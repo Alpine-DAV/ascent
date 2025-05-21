@@ -69,7 +69,7 @@ void render_blueprint_result(const string &field_name,
     ascent.close();
 }
 
-bool is_vtk_disabled(const Node &about)
+bool is_vtkm_disabled(const Node &about)
 {
     bool vtk_disabled = about["runtimes/ascent/vtkm/status"].as_string() == "disabled";
     if (vtk_disabled)
@@ -101,7 +101,7 @@ TEST(ascent_rover, test_xray_blueprint_braid)
     Node n;
     ascent::about(n);
     // only run this test if ascent was built with vtkm support
-    if(is_vtk_disabled(n))
+    if(is_vtkm_disabled(n))
     {
         return;
     }
@@ -127,7 +127,7 @@ TEST(ascent_rover, test_xray_blueprint_braid)
     //
 
     conduit::Node extracts;
-    extracts["e1/type"]  = "xray";
+    extracts["e1/type"] = "xray";
     extracts["e1/params/absorption"] = "radial";
     extracts["e1/params/emission"] = "radial";
     extracts["e1/params/filename"] = query_output_file;
@@ -181,7 +181,7 @@ TEST(ascent_rover, test_xray_blueprint_curv3d)
     Node n;
     ascent::about(n);
     // only run this test if ascent was built with vtkm support
-    if(is_vtk_disabled(n))
+    if(is_vtkm_disabled(n))
     {
         return;
     }
@@ -194,12 +194,6 @@ TEST(ascent_rover, test_xray_blueprint_curv3d)
         conduit::utils::join_file_path(std::string(ASCENT_T_DATA_DIR),
                                        "curv3d_blueprint.cycle_000048.root");
 
-    // test files:
-    //  - curv3d_blueprint.cycle_000048.root
-    //  - multi_curv3d_blueprint.cycle_000048.root
-    //  - tire_blueprint.cycle_000000.root
-    //  - curv2d_blueprint.cycle_000048.root - we are not sure what will happen for 2D inputs.
-
     conduit::relay::io::blueprint::load_mesh(root_file, data);
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data, verify_info));
@@ -210,7 +204,6 @@ TEST(ascent_rover, test_xray_blueprint_curv3d)
     const std::string query_output_file = 
         conduit::utils::join_file_path(query_output_path,
                                        "tout_rover_xray_curv3d_blueprint_query");
-    std::cout << "query_output_file: " << query_output_file << std::endl;
 
     // remove old images before rendering
     remove_test_image(query_output_file);
@@ -247,7 +240,6 @@ TEST(ascent_rover, test_xray_blueprint_curv3d)
     ascent.close();
 
     const std::string full_outfile_name = query_output_file + "48.cycle_000048.root";
-    std::cout << "full_outfile_name: " << full_outfile_name << std::endl;
 
     Node load_mesh;
     conduit::relay::io::blueprint::load_mesh(full_outfile_name, load_mesh);
@@ -277,7 +269,7 @@ TEST(ascent_rover, test_xray_blueprint_multi_curv3d)
     Node n;
     ascent::about(n);
     // only run this test if ascent was built with vtkm support
-    if(is_vtk_disabled(n))
+    if(is_vtkm_disabled(n))
     {
         return;
     }
@@ -289,12 +281,6 @@ TEST(ascent_rover, test_xray_blueprint_multi_curv3d)
     const std::string root_file = 
         conduit::utils::join_file_path(std::string(ASCENT_T_DATA_DIR),
                                        "multi_curv3d_blueprint.cycle_000048.root");
-
-    // test files:
-    //  - curv3d_blueprint.cycle_000048.root
-    //  - multi_curv3d_blueprint.cycle_000048.root
-    //  - tire_blueprint.cycle_000000.root
-    //  - curv2d_blueprint.cycle_000048.root - we are not sure what will happen for 2D inputs.
 
     conduit::relay::io::blueprint::load_mesh(root_file, data);
 
@@ -386,12 +372,6 @@ TEST(ascent_rover, test_xray_blueprint_tire)
         conduit::utils::join_file_path(std::string(ASCENT_T_DATA_DIR),
                                        "tire_blueprint.cycle_000000.root");
 
-    // test files:
-    //  - curv3d_blueprint.cycle_000048.root
-    //  - multi_curv3d_blueprint.cycle_000048.root
-    //  - tire_blueprint.cycle_000000.root
-    //  - curv2d_blueprint.cycle_000048.root - we are not sure what will happen for 2D inputs.
-
     conduit::relay::io::blueprint::load_mesh(root_file, data);
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data, verify_info));
@@ -481,12 +461,6 @@ TEST(ascent_rover, test_xray_blueprint_curv2d)
     const std::string root_file = 
         conduit::utils::join_file_path(std::string(ASCENT_T_DATA_DIR),
                                        "curv2d_blueprint.cycle_000048.root");
-
-    // test files:
-    //  - curv3d_blueprint.cycle_000048.root
-    //  - multi_curv3d_blueprint.cycle_000048.root
-    //  - tire_blueprint.cycle_000000.root
-    //  - curv2d_blueprint.cycle_000048.root - we are not sure what will happen for 2D inputs.
 
     conduit::relay::io::blueprint::load_mesh(root_file, data);
 
