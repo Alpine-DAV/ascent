@@ -619,27 +619,34 @@ void Scheduler<FloatType>::to_blueprint(conduit::Node &dataset)
 
   const int num_channels = m_result.get_num_channels();
 
-  conduit::Node &n_topo = dataset["topologies/"+topo_name];
+  conduit::Node &n_coords = dataset["coordsets/" + coord_name];
+  n_coords["type"] = "rectilinear";
+  
+  std::vector<float> x_coords(num_channels + 1);
+  std::vector<float> y_coords(width + 1);
+  std::vector<float> z_coords(height + 1);
+
+  // Fill each vector with ascending values from [0, vector_size]
+  std::iota(x_coords.begin(), x_coords.end(), 0);
+  std::iota(y_coords.begin(), y_coords.end(), 0);
+  std::iota(z_coords.begin(), z_coords.end(), 0);
+
+  // Can't use set_external here since these vectors will go out of scope
+  n_coords["values/x"].set(x_coords);
+  n_coords["values/y"].set(y_coords);
+  n_coords["values/z"].set(z_coords);
+
+  n_coords["labels/x"] = "energy_group";
+  n_coords["labels/y"] = "width";
+  n_coords["labels/z"] = "height";
+
+  n_coords["units/x"] = "bins";
+  n_coords["units/y"] = "pixels";
+  n_coords["units/z"] = "pixels";
+
+  conduit::Node &n_topo = dataset["topologies/" + topo_name];
   n_topo["coordset"] = coord_name;
-  n_topo["type"] = "uniform";
-
-  conduit::Node &n_coords = dataset["coordsets/"+coord_name];
-  n_coords["type"] = "uniform";
-  n_coords["dims/i"] = num_channels + 1;
-  n_coords["dims/j"] = width + 1;
-  n_coords["dims/k"] = height + 1;
-
-  // probably want to match the physical dims of the detector
-  n_coords["origin/x"] = 0;
-  n_coords["origin/y"] = 0;
-  n_coords["origin/z"] = 0;
-
-  n_coords["spacing/dx"] = 1.f;
-  n_coords["spacing/dy"] = 1.f;
-  n_coords["spacing/dz"] = 1.f;
-  n_coords["labels"].append() = "groups";
-  n_coords["labels"].append() = "width";
-  n_coords["labels"].append() = "height";
+  n_topo["type"] = "rectilinear";
 
   if(m_render_settings.m_render_mode == energy)
   {
@@ -651,15 +658,12 @@ void Scheduler<FloatType>::to_blueprint(conduit::Node &dataset)
       conduit::Node &n_int = dataset["fields/intensities"];
       n_int["topology"] = topo_name;
       n_int["association"] = "element";
+      n_int["units"] = "intensity units";
       vtkm::cont::ArrayHandle<FloatType> ints = m_result.flatten_intensities();
       FloatType *ints_buffer = get_vtkm_ptr(ints);
       // can't set external since this goes out of scope
       n_int["values"].set(ints_buffer, ints.GetNumberOfValues());
-      n_int["shape"].set(shape);
       n_int["strides"].set(strides);
-      n_int["labels"].append() = "groups";
-      n_int["labels"].append() = "width";
-      n_int["labels"].append() = "height";
     }
 
     if(m_result.has_optical_depth(0))
@@ -667,15 +671,12 @@ void Scheduler<FloatType>::to_blueprint(conduit::Node &dataset)
       conduit::Node &n_op = dataset["fields/optical_depth"];
       n_op["topology"] = topo_name;
       n_op["association"] = "element";
+      n_op["units"] = "path length metadata";
       vtkm::cont::ArrayHandle<FloatType> ints = m_result.flatten_optical_depths();
       FloatType *ints_buffer = get_vtkm_ptr(ints);
       // can't set external since this goes out of scope
       n_op["values"].set(ints_buffer, ints.GetNumberOfValues());
-      n_op["shape"].set(shape);
       n_op["strides"].set(strides);
-      n_op["labels"].append() = "groups";
-      n_op["labels"].append() = "width";
-      n_op["labels"].append() = "height";
     }
   }
 
