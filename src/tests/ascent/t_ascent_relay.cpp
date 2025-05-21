@@ -99,7 +99,7 @@ TEST(ascent_relay, test_relay_hdf5)
     std::cout << info.to_yaml();
 
 #ifdef CONDUIT_HAS_ROOT_FILE_NAME_GEN
-    // if conduit 0.9.4 provides util that allows us to 
+    // conduit 0.9.4 provides util that allows us to 
     // provide this, only check if we are using new enough conduit
     // check the path of the root file reported in info
     EXPECT_EQ(info["extracts"][0]["path"].as_string(),
