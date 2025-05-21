@@ -194,6 +194,7 @@ RoverXRay::execute()
 
     std::string topo_name = collection->field_topology(field_name);
 
+    // Returns an empty dataset if topo_name doesn't exist in the collection
     vtkh::DataSet &dataset = collection->dataset_by_topology(topo_name);
 
     vtkmCamera camera;
@@ -233,22 +234,23 @@ RoverXRay::execute()
     // Create some basic settings
     //
     RenderSettings settings;
+    settings.m_render_mode = rover::energy;
     settings.m_primary_field = params()["absorption"].as_string();
-
+    
+    // TODO: investigate how/why this is getting set, even if emission is not specified
+    // example: if absorption == "radial", why is emission also == "radial"
     if(params().has_path("emission"))
     {
-       settings.m_secondary_field = params()["emission"].as_string();
+      settings.m_secondary_field = params()["emission"].as_string();
     }
 
     if(params().has_path("unit_scalar"))
     {
-       settings.m_energy_settings.m_unit_scalar = params()["unit_scalar"].to_float64();
+      settings.m_energy_settings.m_unit_scalar = params()["unit_scalar"].to_float64();
     }
 
-
-    settings.m_render_mode = rover::energy;
-
     tracer.set_render_settings(settings);
+
     for(int i = 0; i < dataset.GetNumberOfDomains(); ++i)
     {
       tracer.add_data_set(dataset.GetDomain(i));
@@ -274,8 +276,7 @@ RoverXRay::execute()
 
     if(params().has_path("blueprint"))
     {
-
-
+      // TODO: validate that protocol is "hdf5", "yaml", or "json" in verify_params
       std::string protocol = params()["blueprint"].as_string();
       conduit::Node multi_domain;
       conduit::Node &dom = multi_domain.append();
