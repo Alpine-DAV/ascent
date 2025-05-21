@@ -152,7 +152,6 @@ TEST(ascent_mpi_uniform_uniform_grid, test_mpi_uniform_grid)
           pipeline: "pl1"
       renders: 
         r1: 
-          image_prefix: "/home/user/sandbox/ascent/scripts/build_ascent/build/ascent-checkout/tests/_output/tout_mpi_uniform_sample_dist10"
     s2: 
       plots: 
         p1: 
@@ -161,10 +160,12 @@ TEST(ascent_mpi_uniform_uniform_grid, test_mpi_uniform_grid)
           pipeline: "pl1"
       renders: 
         r1: 
-          image_prefix: "/home/user/sandbox/ascent/scripts/build_ascent/build/ascent-checkout/tests/_output/tout_mpi_uniform_sample_rank10"
 )xyzxyz";
 
     actions.parse(acts_str,"yaml");
+    actions[1]["scenes/s1/renders/r1/image_prefix"] = image_file_dist;
+    actions[1]["scenes/s2/renders/r1/image_prefix"] = image_file_rank;
+
     //actions.print();
 
     //
