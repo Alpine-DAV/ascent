@@ -502,6 +502,13 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_smaller_by10_than_input)
     // Create the actions.
     //
 
+    std::string acts_str = R"xyzxyz(
+)xyzxyz";
+    conduit::Node actions;
+    actions.parse(acts_str,"yaml");
+    actions[1]["scenes/s1/renders/r1/image_prefix"] = output_file;
+    actions.print();
+
     conduit::Node pipelines;
     // pipeline 1
     pipelines["pl1/f1/type"] = "uniform_grid";
@@ -584,6 +591,14 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_equal_size_input)
     // Create the actions.
     //
 
+    std::string acts_str = R"xyzxyz(
+)xyzxyz";
+    conduit::Node actions;
+    actions.parse(acts_str,"yaml");
+    actions[1]["scenes/s1/renders/r1/image_prefix"] = output_file;
+    actions.print();
+
+
     conduit::Node pipelines;
     // pipeline 1
     pipelines["pl1/f1/type"] = "uniform_grid";
@@ -665,6 +680,14 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_equal_size_input_increased_s
     //
     // Create the actions.
     //
+
+    std::string acts_str = R"xyzxyz(
+)xyzxyz";
+    conduit::Node actions;
+    actions.parse(acts_str,"yaml");
+    actions[1]["scenes/s1/renders/r1/image_prefix"] = output_file;
+    actions.print();
+
 
     conduit::Node pipelines;
     // pipeline 1
@@ -759,6 +782,14 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_equal_size_input_decreased_s
     // Create the actions.
     //
 
+    std::string acts_str = R"xyzxyz(
+)xyzxyz";
+    conduit::Node actions;
+    actions.parse(acts_str,"yaml");
+    actions[1]["scenes/s1/renders/r1/image_prefix"] = output_file;
+    actions.print();
+
+
     conduit::Node pipelines;
     // pipeline 1
     pipelines["pl1/f1/type"] = "uniform_grid";
@@ -840,6 +871,14 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_equal_size_input_shift_origi
     //
     // Create the actions.
     //
+
+    std::string acts_str = R"xyzxyz(
+)xyzxyz";
+    conduit::Node actions;
+    actions.parse(acts_str,"yaml");
+    actions[1]["scenes/s1/renders/r1/image_prefix"] = output_file;
+    actions.print();
+
 
     conduit::Node pipelines;
     // pipeline 1
@@ -934,6 +973,14 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_equal_size_input_shift_origi
     // Create the actions.
     //
 
+    std::string acts_str = R"xyzxyz(
+)xyzxyz";
+    conduit::Node actions;
+    actions.parse(acts_str,"yaml");
+    actions[1]["scenes/s1/renders/r1/image_prefix"] = output_file;
+    actions.print();
+
+
     conduit::Node pipelines;
     // pipeline 1
     pipelines["pl1/f1/type"] = "uniform_grid";
@@ -1024,6 +1071,14 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_equal_size_input_shift_origi
     //
     // Create the actions.
     //
+
+    std::string acts_str = R"xyzxyz(
+)xyzxyz";
+    conduit::Node actions;
+    actions.parse(acts_str,"yaml");
+    actions[1]["scenes/s1/renders/r1/image_prefix"] = output_file;
+    actions.print();
+
 
     conduit::Node pipelines;
     // pipeline 1
@@ -1116,6 +1171,14 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_equal_size_input_shift_origi
     // Create the actions.
     //
 
+    std::string acts_str = R"xyzxyz(
+)xyzxyz";
+    conduit::Node actions;
+    actions.parse(acts_str,"yaml");
+    actions[1]["scenes/s1/renders/r1/image_prefix"] = output_file;
+    actions.print();
+
+
     conduit::Node pipelines;
     // pipeline 1
     pipelines["pl1/f1/type"] = "uniform_grid";
@@ -1206,6 +1269,14 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_larger_by5_than_input)
     //
     // Create the actions.
     //
+
+    std::string acts_str = R"xyzxyz(
+)xyzxyz";
+    conduit::Node actions;
+    actions.parse(acts_str,"yaml");
+    actions[1]["scenes/s1/renders/r1/image_prefix"] = output_file;
+    actions.print();
+
 
     conduit::Node pipelines;
     // pipeline 1
@@ -1300,6 +1371,14 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_larger_by5_than_input_large_
     // Create the actions.
     //
 
+    std::string acts_str = R"xyzxyz(
+)xyzxyz";
+    conduit::Node actions;
+    actions.parse(acts_str,"yaml");
+    actions[1]["scenes/s1/renders/r1/image_prefix"] = output_file;
+    actions.print();
+
+
     conduit::Node pipelines;
     // pipeline 1
     pipelines["pl1/f1/type"] = "uniform_grid";
@@ -1392,6 +1471,14 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_default_values)
     //
     // Create the actions.
     //
+
+    std::string acts_str = R"xyzxyz(
+)xyzxyz";
+    conduit::Node actions;
+    actions.parse(acts_str,"yaml");
+    actions[1]["scenes/s1/renders/r1/image_prefix"] = output_file;
+    actions.print();
+
 
     conduit::Node pipelines;
     // pipeline 1
