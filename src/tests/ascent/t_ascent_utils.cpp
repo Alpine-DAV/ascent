@@ -176,7 +176,15 @@ TEST(ascent_utils, ascent_string_fmt_family)
 
 TEST(ascent_utils, ascent_string_fmt_none)
 {
-    std::string expected_result = "t_output_path_none_100";
+    std::string expected_result = "t_output_path_none_000100";
+    std::string result = ascent::expand_path_special_variables("t_output_path_none", "", -1);
+    std::cout << result << std::endl;
+    EXPECT_TRUE(expected_result == result);
+}
+
+TEST(ascent_utils, ascent_string_fmt_none_underscore)
+{
+    std::string expected_result = "t_output_path_none_000100";
     std::string result = ascent::expand_path_special_variables("t_output_path_none_", "", -1);
     std::cout << result << std::endl;
     EXPECT_TRUE(expected_result == result);
@@ -252,7 +260,7 @@ TEST(ascent_utils, ascent_string_fmt_no_format)
     Metadata::n_metadata["family_value_seed"] = 8;
 
     std::string result = ascent::expand_path_special_variables("t_output_path_none_{cycle}_{time}_{family}", "", -1);
-    std::string expected_result = "t_output_path_none_100_3.141592_8";
+    std::string expected_result = "t_output_path_none_000100_3.14159_000008";
     std::cout << result << std::endl;
    
     EXPECT_TRUE(expected_result == result);
@@ -265,7 +273,7 @@ TEST(ascent_utils, ascent_string_fmt_no_format_colon)
     Metadata::n_metadata["family_value_seed"] = 10;
 
     std::string result = ascent::expand_path_special_variables("t_output_path_none_{cycle:}_{time:}_{family:}", "", -1);
-    std::string expected_result = "t_output_path_none_100_3.141592_10";
+    std::string expected_result = "t_output_path_none_000100_3.14159_000010";
     std::cout << result << std::endl;
    
     EXPECT_TRUE(expected_result == result);

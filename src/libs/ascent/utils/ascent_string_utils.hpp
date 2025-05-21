@@ -30,7 +30,10 @@ template<typename T>
 std::string expand_format_value(const std::string path_string, const T value);
 
 template<typename T>
-std::string expand_generic_variable(const std::string& path_string, const std::string& variable_name, const T value);
+std::string expand_generic_variable(const std::string& path_string,
+                                    const std::string& variable_name,
+                                    const T value,
+                                    const std::string& default_formatting);
 
 // checks the file at the specified output location to see if there are files with the same name
 // returns a family value that will prevent colisions with other files
