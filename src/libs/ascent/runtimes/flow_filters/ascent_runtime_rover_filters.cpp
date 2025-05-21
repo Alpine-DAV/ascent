@@ -276,8 +276,7 @@ RoverXRay::execute()
 
     if(params().has_path("blueprint"))
     {
-
-
+      // TODO: validate that protocol is a valid string in verify_params
       std::string protocol = params()["blueprint"].as_string();
       conduit::Node multi_domain;
       conduit::Node &dom = multi_domain.append();
