@@ -26,21 +26,28 @@ using namespace std;
 using namespace conduit;
 
 //-----------------------------------------------------------------------------
+
 inline void
-remove_test_image(const std::string &path, const std::string num = "000100")
+remove_test_image(const std::string &path, const std::string &num)
 {
-    if(conduit::utils::is_file(path + (path.back() != '_' && num.length() != 0 ? "_" : "") + num + ".png"))
+    if(conduit::utils::is_file(path  + num + ".png"))
     {
-        conduit::utils::remove_file(path + (path.back() != '_' && num.length() != 0 ? "_" : "") + num + ".png");
+        conduit::utils::remove_file(path + num + ".png");
     }
 
-    if(conduit::utils::is_file(path + (path.back() != '_' && num.length() != 0 ? "_" : "") + num + ".pnm"))
+    if(conduit::utils::is_file(path + num + ".pnm"))
     {
-        conduit::utils::remove_file(path + (path.back() != '_' && num.length() != 0 ? "_" : "") + num + ".pnm");
+        conduit::utils::remove_file(path + num + ".pnm");
     }
 
 }
 
+inline void
+remove_test_image(const std::string &path)
+{
+    std::string num = std::string(path.back() != '_' ? "_" : "") + "000100";
+    remove_test_image(path, num);
+}
 
 //-----------------------------------------------------------------------------
 inline void
@@ -163,10 +170,10 @@ check_test_image(const std::string &path,
 
 //-----------------------------------------------------------------------------
 inline bool
-check_test_image(const std::string &path, const float tolerance = 0.001f, std::string num = "000100")
+check_test_image(const std::string &path, const float tolerance, const std::string &num)
 {
     Node info;
-    std::string png_path = path + (path.back() != '_' && num.length() != 0 ? "_" : "") + num + ".png";
+    std::string png_path = path + num + ".png";
 
     // for now, just check if the file exists.
     bool res = conduit::utils::is_file(png_path);
@@ -213,10 +220,17 @@ check_test_image(const std::string &path, const float tolerance = 0.001f, std::s
     {
       info.print();
     }
-    std::string info_fpath = path + (path.back() != '_' && num.length() != 0 ? "_" : "") + num + "_img_compare_results.json";
+    std::string info_fpath = path + num + "_img_compare_results.json";
     info.save(info_fpath,"json");
 
     return res;
+}
+
+inline bool
+check_test_image(const std::string &path, const float tolerance = 0.001f)
+{
+    std::string num = std::string(path.back() != '_' ? "_" : "") + "000100";
+    return check_test_image(path, tolerance, num);
 }
 
 
