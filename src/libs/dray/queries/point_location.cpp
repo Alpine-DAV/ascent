@@ -43,32 +43,32 @@ bool has_data(const Array<Location> &locs)
 // TODO: just put these functions into a mpi_utils class
 void mpi_send(const float32 *data, int32 count, int32 dest, int32 tag, MPI_Comm comm)
 {
-  MPI_Send(data, count, MPI_FLOAT, dest, tag, comm);
+  MPI_Send(const_cast<float*>(data), count, MPI_FLOAT, dest, tag, comm);
 }
 
 void mpi_send(const float64 *data, int32 count, int32 dest, int32 tag, MPI_Comm comm)
 {
-  MPI_Send(data, count, MPI_DOUBLE, dest, tag, comm);
+  MPI_Send(const_cast<double*>(data), count, MPI_DOUBLE, dest, tag, comm);
 }
 
 void mpi_recv(float32 *data, int32 count, int32 src, int32 tag, MPI_Comm comm)
 {
-  MPI_Recv(data, count, MPI_FLOAT, src, tag, comm, MPI_STATUS_IGNORE);
+  MPI_Recv(static_cast<float*>(data), count, MPI_FLOAT, src, tag, comm, MPI_STATUS_IGNORE);
 }
 
 void mpi_recv(float64 *data, int32 count, int32 src, int32 tag, MPI_Comm comm)
 {
-  MPI_Recv(data, count, MPI_DOUBLE, src, tag, comm, MPI_STATUS_IGNORE);
+  MPI_Recv(static_cast<double*>(data), count, MPI_DOUBLE, src, tag, comm, MPI_STATUS_IGNORE);
 }
 
 void mpi_bcast(float64 *data, int32 count, int32 root, MPI_Comm comm)
 {
-  MPI_Bcast(data, count, MPI_DOUBLE, root, comm);
+  MPI_Bcast(static_cast<double*>(data), count, MPI_DOUBLE, root, comm);
 }
 
 void mpi_bcast(float32 *data, int32 count, int32 root, MPI_Comm comm)
 {
-  MPI_Bcast(data, count, MPI_FLOAT, root, comm);
+  MPI_Bcast(static_cast<float*>(data), count, MPI_FLOAT, root, comm);
 }
 #endif
 

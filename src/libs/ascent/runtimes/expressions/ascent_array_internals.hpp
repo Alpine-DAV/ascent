@@ -424,7 +424,7 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
 
     if (m_host == nullptr)
     {
-      m_host = static_cast<T *>(ascent::HostMemory::allocate(m_size * sizeof (T)));
+      m_host = static_cast<T *>(ascent::HostMemory::allocate(m_size, sizeof (T)));
       ArrayRegistry::add_host_bytes(m_size * sizeof(T));
     }
   }
@@ -460,7 +460,7 @@ template <typename T> class ArrayInternals : public ArrayInternalsBase
     {
       if (m_device == nullptr)
       {
-        m_device = static_cast<T *>(ascent::DeviceMemory::allocate(m_size * sizeof (T)));
+        m_device = static_cast<T *>(ascent::DeviceMemory::allocate(m_size,sizeof(T)));
         ArrayRegistry::add_device_bytes(m_size * sizeof(T));
       }
     }

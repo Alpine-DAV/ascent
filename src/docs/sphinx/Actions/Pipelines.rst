@@ -51,7 +51,7 @@ filter to extract the intersection of what remains from the threshold with a sph
   clip_params["sphere/radius"]   = .1;
   pipelines["pl2/f2/params/"] = clip_params;
 
-  // make some imaages of the data
+  // make some images of the data
   conduit::Node scenes;
   // add a plot of pipeline 1
   scenes["s1/plots/p1/type"] = "pseudocolor";
@@ -263,7 +263,7 @@ all three offsets are ``0.0``.
   conduit::Node &slice_params = pipelines["pl1/f1/params"];
   slice_params["x_offset"] = 1.f;   // largest value on the x-axis
   slice_params["y_offset"] = 0.f;   // middle of the y-axis
-  slice_params["z_offset"] = -1.f;  // smalles value of the z-axis
+  slice_params["z_offset"] = -1.f;  // smallest value of the z-axis
 
 .. _threeslice2fig:
 
@@ -858,7 +858,7 @@ Otherwise, the resulting streamlines can be saved via an extract.
 
 Vector Magnitude
 ~~~~~~~~~~~~~~~~
-Vector magnitude creates a new field on the data set representing the magitude
+Vector magnitude creates a new field on the data set representing the magnitude
 of a vector variable. The only parameters are the input vector field name
 and the name of the new field.
 
@@ -903,7 +903,7 @@ Composite Vector
 ~~~~~~~~~~~~~~~~
 Composite Vector creates a new vector field on the data set
 by combining two or three scalar fields into a vector.
-The first two fields are required and the presense of the
+The first two fields are required and the presence of the
 third field dictates whether a 2D or 3D vector is created.
 Input fields can be different types (e.g., int32 and float32),
 and the resulting vector field will be a float64.
@@ -926,7 +926,7 @@ Recenter
 ~~~~~~~~
 Recenter changes the association of a field. Fields associated with either `element` or `vertex` can
 be interchanged by averaging the surrounding values. When recentering to a element associated field, all vertex
-values incident to a element are averaged, and similarly when rencentering to a vertex associated field,
+values incident to a element are averaged, and similarly when recentering to a vertex associated field,
 all element values incident to the vertex are averaged. If a field is already of the desired associated, then
 the nothing is done and the field is simply passed through the filter. Note: ghost zones must be available when
 the data set has more than one domain. Without ghost, the averaging will not be smooth across domain boundaries.
@@ -970,8 +970,8 @@ For distributed data, the final output of this filter is composited on the root 
 Gradient
 ~~~~~~~~
 Computes the gradient of a vertex-centered input field for every element
-in the input data set. Fields will be automaticall recentered if they
-are elemenet-centered.
+in the input data set. Fields will be automatically recentered if they
+are element-centered.
 The gradient computation can either generate cell center based gradients,
 which are fast but less accurate, or more accurate but slower
 point based gradients (default).
@@ -991,8 +991,8 @@ point based gradients (default).
 Vorticity
 ~~~~~~~~~
 Computes the vorticity of a vertex-centered input field for every element
-in the input data set. Fields will be automaticall recentered if they
-are elemenet-centered.
+in the input data set. Fields will be automatically recentered if they
+are element-centered.
 The vorticity computation (based on the gradient) can either generate
 cell center based gradients, which are fast but less accurate, or more
 accurate but slower point based gradients (default).
@@ -1012,7 +1012,7 @@ Q-Criterion
 ~~~~~~~~~~~
 Computes the qcriterion of a vertex-centered input field for every element
 in the input data set. Fields will be automaticall recentered if they
-are elemenet-centered.
+are element-centered.
 The qcriterion computation (based on the gradient) can either generate
 cell center based gradients, which are fast but less accurate, or more
 accurate but slower point based gradients (default).
@@ -1051,7 +1051,7 @@ The output field of the MIR Filter will be the name of the material set and can 
 Add MPI Ranks as Field Data
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Ascent provides a filter to add MPI rank information to a mesh. 
-If the input data has multiple topolgies, the user must specify which topology to add the new field to.
+If the input data has multiple topologies, the user must specify which topology to add the new field to.
 The user also has the option of specifying the output name for the new field.
 
 .. code-block:: c++
@@ -1075,7 +1075,7 @@ The user also has the option of specifying the output name for the new field.
 Add Domain IDs as Field Data
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Ascent provides a filter to add domain ID information to a mesh. 
-If the input data has multiple topolgies, the user must specify which topology to add the new field to.  
+If the input data has multiple topologies, the user must specify which topology to add the new field to.  
 The user also has the option of specifying the output name for the new field.
 
 .. code-block:: c++
@@ -1101,9 +1101,9 @@ Partitioning
 Partitioning meshes is commonly needed in order to evenly distribute work
 among many simulation ranks. Ascent utilizes the ``partition()`` functions provided from Conduit::Blueprint. Blueprint provides two ``partition()`` functions
 that can be used to split or recombine Blueprint meshes in serial or parallel.
-Full M:N repartioning is supported. The ``partition()`` functions are in the
+Full M:N repartitioning is supported. The ``partition()`` functions are in the
 serial and parallel Blueprint libraries, respectively.
-Funtionality and further descriptions of optional parameters can be found in the Conduit::Blueprint `documentation <https://llnl-conduit.readthedocs.io/en/latest/blueprint_mesh_partition.html#partitioning>`_.
+Functionality and further descriptions of optional parameters can be found in the Conduit::Blueprint `documentation <https://llnl-conduit.readthedocs.io/en/latest/blueprint_mesh_partition.html#partitioning>`_.
 
 .. code:: cpp
 
@@ -1126,7 +1126,7 @@ In parallel, the Partition filter will make an effort to redistribute data acros
 ranks to attempt to balance how data are assigned. Domains produced from selections
 are assigned round-robin across ranks from rank 0 through rank N-1 until all
 domains have been assigned. This assignment is carried out after extracting
-selections locally so they can be restributed among ranks
+selections locally so they can be redistributed among ranks
 before being combined into the target number of domains.
 
 
@@ -1142,7 +1142,7 @@ Options
 The Partition filter accepts optional parameters. 
 If no optional parameters are given, each input mesh
 domain will be fully selected. 
-If no ``selections`` are specifed as ``params`` then the partitioner
+If no ``selections`` are specified as ``params`` then the partitioner
 will create selections of an appropriate type that selects all elements in each
 input domain.
 
@@ -1238,7 +1238,7 @@ Selections
 Selections can be specified in the options for the Partition Filter to
 select regions of interest that will participate in mesh partitioning. If
 selections are not used then all elements from the input meshes will be
-selected to partitipate in the partitioning process. Selections can be further
+selected to participate in the partitioning process. Selections can be further
 subdivided if needed to arrive at the target number of domains. Selections can
 target specific domains and topologies as well. If a selection does not apply
 to the input mesh domains then no geometry is produced in the output for that

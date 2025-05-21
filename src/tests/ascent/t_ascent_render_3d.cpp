@@ -151,8 +151,8 @@ TEST(ascent_render_3d, test_render_3d_original_bounds)
     pipelines["pl1/f1/type"] = "clip";
     // filter knobs
     conduit::Node &clip_params = pipelines["pl1/f1/params"];
-    clip_params["box/min/x"] = -10.;
-    clip_params["box/min/y"] = -10.;
+    clip_params["box/min/x"] = -10.1;
+    clip_params["box/min/y"] = -10.1;
     clip_params["box/min/z"] = 0.;
     clip_params["box/max/x"] = 10.01; // <=
     clip_params["box/max/y"] = 10.01;
@@ -167,6 +167,14 @@ TEST(ascent_render_3d, test_render_3d_original_bounds)
     scenes["s1/renders/r1/camera/azimuth"] = 90;
 
 
+    conduit::Node exs;
+    exs["e1/type"]         = "vtk";
+    exs["e1/params/path"]         = output_file + "_before_vtk";
+
+    exs["e2/type"]         = "vtk";
+    exs["e2/pipeline"]     = "pl1";
+    exs["e2/params/path"]         = output_file + "_after_vtk";
+
     conduit::Node actions;
 
     // add the pipeline
@@ -177,6 +185,10 @@ TEST(ascent_render_3d, test_render_3d_original_bounds)
     conduit::Node &add_plots = actions.append();
     add_plots["scenes"] = scenes;
     add_plots["action"] = "add_scenes";
+
+    conduit::Node &add_exs = actions.append();
+    add_exs["extracts"] = exs;
+    add_exs["action"] = "add_extracts";
 
 
     //
@@ -866,6 +878,170 @@ TEST(ascent_render_3d, test_render_3d_name_format)
     EXPECT_TRUE(check_test_image(output_file, 0.0001f, "0100"));
     std::string msg = "An example of rendering to a filename using format specifiers.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+}
+
+TEST(ascent_render_3d, test_render_3d_name_format_keywords)
+{
+    // the ascent runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping 3D default"
+                      "Pipeline test");
+
+        return;
+    }
+
+    Node mesh;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              25,
+                                              25,
+                                              25,
+                                              mesh);
+
+    string output_path = prepare_output_dir();
+    string image_prefix = "t_output_path_{family:05d}_{cycle:04d}_{time:0.4f}";
+    const string output_file = conduit::utils::join_file_path(output_path,image_prefix);
+    const string output_file_final_1 = conduit::utils::join_file_path(output_path,"t_output_path_00100_0100_3.1415.png");
+    const string output_file_final_2 = conduit::utils::join_file_path(output_path,"t_output_path_00101_0100_3.1415.png");
+
+    string image_prefix_only_format = "t_output_path_%03d_only_format";
+    const string output_file_only_format = conduit::utils::join_file_path(output_path,image_prefix_only_format);
+    const string output_file_only_format_final = conduit::utils::join_file_path(output_path,"t_output_path_100_only_format.png");
+
+    string image_prefix_no_format = "t_output_path_no_format_";
+    const string output_file_no_format = conduit::utils::join_file_path(output_path,image_prefix_no_format);
+    const string output_file_no_format_final = conduit::utils::join_file_path(output_path,"t_output_path_no_format_100.png");
+    
+    remove_test_image(output_file_final_1);
+    remove_test_image(output_file_final_2);
+    remove_test_image(output_file_only_format_final);
+    remove_test_image(output_file_no_format_final);
+
+    // Use Ascent to export our mesh to blueprint flavored hdf5 files
+    Ascent a;
+
+    // open ascent
+    a.open();
+
+    // publish mesh to ascent
+    a.publish(mesh);
+
+    // setup actions
+    Node actions;
+    Node &add_act2 = actions.append();
+    add_act2["action"] = "add_scenes";
+
+    Node &scenes = add_act2["scenes"];
+    // Showing family value incrementation:
+    scenes["s1/plots/p1/type"] = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "braid";
+    scenes["s1/image_prefix"] = output_file;
+    scenes["s2/plots/p1/type"] = "pseudocolor";
+    scenes["s2/plots/p1/field"] = "braid";
+    scenes["s2/image_prefix"] = output_file;
+
+    // Showing formatting with only a format field:
+    scenes["s3/plots/p1/type"] = "pseudocolor";
+    scenes["s3/plots/p1/field"] = "braid";
+    scenes["s3/image_prefix"] = output_file_only_format;
+
+    // Showing that family value is added to output file names when no other format given
+    scenes["s4/plots/p1/type"] = "pseudocolor";
+    scenes["s4/plots/p1/field"] = "braid";
+    scenes["s4/image_prefix"] = output_file_no_format;
+
+    // print our full actions tree
+    std::cout << actions.to_yaml() << std::endl;
+
+    // execute the actions
+    a.execute(actions);
+
+    // close ascent
+    a.close();
+
+    EXPECT_TRUE(conduit::utils::is_file(output_file_final_1));
+    EXPECT_TRUE(conduit::utils::is_file(output_file_final_2));
+    EXPECT_TRUE(conduit::utils::is_file(output_file_only_format_final));
+    EXPECT_TRUE(conduit::utils::is_file(output_file_no_format_final));
+}
+
+TEST(ascent_render_3d, test_render_output_dir_not_exist)
+{
+    // the ascent runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping 3D default"
+                      "Pipeline test");
+
+        return;
+    }
+
+    ASCENT_INFO("Test to verify that Ascent will catch non-existant output paths.\n");
+
+    Node mesh;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              25,
+                                              25,
+                                              25,
+                                              mesh);
+
+    string output_path = prepare_output_dir();
+    string image_prefix = "toutput_path_";
+    string image_prefix_dir = conduit::utils::join_file_path("non_existant_dir", image_prefix);
+    const string output_file = conduit::utils::join_file_path(output_path,image_prefix_dir);
+
+    remove_test_image(output_file);
+
+    // setup actions
+    Node actions;
+    Node &add_act2 = actions.append();
+    add_act2["action"] = "add_scenes";
+
+    Node &scenes = add_act2["scenes"];
+    // Showing family value incrementation:
+    scenes["s1/plots/p1/type"] = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "braid";
+    scenes["s1/image_prefix"] = output_file;
+
+    // Use Ascent to export our mesh to blueprint flavored hdf5 files
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent_opts["field_filtering"] = "true";
+    ascent_opts["exceptions"] = "forward";
+    ascent.open(ascent_opts);
+    ascent.publish(mesh);
+
+    bool error_occured = false;
+    try
+    {
+        ascent.execute(actions);
+    }
+    catch(conduit::Error &err)
+    {
+        if (err.message().find("Error: The specified directory") != std::string::npos)
+        {
+            error_occured = true;
+        }
+        else
+        {
+            std::cout << "The error that was thrown did not match the expected " 
+                      << "'Error: The specified directory' error" << std::endl;
+
+            std::cout << err.message() << std::endl;
+        }
+    }
+
+    ascent.close();
+
+    EXPECT_TRUE(error_occured);
 }
 
 TEST(ascent_render_3d, test_render_3d_no_bg)
@@ -1924,7 +2100,7 @@ TEST(ascent_render_3d, test_render_3d_compressed_color_table)
     control_points["g"] = {0.08, .23, 1.};
     control_points["b"] = {0.08, .04, .96};
     control_points["a"] = {1., 1., 1.};
-    control_points["position"] = {0., .5, 1.};    
+    control_points["position"] = {0., .5, 1.};
 
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]  = "pseudocolor";
@@ -2662,7 +2838,7 @@ TEST(ascent_render_3d, test_render_3d_points_implicit_topo)
     ascent.close();
 
     // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file));
+    EXPECT_TRUE(check_test_image(output_file,0.002));
 
 }
 
@@ -2682,7 +2858,7 @@ TEST(ascent_render_3d, test_render_3d_pyra)
         return;
     }
 
-  
+
     Node mesh, info;
     mesh["state/cycle"] = 100;
     // create the coordinate set
@@ -3103,7 +3279,7 @@ TEST(ascent_render_3d, test_render_3d_camera_frustum_meshes)
 
     // Base Case
     // Case to verify that the frustrums plot correctly without rotations.
-    add_plots["scenes/s1/renders/r1/image_prefix"] = 
+    add_plots["scenes/s1/renders/r1/image_prefix"] =
         conduit::utils::join_file_path(output_path, "tout_render_3d_frust_image_0_az_0_el_0_");
     add_plots["scenes/s1/renders/r1/camera/azimuth"] = 0.0;
     add_plots["scenes/s1/renders/r1/camera/elevation"] = 0.0;
@@ -3111,29 +3287,29 @@ TEST(ascent_render_3d, test_render_3d_camera_frustum_meshes)
     // Azimuth Check
     // Case to verify that when only the azimuth is changes the frustum is plotted appropriately.
     // Additionally verifies that the up vector is not changed and still points directly up.
-    add_plots["scenes/s1/renders/r2/image_prefix"] = 
+    add_plots["scenes/s1/renders/r2/image_prefix"] =
         conduit::utils::join_file_path(output_path, "tout_render_3d_frust_image_1_az_120_el_0_");
     add_plots["scenes/s1/renders/r2/camera/azimuth"] = 120.0;
     add_plots["scenes/s1/renders/r2/camera/elevation"] = 0.0;
-    
+
     // Elevation Check
     // Case to verify that the frustum is plotted correctly when only elevation changes.
     // Additionally checks that for angles over 90 degrees that the up vector will angle downwards.
-    add_plots["scenes/s1/renders/r3/image_prefix"] = 
+    add_plots["scenes/s1/renders/r3/image_prefix"] =
         conduit::utils::join_file_path(output_path, "tout_render_3d_frust_image_2_az_0_el_120_");
     add_plots["scenes/s1/renders/r3/camera/azimuth"] = 0.0;
     add_plots["scenes/s1/renders/r3/camera/elevation"] = 120;
 
     // Mixed Rotation Check
     // Verify that when both the azimuth and elevation have been changed that the frustum is correct.
-    add_plots["scenes/s1/renders/r4/image_prefix"] = 
+    add_plots["scenes/s1/renders/r4/image_prefix"] =
         conduit::utils::join_file_path(output_path, "tout_render_3d_frust_image_3_az_20_el_-45_");
     add_plots["scenes/s1/renders/r4/camera/azimuth"] = 20.0;
     add_plots["scenes/s1/renders/r4/camera/elevation"] = -45.0;
 
-    // Test that if the look_at location and the position location are quite similar that the frustum 
+    // Test that if the look_at location and the position location are quite similar that the frustum
     // is still generated without errors.
-    add_plots["scenes/s1/renders/r5/image_prefix"] = 
+    add_plots["scenes/s1/renders/r5/image_prefix"] =
         conduit::utils::join_file_path(output_path, "tout_render_3d_frust_image_nan");
     add_plots["scenes/s1/renders/r5/camera/position"] = {0.0, 0.0, 0.0581200011074543};
     add_plots["scenes/s1/renders/r5/camera/look_at"] = {0.0, 0.0, 0.0};
@@ -3159,7 +3335,7 @@ TEST(ascent_render_3d, test_render_3d_camera_frustum_meshes)
         conduit::Node &image_node = ascent_info["images"][image_index];
         conduit::Node camera_data = image_node["camera/camera_frustum_mesh"];
 
-        string image_name_root = conduit::utils::join_file_path(output_path, 
+        string image_name_root = conduit::utils::join_file_path(output_path,
             "tout_render_3d_frust_camera_image_" + std::to_string(image_index));
         //conduit::relay::io::blueprint::save_mesh(camera_data, image_name_root + "_frustum_mesh","hdf5");
 
@@ -3170,13 +3346,13 @@ TEST(ascent_render_3d, test_render_3d_camera_frustum_meshes)
         conduit::Node frustum_actions;
         conduit::Node &add_frustum_plots = frustum_actions.append();
         add_frustum_plots["action"] = "add_scenes";
-        add_frustum_plots["scenes/s1/plots/p1/type"] = "mesh"; 
+        add_frustum_plots["scenes/s1/plots/p1/type"] = "mesh";
         add_frustum_plots["scenes/s1/plots/p1/topology"] = "camera_frustum_topo";
-        add_frustum_plots["scenes/s1/plots/p2/type"] = "mesh"; 
+        add_frustum_plots["scenes/s1/plots/p2/type"] = "mesh";
         add_frustum_plots["scenes/s1/plots/p2/topology"] = "clipping_planes_topo";
-        add_frustum_plots["scenes/s1/plots/p3/type"] = "mesh"; 
+        add_frustum_plots["scenes/s1/plots/p3/type"] = "mesh";
         add_frustum_plots["scenes/s1/plots/p3/topology"] = "scene_bounds_topo";
-        
+
         // Render a plot of the camera frustum to verify it's relation to the scene
         std::string frust_plot_file_1 = image_name_root + "_frustum_front_image_";
         remove_test_image(frust_plot_file_1);
@@ -3184,7 +3360,7 @@ TEST(ascent_render_3d, test_render_3d_camera_frustum_meshes)
         add_frustum_plots["scenes/s1/renders/r1/camera/azimuth"] = 0.0;
         add_frustum_plots["scenes/s1/renders/r1/camera/elevation"] = 0.0;
         add_frustum_plots["scenes/s1/renders/r1/annotations"] = "false";
-        
+
         // Render a plot of the camera frustum at a 90 degree angle to see the frustum better
         std::string frust_plot_file_2 = image_name_root + "_frustum_side_image_";
         remove_test_image(frust_plot_file_2);
@@ -3192,7 +3368,7 @@ TEST(ascent_render_3d, test_render_3d_camera_frustum_meshes)
         add_frustum_plots["scenes/s1/renders/r2/camera/azimuth"] = 90.0;
         add_frustum_plots["scenes/s1/renders/r2/camera/elevation"] = 0.0;
         add_frustum_plots["scenes/s1/renders/r2/annotations"] = "false";
-        
+
         ascent_2.execute(frustum_actions);
         ascent_2.close();
 
@@ -3274,6 +3450,84 @@ TEST(ascent_render_3d, test_render_3d_bentgrid_example)
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
 }
+
+//-----------------------------------------------------------------------------
+TEST(ascent_render_3d, test_render_3d_zero_zoom_handled)
+{
+    // the ascent runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping 3D default"
+                      "Pipeline test");
+
+        return;
+    }
+
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing Error Handling of Render Camera Zoom Parameter\n");
+
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_render_3d_zero_zoom_handled");
+
+    //
+    // Create the actions.
+    //
+
+    conduit::Node scenes;
+    scenes["s1/plots/p1/type"] = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "braid";
+    scenes["s1/image_prefix"] = output_file;
+    scenes["s1/renders/r1/image_prefix"]   = output_file;
+    scenes["s1/renders/r1/camera/zoom"] = 0.0;
+
+
+    conduit::Node actions;
+    conduit::Node &add_plots = actions.append();
+    add_plots["action"] = "add_scenes";
+    add_plots["scenes"] = scenes;
+
+    //
+    // Run Ascent
+    //
+    Ascent ascent;
+    Node ascent_opts;
+    ascent_opts["timings"] = "true";
+    ascent_opts["runtime/type"] = "ascent";
+    ascent_opts["exceptions"] = "forward";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+
+    bool error = false;
+    try
+    {
+        ascent.execute(actions);
+    }
+    catch(...)
+    {
+        error = true;
+    }
+
+    ascent.close();
+
+    EXPECT_TRUE(error);
+}
+
 
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])

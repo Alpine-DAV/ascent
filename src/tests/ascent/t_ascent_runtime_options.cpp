@@ -206,7 +206,7 @@ TEST(ascent_runtime_options, test_timings)
 
 
     string output_path = prepare_output_dir();
-    string output_file = conduit::utils::join_file_path(output_path,"tout_render_actions_img");
+    string output_file = conduit::utils::join_file_path(output_path,"tout_render_actions_img_timing");
     string output_actions = conduit::utils::join_file_path(output_path,"tout_render_actions.json");
 
     string timings_file = "ascent_filter_times.csv";
@@ -308,14 +308,15 @@ TEST(ascent_runtime_options, test_timings_tear_updown)
 
 
     string output_path = prepare_output_dir();
-    string output_file = conduit::utils::join_file_path(output_path,"tout_render_actions_img");
-    string output_actions = conduit::utils::join_file_path(output_path,"tout_render_actions.json");
+    string output_file = conduit::utils::join_file_path(output_path,"tout_timings_tear_up_down_actions_img");
+    string output_actions = conduit::utils::join_file_path(output_path,"tout_timings_tear_up_down_actions.json");
 
     string timings_file = "ascent_filter_times.csv";
     timings_file = conduit::utils::join_file_path(output_path,timings_file);
 
     // remove old images before rendering
-    remove_test_image(output_file);
+    remove_test_image(output_file, "100");
+    remove_test_image(output_file, "101");
     remove_test_file(output_actions);
     remove_test_file(timings_file);
 
@@ -683,6 +684,7 @@ TEST(ascent_runtime_options, test_field_filtering)
 
     // remove old images before rendering
     remove_test_image(output_file);
+    remove_test_file(output_file + "100.yaml");
 
 
     //
@@ -743,9 +745,9 @@ TEST(ascent_runtime_options, test_field_filtering_ghosts)
                                               EXAMPLE_MESH_SIDE_DIM,
                                               data);
 
-    // add a ghost field 
+    // add a ghost field
     data["fields/ascent_ghosts"].set(data["fields/radial"]);
-    
+
     float64_array gvals = data["fields/ascent_ghosts/values"].value();
     for(int i=0; i < gvals.number_of_elements(); i++)
     {
@@ -1101,7 +1103,7 @@ TEST(ascent_runtime_options, test_field_filtering_binning_filter)
     ascent.open(ascent_opts);
     ascent.publish(data);
     ascent.execute(actions);
-    
+
     EXPECT_TRUE(check_test_image(output_file, 0.1));
 }
 
@@ -1165,4 +1167,67 @@ TEST(ascent_runtime_options, test_field_filtering_lineout)
     ascent.open(ascent_opts);
     ascent.publish(data);
     ascent.execute(actions);
+}
+
+
+
+//-----------------------------------------------------------------------------
+TEST(ascent_runtime_options, test_field_filtering_new)
+{
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        return;
+    }
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    string output_path = prepare_output_dir();
+    std::string output_base =
+      conduit::utils::join_file_path(output_path, "tout_ascent_field_filtering_new_style");
+
+    remove_test_image(output_base);
+
+    ASCENT_INFO("Testing field filtering new style");
+
+    // test option to pre-declare field names
+
+    std::string acts_str = R"xyzxyz(
+    -
+      action: "declare_fields"
+      fields: ["braid","radial"]
+    -
+      action: "add_extracts"
+      extracts:
+        e1:
+          type: "relay"
+          params:
+            protocol: "blueprint/mesh/hdf5"
+)xyzxyz";
+    conduit::Node actions;
+    actions.parse(acts_str,"yaml");
+    actions[1]["extracts/e1/params/path"] = output_base;
+
+    Ascent ascent;
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent_opts["field_filtering"] = "true";
+    ascent_opts["exceptions"] = "forward";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
 }

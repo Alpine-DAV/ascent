@@ -18,7 +18,7 @@ This default behavior can be overridden. Please see the Ascent options for more 
 
 Using ROCm-SMI on AMD GPUs
 --------------------------
-ROCm-SMI stands for ROCm System Management Interface and provides an interfaces for applications and users to monitor and control GPU applicatoins. 
+ROCm-SMI stands for ROCm System Management Interface and provides an interfaces for applications and users to monitor and control GPU applications. 
 
 ROCm-SMI can be used to verify GPU usage. 
 This is done by launching your application and then using ROCm-SMI on the same node to monitor the running job. 
@@ -208,7 +208,7 @@ Helpful RocProf Flags
  Option                      Description                                          Default
  =========================== ==================================================== ================================================
   --timestamp <on|off>        Turn on/off gpu kernel dispatch timestamps           **OFF**
-  --basenames <on|off>        Turn on/off turncating gpu kernel names such         **OFF**
+  --basenames <on|off>        Turn on/off truncating gpu kernel names such         **OFF**
                               as template parameters and arguments types
   -o <output csv file>        Save direct counter data to a specified file name    <input file base>.csv
   -d <directory>              Send profiling data to a specified directory         /tmp

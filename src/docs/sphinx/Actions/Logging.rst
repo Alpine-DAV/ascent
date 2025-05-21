@@ -18,12 +18,12 @@ to a designated log file. The ``echo`` options control the messages and types of
 to the standard output stream.
 
 Log Levels:
-- ``all`` : all messages will be recorded
-- ``debug`` : extra verbose output messages useful for diagnosing issues
-- ``info`` : normal system operations
-- ``warn`` : potential issues that could become a problem
-- ``error`` : significant issues that need to be addressed
-- ``none`` : no messages will be recorded.
+ - ``all`` : all messages will be recorded
+ - ``debug`` : extra verbose output messages useful for diagnosing issues
+ - ``info`` : normal system operations
+ - ``warn`` : potential issues that could become a problem
+ - ``error`` : significant issues that need to be addressed
+ - ``none`` : no messages will be recorded.
 
 Opening Logs
 ------------

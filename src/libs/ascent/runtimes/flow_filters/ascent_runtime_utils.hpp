@@ -43,6 +43,8 @@ namespace filters
 // which defaults to the current directory
 std::string ASCENT_API output_dir(const std::string file_name);
 
+bool ASCENT_API check_dir_path_exists(std::string image_name, int mpi_comm_id, conduit::Node &err_msg);
+
 std::string ASCENT_API default_dir();
 
 std::string ASCENT_API filter_to_path(const std::string filter_name);

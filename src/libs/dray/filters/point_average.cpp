@@ -190,7 +190,7 @@ PointAverageFunctor::execute()
   //   27 0x7ffff5075c87 No dladdr: /lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xe7) [0x7ffff5075c87]
   //   28 0x555555561b4a No dladdr: /tmp/builds/ascent/tests/dray/t_dray_point_average(+0xdb4a) [0x555555561b4a]
 
-  GridFunction<3> gf = detail::get_dof_data(m_mesh);
+  GridFunction<3> gf = dray::detail::get_dof_data(m_mesh);
   m_mesh_gf = &gf;
   dispatch(m_field, *this);
   m_mesh_gf = nullptr;

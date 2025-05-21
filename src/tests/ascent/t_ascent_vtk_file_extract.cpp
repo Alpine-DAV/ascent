@@ -65,7 +65,13 @@ TEST(ascent_vtk_file_extract, basic)
 
     string output_path = prepare_output_dir();
     string output_file = conduit::utils::join_file_path(output_path,
-                                             "tout_vtk_file_extract_test_braid_single_domain");
+                                             "tout_vtk_file_extract_test_braid_single_domain_{family:03d}");
+    string output_file_formatted = conduit::utils::join_file_path(output_path,
+                                                "tout_vtk_file_extract_test_braid_single_domain_000");
+
+    remove_test_file(output_file_formatted + ".visit");
+    conduit::utils::remove_directory(output_file_formatted + "_vtk_files");
+
     // add the extract
     extracts["e1/type"] = "vtk";
     extracts["e1/params/path"] = output_file;
@@ -82,7 +88,7 @@ TEST(ascent_vtk_file_extract, basic)
     ascent.close();
     
     // check that the file exists
-    EXPECT_TRUE(conduit::utils::is_file(output_file + ".visit"));
+    EXPECT_TRUE(conduit::utils::is_file(output_file_formatted + ".visit"));
 }
 
 //-----------------------------------------------------------------------------
@@ -167,7 +173,12 @@ TEST(ascent_vtk_file_extract, basic_mulit_domain)
 
     string output_path = prepare_output_dir();
     string output_file = conduit::utils::join_file_path(output_path,
-                                             "tout_vtk_file_extract_test_spiral_7_domains");
+                                             "tout_vtk_file_extract_test_spiral_7_domains_{family:03d}");
+    string output_file_formatted = conduit::utils::join_file_path(output_path,
+                                                "tout_vtk_file_extract_test_spiral_7_domains_000");
+
+    remove_test_file(output_file_formatted + ".visit");
+    conduit::utils::remove_directory(output_file_formatted + "_vtk_files");
 
     // add the extract
     extracts["e1/type"] = "vtk";
@@ -185,7 +196,7 @@ TEST(ascent_vtk_file_extract, basic_mulit_domain)
     ascent.close();
 
     // check that the file exists
-    EXPECT_TRUE(conduit::utils::is_file(output_file + ".visit"));
+    EXPECT_TRUE(conduit::utils::is_file(output_file_formatted + ".visit"));
 }
 
 //-----------------------------------------------------------------------------
@@ -215,7 +226,12 @@ TEST(ascent_vtk_file_extract, basic_multi_topo)
 
     string output_path = prepare_output_dir();
     string output_file = conduit::utils::join_file_path(output_path,
-                                             "tout_vtk_file_extract_basic_multi_topo");
+                                             "tout_vtk_file_extract_basic_multi_topo_{family:03d}");
+    string output_file_formatted = conduit::utils::join_file_path(output_path,
+                                                "tout_vtk_file_extract_basic_multi_topo_000");
+
+    remove_test_file(output_file_formatted + ".visit");
+    conduit::utils::remove_directory(output_file_formatted + "_vtk_files");
 
     // add the extract
     extracts["e1/type"] = "vtk";
@@ -240,7 +256,7 @@ TEST(ascent_vtk_file_extract, basic_multi_topo)
     ascent.close();
 
     // check that the file exists
-    EXPECT_TRUE(conduit::utils::is_file(output_file + ".visit"));
+    EXPECT_TRUE(conduit::utils::is_file(output_file_formatted + ".visit"));
 }
 
 

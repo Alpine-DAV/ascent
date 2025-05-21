@@ -15,7 +15,7 @@ if(CUDA_FOUND)
 endif()
 
 if(HIP_FOUND)
-    list(APPEND smoke_device_deps blt_hip)
+    list(APPEND smoke_device_deps blt::hip)
 endif()
 
 set(conduit_smoke_deps conduit::conduit)
@@ -57,7 +57,7 @@ IF(VTKM_FOUND AND ENABLE_SERIAL)
     # Note: We may not need this if everything propgates
     # from VTK-m in the future
     if(HIP_FOUND)
-        list(APPEND vtkm_smoke_deps blt_hip)
+        list(APPEND vtkm_smoke_deps blt::hip)
     endif()
 
     add_cpp_test(TEST t_vtkm_smoke DEPENDS_ON ${vtkm_smoke_deps})

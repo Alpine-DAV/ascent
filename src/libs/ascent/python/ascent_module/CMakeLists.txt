@@ -5,7 +5,7 @@
 ###############################################################################
 
 # Specify the sources of the pure python portions of our module.
-SET(ascent_py_python_sources  py_src/__init__.py 
+SET(ascent_py_python_sources  py_src/__init__.py
                               py_src/ascent.py
                               py_src/bridge_kernel/__init__.py
                               py_src/bridge_kernel/mpi_server.py
@@ -20,7 +20,7 @@ PYTHON_ADD_PIP_SETUP(NAME ascent_python_py_setup
                      PY_SETUP_FILE setup.py
                      PY_SOURCES "${ascent_py_python_sources}")
 
-# build non-mpi linked compiled ascent module 
+# build non-mpi linked compiled ascent module
 if (ENABLE_SERIAL)
     SET(ascent_py_cpp_sources     ascent_python.cpp)
     # Setup our module
@@ -31,10 +31,10 @@ if (ENABLE_SERIAL)
                                SOURCES ${ascent_py_cpp_sources})
 
     # compiled modules depend on output dir structure created by main module setup
-    add_dependencies( ascent_python ascent_python_py_setup)
+    target_link_libraries( ascent_python PRIVATE ascent_python_py_setup)
 
     # link with the proper libs (beyond python)
-    target_link_libraries(ascent_python ascent)
+    target_link_libraries(ascent_python PRIVATE ascent)
 
 endif()
 
@@ -54,10 +54,10 @@ if(MPI_FOUND)
 
 
     # compiled modules depend on output dir structure created by main module setup
-    add_dependencies( ascent_mpi_python ascent_python_py_setup)
+    target_link_libraries( ascent_mpi_python PRIVATE ascent_python_py_setup)
 
     # link with the proper libs (beyond python)
-    target_link_libraries(ascent_mpi_python ascent_mpi)
+    target_link_libraries(ascent_mpi_python PRIVATE ascent_mpi)
 
 endif()
 

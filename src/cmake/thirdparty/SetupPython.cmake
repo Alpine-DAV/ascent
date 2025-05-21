@@ -20,18 +20,18 @@ find_package(PythonInterp REQUIRED)
 if(PYTHONINTERP_FOUND)
         MESSAGE(STATUS "PYTHON_EXECUTABLE ${PYTHON_EXECUTABLE}")
 
-        execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c" 
+        execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c"
                         "import sys;from sysconfig import get_config_var; sys.stdout.write(get_config_var('VERSION'))"
                         OUTPUT_VARIABLE PYTHON_CONFIG_VERSION
                         ERROR_VARIABLE  ERROR_FINDING_PYTHON_VERSION)
         MESSAGE(STATUS "PYTHON_CONFIG_VERSION ${PYTHON_CONFIG_VERSION}")
 
-        execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c" 
+        execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c"
                                 "import sys;from sysconfig import get_path;sys.stdout.write(get_path('include'))"
                         OUTPUT_VARIABLE PYTHON_INCLUDE_DIR
                         ERROR_VARIABLE ERROR_FINDING_INCLUDES)
         MESSAGE(STATUS "PYTHON_INCLUDE_DIR ${PYTHON_INCLUDE_DIR}")
-        
+
         if(NOT EXISTS ${PYTHON_INCLUDE_DIR})
             MESSAGE(FATAL_ERROR "Reported PYTHON_INCLUDE_DIR ${PYTHON_INCLUDE_DIR} does not exist!")
         endif()
@@ -93,22 +93,22 @@ if(PYTHONINTERP_FOUND)
             #  LIBDIR + LIBRARY
             #  LIBPL + LIBRARY
 
-            execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c" 
+            execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c"
                                     "import sys;from sysconfig import get_config_var; sys.stdout.write(get_config_var('LIBDIR'))"
                             OUTPUT_VARIABLE PYTHON_CONFIG_LIBDIR
                             ERROR_VARIABLE  ERROR_FINDING_PYTHON_LIBDIR)
 
-            execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c" 
+            execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c"
                                     "import sys;from sysconfig import get_config_var; sys.stdout.write(get_config_var('LIBPL'))"
                             OUTPUT_VARIABLE PYTHON_CONFIG_LIBPL
                             ERROR_VARIABLE  ERROR_FINDING_PYTHON_LIBPL)
 
-            execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c" 
+            execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c"
                                     "import sys;from sysconfig import get_config_var; sys.stdout.write(get_config_var('LDLIBRARY'))"
                             OUTPUT_VARIABLE PYTHON_CONFIG_LDLIBRARY
                             ERROR_VARIABLE  ERROR_FINDING_PYTHON_LDLIBRARY)
 
-            execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c" 
+            execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c"
                                     "import sys;from sysconfig import get_config_var; sys.stdout.write(get_config_var('LIBRARY'))"
                             OUTPUT_VARIABLE PYTHON_CONFIG_LIBRARY
                             ERROR_VARIABLE  ERROR_FINDING_PYTHON_LIBRARY)
@@ -163,7 +163,7 @@ if(PYTHONINTERP_FOUND)
                     endif()
                 endif()
             endif()
-        else() # windows 
+        else() # windows
             get_filename_component(PYTHON_ROOT_DIR ${PYTHON_EXECUTABLE} DIRECTORY)
             # Note: this assumes that two versions of python are not installed in the same dest dir
             set(_PYTHON_LIBRARY_TEST  "${PYTHON_ROOT_DIR}/libs/python${PYTHON_CONFIG_VERSION}.lib")
@@ -183,7 +183,7 @@ if(PYTHONINTERP_FOUND)
         if(NOT PYTHONLIBS_FOUND)
             MESSAGE(FATAL_ERROR "Failed to find Python Libraries using PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}")
         endif()
-        
+
 endif()
 
 
@@ -238,18 +238,26 @@ FUNCTION(PYTHON_ADD_PIP_SETUP)
         string(REGEX REPLACE "/" "\\\\" abs_dest_path  ${abs_dest_path})
     endif()
 
+    # Use a timestamp file to track when the following pip
+    # command was last executed w.r.t. its dependencies.
+    set(stamp ${CMAKE_CURRENT_BINARY_DIR}/${args_NAME}.stamp)
+
     # NOTE: With pip, you can't directly control build dir with an arg
     # like we were able to do with distutils, you have to use TMPDIR
     # TODO: we might want to  explore this in the future
-    add_custom_command(OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${args_NAME}_build
+    add_custom_command(OUTPUT ${stamp}
             COMMAND ${PYTHON_EXECUTABLE} -m pip install . -V --upgrade
             --disable-pip-version-check --no-warn-script-location
             --target "${abs_dest_path}"
+            COMMAND ${CMAKE_COMMAND} -E touch ${stamp}
             DEPENDS  ${args_PY_SETUP_FILE} ${args_PY_SOURCES}
             WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
-    add_custom_target(${args_NAME} ALL DEPENDS
-                      ${CMAKE_CURRENT_BINARY_DIR}/${args_NAME}_build)
+    # The above pip command wipes the --target directory,
+    # so any dependent modules need to be linked afterwards.
+    # Propagate this this dependency as a usage requirement.
+    add_library(${args_NAME} INTERFACE ${stamp})
+    set_property(TARGET ${args_NAME} APPEND PROPERTY INTERFACE_LINK_DEPENDS ${stamp})
 
     # also use pip for the install ...
     # if PYTHON_MODULE_INSTALL_PREFIX is set, install there
@@ -289,10 +297,10 @@ FUNCTION(PYTHON_ADD_PIP_SETUP)
 ENDFUNCTION(PYTHON_ADD_PIP_SETUP)
 
 ##############################################################################
-# Macro to create a compiled python module 
+# Macro to create a compiled python module
 ##############################################################################
 #
-# we use this instead of the std ADD_PYTHON_MODULE cmake command 
+# we use this instead of the std ADD_PYTHON_MODULE cmake command
 # to setup proper install targets.
 #
 ##############################################################################
@@ -350,20 +358,20 @@ FUNCTION(PYTHON_ADD_COMPILED_MODULE)
     # defer linking with python, let the final python interpreter
     # provide the proper symbols
 
-    # on osx we need to use the following flag to 
+    # on osx we need to use the following flag to
     # avoid undefined linking errors
     if(PYTHON_USE_UNDEFINED_DYNAMIC_LOOKUP_FLAG)
         set_target_properties(${args_NAME} PROPERTIES
                               LINK_FLAGS "-undefined dynamic_lookup")
     endif()
-    
+
     # win32, link to python
     if(WIN32)
-        target_link_libraries(${args_NAME} ${PYTHON_LIBRARIES})
+        target_link_libraries(${args_NAME} PRIVATE ${PYTHON_LIBRARIES})
     endif()
 
     # support installing the python module components to an
-    # an alternate dir, set via PYTHON_MODULE_INSTALL_PREFIX 
+    # an alternate dir, set via PYTHON_MODULE_INSTALL_PREFIX
     set(py_install_dir ${args_DEST_DIR})
     if(PYTHON_MODULE_INSTALL_PREFIX)
         set(py_install_dir ${PYTHON_MODULE_INSTALL_PREFIX})
@@ -435,6 +443,9 @@ FUNCTION(PYTHON_ADD_HYBRID_MODULE)
                                SOURCES       ${args_SOURCES}
                                FOLDER        ${args_FOLDER})
 
+    # "${args_NAME}" depends on "${args_NAME}_py_setup"
+    target_link_libraries("${args_NAME}" PRIVATE "${args_NAME}_py_setup")
+
     # args_NAME depends on "${args_NAME}_py_setup"
     add_dependencies( ${args_NAME} "${args_NAME}_py_setup")
 
@@ -448,4 +459,3 @@ ENDFUNCTION(PYTHON_ADD_HYBRID_MODULE)
 blt_register_library(NAME python
                      INCLUDES ${PYTHON_INCLUDE_DIR}
                      LIBRARIES ${PYTHON_LIBRARY} )
-

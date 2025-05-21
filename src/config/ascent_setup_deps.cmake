@@ -21,7 +21,7 @@ endif()
 ###############################################################################
 if(ASCENT_HIP_ENABLED)
     ####################################
-    # IMPORANT NOTE AND FUN CMAKE FACT: 
+    # IMPORANT NOTE AND FUN CMAKE FACT:
     ####################################
     # The HIP CMake Pacakge *requires* ROCM_PATH to be set.
     #
@@ -226,7 +226,7 @@ if(CAMP_DIR)
       # new install layout ?
       set(_CAMP_SEARCH_PATH ${CAMP_DIR}/lib/cmake/camp)
     endif()
-    
+
     if(NOT EXISTS ${_CAMP_SEARCH_PATH})
         message(FATAL_ERROR "Could not find Camp CMake include file (${_CAMP_SEARCH_PATH})")
     endif()
@@ -454,7 +454,7 @@ endif()
 # MFEM (even serial) may require mpi, if so we need to find mpi
 ###############################################################################
 if(ASCENT_MFEM_MPI_ENABLED AND NOT MPI_FOUND)
-    find_package(MPI COMPONENTS CXX)
+    find_package(MPI COMPONENTS C)
 endif()
 
 
