@@ -231,7 +231,7 @@ TEST(ascent_pipeline_failure, test_bad_chaining)
 
 
     string output_path = prepare_output_dir();
-    string output_file = conduit::utils::join_file_path(output_path,"tout_render_failed_pipeline");
+    string output_file = conduit::utils::join_file_path(output_path,"tout_render_failed_pipeline_chaining");
 
     // remove old images before rendering
     remove_test_image(output_file);
@@ -321,7 +321,7 @@ TEST(ascent_pipeline_failure, test_bad_chaining_topo)
 
 
     string output_path = prepare_output_dir();
-    string output_file = conduit::utils::join_file_path(output_path,"tout_render_failed_pipeline");
+    string output_file = conduit::utils::join_file_path(output_path,"tout_render_failed_pipeline_chaining_topo");
 
     // remove old images before rendering
     remove_test_image(output_file);

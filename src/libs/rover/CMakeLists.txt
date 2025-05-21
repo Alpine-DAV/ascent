@@ -39,7 +39,7 @@ if(CUDA_FOUND)
 endif()
 
 if(ENABLE_HIP)
-    list(APPEND rover_base_deps blt_hip)
+    list(APPEND rover_base_deps blt::hip)
 endif()
 
 if(ENABLE_OPENMP)

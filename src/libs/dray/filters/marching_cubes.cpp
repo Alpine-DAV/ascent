@@ -415,7 +415,7 @@ MarchingCubesFunctor::operator()(UnstructuredField<FEType> &field)
   const int nelem = field.get_num_elem();
 
   // Get the proper lookup table for the current shape
-  const Array<int8> lookup_array = detail::get_lookup_table(adapt_get_shape<FEType>());
+  const Array<int8> lookup_array = dray::detail::get_lookup_table(adapt_get_shape<FEType>());
   const int8 *lookup_ptr = lookup_array.get_device_ptr_const();
 
   Array<uint32> cut_info;
@@ -454,12 +454,12 @@ MarchingCubesFunctor::operator()(UnstructuredField<FEType> &field)
       DEBUG_PRINT("\n  [" << eid << "]: " << num_triangles_ptr[eid] << " " << cut_info_ptr[eid]);
       constexpr auto shape3d = adapt_get_shape<FEType>();
       const ReadDofPtr<Vec<Float, 1>> rdp = dfield.get_elem(eid).read_dof_ptr();
-      const int8 *edges = detail::get_triangle_edges(shape3d, lookup_ptr, cut_info_ptr[eid]);
+      const int8 *edges = dray::detail::get_triangle_edges(shape3d, lookup_ptr, cut_info_ptr[eid]);
       const int32 *ctrl_idx_ptr = rdp.m_offset_ptr;
       uint64 *edge_ids_offset = edge_ids_ptr + triangle_offsets_ptr[eid] * 3;
-      while(*edges != detail::NO_EDGE)
+      while(*edges != dray::detail::NO_EDGE)
       {
-        const auto edge = detail::get_edge(shape3d, lookup_ptr, *edges++);
+        const auto edge = dray::detail::get_edge(shape3d, lookup_ptr, *edges++);
         const uint64 id = pack_ids(ctrl_idx_ptr[edge[0]], ctrl_idx_ptr[edge[1]]);
         DEBUG_PRINT("\n    (" << ctrl_idx_ptr[edge[0]] << "," << ctrl_idx_ptr[edge[1]] << ") (" << rdp[edge[0]][0] << "," << rdp[edge[1]][0] << ")");
         *edge_ids_offset++ = id;
@@ -558,7 +558,7 @@ MarchingCubesFunctor::calculate_triangle_cases(ShapeTet,
         info |= (rdp[i][0] > isovalue) << i;
       }
       cut_info_ptr[eid] = info;
-      num_triangles_ptr[eid] = detail::get_num_triangles(shape3d, lookup_ptr, info);
+      num_triangles_ptr[eid] = dray::detail::get_num_triangles(shape3d, lookup_ptr, info);
     });
   DRAY_ERROR_CHECK();
 }
@@ -588,7 +588,7 @@ MarchingCubesFunctor::calculate_triangle_cases(ShapeHex,
         info |= (rdp[reorder[i]][0] > isovalue) << i;
       }
       cut_info_ptr[eid] = info;
-      num_triangles_ptr[eid] = detail::get_num_triangles(shape3d, lookup_ptr, info);
+      num_triangles_ptr[eid] = dray::detail::get_num_triangles(shape3d, lookup_ptr, info);
     });
   DRAY_ERROR_CHECK();
 }
@@ -634,7 +634,7 @@ MarchingCubesFunctor::create_original_cells(const uint32 total_triangles,
   RAJA::forall<for_policy>(elem_range,
     [=] DRAY_LAMBDA (int idx) {
       constexpr auto shape3d = adapt_get_shape<FEType>();
-      const auto ntris = detail::get_num_triangles(shape3d, lookup_ptr, cut_info_ptr[idx]);
+      const auto ntris = dray::detail::get_num_triangles(shape3d, lookup_ptr, cut_info_ptr[idx]);
       int32 *orig_cells_offset = orig_cells_ptr + triangle_offsets_ptr[idx];
       for(int i = 0; i < ntris; i++)
       {

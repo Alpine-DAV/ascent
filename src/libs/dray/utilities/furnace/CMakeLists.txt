@@ -19,6 +19,12 @@ if(ENABLE_CUDA)
     list(APPEND furnace_thirdparty_libs_mpi cuda)
 endif()
 
+if(ENABLE_HIP)
+    list(APPEND furnace_thirdparty_libs blt::hip)
+    list(APPEND furnace_thirdparty_libs_mpi blt::hip)
+endif()
+
+
 if(ENABLE_SERIAL)
     ################################################
     # point location furnace

@@ -82,8 +82,6 @@ TEST(ascent_vtk_file_extract, basic_mulit_domain)
       data.remove(0);
     }
     
-
-
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
 
     ASCENT_INFO("Testing vtk file extract serial multi domain");
@@ -95,7 +93,17 @@ TEST(ascent_vtk_file_extract, basic_mulit_domain)
 
     string output_path = prepare_output_dir();
     string output_file = conduit::utils::join_file_path(output_path,
-                                             "tout_mpi_vtk_file_extract_test_spiral_7_domains");
+                                             "tout_mpi_vtk_file_extract_test_spiral_7_domains_{family:03d}");
+    string output_file_formatted = conduit::utils::join_file_path(output_path,
+                                                "tout_mpi_vtk_file_extract_test_spiral_7_domains_000");
+
+    if(par_rank == 0)
+    {
+        remove_test_file(output_file_formatted + ".visit");
+        conduit::utils::remove_directory(output_file_formatted + "_vtk_files");
+    }
+
+    MPI_Barrier(comm);
 
     // add the extract
     extracts["e1/type"] = "vtk";
@@ -115,7 +123,7 @@ TEST(ascent_vtk_file_extract, basic_mulit_domain)
     ascent.close();
 
     // check that the file exists
-    EXPECT_TRUE(conduit::utils::is_file(output_file + ".visit"));
+    EXPECT_TRUE(conduit::utils::is_file(output_file_formatted + ".visit"));
 }
 
 
@@ -183,7 +191,17 @@ TEST(ascent_vtk_file_extract, basic_mulit_domain_missing)
 
     string output_path = prepare_output_dir();
     string output_file = conduit::utils::join_file_path(output_path,
-                                             "tout_mpi_vtk_file_extract_test_spiral_7_missing_domains");
+                                             "tout_mpi_vtk_file_extract_test_spiral_7_missing_domains_{family:03d}");
+    string output_file_formatted = conduit::utils::join_file_path(output_path,
+                                                "tout_mpi_vtk_file_extract_test_spiral_7_missing_domains_000");
+
+    if(par_rank == 0)
+    {
+        remove_test_file(output_file_formatted + ".visit");
+        conduit::utils::remove_directory(output_file_formatted + "_vtk_files");
+    }
+
+    MPI_Barrier(comm);
 
     // add the extract
     extracts["e1/type"] = "vtk";
@@ -203,7 +221,7 @@ TEST(ascent_vtk_file_extract, basic_mulit_domain_missing)
     ascent.close();
 
     // check that the file exists
-    EXPECT_TRUE(conduit::utils::is_file(output_file + ".visit"));
+    EXPECT_TRUE(conduit::utils::is_file(output_file_formatted + ".visit"));
 }
 
 
