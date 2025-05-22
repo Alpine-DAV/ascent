@@ -9,6 +9,7 @@
 
 #include <conduit.hpp>
 #include <ascent_logging.hpp>
+#include <ascent_logging_old.hpp>
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --

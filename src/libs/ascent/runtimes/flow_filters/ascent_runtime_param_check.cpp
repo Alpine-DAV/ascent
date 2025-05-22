@@ -194,7 +194,7 @@ check_object(const std::string path,
         if(!params[path].dtype().is_object())
         {
             std::string msg = "Expected object parameter '" + path +
-                              "' is not a object";
+                              "' is not an object";
             info["errors"].append() = msg;
             res = false;
         }
@@ -210,12 +210,53 @@ check_object(const std::string path,
   return res;
 }
 
+
+//-----------------------------------------------------------------------------
+bool
+check_list(const std::string path,
+             const conduit::Node &params,
+             conduit::Node &info,
+             bool required)
+{
+    bool res = true;
+    if(!params.has_path(path) && required)
+    {
+        info["errors"].append() = "Missing required list parameter '" + path + "'";
+        res = false;
+    }
+
+    if(params.has_path(path))
+    {
+        if(!params[path].dtype().is_list())
+        {
+            std::string msg = "Expected list parameter '" + path +
+                              "' is not a list";
+            info["errors"].append() = msg;
+            res = false;
+        }
+        else if(params[path].number_of_children() == 0)
+        {
+            std::string msg = "Expected list parameter '" + path +
+                          "' has no children";
+            info["errors"].append() = msg;
+            res = false;
+        }
+    }
+
+  return res;
+}
+
 //-----------------------------------------------------------------------------
 std::string
 surprise_check(const std::vector<std::string> &valid_paths,
                const std::vector<std::string> &ignore_paths,
                const conduit::Node &params)
 {
+  // only children can surprise us
+  if(params.number_of_children() == 0)
+  {
+      return "";
+  }
 
   std::stringstream ss;
   std::vector<std::string> paths;
@@ -240,7 +281,6 @@ surprise_check(const std::vector<std::string> &valid_paths,
       ss<<"Surprise parameter '"<<paths[i]<<"'\n";
     }
   }
-
   return ss.str();
 }
 
@@ -249,6 +289,11 @@ std::string
 surprise_check(const std::vector<std::string> &valid_paths,
                const conduit::Node &params)
 {
+  // only children can surprise us
+  if(params.number_of_children() == 0)
+  {
+      return "";
+  }
 
   std::stringstream ss;
   std::vector<std::string> paths;

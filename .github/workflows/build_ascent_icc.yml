@@ -7,7 +7,7 @@ on:
 jobs:
   build_basic:
     name: Ubuntu Build Ascent OpenAPI
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     env:
       CC: icx
       CXX: icpx
@@ -59,7 +59,7 @@ jobs:
         env enable_mpi=OFF \
             enable_fortran=ON \
             enable_tests=OFF \
-            build_ascent=OFF \
+            build_ascent=false \
             enable_verbose=OFF \
             build_jobs=2 \
             ./scripts/build_ascent/build_ascent.sh

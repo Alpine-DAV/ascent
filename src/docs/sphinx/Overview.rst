@@ -15,7 +15,7 @@ Further, it has a flexible design that supports for integration of new visualiza
 and analysis routines and libraries. 
 
 The Ascent infrastructure was first presented at
-the ISAV 2017 Workshop, held in conjuction with SC 17, in the paper `The ALPINE In Situ
+the ISAV 2017 Workshop, held in conjunction with SC 17, in the paper `The ALPINE In Situ
 Infrastructure: Ascending from the Ashes of Strawman <https://dl.acm.org/citation.cfm?doid=3144769.3144778>`_.
 
 Ascent is also descried in detail in the book chapter `Ascent: A Flyweight In Situ Library for Exascale Simulations <https://doi.org/10.1007/978-3-030-81627-8_12>`_  In: Childs, H., Bennett, J.C., Garth, C. (eds) In Situ Visualization for Computational Science. Mathematics and Visualization. Springer, Cham. Please use this chapter when :ref:`citing` Ascent.
@@ -44,7 +44,7 @@ Minimize  the  resource  impacts  on  host  simulations.
 
 System Architecture
 -------------------
-The Ascent sytem architecture is composed of several components:
+The Ascent system architecture is composed of several components:
   * **Conduit**: `Conduit <http://software.llnl.gov/conduit/>`_  is used to describe and pass in-core mesh data and runtime options from the simulation code to Ascent.
   * **Runtime**: The main Ascent contains runtime implements analysis, rendering, and I/O operations on the mesh data published to Ascent. At a high level, a runtime is responsible for consuming the simulation data that is described using the Conduit Mesh Blueprint and performing a number of actions defined within Conduit Nodes, which create some form of output.
   * **Data Adapters**: Simulation mesh data is described using Conduit's `Mesh Blueprint <http://llnl-conduit.readthedocs.io/en/latest/blueprint.html>`_, which outlines a set of conventions to describe different types of mesh-based scientific data. Each Ascent runtime provides internal Data Adaptors that convert Mesh Blueprint data into a more a more specific data model, such as VTK-m's data model. Ascent will always zero-copy simulation data when possible. To simplify memory ownership semantics, the data provided to Ascent via Conduit Nodes is considered to be owned by the by the simulation.

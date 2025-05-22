@@ -14,7 +14,7 @@
 
 ###############################################################################
 # Capture config settings into derived CMake vars with ASCENT_ prefix
-# these are used to generate headers, our CMake exports, and ascent.mk 
+# these are used to generate headers, our CMake exports, and ascent.mk
 ###############################################################################
 
 convert_to_native_escaped_file_path(${CMAKE_INSTALL_PREFIX}
@@ -174,7 +174,7 @@ set(ascent_headers
     # utils
     utils/ascent_actions_utils.hpp
     utils/ascent_data_logger.hpp
-    utils/ascent_logging.hpp
+    utils/ascent_logging_old.hpp
     utils/ascent_block_timer.hpp
     utils/ascent_mpi_utils.hpp
     utils/ascent_string_utils.hpp
@@ -182,7 +182,6 @@ set(ascent_headers
     utils/ascent_resources.hpp
     utils/ascent_resources_cinema_web.hpp
     utils/ascent_resources_ascent_web.hpp
-    utils/ascent_annotations.hpp
     # hola
     hola/ascent_hola.hpp)
 
@@ -241,12 +240,11 @@ set(ascent_sources
     utils/ascent_actions_utils.cpp
     utils/ascent_data_logger.cpp
     utils/ascent_block_timer.cpp
-    utils/ascent_logging.cpp
+    utils/ascent_logging_old.cpp
     utils/ascent_mpi_utils.cpp
     utils/ascent_string_utils.cpp
     utils/ascent_web_interface.cpp
     utils/ascent_resources.cpp
-    utils/ascent_annotations.cpp
     # hola
     hola/ascent_hola.cpp)
 
@@ -259,7 +257,7 @@ set(ascent_device_sources runtimes/expressions/ascent_memory_manager.cpp
                           runtimes/expressions/ascent_data_binning.cpp
                           runtimes/expressions/ascent_execution_policies.cpp
                           runtimes/expressions/ascent_blueprint_architect.cpp
-                          runtimes/expressions/ascent_derived_jit.cpp 
+                          runtimes/expressions/ascent_derived_jit.cpp
                           )
 
 ##############################
@@ -380,7 +378,8 @@ set(ascent_thirdparty_libs
     conduit::conduit
     ascent_flow
     ascent_lodepng
-    ascent_png_utils)
+    ascent_png_utils
+    ascent_logging)
 
 ##################
 # optional libs
@@ -425,7 +424,7 @@ if(CUDA_FOUND)
 endif()
 
 if(HIP_FOUND)
-    list(APPEND ascent_thirdparty_libs blt_hip_runtime)
+    list(APPEND ascent_thirdparty_libs blt::hip_runtime)
 endif()
 
 if(OPENMP_FOUND)
@@ -550,7 +549,7 @@ if (ENABLE_SERIAL)
         if(UMPIRE_FOUND)
             list(APPEND imported_targets_to_link umpire)
         endif()
-        
+
         if(CAMP_FOUND)
             list(APPEND imported_targets_to_link camp)
         endif()
@@ -681,6 +680,9 @@ if(MPI_FOUND)
     # setup exported target to point to proper include dir
     target_include_directories(ascent_mpi PUBLIC $<INSTALL_INTERFACE:include/ascent/>)
 
+    # avoid mpi C++ apis + link dep of libmpi_cxx
+    target_compile_definitions(ascent_mpi PUBLIC ${ASCENT_MPI_SKIP_MPICXX_DEFINES} )
+
     # install target for mpi ver
     install(TARGETS ascent_mpi
             EXPORT  ascent
@@ -758,7 +760,7 @@ if(MPI_FOUND)
         set(binary_dir "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/ascent_mpi.dir")
         # clear result
         set(locations_on_disk "")
-        
+
         # device link
         source_objects(BINARY_DIR ${binary_dir}
                        SOURCES    ${ascent_device_sources}

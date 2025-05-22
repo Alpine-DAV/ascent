@@ -11,7 +11,9 @@ Publications and Presentations
 Publications
 ------------
 
-- `Ascent: A Flyweight In Situ Library for Exascale Simulations <https://doi.org/10.1007/978-3-030-81627-8_12>`_  In: Childs, H., Bennett, J.C., Garth, C. (eds) In Situ Visualization for Computational Science. Mathematics and Visualization. Springer, Cham.
+- `Bridging Gaps in Simulation Analysis through a General Purpose, Bidirectional Steering Interface with Ascent <https://doi.org/10.1109/SCW63240.2024.00119>`_, Presented at the `ISAV 2024 Workshop https://isav-workshop.github.io/2024/>`_, held in conjunction with SC 24, on November 17h 2024 in Atlanta, GA
+
+- `Ascent: A Flyweight In Situ Library for Exascale Simulations <https://doi.org/10.1007/978-3-030-81627-8_12>`_  In: Childs, H., Bennett, J.C., Garth, C. (eds) In Situ Visualization for Computational Science. Mathematics and Visualization. Springer, Cham. May 2022.
 
 - `Automated In Situ Computational Steering Using Ascent’s Capable Yes-No Machine <https://doi.org/10.1145/3490138.3490144>`_ Presented at the `ISAV 2021 Workshop <https://dav.lbl.gov/events/ISAV2021/>`_, held in conjunction with SC 21, on November 15th 2021, Virtual Event.
 
@@ -41,6 +43,10 @@ Publications
 Tutorials
 -------------
 
+- `In Situ Analysis and Visualization with Ascent @ LLNL 2024 HPC Tutorial Series` August 2024, Virtual Event.
+- `In Situ Analysis and Visualization with Ascent @ ATPESC 2024` August 2024, St Charles, IL.
+- `In Situ Analysis and Visualization with Ascent and ParaView Catalyst @ SC 23`` <https://app.swapcard.com/widget/event/isc-high-performance-2022/planning/UGxhbm5pbmdfODYxMTUx>`_ - November 2023, Denver, CO.
+- `In Situ Analysis and Visualization with Ascent @ LLNL RADIUSS AWS Tutorial` August 2023, Virtual Event.
 - `In Situ Analysis and Visualization with ParaView Catalyst and Ascent @ ISC 2022 <https://app.swapcard.com/widget/event/isc-high-performance-2022/planning/UGxhbm5pbmdfODYxMTUx>`_ - May 2022, Hamburg, Germany
 - ECP 2022 Annual Meeting - May 2022, Virtual
 - `In Situ Analysis and Visualization with SENSEI and Ascent @ SC21 <https://sc21.supercomputing.org/presentation/?id=tut127&sess=sess190>`_ - Nov 2021, Virtual
@@ -53,15 +59,15 @@ Tutorials
 - In Situ Visualization and Analysis with Ascent, ECP Annual Meeting, February 2019, Houston, TX.
 
 
-Presentations
--------------
-
-- DOE Computer Graphics Forum, April 28-30 2020, (Event Held Online)
-- `IXPUG Software-Defined Visualization Workshop 2018 <https://www.ixpug.org/events/swdvis-2018>`_ July 10, 2018, ANL.
-- DOE Computer Graphics Forum, April 24-26 2018, Savannah, GA.
-- `IXPUG Software-Defined Visualization Workshop 2017 <https://www.ixpug.org/events/swdvis-2017>`_ May 23, 2017, Austin, TX.
-- Panel: In Situ Efforts and Challenges in Large Data Analysis and Visualization, LDAV October 23rd 2016, Baltimore, MD.
-- DOE Computer Graphics Forum, April 26-28 2016, Monterey, CA.
+.. Presentations
+.. -------------
+..
+.. - DOE Computer Graphics Forum, April 28-30 2020, (Event Held Online)
+.. - `IXPUG Software-Defined Visualization Workshop 2018 <https://www.ixpug.org/events/swdvis-2018>`_ July 10, 2018, ANL.
+.. - DOE Computer Graphics Forum, April 24-26 2018, Savannah, GA.
+.. - `IXPUG Software-Defined Visualization Workshop 2017 <https://www.ixpug.org/events/swdvis-2017>`_ May 23, 2017, Austin, TX.
+.. - Panel: In Situ Efforts and Challenges in Large Data Analysis and Visualization, LDAV October 23rd 2016, Baltimore, MD.
+.. - DOE Computer Graphics Forum, April 26-28 2016, Monterey, CA.
 
 
 .. note::

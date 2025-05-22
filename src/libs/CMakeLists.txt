@@ -2,14 +2,9 @@
 # Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
 # other details. No copyright assignment is required to contribute to Ascent.
 
-
-################################
-# Add flow
-################################
-add_subdirectory(flow)
-
-
+#######################################
 # display info about optional features
+#######################################
 if(ENABLE_APCOMP)
     message(STATUS "Building APComp    (ENABLE_APCOMP=ON)")
 else()
@@ -29,9 +24,22 @@ else()
 endif()
 
 
+################################
 # ascent_png_utils object lib
 # shared for testing of all libs
+################################
 add_subdirectory(png_utils)
+
+################################
+# ascent_logging lib
+# shared logging for all libs
+################################
+add_subdirectory(logging)
+
+################################
+# Add flow
+################################
+add_subdirectory(flow)
 
 ################################
 # Add ap comp

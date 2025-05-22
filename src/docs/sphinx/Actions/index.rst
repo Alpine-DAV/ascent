@@ -16,6 +16,7 @@ Ascent Actions
    Pipelines
    Extracts
    Triggers
+   Logging
    Examples
    ExpressionsOverview
    expression_objects

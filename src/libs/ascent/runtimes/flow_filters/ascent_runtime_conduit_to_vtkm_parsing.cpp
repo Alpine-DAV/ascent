@@ -14,6 +14,7 @@
 #include "ascent_runtime_conduit_to_vtkm_parsing.hpp"
 
 #include <ascent_logging.hpp>
+#include <ascent_logging_old.hpp>
 using namespace conduit;
 
 //-----------------------------------------------------------------------------
@@ -86,14 +87,33 @@ parse_image_dims(const conduit::Node &node, int &width, int &height)
 
 }
 
+
 //-----------------------------------------------------------------------------
 void
 parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera)
 {
   typedef vtkm::Vec<vtkm::Float32,3> vtkmVec3f;
+
   //
   // Get the optional camera parameters
   //
+
+  // check for 2d mode first
+  if(camera_node.has_child("2d"))
+  {
+    // camera:
+    //  2d: [l,r,b,t]
+    camera.SetModeTo2D();
+    conduit::Node n;
+    camera_node["2d"].to_float64_array(n);
+    const float64 *view_vals = n.as_float64_ptr();
+
+    camera.SetViewRange2D(view_vals[0],
+                          view_vals[1],
+                          view_vals[2],
+                          view_vals[3]);
+  }
+
   if(camera_node.has_child("look_at"))
   {
       conduit::Node n;
@@ -228,16 +248,30 @@ parse_color_table(const conduit::Node &color_table_node)
 
   if(color_table_node.has_child("control_points"))
   {
-    bool clear = false;
+    const Node &control_points_node = color_table_node.fetch("control_points");
+
     // check to see if we have rgb points and clear the table
-    NodeConstIterator itr = color_table_node.fetch("control_points").children();
-    while(itr.has_next())
+    bool clear = false;
+    if (control_points_node.dtype().is_list())
     {
-        const Node &peg = itr.next();
-        if (peg["type"].as_string() == "rgb")
+        NodeConstIterator itr = control_points_node.children();
+        while(itr.has_next())
         {
-          clear = true;
-          break;
+            const Node &peg = itr.next();
+            if (peg["type"].as_string() == "rgb")
+            {
+                clear = true;
+                break;
+            }
+        }
+    }
+    else if (control_points_node.dtype().is_object())
+    {
+        if (control_points_node.has_child("r") &&
+            control_points_node.has_child("g") &&
+            control_points_node.has_child("b"))
+        {
+            clear = true;
         }
     }
 
@@ -246,50 +280,122 @@ parse_color_table(const conduit::Node &color_table_node)
       color_table.ClearColors();
     }
 
-    itr = color_table_node.fetch("control_points").children();
-    while(itr.has_next())
+    if (control_points_node.dtype().is_list())
     {
-        const Node &peg = itr.next();
-        if(!peg.has_child("position"))
+        NodeConstIterator itr = control_points_node.children();
+        while(itr.has_next())
         {
-            ASCENT_WARN("Color map control point must have a position");
+            const Node &peg = itr.next();
+            if(!peg.has_child("position"))
+            {
+                // FIXME: This should be an error
+                ASCENT_WARN("Color map control point must have a position");
+            }
+
+            float64 position = peg["position"].to_float64();
+
+            if(position > 1.0 || position < 0.0)
+            {
+                ASCENT_WARN("Cannot add color map control point position "
+                                << position
+                                << ". Must be a normalized scalar.");
+            }
+
+            if (peg["type"].as_string() == "rgb")
+            {
+                conduit::Node n;
+                peg["color"].to_float64_array(n);
+                const float64 *color = n.as_float64_ptr();
+
+                vtkm::Vec<vtkm::Float64,3> ecolor(color[0], color[1], color[2]);
+
+                for(int i = 0; i < 3; ++i)
+                {
+                ecolor[i] = std::min(1., std::max(ecolor[i], 0.));
+                }
+
+                color_table.AddPoint(position, ecolor);
+            }
+            else if (peg["type"].as_string() == "alpha")
+            {
+                float64 alpha = peg["alpha"].to_float64();
+                alpha = std::min(1., std::max(alpha, 0.));
+                color_table.AddPointAlpha(position, alpha);
+            }
+            else
+            {
+                ASCENT_WARN("Unknown color table control point type "
+                            << peg["type"].as_string()<<
+                            "\nValid types are 'alpha' and 'rgb'");
+            }
+        }
+    }
+    else if (control_points_node.dtype().is_object())
+    {
+        if(!control_points_node.has_child("r"))
+        {
+            ASCENT_ERROR("Color map control point must provide r values");
         }
 
-        float64 position = peg["position"].to_float64();
-
-        if(position > 1.0 || position < 0.0)
+        if(!control_points_node.has_child("g"))
         {
-              ASCENT_WARN("Cannot add color map control point position "
-                            << position
-                            << ". Must be a normalized scalar.");
+            ASCENT_ERROR("Color map control point must provide g values");
         }
 
-        if (peg["type"].as_string() == "rgb")
+        if(!control_points_node.has_child("b"))
         {
-            conduit::Node n;
-            peg["color"].to_float64_array(n);
-            const float64 *color = n.as_float64_ptr();
+            ASCENT_ERROR("Color map control point must provide b values");
+        }
 
-            vtkm::Vec<vtkm::Float64,3> ecolor(color[0], color[1], color[2]);
+        if(!control_points_node.has_child("position"))
+        {
+            ASCENT_ERROR("Color map control point must have a position");
+        }
+
+        float64_array r_vals = control_points_node.fetch("r").value();
+        float64_array g_vals = control_points_node.fetch("g").value();
+        float64_array b_vals = control_points_node.fetch("b").value();
+        float64_array pos_vals = control_points_node.fetch("position").value();
+
+        if(r_vals.number_of_elements() != g_vals.number_of_elements() ||
+            g_vals.number_of_elements() != b_vals.number_of_elements() ||
+            b_vals.number_of_elements() != pos_vals.number_of_elements())
+        {
+            ASCENT_ERROR("Color map color channels should all be of the same size");
+        }
+
+        for(index_t i=0; i<r_vals.number_of_elements();i++)
+        {
+            vtkm::Vec<vtkm::Float64,3> ecolor(r_vals[i], g_vals[i], b_vals[i]);
 
             for(int i = 0; i < 3; ++i)
             {
-              ecolor[i] = std::min(1., std::max(ecolor[i], 0.));
+                ecolor[i] = std::min(1., std::max(ecolor[i], 0.));
             }
 
-            color_table.AddPoint(position, ecolor);
+            if(pos_vals[i] > 1.0 || pos_vals[i] < 0.0)
+            {
+                ASCENT_ERROR("Cannot add color map control point position "
+                                << pos_vals[i]
+                                << ". Must be a normalized scalar.");
+            }
+
+            color_table.AddPoint(pos_vals[i], ecolor);
         }
-        else if (peg["type"].as_string() == "alpha")
+
+        if(control_points_node.has_child("a"))
         {
-            float64 alpha = peg["alpha"].to_float64();
-            alpha = std::min(1., std::max(alpha, 0.));
-            color_table.AddPointAlpha(position, alpha);
-        }
-        else
-        {
-            ASCENT_WARN("Unknown color table control point type "
-                        << peg["type"].as_string()<<
-                        "\nValid types are 'alpha' and 'rgb'");
+            float64_array alpha_vals = control_points_node.fetch("a").value();
+
+            if(pos_vals.number_of_elements() != alpha_vals.number_of_elements())
+            {
+                ASCENT_ERROR("Color map alpha channel should have same size as color channels");
+            }
+
+            for(index_t i=0; i<alpha_vals.number_of_elements();i++)
+            {
+                color_table.AddPointAlpha(pos_vals[i], std::min(1., std::max(alpha_vals[i], 0.)));
+            }
         }
     }
   }

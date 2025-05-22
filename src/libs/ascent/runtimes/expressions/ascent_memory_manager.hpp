@@ -65,7 +65,7 @@ private:
 //-----------------------------------------------------------------------------
 struct ASCENT_API HostMemory
 {
-  static void *allocate(size_t bytes);
+  static void *allocate_bytes(size_t bytes);
   static void *allocate(size_t items, size_t item_size);
   static void  deallocate(void *data_ptr);
 
@@ -82,7 +82,7 @@ private:
 //-----------------------------------------------------------------------------
 struct ASCENT_API DeviceMemory
 {
-  static void *allocate(size_t bytes);
+  static void *allocate_bytes(size_t bytes);
   static void *allocate(size_t items, size_t item_size);
   static void  deallocate(void *data_ptr);
 

@@ -9,7 +9,7 @@
 #   env enable_mpi=ON enable_openmp=ON ./build_ascent.sh
 #
 #
-# Assumes: 
+# Assumes:
 #  - cmake is in your path
 #  - selected compilers are in your path or set via env vars
 #  - [when enabled] MPI and Python (+numpy and mpi4py), are in your path
@@ -24,6 +24,7 @@ set -eu -o pipefail
 # shared options
 enable_cuda="${enable_cuda:=OFF}"
 enable_hip="${enable_hip:=OFF}"
+enable_sycl="${enable_sycl:=OFF}"
 enable_fortran="${enable_fortran:=OFF}"
 enable_python="${enable_python:=OFF}"
 enable_openmp="${enable_openmp:=OFF}"
@@ -50,6 +51,7 @@ build_umpire="${build_umpire:=true}"
 build_mfem="${build_mfem:=true}"
 build_catalyst="${build_catalyst:=false}"
 build_anari="${build_anari:=false}"
+build_zfp="${build_zfp:=true}"
 
 # ascent options
 build_ascent="${build_ascent:=true}"
@@ -71,17 +73,19 @@ if [[ "$enable_cuda" == "ON" ]]; then
     CUDA_ARCH_VTKM="${CUDA_ARCH_VTKM:=ampere}"
 fi
 
+# NOTE: this script only builds kokkos when enable_hip=ON or enable_cycl=ON
 if [[ "$enable_hip" == "ON" ]]; then
     echo "*** configuring with HIP support"
 
     CC="${CC:=/opt/rocm/llvm/bin/amdclang}"
     CXX="${CXX:=/opt/rocm/llvm/bin/amdclang++}"
     # FTN?
-
     ROCM_ARCH="${ROCM_ARCH:=gfx90a}"
     ROCM_PATH="${ROCM_PATH:=/opt/rocm/}"
 
-    # NOTE: this script only builds kokkos when enable_hip=ON
+    build_kokkos="${build_kokkos:=true}"
+elif [[ "$enable_sycl" == "ON" ]]; then
+    echo "*** configuring with SYCL support"
     build_kokkos="${build_kokkos:=true}"
 else
     build_kokkos="${build_kokkos:=false}"
@@ -111,7 +115,7 @@ function ospath()
     echo `cygpath -m $1`
   else
     echo $1
-  fi 
+  fi
 }
 
 function abs_path()
@@ -144,7 +148,7 @@ cd ${root_dir}
 # override with `prefix` env var
 install_dir="${install_dir:=$root_dir/install}"
 
-echo "*** prefix:       ${root_dir}" 
+echo "*** prefix:       ${root_dir}"
 echo "*** build root:   ${build_dir}"
 echo "*** sources root: ${source_dir}"
 echo "*** install root: ${install_dir}"
@@ -156,7 +160,7 @@ echo "*** script dir:   ${script_dir}"
 tar_extra_args=""
 if [[ "$build_windows" == "ON" ]]; then
   tar_extra_args="--force-local"
-fi 
+fi
 
 # make sure sources dir exists
 if [ ! -d ${source_dir} ]; then
@@ -304,7 +308,7 @@ if [ ! -d ${silo_src_dir} ]; then
   # windows specifc patch
   if [[ "$build_windows" == "ON" ]]; then
     patch -p1 < ${script_dir}/2024_07_29_silo-pr389-win32-bugfix.patch
-  fi 
+  fi
 
   cd ${root_dir}
 fi
@@ -350,6 +354,9 @@ if ${build_pyvenv}; then
     cd ${install_dir} && ${python_exe} -m venv python-venv
     ${venv_python_exe} -m pip install --upgrade pip
     ${venv_python_exe} -m pip install numpy sphinx sphinx_rtd_theme
+    if ${build_zfp}; then
+        ${venv_python_exe} -m pip install cython setuptools
+    fi
     if [[ "$enable_mpi" == "ON" ]]; then
         ${venv_python_exe} -m pip install mpi4py
     fi
@@ -388,7 +395,7 @@ if [ ! -d ${caliper_src_dir} ]; then
 fi
 
 #
-# Note: Caliper has optional Umpire support, 
+# Note: Caliper has optional Umpire support,
 # if we want to support in the future, we will need to build umpire first
 #
 
@@ -400,7 +407,7 @@ caliper_windows_cmake_flags="-DCMAKE_CXX_STANDARD=17 -DCMAKE_WINDOWS_EXPORT_ALL_
 caliper_extra_cmake_args=""
 if [[ "$build_windows" == "ON" ]]; then
   caliper_extra_cmake_args="${caliper_windows_cmake_flags}"
-fi 
+fi
 
 # TODO enable_cuda
 
@@ -437,9 +444,58 @@ fi # build_caliper
 
 
 ################
+# ZFP
+################
+zfp_version=1.0.1
+zfp_src_dir=$(ospath ${source_dir}/zfp-${zfp_version})
+zfp_build_dir=$(ospath ${build_dir}/zfp-${zfp_version}/)
+zfp_install_dir=$(ospath ${install_dir}/zfp-${zfp_version}/)
+zfp_tarball=$(ospath ${source_dir}/zfp-${zfp_version}.tar.gz)
+
+# build only if install doesn't exist
+if [ ! -d ${zfp_install_dir} ]; then
+if ${build_zfp}; then
+if [ ! -d ${zfp_src_dir} ]; then
+  echo "**** Downloading ${zfp_tarball}"
+  curl -L https://github.com/LLNL/zfp/releases/download/1.0.1/zfp-${zfp_version}.tar.gz -o ${zfp_tarball}
+  tar ${tar_extra_args} -xzf ${zfp_tarball} -C ${source_dir}
+
+  # apply patches
+  cd ${zfp_src_dir}
+  patch -p1 < ${script_dir}/2025_02_14_zfp_python_build_hardening.patch
+  cd ${root_dir}
+fi
+
+#
+# extra cmake args
+#
+zfp_extra_cmake_opts="-DBUILD_ZFPY=${enable_python}"
+if ${build_pyvenv}; then
+  zfp_extra_cmake_opts="${zfp_extra_cmake_opts} -DPYTHON_EXECUTABLE=${venv_python_exe}"
+  zfp_extra_cmake_opts="${zfp_extra_cmake_opts} -Dpython_install_lib_dir=${venv_python_site_pkgs_dir}"
+fi
+
+echo "**** Configuring ZFP ${zfp_version}"
+cmake -S ${zfp_src_dir} -B ${zfp_build_dir} ${cmake_compiler_settings} \
+  -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose} \
+  -DCMAKE_BUILD_TYPE=${build_config} \
+  -DBUILD_SHARED_LIBS=${build_shared_libs} \
+  -DCMAKE_INSTALL_PREFIX=${zfp_install_dir} ${zfp_extra_cmake_opts}\
+
+echo "**** Building ZFP ${zfp_version}"
+cmake --build ${zfp_build_dir} --config ${build_config} -j${build_jobs}
+echo "**** Installing Caliper ${caliper_version}"
+cmake --install ${zfp_build_dir} --config ${build_config}
+
+fi
+else
+  echo "**** Skipping ZFP build, install found at: ${zfp_install_dir}"
+fi # build_zfp
+
+################
 # Conduit
 ################
-conduit_version=v0.9.2
+conduit_version=v0.9.4
 conduit_src_dir=$(ospath ${source_dir}/conduit-${conduit_version})
 conduit_build_dir=$(ospath ${build_dir}/conduit-${conduit_version}/)
 conduit_install_dir=$(ospath ${install_dir}/conduit-${conduit_version}/)
@@ -454,17 +510,11 @@ if [ ! -d ${conduit_src_dir} ]; then
   # untar and avoid symlinks (which windows despises)
   tar ${tar_extra_args} -xzf ${conduit_tarball} -C ${source_dir} \
       --exclude="conduit-${conduit_version}/src/tests/relay/data/silo/*"
-  # caliper vs adiak patch
-  if ${build_caliper}; then
-      cd ${conduit_src_dir}
-      echo ${conduit_src_dir}
-      patch -p 1 < ${script_dir}/2024_08_01_conduit-pr1311-detect-if-caliper-needs-adiak.patch
-      cd ${root_dir}
-  fi
+
 fi
 
 #
-# extrat cmake args
+# extra cmake args
 #
 conduit_extra_cmake_opts=-DENABLE_PYTHON=${enable_python}
 if ${build_pyvenv}; then
@@ -511,16 +561,16 @@ else
   echo "**** Skipping Conduit build, install found at: ${conduit_install_dir}"
 fi # build_conduit
 
-#########################
-# Kokkos (only for hip)
-#########################
-kokkos_version=3.7.02
+###############################
+# Kokkos (only for hip or sycl)
+###############################
+kokkos_version=4.4.01
 kokkos_src_dir=$(ospath ${source_dir}/kokkos-${kokkos_version})
 kokkos_build_dir=$(ospath ${build_dir}/kokkos-${kokkos_version})
 kokkos_install_dir=$(ospath ${install_dir}/kokkos-${kokkos_version}/)
 kokkos_tarball=$(ospath ${source_dir}/kokkos-${kokkos_version}.tar.gz)
 
-if [[ "$enable_hip" == "ON" ]]; then
+if [[ "$enable_hip" == "ON" ]] || [[ "$enable_sycl" == "ON" ]]; then
 # build only if install doesn't exist
 if [ ! -d ${kokkos_install_dir} ]; then
 if ${build_kokkos}; then
@@ -530,21 +580,52 @@ if [ ! -d ${kokkos_src_dir} ]; then
   tar ${tar_extra_args} -xzf ${kokkos_tarball} -C ${source_dir}
 fi
 
-# TODO: DKokkos_ARCH_VEGA90A needs to be controlled / mapped?
+kokkos_extra_cmake_args=""
+if [[ "$enable_hip" == "ON" ]]; then
+  kokkos_extra_cmake_args="-DKokkos_ENABLE_HIP=ON"
+  kokkos_extra_cmake_args="${kokkos_extra_cmake_args} -DKokkos_ENABLE_HIP_RELOCATABLE_DEVICE_CODE=OFF"
+  kokkos_extra_cmake_args="${kokkos_extra_cmake_args} -DCMAKE_CXX_COMPILER=${ROCM_PATH}/bin/hipcc"
+  kokkos_extra_cmake_args="${kokkos_extra_cmake_args} -DCMAKE_CXX_EXTENSIONS=OFF"
+  kokkos_extra_cmake_args="${kokkos_extra_cmake_args} -DCMAKE_CXX_STANDARD=17"
+  kokkos_extra_cmake_args="${kokkos_extra_cmake_args} -DKokkos_ENABLE_ROCTHRUST=OFF"
+
+  ##
+  ## build_ascent specific ROCM_ARCH Map for Kokkos options:
+  ##
+  ## TODO: Kokkos 4.5 has MI300A specific option, need to figure out how to
+  ##       map hat in when we update.
+  ##
+  ## gfx942 --> Kokkos_ARCH_AMD_GFX942 (MI300A, MI300X)
+  ## (since Kokkos 4.2, since Kokkos 4.5 this should only be used for MI300X)
+  ##
+  ## gfx90a --> Kokkos_ARCH_AMD_GFX90A (MI200 series)
+  ## (since Kokkos 4.2)
+  ##
+  if [[ "$ROCM_ARCH" == "gfx942" ]]; then
+      kokkos_extra_cmake_args="${kokkos_extra_cmake_args} -DKokkos_ARCH_AMD_GFX942=ON"
+  fi
+
+  if [[ "$ROCM_ARCH" == "gfx90a" ]]; then
+      kokkos_extra_cmake_args="${kokkos_extra_cmake_args} -DKokkos_ARCH_AMD_GFX90A=ON"
+  fi
+fi
+
+if [[ "$enable_sycl" == "ON" ]]; then
+  kokkos_extra_cmake_args="-DCMAKE_CXX_FLAGS=-fPIC -fp-model=precise -Wno-unused-command-line-argument -Wno-deprecated-declarations -fsycl-device-code-split=per_kernel -fsycl-max-parallel-link-jobs=128"
+  kokkos_extra_cmake_args="${kokkos_extra_cmake_args} -DKokkos_ENABLE_SYCL=ON"
+  kokkos_extra_cmake_args="${kokkos_extra_cmake_args} -DKokkos_ARCH_INTEL_PVC=ON"
+  kokkos_extra_cmake_args="${kokkos_extra_cmake_args} -DCMAKE_CXX_EXTENSIONS=OFF"
+  kokkos_extra_cmake_args="${kokkos_extra_cmake_args} -DCMAKE_CXX_STANDARD=17"
+fi
 
 echo "**** Configuring Kokkos ${kokkos_version}"
 cmake -S ${kokkos_src_dir} -B ${kokkos_build_dir} ${cmake_compiler_settings} \
   -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose}\
   -DCMAKE_BUILD_TYPE=${build_config} \
   -DBUILD_SHARED_LIBS=${build_shared_libs} \
-  -DKokkos_ARCH_VEGA90A=ON \
-  -DCMAKE_CXX_COMPILER=${ROCM_PATH}/bin/hipcc \
-  -DKokkos_ENABLE_HIP=ON \
   -DKokkos_ENABLE_SERIAL=ON \
-  -DKokkos_ENABLE_HIP_RELOCATABLE_DEVICE_CODE=OFF \
   -DCMAKE_INSTALL_PREFIX=${kokkos_install_dir} \
-  -DCMAKE_CXX_FLAGS="--amdgpu-target=${ROCM_ARCH}" \
-  -DBUILD_TESTING=OFF \
+  -DBUILD_TESTING=OFF ${kokkos_extra_cmake_args} \
   -DCMAKE_INSTALL_PREFIX=${kokkos_install_dir}
 
 echo "**** Building Kokkos ${kokkos_version}"
@@ -557,7 +638,7 @@ else
   echo "**** Skipping Kokkos build, install found at: ${kokkos_install_dir}"
 fi # build_kokkos
 
-fi # if enable_hip
+fi # if enable_hip || enable_sycl
 
 
 ################
@@ -601,7 +682,7 @@ fi # build_anari
 ################
 # VTK-m
 ################
-vtkm_version=v2.2.0
+vtkm_version=v2.3.0
 vtkm_src_dir=$(ospath ${source_dir}/vtk-m-${vtkm_version})
 vtkm_build_dir=$(ospath ${build_dir}/vtk-m-${vtkm_version})
 vtkm_install_dir=$(ospath ${install_dir}/vtk-m-${vtkm_version}/)
@@ -614,8 +695,6 @@ if [ ! -d ${vtkm_src_dir} ]; then
   echo "**** Downloading ${vtkm_tarball}"
   curl -L https://gitlab.kitware.com/vtk/vtk-m/-/archive/${vtkm_version}/vtk-m-${vtkm_version}.tar.gz -o ${vtkm_tarball}
   tar ${tar_extra_args} -xzf ${vtkm_tarball} -C ${source_dir}
-
-  cd ${root_dir}
 fi
 
 
@@ -632,6 +711,13 @@ if [[ "$enable_hip" == "ON" ]]; then
   vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DCMAKE_HIP_ARCHITECTURES=${ROCM_ARCH}"
   vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DVTKm_ENABLE_KOKKOS_THRUST=OFF"
 fi
+
+if [[ "$enable_sycl" == "ON" ]]; then
+  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DVTKm_ENABLE_KOKKOS=ON"
+  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DCMAKE_PREFIX_PATH=${kokkos_install_dir}"
+  vtkm_extra_cmake_args="-DCMAKE_CXX_FLAGS=-fPIC -fp-model=precise -Wno-unused-command-line-argument -Wno-deprecated-declarations -fsycl-device-code-split=per_kernel -fsycl-max-parallel-link-jobs=128"
+fi
+
 
 if [[ "$enable_mpicc" == "ON" ]]; then
   vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DMPI_C_COMPILER=${mpicc_exe}"
@@ -650,7 +736,6 @@ cmake -S ${vtkm_src_dir} -B ${vtkm_build_dir} ${cmake_compiler_settings} \
   -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose}\
   -DCMAKE_BUILD_TYPE=${build_config} \
   -DBUILD_SHARED_LIBS=${build_shared_libs} \
-  -DVTKm_NO_DEPRECATED_VIRTUAL=ON \
   -DVTKm_USE_64BIT_IDS=OFF \
   -DVTKm_USE_DOUBLE_PRECISION=ON \
   -DVTKm_USE_DEFAULT_TYPES_FOR_ASCENT=ON \
@@ -676,7 +761,7 @@ fi # build_vtkm
 ################
 # Camp
 ################
-camp_version=v2024.02.1
+camp_version=v2025.03.0
 camp_src_dir=$(ospath ${source_dir}/camp-${camp_version})
 camp_build_dir=$(ospath ${build_dir}/camp-${camp_version})
 camp_install_dir=$(ospath ${install_dir}/camp-${camp_version}/)
@@ -700,6 +785,7 @@ fi
 
 if [[ "$enable_hip" == "ON" ]]; then
     camp_extra_cmake_args="-DENABLE_HIP=ON"
+    camp_extra_cmake_args="${camp_extra_cmake_args} -DCMAKE_HIP_COMPILER=${CXX}"
     camp_extra_cmake_args="${camp_extra_cmake_args} -DCMAKE_HIP_ARCHITECTURES=${ROCM_ARCH}"
     camp_extra_cmake_args="${camp_extra_cmake_args} -DROCM_PATH=${ROCM_PATH}"
 fi
@@ -727,7 +813,7 @@ fi # build_camp
 ################
 # RAJA
 ################
-raja_version=v2024.02.1
+raja_version=v2025.03.1
 raja_src_dir=$(ospath ${source_dir}/RAJA-${raja_version})
 raja_build_dir=$(ospath ${build_dir}/raja-${raja_version})
 raja_install_dir=$(ospath ${install_dir}/raja-${raja_version}/)
@@ -751,6 +837,7 @@ fi
 
 if [[ "$enable_hip" == "ON" ]]; then
   raja_extra_cmake_args="-DENABLE_HIP=ON"
+  raja_extra_cmake_args="${raja_extra_cmake_args} -DCMAKE_HIP_COMPILER=${CXX}"
   raja_extra_cmake_args="${raja_extra_cmake_args} -DCMAKE_HIP_ARCHITECTURES=${ROCM_ARCH}"
   raja_extra_cmake_args="${raja_extra_cmake_args} -DROCM_PATH=${ROCM_PATH}"
 fi
@@ -782,7 +869,7 @@ fi # build_raja
 ################
 # Umpire
 ################
-umpire_version=2024.02.1
+umpire_version=2025.03.0
 umpire_src_dir=$(ospath ${source_dir}/umpire-${umpire_version})
 umpire_build_dir=$(ospath ${build_dir}/umpire-${umpire_version})
 umpire_install_dir=$(ospath ${install_dir}/umpire-${umpire_version}/)
@@ -792,7 +879,7 @@ umpire_windows_cmake_flags="-DBLT_CXX_STD=c++17 -DCMAKE_CXX_STANDARD=17 -DUMPIRE
 umpire_extra_cmake_args=""
 if [[ "$build_windows" == "ON" ]]; then
   umpire_extra_cmake_args="${umpire_windows_cmake_flags}"
-fi 
+fi
 
 if [[ "$enable_cuda" == "ON" ]]; then
   umpire_extra_cmake_args="${umpire_extra_cmake_args} -DENABLE_CUDA=ON"
@@ -801,8 +888,13 @@ fi
 
 if [[ "$enable_hip" == "ON" ]]; then
   umpire_extra_cmake_args="${umpire_extra_cmake_args} -DENABLE_HIP=ON"
+  umpire_extra_cmake_args="${umpire_extra_cmake_args} -DCMAKE_HIP_COMPILER=${CXX}"
   umpire_extra_cmake_args="${umpire_extra_cmake_args} -DCMAKE_HIP_ARCHITECTURES=${ROCM_ARCH}"
   umpire_extra_cmake_args="${umpire_extra_cmake_args} -DROCM_PATH=${ROCM_PATH}"
+fi
+
+if [[ "$enable_sycl" == "ON" ]]; then
+  umpire_extra_cmake_args="${umpire_extra_cmake_args} -DENABLE_SYCL=ON"
 fi
 
 # build only if install doesn't exist
@@ -839,7 +931,7 @@ fi # build_umpire
 ################
 # MFEM
 ################
-mfem_version=4.6
+mfem_version=4.8
 mfem_src_dir=$(ospath ${source_dir}/mfem-${mfem_version})
 mfem_build_dir=$(ospath ${build_dir}/mfem-${mfem_version})
 mfem_install_dir=$(ospath ${install_dir}/mfem-${mfem_version}/)
@@ -849,7 +941,7 @@ mfem_windows_cmake_flags="-DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON"
 mfem_extra_cmake_args=""
 if [[ "$build_windows" == "ON" ]]; then
   mfem_extra_cmake_args="${mfem_windows_cmake_flags}"
-fi 
+fi
 
 
 # build only if install doesn't exist
@@ -864,7 +956,7 @@ fi
 #
 # Note: MFEM MPI requires Hypre and Metis
 #  -DMFEM_USE_MPI=${enable_mpi} \
-  
+
 echo "**** Configuring MFEM ${mfem_version}"
 cmake -S ${mfem_src_dir} -B ${mfem_build_dir} ${cmake_compiler_settings} \
   -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose}\
@@ -874,7 +966,7 @@ cmake -S ${mfem_src_dir} -B ${mfem_build_dir} ${cmake_compiler_settings} \
   -DCMAKE_PREFIX_PATH="${conduit_install_dir}" \
   -DMFEM_ENABLE_TESTING=OFF \
   -DMFEM_ENABLE_EXAMPLES=OFF \
-  -DCMAKE_INSTALL_PREFIX=${mfem_install_dir} 
+  -DCMAKE_INSTALL_PREFIX=${mfem_install_dir}
 
 echo "**** Building MFEM ${mfem_version}"
 cmake --build ${mfem_build_dir} --config ${build_config} -j${build_jobs}
@@ -996,7 +1088,6 @@ fi
 if ${build_caliper}; then
   echo 'set(CALIPER_DIR ' ${caliper_install_dir} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
 fi
-echo 'set(BLT_CXX_STD c++14 CACHE STRING "")' >> ${root_dir}/ascent-config.cmake
 echo 'set(CONDUIT_DIR ' ${conduit_install_dir} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
 echo 'set(VTKM_DIR ' ${vtkm_install_dir} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
 echo 'set(CAMP_DIR ' ${camp_install_dir} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
@@ -1024,6 +1115,8 @@ fi
 
 if [[ "$enable_hip" == "ON" ]]; then
     echo 'set(ENABLE_HIP ON CACHE BOOL "")' >> ${root_dir}/ascent-config.cmake
+    echo 'set(BLT_CXX_STD c++17 CACHE STRING "")' >> ${root_dir}/ascent-config.cmake
+    echo 'set(CMAKE_HIP_COMPILER ' ${CXX} ' CACHE STRING "")' >> ${root_dir}/ascent-config.cmake
     echo 'set(CMAKE_HIP_ARCHITECTURES ' ${ROCM_ARCH} ' CACHE STRING "")' >> ${root_dir}/ascent-config.cmake
     echo 'set(ROCM_PATH ' ${ROCM_PATH} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
     echo 'set(KOKKOS_DIR ' ${kokkos_install_dir} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
@@ -1034,7 +1127,7 @@ if [ ! -d ${ascent_install_dir} ]; then
 if ${build_ascent}; then
 if [ ! -d ${ascent_src_dir} ]; then
     echo "**** Cloning Ascent"
-    git clone --recursive https://github.com/Alpine-DAV/ascent.git
+    git clone --recursive https://github.com/Alpine-DAV/ascent.git ${source_dir}/ascent
 fi
 
 echo "**** Configuring Ascent"

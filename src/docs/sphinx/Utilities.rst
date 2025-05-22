@@ -175,7 +175,7 @@ contents:
 
 
 To run clover: ``srun -n 1 path_to_clover/cloverleaf3d_par``. Your MPI may be different, so
-you may need to lauch the MPI task with ``mpiexec`` or ``mpirun``. After this runs,
+you may need to launch the MPI task with ``mpiexec`` or ``mpirun``. After this runs,
 there will be ``20`` files in the form ``clover_data.cycle_000010.root`` in the current
 directory. Each root file points to subdirectories with HDF5 files that contain
 the mesh data for each cycle.
@@ -259,7 +259,7 @@ Writing Valid Yaml
 ^^^^^^^^^^^^^^^^^^
 The yaml format is human readable, but it can still be easy to make mistakes.
 Ascent will tell you about yaml parsing errors, but using external validation tools
-like `<http://www.yamllint.com//>`_ helps filter out simple mistakes. You can simply
+like `<https://www.yamllint.com/>`_ or `<https://yamline.com/validator/>`_ helps filter out simple mistakes. You can simply
 paste your yaml into the site and validate if the syntax is correct.
 
 

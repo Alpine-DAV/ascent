@@ -20,6 +20,7 @@
 
 
 #include <ascent_logging.hpp>
+#include <ascent_logging_old.hpp>
 #include <ascent_block_timer.hpp>
 
 #include <conduit.hpp>

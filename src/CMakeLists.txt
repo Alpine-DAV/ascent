@@ -4,8 +4,7 @@
 # other details. No copyright assignment is required to contribute to Ascent.
 ###############################################################################
 
-# avoid warnings for project commands w/o VERSION
-cmake_policy(SET CMP0048 NEW)
+cmake_minimum_required(VERSION 3.23)
 
 ################################
 # Ascent
@@ -44,7 +43,9 @@ option(ENABLE_HIDDEN_VISIBILITY "Build with hidden visibility for private symbol
 option(DRAY_ENABLE_STATS          "Enable stats"         ON)
 option(DRAY_USE_DOUBLE_PRECISION  "Build Devil Ray with double precision" OFF)
 
-# VTK-h Specific Options 
+
+# VTK-h Specific Options
+
 option(VTKH_ENABLE_FILTER_CONTOUR_TREE "Build VTK-h contour tree support" ON)
 
 # Cuda Specific Options
@@ -54,7 +55,7 @@ option(ENABLE_CUDA_DEBUG_CPU_ONLY "Enable CUDA CPU debugging" OFF)
 option(ENABLE_ANARI "Build ANARI Support" OFF)
 
 #####################################################
-# Note: Third party libs like MFEM, FIDES, etc are 
+# Note: Third party libs like MFEM, FIDES, etc are
 #       enabled when you provide MFEM_DIR, etc
 #####################################################
 
@@ -65,12 +66,6 @@ endif()
 
 if(ENABLE_DRAY AND NOT ENABLE_APCOMP)
     message(FATAL_ERROR "Devil Ray requires APComp (ENABLE_APCOMP=OFF and ENABLE_DRAY=ON)")
-endif()
-
-if (ENABLE_HIP)
-    cmake_minimum_required(VERSION 3.21)
-else()
-    cmake_minimum_required(VERSION 3.14)
 endif()
 
 if(ENABLE_CUDA)
@@ -99,7 +94,6 @@ if(POLICY CMP0148)
     cmake_policy(SET CMP0148 OLD)
 endif()
 
-
 ################################
 # Populate the cmake gui
 ################################
@@ -116,7 +110,7 @@ endif()
 ################################
 # Init BLT
 ################################
-# This also includes 
+# This also includes
 # our BLT defaults
 include(cmake/SetupBLT.cmake)
 

@@ -40,6 +40,7 @@
 //-----------------------------------------------------------------------------
 #include <ascent_data_object.hpp>
 #include <ascent_logging.hpp>
+#include <ascent_string_utils.hpp>
 #include <ascent_metadata.hpp>
 #include <ascent_mpi_utils.hpp>
 #include <ascent_runtime_utils.hpp>
@@ -70,6 +71,14 @@ using namespace std;
 using namespace conduit;
 using namespace conduit::relay;
 using namespace flow;
+
+// helper def to see if conduit 0.9.4 or newer
+// which includes a new method to generate root file name string
+// given specific options to relays blueprint mesh method
+#if (CONDUIT_VERSION_MINOR >= 9 ) && (CONDUIT_VERSION_PATCH >= 4 )
+    #define CONDUIT_HAS_ROOT_FILE_NAME_GEN 1
+#endif
+
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -160,7 +169,7 @@ filter_topos(const conduit::Node &input,
         {
           out_dom[cpath].set_external(dom[cpath]);
         }
-        
+
         // check for any fields defined on this topo
         if(dom.has_path("fields"))
         {
@@ -211,7 +220,7 @@ filter_topos(const conduit::Node &input,
             }
           }
         }
-        
+
       }
     }
 
@@ -464,7 +473,7 @@ verify_io_params(const conduit::Node &params,
             info["info"].append() = "includes 'num_files'";
         }
     }
-    
+
     if( params.has_child("refinement_level") )
     {
         if(!params["refinement_level"].dtype().is_integer())
@@ -577,13 +586,15 @@ verify_io_params(const conduit::Node &params,
 
 
 //-----------------------------------------------------------------------------
-void mesh_blueprint_save(const Node &data,
-                         const std::string &path,
-                         const std::string &file_protocol,
-                         int num_files,
-                         const Node &extra_opts,
-                         std::string &root_file_out)
+void
+mesh_blueprint_save(const Node &data,
+                    const std::string &path,
+                    const std::string &file_protocol,
+                    int num_files,
+                    const Node &extra_opts,
+                    std::string &root_file_out)
 {
+    root_file_out = "";
     bool has_data = blueprint::mesh::number_of_domains(data) > 0;
     has_data = global_someone_agrees(has_data);
 
@@ -596,6 +607,7 @@ void mesh_blueprint_save(const Node &data,
     // setup our options
     Node opts;
     opts["number_of_files"] = num_files;
+    std::string file_protocol_resolved = file_protocol;
 
 #ifdef ASCENT_HDF5_ENABLED
     bool using_hdf5_opts = (file_protocol == "hdf5" &&
@@ -616,46 +628,53 @@ void mesh_blueprint_save(const Node &data,
         conduit::relay::io::hdf5_set_options(hdf5_opts_orig_curr);
     }
 #endif
-
-
-    if (file_protocol == "silo" || file_protocol == "overlink")
+    if (file_protocol == "overlink")
     {
-#ifdef CONDUIT_RELAY_IO_SILO_ENABLED
-        if (file_protocol == "overlink")
-        {
-            opts["file_style"] = "overlink";
-        }
-    #ifdef ASCENT_MPI_ENABLED
-        MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
-        conduit::relay::mpi::io::silo::save_mesh(data,
-                                                 path,
-                                                 opts,
-                                                 mpi_comm);
-    #else
-        conduit::relay::io::silo::save_mesh(data,
-                                            path,
-                                            opts);
-    #endif
-#else
-        ASCENT_ERROR("Ascent's Conduit was not built with Silo support.");
-#endif
+        file_protocol_resolved = "silo";
+        opts["file_style"] = "overlink";
     }
-    else
-    {
+
+    // execute save and for conduit 0.9.4 or newer:
+    //   given mesh, path, and options generate the root file name
+    //   that corresponds to the result of the save call
+
+//-----------------------------------------------------------------------------
 #ifdef ASCENT_MPI_ENABLED
-        MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
-        conduit::relay::mpi::io::blueprint::save_mesh(data,
-                                                      path,
-                                                      file_protocol,
-                                                      opts,
-                                                      mpi_comm);
-#else
-        conduit::relay::io::blueprint::save_mesh(data,
-                                                 path,
-                                                 file_protocol,
-                                                 opts);
+//-----------------------------------------------------------------------------
+    MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
+    conduit::relay::mpi::io::blueprint::save_mesh(data,
+                                                  path,
+                                                  file_protocol_resolved,
+                                                  opts,
+                                                  mpi_comm);
+
+#ifdef CONDUIT_HAS_ROOT_FILE_NAME_GEN
+    root_file_out = conduit::relay::mpi::io::blueprint::generate_root_filename(data,
+                                                                               path,
+                                                                               file_protocol_resolved,
+                                                                               opts,
+                                                                               mpi_comm);
 #endif
-    }
+
+//-----------------------------------------------------------------------------
+#else // non mpi case
+//-----------------------------------------------------------------------------
+    conduit::relay::io::blueprint::save_mesh(data,
+                                             path,
+                                             file_protocol_resolved,
+                                             opts);
+
+#ifdef CONDUIT_HAS_ROOT_FILE_NAME_GEN
+    root_file_out = conduit::relay::io::blueprint::generate_root_filename(data,
+                                                                          path,
+                                                                          file_protocol_resolved,
+                                                                          opts);
+#endif
+
+
+//-----------------------------------------------------------------------------
+#endif // end non mpi case
+//-----------------------------------------------------------------------------
 
 
 #ifdef ASCENT_HDF5_ENABLED
@@ -665,7 +684,6 @@ void mesh_blueprint_save(const Node &data,
         conduit::relay::io::hdf5_set_options(hdf5_opts_orig);
     }
 #endif
-    return;
 
 }
 
@@ -706,8 +724,14 @@ RelayIOSave::verify_params(const conduit::Node &params,
 void
 RelayIOSave::execute()
 {
+    int mpi_comm_id = -1;
+#ifdef ASCENT_MPI_ENABLED
+    mpi_comm_id = flow::Workspace::default_mpi_comm();
+#endif
+
     std::string path, protocol;
     path = params()["path"].as_string();
+    path = expand_path_special_variables(path, mpi_comm_id, 0, false);
     path = output_dir(path);
 
     if(params().has_child("protocol"))
@@ -838,7 +862,7 @@ RelayIOSave::execute()
                     std::vector<std::string> unique_topo_names = unique_topos.child_names();
                     error_oss << "relay_io_save Overlink save requires a single topology; "
                                  "there are " << num_topos << " topologies in the input mesh. "
-                                 "The current topologies are " << 
+                                 "The current topologies are " <<
                                  std::accumulate(
                                     unique_topo_names.begin(),
                                     unique_topo_names.end(),
@@ -877,7 +901,7 @@ RelayIOSave::execute()
             {
                 ASCENT_ERROR(error_oss.str());
             }
-#endif            
+#endif
         }
     }
 
@@ -912,7 +936,7 @@ RelayIOSave::execute()
         }
         detail::filter_fields(*in, selected, field_selection, graph());
       }
-    
+
       if(params().has_path("topologies"))
       {
         std::vector<std::string> topology_selection;
@@ -971,7 +995,7 @@ RelayIOSave::execute()
     {
         num_files = params()["num_files"].to_int();
     }
-    
+
     Node extra_opts;
 
 #if defined(ASCENT_HDF5_ENABLED)
@@ -981,7 +1005,9 @@ RelayIOSave::execute()
     }
 #endif
 
+    std::string protocol_resolved;
     std::string result_path;
+
     if(protocol.empty())
     {
         conduit::relay::io::save(selected,path);
@@ -992,51 +1018,38 @@ RelayIOSave::execute()
              protocol == "blueprint/mesh/hdf5" ||
              protocol == "hdf5")
     {
-        mesh_blueprint_save(selected,
-                            path,
-                            "hdf5",
-                            num_files,
-                            extra_opts,
-                            result_path);
+        protocol_resolved = "hdf5";
     }
 #endif
     else if( protocol == "blueprint" ||
              protocol == "blueprint/mesh/yaml" ||
              protocol == "yaml")
     {
-        mesh_blueprint_save(selected,
-                            path,
-                            "yaml",
-                            num_files,
-                            extra_opts,
-                            result_path);
-
+        protocol_resolved = "yaml";
     }
     else if( protocol == "blueprint/mesh/json" || protocol == "json")
     {
-        mesh_blueprint_save(selected,
-                            path,
-                            "json",
-                            num_files,
-                            extra_opts,
-                            result_path);
-
+        protocol_resolved = "json";
     }
     else if( protocol == "silo" ||
              protocol == "overlink")
     {
-#ifdef CONDUIT_RELAY_IO_SILO_ENABLED
-        mesh_blueprint_save(selected,
-                            path,
-                            protocol,
-                            num_files,
-                            extra_opts,
-                            result_path);
-#else
+        protocol_resolved = protocol;
+#ifndef CONDUIT_RELAY_IO_SILO_ENABLED
         ASCENT_ERROR("Ascent's Conduit was not built with Silo support.");
 #endif
     }
-    else
+
+    if(!protocol_resolved.empty())
+    {
+        mesh_blueprint_save(selected,
+                            path,
+                            protocol_resolved,
+                            num_files,
+                            extra_opts,
+                            result_path);
+    }
+    else  // catch all case for random protocol
     {
         conduit::relay::io::save(selected,path,protocol);
         result_path = path;
@@ -1231,20 +1244,19 @@ BlueprintFlatten::execute()
 #ifdef ASCENT_MPI_ENABLED
     MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
     blueprint::mpi::mesh::flatten(selected,
-		                  params(),
-				  output,
-  				  mpi_comm);
+                                  params(),
+                                  output,
+                                  mpi_comm);
 #else
     blueprint::mesh::flatten(selected,
-		             params(),
-			     output);
-
+                             params(),
+                             output);
 #endif
 
     std::string result_path;
     int rank = 0;
     int root = 0;
- 
+
 #ifdef ASCENT_MPI_ENABLED
     MPI_Comm_rank(mpi_comm, &rank);
 #endif
@@ -1261,7 +1273,7 @@ BlueprintFlatten::execute()
         else
         {
             conduit::relay::io::save(output,path,protocol);
-	    result_path = path;
+            result_path = path;
         }
     }
 

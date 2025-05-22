@@ -634,14 +634,12 @@ void Scheduler<FloatType>::to_blueprint(conduit::Node &dataset)
   n_coords["origin/y"] = 0;
   n_coords["origin/z"] = 0;
 
-  // scale the group spacing so we get more squarish data set
-  n_coords["spacing/dx"] = float(width) / float(num_channels);
+  n_coords["spacing/dx"] = 1.f;
   n_coords["spacing/dy"] = 1.f;
   n_coords["spacing/dz"] = 1.f;
   n_coords["labels"].append() = "groups";
   n_coords["labels"].append() = "width";
   n_coords["labels"].append() = "height";
-
 
   if(m_render_settings.m_render_mode == energy)
   {
@@ -657,7 +655,6 @@ void Scheduler<FloatType>::to_blueprint(conduit::Node &dataset)
       FloatType *ints_buffer = get_vtkm_ptr(ints);
       // can't set external since this goes out of scope
       n_int["values"].set(ints_buffer, ints.GetNumberOfValues());
-
       n_int["shape"].set(shape);
       n_int["strides"].set(strides);
       n_int["labels"].append() = "groups";
@@ -674,10 +671,8 @@ void Scheduler<FloatType>::to_blueprint(conduit::Node &dataset)
       FloatType *ints_buffer = get_vtkm_ptr(ints);
       // can't set external since this goes out of scope
       n_op["values"].set(ints_buffer, ints.GetNumberOfValues());
-
       n_op["shape"].set(shape);
       n_op["strides"].set(strides);
-
       n_op["labels"].append() = "groups";
       n_op["labels"].append() = "width";
       n_op["labels"].append() = "height";

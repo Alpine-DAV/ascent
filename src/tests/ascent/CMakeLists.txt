@@ -16,10 +16,12 @@ set(BASIC_TESTS t_ascent_smoke
                 t_ascent_runtime_options
                 t_ascent_data_binning
                 t_ascent_utils
+                t_ascent_logging
                 t_ascent_annotations
                 t_ascent_derived
                 t_ascent_empty_runtime
                 t_ascent_expressions
+                t_ascent_external_surfaces
                 t_ascent_cinema_a
                 t_ascent_color_bar_pos
                 t_ascent_render_2d
@@ -52,6 +54,7 @@ set(BASIC_TESTS t_ascent_smoke
                 t_ascent_image_compare
                 t_ascent_pipelines_to_pipelines
                 t_ascent_threshold
+                t_ascent_transform
                 t_ascent_slice
                 t_ascent_scale
                 t_ascent_particle_advection
@@ -84,7 +87,7 @@ endif()
 
 
 if(HIP_FOUND)
-    list(APPEND ascent_device_deps blt_hip_runtime)
+    list(APPEND ascent_device_deps blt::hip_runtime)
 endif()
 
 
@@ -155,7 +158,7 @@ if (ENABLE_SERIAL)
         endif()
         if(HIP_FOUND)
             set_source_files_properties(${TEST}.cpp PROPERTIES LANGUAGE HIP)
-            list(APPEND ascent_device_tests_deps blt_hip)
+            list(APPEND ascent_device_tests_deps blt::hip)
         endif()
         add_cpp_test(TEST ${TEST} DEPENDS_ON ascent ${ascent_device_deps} ${ascent_device_tests_deps})
     endforeach()

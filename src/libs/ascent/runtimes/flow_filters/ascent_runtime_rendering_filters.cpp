@@ -104,18 +104,36 @@ check_color_table_surprises(const conduit::Node &color_table)
   surprises += surprise_check(valid_paths, ignore_paths, color_table);
   if(color_table.has_path("control_points"))
   {
-    std::vector<std::string> c_valid_paths;
-    c_valid_paths.push_back("type");
-    c_valid_paths.push_back("alpha");
-    c_valid_paths.push_back("color");
-    c_valid_paths.push_back("position");
+    const Node &control_points_node = color_table.fetch("control_points");
 
-    const conduit::Node &control_points = color_table["control_points"];
-    const int num_points = control_points.number_of_children();
-    for(int i = 0; i < num_points; ++i)
+    if (control_points_node.dtype().is_list())
     {
-      const conduit::Node &point = control_points.child(i);
-      surprises += surprise_check(c_valid_paths, point);
+        // Valid path options for the expanded control points input format
+        std::vector<std::string> c_valid_paths;
+        c_valid_paths.push_back("type");
+        c_valid_paths.push_back("alpha");
+        c_valid_paths.push_back("color");
+        c_valid_paths.push_back("position");
+
+        const int num_points = control_points_node.number_of_children();
+        for(int i = 0; i < num_points; ++i)
+        {
+            const conduit::Node &point = control_points_node.child(i);
+            surprises += surprise_check(c_valid_paths, point);
+        }
+    }
+    else if (control_points_node.dtype().is_object())
+    {
+        // Valid path options for the compressed control points input format
+        std::vector<std::string> c_valid_paths;
+        c_valid_paths.push_back("r");
+        c_valid_paths.push_back("g");
+        c_valid_paths.push_back("b");
+        c_valid_paths.push_back("a");
+        c_valid_paths.push_back("position");
+
+
+        surprises += surprise_check(c_valid_paths, control_points_node);
     }
   }
 
@@ -129,6 +147,7 @@ check_renders_surprises(const conduit::Node &renders_node)
   const int num_renders = renders_node.number_of_children();
   // render paths
   std::vector<std::string> r_valid_paths;
+  r_valid_paths.push_back("camera/2d");
   r_valid_paths.push_back("image_name");
   r_valid_paths.push_back("image_prefix");
   r_valid_paths.push_back("image_width");
@@ -196,7 +215,7 @@ check_renders_surprises(const conduit::Node &renders_node)
         const conduit::Node &position = phi_theta_positions.child(i);
         std::stringstream ss;
         ss << "[" << i << "]";
-        if (position.name() != ss.str()) 
+        if (position.name() != ss.str())
         {
           surprises += "Surprise parameter '";
           surprises += position.name();
@@ -352,7 +371,7 @@ vtkh::Render parse_render(const conduit::Node &render_node,
     std::vector<std::string> comments;
     for(int i = 0; i < num_comments; ++i)
     {
-      comments.push_back(comments_node.child(i).as_string());
+      comments.push_back(comments_node.child(i).to_yaml());
     }
     render.SetComments(comments);
   }
@@ -504,8 +523,8 @@ vtkh::Render parse_render(const conduit::Node &render_node,
       conduit::Node n;
       render_node["color_bar_position"].to_float32_array(n);
       const float32 *cb_pos = n.as_float32_ptr();
-      vtkm::Bounds pos(vtkm::Range(cb_pos[0+4*i],cb_pos[1+4*i]), 
-			vtkm::Range(cb_pos[2+4*i],cb_pos[3+4*i]), 
+      vtkm::Bounds pos(vtkm::Range(cb_pos[0+4*i],cb_pos[1+4*i]),
+			vtkm::Range(cb_pos[2+4*i],cb_pos[3+4*i]),
 			vtkm::Range(0.0,0.0));
       cb_position.push_back(pos);
     }
@@ -736,11 +755,16 @@ public:
   {
     conduit::Node render_copy = render_node;
 
-    // allow zoom to be ajusted
+    // allow zoom to be adjusted
     conduit::Node zoom;
     if(render_copy.has_path("camera/zoom"))
     {
-      zoom = render_copy["camera/zoom"];
+        float zoom_val = render_node["camera/zoom"].to_value();
+        if (zoom_val <= 0) {
+            ASCENT_ERROR("Zoom must be greater than zero. Default zoom is 1.\n");
+        }
+
+        zoom = render_copy["camera/zoom"];
     }
 
     // cinema is controlling the camera so get
@@ -774,6 +798,7 @@ public:
       }
 
       tmp.SetCamera(camera);
+
       renders->push_back(tmp);
     }
   }
@@ -892,7 +917,7 @@ private:
 
   void create_cinema_angles()
   {
-    for(int p = 0; p < m_phi_values.size(); ++p) 
+    for(int p = 0; p < m_phi_values.size(); ++p)
     {
       for(int t = 0; t < m_theta_values.size(); ++t)
       {
@@ -1073,6 +1098,14 @@ DefaultRender::execute()
       ASCENT_ERROR("'a' input must be a vktm::Bounds * instance");
     }
 
+    int mpi_comm_id = -1;
+    int rank = 0;
+#ifdef ASCENT_MPI_ENABLED
+    mpi_comm_id = Workspace::default_mpi_comm();
+    MPI_Comm mpi_comm = MPI_Comm_f2c(mpi_comm_id);
+    MPI_Comm_rank(mpi_comm, &rank);
+#endif
+
     vtkm::Bounds *bounds = input<vtkm::Bounds>(0);
 
     std::vector<vtkh::Render> *renders = new std::vector<vtkh::Render>();
@@ -1169,20 +1202,16 @@ DefaultRender::execute()
 
           std::string output_path = default_dir();
 
-	  if(render_node.has_path("output_path"))
-	  {
+          if(render_node.has_path("output_path"))
+          {
             output_path = render_node["output_path"].as_string();
-	    int rank = 0;
-#ifdef ASCENT_MPI_ENABLED
-            MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
-            MPI_Comm_rank(mpi_comm, &rank);
-#endif
+
             // create a folder if it doesn't exist
             if(rank == 0 && !conduit::utils::is_directory(output_path))
             {
               conduit::utils::create_directory(output_path);
             }
-	  }
+	        }
 
           if(!render_node.has_path("db_name"))
           {
@@ -1226,13 +1255,25 @@ DefaultRender::execute()
           {
             image_name = render_node["image_name"].as_string();
             image_name = output_dir(image_name);
+
+            conduit::Node err_msg;
+            if(!check_dir_path_exists(image_name, mpi_comm_id, err_msg))
+            {
+              ASCENT_ERROR(err_msg.as_string());
+            }
           }
           else if(render_node.has_path("image_prefix"))
           {
             std::stringstream ss;
-            ss<<expand_family_name(render_node["image_prefix"].as_string(), cycle);
+            ss<<expand_path_special_variables(render_node["image_prefix"].as_string(), mpi_comm_id, cycle);
             image_name = ss.str();
             image_name = output_dir(image_name);
+
+            conduit::Node err_msg;
+            if(!check_dir_path_exists(image_name, mpi_comm_id, err_msg))
+            {
+              ASCENT_ERROR(err_msg.as_string());
+            }
           }
           else
           {
@@ -1243,106 +1284,104 @@ DefaultRender::execute()
                          "'image_prefix' parameter");
           }
 
-
-	  if(render_node.has_path("dataset_bounds"))
-	  {
-	    float64_accessor d_bounds = render_node["dataset_bounds"].value();
-	    int num_bounds = d_bounds.number_of_elements();
-	    
-	    if(num_bounds != 6)
-            {
-              std::string render_name = renders_node.child_names()[i];
-              std::string fpath = filter_to_path(this->name());
-              ASCENT_ERROR("Render ("<<fpath<<"/"<<render_name<<")"<<
-                           " only provided " << num_bounds << 
-	                   " dataset_bounds when 6 are required:" <<
-			   " [xMin,xMax,yMin,yMax,zMin,zMax]");
-	    }
-	    if(scene_bounds.X.Min > d_bounds[0])
-	      scene_bounds.X.Min = d_bounds[0];
-	    if(scene_bounds.X.Max < d_bounds[1])
-	      scene_bounds.X.Max = d_bounds[1];
-	    if(scene_bounds.Y.Min > d_bounds[2])
-	      scene_bounds.Y.Min = d_bounds[2];
-	    if(scene_bounds.Y.Max < d_bounds[3])
-	      scene_bounds.Y.Max = d_bounds[3];
-	    if(scene_bounds.Z.Min > d_bounds[4])
-	      scene_bounds.Z.Min = d_bounds[4];
-	    if(scene_bounds.Z.Max < d_bounds[5])
-	      scene_bounds.Z.Max = d_bounds[5];
-	  }
-
-	  if(is_auto_camera)
-	  { 
+          if(render_node.has_path("dataset_bounds"))
+          {
+            float64_accessor d_bounds = render_node["dataset_bounds"].value();
+            int num_bounds = d_bounds.number_of_elements();
+            
+            if(num_bounds != 6)
+                  {
+                    std::string render_name = renders_node.child_names()[i];
+                    std::string fpath = filter_to_path(this->name());
+                    ASCENT_ERROR("Render ("<<fpath<<"/"<<render_name<<")"<<
+                                 " only provided " << num_bounds << 
+                                 " dataset_bounds when 6 are required:" <<
+                                 " [xMin,xMax,yMin,yMax,zMin,zMax]");
+            }
+            if(scene_bounds.X.Min > d_bounds[0])
+              scene_bounds.X.Min = d_bounds[0];
+            if(scene_bounds.X.Max < d_bounds[1])
+              scene_bounds.X.Max = d_bounds[1];
+            if(scene_bounds.Y.Min > d_bounds[2])
+              scene_bounds.Y.Min = d_bounds[2];
+            if(scene_bounds.Y.Max < d_bounds[3])
+              scene_bounds.Y.Max = d_bounds[3];
+            if(scene_bounds.Z.Min > d_bounds[4])
+              scene_bounds.Z.Min = d_bounds[4];
+            if(scene_bounds.Z.Max < d_bounds[5])
+              scene_bounds.Z.Max = d_bounds[5];
+          }
+      
+          if(is_auto_camera)
+          { 
             DataObject *source
               = graph().workspace().registry().fetch<DataObject>("source_object");
-            
+
             std::shared_ptr<VTKHCollection> collection = source->as_vtkh_collection();
-      
-	    if(!render_node.has_path("auto_camera/field"))
-              ASCENT_ERROR("Auto Camera must specify a 'field'");
-	    if(!render_node.has_path("auto_camera/metric"))
-              ASCENT_ERROR("Auto Camera must specify a 'metric'");
-	    if(!render_node.has_path("auto_camera/samples"))
-              ASCENT_ERROR("Auto Camera must specify number of 'samples'");
+            
+            if(!render_node.has_path("auto_camera/field"))
+                    ASCENT_ERROR("Auto Camera must specify a 'field'");
+            if(!render_node.has_path("auto_camera/metric"))
+                    ASCENT_ERROR("Auto Camera must specify a 'metric'");
+            if(!render_node.has_path("auto_camera/samples"))
+                    ASCENT_ERROR("Auto Camera must specify number of 'samples'");
 
             std::string field_name = render_node["auto_camera/field"].as_string();
             std::string metric     = render_node["auto_camera/metric"].as_string();
             int samples            = render_node["auto_camera/samples"].as_int32();
-      
+
             if(!collection->has_field(field_name))
             {
               ASCENT_ERROR("Unknown field '"<<field_name<<"' in Auto Camera");
             }
-      
+
             std::string topo_name = collection->field_topology(field_name);
             vtkh::DataSet &dataset = collection->dataset_by_topology(topo_name);
-      
+
             vtkh::AutoCamera auto_cam;
-      
-	    int height = 1024;
-	    int width  = 1024;
+            
+            int height = 1024;
+            int width  = 1024;
             if(render_node.has_path("auto_camera/bins"))
             {
               int bins = render_node["auto_camera/bins"].as_int32();
-              auto_cam.SetNumBins(bins); 
+              auto_cam.SetNumBins(bins);
             }
             if(render_node.has_path("auto_camera/height"))
             {
               height = render_node["auto_camera/height"].as_int32();
-              auto_cam.SetHeight(height); 
+              auto_cam.SetHeight(height);
             }
             if(render_node.has_path("auto_camera/width"))
             {
               width = render_node["auto_camera/width"].as_int32();
-              auto_cam.SetWidth(width); 
+              auto_cam.SetWidth(width);
             }
-      
+
             auto_cam.SetInput(&dataset);
             auto_cam.SetField(field_name);
             auto_cam.SetMetric(metric);
             auto_cam.SetNumSamples(samples);
             auto_cam.Update();
-            
+                  
             vtkm::rendering::Camera *camera = new vtkm::rendering::Camera;
             *camera = auto_cam.GetCamera();
-	    vtkh::Render render = vtkh::MakeRender(width,
+            vtkh::Render render = vtkh::MakeRender(width,
                                       height,
                                       scene_bounds,
-	    			      *camera,
+                                      *camera,
                                       image_name);
             renders->push_back(render);
-	    delete camera;
+            delete camera;
 
-	  }
-	  else
-	  {
-
+          }
+          else
+          {
             vtkh::Render render = detail::parse_render(render_node,
-                                                       scene_bounds,
-                                                       image_name);
+                                                      scene_bounds,
+                                                      image_name);
             renders->push_back(render);
-	  }
+          }
         }
       }
     }
@@ -1357,8 +1396,14 @@ DefaultRender::execute()
       else
       {
         image_name =  params()["image_prefix"].as_string();
-        image_name = expand_family_name(image_name, cycle);
+        image_name = expand_path_special_variables(image_name, mpi_comm_id, cycle);
         image_name = output_dir(image_name);
+
+        conduit::Node err_msg;
+        if(!check_dir_path_exists(image_name, mpi_comm_id, err_msg))
+        {
+          ASCENT_ERROR(err_msg.as_string());
+        }
       }
 
       vtkm::Bounds scene_bounds = *bounds;
@@ -1369,12 +1414,12 @@ DefaultRender::execute()
           scene_bounds = original_bounds;
         }
       }
-      
+
       vtkh::Render render = vtkh::MakeRender(1024,
                             1024,
                             scene_bounds,
                             image_name);
-      
+
       Node meta = Metadata::n_metadata;
       if(meta.has_path("comments"))
       {
@@ -1383,7 +1428,7 @@ DefaultRender::execute()
         std::vector<std::string> comments;
         for(int i = 0; i < num_comments; ++i)
         {
-          comments.push_back(comments_node.child(i).as_string());
+          comments.push_back(comments_node.child(i).to_yaml());
         }
         render.SetComments(comments);
       }
@@ -1425,7 +1470,7 @@ VTKHBounds::execute()
     {
         ASCENT_ERROR("VTKHBounds input must be a data object");
     }
-    
+
     DataObject *data_object = input<DataObject>(0);
 
     // data could be the result of a failed pipeline
@@ -1434,7 +1479,7 @@ VTKHBounds::execute()
       std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
       bounds->Include(collection->global_bounds());
     }
-    
+
     set_output<vtkm::Bounds>(bounds);
 }
 
@@ -1782,7 +1827,7 @@ CreatePlot::execute()
     }
 
 
-    
+
 
     if(type == "mesh")
     {
@@ -1881,25 +1926,33 @@ ExecScene::declare_interface(conduit::Node &i)
 }
 
 //-----------------------------------------------------------------------------
-void generate_camera_meshes(conduit::Node &image_data){
+void generate_camera_meshes(conduit::Node &image_data)
+{
   conduit::Node &camera = image_data["camera"];
+
+  if(camera.has_child("2d"))
+  {
+    // skip cam mesh for 2d cam mode
+    return;
+  }
+
   conduit::Node &cam_frust = camera["camera_frustum_mesh"];
   // std::string image_name = image_data["image_name"].as_string();
-  
+
   // Scene Bounds Mesh
   float64_accessor scene_bounds = image_data["scene_bounds"].value();
-  double x_scene_bounds[] = {scene_bounds[0], scene_bounds[0], scene_bounds[0], scene_bounds[0], 
+  double x_scene_bounds[] = {scene_bounds[0], scene_bounds[0], scene_bounds[0], scene_bounds[0],
                              scene_bounds[3], scene_bounds[3], scene_bounds[3], scene_bounds[3]};
-  double y_scene_bounds[] = {scene_bounds[1], scene_bounds[1], scene_bounds[4], scene_bounds[4], 
+  double y_scene_bounds[] = {scene_bounds[1], scene_bounds[1], scene_bounds[4], scene_bounds[4],
                              scene_bounds[1], scene_bounds[1], scene_bounds[4], scene_bounds[4]};
-  double z_scene_bounds[] = {scene_bounds[2], scene_bounds[5], scene_bounds[5], scene_bounds[2], 
+  double z_scene_bounds[] = {scene_bounds[2], scene_bounds[5], scene_bounds[5], scene_bounds[2],
                              scene_bounds[2], scene_bounds[5], scene_bounds[5], scene_bounds[2]};
 
   cam_frust["coordsets/scene_bounds_coords/type"] = "explicit";
   cam_frust["coordsets/scene_bounds_coords/values/x"].set(x_scene_bounds, 8);
   cam_frust["coordsets/scene_bounds_coords/values/y"].set(y_scene_bounds, 8);
   cam_frust["coordsets/scene_bounds_coords/values/z"].set(z_scene_bounds, 8);
-  
+
   cam_frust["topologies/scene_bounds_topo/type"] = "unstructured";
   cam_frust["topologies/scene_bounds_topo/coordset"] = "scene_bounds_coords";
   cam_frust["topologies/scene_bounds_topo/elements/shape"]  = "line";
@@ -1918,14 +1971,14 @@ void generate_camera_meshes(conduit::Node &image_data){
   // Initializing and normalizing up vector
   float64_accessor up = camera["up"].value();
   vtkm::Vec<vtkm::Float64,3> vtkm_up(up[0], up[1], up[2]);
-  
+
   vtkm::Vec<vtkm::Float64,3> forward(0,0,-1);
   double angle_between = vtkm::ACos(vtkm::Dot(forward, vtkm_look)) / vtkm::Pi() * 180;
 
-  // If the look vector has been rotated by a certain angle, ajust the camera up vector to match
-  if (angle_between != 0.0) {
+  // If the look vector has been rotated by a certain angle, adjust the camera up vector to match
+  if (vtkm::Abs(angle_between) >= 0.001) {
     vtkm::Vec<vtkm::Float64,3> axisOfRotation = vtkm::Cross(vtkm_look, forward);
-    vtkm_up = 
+    vtkm_up =
       vtkm::Transform3DVector(vtkm::Transform3DRotate(-angle_between, axisOfRotation), vtkm_up);
   }
   vtkm::Normalize(vtkm_up);
@@ -1946,24 +1999,24 @@ void generate_camera_meshes(conduit::Node &image_data){
   // Near frustum
   double frust_near_height = near_dist * vtkm::Tan(fov * 0.5 * vtkm::Pi() / 180.0) / zoom;
   double frust_near_width  = frust_near_height;
-  vtkm::Vec<vtkm::Float64,3> near_frust_ll = look_near_pt + (-1 * vtkm_up * frust_near_height) 
+  vtkm::Vec<vtkm::Float64,3> near_frust_ll = look_near_pt + (-1 * vtkm_up * frust_near_height)
                                              + (vtkm_side * frust_near_width * image_aspect );
-  vtkm::Vec<vtkm::Float64,3> near_frust_lr = look_near_pt + (-1 * vtkm_up * frust_near_height) 
+  vtkm::Vec<vtkm::Float64,3> near_frust_lr = look_near_pt + (-1 * vtkm_up * frust_near_height)
                                              + (-1 * vtkm_side * frust_near_width * image_aspect);
-  vtkm::Vec<vtkm::Float64,3> near_frust_ur = look_near_pt + (vtkm_up * frust_near_height) 
+  vtkm::Vec<vtkm::Float64,3> near_frust_ur = look_near_pt + (vtkm_up * frust_near_height)
                                              + (-1 * vtkm_side * frust_near_width * image_aspect);
-  vtkm::Vec<vtkm::Float64,3> near_frust_ul = look_near_pt + (vtkm_up * frust_near_height) 
+  vtkm::Vec<vtkm::Float64,3> near_frust_ul = look_near_pt + (vtkm_up * frust_near_height)
                                              + (vtkm_side * frust_near_width * image_aspect);
   // Far frustum
   double frust_far_height = far_dist * vtkm::Tan(fov * 0.5 * vtkm::Pi() / 180.0) / zoom;
   double frust_far_width  = frust_far_height;
-  vtkm::Vec<vtkm::Float64,3> far_frust_ll = look_far_pt + (-1 * vtkm_up * frust_far_height) 
+  vtkm::Vec<vtkm::Float64,3> far_frust_ll = look_far_pt + (-1 * vtkm_up * frust_far_height)
                                             + (vtkm_side * frust_far_width * image_aspect);
-  vtkm::Vec<vtkm::Float64,3> far_frust_lr = look_far_pt + (-1 * vtkm_up * frust_far_height) 
+  vtkm::Vec<vtkm::Float64,3> far_frust_lr = look_far_pt + (-1 * vtkm_up * frust_far_height)
                                             + (-1 * vtkm_side * frust_far_width * image_aspect);
-  vtkm::Vec<vtkm::Float64,3> far_frust_ur = look_far_pt + (vtkm_up * frust_far_height) 
+  vtkm::Vec<vtkm::Float64,3> far_frust_ur = look_far_pt + (vtkm_up * frust_far_height)
                                             + (-1 * vtkm_side * frust_far_width * image_aspect);
-  vtkm::Vec<vtkm::Float64,3> far_frust_ul = look_far_pt + (vtkm_up * frust_far_height) 
+  vtkm::Vec<vtkm::Float64,3> far_frust_ul = look_far_pt + (vtkm_up * frust_far_height)
                                             + (vtkm_side * frust_far_width * image_aspect);
 
   // Assembling frustum mesh
@@ -1977,7 +2030,7 @@ void generate_camera_meshes(conduit::Node &image_data){
   double z_val_frust[] = {near_frust_ll[2],near_frust_lr[2],near_frust_ur[2],near_frust_ul[2],
                           far_frust_ll[2], far_frust_lr[2], far_frust_ur[2], far_frust_ul[2],
                           look_near_pt[2],  look_far_pt[2], up_vector_pt[2]};
-  
+
   cam_frust["coordsets/camera_frustum_coords/type"] = "explicit";
   cam_frust["coordsets/camera_frustum_coords/values/x"].set(x_val_frust, 11);
   cam_frust["coordsets/camera_frustum_coords/values/y"].set(y_val_frust, 11);
@@ -2038,13 +2091,30 @@ ExecScene::execute()
       image_data["image_width"] = renders->at(i).GetWidth();
       image_data["image_height"] = renders->at(i).GetHeight();
 
-      image_data["camera/position"].set(&renders->at(i).GetCamera().GetPosition()[0],3);
-      image_data["camera/look_at"].set(&renders->at(i).GetCamera().GetLookAt()[0],3);
-      image_data["camera/up"].set(&renders->at(i).GetCamera().GetViewUp()[0],3);
-      image_data["camera/zoom"] = renders->at(i).GetCamera().GetZoom();
-      image_data["camera/fov"] = renders->at(i).GetCamera().GetFieldOfView();
-      image_data["camera/near_plane"] = renders->at(i).GetCamera().GetClippingRange().Min;
-      image_data["camera/far_plane"] = renders->at(i).GetCamera().GetClippingRange().Max;
+      // check for 2d vs 3d camera
+      if(renders->at(i).GetCamera().GetMode() ==  vtkm::rendering::Camera::Mode::TwoD)
+      {
+        vtkm::Bounds bounds =  renders->at(i).GetCamera().GetViewRange2D();
+        double view_2d[4] = {bounds.X.Min,
+                             bounds.Y.Min,
+                             bounds.X.Max,
+                             bounds.Y.Max};
+
+        image_data["camera/2d"].set(view_2d,4);
+      }
+      else
+      {
+        image_data["camera/position"].set(&renders->at(i).GetCamera().GetPosition()[0],3);
+        image_data["camera/look_at"].set(&renders->at(i).GetCamera().GetLookAt()[0],3);
+        image_data["camera/up"].set(&renders->at(i).GetCamera().GetViewUp()[0],3);
+        image_data["camera/zoom"] = renders->at(i).GetCamera().GetZoom();
+        image_data["camera/fov"] = renders->at(i).GetCamera().GetFieldOfView();
+        image_data["camera/near_plane"] = renders->at(i).GetCamera().GetClippingRange().Min;
+        image_data["camera/far_plane"] = renders->at(i).GetCamera().GetClippingRange().Max;
+      }
+      auto pan_vals = renders->at(i).GetCamera().GetPan();
+      image_data["camera/xpan"] = pan_vals[0];
+      image_data["camera/ypan"] = pan_vals[1];
       vtkm::Bounds bounds=  renders->at(i).GetSceneBounds();
       double coord_bounds [6] = {bounds.X.Min,
                                  bounds.Y.Min,
@@ -2052,7 +2122,7 @@ ExecScene::execute()
                                  bounds.X.Max,
                                  bounds.Y.Max,
                                  bounds.Z.Max};
-      
+
       image_data["scene_bounds"].set(coord_bounds, 6);
 
       generate_camera_meshes(image_data);

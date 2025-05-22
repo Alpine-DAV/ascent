@@ -37,7 +37,7 @@ if(CUDA_FOUND)
 endif()
 
 if(ENABLE_HIP)
-    list(APPEND vtkh_base_deps blt_hip)
+    list(APPEND vtkh_base_deps blt::hip)
 endif()
 
 if(ENABLE_OPENMP)
@@ -150,6 +150,9 @@ if(MPI_FOUND)
     # install includes
     # setup exported target to point to proper include dir
     target_include_directories(vtkh_core_mpi PUBLIC $<INSTALL_INTERFACE:include/ascent/vtkh>)
+
+    # avoid mpi C++ apis + link dep of libmpi_cxx
+    target_compile_definitions(vtkh_core_mpi PUBLIC ${ASCENT_MPI_SKIP_MPICXX_DEFINES} )
 
     # Install libraries
     install(TARGETS vtkh_core_mpi

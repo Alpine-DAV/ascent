@@ -15,6 +15,16 @@
 #include <sstream>
 #include <stdio.h>
 #include <regex>
+// mpi related includes
+#ifdef ASCENT_MPI_ENABLED
+#include <mpi.h>
+// -- conduit relay mpi
+#include <conduit_relay_mpi.hpp>
+#include <conduit_blueprint_mpi.hpp>
+#endif
+
+using namespace conduit;
+
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
 //-----------------------------------------------------------------------------
@@ -164,11 +174,36 @@ void filter_fields(const conduit::Node &node,
                    std::set<std::string> &fields,
                    conduit::Node &info)
 {
+
   const int num_children = node.number_of_children();
   const std::vector<std::string> names = node.child_names();
   for(int i = 0; i < num_children; ++i)
   {
     const conduit::Node &child = node.child(i);
+
+    // to avoid complex parsing, we added a shortcut case
+    // action: `declare_fields`
+    // fields: ["field1", "field2", .... "fieldN-1"]
+
+    if(child.has_child("action") && child.has_child("fields"))
+    {
+        if(child["action"].as_string() == "declare_fields")
+        {
+            const Node &fields_list = child["fields"];
+            const int num_entries = fields_list.number_of_children();
+            for(int e = 0; e < num_entries;  e++)
+            {
+                const conduit::Node &item = fields_list.child(e);
+                if(item.dtype().is_string())
+                {
+                    fields.insert(item.as_string());
+                }
+            } // for list  entries
+            // early return, user needs to provide a definitive list
+            return;
+        }
+    }
+
     bool is_leaf = child.number_of_children() == 0;
     if(is_leaf)
     {
@@ -318,6 +353,71 @@ bool field_list(const conduit::Node &actions,
   fields.clear();
   detail::filter_fields(actions, fields, info);
   return info.number_of_children() == 0;
+}
+
+//-----------------------------------------------------------------------------
+bool load_actions_file(const std::string &path,
+                       int mpi_comm_id,
+                       conduit::Node &actions)
+{
+
+    int load_ok = 0;
+    int rank = 0;
+    actions.reset();
+
+#ifdef ASCENT_MPI_ENABLED
+
+    if(mpi_comm_id == -1)
+    {
+        // report as failure to load
+        return false;
+    }
+
+    MPI_Comm mpi_comm = MPI_Comm_f2c(mpi_comm_id);
+    MPI_Comm_rank(mpi_comm, &rank);
+
+#endif
+
+    if(rank == 0)
+    {
+        try
+        {
+            actions.load(path);
+            load_ok = 1;
+        }
+        catch(const conduit::Error &e)
+        {
+            actions.reset();
+        }
+    }
+
+#ifdef ASCENT_MPI_ENABLED
+
+    Node n_src, n_reduce;
+    n_src = load_ok;
+    conduit::relay::mpi::sum_all_reduce(n_src,
+                                        n_reduce,
+                                        mpi_comm);
+
+    load_ok = n_reduce.value();
+
+    if(load_ok == 0)
+    {
+        return false;
+    }
+
+    relay::mpi::broadcast_using_schema(actions, 0, mpi_comm);
+
+#else
+
+    if(load_ok == 0)
+    {
+        return false;
+    }
+
+#endif
+
+    return true;
 }
 
 

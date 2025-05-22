@@ -30,6 +30,13 @@ using namespace std;
 using namespace conduit;
 using namespace ascent;
 
+// helper def to see if conduit 0.9.4 or newer
+// which includes a new method to generate root file name string
+// given specific options to relays blueprint mesh method
+#if (CONDUIT_VERSION_MINOR >= 9 ) && (CONDUIT_VERSION_PATCH >= 4 )
+    #define CONDUIT_HAS_ROOT_FILE_NAME_GEN 1
+#endif
+
 
 index_t EXAMPLE_MESH_SIDE_DIM = 20;
 
@@ -82,15 +89,22 @@ TEST(ascent_relay, test_relay_hdf5)
 
     Ascent ascent;
 
-    Node ascent_opts;
-    // we use the mpi handle provided by the fortran interface
-    // since it is simply an integer
-    ascent_opts["runtime"] = "ascent";
-    ascent.open(ascent_opts);
+    Node info;
+    ascent.open();
     ascent.publish(data);
     ascent.execute(actions);
+    ascent.info(info);
     ascent.close();
 
+    std::cout << info.to_yaml();
+
+#ifdef CONDUIT_HAS_ROOT_FILE_NAME_GEN
+    // conduit 0.9.4 provides util that allows us to 
+    // provide this, only check if we are using new enough conduit
+    // check the path of the root file reported in info
+    EXPECT_EQ(info["extracts"][0]["path"].as_string(),
+              output_root);
+#endif
     // make sure the expected root file exists
     EXPECT_TRUE(conduit::utils::is_file(output_root));
 }
@@ -1313,6 +1327,89 @@ TEST(ascent_relay, overlink_spiral_multi_file)
 }
 #endif
 
+//-----------------------------------------------------------------------------
+
+TEST(ascent_relay, test_extract_name_format_keywords)
+{
+    Node mesh;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              25,
+                                              25,
+                                              25,
+                                              mesh);
+
+    string output_path = prepare_output_dir();
+
+    string extract_prefix = "extract_path_{family:05d}_{cycle:04d}_{time:0.4f}";
+    const string extract_file = conduit::utils::join_file_path(output_path, extract_prefix);
+    const string extract_file_final_1 = conduit::utils::join_file_path(output_path,"extract_path_00000_0100_3.1415.cycle_000100.root");
+    const string extract_file_final_2 = conduit::utils::join_file_path(output_path,"extract_path_00001_0100_3.1415.cycle_000100.root");
+
+    string extract_prefix_only_format = "extract_path_%03d_only_format";
+    const string extract_file_only_format = conduit::utils::join_file_path(output_path, extract_prefix_only_format);
+    const string extract_file_only_format_final = conduit::utils::join_file_path(output_path,"extract_path_000_only_format.cycle_000100.root");
+
+    string extract_prefix_no_format = "extract_path_no_format";
+    const string extract_file_no_format = conduit::utils::join_file_path(output_path, extract_prefix_no_format);
+    const string extract_file_no_format_final = conduit::utils::join_file_path(output_path,"extract_path_no_format.cycle_000100.root");
+
+    remove_test_file(extract_file_final_1);
+    remove_test_file(extract_file_final_2);
+    remove_test_file(extract_file_only_format_final);
+    remove_test_file(extract_file_no_format_final);
+
+    // Use Ascent to export our mesh to blueprint flavored hdf5 files
+    Ascent a;
+
+    // open ascent
+    a.open();
+
+    // publish mesh to ascent
+    a.publish(mesh);
+
+    // setup actions
+    Node actions;
+    conduit::Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    conduit::Node &extracts = add_extracts["extracts"];
+
+    // Showing family value incrementation:
+    extracts["e1/type"]  = "relay";
+    extracts["e1/params/path"] = extract_file;
+    extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
+    extracts["e1/params/fields"].append().set("braid");
+    extracts["e2/type"]  = "relay";
+    extracts["e2/params/path"] = extract_file;
+    extracts["e2/params/protocol"] = "blueprint/mesh/hdf5";
+    extracts["e2/params/fields"].append().set("braid");
+
+    // Showing formatting with only a format field:
+    extracts["e3/type"]  = "relay";
+    extracts["e3/params/path"] = extract_file_only_format;
+    extracts["e3/params/protocol"] = "blueprint/mesh/hdf5";
+    extracts["e3/params/fields"].append().set("braid");
+
+    // Showing that family value is added to output file names when no other format given
+    extracts["e4/type"]  = "relay";
+    extracts["e4/params/path"] = extract_file_no_format;
+    extracts["e4/params/protocol"] = "blueprint/mesh/hdf5";
+    extracts["e4/params/fields"].append().set("braid");
+
+    // print our full actions tree
+    std::cout << actions.to_yaml() << std::endl;
+
+    // execute the actions
+    a.execute(actions);
+
+    // close ascent
+    a.close();
+
+    // check that we created an image
+    EXPECT_TRUE(conduit::utils::is_file(extract_file_final_1));
+    EXPECT_TRUE(conduit::utils::is_file(extract_file_final_2));
+    EXPECT_TRUE(conduit::utils::is_file(extract_file_only_format_final));
+    EXPECT_TRUE(conduit::utils::is_file(extract_file_no_format_final));
+}
 
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])

@@ -1,4 +1,4 @@
-.. _ExpressionsObjects:
+.. _ExpressionObjects:
 
 Expression Objects
 ==================

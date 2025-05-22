@@ -27,6 +27,9 @@
 #include <mpi.h>
 #endif
 
+#include <ascent_logging.hpp>
+#include <ascent_logging_old.hpp>
+
 // VTKm includes
 #define VTKM_USE_DOUBLE_PRECISION
 #include <vtkm/cont/DataSet.h>
@@ -931,6 +934,7 @@ VTKHDataAdapter::BlueprintToVTKmDataSet(const Node &node,
     string coords_name   = n_topo["coordset"].as_string();
     const Node &n_coords = node["coordsets"][coords_name];
 
+
     int neles  = 0;
     int nverts = 0;
 
@@ -1444,8 +1448,8 @@ VTKHDataAdapter::StructuredBlueprintToVTKmDataSet
 {
     vtkm::cont::DataSet *result = new vtkm::cont::DataSet();
 
+    string coords_type = n_coords["type"].as_string();
     nverts = n_coords["values/x"].dtype().number_of_elements();
-
     int ndims = 0;
 
     vtkm::cont::CoordinateSystem coords;
@@ -1498,33 +1502,127 @@ VTKHDataAdapter::StructuredBlueprintToVTKmDataSet
 
     result->AddCoordinateSystem(coords);
 
-    int32 x_elems = n_topo["elements/dims/i"].as_int32();
-    int32 y_elems = n_topo["elements/dims/j"].as_int32();
+    int32 x_elems = n_topo["elements/dims/i"].to_int();
+    int32 y_elems = n_topo["elements/dims/j"].to_int();
 
     vtkm::Id3 topo_origin = detail::topo_origin(n_topo);
 
-    if (ndims == 2)
+    if(coords_type == "explicit")
     {
-      vtkm::cont::CellSetStructured<2> cell_set;
-      cell_set.SetPointDimensions(vtkm::make_Vec(x_elems+1,
-                                                 y_elems+1));
-      vtkm::Id2 origin2(topo_origin[0], topo_origin[1]);
-      cell_set.SetGlobalPointIndexStart(origin2);
-      result->SetCellSet(cell_set);
-      neles = x_elems * y_elems;
+      if(ndims == 2)
+      {
+        vtkm::Id x_verts = x_elems + 1;
+        vtkm::Id y_verts = y_elems + 1;
+        neles = x_elems * y_elems;
+        nverts = (x_verts) * (y_verts);
+        
+        std::string ele_shape = "quad";
+        vtkm::UInt8 shape_id;
+        vtkm::IdComponent indices_per;
+        detail::VTKmCellShape(ele_shape, shape_id, indices_per);
+        vtkm::cont::ArrayHandle<vtkm::Id> connectivity;
+        connectivity.Allocate(neles * indices_per);
+        auto conn_portal = connectivity.WritePortal();
+        int offset = 0;
+        // Build Connectivity 
+        for (vtkm::Id i = 0; i < x_elems; ++i) 
+        {
+          for (vtkm::Id j = 0; j < y_elems; ++j) 
+          {
+            vtkm::Id v0 = j * x_verts + i;
+            vtkm::Id v1 = v0 + 1;
+            vtkm::Id v2 = v0 + x_verts;
+            vtkm::Id v3 = v0 + x_verts + 1;
+            
+            conn_portal.Set(offset, v0);// bottom left
+            conn_portal.Set(offset+1, v1); //bottom right
+            conn_portal.Set(offset+2, v3); //top right
+            conn_portal.Set(offset+3, v2); //top left 
+            offset = offset + 4;
+          }
+        }
+        vtkm::cont::CellSetSingleType<> cell_set;
+        cell_set.Fill(nverts, shape_id, indices_per, connectivity);
+        neles = cell_set.GetNumberOfCells();
+        result->SetCellSet(cell_set);
+      }
+      else
+      {
+        int32 z_elems = n_topo["elements/dims/k"].to_int();
+
+        vtkm::Id x_verts = x_elems + 1;
+        vtkm::Id y_verts = y_elems + 1;
+        vtkm::Id z_verts = z_elems + 1;
+        neles = x_elems * y_elems * z_elems;
+        nverts = (x_verts) * (y_verts) * (z_verts);
+        
+        std::string ele_shape = "hex";
+        vtkm::UInt8 shape_id;
+        vtkm::IdComponent indices_per;
+        detail::VTKmCellShape(ele_shape, shape_id, indices_per);
+        vtkm::cont::ArrayHandle<vtkm::Id> connectivity;
+        connectivity.Allocate(neles * indices_per);
+        auto conn_portal = connectivity.WritePortal();
+        int offset = 0;
+        // Build Connectivity (Polyhedral cells)
+        for (vtkm::Id i = 0; i < x_elems; ++i) 
+        {
+          for (vtkm::Id j = 0; j < y_elems; ++j) 
+          {
+            for (vtkm::Id k = 0; k < z_elems; ++k) 
+            {
+              vtkm::Id v0 = k * y_verts * x_verts + j * x_verts + i;
+              vtkm::Id v1 = v0 + 1;
+              vtkm::Id v2 = v0 + x_verts;
+              vtkm::Id v3 = v0 + x_verts + 1;
+              vtkm::Id v4 = v0 + y_verts * x_verts;
+              vtkm::Id v5 = v4 + 1;
+              vtkm::Id v6 = v4 + x_verts;
+              vtkm::Id v7 = v4 + x_verts + 1;
+              
+              conn_portal.Set(offset, v0);
+              conn_portal.Set(offset+1, v1);
+              conn_portal.Set(offset+2, v3);
+              conn_portal.Set(offset+3, v2);
+              conn_portal.Set(offset+4, v4);
+              conn_portal.Set(offset+5, v5);
+              conn_portal.Set(offset+6, v7);
+              conn_portal.Set(offset+7, v6);
+              offset = offset + 8;
+            }
+          }
+        }
+
+        vtkm::cont::CellSetSingleType<> cell_set;
+        cell_set.Fill(nverts, shape_id, indices_per, connectivity);
+        neles = cell_set.GetNumberOfCells();
+        result->SetCellSet(cell_set);
+      }
     }
     else
     {
-      int32 z_elems = n_topo["elements/dims/k"].as_int32();
-      vtkm::cont::CellSetStructured<3> cell_set;
-      cell_set.SetPointDimensions(vtkm::make_Vec(x_elems+1,
-                                                 y_elems+1,
-                                                 z_elems+1));
-      cell_set.SetGlobalPointIndexStart(topo_origin);
-      result->SetCellSet(cell_set);
-      neles = x_elems * y_elems * z_elems;
-
-    }
+      if (ndims == 2)
+      {
+        vtkm::cont::CellSetStructured<2> cell_set;
+        cell_set.SetPointDimensions(vtkm::make_Vec(x_elems+1,
+                                                   y_elems+1));
+        vtkm::Id2 origin2(topo_origin[0], topo_origin[1]);
+        cell_set.SetGlobalPointIndexStart(origin2);
+        result->SetCellSet(cell_set);
+        neles = x_elems * y_elems;
+      }
+      else
+      {
+        int32 z_elems = n_topo["elements/dims/k"].to_int();
+        vtkm::cont::CellSetStructured<3> cell_set;
+        cell_set.SetPointDimensions(vtkm::make_Vec(x_elems+1,
+                                                   y_elems+1,
+                                                   z_elems+1));
+        cell_set.SetGlobalPointIndexStart(topo_origin);
+        result->SetCellSet(cell_set);
+        neles = x_elems * y_elems * z_elems;
+      }
+    }    
     return result;
 }
 
@@ -1885,6 +1983,248 @@ VTKHDataAdapter::AddField(const std::string &field_name,
                 supported_type = true;
             }
         }
+        else if(n_vals.dtype().is_uint8())
+        {
+
+          vtkm::cont::ArrayHandle<vtkm::Float64> vtkm_arr;
+          vtkm_arr.Allocate(num_vals);
+
+          const conduit::uint8 *input = n_vals.value();
+          vtkm::cont::ArrayHandle<conduit::uint8> input_arr = vtkm::cont::make_ArrayHandle(input, num_vals, vtkm::CopyFlag::Off);
+
+          vtkm::cont::Invoker invoker;
+          vtkh::VTKmTypeCast worklet;
+
+          invoker(worklet,input_arr,vtkm_arr);
+
+          // add field to dataset
+          if(assoc_str == "vertex")
+          {
+              dset->AddField(vtkm::cont::Field(field_name.c_str(),
+                                               vtkm::cont::Field::Association::Points,
+                                               vtkm_arr));
+              supported_type = true;
+          }
+          else if( assoc_str == "element")
+          {
+              dset->AddField(vtkm::cont::Field(field_name.c_str(),
+                                               vtkm::cont::Field::Association::Cells,
+                                               vtkm_arr));
+              supported_type = true;
+          }
+        }
+        else if(n_vals.dtype().is_uint16())
+        {
+
+          vtkm::cont::ArrayHandle<vtkm::Float64> vtkm_arr;
+          vtkm_arr.Allocate(num_vals);
+
+          const conduit::uint16 *input = n_vals.value();
+          vtkm::cont::ArrayHandle<conduit::uint16> input_arr = vtkm::cont::make_ArrayHandle(input, num_vals, vtkm::CopyFlag::Off);
+
+          vtkm::cont::Invoker invoker;
+          vtkh::VTKmTypeCast worklet;
+
+          invoker(worklet,input_arr,vtkm_arr);
+
+          // add field to dataset
+          if(assoc_str == "vertex")
+          {
+              dset->AddField(vtkm::cont::Field(field_name.c_str(),
+                                               vtkm::cont::Field::Association::Points,
+                                               vtkm_arr));
+              supported_type = true;
+          }
+          else if( assoc_str == "element")
+          {
+              dset->AddField(vtkm::cont::Field(field_name.c_str(),
+                                               vtkm::cont::Field::Association::Cells,
+                                               vtkm_arr));
+              supported_type = true;
+          }
+        }
+        else if(n_vals.dtype().is_uint32())
+        {
+
+          vtkm::cont::ArrayHandle<vtkm::Float64> vtkm_arr;
+          vtkm_arr.Allocate(num_vals);
+
+          const conduit::uint32 *input = n_vals.value();
+          vtkm::cont::ArrayHandle<conduit::uint32> input_arr = vtkm::cont::make_ArrayHandle(input, num_vals, vtkm::CopyFlag::Off);
+
+          vtkm::cont::Invoker invoker;
+          vtkh::VTKmTypeCast worklet;
+
+          invoker(worklet,input_arr,vtkm_arr);
+
+          // add field to dataset
+          if(assoc_str == "vertex")
+          {
+              dset->AddField(vtkm::cont::Field(field_name.c_str(),
+                                               vtkm::cont::Field::Association::Points,
+                                               vtkm_arr));
+              supported_type = true;
+          }
+          else if( assoc_str == "element")
+          {
+              dset->AddField(vtkm::cont::Field(field_name.c_str(),
+                                               vtkm::cont::Field::Association::Cells,
+                                               vtkm_arr));
+              supported_type = true;
+          }
+        }
+        else if(n_vals.dtype().is_uint64())
+        {
+
+          vtkm::cont::ArrayHandle<vtkm::Float64> vtkm_arr;
+          vtkm_arr.Allocate(num_vals);
+
+          const conduit::uint64 *input = n_vals.value();
+          vtkm::cont::ArrayHandle<conduit::uint64> input_arr = vtkm::cont::make_ArrayHandle(input, num_vals, vtkm::CopyFlag::Off);
+
+          vtkm::cont::Invoker invoker;
+          vtkh::VTKmTypeCast worklet;
+
+          invoker(worklet,input_arr,vtkm_arr);
+
+          // add field to dataset
+          if(assoc_str == "vertex")
+          {
+              dset->AddField(vtkm::cont::Field(field_name.c_str(),
+                                               vtkm::cont::Field::Association::Points,
+                                               vtkm_arr));
+              supported_type = true;
+          }
+          else if( assoc_str == "element")
+          {
+              dset->AddField(vtkm::cont::Field(field_name.c_str(),
+                                               vtkm::cont::Field::Association::Cells,
+                                               vtkm_arr));
+              supported_type = true;
+          }
+        }
+        else if(n_vals.dtype().is_int8())
+        {
+
+          vtkm::cont::ArrayHandle<vtkm::Float64> vtkm_arr;
+          vtkm_arr.Allocate(num_vals);
+
+          const conduit::int8 *input = n_vals.value();
+          vtkm::cont::ArrayHandle<conduit::int8> input_arr = vtkm::cont::make_ArrayHandle(input, num_vals, vtkm::CopyFlag::Off);
+
+          vtkm::cont::Invoker invoker;
+          vtkh::VTKmTypeCast worklet;
+
+          invoker(worklet,input_arr,vtkm_arr);
+
+          // add field to dataset
+          if(assoc_str == "vertex")
+          {
+              dset->AddField(vtkm::cont::Field(field_name.c_str(),
+                                               vtkm::cont::Field::Association::Points,
+                                               vtkm_arr));
+              supported_type = true;
+          }
+          else if( assoc_str == "element")
+          {
+              dset->AddField(vtkm::cont::Field(field_name.c_str(),
+                                               vtkm::cont::Field::Association::Cells,
+                                               vtkm_arr));
+              supported_type = true;
+          }
+        }
+        else if(n_vals.dtype().is_int16())
+        {
+
+          vtkm::cont::ArrayHandle<vtkm::Float64> vtkm_arr;
+          vtkm_arr.Allocate(num_vals);
+
+          const conduit::int16 *input = n_vals.value();
+          vtkm::cont::ArrayHandle<conduit::int16> input_arr = vtkm::cont::make_ArrayHandle(input, num_vals, vtkm::CopyFlag::Off);
+
+          vtkm::cont::Invoker invoker;
+          vtkh::VTKmTypeCast worklet;
+
+          invoker(worklet,input_arr,vtkm_arr);
+
+          // add field to dataset
+          if(assoc_str == "vertex")
+          {
+              dset->AddField(vtkm::cont::Field(field_name.c_str(),
+                                               vtkm::cont::Field::Association::Points,
+                                               vtkm_arr));
+              supported_type = true;
+          }
+          else if( assoc_str == "element")
+          {
+              dset->AddField(vtkm::cont::Field(field_name.c_str(),
+                                               vtkm::cont::Field::Association::Cells,
+                                               vtkm_arr));
+              supported_type = true;
+          }
+        }
+        else if(n_vals.dtype().is_int32())
+        {
+
+          vtkm::cont::ArrayHandle<vtkm::Float64> vtkm_arr;
+          vtkm_arr.Allocate(num_vals);
+
+          const conduit::int32 *input = n_vals.value();
+          vtkm::cont::ArrayHandle<conduit::int32> input_arr = vtkm::cont::make_ArrayHandle(input, num_vals, vtkm::CopyFlag::Off);
+
+          vtkm::cont::Invoker invoker;
+          vtkh::VTKmTypeCast worklet;
+
+          invoker(worklet,input_arr,vtkm_arr);
+
+          // add field to dataset
+          if(assoc_str == "vertex")
+          {
+              dset->AddField(vtkm::cont::Field(field_name.c_str(),
+                                               vtkm::cont::Field::Association::Points,
+                                               vtkm_arr));
+              supported_type = true;
+          }
+          else if( assoc_str == "element")
+          {
+              dset->AddField(vtkm::cont::Field(field_name.c_str(),
+                                               vtkm::cont::Field::Association::Cells,
+                                               vtkm_arr));
+              supported_type = true;
+          }
+        }
+        else if(n_vals.dtype().is_int64())
+        {
+
+          vtkm::cont::ArrayHandle<vtkm::Float64> vtkm_arr;
+          vtkm_arr.Allocate(num_vals);
+
+          const conduit::int64 *input = n_vals.value();
+          vtkm::cont::ArrayHandle<conduit::int64> input_arr = vtkm::cont::make_ArrayHandle(input, num_vals, vtkm::CopyFlag::Off);
+
+          vtkm::cont::Invoker invoker;
+          vtkh::VTKmTypeCast worklet;
+
+          invoker(worklet,input_arr,vtkm_arr);
+
+          // add field to dataset
+          if(assoc_str == "vertex")
+          {
+              dset->AddField(vtkm::cont::Field(field_name.c_str(),
+                                               vtkm::cont::Field::Association::Points,
+                                               vtkm_arr));
+              supported_type = true;
+          }
+          else if( assoc_str == "element")
+          {
+              dset->AddField(vtkm::cont::Field(field_name.c_str(),
+                                               vtkm::cont::Field::Association::Cells,
+                                               vtkm_arr));
+              supported_type = true;
+          }
+        }
+        // ***********************************************************************
+        // ***********************************************************************
         // ***********************************************************************
         // NOTE: TODO OUR VTK-M is not compiled with int32 and int64 support ...
         // ***********************************************************************
@@ -1895,6 +2235,7 @@ VTKHDataAdapter::AddField(const std::string &field_name,
         // ***********************************************************************
         // ***********************************************************************
         // NOTE: int32 should work as of sept 10 2024 
+        // NOTE: int32 & 64 are back to not working as of March 28 2025
         // ***********************************************************************
         //
         //else if(n_vals.dtype().is_int32())
@@ -1969,21 +2310,17 @@ VTKHDataAdapter::AddField(const std::string &field_name,
         if(!supported_type)
         {
 
-          // std::cout << "WE ARE IN UNSUPPORTED DATA TYPE: "
-          //           << n_vals.dtype().name() << std::endl;
-          if(n_vals.dtype().is_uint64())
-          {
-
+            //std::cout << "WE ARE IN UNSUPPORTED DATA TYPE: "
+            //          << n_vals.dtype().name() << std::endl;
+            // convert to float64, we use this as a compromise to cover the widest range
             vtkm::cont::ArrayHandle<vtkm::Float64> vtkm_arr;
             vtkm_arr.Allocate(num_vals);
 
-            const unsigned long long *input = n_vals.value();
-            vtkm::cont::ArrayHandle<unsigned long long> input_arr = vtkm::cont::make_ArrayHandle(input, num_vals, vtkm::CopyFlag::Off);
-
-            vtkm::cont::Invoker invoker;
-            vtkh::VTKmTypeCast worklet;
-
-            invoker(worklet,input_arr,vtkm_arr);
+            // TODO -- FUTURE: Do this conversion w/ device if on device
+            void *ptr = (void*) vtkh::GetVTKMPointer(vtkm_arr);
+            Node n_tmp;
+            n_tmp.set_external(DataType::float64(num_vals),ptr);
+            n_vals.to_float64_array(n_tmp);
 
             // add field to dataset
             if(assoc_str == "vertex")
@@ -1998,36 +2335,6 @@ VTKHDataAdapter::AddField(const std::string &field_name,
                                                  vtkm::cont::Field::Association::Cells,
                                                  vtkm_arr));
             }
-          }
-          else
-          {
-   // st  d::cout << "WE ARE IN UNSUPPORTED DATA TYPE: "
-              //           << n_vals.dtype().name() << std::endl;
-
-              // convert to float64, we use this as a comprise to cover the widest range
-              vtkm::cont::ArrayHandle<vtkm::Float64> vtkm_arr;
-              vtkm_arr.Allocate(num_vals);
-
-              // TODO -- FUTURE: Do this conversion w/ device if on device
-              void *ptr = (void*) vtkh::GetVTKMPointer(vtkm_arr);
-              Node n_tmp;
-              n_tmp.set_external(DataType::float64(num_vals),ptr);
-              n_vals.to_float64_array(n_tmp);
-
-              // add field to dataset
-              if(assoc_str == "vertex")
-              {
-                  dset->AddField(vtkm::cont::Field(field_name.c_str(),
-                                                   vtkm::cont::Field::Association::Points,
-                                                   vtkm_arr));
-              }
-              else if( assoc_str == "element")
-              {
-                  dset->AddField(vtkm::cont::Field(field_name.c_str(),
-                                                   vtkm::cont::Field::Association::Cells,
-                                                   vtkm_arr));
-              }
-          }
         // else
         // {
         //     std::cout << "SUPPORTED DATA TYPE: "
@@ -3069,7 +3376,7 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
       }
       else
       {
-        data_set.PrintSummary(std::cout);
+        //data_set.PrintSummary(std::cout);
         //ASCENT_ERROR("Mixed explicit types not implemented");
         MixedType cells = dyn_cells.AsCellSet<MixedType>();
         Node &topo_ele = output

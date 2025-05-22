@@ -1,0 +1,25 @@
+From 1289d3e568b4aa2ee32b5d78dcc85cbaa0a956bc Mon Sep 17 00:00:00 2001
+From: Cyrus Harrison <cyrush@llnl.gov>
+Date: Mon, 24 Mar 2025 09:48:31 -0700
+Subject: [PATCH] fix symbol export macro order
+
+---
+ src/libs/relay/conduit_relay_io_silo_api.hpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/libs/relay/conduit_relay_io_silo_api.hpp b/src/libs/relay/conduit_relay_io_silo_api.hpp
+index 81ee9a6e..42b8c722 100644
+--- a/src/libs/relay/conduit_relay_io_silo_api.hpp
++++ b/src/libs/relay/conduit_relay_io_silo_api.hpp
+@@ -27,7 +27,7 @@ bool CONDUIT_RELAY_API is_silo_file(const std::string &path,
+ //-----------------------------------------------------------------------------
+ /// Opens a silo file and returns a silo file handle
+ //-----------------------------------------------------------------------------
+-DBfile* CONDUIT_RELAY_API silo_open_file_for_read(const std::string &path);
++CONDUIT_RELAY_API DBfile* silo_open_file_for_read(const std::string &path);
+ 
+ //-----------------------------------------------------------------------------
+ /// Close silo file handle
+-- 
+2.39.3 (Apple Git-145)
+

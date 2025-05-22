@@ -13,6 +13,7 @@
 #include "ascent_mfem_data_adapter.hpp"
 
 #include <ascent_logging.hpp>
+#include <ascent_logging_old.hpp>
 
 // standard lib includes
 #include <iostream>

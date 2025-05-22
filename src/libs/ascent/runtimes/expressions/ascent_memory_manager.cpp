@@ -1,5 +1,6 @@
 #include "ascent_memory_manager.hpp"
 #include <ascent_logging.hpp>
+#include <ascent_logging_old.hpp>
 #include <ascent_config.h>
 
 
@@ -257,7 +258,7 @@ size_t HostMemory::m_free_count = 0;
 
 //-----------------------------------------------------------------------------
 void *
-HostMemory::allocate(size_t bytes)
+HostMemory::allocate_bytes(size_t bytes)
 {
   m_total_bytes_alloced += bytes;
   m_alloc_count++;
@@ -276,7 +277,7 @@ HostMemory::allocate(size_t bytes)
 void *
 HostMemory::allocate(size_t items, size_t item_size)
 {
-  return allocate(items * item_size);
+  return allocate_bytes(items * item_size);
 }
 
 //-----------------------------------------------------------------------------
@@ -305,7 +306,7 @@ size_t DeviceMemory::m_free_count = 0;
 
 //-----------------------------------------------------------------------------
 void *
-DeviceMemory::allocate(size_t bytes)
+DeviceMemory::allocate_bytes(size_t bytes)
 {
 #if !defined(ASCENT_UMPIRE_ENABLED)
      ASCENT_ERROR("Ascent was built without Umpire support. "
@@ -330,7 +331,7 @@ DeviceMemory::allocate(size_t bytes)
 void *
 DeviceMemory::allocate(size_t items, size_t item_size)
 {
-    return allocate(items * item_size);
+    return allocate_bytes(items * item_size);
 }
 
 //-----------------------------------------------------------------------------

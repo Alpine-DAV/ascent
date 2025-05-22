@@ -57,6 +57,19 @@ public:
 };
 
 //-----------------------------------------------------------------------------
+class ASCENT_API VTKHExternalSurfaces : public ::flow::Filter
+{
+public:
+    VTKHExternalSurfaces();
+    virtual ~VTKHExternalSurfaces();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
+//-----------------------------------------------------------------------------
 class ASCENT_API VTKHVectorMagnitude : public ::flow::Filter
 {
 public:
@@ -443,6 +456,19 @@ class ASCENT_API VTKHScale : public ::flow::Filter
 public:
     VTKHScale();
     virtual ~VTKHScale();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
+//-----------------------------------------------------------------------------
+class ASCENT_API VTKHTransform : public ::flow::Filter
+{
+public:
+    VTKHTransform();
+    virtual ~VTKHTransform();
 
     virtual void   declare_interface(conduit::Node &i);
     virtual bool   verify_params(const conduit::Node &params,

@@ -12,6 +12,7 @@
 //-----------------------------------------------------------------------------
 
 #include "ascent_main_runtime.hpp"
+#include <ascent_logging.hpp>
 
 // standard lib includes
 #include <string.h>
@@ -131,6 +132,15 @@ AscentRuntime::~AscentRuntime()
 void
 AscentRuntime::Initialize(const conduit::Node &options)
 {
+
+// handle logging first
+#if defined(ASCENT_MPI_ENABLED)
+    
+#else
+
+#endif
+
+
 #if ASCENT_MPI_ENABLED
     if(!options.has_child("mpi_comm") ||
        !options["mpi_comm"].dtype().is_integer())
@@ -412,8 +422,17 @@ void
 AscentRuntime::ResetInfo()
 {
     m_info.reset();
+    // we cache the result of ascent::about
+    // b/c we want some info from it
+    if(m_about.number_of_children() == 0)
+    {
+        ascent::about(m_about);
+    }
     m_info["runtime/type"] = "ascent";
-    m_info["runtime/options"] = m_runtime_options;
+    m_info["runtime/version"]  = m_about["version"];
+    m_info["runtime/git_sha1"] = m_about["git_sha1"];
+    m_info["runtime/git_tag"]  = m_about["git_tag"];
+    m_info["runtime/options"]  = m_runtime_options;
     m_info["registered_filter_types"] = registered_filter_types();
 }
 
@@ -858,6 +877,11 @@ AscentRuntime::ConvertPipelineToFlow(const conduit::Node &pipeline,
     }
 
     const std::vector<std::string> &child_names = pipeline.child_names();
+
+    if(child_names.empty())
+    {
+      ASCENT_ERROR("Pipeline " << pipeline_name << " empty. Must specify a filter.");
+    }
 
     for(int i = 0; i < pipeline.number_of_children(); ++i)
     {
@@ -1929,6 +1953,91 @@ AscentRuntime::BuildGraph(const conduit::Node &actions)
         // the workspace executes.
         m_save_info_actions.append() = action;
       }
+      else if(action_name == "declare_fields")
+      {
+        // Used with field filtering, we don't need
+        // to process as part of exec
+      }
+      else if(action_name == "open_log")
+      {
+        // Open Ascent Logging Stream
+        // This starts logging
+
+        if(action.has_path("log_threshold"))
+        {
+            ascent::Logger::instance().set_log_threshold(action["log_threshold"].as_string());
+        }
+        else
+        {
+        #if defined(ASCENT_MPI_ENABLED)
+            if(m_rank == 0)
+            {
+                ascent::Logger::instance().set_log_threshold(ascent::Logger::LOG_DEBUG_ID);
+            }
+            else
+            {
+                ascent::Logger::instance().set_log_threshold(ascent::Logger::LOG_WARN_ID);
+            }
+        #else
+            ascent::Logger::instance().set_log_threshold(ascent::Logger::LOG_DEBUG_ID);
+        #endif
+        }
+
+        #if defined(ASCENT_MPI_ENABLED)
+            std::string file_pattern = action.has_path("file_pattern") ? 
+                                   action["file_pattern"].as_string() : "ascent_log_output_rank_{rank:05d}.yaml";
+            
+            int comm_id = flow::Workspace::default_mpi_comm();
+            MPI_Comm mpi_comm = MPI_Comm_f2c(comm_id);
+            int comm_size = 1;
+            MPI_Comm_size(mpi_comm, &comm_size);
+            ASCENT_LOG_OPEN_RANK( file_pattern, m_rank );
+            ASCENT_LOG_DEBUG(conduit_fmt::format("mpi info: rank={}, size={}",
+                                                  m_rank,
+                                                  comm_size));
+        #else
+            std::string file_pattern = action.has_path("file_pattern") ? 
+                                   action["file_pattern"].as_string() : "ascent_log_output.yaml";
+            ASCENT_LOG_OPEN(file_pattern);
+            ASCENT_LOG_DEBUG("MPI not enabled");
+        #endif
+      }
+      else if(action_name == "flush_log")
+      {
+        // Flush Current Log Streams to Disk
+        // This is so they can be seen before ascent is closed out
+        ASCENT_LOG_FLUSH();
+      }
+      else if(action_name == "set_log_threshold")
+      {
+        // Change the logging level
+        if (action.has_path("log_threshold"))
+        {
+            ascent::Logger::instance().set_log_threshold(action["log_threshold"].as_string());
+        }
+        else
+        {
+            ASCENT_WARN("No Log Threshold level given. No changes to logging behavior made.");
+        }
+      }
+      else if(action_name == "set_echo_threshold")
+      {
+        // Change the echo to standard output level
+        if (action.has_path("echo_threshold"))
+        {
+            ascent::Logger::instance().set_echo_threshold(action["echo_threshold"].as_string());
+        }
+        else
+        {
+            ASCENT_WARN("No Echo Threshold level given. No changes to echo output behavior made.");
+        }
+      }
+      else if(action_name == "close_log")
+      {
+        // Closes current log stream
+        // This stops logging
+        ASCENT_LOG_CLOSE();
+      }
       else
       {
         ASCENT_ERROR("Unknown action ' "<<action_name<<"'");
@@ -1996,6 +2105,7 @@ AscentRuntime::Execute(const conduit::Node &actions)
             // fields the actions need
             conduit::Node info;
             bool success = field_list(actions, m_field_list, info);
+
             if(!success)
             {
               ASCENT_ERROR("Field filtering failed: "<<info.to_yaml());

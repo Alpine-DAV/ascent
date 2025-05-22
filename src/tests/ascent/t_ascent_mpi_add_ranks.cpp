@@ -80,49 +80,34 @@ TEST(ascent_mpi_add_mpi_ranks, test_mpi_add_mpi_ranks)
     //
     // Create the actions.
     //
-
-    conduit::Node pipelines;
-    // pipeline 1
-    pipelines["pl1/f1/type"] = "add_mpi_ranks";
-    conduit::Node &params = pipelines["pl1/f1/params"];
-    params["topology"] = "topo";      
-    params["output"] = "ranks"; 
-
-    conduit::Node scenes;
-    scenes["s1/plots/p1/type"] = "pseudocolor";
-    scenes["s1/plots/p1/field"] = "ranks";
-    scenes["s1/plots/p1/pipeline"] = "pl1";
-    scenes["s1/plots/p1/color_table/discrete"] = "true";
-
-    scenes["s1/image_prefix"] = image_file;
-
     conduit::Node actions;
     // add the pipeline
     conduit::Node &add_pipelines = actions.append();
     add_pipelines["action"] = "add_pipelines";
-    add_pipelines["pipelines"] = pipelines;
+    conduit::Node &pipelines = add_pipelines["pipelines"];
     // add the scenes
     conduit::Node &add_scenes= actions.append();
     add_scenes["action"] = "add_scenes";
-    add_scenes["scenes"] = scenes;
+    conduit::Node &scenes = add_scenes["scenes"];
 
-//    conduit::Node extracts;
-//
-//    extracts["e1/type"]  = "relay";
-//    extracts["e1/params/path"] = output_file;
-//    extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
-//    conduit::Node &add_ext= actions.append();
-//    add_ext["action"] = "add_extracts";
-//    add_ext["extracts"] = extracts;
+    // pipeline 1
+    pipelines["pl1/f1/type"] = "add_mpi_ranks";
+    conduit::Node &params = pipelines["pl1/f1/params"];
+    params["topology"] = "topo";
+    params["output"] = "rank"; 
+
+    scenes["s1/plots/p1/type"] = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "rank";
+    scenes["s1/plots/p1/pipeline"] = "pl1";
+    scenes["s1/plots/p1/color_table/discrete"] = "true";
+    scenes["s1/image_prefix"] = image_file;
 
     //
     // Run Ascent
     //
 
     Ascent ascent;
-
     Node ascent_opts;
-    ascent_opts["runtime/type"] = "ascent";
     ascent_opts["mpi_comm"] = MPI_Comm_c2f(comm);
     ascent_opts["exceptions"] = "forward";
     ascent.open(ascent_opts);

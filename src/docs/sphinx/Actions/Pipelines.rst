@@ -51,7 +51,7 @@ filter to extract the intersection of what remains from the threshold with a sph
   clip_params["sphere/radius"]   = .1;
   pipelines["pl2/f2/params/"] = clip_params;
 
-  // make some imaages of the data
+  // make some images of the data
   conduit::Node scenes;
   // add a plot of pipeline 1
   scenes["s1/plots/p1/type"] = "pseudocolor";
@@ -82,19 +82,8 @@ filter to extract the intersection of what remains from the threshold with a sph
   ascent.execute(actions);
   ascent.close();
 
-Ascent and VTK-h are under heavy development and features are being added rapidly.
-As we stand up the infrastructure necessary to support a wide variety filter we created the following filters for the alpha release:
 
-  - Contour
-  - Threshold
-  - Slice
-  - Three Slice
-  - Automatic Slice 
-  - Clip
-  - Clip by field
-  - Isovolume
-  - Vector magnitude
-
+Ascent is under active development and features are being added rapidly.
 In the following section we provide brief descriptions and code examples of the supported filters.
 For complete code examples, please consult the unit tests located in ``src/tests/ascent``..
 
@@ -103,16 +92,12 @@ Filters
 -------
 Our filter API consists of the type of filter and the parameters associated with the filter in the general form:
 
-.. code-block:: json
+.. code-block:: yaml
 
-  {
-    "type"   : "filter_name",
-    "params":
-    {
-      "string_param" : "string",
-      "double_param" : 2.0
-    }
-  }
+  type: "filter_name"
+  params:
+      string_param: "string"
+      double_param: 2.0
 
 In c++, the equivalent declarations would be as follows:
 
@@ -122,9 +107,6 @@ In c++, the equivalent declarations would be as follows:
   filter["type"] = "filter_name";
   filter["params/string_param"] = "string";
   filter["params/double_param"] = 2.0;
-
-Included Filters
-^^^^^^^^^^^^^^^^
 
 Contour
 ~~~~~~~
@@ -281,7 +263,7 @@ all three offsets are ``0.0``.
   conduit::Node &slice_params = pipelines["pl1/f1/params"];
   slice_params["x_offset"] = 1.f;   // largest value on the x-axis
   slice_params["y_offset"] = 0.f;   // middle of the y-axis
-  slice_params["z_offset"] = -1.f;  // smalles value of the z-axis
+  slice_params["z_offset"] = -1.f;  // smallest value of the z-axis
 
 .. _threeslice2fig:
 
@@ -607,6 +589,87 @@ values are removed from the data set.
 
     An example of creating a iso-volume of values between 5.0 and 10.0.
 
+Transform
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The transform filter allows you to scale, translate, reflect, and rotate your mesh.
+It also accepts a general 4x4 transformation matrix.
+
+Translate Example:
+
+.. code-block:: yaml
+
+  -
+    action: "add_pipelines"
+    pipelines:
+      pl1:
+        f1:
+          type: "transform"
+          params:
+            translate:
+              x: 23.0
+              y: 15.0
+
+Scale Example:
+
+.. code-block:: yaml
+
+  -
+    action: "add_pipelines"
+    pipelines:
+      pl1:
+        f1:
+          type: "transform"
+          params:
+            scale:
+              x: 2.0
+              y: 0.5
+              z: 2.0
+
+Reflect Example:
+
+.. code-block:: yaml
+
+  -
+    action: "add_pipelines"
+    pipelines:
+      pl1:
+        f1:
+          type: "transform"
+          params:
+            reflect:
+              x: 1.0
+
+Rotate Example:
+
+.. code-block:: yaml
+
+  -
+    action: "add_pipelines"
+    pipelines:
+      pl1:
+        f1:
+          type: "transform"
+          params:
+            rotate:
+              angle: 45.0
+              axis:
+                y: 1.0
+
+
+Matrix Example:
+
+.. code-block:: yaml
+
+  -
+    action: "add_pipelines"
+    pipelines:
+      pl1:
+        f1:
+          type: "transform"
+          params:
+            matrix: [2.0, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 50.0, 0.0, 0.0, 2.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+
+
 Particle Advection
 ~~~~~~~~~~~~~~~~~~~~
 The particle advection filter distributes some number of weightless particles over a user-specified vector field (``field``) and, given some advection distance (``step_size``), advects them for some number of advection steps (``num_steps``).
@@ -795,7 +858,7 @@ Otherwise, the resulting streamlines can be saved via an extract.
 
 Vector Magnitude
 ~~~~~~~~~~~~~~~~
-Vector magnitude creates a new field on the data set representing the magitude
+Vector magnitude creates a new field on the data set representing the magnitude
 of a vector variable. The only parameters are the input vector field name
 and the name of the new field.
 
@@ -840,7 +903,7 @@ Composite Vector
 ~~~~~~~~~~~~~~~~
 Composite Vector creates a new vector field on the data set
 by combining two or three scalar fields into a vector.
-The first two fields are required and the presense of the
+The first two fields are required and the presence of the
 third field dictates whether a 2D or 3D vector is created.
 Input fields can be different types (e.g., int32 and float32),
 and the resulting vector field will be a float64.
@@ -863,7 +926,7 @@ Recenter
 ~~~~~~~~
 Recenter changes the association of a field. Fields associated with either `element` or `vertex` can
 be interchanged by averaging the surrounding values. When recentering to a element associated field, all vertex
-values incident to a element are averaged, and similarly when rencentering to a vertex associated field,
+values incident to a element are averaged, and similarly when recentering to a vertex associated field,
 all element values incident to the vertex are averaged. If a field is already of the desired associated, then
 the nothing is done and the field is simply passed through the filter. Note: ghost zones must be available when
 the data set has more than one domain. Without ghost, the averaging will not be smooth across domain boundaries.
@@ -883,6 +946,7 @@ Uniform Grid
 Uniform Grid filter changes the coordinate system of the input mesh to that of the user-specified regular mesh. Input fields are transferred by sampling the data at the vertex locations of the output geometry. For the output geometry, users must specify the field (`field`) to be sampled, and have the option to specify the origin (`origin`), the number of points along each axis (`dims`) from the origin, and the spacing between these points (`spacing`). 
 
 For distributed data, the final output of this filter is composited on the root process, and ties for sampled points are handled by taking the average of all valid values.
+
 .. code-block:: c++
 
   conduit::Node pipelines;
@@ -906,8 +970,8 @@ For distributed data, the final output of this filter is composited on the root 
 Gradient
 ~~~~~~~~
 Computes the gradient of a vertex-centered input field for every element
-in the input data set. Fields will be automaticall recentered if they
-are elemenet-centered.
+in the input data set. Fields will be automatically recentered if they
+are element-centered.
 The gradient computation can either generate cell center based gradients,
 which are fast but less accurate, or more accurate but slower
 point based gradients (default).
@@ -927,8 +991,8 @@ point based gradients (default).
 Vorticity
 ~~~~~~~~~
 Computes the vorticity of a vertex-centered input field for every element
-in the input data set. Fields will be automaticall recentered if they
-are elemenet-centered.
+in the input data set. Fields will be automatically recentered if they
+are element-centered.
 The vorticity computation (based on the gradient) can either generate
 cell center based gradients, which are fast but less accurate, or more
 accurate but slower point based gradients (default).
@@ -948,7 +1012,7 @@ Q-Criterion
 ~~~~~~~~~~~
 Computes the qcriterion of a vertex-centered input field for every element
 in the input data set. Fields will be automaticall recentered if they
-are elemenet-centered.
+are element-centered.
 The qcriterion computation (based on the gradient) can either generate
 cell center based gradients, which are fast but less accurate, or more
 accurate but slower point based gradients (default).
@@ -987,7 +1051,7 @@ The output field of the MIR Filter will be the name of the material set and can 
 Add MPI Ranks as Field Data
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Ascent provides a filter to add MPI rank information to a mesh. 
-If the input data has multiple topolgies, the user must specify which topology to add the new field to.
+If the input data has multiple topologies, the user must specify which topology to add the new field to.
 The user also has the option of specifying the output name for the new field.
 
 .. code-block:: c++
@@ -1011,7 +1075,7 @@ The user also has the option of specifying the output name for the new field.
 Add Domain IDs as Field Data
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Ascent provides a filter to add domain ID information to a mesh. 
-If the input data has multiple topolgies, the user must specify which topology to add the new field to.  
+If the input data has multiple topologies, the user must specify which topology to add the new field to.  
 The user also has the option of specifying the output name for the new field.
 
 .. code-block:: c++
@@ -1037,39 +1101,32 @@ Partitioning
 Partitioning meshes is commonly needed in order to evenly distribute work
 among many simulation ranks. Ascent utilizes the ``partition()`` functions provided from Conduit::Blueprint. Blueprint provides two ``partition()`` functions
 that can be used to split or recombine Blueprint meshes in serial or parallel.
-Full M:N repartioning is supported. The ``partition()`` functions are in the
+Full M:N repartitioning is supported. The ``partition()`` functions are in the
 serial and parallel Blueprint libraries, respectively.
+Functionality and further descriptions of optional parameters can be found in the Conduit::Blueprint `documentation <https://llnl-conduit.readthedocs.io/en/latest/blueprint_mesh_partition.html#partitioning>`_.
 
 .. code:: cpp
 
-    // Serial
-    void conduit::blueprint::mesh::partition(const Node &mesh,
-                                             const Node &options,
-                                             Node &output);
+  conduit::Node pipelines;
+  // pipeline 1
+  pipelines["pl1/f1/type"] = "partition";
+  //params optional
+  pipelines["pl1/f1/params/target"] = 1;
+  pipelines["pl1/f1/params/fields"].append() = "pink";
+  pipelines["pl1/f1/params/fields"].append() = "pony";
+  pipelines["pl1/f1/params/fields"].append() = "club";
+  pipelines["pl1/f1/params/merge_tolerance"] = 0.000001;
+  pipelines["pl1/f1/params/mapping"] = 0; //turns off; on by default
+  pipelines["pl1/f1/params/build_adjsets"] = 1;
 
-    // Parallel
-    void conduit::blueprint::mpi::mesh::partition(const Node &mesh,
-                                                  const Node &options,
-                                                  Node &output,
-                                                  MPI_Comm comm);
+   
 
 
-Partitioning meshes using Blueprint will use any options present to determine
-how the partitioning process will behave. Typically, a caller would pass options
-containing selections if pieces of domains are desired. The partitioner processes
-any selections and then examines the desired target number of domains and will then
-decide whether domains must be moved among ranks (only in parallel version) and
-then locally combined to achieve the target number of domains. The combining
-process will attempt to preserve the input topology type for the output topology.
-However, in cases where lower topologies cannot be used, the algorithm will promote
-the extracted domain parts towards more general topologies and use the one most
-appropriate to contain the inputs.
-
-In parallel, the ``partition()`` function will make an effort to redistribute data across MPI
+In parallel, the Partition filter will make an effort to redistribute data across MPI
 ranks to attempt to balance how data are assigned. Domains produced from selections
 are assigned round-robin across ranks from rank 0 through rank N-1 until all
 domains have been assigned. This assignment is carried out after extracting
-selections locally so they can be restributed among ranks
+selections locally so they can be redistributed among ranks
 before being combined into the target number of domains.
 
 
@@ -1082,95 +1139,112 @@ before being combined into the target number of domains.
 
 Options
 +++++++
-The ``partition()`` functions accept a node containing options. The options node
-can be empty and all options are optional. If no options are given, each input mesh
-domain will be fully selected. It is more useful to pass selections as part of the
-option node with additional options that tell the algorithm how to split or combine
-the inputs. If no selections are present in the options node then the partitioner
-will create selections of an  appropriate type that selects all elements in each
+The Partition filter accepts optional parameters. 
+If no optional parameters are given, each input mesh
+domain will be fully selected. 
+If no ``selections`` are specified as ``params`` then the partitioner
+will create selections of an appropriate type that selects all elements in each
 input domain.
 
-The ``target`` option is useful for setting the target number of domains in the
+The ``target`` parameter is useful for setting the target number of domains in the
 final output mesh. If the target value is larger than the number of input domains
 or selections then the mesh will be split to achieve that target number of domains.
 This may require further subdividing selections. Alternatively, if the target is
 smaller than the number of selections then the selections will be combined to
 yield the target number of domains. The combining is done such that smaller element
-count domains are combined first. Additionally, Ascent provides an optional boolean parameter, ``distributed``, which dictates if the number of chosen target domains is applied across ranks (``true``, default), or to each rank individually (``false``).
+count domains are combined first. 
+Additionally, Ascent provides an optional boolean parameter, ``distributed``, which dictates if the number 
+of chosen target domains is applied across ranks (``true``, default), or to each rank individually (``false``).
 
 .. tabularcolumns:: |p{1.5cm}|p{4cm}|L|
 
-+------------------+-----------------------------------------+------------------------------------------+
-| **Option**       | **Description**                         | **Example**                              |
-+------------------+-----------------------------------------+------------------------------------------+
-| selections       | A list of selection objects that        | .. code:: yaml                           |
-|                  | identify regions of interest from the   |                                          |
-|                  | input domains. Selections can be        |    selections:                           |
-|                  | different on each MPI rank.             |      -                                   |
-|                  |                                         |       type: logical                      |
-|                  |                                         |       start: [0,0,0]                     |
-|                  |                                         |       end: [9,9,9]                       |
-|                  |                                         |       domain_id: 10                      |
-+------------------+-----------------------------------------+------------------------------------------+
-| target           | An optional integer that determines the | .. code:: yaml                           |
-|                  | fields containing original domains and  |                                          |
-|                  | number of domains in the output. If     |    target: 4                             |
-|                  | given, the value must be greater than 0.|                                          |
-|                  | Values larger than the number of        |                                          |
-|                  | selections cause domains to be split.   |                                          |
-|                  | Values smaller than the number of       |                                          |
-|                  | selections cause domains to be combined.|                                          |
-|                  | Invalid values are ignored.             |                                          |
-|                  |                                         |                                          |
-|                  | If not given, the output will contain   |                                          |
-|                  | the number of selections. In parallel,  |                                          |
-|                  | the largest target value from the ranks |                                          |
-|                  | will be used for all ranks.             |                                          |
-+------------------+-----------------------------------------+------------------------------------------+
-| fields           | An list of strings that indicate the    | .. code:: yaml                           |
-|                  | names of the fields to extract in the   |                                          |
-|                  | output. If this option is not provided, |    fields: ["dist", "pressure"]          |
-|                  | all fields will be extracted.           |                                          |
-+------------------+-----------------------------------------+------------------------------------------+
-| mapping          | An integer that determines whether      | .. code:: yaml                           |
-|                  | fields containing original domains and  |                                          |
-|                  | ids will be added in the output. These  |    mapping: 0                            |
-|                  | fields enable one to know where each    |                                          |
-|                  | vertex and element came from originally.|                                          |
-|                  | Mapping is on by default. A non-zero    |                                          |
-|                  | value turns it on and a zero value turns|                                          |
-|                  | it off.                                 |                                          |
-+------------------+-----------------------------------------+------------------------------------------+
-| merge_tolerance  | A double value that indicates the max   | .. code:: yaml                           |
-|                  | allowable distance between 2 points     |                                          |
-|                  | before they are considered to be        |    merge_tolerance: 0.000001             |
-|                  | separate. 2 points spaced smaller than  |                                          |
-|                  | this distance will be merged when       |                                          |
-|                  | explicit coordsets are combined.        |                                          |
-+------------------+-----------------------------------------+------------------------------------------+
-| distributed      | An optional boolean value for parallel  | .. code:: yaml                           |
-|                  | execution. If true, the chosen number   |                                          |
-|                  | of target domains will be applied       |    distributed: "false"                  |
-|                  | across all ranks. If false, the chosen  |                                          |
-|                  | number of target domains will be        |                                          |
-|                  | applied to each rank individually.      |                                          |
-|                  |                                         |                                          |
-|                  | If not given, the default is true.      |                                          |
-+------------------+-----------------------------------------+------------------------------------------+
++---------------------+-----------------------------------------+------------------------------------------+
+| **Option**          | **Description**                         | **Example**                              |
++---------------------+-----------------------------------------+------------------------------------------+
+| selections          | A list of selection objects that        | .. code:: yaml                           |
+|                     | identify regions of interest from the   |                                          |
+|                     | input domains. Selections can be        |    selections:                           |
+|                     | different on each MPI rank.             |      type: "logical"                     |
+|                     |                                         |      start: [0,0,0]                      |
+|                     |                                         |      end: [9,9,9]                        |
+|                     |                                         |      domain_id: 10                       |
++---------------------+-----------------------------------------+------------------------------------------+
+| target              | An optional integer that determines the | .. code:: yaml                           |
+|                     | fields containing original domains and  |                                          |
+|                     | number of domains in the output. If     |    target: 4                             |
+|                     | given, the value must be greater than 0.|                                          |
+|                     | Values larger than the number of        |                                          |
+|                     | selections cause domains to be split.   |                                          |
+|                     | Values smaller than the number of       |                                          |
+|                     | selections cause domains to be combined.|                                          |
+|                     | Invalid values are ignored.             |                                          |
+|                     |                                         |                                          |
+|                     | If not given, the output will contain   |                                          |
+|                     | the number of selections. In parallel,  |                                          |
+|                     | the largest target value from the ranks |                                          |
+|                     | will be used for all ranks.             |                                          |
++---------------------+-----------------------------------------+------------------------------------------+
+| fields              | An list of strings that indicate the    | .. code:: yaml                           |
+|                     | names of the fields to extract in the   |                                          |
+|                     | output. If this option is not provided, |    fields: ["dist", "pressure"]          |
+|                     | all fields will be extracted.           |                                          |
++---------------------+-----------------------------------------+------------------------------------------+
+| mapping             | An integer that determines whether      | .. code:: yaml                           |
+|                     | fields containing original domains and  |                                          |
+|                     | ids will be added in the output. These  |    mapping: 0                            |
+|                     | fields enable one to know where each    |                                          |
+|                     | vertex and element came from originally.|                                          |
+|                     | Mapping is on by default. A non-zero    |                                          |
+|                     | value turns it on and a zero value turns|                                          |
+|                     | it off.                                 |                                          |
++---------------------+-----------------------------------------+------------------------------------------+
+| merge_tolerance     | A double value that indicates the max   | .. code:: yaml                           |
+|                     | allowable distance between 2 points     |                                          |
+|                     | before they are considered to be        |    merge_tolerance: 0.000001             |
+|                     | separate. 2 points spaced smaller than  |                                          |
+|                     | this distance will be merged when       |                                          |
+|                     | explicit coordsets are combined.        |                                          |
++---------------------+-----------------------------------------+------------------------------------------+
+| distributed         | An optional boolean value for parallel  | .. code:: yaml                           |
+|                     | execution. If true, the chosen number   |                                          |
+|                     | of target domains will be applied       |    distributed: "false"                  |
+|                     | across all ranks. If false, the chosen  |                                          |
+|                     | number of target domains will be        |                                          |
+|                     | applied to each rank individually.      |                                          |
+|                     |                                         |                                          |
+|                     | If not given, the default is true.      |                                          |
++---------------------+-----------------------------------------+------------------------------------------+
+| build_adjsets       | An integer that determines whether      | .. code:: yaml                           |
+|                     | the partitioner should build adjsets,   |                                          |
+|                     | if they are present in the selected     |    build_adjsets: 1                      |
+|                     | topology.                               |                                          |
++---------------------+-----------------------------------------+------------------------------------------+
+| original_element_ids| A string value that provides desired    | .. code::yaml                            |
+|                     | field name used to contain original     |                                          |
+|                     | element ids created from partitioning.  |    original_element_ids: "elem_name"     |
+|                     | The default value is                    |                                          |
+|                     | original_element_ids.                   |                                          |
++---------------------+-----------------------------------------+------------------------------------------+
+| original_vertex_ids | A string value that provides desired    | .. code::yaml                            |
+|                     | field name used to contain original     |                                          |
+|                     | vertex ids created from partitioning.   |    original_vertex_ids: "vert_name"      |
+|                     | The default value is                    |                                          |
+|                     | original_vertex_ids.                    |                                          |
++---------------------+-----------------------------------------+------------------------------------------+
 
 
 Selections
 ++++++++++
-Selections can be specified in the options for the ``partition()`` function to
+Selections can be specified in the options for the Partition Filter to
 select regions of interest that will participate in mesh partitioning. If
 selections are not used then all elements from the input meshes will be
-selected to partitipate in the partitioning process. Selections can be further
+selected to participate in the partitioning process. Selections can be further
 subdivided if needed to arrive at the target number of domains. Selections can
 target specific domains and topologies as well. If a selection does not apply
 to the input mesh domains then no geometry is produced in the output for that
 selection.
 
-The ``partition()`` function's options support 4 types of selections:
+The Partition filter supports 4 types of selections:
 
 .. tabularcolumns:: |p{1.5cm}|p{2cm}|L|
 
@@ -1202,31 +1276,29 @@ operate on the specified topology only.
 | type             | The selection type                      | .. code:: yaml                           |
 |                  |                                         |                                          |
 |                  |                                         |    selections:                           |
-|                  |                                         |      -                                   |
-|                  |                                         |       type: logical                      |
+|                  |                                         |       type: "logical"                    |
 +------------------+-----------------------------------------+------------------------------------------+
 | domain_id        | The domain_id to which the selection    | .. code:: yaml                           |
 |                  | will apply. This is almost always an    |                                          |
 |                  | unsigned integer value.                 |    selections:                           |
-|                  |                                         |      -                                   |
-|                  |                                         |       type: logical                      |
+|                  |                                         |       type: "logical"                    |
 |                  |                                         |       domain_id: 10                      |
 |                  |                                         |                                          |
 |                  |                                         | .. code:: yaml                           |
 |                  |                                         |                                          |
 |                  | For field selections, domain_id is      |    selections:                           |
-|                  | allowed to be a string "any" so a single|      -                                   |
-|                  | selection can apply to many domains.    |       type: logical                      |
-|                  |                                         |       domain_id: any                     |
+|                  | allowed to be a string "any" so a single|       type: "logical"                    |
+|                  | selection can apply to many domains.    |       domain_id = "any"                  |
+|                  |                                         |                                          |
 |                  |                                         |                                          |
 +------------------+-----------------------------------------+------------------------------------------+
 | topology         | The topology to which the selection     | .. code:: yaml                           |
 |                  | will apply.                             |                                          |
 |                  |                                         |    selections:                           |
-|                  |                                         |      -                                   |
-|                  |                                         |       type: logical                      |
+|                  |                                         |       type: "logical"                    |
 |                  |                                         |       domain_id: 10                      |
-|                  |                                         |       topology: mesh                     |
+|                  |                                         |       topology: "mesh"                   |
+|                  |                                         |                                          |
 +------------------+-----------------------------------------+------------------------------------------+
 
 Logical Selection
@@ -1237,13 +1309,17 @@ beyond the actual mesh's logical extents, they will be clipped. The partitioner 
 automatically subdivide logical selections into smaller logical selections, if needed,
 preserving the logical structure of the input topology into the output.
 
-.. code:: yaml
+.. code:: cpp
 
-  selections:
-    -
-     type: logical
-     start: [0,0,0]
-     end: [9,9,9]
+  conduit::Node pipelines;
+  // pipeline 1
+  pipelines["pl1/f1/type"] = "partition";
+  //params optional
+  pipelines["pl1/f1/params/selections/type"] = "logical";
+  const float start[3] = {0,0,0};
+  const float end[3] = {10,10,10};
+  pipelines["pl1/f1/params/selections/start"].set(start,3); 
+  pipelines["pl1/f1/params/selections/end"].set(end,3); 
 
 Explicit Selection
 ******************
@@ -1251,12 +1327,15 @@ The explicit selection allows the partitioner to extract a list of elements.
 This is used when the user wants to target a specific set of elements.
 The output will result in an explicit topology.
 
-.. code:: yaml
+.. code:: cpp
 
-  selections:
-    -
-     type: explicit
-     elements: [0,1,2,3,100,101,102]
+  conduit::Node pipelines;
+  // pipeline 1
+  pipelines["pl1/f1/type"] = "partition";
+  //params optional
+  pipelines["pl1/f1/params/selections/type"] = "explicit";
+  const int elements[6] = [0,1,2,3,100,101,102]; 
+  pipelines["pl1/f1/params/selections/elements"].set(elements,6); 
 
 
 Ranges Selection
@@ -1265,12 +1344,16 @@ The ranges selection is similar to the explicit selection except that it identif
 ranges of elements using pairs of numbers. The list of ranges must be a multiple of
 2 in length. The output will result in an explicit topology.
 
-.. code:: yaml
+.. code:: cpp
 
-  selections:
-    -
-     type: ranges
-     ranges: [0,3,100,102]
+  conduit::Node pipelines;
+  // pipeline 1
+  pipelines["pl1/f1/type"] = "partition";
+  //params optional
+  pipelines["pl1/f1/params/selections/type"] = "ranges";
+  const int elements[4] = [0,3,100,102]; 
+  pipelines["pl1/f1/params/selections/elements"].set(elements,4); 
+
 
 Field Selection
 ***************
@@ -1285,11 +1368,34 @@ can be set to "any" if it is desired that the field selection will be applied to
 all domains in the input mesh. The domain_id value can still be set to specific
 integer values to limit the set of domains over which the selection will be applied.
 
-.. code:: yaml
++------------------+-----------------------------------------+------------------------------------------+
+| **Option**       | **Description**                         | **Example**                              |
++------------------+-----------------------------------------+------------------------------------------+
+| field            | The name of the element field that will | .. code:: yaml                           |
+|                  | be used for partitioning. The field     |                                          |
+|                  | shall contain non-negative domain       |    selections:                           |
+|                  | numbers.                                |       type: "field"                      |
+|                  |                                         |       domain_id: "any"                   |
+|                  |                                         |                                          |
++------------------+-----------------------------------------+------------------------------------------+
+| destination_ranks| An optional list of integers            | .. code:: yaml                           |
+|                  | representing the MPI rank where the     |                                          |
+|                  | domain will be sent after partitioning. |    selections:                           |
+|                  | This option can help ensure domains for |       type: "field"                      |
+|                  | topologies partitioned via multiple     |       field: "albatraoz"                 |
+|                  | calls to partition() end up together on |       domain_id: "any"                   |
+|                  | a target MPI rank. The example shows    |       destination_ranks: [0,1,2,3]       |
+|                  | domain 0 going to MPI rank 0 and so on. |                                          |
+|                  |                                         |                                          |
++------------------+-----------------------------------------+------------------------------------------+
 
-  selections:
-    -
-     type: field
-     domain_id: any
-     field: fieldname
+.. code:: cpp
+
+  conduit::Node pipelines;
+  // pipeline 1
+  pipelines["pl1/f1/type"] = "partition";
+  //params optional
+  pipelines["pl1/f1/params/selections/type"] = "field";
+  pipelines["pl1/f1/params/selections/domain_id"] = "any";
+  pipelines["pl1/f1/params/selections/field"] = "padam_padam"; 
 

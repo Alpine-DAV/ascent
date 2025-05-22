@@ -194,6 +194,7 @@ RoverXRay::execute()
 
     std::string topo_name = collection->field_topology(field_name);
 
+    // Returns an empty dataset if topo_name doesn't exist in the collection
     vtkh::DataSet &dataset = collection->dataset_by_topology(topo_name);
 
     vtkmCamera camera;
@@ -211,12 +212,13 @@ RoverXRay::execute()
     CameraGenerator generator(camera, width, height);
 
     Rover tracer;
+    int mpi_comm_id = -1;
 #ifdef ASCENT_MPI_ENABLED
-    int comm_id = flow::Workspace::default_mpi_comm();
-    rover::Logger::get_instance()->set_mpi_comm_id(comm_id);
+    mpi_comm_id = flow::Workspace::default_mpi_comm();
+    rover::Logger::get_instance()->set_mpi_comm_id(mpi_comm_id);
     /// these use different styles of naming functions ....
-    rover::DataLogger::GetInstance()->set_mpi_comm_id(comm_id);
-    tracer.set_mpi_comm_handle(comm_id);
+    rover::DataLogger::GetInstance()->set_mpi_comm_id(mpi_comm_id);
+    tracer.set_mpi_comm_handle(mpi_comm_id);
 #endif
 
     if(params().has_path("precision"))
@@ -232,22 +234,23 @@ RoverXRay::execute()
     // Create some basic settings
     //
     RenderSettings settings;
+    settings.m_render_mode = rover::energy;
     settings.m_primary_field = params()["absorption"].as_string();
-
+    
+    // TODO: investigate how/why this is getting set, even if emission is not specified
+    // example: if absorption == "radial", why is emission also == "radial"
     if(params().has_path("emission"))
     {
-       settings.m_secondary_field = params()["emission"].as_string();
+      settings.m_secondary_field = params()["emission"].as_string();
     }
 
     if(params().has_path("unit_scalar"))
     {
-       settings.m_energy_settings.m_unit_scalar = params()["unit_scalar"].to_float64();
+      settings.m_energy_settings.m_unit_scalar = params()["unit_scalar"].to_float64();
     }
 
-
-    settings.m_render_mode = rover::energy;
-
     tracer.set_render_settings(settings);
+
     for(int i = 0; i < dataset.GetNumberOfDomains(); ++i)
     {
       tracer.add_data_set(dataset.GetDomain(i));
@@ -266,15 +269,14 @@ RoverXRay::execute()
     std::string filename = params()["filename"].as_string();
     if(cycle != -1)
     {
-      filename = expand_family_name(filename, cycle);
+      filename = expand_path_special_variables(filename, mpi_comm_id, cycle);
     }
 
     filename = output_dir(filename);
 
     if(params().has_path("blueprint"))
     {
-
-
+      // TODO: validate that protocol is "hdf5", "yaml", or "json" in verify_params
       std::string protocol = params()["blueprint"].as_string();
       conduit::Node multi_domain;
       conduit::Node &dom = multi_domain.append();
@@ -334,11 +336,11 @@ RoverXRay::execute()
       bov_filename = output_dir(bov_filename);
       if(cycle != -1)
       {
-        tracer.save_bov(expand_family_name(bov_filename, cycle));
+        tracer.save_bov(expand_path_special_variables(bov_filename, mpi_comm_id, cycle));
       }
       else
       {
-        tracer.save_bov(expand_family_name(bov_filename));
+        tracer.save_bov(expand_path_special_variables(bov_filename, mpi_comm_id));
       }
     }
     tracer.finalize();
@@ -445,9 +447,10 @@ RoverVolume::execute()
     CameraGenerator generator(camera, width, height);
 
     Rover tracer;
+    int mpi_comm_id = -1;
 #ifdef ASCENT_MPI_ENABLED
-    int comm_id =flow::Workspace::default_mpi_comm();
-    tracer.set_mpi_comm_handle(comm_id);
+    mpi_comm_id =flow::Workspace::default_mpi_comm();
+    tracer.set_mpi_comm_handle(mpi_comm_id);
 #endif
 
     if(params().has_path("precision"))
@@ -514,11 +517,11 @@ RoverVolume::execute()
     std::string filename = params()["filename"].as_string();
     if(cycle != -1)
     {
-      filename = expand_family_name(filename, cycle);
+      filename = expand_path_special_variables(filename, mpi_comm_id, cycle);
     }
     else
     {
-      filename = expand_family_name(filename);
+      filename = expand_path_special_variables(filename, mpi_comm_id);
     }
     filename = output_dir(filename);
 

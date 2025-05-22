@@ -40,6 +40,7 @@
 #include <mpi.h>
 #include <conduit_blueprint_mpi_mesh.hpp>
 #include <conduit_blueprint_mpi.hpp>
+#include <conduit_relay_mpi_io_blueprint.hpp>
 #endif
 
 #if defined(ASCENT_VTKM_ENABLED)
@@ -319,22 +320,53 @@ BlueprintPartition::verify_params(const conduit::Node &params,
     info.reset();
     bool res = true;
 
-    if(! params.has_child("target") ||
-       ! params["target"].dtype().is_int() )
+    res &= check_numeric("target",params, info, false, false);
+
+    if(params.has_child("selections"))
     {
-        info["errors"].append() = "Missing required int parameter 'target'";
+      res &= check_string("selections/type",params, info, true);
+      //domain_id can be int or "any"
+      res &= (check_string("selections/domain_id",params, info, false) || check_numeric("selections/domain_id", params, info, false, false));
+      res &= check_string("selections/topology",params, info, false);
     }
+
+    if(params.has_child("fields"))
+    {
+      if(!params["fields"].dtype().is_list())
+      {
+        res = false;
+        info["errors"].append() = "fields is not a list";
+      }
+    }
+
+    res &= check_numeric("mapping",params, info, false, false);
+    res &= check_numeric("merge_tolerance",params, info, false, false);
+    res &= check_numeric("build_adjsets",params, info, false, false);
+    res &= check_string("original_element_ids",params, info, false);
+    res &= check_string("original_vertex_ids",params, info, false);
 
     std::vector<std::string> valid_paths;
     valid_paths.push_back("target");
-    valid_paths.push_back("selections");
-    valid_paths.push_back("fields");
+    valid_paths.push_back("selections/type");
+    valid_paths.push_back("selections/domain_id");
+    valid_paths.push_back("selections/field");
+    valid_paths.push_back("selections/topology");
+    valid_paths.push_back("selections/start");
+    valid_paths.push_back("selections/end");
+    valid_paths.push_back("selections/elements");
+    valid_paths.push_back("selections/ranges");
+    valid_paths.push_back("selections/field");
     valid_paths.push_back("mapping");
     valid_paths.push_back("merge_tolerance");
+    valid_paths.push_back("build_adjsets");
+    valid_paths.push_back("original_element_ids");
+    valid_paths.push_back("original_vertex_ids");
     valid_paths.push_back("distributed");
-    
-    std::string surprises = surprise_check(valid_paths, params);
-    
+
+    std::vector<std::string> ingore_paths = {"fields"};
+
+    std::string surprises = surprise_check(valid_paths,ingore_paths, params);
+
     if(surprises != "")
     {
       res = false;
@@ -359,8 +391,21 @@ BlueprintPartition::execute()
 
     conduit::Node *n_output = new conduit::Node();
     
-    conduit::Node n_options = params();
+    conduit::Node n_options;
 
+    int target = 1;
+    if(params().has_child("target"))
+    {
+      target = params()["target"].to_int32();
+    }
+
+    n_options.set_external(params());
+    if(n_options.has_child("distributed"))
+    {
+      n_options.remove_child("distributed");
+    }
+
+    conduit::Node tmp;
 #ifdef ASCENT_MPI_ENABLED
     MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
     if(params().has_child("distributed") && 
@@ -368,20 +413,32 @@ BlueprintPartition::execute()
     {
         conduit::blueprint::mesh::partition(*n_input,
                                             n_options,
-                                            *n_output);
+                                            tmp);
     }
     else
     {
         conduit::blueprint::mpi::mesh::partition(*n_input,
                                                  n_options,
-                                                 *n_output,
+                                                 tmp,
                                                  mpi_comm);
     }
 #else
     conduit::blueprint::mesh::partition(*n_input,
                                         n_options,
-                                        *n_output);
+                                        tmp);
 #endif
+
+    if(tmp.number_of_children() > 0)
+    {
+      if(target == 1)
+      {
+        n_output->append().move(tmp);
+      }
+      else
+      {
+        n_output->move(tmp);
+      }
+    }
     DataObject *d_output = new DataObject(n_output);
     set_output<DataObject>(d_output);
 }
