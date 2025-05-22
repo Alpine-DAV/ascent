@@ -75,7 +75,7 @@ TEST(ascent_pipeline, test_render_2d_poly)
 
     //
     // // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file, 0.001f, "_000000"));
+    EXPECT_TRUE(check_test_image(output_file, 0.001f, 0));
 }
 
 //-----------------------------------------------------------------------------
@@ -147,7 +147,7 @@ TEST(ascent_pipeline, test_render_2d_poly_multi)
 
     //
     // // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file, 0.001f, "_000000"));
+    EXPECT_TRUE(check_test_image(output_file, 0.001f, 0));
 }
 
 //-----------------------------------------------------------------------------
@@ -218,6 +218,6 @@ TEST(ascent_pipeline, test_render_2d_poly_and_nonpoly)
 
     //
     // // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file + "polytess", 0.001f, "_000000"));
-    EXPECT_TRUE(check_test_image(output_file + "braid", 0.001f, "_000000"));
+    EXPECT_TRUE(check_test_image(output_file + "polytess", 0.001f, 0));
+    EXPECT_TRUE(check_test_image(output_file + "braid", 0.001f, 0));
 }

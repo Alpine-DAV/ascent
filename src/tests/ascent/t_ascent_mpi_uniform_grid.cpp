@@ -162,7 +162,7 @@ TEST(ascent_mpi_uniform_uniform_grid, test_mpi_uniform_grid)
     // check that we created an image
     if(par_rank == 0)
     {
-      EXPECT_TRUE(check_test_image(output_file, 0.001f, "_000000"));
+      EXPECT_TRUE(check_test_image(output_file, 0.001f, 0));
       std::string msg = "An example of using the mpi uniform grid filter.";
       ASCENT_ACTIONS_DUMP(actions,output_file,msg);
     }

@@ -163,7 +163,7 @@ TEST(ascent_devil_ray, test_pseudocolor)
     ascent.close();
 
     // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file, 0.1, "_001860"));
+    EXPECT_TRUE(check_test_image(output_file, 0.1, 1860));
     std::string msg = "An example of using devil ray for pseudocolor plot.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
@@ -232,7 +232,7 @@ TEST(ascent_devil_ray, test_pseudocolor_noannots)
     ascent.close();
 
     // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file, 0.1, "_001860"));
+    EXPECT_TRUE(check_test_image(output_file, 0.1, 1860));
     std::string msg = "An example of using devil ray for pseudocolor plot with no annotations.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
@@ -298,7 +298,7 @@ TEST(ascent_devil_ray, test_3slice)
     ascent.close();
 
     // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file, 0.1, "_001860"));
+    EXPECT_TRUE(check_test_image(output_file, 0.1, 1860));
     std::string msg = "An example of using devil ray for a three sliced pseudocolor plot.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
@@ -511,7 +511,7 @@ TEST(ascent_devil_ray, test_volume)
     ascent.close();
 
     // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file, 0.1, "_001860"));
+    EXPECT_TRUE(check_test_image(output_file, 0.1, 1860));
     std::string msg = "An example of using devil ray for pseudocolor plot.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
@@ -590,7 +590,7 @@ TEST(ascent_devil_ray, test_reflect)
     ascent.close();
 
     // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file, 0.1, "_001860"));
+    EXPECT_TRUE(check_test_image(output_file, 0.1, 1860));
     std::string msg = "An example of using devil ray to reflect a data set.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
@@ -887,7 +887,7 @@ TEST(ascent_devil_ray, test_vector_component)
     ascent.close();
 
     // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file, 0.1, "_001860"));
+    EXPECT_TRUE(check_test_image(output_file, 0.1, 1860));
     std::string msg = "An example of using devil ray extract a component of a vector.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }

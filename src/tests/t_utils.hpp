@@ -43,10 +43,14 @@ remove_test_image(const std::string &path, const std::string &num)
 }
 
 inline void
-remove_test_image(const std::string &path)
+remove_test_image(const std::string &path, 
+                  const int num = 100,
+                  const std::string &fmt = "%06d")
 {
-    std::string num = std::string(path.back() != '_' ? "_" : "") + "000100";
-    remove_test_image(path, num);
+    char num_str[7];
+    snprintf(num_str, sizeof(num_str), fmt.c_str(), num);
+    std::string fmt_num = std::string(path.back() != '_' ? "_" : "") + num_str;
+    remove_test_image(path, fmt_num);
 }
 
 //-----------------------------------------------------------------------------
@@ -227,12 +231,16 @@ check_test_image(const std::string &path, const float tolerance, const std::stri
 }
 
 inline bool
-check_test_image(const std::string &path, const float tolerance = 0.001f)
+check_test_image(const std::string &path, 
+                 const float tolerance = 0.001f,
+                 const int num = 100,
+                 const std::string &fmt = "%06d")
 {
-    std::string num = std::string(path.back() != '_' ? "_" : "") + "000100";
-    return check_test_image(path, tolerance, num);
+    char num_str[50];
+    snprintf(num_str, sizeof(num_str), fmt.c_str(), num);
+    std::string fmt_num = std::string(path.back() != '_' ? "_" : "") + num_str;
+    return check_test_image(path, tolerance, fmt_num);
 }
-
 
 inline bool
 check_test_file(const std::string &path)

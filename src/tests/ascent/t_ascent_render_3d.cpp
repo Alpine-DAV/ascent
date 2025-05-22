@@ -841,7 +841,7 @@ TEST(ascent_render_3d, test_render_3d_name_format)
     string output_file = conduit::utils::join_file_path(output_path,"tout_render_3d_name_format");
 
     // remove old images before rendering
-    remove_test_image(output_file, "0100");
+    remove_test_image(output_file, 100, "%04d");
 
 
     //
@@ -851,7 +851,7 @@ TEST(ascent_render_3d, test_render_3d_name_format)
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]         = "pseudocolor";
     scenes["s1/plots/p1/field"] = "braid";
-    scenes["s1/renders/r1/image_prefix"]  = output_file + "%04d";
+    scenes["s1/renders/r1/image_prefix"]  = output_file + "_%04d";
     scenes["s1/renders/r1/annotations"] = "false";
 
     conduit::Node actions;
@@ -875,7 +875,7 @@ TEST(ascent_render_3d, test_render_3d_name_format)
     ascent.close();
 
     // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file, 0.0001f, "0100"));
+    EXPECT_TRUE(check_test_image(output_file, 0.0001f, 100, "%04d"));
     std::string msg = "An example of rendering to a filename using format specifiers.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
