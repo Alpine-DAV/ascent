@@ -245,8 +245,11 @@ void WarpXStreamline::DoExecute()
         {
           this->m_output->AddDomain(tubeOut.GetPartition(i), i);
         }
-        //this->m_output->AddConstantPointField(m_tube_value, m_output_field_name);
-        this->m_output->AddLinearPointField(m_tube_value, m_output_field_name);
+        this->m_output->AddConstantPointField(m_tube_value, m_output_field_name);
+	
+	//TODO: Add a linear option? 
+	//Makes the streamlines pretty
+        //this->m_output->AddLinearPointField(m_tube_value, m_output_field_name);
     }
     else
     {
@@ -255,7 +258,6 @@ void WarpXStreamline::DoExecute()
       {
         this->m_output->AddDomain(out.GetPartition(i), i);
       }
-      //this->m_output->AddConstantPointField(1.0, m_output_field_name);
     }
 #endif
 }
