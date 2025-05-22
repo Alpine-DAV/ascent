@@ -151,7 +151,7 @@ TEST(ascent_rover, test_xray_blueprint_braid)
     ascent.execute(actions);
     ascent.close();
 
-    const std::string full_outfile_name = query_output_file + "100.cycle_000100.root";
+    const std::string full_outfile_name = query_output_file + "_000100.cycle_000100.root";
 
     Node load_mesh, verify_info;
     conduit::relay::io::blueprint::load_mesh(full_outfile_name, load_mesh);
@@ -161,14 +161,12 @@ TEST(ascent_rover, test_xray_blueprint_braid)
     const std::string image_output_base =
         conduit::utils::join_file_path(image_output_path, "tout_rover_xray_blueprint");
 
-    const std::string image_output_image_prefix = image_output_base + "{cycle:d}";
-
-    render_blueprint_result("intensities", image_output_image_prefix, load_mesh);
+    render_blueprint_result("intensities", image_output_base, load_mesh);
 
     // TODO we need the render to make an interesting picture. This will be accomplished
     // by working on the basic mesh output and changing the order of the dimensions.
     // TODO we will need to change the baseline when we are making good renders.
-    EXPECT_TRUE(check_test_image(image_output_base, 0.01f, "100"));
+    EXPECT_TRUE(check_test_image(image_output_base));
 
     std::string msg = "TODO we need a good description here";
     ASCENT_ACTIONS_DUMP(actions, image_output_base, msg);
@@ -206,7 +204,7 @@ TEST(ascent_rover, test_xray_blueprint_curv3d)
                                        "tout_rover_xray_curv3d_blueprint_query");
 
     // remove old images before rendering
-    remove_test_image(query_output_file);
+    remove_test_image(query_output_file, "_000048");
 
     //
     // Create the actions.
@@ -239,7 +237,7 @@ TEST(ascent_rover, test_xray_blueprint_curv3d)
     // std::cout << ascent.info().to_yaml() << std::endl;
     ascent.close();
 
-    const std::string full_outfile_name = query_output_file + "48.cycle_000048.root";
+    const std::string full_outfile_name = query_output_file + "_000048.cycle_000048.root";
 
     Node load_mesh;
     conduit::relay::io::blueprint::load_mesh(full_outfile_name, load_mesh);
@@ -249,14 +247,12 @@ TEST(ascent_rover, test_xray_blueprint_curv3d)
     const std::string image_output_base =
         conduit::utils::join_file_path(image_output_path, "tout_rover_xray_curv3d");
 
-    const std::string image_output_image_prefix = image_output_base + "{cycle:d}";
-
-    render_blueprint_result("intensities", image_output_image_prefix, load_mesh);
+    render_blueprint_result("intensities", image_output_base, load_mesh);
 
     // TODO we need the render to make an interesting picture. This will be accomplished
     // by working on the basic mesh output and changing the order of the dimensions.
     // TODO we will need to change the baseline when we are making good renders.
-    EXPECT_TRUE(check_test_image(image_output_base, 0.01f, "48"));
+    EXPECT_TRUE(check_test_image(image_output_base, 0.01f, "_000048"));
     
     std::string msg = "TODO we need a good description here";
     ASCENT_ACTIONS_DUMP(actions, image_output_base, msg);
@@ -294,7 +290,7 @@ TEST(ascent_rover, test_xray_blueprint_multi_curv3d)
                                        "tout_rover_xray_multi_curv3d_blueprint_query");
 
     // remove old images before rendering
-    remove_test_image(query_output_file);
+    remove_test_image(query_output_file, "_000048");
 
     //
     // Create the actions.
@@ -327,7 +323,7 @@ TEST(ascent_rover, test_xray_blueprint_multi_curv3d)
     // std::cout << ascent.info().to_yaml() << std::endl;
     ascent.close();
 
-    const std::string full_outfile_name = query_output_file + "48.cycle_000048.root";
+    const std::string full_outfile_name = query_output_file + "_000048.cycle_000048.root";
 
     Node load_mesh;
     conduit::relay::io::blueprint::load_mesh(full_outfile_name, load_mesh);
@@ -337,14 +333,12 @@ TEST(ascent_rover, test_xray_blueprint_multi_curv3d)
     const std::string image_output_base =
         conduit::utils::join_file_path(image_output_path, "tout_rover_xray_multi_curv3d");
 
-    const std::string image_output_image_prefix = image_output_base + "{cycle:d}";
-
-    render_blueprint_result("intensities", image_output_image_prefix, load_mesh);
+    render_blueprint_result("intensities", image_output_base, load_mesh);
 
     // TODO we need the render to make an interesting picture. This will be accomplished
     // by working on the basic mesh output and changing the order of the dimensions.
     // TODO we will need to change the baseline when we are making good renders.
-    EXPECT_TRUE(check_test_image(image_output_base, 0.01f, "48"));
+    EXPECT_TRUE(check_test_image(image_output_base, 0.01f, "_000048"));
 
     std::string msg = "TODO we need a good description here";
     ASCENT_ACTIONS_DUMP(actions, image_output_base, msg);
@@ -429,14 +423,12 @@ TEST(ascent_rover, test_xray_blueprint_tire)
     const std::string image_output_base =
         conduit::utils::join_file_path(image_output_path, "tout_rover_xray_tire");
 
-    const std::string image_output_image_prefix = image_output_base + "{cycle:d}";
-
-    render_blueprint_result("intensities", image_output_image_prefix, load_mesh);
+    render_blueprint_result("intensities", image_output_base, load_mesh);
 
     // TODO we need the render to make an interesting picture. This will be accomplished
     // by working on the basic mesh output and changing the order of the dimensions.
     // TODO we will need to change the baseline when we are making good renders.
-    EXPECT_TRUE(check_test_image(image_output_base, 0.01f, "48"));
+    EXPECT_TRUE(check_test_image(image_output_base, 0.01f, "_000048"));
     
     std::string msg = "TODO we need a good description here";
     ASCENT_ACTIONS_DUMP(actions, image_output_base, msg);
@@ -474,7 +466,7 @@ TEST(ascent_rover, test_xray_blueprint_curv2d)
                                        "tout_rover_xray_curv2d_blueprint_query");
 
     // remove old images before rendering
-    remove_test_image(query_output_file);
+    remove_test_image(query_output_file, "_000048");
 
     //
     // Create the actions.
@@ -508,7 +500,7 @@ TEST(ascent_rover, test_xray_blueprint_curv2d)
     // std::cout << ascent.info().to_yaml() << std::endl;
     ascent.close();
 
-    const std::string full_outfile_name = query_output_file + "48.cycle_000048.root";
+    const std::string full_outfile_name = query_output_file + "_000048.cycle_000048.root";
 
     Node load_mesh;
     conduit::relay::io::blueprint::load_mesh(full_outfile_name, load_mesh);
@@ -518,14 +510,12 @@ TEST(ascent_rover, test_xray_blueprint_curv2d)
     const std::string image_output_base =
         conduit::utils::join_file_path(image_output_path, "tout_rover_xray_curv2d");
 
-    const std::string image_output_image_prefix = image_output_base + "{cycle:d}";
-
-    render_blueprint_result("intensities", image_output_image_prefix, load_mesh);
+    render_blueprint_result("intensities", image_output_base, load_mesh);
 
     // TODO we need the render to make an interesting picture. This will be accomplished
     // by working on the basic mesh output and changing the order of the dimensions.
     // TODO we will need to change the baseline when we are making good renders.
-    EXPECT_TRUE(check_test_image(image_output_base, 0.01f, "48"));
+    EXPECT_TRUE(check_test_image(image_output_base, 0.01f, "_000048"));
     
     std::string msg = "TODO we need a good description here";
     ASCENT_ACTIONS_DUMP(actions, image_output_base, msg);
@@ -604,7 +594,7 @@ TEST(ascent_rover, test_xray_serial_image_params)
     // check that we created an image
     // NOTE: RELAXED TOLERANCE TO FROM 0.0001f
     //       to mitigate differences between platforms
-    EXPECT_TRUE(check_test_image(output_file, 0.01f, "100_0"));
+    EXPECT_TRUE(check_test_image(output_file));
 
     std::string msg = "An example of using the xray extract.";
     ASCENT_ACTIONS_DUMP(actions, output_file, msg);
@@ -667,7 +657,7 @@ TEST(ascent_rover, test_xray_serial)
     // check that we created an image
     // NOTE: RELAXED TOLERANCE TO FROM 0.0001f
     //       to mitigate differences between platforms
-    EXPECT_TRUE(check_test_image(output_file, 0.01f, "100_0"));
+    EXPECT_TRUE(check_test_image(output_file));
 
     std::string msg = "An example of using the xray extract.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
@@ -740,7 +730,7 @@ TEST(ascent_rover, test_volume_min_max)
     ascent.close();
 
     // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file, 0.01f, "100"));
+    EXPECT_TRUE(check_test_image(output_file));
     std::string msg = "An example of using the volume (unstructured grid) extract with "
                       "min and max values.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
@@ -803,7 +793,7 @@ TEST(ascent_rover, test_volume_serial)
     ascent.close();
 
     // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file, 0.01f, "100"));
+    EXPECT_TRUE(check_test_image(output_file));
     std::string msg = "An example of using the volume (unstructured grid) extract.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
