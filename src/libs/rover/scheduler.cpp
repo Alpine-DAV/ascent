@@ -24,6 +24,8 @@
 #include <mpi.h>
 #endif
 
+using namespace conduit;
+
 namespace rover {
 
 template<typename FloatType>
@@ -605,7 +607,7 @@ void Scheduler<FloatType>::save_bov(std::string file_name)
 }
 
 template<typename FloatType>
-void Scheduler<FloatType>::to_blueprint(conduit::Node &dataset)
+void Scheduler<FloatType>::to_blueprint(Node &dataset)
 {
   int height = 0;
   int width = 0;
@@ -619,16 +621,16 @@ void Scheduler<FloatType>::to_blueprint(conduit::Node &dataset)
 
   const int num_channels = m_result.get_num_channels();
 
-  conduit::Node &n_coords = dataset["coordsets/" + coord_name];
+  Node &n_coords = dataset["coordsets/" + coord_name];
   n_coords["type"] = "rectilinear";
   
-  n_coords["values/x"].set(conduit::DataType::float32(num_channels + 1));
-  n_coords["values/y"].set(conduit::DataType::float32(width + 1));
-  n_coords["values/z"].set(conduit::DataType::float32(height + 1));
+  n_coords["values/x"].set(DataType::float32(num_channels + 1));
+  n_coords["values/y"].set(DataType::float32(width + 1));
+  n_coords["values/z"].set(DataType::float32(height + 1));
 
-  float *x_coords = n_coords["values/x"].value();
-  float *y_coords = n_coords["values/y"].value();
-  float *z_coords = n_coords["values/z"].value();
+  float32_array x_coords = n_coords["values/x"].value();
+  float32_array y_coords = n_coords["values/y"].value();
+  float32_array z_coords = n_coords["values/z"].value();
 
   for (int i = 0; i <= num_channels; i++)
   {
@@ -653,7 +655,7 @@ void Scheduler<FloatType>::to_blueprint(conduit::Node &dataset)
   n_coords["units/y"] = "pixels";
   n_coords["units/z"] = "pixels";
 
-  conduit::Node &n_topo = dataset["topologies/" + topo_name];
+  Node &n_topo = dataset["topologies/" + topo_name];
   n_topo["coordset"] = coord_name;
   n_topo["type"] = "rectilinear";
 
@@ -664,7 +666,7 @@ void Scheduler<FloatType>::to_blueprint(conduit::Node &dataset)
 
     if(m_result.has_intensity(0))
     {
-      conduit::Node &n_int = dataset["fields/intensities"];
+      Node &n_int = dataset["fields/intensities"];
       n_int["topology"] = topo_name;
       n_int["association"] = "element";
       n_int["units"] = "intensity units";
@@ -677,7 +679,7 @@ void Scheduler<FloatType>::to_blueprint(conduit::Node &dataset)
 
     if(m_result.has_optical_depth(0))
     {
-      conduit::Node &n_op = dataset["fields/optical_depth"];
+      Node &n_op = dataset["fields/optical_depth"];
       n_op["topology"] = topo_name;
       n_op["association"] = "element";
       n_op["units"] = "path length metadata";
@@ -689,9 +691,9 @@ void Scheduler<FloatType>::to_blueprint(conduit::Node &dataset)
     }
   }
 
-  //conduit::relay::io::blueprint::save_mesh(n_dataset, root_file, protocol);
-  conduit::Node info;
-  if(!conduit::blueprint::verify("mesh",dataset, info))
+  //relay::io::blueprint::save_mesh(n_dataset, root_file, protocol);
+  Node info;
+  if(!blueprint::verify("mesh",dataset, info))
   {
     info.print();
   }
