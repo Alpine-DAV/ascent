@@ -255,7 +255,7 @@ TEST(ascent_rover, test_xray_blueprint_curv3d)
     EXPECT_TRUE(check_test_image(image_output_base, 0.01f, 48));
     
     std::string msg = "TODO we need a good description here";
-    ASCENT_ACTIONS_DUMP(actions, image_output_base, msg);
+    ASCENT_ACTIONS_DUMP_CYCLE(actions, image_output_base, msg, 48);
 }
 
 //-----------------------------------------------------------------------------
@@ -341,7 +341,7 @@ TEST(ascent_rover, test_xray_blueprint_multi_curv3d)
     EXPECT_TRUE(check_test_image(image_output_base, 0.01f, 48));
 
     std::string msg = "TODO we need a good description here";
-    ASCENT_ACTIONS_DUMP(actions, image_output_base, msg);
+    ASCENT_ACTIONS_DUMP_CYCLE(actions, image_output_base, msg, 48);
 }
 
 #if 0
@@ -431,7 +431,7 @@ TEST(ascent_rover, test_xray_blueprint_tire)
     EXPECT_TRUE(check_test_image(image_output_base, 0.01f, 48));
     
     std::string msg = "TODO we need a good description here";
-    ASCENT_ACTIONS_DUMP(actions, image_output_base, msg);
+    ASCENT_ACTIONS_DUMP_CYCLE(actions, image_output_base, msg, 48);
 }
 
 //-----------------------------------------------------------------------------
@@ -518,7 +518,7 @@ TEST(ascent_rover, test_xray_blueprint_curv2d)
     EXPECT_TRUE(check_test_image(image_output_base, 0.01f, 48));
     
     std::string msg = "TODO we need a good description here";
-    ASCENT_ACTIONS_DUMP(actions, image_output_base, msg);
+    ASCENT_ACTIONS_DUMP_CYCLE(actions, image_output_base, msg, 48);
 }
 
 //-----------------------------------------------------------------------------

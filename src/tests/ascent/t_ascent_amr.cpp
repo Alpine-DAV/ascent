@@ -98,7 +98,7 @@ TEST(ascent_amr, test_amr_render_simple)
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file,0.01,0));
     std::string msg = "An example of rendering amr data";
-    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+    ASCENT_ACTIONS_DUMP_CYCLE(actions,output_file,msg,0);
 }
 
 //-----------------------------------------------------------------------------
@@ -171,7 +171,7 @@ TEST(ascent_amr, test_amr_render_complex)
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file,0.01,0));
     std::string msg = "An example of rendering amr data";
-    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+    ASCENT_ACTIONS_DUMP_CYCLE(actions,output_file,msg,0);
 }
 
 //-----------------------------------------------------------------------------
@@ -243,7 +243,7 @@ TEST(ascent_amr, test_amr_render_complex_ghosts)
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file,0.01,0));
     std::string msg = "An example of rendering amr data";
-    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+    ASCENT_ACTIONS_DUMP_CYCLE(actions,output_file,msg,0);
 }
 
 

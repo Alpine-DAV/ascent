@@ -164,7 +164,7 @@ TEST(ascent_mpi_uniform_uniform_grid, test_mpi_uniform_grid)
     {
       EXPECT_TRUE(check_test_image(output_file, 0.001f, 0));
       std::string msg = "An example of using the mpi uniform grid filter.";
-      ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+      ASCENT_ACTIONS_DUMP_CYCLE(actions,output_file,msg,0);
     }
 }
 

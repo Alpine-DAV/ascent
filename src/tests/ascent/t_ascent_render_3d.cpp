@@ -877,7 +877,7 @@ TEST(ascent_render_3d, test_render_3d_name_format)
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file, 0.0001f, 100, "%04d"));
     std::string msg = "An example of rendering to a filename using format specifiers.";
-    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+    ASCENT_ACTIONS_DUMP_CYCLE_FMT(actions,output_file,msg,100,"%04d");
 }
 
 TEST(ascent_render_3d, test_render_3d_name_format_keywords)

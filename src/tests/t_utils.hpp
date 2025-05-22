@@ -47,7 +47,7 @@ remove_test_image(const std::string &path,
                   const int num = 100,
                   const std::string &fmt = "%06d")
 {
-    char num_str[7];
+    char num_str[50];
     snprintf(num_str, sizeof(num_str), fmt.c_str(), num);
     std::string fmt_num = std::string(path.back() != '_' ? "_" : "") + num_str;
     remove_test_image(path, fmt_num);
@@ -705,16 +705,25 @@ add_matset_to_spiral(Node &n_mesh, const int ndomains)
     }
 }
 
-
-// Macro to save ascent actions file
-#define ASCENT_ACTIONS_DUMP(actions,name,msg) \
+// Macro to save ascent actions file with a custom cycle and format
+#define ASCENT_ACTIONS_DUMP_CYCLE_FMT(actions,name,msg,num,fmt) \
+  char num_str[50]; \
+  snprintf(num_str, sizeof(num_str), fmt, num); \
+  std::string fmt_num = std::string(#name[sizeof(#name)-2] != '_' ? "_" : "") + num_str; \
   std::string actions_str = actions.to_yaml(); \
   std::ofstream out; \
-  out.open(name+"_000100.yaml"); \
+  out.open(name+fmt_num+".yaml"); \
   out<<"#"<<msg<<"\n"; \
   out<<actions_str; \
   out.close();
 
+// Macro to save ascent actions file with a custom cycle number
+#define ASCENT_ACTIONS_DUMP_CYCLE(actions,name,msg,num) \
+  ASCENT_ACTIONS_DUMP_CYCLE_FMT(actions,name,msg,num,"%06d")
+
+// Macro to save ascent actions file with default cycle and formatting
+#define ASCENT_ACTIONS_DUMP(actions,name,msg) \
+  ASCENT_ACTIONS_DUMP_CYCLE(actions,name,msg,100)
 
 //-----------------------------------------------------------------------------
 #endif

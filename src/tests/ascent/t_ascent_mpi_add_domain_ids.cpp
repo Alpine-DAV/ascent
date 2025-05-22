@@ -118,7 +118,7 @@ TEST(ascent_mpi_add_domain_ids, test_mpi_add_domain_ids)
     {
       EXPECT_TRUE(check_test_image(output_file, 0.001f, 0));
       std::string msg = "An example of adding domain_ids to the data.";
-      ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+      ASCENT_ACTIONS_DUMP_CYCLE(actions,output_file,msg,0);
     }
 }
 
