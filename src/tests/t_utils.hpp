@@ -702,7 +702,7 @@ add_matset_to_spiral(Node &n_mesh, const int ndomains)
 #define ASCENT_ACTIONS_DUMP(actions,name,msg) \
   std::string actions_str = actions.to_yaml(); \
   std::ofstream out; \
-  out.open(name+"100_actions.yaml"); \
+  out.open(name+"_000100.yaml"); \
   out<<"#"<<msg<<"\n"; \
   out<<actions_str; \
   out.close();
