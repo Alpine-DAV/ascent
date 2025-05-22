@@ -634,7 +634,7 @@ MarchingCubesFunctor::create_original_cells(const uint32 total_triangles,
   RAJA::forall<for_policy>(elem_range,
     [=] DRAY_LAMBDA (int idx) {
       constexpr auto shape3d = adapt_get_shape<FEType>();
-      const auto ntris = detail::get_num_triangles(shape3d, lookup_ptr, cut_info_ptr[idx]);
+      const auto ntris = dray::detail::get_num_triangles(shape3d, lookup_ptr, cut_info_ptr[idx]);
       int32 *orig_cells_offset = orig_cells_ptr + triangle_offsets_ptr[idx];
       for(int i = 0; i < ntris; i++)
       {
