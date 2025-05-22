@@ -622,19 +622,28 @@ void Scheduler<FloatType>::to_blueprint(conduit::Node &dataset)
   conduit::Node &n_coords = dataset["coordsets/" + coord_name];
   n_coords["type"] = "rectilinear";
   
-  std::vector<float> x_coords(num_channels + 1);
-  std::vector<float> y_coords(width + 1);
-  std::vector<float> z_coords(height + 1);
+  n_coords["values/x"].set(conduit::DataType::float32(num_channels + 1));
+  n_coords["values/y"].set(conduit::DataType::float32(width + 1));
+  n_coords["values/z"].set(conduit::DataType::float32(height + 1));
 
-  // Fill each vector with ascending values from [0, vector_size]
-  std::iota(x_coords.begin(), x_coords.end(), 0);
-  std::iota(y_coords.begin(), y_coords.end(), 0);
-  std::iota(z_coords.begin(), z_coords.end(), 0);
+  float *x_coords = n_coords["values/x"].value();
+  float *y_coords = n_coords["values/y"].value();
+  float *z_coords = n_coords["values/z"].value();
 
-  // Can't use set_external here since these vectors will go out of scope
-  n_coords["values/x"].set(x_coords);
-  n_coords["values/y"].set(y_coords);
-  n_coords["values/z"].set(z_coords);
+  for (int i = 0; i <= num_channels; i++)
+  {
+    x_coords[i] = i;
+  }
+
+  for (int i = 0; i <= width; i++)
+  {
+    y_coords[i] = i;
+  }
+
+  for (int i = 0; i <= height; i++)
+  {
+    z_coords[i] = i;
+  }
 
   n_coords["labels/x"] = "energy_group";
   n_coords["labels/y"] = "width";
