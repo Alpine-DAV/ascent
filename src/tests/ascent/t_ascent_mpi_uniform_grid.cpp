@@ -102,8 +102,7 @@ TEST(ascent_mpi_uniform_uniform_grid, test_mpi_uniform_grid)
 
     string output_path = prepare_output_dir();
     string output_file = conduit::utils::join_file_path(output_path,"tout_mpi_uniform_grid");
-    string image_file = conduit::utils::join_file_path(output_path,"tout_mpi_uniform_grid10");
-
+    
     // remove old images before rendering
     if(par_rank == 0)
       remove_test_image(output_file);
@@ -124,7 +123,7 @@ TEST(ascent_mpi_uniform_uniform_grid, test_mpi_uniform_grid)
     scenes["s1/plots/p1/field"] = "dist";
     scenes["s1/plots/p1/pipeline"] = "pl1";
 
-    scenes["s1/image_prefix"] = image_file;
+    scenes["s1/image_prefix"] = output_file;
 
     conduit::Node actions;
     // add the pipeline
@@ -163,7 +162,7 @@ TEST(ascent_mpi_uniform_uniform_grid, test_mpi_uniform_grid)
     // check that we created an image
     if(par_rank == 0)
     {
-      EXPECT_TRUE(check_test_image(output_file));
+      EXPECT_TRUE(check_test_image(output_file, 0.001f, "_000000"));
       std::string msg = "An example of using the mpi uniform grid filter.";
       ASCENT_ACTIONS_DUMP(actions,output_file,msg);
     }

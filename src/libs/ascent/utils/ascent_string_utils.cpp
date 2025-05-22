@@ -309,25 +309,14 @@ std::string expand_path_special_variables(const std::string &path_string,
 
     // If no formatting has been added to the path, add one to the end of the path
     // This will either add the cycle value if cycle is available or the family value if not
-    std::regex generic_fmt_pattern(R"(%\d*(\.\d+)?[a-zA-Z]$)");
     if (append_if_no_format
         && !std::regex_search(result_string, get_format_pattern(R"([a-zA-Z]*)")) 
-        && !std::regex_search(result_string, generic_fmt_pattern))
+        && !std::regex_search(result_string, std::regex(R"(%(\d*)?(\.\d+)?[a-zA-Z])")))
     {
         std::stringstream ss;
-        ss << result_string;
-        if (result_string.back() != '_') {
-            ss << "_";
-        }
-
-        if (meta.has_path("cycle"))
-        {
-            ss << "{cycle}";
-        }
-        else
-        {
-            ss << "{family}";
-        }
+        ss << result_string 
+           << (result_string.back() != '_' ? "_" : "") 
+           << (meta.has_path("cycle") ? "{cycle}" : "{family}");
         result_string = ss.str();
     }
 

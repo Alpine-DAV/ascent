@@ -913,7 +913,7 @@ TEST(ascent_render_3d, test_render_3d_name_format_keywords)
 
     string image_prefix_no_format = "t_output_path_no_format_";
     const string output_file_no_format = conduit::utils::join_file_path(output_path,image_prefix_no_format);
-    const string output_file_no_format_final = conduit::utils::join_file_path(output_path,"t_output_path_no_format_100.png");
+    const string output_file_no_format_final = conduit::utils::join_file_path(output_path,"t_output_path_no_format_000100.png");
     
     remove_test_image(output_file_final_1);
     remove_test_image(output_file_final_2);

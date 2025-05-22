@@ -72,7 +72,7 @@ TEST(ascent_pipeline, test_render_3d_poly)
     ascent.close();
     //
     // // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file, 0.001f, "0"));
+    EXPECT_TRUE(check_test_image(output_file, 0.001f, "_000000"));
 }
 
 //-----------------------------------------------------------------------------
@@ -147,7 +147,7 @@ TEST(ascent_pipeline, test_render_3d_poly_multi)
 
     //
     // // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file, 0.001f, "0"));
+    EXPECT_TRUE(check_test_image(output_file, 0.001f, "_000000"));
 }
 
 //-----------------------------------------------------------------------------
@@ -253,5 +253,5 @@ fields:
 
     //
     // // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file, 0.001f, "0"));
+    EXPECT_TRUE(check_test_image(output_file, 0.001f, "_000000"));
 }

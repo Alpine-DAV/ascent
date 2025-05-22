@@ -69,7 +69,6 @@ TEST(ascent_mpi_add_domain_ids, test_mpi_add_domain_ids)
 
     string output_path = prepare_output_dir();
     string output_file = conduit::utils::join_file_path(output_path,"tout_mpi_add_domain_ids");
-    string image_file = conduit::utils::join_file_path(output_path,"tout_mpi_add_domain_ids10");
 
     // remove old images before rendering
     if(par_rank == 0)
@@ -99,7 +98,7 @@ TEST(ascent_mpi_add_domain_ids, test_mpi_add_domain_ids)
     scenes["s1/plots/p1/field"] = "domain_id";
     scenes["s1/plots/p1/pipeline"] = "pl1";
     scenes["s1/plots/p1/color_table/discrete"] = "true";
-    scenes["s1/image_prefix"] = image_file;
+    scenes["s1/image_prefix"] = output_file;
 
     //
     // Run Ascent
@@ -117,7 +116,7 @@ TEST(ascent_mpi_add_domain_ids, test_mpi_add_domain_ids)
     // check that we created an image
     if(par_rank == 0)
     {
-      EXPECT_TRUE(check_test_image(output_file));
+      EXPECT_TRUE(check_test_image(output_file, 0.001f, "_000000"));
       std::string msg = "An example of adding domain_ids to the data.";
       ASCENT_ACTIONS_DUMP(actions,output_file,msg);
     }

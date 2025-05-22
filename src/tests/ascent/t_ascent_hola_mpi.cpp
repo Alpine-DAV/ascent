@@ -264,7 +264,7 @@ TEST(ascent_hola_mpi, test_hola_mpi)
 
         string output_image = conduit::utils::join_file_path(output_dir(),
                                                             "tout_hola_mpi_test_render");
-        EXPECT_TRUE(utils::is_file(output_image + "100.png"));
+        EXPECT_TRUE(utils::is_file(output_image + "_000100.png"));
     }
     else
     {
