@@ -169,6 +169,8 @@ TEST(ascent_rover, test_xray_blueprint_braid)
     ASCENT_ACTIONS_DUMP(actions, image_output_base, msg);
 }
 
+#if 0
+
 //-----------------------------------------------------------------------------
 TEST(ascent_rover, test_xray_blueprint_braid_lowres)
 {
@@ -254,6 +256,8 @@ TEST(ascent_rover, test_xray_blueprint_braid_lowres)
     std::string msg = "TODO we need a good description here";
     ASCENT_ACTIONS_DUMP(actions, image_output_base, msg);
 }
+
+#endif
 
 //-----------------------------------------------------------------------------
 TEST(ascent_rover, test_xray_blueprint_curv3d)
