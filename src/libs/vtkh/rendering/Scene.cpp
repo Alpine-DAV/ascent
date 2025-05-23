@@ -249,14 +249,6 @@ Scene::Render()
 
     batch_start = batch_end;
   } // while
-std::cerr << "print ranges in SCENE" << std::endl;
-std::cerr << "num ranges: " << ranges.size() << std::endl;
-int num_r = ranges.size();
-for(int i = 0; i < num_r; i++)
-{
-  std::cerr <<"RANGE " << i <<  " min: " << ranges[i].Min << " max: " << ranges[i].Max << std::endl;
-
-}
 }
 
 void Scene::SynchDepths(std::vector<vtkh::Render> &renders)
