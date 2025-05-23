@@ -110,9 +110,9 @@ TEST(vtkh_volume_renderer, vtkh_parallel_render)
   vtkm::cont::ColorTable color_map("Cool to Warm");
   color_map.AddPointAlpha(0.0, 0.01);
   color_map.AddPointAlpha(1.0, 0.6);
-  std::cerr << "input data in UNIT TEST START " << std::endl;
-  data_set.PrintSummary(std::cerr);
-  std::cerr << "input data in UNIT TEST END " << std::endl;
+  //std::cerr << "input data in UNIT TEST START " << std::endl;
+  //data_set.PrintSummary(std::cerr);
+  //std::cerr << "input data in UNIT TEST END " << std::endl;
   vtkh::ANARIVolumeRenderer tracer;
   tracer.SetColorTable(color_map);
   tracer.SetInput(&data_set);
