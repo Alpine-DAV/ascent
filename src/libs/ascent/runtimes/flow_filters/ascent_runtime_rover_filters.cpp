@@ -130,7 +130,7 @@ RoverXRay::verify_params(const conduit::Node &params,
 
   if (has_width && has_height)
   {
-    if (!params["width"].dtype().is_number())
+    if (!params["width"].dtype().is_integer())
     {
       info["errors"].append() = "Optional parameter 'width' must be an integer";
       res = false;
@@ -145,7 +145,7 @@ RoverXRay::verify_params(const conduit::Node &params,
       }
     }
 
-    if (!params["height"].dtype().is_number())
+    if (!params["height"].dtype().is_integer())
     {
       info["errors"].append() = "Optional parameter 'height' must be an integer";
       res = false;
