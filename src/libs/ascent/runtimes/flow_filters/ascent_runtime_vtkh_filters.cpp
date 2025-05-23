@@ -3813,14 +3813,14 @@ VTKHUniformGrid::execute()
       const int num_fields = flist.number_of_children();
       if(num_fields == 0)
       {
-        ASCENT_ERROR("relay_io_save field selection list must be non-empty");
+        ASCENT_ERROR("vtkh_uniform_grid fields selection list must be non-empty");
       }
       for(int i = 0; i < num_fields; ++i)
       {
         const conduit::Node &f = flist.child(i);
         if(!f.dtype().is_string())
         {
-           ASCENT_ERROR("relay_io_save field selection list values must be a string");
+           ASCENT_ERROR("vtkh_uniform_grid fields selection list values must be a string");
         }
         field_selection.push_back(f.as_string());
       }
