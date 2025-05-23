@@ -673,10 +673,8 @@ void Scheduler<FloatType>::to_blueprint(Node &data)
       // can't set external since this goes out of scope
       const int num_intensity_values = intensity_values.GetNumberOfValues();
       intensities["values"].set(intensity_buffer, num_intensity_values);
-
-      // TODO: VisIt uses int64, but using it here throws an error later on
-      intensities["strides"].set(DataType::int32(3));
-      int32_array strides = intensities["strides"].value();
+      intensities["strides"].set(DataType::int64(3));
+      int64_array strides = intensities["strides"].value();
       strides[0] = 1;
       strides[1] = width;
       strides[2] = width * height;
@@ -693,14 +691,11 @@ void Scheduler<FloatType>::to_blueprint(Node &data)
       // can't set external since this goes out of scope
       const int num_optical_values = optical_values.GetNumberOfValues();
       optical_depth["values"].set(optical_buffer, num_optical_values);
-      
-      // TODO: Why does VisIt only set the first two stride values?
-      // TODO: VisIt uses int64, but using it here throws an error later on
-      optical_depth["strides"].set(DataType::int32(3));
-      int32_array strides = optical_depth["strides"].value();
+      optical_depth["strides"].set(DataType::int64(3));
+      int64_array strides = optical_depth["strides"].value();
       strides[0] = 1;
       strides[1] = width;
-      strides[2] = width * height; // Potentially not used?
+      strides[2] = width * height;
     }
   }
 
