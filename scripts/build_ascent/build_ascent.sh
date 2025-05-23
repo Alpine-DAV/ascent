@@ -50,6 +50,7 @@ build_raja="${build_raja:=true}"
 build_umpire="${build_umpire:=true}"
 build_mfem="${build_mfem:=true}"
 build_catalyst="${build_catalyst:=false}"
+build_anari="${build_anari:=false}"
 build_zfp="${build_zfp:=true}"
 
 # ascent options
@@ -639,6 +640,45 @@ fi # build_kokkos
 
 fi # if enable_hip || enable_sycl
 
+
+################
+# anari
+################
+anari_version=0.10.0
+anari_src_dir=$(ospath ${source_dir}/ANARI-SDK-${anari_version})
+anari_build_dir=$(ospath ${build_dir}/anari-v${anari_version})
+anari_install_dir=$(ospath ${install_dir}/anari-v${anari_version}/)
+anari_tarball=$(ospath ${source_dir}/anari-v${anari_version}.tar.gz)
+
+# build only if install doesn't exist
+if [ ! -d ${anari_install_dir} ]; then
+if ${build_anari}; then
+if [ ! -d ${anari_src_dir} ]; then
+  echo "**** Downloading ${anari_tarball}"
+  curl -L https://github.com/KhronosGroup/ANARI-SDK/archive/refs/tags/v${anari_version}/anari-v${anari_version}.tar.gz -o ${anari_tarball}
+  tar ${tar_extra_args} -xzf ${anari_tarball} -C ${source_dir}
+fi
+
+echo "**** Configuring anari ${anari_version}"
+cmake -S ${anari_src_dir} -B ${anari_build_dir} ${cmake_compiler_settings} \
+  -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose}\
+  -DCMAKE_BUILD_TYPE=${build_config} \
+  -DBUILD_VIEWER=OFF \
+  -DBUILD_CTS=OFF \
+  -Danari_BUILD_TESTING=OFF \
+  -DCMAKE_INSTALL_PREFIX=${anari_install_dir} \
+
+echo "**** Building anari ${anari_version}"
+cmake --build ${anari_build_dir} --config ${build_config} -j${build_jobs}
+echo "**** Installing anari ${anari_version}"
+cmake --install ${anari_build_dir} --config ${build_config}
+
+fi
+else
+  echo "**** Skipping anari build, install found at: ${anari_install_dir}"
+fi # build_anari
+
+
 ################
 # VTK-m
 ################
@@ -683,6 +723,13 @@ if [[ "$enable_mpicc" == "ON" ]]; then
   vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DMPI_C_COMPILER=${mpicc_exe}"
   vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DMPI_CXX_COMPILER=${mpicxx_exe}"
 fi
+
+if ${build_anari}; then
+  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DVTKm_ENABLE_ANARI=ON"
+  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DANARI_DIR=$anari_install_dir}"
+  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DCMAKE_PREFIX_PATH=${anari_install_dir}"
+fi
+
 
 echo "**** Configuring VTK-m ${vtkm_version}"
 cmake -S ${vtkm_src_dir} -B ${vtkm_build_dir} ${cmake_compiler_settings} \
@@ -972,17 +1019,17 @@ fi # build_catalyst
 # Ascent
 ################
 # if we are in an ascent checkout, use existing source
-ascent_checkout_dir=$(ospath ${script_dir}/../../src)
-ascent_checkout_dir=$(abs_path ${ascent_checkout_dir})
-echo ${ascent_checkout_dir}
-if [ -d ${ascent_checkout_dir} ]; then
-    ascent_version=checkout
-    ascent_src_dir=$(abs_path ${ascent_checkout_dir})
-    echo "**** Using existing Ascent source repo checkout: ${ascent_src_dir}"
-else
-    ascent_version=develop
-    ascent_src_dir=$(ospath ${source_dir}/ascent/src)
-fi
+#ascent_checkout_dir=$(ospath ${script_dir}/../../src)
+#ascent_checkout_dir=$(abs_path ${ascent_checkout_dir})
+#echo ${ascent_checkout_dir}
+#if [ -d ${ascent_checkout_dir} ]; then
+#    ascent_version=checkout
+#    ascent_src_dir=$(abs_path ${ascent_checkout_dir})
+#    echo "**** Using existing Ascent source repo checkout: ${ascent_src_dir}"
+#else
+ascent_version=develop_anari
+ascent_src_dir=$(ospath ${source_dir}/ascent/src)
+#fi
 
 # otherwise use ascent develop
 ascent_build_dir=$(ospath ${build_dir}/ascent-${ascent_version}/)
@@ -1054,6 +1101,11 @@ echo 'set(ENABLE_DRAY ON CACHE BOOL "")' >> ${root_dir}/ascent-config.cmake
 
 if ${build_catalyst}; then
     echo 'set(CATALYST_DIR ' ${catalyst_cmake_dir} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
+fi
+
+if ${build_anari}; then
+    echo 'set(ENABLE_ANARI ON CACHE BOOL "")' >> ${root_dir}/ascent-config.cmake
+    echo 'set(ANARI_DIR ' ${anari_install_dir}' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
 fi
 
 if [[ "$enable_cuda" == "ON" ]]; then
