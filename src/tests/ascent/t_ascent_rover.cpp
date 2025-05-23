@@ -46,8 +46,6 @@ void render_blueprint_result(const string &field_name,
     scenes["s1/plots/p1/type"] = "pseudocolor";
     scenes["s1/plots/p1/field"] = field_name;
     scenes["s1/renders/r1/image_prefix"] = output_file;
-    // TODO: Revisit this once we figure out why/where the data is rotated in the first place
-    scenes["s1/renders/r1/camera/azimuth"] = 90.0;
 
     Node actions;
     Node &add_plots = actions.append();
@@ -211,8 +209,8 @@ TEST(ascent_rover, test_xray_blueprint_braid_lowres)
     extracts["e1/params/blueprint"] = "json";
 
     // Output resolution
-    extracts["e1/params/width"] = 10;
-    extracts["e1/params/height"] = 10;
+    extracts["e1/params/width"] = 11;
+    extracts["e1/params/height"] = 11;
 
     // Image params
     extracts["e1/params/image_params/min_value"] = 0.006;

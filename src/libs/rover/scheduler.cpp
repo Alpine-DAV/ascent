@@ -624,36 +624,36 @@ void Scheduler<FloatType>::to_blueprint(Node &dataset)
   Node &n_coords = dataset["coordsets/" + coord_name];
   n_coords["type"] = "rectilinear";
   
-  n_coords["values/x"].set(DataType::float32(num_channels + 1));
-  n_coords["values/y"].set(DataType::float32(width + 1));
-  n_coords["values/z"].set(DataType::float32(height + 1));
+  n_coords["values/x"].set(DataType::float32(width + 1));
+  n_coords["values/y"].set(DataType::float32(height + 1));
+  n_coords["values/z"].set(DataType::float32(num_channels + 1));
 
   float32_array x_coords = n_coords["values/x"].value();
   float32_array y_coords = n_coords["values/y"].value();
   float32_array z_coords = n_coords["values/z"].value();
 
-  for (int i = 0; i <= num_channels; i++)
+  for (int i = 0; i <= width; i++)
   {
     x_coords[i] = i;
   }
 
-  for (int i = 0; i <= width; i++)
+  for (int i = 0; i <= height; i++)
   {
     y_coords[i] = i;
   }
 
-  for (int i = 0; i <= height; i++)
+  for (int i = 0; i <= num_channels; i++)
   {
     z_coords[i] = i;
   }
 
-  n_coords["labels/x"] = "energy_group";
-  n_coords["labels/y"] = "width";
-  n_coords["labels/z"] = "height";
+  n_coords["labels/x"] = "width";
+  n_coords["labels/y"] = "height";
+  n_coords["labels/z"] = "energy_group";
 
-  n_coords["units/x"] = "bins";
+  n_coords["units/x"] = "pixels";
   n_coords["units/y"] = "pixels";
-  n_coords["units/z"] = "pixels";
+  n_coords["units/z"] = "bins";
 
   Node &n_topo = dataset["topologies/" + topo_name];
   n_topo["coordset"] = coord_name;
