@@ -662,41 +662,38 @@ void Scheduler<FloatType>::to_blueprint(Node &data)
 
   if(m_render_settings.m_render_mode == energy)
   {
-    if(m_result.has_intensity(0))
+    if(!m_result.has_intensity(0) || !m_result.has_optical_depth(0))
     {
-      Node &intensities = data["fields/intensities"];
-      intensities["topology"] = topo_name;
-      intensities["association"] = "element";
-      intensities["units"] = "intensity units";
-      vtkm::cont::ArrayHandle<FloatType> intensity_values = m_result.flatten_intensities();
-      FloatType *intensity_buffer = get_vtkm_ptr(intensity_values);
-      // can't set external since this goes out of scope
-      const int num_intensity_values = intensity_values.GetNumberOfValues();
-      intensities["values"].set(intensity_buffer, num_intensity_values);
-      intensities["strides"].set(DataType::int64(3));
-      int64_array strides = intensities["strides"].value();
-      strides[0] = 1;
-      strides[1] = width;
-      strides[2] = width * height;
+      ROVER_ERROR("intensity and optical depth must both be available")
     }
 
-    if(m_result.has_optical_depth(0))
-    {
-      Node &optical_depth = data["fields/optical_depth"];
-      optical_depth["topology"] = topo_name;
-      optical_depth["association"] = "element";
-      optical_depth["units"] = "path length metadata";
-      vtkm::cont::ArrayHandle<FloatType> optical_values = m_result.flatten_optical_depths();
-      FloatType *optical_buffer = get_vtkm_ptr(optical_values);
-      // can't set external since this goes out of scope
-      const int num_optical_values = optical_values.GetNumberOfValues();
-      optical_depth["values"].set(optical_buffer, num_optical_values);
-      optical_depth["strides"].set(DataType::int64(3));
-      int64_array strides = optical_depth["strides"].value();
-      strides[0] = 1;
-      strides[1] = width;
-      strides[2] = width * height;
-    }
+    // Intensity
+    Node &intensities = data["fields/intensities"];
+    intensities["topology"] = topo_name;
+    intensities["association"] = "element";
+    intensities["units"] = "intensity units";
+    vtkm::cont::ArrayHandle<FloatType> intensity_values = m_result.flatten_intensities();
+    FloatType *intensity_buffer = get_vtkm_ptr(intensity_values);
+    // can't set external since this goes out of scope
+    const int num_intensity_values = intensity_values.GetNumberOfValues();
+    intensities["values"].set(intensity_buffer, num_intensity_values);
+    intensities["strides"].set(DataType::int64(3));
+    int64_array strides = intensities["strides"].value();
+    strides[0] = 1;
+    strides[1] = width;
+    strides[2] = width * height;
+
+    // Optical Depth
+    Node &optical_depth = data["fields/optical_depth"];
+    optical_depth["topology"] = topo_name;
+    optical_depth["association"] = "element";
+    optical_depth["units"] = "path length metadata";
+    vtkm::cont::ArrayHandle<FloatType> optical_values = m_result.flatten_optical_depths();
+    FloatType *optical_buffer = get_vtkm_ptr(optical_values);
+    // can't set external since this goes out of scope
+    const int num_optical_values = optical_values.GetNumberOfValues();
+    optical_depth["values"].set(optical_buffer, num_optical_values);
+    optical_depth["strides"].set(intensities["strides"]);
   }
 
   Node verify;
