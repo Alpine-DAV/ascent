@@ -707,7 +707,7 @@ void Scheduler<FloatType>::to_blueprint(Node &data)
   Node verify;
   if(!blueprint::verify("mesh", data, verify))
   {
-    ROVER_ERROR("to_blueprint failed to produce a valid conduit mesh");
+    ROVER_ERROR("to_blueprint failed to produce a valid conduit mesh: " << verify.to_yaml());
   }
 }
 
