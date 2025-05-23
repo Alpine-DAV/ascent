@@ -262,8 +262,8 @@ RoverXRay::execute()
     parse_camera(n_camera, camera);
   }
 
-  int width = 1024;
-  int height = 1024;
+  int width = 200;
+  int height = 200;
   if (params().has_path("width") && params().has_path("height"))
   {
     width = params()["width"].as_int32();
