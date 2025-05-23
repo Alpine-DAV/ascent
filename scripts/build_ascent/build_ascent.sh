@@ -1019,17 +1019,17 @@ fi # build_catalyst
 # Ascent
 ################
 # if we are in an ascent checkout, use existing source
-#ascent_checkout_dir=$(ospath ${script_dir}/../../src)
-#ascent_checkout_dir=$(abs_path ${ascent_checkout_dir})
-#echo ${ascent_checkout_dir}
-#if [ -d ${ascent_checkout_dir} ]; then
-#    ascent_version=checkout
-#    ascent_src_dir=$(abs_path ${ascent_checkout_dir})
-#    echo "**** Using existing Ascent source repo checkout: ${ascent_src_dir}"
-#else
-ascent_version=develop_anari
+ascent_checkout_dir=$(ospath ${script_dir}/../../src)
+ascent_checkout_dir=$(abs_path ${ascent_checkout_dir})
+echo ${ascent_checkout_dir}
+if [ -d ${ascent_checkout_dir} ]; then
+    ascent_version=checkout
+    ascent_src_dir=$(abs_path ${ascent_checkout_dir})
+    echo "**** Using existing Ascent source repo checkout: ${ascent_src_dir}"
+else
+ascent_version=develop
 ascent_src_dir=$(ospath ${source_dir}/ascent/src)
-#fi
+fi
 
 # otherwise use ascent develop
 ascent_build_dir=$(ospath ${build_dir}/ascent-${ascent_version}/)
