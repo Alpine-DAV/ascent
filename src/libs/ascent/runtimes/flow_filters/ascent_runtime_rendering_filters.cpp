@@ -50,6 +50,7 @@
 #include <vtkh/rendering/MeshRenderer.hpp>
 #include <vtkh/rendering/PointRenderer.hpp>
 #include <vtkh/rendering/VolumeRenderer.hpp>
+#include <vtkh/rendering/ANARIVolumeRenderer.hpp>
 #include <vtkh/rendering/AutoCamera.hpp>
 #include <vtkm/cont/DataSet.h>
 
@@ -1775,6 +1776,10 @@ CreatePlot::execute()
     else if(type == "mesh")
     {
       renderer = new vtkh::MeshRenderer();
+    }
+    else if(type == "anari")
+    {
+      renderer = new vtkh::ANARIVolumeRenderer();
     }
     else
     {
