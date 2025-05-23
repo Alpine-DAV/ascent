@@ -607,8 +607,9 @@ void Scheduler<FloatType>::save_bov(std::string file_name)
 }
 
 template<typename FloatType>
-void Scheduler<FloatType>::to_blueprint(Node &dataset)
+void Scheduler<FloatType>::to_blueprint(Node &data)
 {
+  // TODO: Handle these default values in a better way
   int height = 0;
   int width = 0;
   m_ray_generator->get_dims(height, width);
@@ -621,7 +622,7 @@ void Scheduler<FloatType>::to_blueprint(Node &dataset)
 
   const int num_channels = m_result.get_num_channels();
 
-  Node &n_coords = dataset["coordsets/" + coord_name];
+  Node &n_coords = data["coordsets/" + coord_name];
   n_coords["type"] = "rectilinear";
   
   n_coords["values/x"].set(DataType::float32(width + 1));
@@ -655,47 +656,58 @@ void Scheduler<FloatType>::to_blueprint(Node &dataset)
   n_coords["units/y"] = "pixels";
   n_coords["units/z"] = "bins";
 
-  Node &n_topo = dataset["topologies/" + topo_name];
+  Node &n_topo = data["topologies/" + topo_name];
   n_topo["coordset"] = coord_name;
   n_topo["type"] = "rectilinear";
 
   if(m_render_settings.m_render_mode == energy)
   {
-    std::vector<int> shape = {num_channels, width, height};
-    std::vector<int> strides = {1, num_channels, num_channels * width};
-
     if(m_result.has_intensity(0))
     {
-      Node &n_int = dataset["fields/intensities"];
-      n_int["topology"] = topo_name;
-      n_int["association"] = "element";
-      n_int["units"] = "intensity units";
-      vtkm::cont::ArrayHandle<FloatType> ints = m_result.flatten_intensities();
-      FloatType *ints_buffer = get_vtkm_ptr(ints);
+      Node &intensities = data["fields/intensities"];
+      intensities["topology"] = topo_name;
+      intensities["association"] = "element";
+      intensities["units"] = "intensity units";
+      vtkm::cont::ArrayHandle<FloatType> intensity_values = m_result.flatten_intensities();
+      FloatType *intensity_buffer = get_vtkm_ptr(intensity_values);
       // can't set external since this goes out of scope
-      n_int["values"].set(ints_buffer, ints.GetNumberOfValues());
-      n_int["strides"].set(strides);
+      const int num_intensity_values = intensity_values.GetNumberOfValues();
+      intensities["values"].set(intensity_buffer, num_intensity_values);
+
+      // TODO: VisIt uses int64, but using it here throws an error later on
+      intensities["strides"].set(DataType::int32(3));
+      int32_array strides = intensities["strides"].value();
+      strides[0] = 1;
+      strides[1] = width;
+      strides[2] = width * height;
     }
 
     if(m_result.has_optical_depth(0))
     {
-      Node &n_op = dataset["fields/optical_depth"];
-      n_op["topology"] = topo_name;
-      n_op["association"] = "element";
-      n_op["units"] = "path length metadata";
-      vtkm::cont::ArrayHandle<FloatType> ints = m_result.flatten_optical_depths();
-      FloatType *ints_buffer = get_vtkm_ptr(ints);
+      Node &optical_depth = data["fields/optical_depth"];
+      optical_depth["topology"] = topo_name;
+      optical_depth["association"] = "element";
+      optical_depth["units"] = "path length metadata";
+      vtkm::cont::ArrayHandle<FloatType> optical_values = m_result.flatten_optical_depths();
+      FloatType *optical_buffer = get_vtkm_ptr(optical_values);
       // can't set external since this goes out of scope
-      n_op["values"].set(ints_buffer, ints.GetNumberOfValues());
-      n_op["strides"].set(strides);
+      const int num_optical_values = optical_values.GetNumberOfValues();
+      optical_depth["values"].set(optical_buffer, num_optical_values);
+      
+      // TODO: Why does VisIt only set the first two stride values?
+      // TODO: VisIt uses int64, but using it here throws an error later on
+      optical_depth["strides"].set(DataType::int32(3));
+      int32_array strides = optical_depth["strides"].value();
+      strides[0] = 1;
+      strides[1] = width;
+      strides[2] = width * height; // Potentially not used?
     }
   }
 
-  //relay::io::blueprint::save_mesh(n_dataset, root_file, protocol);
-  Node info;
-  if(!blueprint::verify("mesh",dataset, info))
+  Node verify;
+  if(!blueprint::verify("mesh", data, verify))
   {
-    info.print();
+    ROVER_ERROR("to_blueprint failed to produce a valid conduit mesh");
   }
 }
 
