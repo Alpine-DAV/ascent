@@ -46,8 +46,6 @@ void render_blueprint_result(const string &field_name,
     scenes["s1/plots/p1/type"] = "pseudocolor";
     scenes["s1/plots/p1/field"] = field_name;
     scenes["s1/renders/r1/image_prefix"] = output_file;
-    // TODO: Revisit this once we figure out why/where the data is rotated in the first place
-    scenes["s1/renders/r1/camera/azimuth"] = 90.0;
 
     Node actions;
     Node &add_plots = actions.append();
@@ -165,14 +163,101 @@ TEST(ascent_rover, test_xray_blueprint_braid)
 
     render_blueprint_result("intensities", image_output_image_prefix, load_mesh);
 
-    // TODO we need the render to make an interesting picture. This will be accomplished
-    // by working on the basic mesh output and changing the order of the dimensions.
-    // TODO we will need to change the baseline when we are making good renders.
     EXPECT_TRUE(check_test_image(image_output_base, 0.01f, "100"));
 
     std::string msg = "TODO we need a good description here";
     ASCENT_ACTIONS_DUMP(actions, image_output_base, msg);
 }
+
+#if 0
+
+//-----------------------------------------------------------------------------
+TEST(ascent_rover, test_xray_blueprint_braid_lowres)
+{
+    // the vtkm runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(is_vtkm_disabled(n))
+    {
+        return;
+    }
+
+    //
+    // Create an example mesh.
+    //
+    
+    Node data;
+    get_valid_test_data(data);
+
+    ASCENT_INFO("Testing lowres xray_extract on conduit braid example\n");
+
+    const std::string query_output_path = prepare_output_dir();
+    const std::string query_output_file = 
+        conduit::utils::join_file_path(query_output_path, "tout_rover_xray_lowres_query");
+
+    // remove old images before rendering
+    remove_test_image(query_output_file);
+
+    //
+    // Create the actions.
+    //
+
+    conduit::Node extracts;
+    extracts["e1/type"] = "xray";
+    extracts["e1/params/absorption"] = "radial";
+    extracts["e1/params/emission"] = "radial";
+    extracts["e1/params/filename"] = query_output_file;
+    extracts["e1/params/blueprint"] = "json";
+
+    // Output resolution
+    extracts["e1/params/width"] = 11;
+    extracts["e1/params/height"] = 11;
+
+    // Image params
+    extracts["e1/params/image_params/min_value"] = 0.006;
+    extracts["e1/params/image_params/max_value"] = 1.000;
+    extracts["e1/params/image_params/log_scale"] = "true";
+
+    conduit::Node actions;
+    // add the pipeline
+    conduit::Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    add_extracts["extracts"] = extracts;
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    const std::string full_outfile_name = query_output_file + "100.cycle_000100.root";
+
+    Node load_mesh, verify_info;
+    conduit::relay::io::blueprint::load_mesh(full_outfile_name, load_mesh);
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(load_mesh, verify_info));
+
+    const std::string image_output_path = prepare_output_dir();
+    const std::string image_output_base =
+        conduit::utils::join_file_path(image_output_path, "tout_rover_xray_lowres_blueprint");
+
+    const std::string image_output_image_prefix = image_output_base + "{cycle:d}";
+
+    render_blueprint_result("intensities", image_output_image_prefix, load_mesh);
+
+    EXPECT_TRUE(check_test_image(image_output_base, 0.01f, "100"));
+
+    std::string msg = "TODO we need a good description here";
+    ASCENT_ACTIONS_DUMP(actions, image_output_base, msg);
+}
+
+#endif
 
 //-----------------------------------------------------------------------------
 TEST(ascent_rover, test_xray_blueprint_curv3d)
@@ -594,7 +679,6 @@ TEST(ascent_rover, test_xray_serial_image_params)
     Ascent ascent;
 
     Node ascent_opts;
-    ascent_opts["runtime/type"] = "ascent";
     ascent_opts["exceptions"] = "forward";
     ascent.open(ascent_opts);
     ascent.publish(data);

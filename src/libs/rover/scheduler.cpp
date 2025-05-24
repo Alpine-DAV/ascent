@@ -24,6 +24,8 @@
 #include <mpi.h>
 #endif
 
+using namespace conduit;
+
 namespace rover {
 
 template<typename FloatType>
@@ -605,8 +607,9 @@ void Scheduler<FloatType>::save_bov(std::string file_name)
 }
 
 template<typename FloatType>
-void Scheduler<FloatType>::to_blueprint(conduit::Node &dataset)
+void Scheduler<FloatType>::to_blueprint(Node &data)
 {
+  // TODO: Handle these default values in a better way
   int height = 0;
   int width = 0;
   m_ray_generator->get_dims(height, width);
@@ -619,71 +622,84 @@ void Scheduler<FloatType>::to_blueprint(conduit::Node &dataset)
 
   const int num_channels = m_result.get_num_channels();
 
-  conduit::Node &n_topo = dataset["topologies/"+topo_name];
+  Node &n_coords = data["coordsets/" + coord_name];
+  n_coords["type"] = "rectilinear";
+  
+  n_coords["values/x"].set(DataType::float32(width + 1));
+  n_coords["values/y"].set(DataType::float32(height + 1));
+  n_coords["values/z"].set(DataType::float32(num_channels + 1));
+
+  float32_array x_coords = n_coords["values/x"].value();
+  float32_array y_coords = n_coords["values/y"].value();
+  float32_array z_coords = n_coords["values/z"].value();
+
+  for (int i = 0; i <= width; i++)
+  {
+    x_coords[i] = i;
+  }
+
+  for (int i = 0; i <= height; i++)
+  {
+    y_coords[i] = i;
+  }
+
+  for (int i = 0; i <= num_channels; i++)
+  {
+    z_coords[i] = i;
+  }
+
+  n_coords["labels/x"] = "width";
+  n_coords["labels/y"] = "height";
+  n_coords["labels/z"] = "energy_group";
+
+  n_coords["units/x"] = "pixels";
+  n_coords["units/y"] = "pixels";
+  n_coords["units/z"] = "bins";
+
+  Node &n_topo = data["topologies/" + topo_name];
   n_topo["coordset"] = coord_name;
-  n_topo["type"] = "uniform";
-
-  conduit::Node &n_coords = dataset["coordsets/"+coord_name];
-  n_coords["type"] = "uniform";
-  n_coords["dims/i"] = num_channels + 1;
-  n_coords["dims/j"] = width + 1;
-  n_coords["dims/k"] = height + 1;
-
-  // probably want to match the physical dims of the detector
-  n_coords["origin/x"] = 0;
-  n_coords["origin/y"] = 0;
-  n_coords["origin/z"] = 0;
-
-  n_coords["spacing/dx"] = 1.f;
-  n_coords["spacing/dy"] = 1.f;
-  n_coords["spacing/dz"] = 1.f;
-  n_coords["labels"].append() = "groups";
-  n_coords["labels"].append() = "width";
-  n_coords["labels"].append() = "height";
+  n_topo["type"] = "rectilinear";
 
   if(m_render_settings.m_render_mode == energy)
   {
-    std::vector<int> shape = {num_channels, width, height};
-    std::vector<int> strides = {1, num_channels, num_channels * width};
-
-    if(m_result.has_intensity(0))
+    if(!m_result.has_intensity(0) || !m_result.has_optical_depth(0))
     {
-      conduit::Node &n_int = dataset["fields/intensities"];
-      n_int["topology"] = topo_name;
-      n_int["association"] = "element";
-      vtkm::cont::ArrayHandle<FloatType> ints = m_result.flatten_intensities();
-      FloatType *ints_buffer = get_vtkm_ptr(ints);
-      // can't set external since this goes out of scope
-      n_int["values"].set(ints_buffer, ints.GetNumberOfValues());
-      n_int["shape"].set(shape);
-      n_int["strides"].set(strides);
-      n_int["labels"].append() = "groups";
-      n_int["labels"].append() = "width";
-      n_int["labels"].append() = "height";
+      ROVER_ERROR("intensity and optical depth must both be available")
     }
 
-    if(m_result.has_optical_depth(0))
-    {
-      conduit::Node &n_op = dataset["fields/optical_depth"];
-      n_op["topology"] = topo_name;
-      n_op["association"] = "element";
-      vtkm::cont::ArrayHandle<FloatType> ints = m_result.flatten_optical_depths();
-      FloatType *ints_buffer = get_vtkm_ptr(ints);
-      // can't set external since this goes out of scope
-      n_op["values"].set(ints_buffer, ints.GetNumberOfValues());
-      n_op["shape"].set(shape);
-      n_op["strides"].set(strides);
-      n_op["labels"].append() = "groups";
-      n_op["labels"].append() = "width";
-      n_op["labels"].append() = "height";
-    }
+    // Intensity
+    Node &intensities = data["fields/intensities"];
+    intensities["topology"] = topo_name;
+    intensities["association"] = "element";
+    intensities["units"] = "intensity units";
+    vtkm::cont::ArrayHandle<FloatType> intensity_values = m_result.flatten_intensities();
+    FloatType *intensity_buffer = get_vtkm_ptr(intensity_values);
+    // can't set external since this goes out of scope
+    const int num_intensity_values = intensity_values.GetNumberOfValues();
+    intensities["values"].set(intensity_buffer, num_intensity_values);
+    intensities["strides"].set(DataType::int64(3));
+    int64_array strides = intensities["strides"].value();
+    strides[0] = 1;
+    strides[1] = width;
+    strides[2] = width * height;
+
+    // Optical Depth
+    Node &optical_depth = data["fields/optical_depth"];
+    optical_depth["topology"] = topo_name;
+    optical_depth["association"] = "element";
+    optical_depth["units"] = "path length metadata";
+    vtkm::cont::ArrayHandle<FloatType> optical_values = m_result.flatten_optical_depths();
+    FloatType *optical_buffer = get_vtkm_ptr(optical_values);
+    // can't set external since this goes out of scope
+    const int num_optical_values = optical_values.GetNumberOfValues();
+    optical_depth["values"].set(optical_buffer, num_optical_values);
+    optical_depth["strides"].set(intensities["strides"]);
   }
 
-  //conduit::relay::io::blueprint::save_mesh(n_dataset, root_file, protocol);
-  conduit::Node info;
-  if(!conduit::blueprint::verify("mesh",dataset, info))
+  Node verify;
+  if(!blueprint::verify("mesh", data, verify))
   {
-    info.print();
+    ROVER_ERROR("to_blueprint failed to produce a valid conduit mesh: " << verify.to_yaml());
   }
 }
 
