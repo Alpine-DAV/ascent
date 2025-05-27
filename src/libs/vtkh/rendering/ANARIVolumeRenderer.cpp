@@ -213,8 +213,8 @@ ANARIVolumeRenderer::ANARIVolumeRenderer()
   ////
   //// add some default opacity to the color table
   ////
-  m_color_table.AddPointAlpha(0.0f, .02);
-  m_color_table.AddPointAlpha(.0f, .5);
+  //m_color_table.AddPointAlpha(0.0f, .02);
+  //m_color_table.AddPointAlpha(.0f, .5);
   m_num_samples = 100.f;
   //m_has_unstructured = false;
 }
@@ -293,6 +293,7 @@ ANARIVolumeRenderer::DoExecute()
     //m_input->GetDomain(i).GetField(m_field_name).PrintSummary(std::cerr);
     if(m_input->IsUnstructured())
     {
+      std::cerr << "in unstructured" << std::endl;
       auto& mIso = scene.AddMapper(vtkm::interop::anari::ANARIMapperTriangles(m_device));
       mIso.SetName(("isosurface_" + std::to_string(i)).c_str());
       mIso.SetActor({ 
@@ -301,7 +302,8 @@ ANARIVolumeRenderer::DoExecute()
         m_input->GetDomain(i).GetField(m_field_name) 
       });
       mIso.SetCalculateNormals(true);
-      detail::set_tfn(mIso,m_device,m_color_table,m_range);
+      mIso.SetColorTable(m_color_table);
+      //detail::set_tfn(mIso,m_device,m_color_table,m_range);
     }
 
     auto& mVol = scene.AddMapper(vtkm::interop::anari::ANARIMapperVolume(m_device));
@@ -311,7 +313,8 @@ ANARIVolumeRenderer::DoExecute()
       m_input->GetDomain(i).GetCoordinateSystem(), 
       m_input->GetDomain(i).GetField(m_field_name) 
     });
-    detail::set_tfn(mVol,m_device,m_color_table,m_range);
+    mVol.SetColorTable(m_color_table);
+    //detail::set_tfn(mVol,m_device,m_color_table,m_range);
   }
   int num_renders = static_cast<int>(m_renders.size());
   for(int i = 0; i < num_renders; ++i)
@@ -362,7 +365,7 @@ ANARIVolumeRenderer::DoExecute()
     // commit world with lights
     auto world = scene.GetANARIWorld();
     anari_cpp::setAndReleaseParameter(m_device, world, "light", 
-      anari_cpp::newArray1D(m_device, m_lights.data(), m_lights.size()));
+    anari_cpp::newArray1D(m_device, m_lights.data(), m_lights.size()));
     anari_cpp::commitParameters(m_device, world);
 
     // m_frame parameters
@@ -384,10 +387,9 @@ ANARIVolumeRenderer::DoExecute()
     const auto a_colors = anari_cpp::map<vtkm::Vec4f_32>(m_device, m_frame, "channel.color");
     const auto a_depths = anari_cpp::map<vtkm::Float32>(m_device, m_frame, "channel.depth");
 
-    ascent::PNGEncoder encoder;
-//    encoder.Encode((unsigned char*)a_colors.data, a_colors.width, a_colors.height);
-    encoder.Encode((float *)a_colors.data, a_colors.width, a_colors.height);
-    encoder.Save("encoder_image.png");
+    //ascent::PNGEncoder encoder;
+    //encoder.Encode((float *)a_colors.data, a_colors.width, a_colors.height);
+    //encoder.Save("encoder_image.png");
     auto v_colors = canvas.GetColorBuffer().WritePortal();
     auto v_depths = canvas.GetDepthBuffer().WritePortal();
     const float *d_pixels = anari::map<float>(m_device, m_frame, "channel.depth").data;
