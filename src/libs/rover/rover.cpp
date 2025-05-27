@@ -212,6 +212,20 @@ public:
 
 Rover::Rover() : m_internals( new InternalsType )
 {
+  // Rover settings
+  render_mode = energy;
+  scattering_type = non_scattering;
+  ray_scope = global_rays;
+  color_table.LoadPreset("Cool to Warm");
+
+  // Energy settings
+  divide_abs_by_emission = false;
+  unit_scalar = 1.0;
+
+  // Volume setings
+  num_samples = 400;
+
+  // Camera settings
   normal[0] = 0.0;
   normal[1] = 0.0;
   normal[2] = 1.0;

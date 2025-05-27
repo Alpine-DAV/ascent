@@ -62,7 +62,23 @@ private:
   std::shared_ptr<InternalsType> m_internals;
 
 protected:
-  // Default camera params
+  // Rover settings
+  RenderMode render_mode;
+  ScatteringType scattering_type;
+  RayScope ray_scope;
+  vtkmColorTable color_table;
+  std::string primary_field;
+  std::string secondary_field;
+
+  // Energy settings
+  bool divide_abs_by_emission;
+  float unit_scalar;
+
+  // Volume settings
+  int num_samples; // approximate number of samples per ray
+  vtkmRange scalar_range;
+
+  // Camera settings
   double normal[3];
   double focus[3];
   double viewUp[3];

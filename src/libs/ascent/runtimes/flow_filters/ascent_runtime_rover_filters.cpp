@@ -272,8 +272,31 @@ RoverXRay::execute()
     }
   }
 
+  //
+  // Default camera settings
+  //
   vtkmCamera camera = tracer.get_camera();
   camera.ResetToBounds(dataset.GetGlobalBounds());
+
+  // Overrides the default camera settings
+  if(params().has_path("camera"))
+  {
+    const conduit::Node &camera_node = params()["camera"];
+    parse_camera(camera_node, camera);
+  }
+
+  // TODO: Initialize the camera_generator in the rover constructor
+  int width = 200;
+  int height = 200;
+  if (params().has_path("width") && params().has_path("height"))
+  {
+    width = params()["width"].as_int32();
+    height = params()["height"].as_int32();
+  }
+
+  CameraGenerator camera_generator(camera, width, height);
+
+  tracer.set_ray_generator(&camera_generator);
 
   //
   // Default render settings
@@ -296,33 +319,10 @@ RoverXRay::execute()
 
   tracer.set_render_settings(render_settings);
 
-  // Overrides the default camera settings
-  if(params().has_path("camera"))
-  {
-    const conduit::Node &camera_node = params()["camera"];
-    parse_camera(camera_node, camera);
-  }
-
   for(int i = 0; i < dataset.GetNumberOfDomains(); i++)
   {
     tracer.add_data_set(dataset.GetDomain(i));
   }
-
-  //
-  // Default camera settings
-  //
-
-  int width = 200;
-  int height = 200;
-  if (params().has_path("width") && params().has_path("height"))
-  {
-    width = params()["width"].as_int32();
-    height = params()["height"].as_int32();
-  }
-
-  CameraGenerator camera_generator(camera, width, height);
-
-  tracer.set_ray_generator(&camera_generator);
 
   tracer.execute();
 
