@@ -253,25 +253,6 @@ RoverXRay::execute()
   // Returns an empty dataset if topo_name doesn't exist in the collection
   vtkh::DataSet &dataset = collection->dataset_by_topology(topo_name);
 
-  vtkmCamera camera;
-  camera.ResetToBounds(dataset.GetGlobalBounds());
-
-  if(params().has_path("camera"))
-  {
-    const conduit::Node &n_camera = params()["camera"];
-    parse_camera(n_camera, camera);
-  }
-
-  int width = 200;
-  int height = 200;
-  if (params().has_path("width") && params().has_path("height"))
-  {
-    width = params()["width"].as_int32();
-    height = params()["height"].as_int32();
-  }
-
-  CameraGenerator generator(camera, width, height);
-
   Rover tracer;
   int mpi_comm_id = -1;
 #ifdef ASCENT_MPI_ENABLED
@@ -291,33 +272,57 @@ RoverXRay::execute()
     }
   }
 
+  vtkmCamera camera = tracer.get_camera();
+  camera.ResetToBounds(dataset.GetGlobalBounds());
+
   //
-  // Create some basic settings
+  // Default render settings
   //
-  RenderSettings settings;
-  settings.m_render_mode = rover::energy;
-  settings.m_primary_field = absorption;
-    
+  RenderSettings render_settings;
+  render_settings.m_render_mode = rover::energy;
+  render_settings.m_primary_field = absorption;
+
   // TODO: investigate how/why this is getting set, even if emission is not specified
   // example: if absorption == "radial", why is emission also == "radial"
   if (params().has_path("emission"))
   {
-    settings.m_secondary_field = params()["emission"].as_string();
+    render_settings.m_secondary_field = params()["emission"].as_string();
   }
 
   if(params().has_path("unit_scalar"))
   {
-    settings.m_energy_settings.m_unit_scalar = params()["unit_scalar"].to_float64();
+    render_settings.m_energy_settings.m_unit_scalar = params()["unit_scalar"].to_float64();
   }
 
-  tracer.set_render_settings(settings);
+  tracer.set_render_settings(render_settings);
+
+  // Overrides the default camera settings
+  if(params().has_path("camera"))
+  {
+    const conduit::Node &camera_node = params()["camera"];
+    parse_camera(camera_node, camera);
+  }
 
   for(int i = 0; i < dataset.GetNumberOfDomains(); i++)
   {
     tracer.add_data_set(dataset.GetDomain(i));
   }
 
-  tracer.set_ray_generator(&generator);
+  //
+  // Default camera settings
+  //
+
+  int width = 200;
+  int height = 200;
+  if (params().has_path("width") && params().has_path("height"))
+  {
+    width = params()["width"].as_int32();
+    height = params()["height"].as_int32();
+  }
+
+  CameraGenerator camera_generator(camera, width, height);
+
+  tracer.set_ray_generator(&camera_generator);
 
   tracer.execute();
 
@@ -401,8 +406,6 @@ RoverXRay::execute()
       tracer.save_bov(expand_path_special_variables(bov_filename, mpi_comm_id));
     }
   }
-  
-  tracer.finalize();
 }
 
 //-----------------------------------------------------------------------------
@@ -584,8 +587,6 @@ RoverVolume::execute()
     filename = output_dir(filename);
 
     tracer.save_png(filename);
-    tracer.finalize();
-
 }
 
 //-----------------------------------------------------------------------------

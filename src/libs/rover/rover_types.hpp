@@ -31,8 +31,8 @@ enum ScatteringType
 //
 enum RayScope
 {
-  global_rays,  // rays can exist in one ore more domains at one time
-  local_rays    // ran only exist in a single domain st any given time
+  global_rays,  // rays can exist in one or more more domains at one time
+  local_rays    // rays only exist in a single domain at any given time
 };
 
 //
@@ -52,7 +52,10 @@ struct EnergySettings
 {
   bool m_divide_abs_by_emmision;
   float m_unit_scalar;
-  EnergySettings() : m_divide_abs_by_emmision(false), m_unit_scalar(1.0) {}
+  EnergySettings() :
+    m_divide_abs_by_emmision(false),
+    m_unit_scalar(1.0)
+    {}
 };
 
 struct RenderSettings
@@ -65,6 +68,7 @@ struct RenderSettings
   std::string    m_secondary_field;
   VolumeSettings m_volume_settings;
   EnergySettings m_energy_settings;
+
   //
   // Default settings
   //
@@ -75,6 +79,7 @@ struct RenderSettings
     m_ray_scope       = global_rays;
   }
 
+  // Can we remove this?
   void print()
   {
     //std::cout<<"******* Settings *********\n";

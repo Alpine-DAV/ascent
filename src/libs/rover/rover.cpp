@@ -73,7 +73,7 @@ public:
      //m_scheduler = new Scheduler<FloatType>();
      m_scheduler->set_render_settings(render_settings);
 //#endif
-   }
+  }
 
   void set_ray_generator(RayGenerator *ray_generator)
   {
@@ -210,15 +210,62 @@ public:
 
 }; //Internals Type
 
-Rover::Rover()
-  : m_internals( new InternalsType )
+Rover::Rover() : m_internals( new InternalsType )
 {
+  normal[0] = 0.0;
+  normal[1] = 0.0;
+  normal[2] = 1.0;
+  focus[0] = 0.0;
+  focus[1] = 0.0;
+  focus[2] = 0.0;
+  viewUp[0] = 0.0;
+  viewUp[1] = 1.0;
+  viewUp[2] = 0.0;
+  viewAngle = 30.0;
+  parallelScale = 0.5;
+  viewWidthOverride = 0.0;
+  nonSquarePixels = false;
+  nearPlane = -0.5;
+  farPlane = 0.5;
+  imagePan[0] = 0.0;
+  imagePan[1] = 0.0;
+  imageZoom = 1.0;
+  perspective = true;
+  imageSize[0] = 200;
+  imageSize[1] = 200;
 
+  Rover::initialize_camera();
 }
 
 Rover::~Rover()
 {
+#ifdef ROVER_ENABLE_LOGGING
+  DataLogger::GetInstance()->WriteLog();
+#endif
+}
 
+void
+Rover::initialize_camera()
+{
+  vtkmVec3f look_at(focus[0], focus[1], focus[2]);
+  vtkmVec3f up(viewUp[0], viewUp[1], viewUp[2]);
+
+  camera.SetLookAt(look_at);
+  camera.SetViewUp(up);
+  camera.SetFieldOfView(viewAngle);
+  camera.Pan(imagePan[0], imagePan[1]);
+  camera.Zoom(log(imageZoom) / log(4.0));
+
+  vtkm::Range clipping_range;
+  clipping_range.Min = imagePan[0];
+  clipping_range.Max = imagePan[1];
+  camera.SetClippingRange(clipping_range);
+}
+
+vtkmCamera&
+Rover::get_camera()
+{
+  return camera;
 }
 
 void
@@ -227,9 +274,8 @@ Rover::set_mpi_comm_handle(int mpi_comm_id)
 #ifdef ROVER_PARALLEL
   this->m_internals->set_comm_handle(MPI_Comm_f2c(mpi_comm_id));
 #else
-  (void)mpi_comm_id;
+  (void) mpi_comm_id;
 #endif
-
 }
 
 int
@@ -239,14 +285,6 @@ Rover::get_mpi_comm_handle()
   return MPI_Comm_c2f(this->m_internals->get_comm_handle());
 #else
   return -1;
-#endif
-}
-
-void
-Rover::finalize()
-{
-#ifdef ROVER_ENABLE_LOGGING
-  DataLogger::GetInstance()->WriteLog();
 #endif
 }
 

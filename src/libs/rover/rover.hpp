@@ -7,31 +7,33 @@
 #ifndef rover_h
 #define rover_h
 
-#include <rover_config.h>
-
-#include <image.hpp>
-#include <rover_exports.h>
-#include <rover_types.hpp>
-#include <ray_generators/ray_generator.hpp>
-// vtk-m includes
-#include <vtkm_typedefs.hpp>
-
 // std includes
 #include <memory>
-#include <conduit.hpp>
 
-namespace rover {
+// tpl includes
+#include <conduit.hpp>
+#include <vtkm_typedefs.hpp>
+
+// rover includes
+#include <rover_exports.h>
+#include <rover_config.h>
+#include <rover_types.hpp>
+#include <image.hpp>
+#include <ray_generators/ray_generator.hpp>
+
+namespace rover
+{
 
 class ROVER_API Rover
 {
 public:
+  vtkmCamera camera;
+  
   Rover();
   ~Rover();
 
   void set_mpi_comm_handle(int mpi_comm_id);
   int  get_mpi_comm_handle();
-
-  void finalize();
 
   void add_data_set(vtkmDataSet &);
   void set_render_settings(const RenderSettings render_settings);
@@ -52,9 +54,28 @@ public:
   void set_tracer_precision64();
   void get_result(Image<vtkm::Float32> &image);
   void get_result(Image<vtkm::Float64> &image);
+  vtkmCamera& get_camera();
+  
 private:
+  void initialize_camera();
   class InternalsType;
   std::shared_ptr<InternalsType> m_internals;
+
+protected:
+  // Default camera params
+  double normal[3];
+  double focus[3];
+  double viewUp[3];
+  double viewAngle;
+  double parallelScale;     // view height
+  double viewWidthOverride; // view width
+  bool nonSquarePixels;
+  double nearPlane;
+  double farPlane;
+  double imagePan[2];
+  double imageZoom;
+  bool perspective;
+  int imageSize[2];
 };
 
 }; // namespace rover
