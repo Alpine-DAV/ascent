@@ -245,7 +245,7 @@ RoverXRay::execute()
   std::string absorption = params()["absorption"].as_string();
   if(!collection->has_field(absorption))
   {
-    ASCENT_ERROR("Unknown absorption field: '" << absorption << "'");
+    ASCENT_ERROR("Absorption field name '" << absorption << "' is not in the dataset");
   }
 
   std::string topo_name = collection->field_topology(absorption);
@@ -272,10 +272,13 @@ RoverXRay::execute()
     }
   }
 
+  tracer.add_data_set(dataset);
+
   //
   // Default camera settings
   //
   vtkmCamera camera = tracer.get_camera();
+  // TODO: Resetting the camera bounds within add_data_set causes tests to fail
   camera.ResetToBounds(dataset.GetGlobalBounds());
 
   // Overrides the default camera settings
@@ -285,16 +288,17 @@ RoverXRay::execute()
     parse_camera(camera_node, camera);
   }
 
-  // TODO: Initialize the camera_generator in the rover constructor
-  int width = 200;
-  int height = 200;
+  // TODO: Figure out why things fail when rover initializes this internally
+  CameraGenerator camera_generator;
+  camera_generator.set_camera(camera);
+
+  // Overrides the default output image size of (200, 200)
   if (params().has_path("width") && params().has_path("height"))
   {
-    width = params()["width"].as_int32();
-    height = params()["height"].as_int32();
+    int width = params()["width"].as_int32();
+    int height = params()["height"].as_int32();
+    camera_generator.set_image_dims(width, height);
   }
-
-  CameraGenerator camera_generator(camera, width, height);
 
   tracer.set_ray_generator(&camera_generator);
 
@@ -302,6 +306,7 @@ RoverXRay::execute()
   // Default render settings
   //
   RenderSettings render_settings;
+  // TODO: Changing energy to be the default render mode breaks things
   render_settings.m_render_mode = rover::energy;
   render_settings.m_primary_field = absorption;
 
@@ -318,11 +323,6 @@ RoverXRay::execute()
   }
 
   tracer.set_render_settings(render_settings);
-
-  for(int i = 0; i < dataset.GetNumberOfDomains(); i++)
-  {
-    tracer.add_data_set(dataset.GetDomain(i));
-  }
 
   tracer.execute();
 
@@ -560,10 +560,7 @@ RoverVolume::execute()
     }
 
     tracer.set_render_settings(settings);
-    for(int i = 0; i < dataset.GetNumberOfDomains(); ++i)
-    {
-      tracer.add_data_set(dataset.GetDomain(i));
-    }
+    tracer.add_data_set(dataset);
 
     tracer.set_ray_generator(&generator);
     tracer.execute();

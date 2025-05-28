@@ -4,6 +4,7 @@
 // other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+#include "image.hpp"
 #include <scheduler.hpp>
 #include <rover.hpp>
 #include <rover_exceptions.hpp>
@@ -249,6 +250,7 @@ Rover::Rover() : m_internals( new InternalsType )
   imageSize[1] = 200;
 
   Rover::initialize_camera();
+  // Rover::initialize_camera_generator();
 }
 
 Rover::~Rover()
@@ -274,6 +276,15 @@ Rover::initialize_camera()
   clipping_range.Min = imagePan[0];
   clipping_range.Max = imagePan[1];
   camera.SetClippingRange(clipping_range);
+}
+
+void
+Rover::initialize_camera_generator()
+{
+  camera_generator.set_camera(camera);
+  camera_generator.set_width(imageSize[0]);
+  camera_generator.set_height(imageSize[1]);
+  Rover::set_ray_generator(&camera_generator);
 }
 
 vtkmCamera&
@@ -303,9 +314,13 @@ Rover::get_mpi_comm_handle()
 }
 
 void
-Rover::add_data_set(vtkmDataSet &dataset)
+Rover::add_data_set(vtkh::DataSet &dataset)
 {
-  m_internals->add_data_set(dataset);
+  for (int i = 0; i < dataset.GetNumberOfDomains(); i++)
+  {
+    m_internals->add_data_set(dataset.GetDomain(i));
+  }
+  // camera.ResetToBounds(dataset.GetGlobalBounds());
 }
 
 void
@@ -328,6 +343,14 @@ Rover::set_ray_generator(RayGenerator *ray_generator)
     throw RoverException("Ray generator cannot  be null");
   }
   m_internals->set_ray_generator(ray_generator);
+}
+
+void
+Rover::set_image_dims(int width, int height)
+{
+  imageSize[0] = width;
+  imageSize[1] = height;
+  camera_generator.set_image_dims(imageSize[0], imageSize[1]);
 }
 
 void

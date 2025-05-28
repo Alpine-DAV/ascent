@@ -74,6 +74,7 @@ struct RenderSettings
   //
   RenderSettings() : m_color_table("Cool to Warm")
   {
+    // TODO: Why does changing the default to energy not work?
     m_render_mode     = volume;
     m_scattering_type = non_scattering;
     m_ray_scope       = global_rays;

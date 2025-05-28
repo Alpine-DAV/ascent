@@ -8,11 +8,13 @@
 #define rover_h
 
 // std includes
+#include "ray_generators/camera_generator.hpp"
 #include <memory>
 
 // tpl includes
 #include <conduit.hpp>
 #include <vtkm_typedefs.hpp>
+#include <vtkh/DataSet.hpp>
 
 // rover includes
 #include <rover_exports.h>
@@ -28,6 +30,7 @@ class ROVER_API Rover
 {
 public:
   vtkmCamera camera;
+  CameraGenerator camera_generator;
   
   Rover();
   ~Rover();
@@ -35,9 +38,10 @@ public:
   void set_mpi_comm_handle(int mpi_comm_id);
   int  get_mpi_comm_handle();
 
-  void add_data_set(vtkmDataSet &);
+  void add_data_set(vtkh::DataSet &);
   void set_render_settings(const RenderSettings render_settings);
   void set_ray_generator(RayGenerator *);
+  void set_image_dims(int width, int height);
   void clear_data_sets();
   void set_background(const std::vector<vtkm::Float32> &background);
   void set_background(const std::vector<vtkm::Float64> &background);
@@ -55,7 +59,7 @@ public:
   void get_result(Image<vtkm::Float32> &image);
   void get_result(Image<vtkm::Float64> &image);
   vtkmCamera& get_camera();
-  
+  void initialize_camera_generator();
 private:
   void initialize_camera();
   class InternalsType;

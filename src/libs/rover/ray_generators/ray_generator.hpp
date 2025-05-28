@@ -48,12 +48,12 @@ class RayGenerator
 {
 public:
   RayGenerator();
-  RayGenerator(int height, int width);
+  RayGenerator(int width, int height);
   virtual ~RayGenerator();
   virtual void get_rays(vtkmRayTracing::Ray<vtkm::Float32> &rays) = 0;
   virtual void get_rays(vtkmRayTracing::Ray<vtkm::Float64> &rays) = 0;
 
-  void get_dims(int &height, int &width) const;
+  void get_dims(int &width, int &height) const;
   int  get_size() const;
   bool get_has_rays() const;
   void reset();

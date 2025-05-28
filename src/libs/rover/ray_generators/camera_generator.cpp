@@ -45,14 +45,14 @@
 
 namespace rover {
 
-CameraGenerator::CameraGenerator()
- : RayGenerator()
+CameraGenerator::CameraGenerator(const int width, const int height)
+ : RayGenerator(width, height)
 {
 
 }
 
-CameraGenerator::CameraGenerator(const vtkmCamera &camera, const int height, const int width)
- : RayGenerator(height, width)
+CameraGenerator::CameraGenerator(const vtkmCamera &camera, const int width, const int height)
+ : RayGenerator(width, height)
 {
   m_camera = camera;
 }
@@ -89,7 +89,14 @@ CameraGenerator::get_rays(vtkmRayTracing::Ray<vtkm::Float64> &rays)
 vtkmCamera
 CameraGenerator::get_camera()
 {
+  // TODO: Handle the case where m_camera is never set
   return m_camera;
+}
+
+void
+CameraGenerator::set_camera(vtkmCamera &camera)
+{
+  m_camera = camera;
 }
 
 vtkmCoordinates
@@ -102,6 +109,13 @@ void
 CameraGenerator::set_coordinates(vtkmCoordinates coordinates)
 {
   m_coordinates = coordinates;
+}
+
+void
+CameraGenerator::set_image_dims(int width, int height)
+{
+  set_width(width);
+  set_height(height);
 }
 
 } // namespace rover
