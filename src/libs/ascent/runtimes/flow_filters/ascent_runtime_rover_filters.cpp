@@ -253,14 +253,16 @@ RoverXRay::execute()
   // Returns an empty dataset if topo_name doesn't exist in the collection
   vtkh::DataSet &dataset = collection->dataset_by_topology(topo_name);
 
-  Rover tracer;
+  Rover rover;
+  rover.update_settings(params());
+
   int mpi_comm_id = -1;
 #ifdef ASCENT_MPI_ENABLED
   mpi_comm_id = flow::Workspace::default_mpi_comm();
   rover::Logger::get_instance()->set_mpi_comm_id(mpi_comm_id);
   // these use different styles of naming functions ....
   rover::DataLogger::GetInstance()->set_mpi_comm_id(mpi_comm_id);
-  tracer.set_mpi_comm_handle(mpi_comm_id);
+  rover.set_mpi_comm_handle(mpi_comm_id);
 #endif
 
   if (params().has_path("precision"))
@@ -268,25 +270,19 @@ RoverXRay::execute()
     std::string precision = params()["precision"].as_string();
     if (precision == "double")
     {
-      tracer.set_tracer_precision64();
+      rover.set_tracer_precision64();
     }
   }
-
-  tracer.add_data_set(dataset);
+  
+  // Giving rover a dataset causes the default camera bounds to be reset to the dataset bounds
+  rover.add_data_set(dataset);
+  // We then want to override that dataset-adjusted camera per the input params
+  rover.update_camera();
 
   //
   // Default camera settings
   //
-  vtkmCamera camera = tracer.get_camera();
-  // TODO: Resetting the camera bounds within add_data_set causes tests to fail
-  camera.ResetToBounds(dataset.GetGlobalBounds());
-
-  // Overrides the default camera settings
-  if(params().has_path("camera"))
-  {
-    const conduit::Node &camera_node = params()["camera"];
-    parse_camera(camera_node, camera);
-  }
+  vtkmCamera camera = rover.get_camera();
 
   // TODO: Figure out why things fail when rover initializes this internally
   CameraGenerator camera_generator;
@@ -300,7 +296,7 @@ RoverXRay::execute()
     camera_generator.set_image_dims(width, height);
   }
 
-  tracer.set_ray_generator(&camera_generator);
+  rover.set_ray_generator(&camera_generator);
 
   //
   // Default render settings
@@ -322,9 +318,8 @@ RoverXRay::execute()
     render_settings.m_energy_settings.m_unit_scalar = params()["unit_scalar"].to_float64();
   }
 
-  tracer.set_render_settings(render_settings);
-
-  tracer.execute();
+  rover.set_render_settings(render_settings);
+  rover.execute();
 
   Node metadata = Metadata::n_metadata;
 
@@ -347,7 +342,7 @@ RoverXRay::execute()
     std::string protocol = params()["blueprint"].as_string();
     conduit::Node multi_domain;
     conduit::Node &data = multi_domain.append();
-    tracer.to_blueprint(data);
+    rover.to_blueprint(data);
 
     if (data.has_path("coordsets"))
     {
@@ -371,7 +366,7 @@ RoverXRay::execute()
     const int num_files = -1;
     conduit::Node extra_opts;
     std::string result_path;
-    
+
     mesh_blueprint_save(multi_domain,
                         filename,
                         protocol,
@@ -386,11 +381,11 @@ RoverXRay::execute()
     float min_value = params()["image_params/min_value"].to_float32();
     float max_value = params()["image_params/max_value"].to_float32();
     bool log_scale = params()["image_params/log_scale"].as_string() == "true";
-    tracer.save_png(filename, min_value, max_value, log_scale);
+    rover.save_png(filename, min_value, max_value, log_scale);
   }
   else
   {
-    tracer.save_png(filename);
+    rover.save_png(filename);
   }
 
   if (params().has_path("bov_filename"))
@@ -399,11 +394,11 @@ RoverXRay::execute()
     bov_filename = output_dir(bov_filename);
     if (cycle != -1)
     {
-      tracer.save_bov(expand_path_special_variables(bov_filename, mpi_comm_id, cycle));
+      rover.save_bov(expand_path_special_variables(bov_filename, mpi_comm_id, cycle));
     }
     else
     {
-      tracer.save_bov(expand_path_special_variables(bov_filename, mpi_comm_id));
+      rover.save_bov(expand_path_special_variables(bov_filename, mpi_comm_id));
     }
   }
 }

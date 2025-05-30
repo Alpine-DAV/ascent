@@ -23,17 +23,22 @@
 #include <image.hpp>
 #include <ray_generators/ray_generator.hpp>
 
+using namespace conduit;
+
 namespace rover
 {
 
 class ROVER_API Rover
 {
 public:
-  vtkmCamera camera;
+  vtkmCamera m_camera;
   CameraGenerator camera_generator;
   
   Rover();
   ~Rover();
+
+  void update_settings(Node &params);
+  void print_settings();
 
   void set_mpi_comm_handle(int mpi_comm_id);
   int  get_mpi_comm_handle();
@@ -59,43 +64,13 @@ public:
   void get_result(Image<vtkm::Float32> &image);
   void get_result(Image<vtkm::Float64> &image);
   vtkmCamera& get_camera();
+  void update_camera();
   void initialize_camera_generator();
 private:
-  void initialize_camera();
   class InternalsType;
   std::shared_ptr<InternalsType> m_internals;
-
 protected:
-  // Rover settings
-  RenderMode render_mode;
-  ScatteringType scattering_type;
-  RayScope ray_scope;
-  vtkmColorTable color_table;
-  std::string primary_field;
-  std::string secondary_field;
-
-  // Energy settings
-  bool divide_abs_by_emission;
-  float unit_scalar;
-
-  // Volume settings
-  int num_samples; // approximate number of samples per ray
-  vtkmRange scalar_range;
-
-  // Camera settings
-  double normal[3];
-  double focus[3];
-  double viewUp[3];
-  double viewAngle;
-  double parallelScale;     // view height
-  double viewWidthOverride; // view width
-  bool nonSquarePixels;
-  double nearPlane;
-  double farPlane;
-  double imagePan[2];
-  double imageZoom;
-  bool perspective;
-  int imageSize[2];
+  Node m_settings;
 };
 
 }; // namespace rover

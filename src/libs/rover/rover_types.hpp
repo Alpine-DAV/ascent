@@ -8,6 +8,7 @@
 #define rover_types_h
 
 #include <rover_config.h>
+#include <conduit.hpp>
 #include <vtkm_typedefs.hpp>
 
 namespace rover {
@@ -80,7 +81,6 @@ struct RenderSettings
     m_ray_scope       = global_rays;
   }
 
-  // Can we remove this?
   void print()
   {
     //std::cout<<"******* Settings *********\n";

@@ -211,46 +211,9 @@ public:
 
 }; //Internals Type
 
-Rover::Rover() : m_internals( new InternalsType )
+Rover::Rover() : m_internals(new InternalsType)
 {
-  // Rover settings
-  render_mode = energy;
-  scattering_type = non_scattering;
-  ray_scope = global_rays;
-  color_table.LoadPreset("Cool to Warm");
 
-  // Energy settings
-  divide_abs_by_emission = false;
-  unit_scalar = 1.0;
-
-  // Volume setings
-  num_samples = 400;
-
-  // Camera settings
-  normal[0] = 0.0;
-  normal[1] = 0.0;
-  normal[2] = 1.0;
-  focus[0] = 0.0;
-  focus[1] = 0.0;
-  focus[2] = 0.0;
-  viewUp[0] = 0.0;
-  viewUp[1] = 1.0;
-  viewUp[2] = 0.0;
-  viewAngle = 30.0;
-  parallelScale = 0.5;
-  viewWidthOverride = 0.0;
-  nonSquarePixels = false;
-  nearPlane = -0.5;
-  farPlane = 0.5;
-  imagePan[0] = 0.0;
-  imagePan[1] = 0.0;
-  imageZoom = 1.0;
-  perspective = true;
-  imageSize[0] = 200;
-  imageSize[1] = 200;
-
-  Rover::initialize_camera();
-  // Rover::initialize_camera_generator();
 }
 
 Rover::~Rover()
@@ -261,36 +224,162 @@ Rover::~Rover()
 }
 
 void
-Rover::initialize_camera()
+Rover::update_settings(Node &params)
 {
-  vtkmVec3f look_at(focus[0], focus[1], focus[2]);
-  vtkmVec3f up(viewUp[0], viewUp[1], viewUp[2]);
+  if (params.has_path("camera/look_at"))
+  {
+    m_settings["camera/look_at"].set(params["camera/look_at"]);
+  }
 
-  camera.SetLookAt(look_at);
-  camera.SetViewUp(up);
-  camera.SetFieldOfView(viewAngle);
-  camera.Pan(imagePan[0], imagePan[1]);
-  camera.Zoom(log(imageZoom) / log(4.0));
+  if (params.has_path("camera/up"))
+  {
+    m_settings["camera/up"].set(params["camera/up"]);
+  }
 
-  vtkm::Range clipping_range;
-  clipping_range.Min = imagePan[0];
-  clipping_range.Max = imagePan[1];
-  camera.SetClippingRange(clipping_range);
+  if (params.has_path("camera/fov"))
+  {
+    m_settings["camera/fov"] = params["camera/fov"];
+  }
+
+  if (params.has_path("camera/xpan"))
+  {
+    m_settings["camera/xpan"] = params["camera/xpan"];
+  }
+
+  if (params.has_path("camera/ypan"))
+  {
+    m_settings["camera/ypan"] = params["camera/ypan"];
+  }
+
+  if(params.has_path("camera/zoom"))
+  {
+    m_settings["camera/zoom"] = params["camera/zoom"];
+  }
+
+  if(params.has_path("camera/near_plane"))
+  {
+    m_settings["camera/near_plane"] = params["camera/near_plane"];
+  }
+
+  if (params.has_path("camera/far_plane"))
+  {
+    m_settings["camera/far_plane"] = params["camera/far_plane"];
+  }
+
+  if (params.has_path("camera/image_width"))
+  {
+    m_settings["camera/image_width"] = params["camera/image_width"]; 
+  }
+
+  if (params.has_path("camera/image_height"))
+  {
+    m_settings["camera/image_height"] = params["camera/image_height"]; 
+  }
+}
+
+void
+Rover::print_settings()
+{
+  std::cout << m_settings.to_yaml() << std::endl;
+}
+
+void
+Rover::update_camera()
+{
+  if (m_settings.has_path("camera/look_at"))
+  {
+    float64_accessor focus = m_settings["camera/look_at"].value();
+    vtkmVec3f look_at(focus[0], focus[1], focus[2]);
+    m_camera.SetLookAt(look_at);
+  }
+  
+  if (m_settings.has_path("camera/up"))
+  {
+    float64_accessor view_up = m_settings["camera/up"].value();
+    vtkmVec3f up(view_up[0], view_up[1], view_up[2]);
+    m_camera.SetViewUp(up);
+  }
+  
+  if (m_settings.has_path("camera/fov"))
+  {
+    float64 view_angle = m_settings["camera/fov"].value();
+    m_camera.SetFieldOfView(view_angle);
+  }
+  
+  if (m_settings.has_path("camera/xpan") || m_settings.has_path("camera/ypan"))
+  {
+    float64 xpan = 0.0;
+    float64 ypan = 0.0;
+
+    if (m_settings.has_path("camera/xpan"))
+    {
+      xpan = m_settings["camera/xpan"].value();
+    }
+
+    if (m_settings.has_path("camera/ypan"))
+    {
+      ypan = m_settings["camera/ypan"].value();
+    }
+    
+    m_camera.Pan(xpan, ypan);
+  }
+  
+  if (m_settings.has_path("camera/zoom"))
+  {
+    float64 image_zoom = m_settings["camera/zoom"].value();
+    m_camera.Zoom(log(image_zoom) / log(4.0));
+  }
+  
+  if (m_settings.has_path("camera/near_plane") || m_settings.has_path("camera/far_plane"))
+  {
+    vtkm::Range clipping_range;
+
+    if (m_settings.has_path("camera/near_plane"))
+    {
+      clipping_range.Min = m_settings["camera/near_plane"].value();
+    }
+    
+    if (m_settings.has_path("camera/far_plane"))
+    {
+      clipping_range.Max = m_settings["camera/far_plane"].value();
+    }
+
+    m_camera.SetClippingRange(clipping_range);
+  }
 }
 
 void
 Rover::initialize_camera_generator()
 {
-  camera_generator.set_camera(camera);
-  camera_generator.set_width(imageSize[0]);
-  camera_generator.set_height(imageSize[1]);
+  camera_generator.set_camera(m_camera);
+
+  if (m_settings.has_path("camera/image_width") || m_settings.has_path("camera/image_width"))
+  {
+
+    int64 width = 200;
+    int64 height = 200;
+
+    if (m_settings.has_path("camera/image_width"))
+    {
+      width = m_settings["camera/image_width"].value();
+    }
+
+    if (m_settings.has_path("camera/image_height"))
+    {
+      height = m_settings["camera/image_height"].value();
+    }
+
+    camera_generator.set_width(width);
+    camera_generator.set_height(height);
+  }
+
   Rover::set_ray_generator(&camera_generator);
 }
 
 vtkmCamera&
 Rover::get_camera()
 {
-  return camera;
+  return m_camera;
 }
 
 void
@@ -320,7 +409,7 @@ Rover::add_data_set(vtkh::DataSet &dataset)
   {
     m_internals->add_data_set(dataset.GetDomain(i));
   }
-  // camera.ResetToBounds(dataset.GetGlobalBounds());
+  m_camera.ResetToBounds(dataset.GetGlobalBounds());
 }
 
 void
@@ -348,9 +437,9 @@ Rover::set_ray_generator(RayGenerator *ray_generator)
 void
 Rover::set_image_dims(int width, int height)
 {
-  imageSize[0] = width;
-  imageSize[1] = height;
-  camera_generator.set_image_dims(imageSize[0], imageSize[1]);
+  // imageSize[0] = width;
+  // imageSize[1] = height;
+  // camera_generator.set_image_dims(imageSize[0], imageSize[1]);
 }
 
 void
