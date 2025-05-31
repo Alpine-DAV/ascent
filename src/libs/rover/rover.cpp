@@ -346,12 +346,14 @@ Rover::update_camera()
 
     m_camera.SetClippingRange(clipping_range);
   }
+
+  Rover::update_camera_generator();
 }
 
 void
-Rover::initialize_camera_generator()
+Rover::update_camera_generator()
 {
-  camera_generator.set_camera(m_camera);
+  m_camera_generator.set_camera(m_camera);
 
   if (m_settings.has_path("camera/image_width") || m_settings.has_path("camera/image_width"))
   {
@@ -369,11 +371,10 @@ Rover::initialize_camera_generator()
       height = m_settings["camera/image_height"].value();
     }
 
-    camera_generator.set_width(width);
-    camera_generator.set_height(height);
+    m_camera_generator.set_image_dims(width, height);
   }
 
-  Rover::set_ray_generator(&camera_generator);
+  Rover::set_ray_generator(&m_camera_generator);
 }
 
 vtkmCamera&

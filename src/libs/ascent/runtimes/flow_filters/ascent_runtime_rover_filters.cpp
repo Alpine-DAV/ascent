@@ -274,29 +274,10 @@ RoverXRay::execute()
     }
   }
   
-  // Giving rover a dataset causes the default camera bounds to be reset to the dataset bounds
+  // Adding a dataset to rover resets the camera bounds to the dataset bounds
   rover.add_data_set(dataset);
-  // We then want to override that dataset-adjusted camera per the input params
+  // We then want to override the dataset-adjusted camera per the input params
   rover.update_camera();
-
-  //
-  // Default camera settings
-  //
-  vtkmCamera camera = rover.get_camera();
-
-  // TODO: Figure out why things fail when rover initializes this internally
-  CameraGenerator camera_generator;
-  camera_generator.set_camera(camera);
-
-  // Overrides the default output image size of (200, 200)
-  if (params().has_path("width") && params().has_path("height"))
-  {
-    int width = params()["width"].as_int32();
-    int height = params()["height"].as_int32();
-    camera_generator.set_image_dims(width, height);
-  }
-
-  rover.set_ray_generator(&camera_generator);
 
   //
   // Default render settings

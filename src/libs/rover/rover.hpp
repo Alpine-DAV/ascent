@@ -32,7 +32,7 @@ class ROVER_API Rover
 {
 public:
   vtkmCamera m_camera;
-  CameraGenerator camera_generator;
+  CameraGenerator m_camera_generator;
   
   Rover();
   ~Rover();
@@ -65,7 +65,7 @@ public:
   void get_result(Image<vtkm::Float64> &image);
   vtkmCamera& get_camera();
   void update_camera();
-  void initialize_camera_generator();
+  void update_camera_generator();
 private:
   class InternalsType;
   std::shared_ptr<InternalsType> m_internals;
