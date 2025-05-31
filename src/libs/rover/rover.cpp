@@ -226,6 +226,7 @@ Rover::~Rover()
 void
 Rover::update_settings(Node &params)
 {
+  // TODO: Change this to use has_child everywhere instead
   if (params.has_path("camera/look_at"))
   {
     m_settings["camera/look_at"].set(params["camera/look_at"]);
@@ -286,24 +287,25 @@ Rover::print_settings()
 void
 Rover::update_camera()
 {
+  // TODO: Change this to use has_child everywhere instead
   if (m_settings.has_path("camera/look_at"))
   {
-    float64_accessor focus = m_settings["camera/look_at"].value();
-    vtkmVec3f look_at(focus[0], focus[1], focus[2]);
+    float64_accessor vec3 = m_settings["camera/look_at"].value();
+    vtkmVec3f look_at(vec3[0], vec3[1], vec3[2]);
     m_camera.SetLookAt(look_at);
   }
   
   if (m_settings.has_path("camera/up"))
   {
-    float64_accessor view_up = m_settings["camera/up"].value();
-    vtkmVec3f up(view_up[0], view_up[1], view_up[2]);
+    float64_accessor vec3 = m_settings["camera/up"].value();
+    vtkmVec3f up(vec3[0], vec3[1], vec3[2]);
     m_camera.SetViewUp(up);
   }
   
   if (m_settings.has_path("camera/fov"))
   {
-    float64 view_angle = m_settings["camera/fov"].value();
-    m_camera.SetFieldOfView(view_angle);
+    float64 fov = m_settings["camera/fov"].value();
+    m_camera.SetFieldOfView(fov);
   }
   
   if (m_settings.has_path("camera/xpan") || m_settings.has_path("camera/ypan"))
@@ -347,7 +349,7 @@ Rover::update_camera()
     m_camera.SetClippingRange(clipping_range);
   }
 
-  Rover::update_camera_generator();
+  update_camera_generator();
 }
 
 void
@@ -358,23 +360,20 @@ Rover::update_camera_generator()
   int64 width = 200;
   int64 height = 200;
 
-  if (m_settings.has_path("camera/image_width") || m_settings.has_path("camera/image_width"))
+  if (m_settings.has_path("camera/image_width"))
   {
-    if (m_settings.has_path("camera/image_width"))
-    {
-      width = m_settings["camera/image_width"].value();
-    }
+    width = m_settings["camera/image_width"].value();
+  }
 
-    if (m_settings.has_path("camera/image_height"))
-    {
-      height = m_settings["camera/image_height"].value();
-    }
+  if (m_settings.has_path("camera/image_height"))
+  {
+    height = m_settings["camera/image_height"].value();
   }
 
   m_camera_generator.set_width(width);
   m_camera_generator.set_height(height);
 
-  Rover::set_ray_generator(&m_camera_generator);
+  set_ray_generator(&m_camera_generator);
 }
 
 void

@@ -619,6 +619,9 @@ void Scheduler<FloatType>::to_blueprint(Node &data)
 
   const int num_channels = m_result.get_num_channels();
 
+  // TODO: Should live under "state/xray_view", but requires
+  // refactoring since we currently generate "state/" in
+  // *_rover_filters.cpp
   Node &xray_view = data["xray_view"];
   vtkmCamera camera = m_ray_generator->get_camera();
   xray_view["position"].set(&camera.GetPosition()[0], 3);
