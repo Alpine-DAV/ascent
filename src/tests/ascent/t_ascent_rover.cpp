@@ -213,8 +213,8 @@ TEST(ascent_rover, test_xray_blueprint_braid_lowres)
     extracts["e1/params/blueprint"] = "json";
 
     // Output resolution
-    extracts["e1/params/width"] = 11;
-    extracts["e1/params/height"] = 11;
+    extracts["e1/params/camera/image_width"] = 11;
+    extracts["e1/params/camera/image_height"] = 11;
 
     // Image params
     extracts["e1/params/image_params/min_value"] = 0.006;

@@ -438,7 +438,7 @@ Rover::execute()
 
 template<typename T>
 bool
-is_float(T );
+is_float(T);
 
 template<>
 bool
