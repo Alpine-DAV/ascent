@@ -226,55 +226,9 @@ Rover::~Rover()
 void
 Rover::update_settings(Node &params)
 {
-  // TODO: Change this to use has_child everywhere instead
-  if (params.has_path("camera/look_at"))
+  if (params.has_child("camera"))
   {
-    m_settings["camera/look_at"].set(params["camera/look_at"]);
-  }
-
-  if (params.has_path("camera/up"))
-  {
-    m_settings["camera/up"].set(params["camera/up"]);
-  }
-
-  if (params.has_path("camera/fov"))
-  {
-    m_settings["camera/fov"] = params["camera/fov"];
-  }
-
-  if (params.has_path("camera/xpan"))
-  {
-    m_settings["camera/xpan"] = params["camera/xpan"];
-  }
-
-  if (params.has_path("camera/ypan"))
-  {
-    m_settings["camera/ypan"] = params["camera/ypan"];
-  }
-
-  if(params.has_path("camera/zoom"))
-  {
-    m_settings["camera/zoom"] = params["camera/zoom"];
-  }
-
-  if(params.has_path("camera/near_plane"))
-  {
-    m_settings["camera/near_plane"] = params["camera/near_plane"];
-  }
-
-  if (params.has_path("camera/far_plane"))
-  {
-    m_settings["camera/far_plane"] = params["camera/far_plane"];
-  }
-
-  if (params.has_path("camera/image_width"))
-  {
-    m_settings["camera/image_width"] = params["camera/image_width"]; 
-  }
-
-  if (params.has_path("camera/image_height"))
-  {
-    m_settings["camera/image_height"] = params["camera/image_height"]; 
+    m_settings["camera"].set(params["camera"]);
   }
 }
 
