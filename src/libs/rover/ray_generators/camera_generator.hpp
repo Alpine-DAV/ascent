@@ -55,11 +55,9 @@ public:
   virtual ~CameraGenerator();
   virtual void get_rays(vtkmRayTracing::Ray<vtkm::Float32> &rays);
   virtual void get_rays(vtkmRayTracing::Ray<vtkm::Float64> &rays);
-  vtkmCamera get_camera();
   void set_camera(vtkmCamera &camera);
   vtkmCoordinates get_coordinates();
   void set_coordinates(vtkmCoordinates coordinates);
-  void set_image_dims(int width, int height);
 protected:
   vtkmCoordinates m_coordinates;
   vtkmCamera m_camera;

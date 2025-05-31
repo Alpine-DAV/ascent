@@ -371,7 +371,8 @@ Rover::update_camera_generator()
       height = m_settings["camera/image_height"].value();
     }
 
-    m_camera_generator.set_image_dims(width, height);
+    m_camera_generator.set_width(width);
+    m_camera_generator.set_height(height);
   }
 
   Rover::set_ray_generator(&m_camera_generator);
