@@ -45,8 +45,8 @@
 
 namespace rover {
 
-CameraGenerator::CameraGenerator(const int width, const int height)
- : RayGenerator(width, height)
+CameraGenerator::CameraGenerator()
+ : RayGenerator()
 {
 
 }
