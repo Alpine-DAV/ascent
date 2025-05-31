@@ -60,7 +60,6 @@ public:
   void set_coordinates(vtkmCoordinates coordinates);
 protected:
   vtkmCoordinates m_coordinates;
-  vtkmCamera m_camera;
 };
 
 } // namespace rover

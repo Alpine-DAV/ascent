@@ -373,7 +373,7 @@ Rover::update_camera_generator()
 
   m_camera_generator.set_width(width);
   m_camera_generator.set_height(height);
-  
+
   Rover::set_ray_generator(&m_camera_generator);
 }
 
