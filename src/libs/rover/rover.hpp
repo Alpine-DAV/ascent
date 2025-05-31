@@ -46,7 +46,6 @@ public:
   void add_data_set(vtkh::DataSet &);
   void set_render_settings(const RenderSettings render_settings);
   void set_ray_generator(RayGenerator *);
-  void set_image_dims(int width, int height);
   void clear_data_sets();
   void set_background(const std::vector<vtkm::Float32> &background);
   void set_background(const std::vector<vtkm::Float64> &background);
@@ -63,7 +62,6 @@ public:
   void set_tracer_precision64();
   void get_result(Image<vtkm::Float32> &image);
   void get_result(Image<vtkm::Float64> &image);
-  vtkmCamera& get_camera();
   void update_camera();
   void update_camera_generator();
 private:

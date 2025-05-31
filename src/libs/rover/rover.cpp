@@ -211,7 +211,7 @@ public:
 
 }; //Internals Type
 
-Rover::Rover() : m_internals(new InternalsType)
+Rover::Rover() : m_internals( new InternalsType )
 {
 
 }
@@ -377,19 +377,13 @@ Rover::update_camera_generator()
   Rover::set_ray_generator(&m_camera_generator);
 }
 
-vtkmCamera&
-Rover::get_camera()
-{
-  return m_camera;
-}
-
 void
 Rover::set_mpi_comm_handle(int mpi_comm_id)
 {
 #ifdef ROVER_PARALLEL
   this->m_internals->set_comm_handle(MPI_Comm_f2c(mpi_comm_id));
 #else
-  (void) mpi_comm_id;
+  (void)mpi_comm_id;
 #endif
 }
 
@@ -433,14 +427,6 @@ Rover::set_ray_generator(RayGenerator *ray_generator)
     throw RoverException("Ray generator cannot  be null");
   }
   m_internals->set_ray_generator(ray_generator);
-}
-
-void
-Rover::set_image_dims(int width, int height)
-{
-  // imageSize[0] = width;
-  // imageSize[1] = height;
-  // camera_generator.set_image_dims(imageSize[0], imageSize[1]);
 }
 
 void

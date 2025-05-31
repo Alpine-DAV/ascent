@@ -53,10 +53,7 @@ struct EnergySettings
 {
   bool m_divide_abs_by_emmision;
   float m_unit_scalar;
-  EnergySettings() :
-    m_divide_abs_by_emmision(false),
-    m_unit_scalar(1.0)
-    {}
+  EnergySettings() : m_divide_abs_by_emmision(false), m_unit_scalar(1.0) {}
 };
 
 struct RenderSettings
@@ -69,13 +66,11 @@ struct RenderSettings
   std::string    m_secondary_field;
   VolumeSettings m_volume_settings;
   EnergySettings m_energy_settings;
-
   //
   // Default settings
   //
   RenderSettings() : m_color_table("Cool to Warm")
   {
-    // TODO: Why does changing the default to energy not work?
     m_render_mode     = volume;
     m_scattering_type = non_scattering;
     m_ray_scope       = global_rays;
