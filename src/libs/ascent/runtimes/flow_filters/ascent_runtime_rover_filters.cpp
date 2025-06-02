@@ -283,7 +283,6 @@ RoverXRay::execute()
   // Default render settings
   //
   RenderSettings render_settings;
-  render_settings.m_render_mode = rover::energy;
   render_settings.m_primary_field = absorption;
 
   // TODO: investigate how/why this is getting set, even if emission is not specified

@@ -18,7 +18,7 @@ enum RenderMode
 {
   // volume, // standard volume rendering (3d) // removing volume renderer
   energy, // radiography with enegry bins (3d)
-  surface //
+  // surface // removing volume renderer
 };
 
 enum ScatteringType
