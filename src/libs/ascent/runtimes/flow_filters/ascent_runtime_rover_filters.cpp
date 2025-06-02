@@ -245,7 +245,7 @@ RoverXRay::execute()
   std::string absorption = params()["absorption"].as_string();
   if(!collection->has_field(absorption))
   {
-    ASCENT_ERROR("Absorption field name '" << absorption << "' is not in the dataset");
+    ASCENT_ERROR("Unknown absorption field: '" << absorption << "'");
   }
 
   std::string topo_name = collection->field_topology(absorption);
@@ -253,16 +253,33 @@ RoverXRay::execute()
   // Returns an empty dataset if topo_name doesn't exist in the collection
   vtkh::DataSet &dataset = collection->dataset_by_topology(topo_name);
 
-  Rover rover;
-  rover.update_settings(params());
+  vtkmCamera camera;
+  camera.ResetToBounds(dataset.GetGlobalBounds());
 
+  if(params().has_path("camera"))
+  {
+    const conduit::Node &n_camera = params()["camera"];
+    parse_camera(n_camera, camera);
+  }
+
+  int width = 200;
+  int height = 200;
+  if (params().has_path("width") && params().has_path("height"))
+  {
+    width = params()["width"].as_int32();
+    height = params()["height"].as_int32();
+  }
+
+  CameraGenerator generator(camera, width, height);
+
+  Rover tracer;
   int mpi_comm_id = -1;
 #ifdef ASCENT_MPI_ENABLED
   mpi_comm_id = flow::Workspace::default_mpi_comm();
   rover::Logger::get_instance()->set_mpi_comm_id(mpi_comm_id);
   // these use different styles of naming functions ....
   rover::DataLogger::GetInstance()->set_mpi_comm_id(mpi_comm_id);
-  rover.set_mpi_comm_handle(mpi_comm_id);
+  tracer.set_mpi_comm_handle(mpi_comm_id);
 #endif
 
   if (params().has_path("precision"))
@@ -270,36 +287,39 @@ RoverXRay::execute()
     std::string precision = params()["precision"].as_string();
     if (precision == "double")
     {
-      rover.set_tracer_precision64();
+      tracer.set_tracer_precision64();
     }
   }
-  
-  // Adding a dataset to rover resets the camera bounds to the dataset bounds
-  rover.add_data_set(dataset);
-  // We then want to override the dataset-adjusted camera per the input params
-  rover.update_camera();
 
   //
-  // Default render settings
+  // Create some basic settings
   //
-  RenderSettings render_settings;
-  render_settings.m_render_mode = rover::energy;
-  render_settings.m_primary_field = absorption;
-
+  RenderSettings settings;
+  settings.m_render_mode = rover::energy;
+  settings.m_primary_field = absorption;
+    
   // TODO: investigate how/why this is getting set, even if emission is not specified
   // example: if absorption == "radial", why is emission also == "radial"
   if (params().has_path("emission"))
   {
-    render_settings.m_secondary_field = params()["emission"].as_string();
+    settings.m_secondary_field = params()["emission"].as_string();
   }
 
   if(params().has_path("unit_scalar"))
   {
-    render_settings.m_energy_settings.m_unit_scalar = params()["unit_scalar"].to_float64();
+    settings.m_energy_settings.m_unit_scalar = params()["unit_scalar"].to_float64();
   }
 
-  rover.set_render_settings(render_settings);
-  rover.execute();
+  tracer.set_render_settings(settings);
+
+  for(int i = 0; i < dataset.GetNumberOfDomains(); i++)
+  {
+    tracer.add_data_set(dataset.GetDomain(i));
+  }
+
+  tracer.set_ray_generator(&generator);
+
+  tracer.execute();
 
   Node metadata = Metadata::n_metadata;
 
@@ -322,7 +342,7 @@ RoverXRay::execute()
     std::string protocol = params()["blueprint"].as_string();
     conduit::Node multi_domain;
     conduit::Node &data = multi_domain.append();
-    rover.to_blueprint(data);
+    tracer.to_blueprint(data);
 
     if (data.has_path("coordsets"))
     {
@@ -346,7 +366,7 @@ RoverXRay::execute()
     const int num_files = -1;
     conduit::Node extra_opts;
     std::string result_path;
-
+    
     mesh_blueprint_save(multi_domain,
                         filename,
                         protocol,
@@ -361,11 +381,11 @@ RoverXRay::execute()
     float min_value = params()["image_params/min_value"].to_float32();
     float max_value = params()["image_params/max_value"].to_float32();
     bool log_scale = params()["image_params/log_scale"].as_string() == "true";
-    rover.save_png(filename, min_value, max_value, log_scale);
+    tracer.save_png(filename, min_value, max_value, log_scale);
   }
   else
   {
-    rover.save_png(filename);
+    tracer.save_png(filename);
   }
 
   if (params().has_path("bov_filename"))
@@ -374,13 +394,15 @@ RoverXRay::execute()
     bov_filename = output_dir(bov_filename);
     if (cycle != -1)
     {
-      rover.save_bov(expand_path_special_variables(bov_filename, mpi_comm_id, cycle));
+      tracer.save_bov(expand_path_special_variables(bov_filename, mpi_comm_id, cycle));
     }
     else
     {
-      rover.save_bov(expand_path_special_variables(bov_filename, mpi_comm_id));
+      tracer.save_bov(expand_path_special_variables(bov_filename, mpi_comm_id));
     }
   }
+  
+  tracer.finalize();
 }
 
 //-----------------------------------------------------------------------------
@@ -535,7 +557,10 @@ RoverVolume::execute()
     }
 
     tracer.set_render_settings(settings);
-    tracer.add_data_set(dataset);
+    for(int i = 0; i < dataset.GetNumberOfDomains(); ++i)
+    {
+      tracer.add_data_set(dataset.GetDomain(i));
+    }
 
     tracer.set_ray_generator(&generator);
     tracer.execute();
@@ -559,6 +584,8 @@ RoverVolume::execute()
     filename = output_dir(filename);
 
     tracer.save_png(filename);
+    tracer.finalize();
+
 }
 
 //-----------------------------------------------------------------------------

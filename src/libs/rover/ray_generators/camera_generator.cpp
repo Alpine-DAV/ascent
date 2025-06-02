@@ -51,8 +51,8 @@ CameraGenerator::CameraGenerator()
 
 }
 
-CameraGenerator::CameraGenerator(const vtkmCamera &camera, const int width, const int height)
- : RayGenerator(width, height)
+CameraGenerator::CameraGenerator(const vtkmCamera &camera, const int height, const int width)
+ : RayGenerator(height, width)
 {
   m_camera = camera;
 }
@@ -86,10 +86,10 @@ CameraGenerator::get_rays(vtkmRayTracing::Ray<vtkm::Float64> &rays)
   if(rays.NumRays == 0) std::cout<<"CameraGenerator Warning no rays were generated\n";
 }
 
-void
-CameraGenerator::set_camera(vtkmCamera &camera)
+vtkmCamera
+CameraGenerator::get_camera()
 {
-  m_camera = camera;
+  return m_camera;
 }
 
 vtkmCoordinates

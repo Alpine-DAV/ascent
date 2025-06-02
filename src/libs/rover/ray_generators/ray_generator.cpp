@@ -61,12 +61,6 @@ RayGenerator::~RayGenerator()
 
 }
 
-vtkmCamera&
-RayGenerator::get_camera()
-{
-  return m_camera;
-}
-
 void
 RayGenerator::get_dims(int &height, int &width) const
 {

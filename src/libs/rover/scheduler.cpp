@@ -609,30 +609,18 @@ void Scheduler<FloatType>::save_bov(std::string file_name)
 template<typename FloatType>
 void Scheduler<FloatType>::to_blueprint(Node &data)
 {
-  int width;
-  int height;
-  m_ray_generator->get_dims(width, height);
+  // TODO: Handle these default values in a better way
+  int height = 0;
+  int width = 0;
+  m_ray_generator->get_dims(height, width);
+  assert( height > 0 );
+  assert( width > 0 );
   ROVER_INFO("Saving blueprint file " << height << " "<<width);
 
   const std::string topo_name = "image_topo";
   const std::string coord_name = "image_coords";
 
   const int num_channels = m_result.get_num_channels();
-
-  // TODO: Plumb the other "state/" info down out of *_rover_filters.cpp
-  Node &xray_view = data["state/xray_view"];
-  vtkmCamera camera = m_ray_generator->get_camera();
-  xray_view["position"].set(&camera.GetPosition()[0], 3);
-  xray_view["look_at"].set(&camera.GetLookAt()[0], 3);
-  xray_view["up"].set(&camera.GetViewUp()[0], 3);
-  xray_view["zoom"] = camera.GetZoom();
-  xray_view["fov"] = camera.GetFieldOfView();
-  xray_view["near_plane"] = camera.GetClippingRange().Min;
-  xray_view["far_plane"] = camera.GetClippingRange().Max;
-
-  auto xy_pan = camera.GetPan();
-  xray_view["xpan"] = xy_pan[0];
-  xray_view["ypan"] = xy_pan[1];
 
   Node &n_coords = data["coordsets/" + coord_name];
   n_coords["type"] = "rectilinear";

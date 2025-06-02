@@ -20,9 +20,6 @@
 #ifdef ROVER_PARALLEL
 #include <mpi.h>
 #endif
-
-using namespace conduit;
-
 //
 // Scheduler types:
 //  static: all ranks gets all rays
