@@ -52,6 +52,9 @@ void render_blueprint_result(const string &field_name,
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
 
+    // Helps identify which ascent execute is throwing errors
+    ASCENT_INFO("Executing render_blueprint_result\n");
+
     //
     // Run Ascent
     //
@@ -162,10 +165,9 @@ TEST(ascent_rover, test_xray_blueprint_braid)
     const std::string image_output_image_prefix = image_output_base + "{cycle:d}";
 
     render_blueprint_result("intensities", image_output_image_prefix, load_mesh);
-
     EXPECT_TRUE(check_test_image(image_output_base, 0.01f, "100"));
 
-    std::string msg = "TODO we need a good description here";
+    std::string msg = "Render an XRay diagnostic image of an example braid mesh";
     ASCENT_ACTIONS_DUMP(actions, image_output_base, msg);
 }
 
@@ -211,8 +213,8 @@ TEST(ascent_rover, test_xray_blueprint_braid_lowres)
     extracts["e1/params/blueprint"] = "json";
 
     // Output resolution
-    extracts["e1/params/width"] = 11;
-    extracts["e1/params/height"] = 11;
+    extracts["e1/params/camera/image_width"] = 11;
+    extracts["e1/params/camera/image_height"] = 11;
 
     // Image params
     extracts["e1/params/image_params/min_value"] = 0.006;
@@ -253,7 +255,7 @@ TEST(ascent_rover, test_xray_blueprint_braid_lowres)
 
     EXPECT_TRUE(check_test_image(image_output_base, 0.01f, "100"));
 
-    std::string msg = "TODO we need a good description here";
+    std::string msg = "Render a lowres XRay diagnostic image of an example braid mesh";
     ASCENT_ACTIONS_DUMP(actions, image_output_base, msg);
 }
 
@@ -337,13 +339,110 @@ TEST(ascent_rover, test_xray_blueprint_curv3d)
     const std::string image_output_image_prefix = image_output_base + "{cycle:d}";
 
     render_blueprint_result("intensities", image_output_image_prefix, load_mesh);
-
-    // TODO we need the render to make an interesting picture. This will be accomplished
-    // by working on the basic mesh output and changing the order of the dimensions.
-    // TODO we will need to change the baseline when we are making good renders.
     EXPECT_TRUE(check_test_image(image_output_base, 0.01f, "48"));
     
-    std::string msg = "TODO we need a good description here";
+    std::string msg = "Render an XRay diagnostic image of the curv3d mesh";
+    ASCENT_ACTIONS_DUMP(actions, image_output_base, msg);
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_rover, test_xray_blueprint_curv3d_camera_params)
+{
+    // the vtkm runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(is_vtkm_disabled(n))
+    {
+        return;
+    }
+
+    //
+    // Open an example mesh.
+    //
+    Node data, verify_info;
+    const std::string root_file = 
+        conduit::utils::join_file_path(std::string(ASCENT_T_DATA_DIR),
+                                       "curv3d_blueprint.cycle_000048.root");
+
+    conduit::relay::io::blueprint::load_mesh(root_file, data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data, verify_info));
+
+    ASCENT_INFO("Testing xray_extract on curv3d example\n");
+
+    const std::string query_output_path = prepare_output_dir();
+    const std::string query_output_file = 
+        conduit::utils::join_file_path(query_output_path,
+                                       "tout_rover_xray_curv3d_blueprint_camera_param_query");
+
+    // remove old images before rendering
+    remove_test_image(query_output_file);
+
+    //
+    // Create the actions.
+    //
+
+    conduit::Node extracts;
+    extracts["e1/type"] = "xray";
+    extracts["e1/params/absorption"] = "d";
+    extracts["e1/params/emission"] = "p";
+    extracts["e1/params/filename"] = query_output_file;
+    extracts["e1/params/blueprint"] = "json";
+
+    // These errors all originate from within rover
+    // TODO: Setting anything for position (e.g. 0,0,0) throws a vector range error
+    // TODO: Setting (0,0,0) for up throws a vector range error
+    // TODO: If xpan = 1 and ypan = 2, throws a vector range error
+
+    // Change all of the default camera parameters
+    double vec3[3] = {1.0, 1.0, 1.0};
+    extracts["e1/params/camera/look_at"].set_float64_ptr(vec3, 3);
+    // extracts["e1/params/camera/position"].set_float64_ptr(vec3, 3);
+    extracts["e1/params/camera/up"].set_float64_ptr(vec3, 3);
+    extracts["e1/params/camera/fov"] = 60.0;
+    extracts["e1/params/camera/xpan"] = -0.1;
+    extracts["e1/params/camera/ypan"] = 0.1;
+    extracts["e1/params/camera/zoom"] = 1.5;
+    extracts["e1/params/camera/near_plane"] = 2.0;
+    extracts["e1/params/camera/far_plane"] = 50.0;
+
+    conduit::Node actions;
+    // add the pipeline
+    conduit::Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    add_extracts["extracts"] = extracts;
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    // TODO can we ask Ascent for the name of the file it wrote?
+    // std::cout << ascent.info().to_yaml() << std::endl;
+    ascent.close();
+
+    const std::string full_outfile_name = query_output_file + "48.cycle_000048.root";
+
+    Node load_mesh;
+    conduit::relay::io::blueprint::load_mesh(full_outfile_name, load_mesh);
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(load_mesh, verify_info));
+
+    const std::string image_output_path = prepare_output_dir();
+    const std::string image_output_base =
+        conduit::utils::join_file_path(image_output_path, "tout_rover_xray_curv3d_camera_param");
+
+    const std::string image_output_image_prefix = image_output_base + "{cycle:d}";
+
+    render_blueprint_result("intensities", image_output_image_prefix, load_mesh);
+    EXPECT_TRUE(check_test_image(image_output_base, 0.01f, "48"));
+    
+    std::string msg = "Render an XRay diagnostic image with non-default camera params";
     ASCENT_ACTIONS_DUMP(actions, image_output_base, msg);
 }
 
@@ -425,13 +524,9 @@ TEST(ascent_rover, test_xray_blueprint_multi_curv3d)
     const std::string image_output_image_prefix = image_output_base + "{cycle:d}";
 
     render_blueprint_result("intensities", image_output_image_prefix, load_mesh);
-
-    // TODO we need the render to make an interesting picture. This will be accomplished
-    // by working on the basic mesh output and changing the order of the dimensions.
-    // TODO we will need to change the baseline when we are making good renders.
     EXPECT_TRUE(check_test_image(image_output_base, 0.01f, "48"));
 
-    std::string msg = "TODO we need a good description here";
+    std::string msg = "Render an XRay diagnostic image of the multi_curv3d mesh";
     ASCENT_ACTIONS_DUMP(actions, image_output_base, msg);
 }
 
@@ -517,13 +612,9 @@ TEST(ascent_rover, test_xray_blueprint_tire)
     const std::string image_output_image_prefix = image_output_base + "{cycle:d}";
 
     render_blueprint_result("intensities", image_output_image_prefix, load_mesh);
-
-    // TODO we need the render to make an interesting picture. This will be accomplished
-    // by working on the basic mesh output and changing the order of the dimensions.
-    // TODO we will need to change the baseline when we are making good renders.
     EXPECT_TRUE(check_test_image(image_output_base, 0.01f, "48"));
     
-    std::string msg = "TODO we need a good description here";
+    std::string msg = "Render an XRay diagnostic image of the tire mesh";
     ASCENT_ACTIONS_DUMP(actions, image_output_base, msg);
 }
 
@@ -606,13 +697,9 @@ TEST(ascent_rover, test_xray_blueprint_curv2d)
     const std::string image_output_image_prefix = image_output_base + "{cycle:d}";
 
     render_blueprint_result("intensities", image_output_image_prefix, load_mesh);
-
-    // TODO we need the render to make an interesting picture. This will be accomplished
-    // by working on the basic mesh output and changing the order of the dimensions.
-    // TODO we will need to change the baseline when we are making good renders.
     EXPECT_TRUE(check_test_image(image_output_base, 0.01f, "48"));
     
-    std::string msg = "TODO we need a good description here";
+    std::string msg = "Render an XRay diagnostic image of the curv2d mesh";
     ASCENT_ACTIONS_DUMP(actions, image_output_base, msg);
 }
 

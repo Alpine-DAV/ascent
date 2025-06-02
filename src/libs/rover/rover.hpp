@@ -7,33 +7,43 @@
 #ifndef rover_h
 #define rover_h
 
-#include <rover_config.h>
-
-#include <image.hpp>
-#include <rover_exports.h>
-#include <rover_types.hpp>
-#include <ray_generators/ray_generator.hpp>
-// vtk-m includes
-#include <vtkm_typedefs.hpp>
-
 // std includes
+#include "ray_generators/camera_generator.hpp"
 #include <memory>
-#include <conduit.hpp>
 
-namespace rover {
+// tpl includes
+#include <conduit.hpp>
+#include <vtkm_typedefs.hpp>
+#include <vtkh/DataSet.hpp>
+
+// rover includes
+#include <rover_exports.h>
+#include <rover_config.h>
+#include <rover_types.hpp>
+#include <image.hpp>
+#include <ray_generators/ray_generator.hpp>
+
+using namespace conduit;
+
+namespace rover
+{
 
 class ROVER_API Rover
 {
 public:
+  vtkmCamera m_camera;
+  CameraGenerator m_camera_generator;
+  
   Rover();
   ~Rover();
+
+  void update_settings(Node &params);
+  void print_settings();
 
   void set_mpi_comm_handle(int mpi_comm_id);
   int  get_mpi_comm_handle();
 
-  void finalize();
-
-  void add_data_set(vtkmDataSet &);
+  void add_data_set(vtkh::DataSet &);
   void set_render_settings(const RenderSettings render_settings);
   void set_ray_generator(RayGenerator *);
   void clear_data_sets();
@@ -52,9 +62,13 @@ public:
   void set_tracer_precision64();
   void get_result(Image<vtkm::Float32> &image);
   void get_result(Image<vtkm::Float64> &image);
+  void update_camera();
+  void update_camera_generator();
 private:
   class InternalsType;
   std::shared_ptr<InternalsType> m_internals;
+protected:
+  Node m_settings;
 };
 
 }; // namespace rover
