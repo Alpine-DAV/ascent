@@ -845,7 +845,7 @@ TEST(ascent_rover, test_xray_serial)
 }
 #endif
 
-#if 0
+#if 0 // removing volume renderer
 //
 // Rover Volume tests
 //
