@@ -383,7 +383,7 @@ RoverXRay::execute()
   }
 }
 
-#if 0
+#if 0 // removing volume renderer
 //-----------------------------------------------------------------------------
 RoverVolume::RoverVolume()
 :Filter()

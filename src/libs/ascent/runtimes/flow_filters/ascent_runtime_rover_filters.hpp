@@ -55,7 +55,7 @@ public:
     virtual void   execute();
 };
 
-#if 0
+#if 0 // removing volume renderer
 class ASCENT_API RoverVolume : public ::flow::Filter
 {
 public:
