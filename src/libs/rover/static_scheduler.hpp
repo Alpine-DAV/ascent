@@ -4,12 +4,15 @@
 // other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-#ifndef rover_static_schedular_h
-#define rover_static_schedular_h
+#ifndef rover_static_scheduler_h
+#define rover_static_scheduler_h
 
-#include <scheduler.h>
+#include <scheduler.hpp>
 
-namespace rover {
+namespace rover
+{
+
+#if 0 // removing volume renderer
 // static scedular handles the case where all ranks get all rays
 // and takes care of the compositing.
 class StaticSchedular : public Schedular
@@ -17,5 +20,7 @@ class StaticSchedular : public Schedular
 public:
 protected:
 };
+#endif
+
 } // namespace rover
 #endif

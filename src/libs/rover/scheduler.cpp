@@ -26,7 +26,8 @@
 
 using namespace conduit;
 
-namespace rover {
+namespace rover
+{
 
 template<typename FloatType>
 Scheduler<FloatType>::Scheduler()
@@ -37,6 +38,7 @@ Scheduler<FloatType>::Scheduler()
 template<typename FloatType>
 Scheduler<FloatType>::~Scheduler()
 {
+
 }
 
 template<typename FloatType>
@@ -69,7 +71,6 @@ template<typename FloatType>
 void
 Scheduler<FloatType>::set_global_scalar_range()
 {
-
   vtkmTimer timer;
   timer.Start();
   double time = 0;
@@ -78,6 +79,8 @@ Scheduler<FloatType>::set_global_scalar_range()
   const int num_domains = static_cast<int>(m_domains.size());
 
   vtkmRange global_range;
+
+#if 0 // removing volume renderer
   if(m_render_settings.m_render_mode == volume &&
      m_render_settings.m_volume_settings.m_scalar_range.IsNonEmpty())
   {
@@ -86,25 +89,27 @@ Scheduler<FloatType>::set_global_scalar_range()
   }
   else
   {
-
-    for(int i = 0; i < num_domains; ++i)
-    {
-      vtkmRange local_range = m_domains[i].get_primary_range();
-      global_range.Include(local_range);
-    }
-#ifdef ROVER_PARALLEL
-    double rank_min = global_range.Min;
-    double rank_max = global_range.Max;
-    double mpi_min;
-    double mpi_max;
-    MPI_Allreduce(&rank_min, &mpi_min, 1, MPI_DOUBLE, MPI_MIN, m_comm_handle);
-    MPI_Allreduce(&rank_max, &mpi_max, 1, MPI_DOUBLE, MPI_MAX, m_comm_handle);
-    global_range.Min = mpi_min;
-    global_range.Max = mpi_max;
 #endif
 
-    ROVER_INFO("Global scalar range "<<global_range);
+  for (int i = 0; i < num_domains; ++i)
+  {
+    vtkmRange local_range = m_domains[i].get_primary_range();
+    global_range.Include(local_range);
   }
+
+#ifdef ROVER_PARALLEL
+  double rank_min = global_range.Min;
+  double rank_max = global_range.Max;
+  double mpi_min;
+  double mpi_max;
+  MPI_Allreduce(&rank_min, &mpi_min, 1, MPI_DOUBLE, MPI_MIN, m_comm_handle);
+  MPI_Allreduce(&rank_max, &mpi_max, 1, MPI_DOUBLE, MPI_MAX, m_comm_handle);
+  global_range.Min = mpi_min;
+  global_range.Max = mpi_max;
+#endif
+
+  ROVER_INFO("Global scalar range: " << global_range);
+  // } // removing volume renderer
 
   for(int i = 0; i < num_domains; ++i)
   {
@@ -134,7 +139,6 @@ Scheduler<FloatType>::set_global_bounds()
   }
 
 #ifdef ROVER_PARALLEL
-
   double x_min = global_bounds.X.Min;
   double x_max = global_bounds.X.Max;
   double y_min = global_bounds.Y.Min;
@@ -207,30 +211,33 @@ Scheduler<FloatType>::set_global_bounds()
   time = timer.GetElapsedTime();
   ROVER_DATA_ADD("set_global_bounds", time);
 }
+
 template<typename FloatType>
-void Scheduler<FloatType>::add_partial(vtkmRayTracing::PartialComposite<FloatType> &partial,
-                                       int width,
-                                       int height)
+void
+Scheduler<FloatType>::add_partial(vtkmRayTracing::PartialComposite<FloatType> &partial,
+                                  int width,
+                                  int height)
 {
   PartialImage<FloatType> partial_image;
   partial_image.m_pixel_ids = partial.PixelIds;
   partial_image.m_distances = partial.Distances;
   partial_image.m_buffer = partial.Buffer;
   partial_image.m_intensities = partial.Intensities;
-
   partial_image.m_width = width;
   partial_image.m_height = height;
-
   m_partial_images.push_back(partial_image);
 }
 
 template<typename FloatType>
-void Scheduler<FloatType>::composite()
+void
+Scheduler<FloatType>::composite()
 {
   int rank = 0;
 #ifdef ROVER_PARALLEL
   MPI_Comm_rank(m_comm_handle, &rank);
 #endif
+
+#if 0 // removing volume renderer
   if(m_render_settings.m_render_mode == volume)
   {
     vtkh::PartialCompositor<vtkh::VolumePartial<FloatType>> compositor;
@@ -262,65 +269,72 @@ void Scheduler<FloatType>::composite()
   }
   else
   {
-    if(m_render_settings.m_secondary_field != "")
-    {
-      vtkh::PartialCompositor<vtkh::EmissionPartial<FloatType>> compositor;
-      compositor.set_background(m_background);
-#ifdef ROVER_PARALLEL
-      compositor.set_comm_handle(MPI_Comm_c2f(m_comm_handle));
-#endif
-      const int num_partials = m_partial_images.size();
-      int width = m_partial_images[0].m_width;
-      int height = m_partial_images[0].m_height;
-      std::vector<std::vector<vtkh::EmissionPartial<FloatType>>> partials;
-      partials.resize(num_partials);
-      for(int i = 0; i < num_partials; ++i)
-      {
-        m_partial_images[i].extract_partials(partials[i]);
-      }
-      std::vector<vtkh::EmissionPartial<FloatType>> result;
-      compositor.composite(partials, result);
-      PartialImage<FloatType> p_result;
-
-      if(rank == 0)
-      {
-        // data only valid on rank = 0
-        p_result.store(result,m_background, width, height);
-      }
-
-      m_result = p_result;
-    }
-    else
-    {
-      vtkh::PartialCompositor<vtkh::AbsorptionPartial<FloatType>> compositor;
-      compositor.set_background(m_background);
-#ifdef ROVER_PARALLEL
-      compositor.set_comm_handle(MPI_Comm_c2f(m_comm_handle));
-#endif
-      const int num_partials = m_partial_images.size();
-      int width = m_partial_images[0].m_width;
-      int height = m_partial_images[0].m_height;
-      std::vector<std::vector<vtkh::AbsorptionPartial<FloatType>>> partials;
-      partials.resize(num_partials);
-      for(int i = 0; i < num_partials; ++i)
-      {
-        m_partial_images[i].extract_partials(partials[i]);
-      }
-      std::vector<vtkh::AbsorptionPartial<FloatType>> result;
-      compositor.composite(partials, result);
-      PartialImage<FloatType> p_result;
-
-      if(rank == 0)
-      {
-        // data only valid on rank = 0
-        p_result.store(result,m_background, width, height);
-      }
-
-      m_result = p_result;
-    }
   }
+#endif
+
+  // TODO: Secondary field should always be set for energy renders,
+  // so we should make it required at verify_params
+  if (m_render_settings.m_secondary_field != "")
+  {
+    vtkh::PartialCompositor<vtkh::EmissionPartial<FloatType>> compositor;
+    compositor.set_background(m_background);
+#ifdef ROVER_PARALLEL
+      compositor.set_comm_handle(MPI_Comm_c2f(m_comm_handle));
+#endif
+    const int num_partials = m_partial_images.size();
+    int width = m_partial_images[0].m_width;
+    int height = m_partial_images[0].m_height;
+    std::vector<std::vector<vtkh::EmissionPartial<FloatType>>> partials;
+    partials.resize(num_partials);
+    for(int i = 0; i < num_partials; ++i)
+    {
+      m_partial_images[i].extract_partials(partials[i]);
+    }
+    std::vector<vtkh::EmissionPartial<FloatType>> result;
+    compositor.composite(partials, result);
+    PartialImage<FloatType> p_result;
+
+    if(rank == 0)
+    {
+      // data only valid on rank = 0
+      p_result.store(result,m_background, width, height);
+    }
+
+    m_result = p_result;
+  }
+  // TODO: Figure out if this else block is relevant for energy renders
+  else
+  {
+    vtkh::PartialCompositor<vtkh::AbsorptionPartial<FloatType>> compositor;
+    compositor.set_background(m_background);
+#ifdef ROVER_PARALLEL
+    compositor.set_comm_handle(MPI_Comm_c2f(m_comm_handle));
+#endif
+    const int num_partials = m_partial_images.size();
+    int width = m_partial_images[0].m_width;
+    int height = m_partial_images[0].m_height;
+    std::vector<std::vector<vtkh::AbsorptionPartial<FloatType>>> partials;
+    partials.resize(num_partials);
+    for(int i = 0; i < num_partials; ++i)
+    {
+      m_partial_images[i].extract_partials(partials[i]);
+    }
+    std::vector<vtkh::AbsorptionPartial<FloatType>> result;
+    compositor.composite(partials, result);
+    PartialImage<FloatType> p_result;
+
+    if(rank == 0)
+    {
+      // data only valid on rank = 0
+      p_result.store(result,m_background, width, height);
+    }
+
+    m_result = p_result;
+  }
+  // } // removing volume renderer
   ROVER_INFO("Schedule: compositing complete");
 }
+
 //
 // in the other schedulers this method will be far from trivial
 //
@@ -343,13 +357,12 @@ Scheduler<FloatType>::trace_rays()
   }
 
   m_ray_generator->reset();
-  // TODO while (m_geerator.has_rays())
+  // TODO while (m_generator.has_rays())
   ROVER_INFO("Tracing rays");
 
-  int height = 0 ;
-  int width = 0;
-
-  m_ray_generator->get_dims(height, width);
+  int width;
+  int height;
+  m_ray_generator->get_dims(width, height);
 
   //
   // ensure that the render settings are set
@@ -357,13 +370,13 @@ Scheduler<FloatType>::trace_rays()
   // TODO: make copy constructor so the mesh stuctures are not rebuilt when moving from
   //       volume to energy and vice versa
   const int num_domains = static_cast<int>(m_domains.size());
-  ROVER_INFO("scheduer set render settings for "<<num_domains<<" domains ");
+  ROVER_INFO("Scheduler set render settings for " << num_domains << " domains");
   for(int i = 0; i < num_domains; ++i)
   {
     m_domains[i].set_render_settings(m_render_settings);
   }
 
-  ROVER_INFO("done scheduer set render settings for "<<num_domains<<" domains ");
+  ROVER_INFO("Done scheduler set render settings for "<<num_domains<<" domains ");
   time = timer.GetElapsedTime();
   ROVER_DATA_ADD("setup", time);
 
@@ -438,7 +451,6 @@ Scheduler<FloatType>::trace_rays()
   t1.Start();
 
   // Add dummy partial image if we had no domains
-
   if(num_domains == 0 || m_partial_images.size() == 0)
   {
     PartialImage<FloatType> partial_image;
@@ -505,29 +517,29 @@ Scheduler<FloatType>::get_result(Image<vtkm::Float64> &image)
 template<typename FloatType>
 void Scheduler<FloatType>::save_result(std::string file_name)
 {
-  int height = 0;
-  int width = 0;
-  m_ray_generator->get_dims(height, width);
-  assert( height > 0 );
-  assert( width > 0 );
-  ROVER_INFO("Saving file " << height << " "<<width);
+  int width;
+  int height;
+  m_ray_generator->get_dims(width, height);
+  ROVER_INFO("Saving .png file with output size " << width << "x" << height);
   ascent::PNGEncoder encoder;
 
-  if(m_render_settings.m_render_mode == energy)
+  // if(m_render_settings.m_render_mode == energy) // removing volume renderer
+  // {
+  const int num_channels = m_result.get_num_channels();
+  ROVER_INFO("Saving "<<num_channels<<" channels ");
+  for(int i = 0; i < num_channels; ++i)
   {
-    const int num_channels = m_result.get_num_channels();
-    ROVER_INFO("Saving "<<num_channels<<" channels ");
-    for(int i = 0; i < num_channels; ++i)
-    {
-      std::stringstream sstream;
-      sstream<<file_name<<"_"<<i<<".png";
-      m_result.normalize_intensity(i);
-      FloatType * buffer
-        = get_vtkm_ptr(m_result.get_intensity(i));
+    std::stringstream sstream;
+    sstream<<file_name<<"_"<<i<<".png";
+    m_result.normalize_intensity(i);
+    FloatType * buffer
+      = get_vtkm_ptr(m_result.get_intensity(i));
 
-      encoder.EncodeChannel(buffer, width, height);
-      encoder.Save(sstream.str());
-    }
+    encoder.EncodeChannel(buffer, width, height);
+    encoder.Save(sstream.str());
+  }
+
+#if 0 // removing volume renderer
   }
   else
   {
@@ -541,78 +553,79 @@ void Scheduler<FloatType>::save_result(std::string file_name)
     encoder.Encode(buffer, width, height);
     encoder.Save(file_name + ".png");
   }
-
+#endif
 }
 
 template<typename FloatType>
-void Scheduler<FloatType>::save_result(std::string file_name,
-                   float min_val,
-                   float max_val,
-                   bool log_scale)
+void
+Scheduler<FloatType>::save_result(std::string file_name,
+                                  float min_val,
+                                  float max_val,
+                                  bool log_scale)
 {
-  int height = 0;
-  int width = 0;
-  m_ray_generator->get_dims(height, width);
-  assert( height > 0 );
-  assert( width > 0 );
-  ROVER_INFO("Saving file " << height << " "<<width);
+  int width;
+  int height;
+  m_ray_generator->get_dims(width, height);
+  ROVER_INFO("Saving .png file with output size " << width << "x" << height);
   ascent::PNGEncoder encoder;
-  if(!(m_render_settings.m_render_mode == energy))
+
+  // if(!(m_render_settings.m_render_mode == energy)) // removing volume renderer
+  // {
+  //   throw RoverException("Error: can only save images with min and max in energy mode");
+  // }
+
+  const int num_channels = m_result.get_num_channels();
+  ROVER_INFO("Saving " << num_channels << " channels");
+  for(int i = 0; i < num_channels; ++i)
   {
-    throw RoverException("Error: can only save images with min and max in enerhy mode");
+    std::stringstream sstream;
+    sstream<<file_name<<"_"<<i<<".png";
+    m_result.normalize_intensity(i, min_val, max_val, log_scale);
+    FloatType * buffer
+      = get_vtkm_ptr(m_result.get_intensity(i));
+
+    encoder.EncodeChannel(buffer, width, height);
+    encoder.Save(sstream.str());
   }
-
-   const int num_channels = m_result.get_num_channels();
-   ROVER_INFO("Saving "<<num_channels<<" channels ");
-   for(int i = 0; i < num_channels; ++i)
-   {
-     std::stringstream sstream;
-     sstream<<file_name<<"_"<<i<<".png";
-     m_result.normalize_intensity(i, min_val, max_val, log_scale);
-     FloatType * buffer
-       = get_vtkm_ptr(m_result.get_intensity(i));
-
-     encoder.EncodeChannel(buffer, width, height);
-     encoder.Save(sstream.str());
-   }
 }
 
 template<typename FloatType>
 void Scheduler<FloatType>::save_bov(std::string file_name)
 {
-  int height = 0;
-  int width = 0;
-  m_ray_generator->get_dims(height, width);
-  assert( height > 0 );
-  assert( width > 0 );
-  ROVER_INFO("Saving bov file " << height << " "<<width);
+  int width;
+  int height;
+  m_ray_generator->get_dims(width, height);
+  ROVER_INFO("Saving bov file with output size " << width << "x" << height);
   ascent::PNGEncoder encoder;
   const int size = height * width;
-  if(m_render_settings.m_render_mode == energy)
+
+  // if(m_render_settings.m_render_mode == energy) // removing volume renderer
+  // {
+    
+  const int num_channels = m_result.get_num_channels();
+  ROVER_INFO("Saving bov"<<num_channels<<" channels ");
+  for(int i = 0; i < num_channels; ++i)
   {
-    const int num_channels = m_result.get_num_channels();
-    ROVER_INFO("Saving bov"<<num_channels<<" channels ");
-    for(int i = 0; i < num_channels; ++i)
-    {
-      std::stringstream sstream;
-      sstream<<file_name<<"_"<<i<<".bov";
-      m_result.normalize_intensity(i);
-      FloatType * buffer
-        = get_vtkm_ptr(m_result.get_intensity(i));
-      std::fstream bov(sstream.str(), std::ios::out | std::ios::binary);
-      bov.write((char*)buffer, sizeof(FloatType) * size);
-      bov.close();
-    }
+    std::stringstream sstream;
+    sstream<<file_name<<"_"<<i<<".bov";
+    m_result.normalize_intensity(i);
+    FloatType * buffer
+      = get_vtkm_ptr(m_result.get_intensity(i));
+    std::fstream bov(sstream.str(), std::ios::out | std::ios::binary);
+    bov.write((char*)buffer, sizeof(FloatType) * size);
+    bov.close();
   }
+  // } // removing volume renderer
 }
 
 template<typename FloatType>
-void Scheduler<FloatType>::to_blueprint(Node &data)
+void
+Scheduler<FloatType>::to_blueprint(Node &data)
 {
   int width;
   int height;
   m_ray_generator->get_dims(width, height);
-  ROVER_INFO("Saving blueprint file " << height << " "<<width);
+  ROVER_INFO("Saving blueprint file with output size " << width << "x" << height);
 
   const std::string topo_name = "image_topo";
   const std::string coord_name = "image_coords";
@@ -672,46 +685,48 @@ void Scheduler<FloatType>::to_blueprint(Node &data)
   n_topo["coordset"] = coord_name;
   n_topo["type"] = "rectilinear";
 
-  if(m_render_settings.m_render_mode == energy)
+  // if(m_render_settings.m_render_mode == energy) // removing volume renderer
+  // {
+
+  if (!m_result.has_intensity(0) || !m_result.has_optical_depth(0))
   {
-    if(!m_result.has_intensity(0) || !m_result.has_optical_depth(0))
-    {
-      ROVER_ERROR("intensity and optical depth must both be available")
-    }
-
-    // Intensity
-    Node &intensities = data["fields/intensities"];
-    intensities["topology"] = topo_name;
-    intensities["association"] = "element";
-    intensities["units"] = "intensity units";
-    vtkm::cont::ArrayHandle<FloatType> intensity_values = m_result.flatten_intensities();
-    FloatType *intensity_buffer = get_vtkm_ptr(intensity_values);
-    // can't set external since this goes out of scope
-    const int num_intensity_values = intensity_values.GetNumberOfValues();
-    intensities["values"].set(intensity_buffer, num_intensity_values);
-    intensities["strides"].set(DataType::int64(3));
-    int64_array strides = intensities["strides"].value();
-    strides[0] = 1;
-    strides[1] = width;
-    strides[2] = width * height;
-
-    // Optical Depth
-    Node &optical_depth = data["fields/optical_depth"];
-    optical_depth["topology"] = topo_name;
-    optical_depth["association"] = "element";
-    optical_depth["units"] = "path length metadata";
-    vtkm::cont::ArrayHandle<FloatType> optical_values = m_result.flatten_optical_depths();
-    FloatType *optical_buffer = get_vtkm_ptr(optical_values);
-    // can't set external since this goes out of scope
-    const int num_optical_values = optical_values.GetNumberOfValues();
-    optical_depth["values"].set(optical_buffer, num_optical_values);
-    optical_depth["strides"].set(intensities["strides"]);
+    ROVER_ERROR("intensity and optical depth must both be available")
   }
+
+  // Intensity
+  Node &intensities = data["fields/intensities"];
+  intensities["topology"] = topo_name;
+  intensities["association"] = "element";
+  intensities["units"] = "intensity units";
+  vtkm::cont::ArrayHandle<FloatType> intensity_values = m_result.flatten_intensities();
+  FloatType *intensity_buffer = get_vtkm_ptr(intensity_values);
+  // can't set external since this goes out of scope
+  const int num_intensity_values = intensity_values.GetNumberOfValues();
+  intensities["values"].set(intensity_buffer, num_intensity_values);
+  intensities["strides"].set(DataType::int64(3));
+  int64_array strides = intensities["strides"].value();
+  strides[0] = 1;
+  strides[1] = width;
+  strides[2] = width * height;
+
+  // Optical Depth
+  Node &optical_depth = data["fields/optical_depth"];
+  optical_depth["topology"] = topo_name;
+  optical_depth["association"] = "element";
+  optical_depth["units"] = "path length metadata";
+  vtkm::cont::ArrayHandle<FloatType> optical_values = m_result.flatten_optical_depths();
+  FloatType *optical_buffer = get_vtkm_ptr(optical_values);
+  // can't set external since this goes out of scope
+  const int num_optical_values = optical_values.GetNumberOfValues();
+  optical_depth["values"].set(optical_buffer, num_optical_values);
+  optical_depth["strides"].set(intensities["strides"]);
+
+  // } // removing volume renderer
 
   Node verify;
   if(!blueprint::verify("mesh", data, verify))
   {
-    ROVER_ERROR("to_blueprint failed to produce a valid conduit mesh: " << verify.to_yaml());
+    ROVER_ERROR("Error: to_blueprint failed to produce a valid conduit mesh: " << verify.to_yaml());
   }
 }
 

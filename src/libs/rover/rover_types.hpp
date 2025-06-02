@@ -16,7 +16,7 @@ namespace rover {
 // this could be ray tracing(surface) / volume rendering / energy
 enum RenderMode
 {
-  volume, // standard volume rendering (3d)
+  // volume, // standard volume rendering (3d) // removing volume renderer
   energy, // radiography with enegry bins (3d)
   surface //
 };
@@ -36,6 +36,7 @@ enum RayScope
   local_rays    // rays only exist in a single domain at any given time
 };
 
+#if 0 // removing volume renderer
 //
 // Volume rendering specific settigns
 //
@@ -45,6 +46,7 @@ struct VolumeSettings
   vtkmRange m_scalar_range;
   VolumeSettings() : m_num_samples(400) {}
 };
+#endif
 
 //
 // Energy specific settings
@@ -64,16 +66,18 @@ struct RenderSettings
   vtkmColorTable m_color_table;
   std::string    m_primary_field;
   std::string    m_secondary_field;
-  VolumeSettings m_volume_settings;
+  int            m_num_samples; // approximate number of samples per ray
+  // VolumeSettings m_volume_settings; // removing volume renderer
   EnergySettings m_energy_settings;
   //
   // Default settings
   //
   RenderSettings() : m_color_table("Cool to Warm")
   {
-    m_render_mode     = volume;
+    m_render_mode     = energy;
     m_scattering_type = non_scattering;
     m_ray_scope       = global_rays;
+    m_num_samples     = 400;
   }
 
   void print()
