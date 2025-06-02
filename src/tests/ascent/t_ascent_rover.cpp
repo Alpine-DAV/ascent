@@ -843,7 +843,9 @@ TEST(ascent_rover, test_xray_serial)
     std::string msg = "An example of using the xray extract.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
+#endif
 
+#if 0
 //
 // Rover Volume tests
 //
@@ -978,5 +980,4 @@ TEST(ascent_rover, test_volume_serial)
     std::string msg = "An example of using the volume (unstructured grid) extract.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
-
 #endif

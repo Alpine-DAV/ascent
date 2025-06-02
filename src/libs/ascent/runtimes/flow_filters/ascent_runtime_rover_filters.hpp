@@ -55,6 +55,7 @@ public:
     virtual void   execute();
 };
 
+#if 0
 class ASCENT_API RoverVolume : public ::flow::Filter
 {
 public:
@@ -66,7 +67,7 @@ public:
                                  conduit::Node &info);
     virtual void   execute();
 };
-
+#endif
 
 };
 //-----------------------------------------------------------------------------
