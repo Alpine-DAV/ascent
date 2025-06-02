@@ -569,10 +569,12 @@ Scheduler<FloatType>::save_result(std::string file_name,
   ROVER_INFO("Saving .png file with output size " << width << "x" << height);
   ascent::PNGEncoder encoder;
 
-  // if(!(m_render_settings.m_render_mode == energy)) // removing volume renderer
-  // {
-  //   throw RoverException("Error: can only save images with min and max in energy mode");
-  // }
+#if 0 // removing volume renderer
+  if(!(m_render_settings.m_render_mode == energy))
+  {
+    throw RoverException("Error: can only save images with min and max in energy mode");
+  }
+#endif
 
   const int num_channels = m_result.get_num_channels();
   ROVER_INFO("Saving " << num_channels << " channels");
