@@ -13,13 +13,15 @@
 
 namespace rover {
 
+#if 0 // removing volume renderer
 // this could be ray tracing(surface) / volume rendering / energy
 enum RenderMode
 {
-  // volume, // standard volume rendering (3d) // removing volume renderer
+  volume, // standard volume rendering (3d)
   energy, // radiography with enegry bins (3d)
-  // surface // removing volume renderer
+  surface //
 };
+#endif
 
 enum ScatteringType
 {
@@ -60,7 +62,7 @@ struct EnergySettings
 
 struct RenderSettings
 {
-  RenderMode     m_render_mode;
+  // RenderMode     m_render_mode; // removing volume renderer
   ScatteringType m_scattering_type;
   RayScope       m_ray_scope;
   vtkmColorTable m_color_table;
@@ -74,7 +76,7 @@ struct RenderSettings
   //
   RenderSettings() : m_color_table("Cool to Warm")
   {
-    m_render_mode     = energy;
+    // m_render_mode     = energy; // removing volume renderer
     m_scattering_type = non_scattering;
     m_ray_scope       = global_rays;
     m_num_samples     = 400;

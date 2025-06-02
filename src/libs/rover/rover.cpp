@@ -31,11 +31,6 @@ protected:
   int                       m_num_ranks;
 #endif
 
-  void reset_render_mode(RenderMode render_mode)
-  {
-
-  }
-
 public:
   InternalsType()
   {

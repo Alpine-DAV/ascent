@@ -79,12 +79,13 @@ Domain::set_render_settings(const RenderSettings &settings)
   {
     ROVER_INFO("outgoing render mode = volume");
   }
-#endif
 
   if(m_render_settings.m_render_mode == energy)
   {
     ROVER_INFO("outgoing render mode = energy");
   }
+#endif
+
 }
 
 int
