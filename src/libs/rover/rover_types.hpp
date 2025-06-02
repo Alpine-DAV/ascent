@@ -8,6 +8,7 @@
 #define rover_types_h
 
 #include <rover_config.h>
+#include <conduit.hpp>
 #include <vtkm_typedefs.hpp>
 
 namespace rover {
@@ -31,8 +32,8 @@ enum ScatteringType
 //
 enum RayScope
 {
-  global_rays,  // rays can exist in one ore more domains at one time
-  local_rays    // ran only exist in a single domain st any given time
+  global_rays,  // rays can exist in one or more more domains at one time
+  local_rays    // rays only exist in a single domain at any given time
 };
 
 //
