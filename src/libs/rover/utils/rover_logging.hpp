@@ -12,6 +12,9 @@
 #include <sstream>
 #include <rover_exports.h>
 
+// TODO: Would be cool to revamp this, possibly as part of a larger pass to improve
+// logging in ascent
+
 namespace rover {
 
 class ROVER_API Logger

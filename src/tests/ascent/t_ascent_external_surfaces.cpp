@@ -229,6 +229,106 @@ TEST(ascent_external_surfaces, test_external_surfaces_multi_topo)
     ASCENT_ACTIONS_DUMP(actions,output_render,msg);
 }
 
+
+//-----------------------------------------------------------------------------
+TEST(ascent_external_surfaces, test_external_surfaces_input_to_many_pipelines)
+{
+    // the vtkm runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        return;
+    }
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("structured",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing External Surfaces Filter Multi Pipeline\n");
+
+
+    string output_path = prepare_output_dir();
+    string output_base = conduit::utils::join_file_path(output_path,"tout_external_surfaces_3d_multi_pipeline");
+    string output_render = output_base + "_render";
+    // remove old images before rendering
+    remove_test_image(output_base + "_render");
+
+    std::string acts_str = R"xyzxyz(
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl_ext_surfaces: 
+      f1: 
+        type: "external_surfaces"
+    pl_translate_plus:
+      f1:
+        type: "transform"
+        params:
+              translate:
+                  x: 25.0
+                  y: 25.0
+    pl_translate_minus:
+      f1:
+        type: "transform"
+        params:
+              translate:
+                  x: -25.0
+                  y: -25.0
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "braid"
+          pipeline: "pl_ext_surfaces"
+        p2: 
+          type: "pseudocolor"
+          field: "braid"
+          pipeline: "pl_translate_minus"
+        p3: 
+          type: "pseudocolor"
+          field: "braid"
+          pipeline: "pl_translate_plus"
+      renders:
+          r1:
+             camera:
+                 azimuth: 35
+)xyzxyz";
+
+    conduit::Node actions;
+    actions.parse(acts_str,"yaml");
+    actions[1]["scenes/s1/renders/r1/image_prefix"] = output_render;
+
+    std::cout << actions.to_yaml() << std::endl;
+    //
+    // Run Ascent
+    //
+    Ascent ascent;
+    conduit::Node ascent_opts;
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_render));
+    std::string msg = "An example of using the external_surfaces filter as input to multiple pipelines";
+    ASCENT_ACTIONS_DUMP(actions,output_render,msg);
+}
+
+
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {
