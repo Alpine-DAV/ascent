@@ -57,7 +57,7 @@ public:
     // logic to create the appropriate parallel scheduler
     //
     // ray tracing = dynamic scheduler, scattering | no_scattering
-    // engery = scattering + local_scope -> dynamic scheduler
+    // energy = scattering + local_scope -> dynamic scheduler
     //                 non_scattering + global_scope ->static scheduler
     //
     // Note: I wanted to allow for the case of scattering + global scope. This could
