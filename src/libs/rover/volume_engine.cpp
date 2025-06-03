@@ -7,8 +7,11 @@
 #include <volume_engine.hpp>
 #include <rover_exceptions.hpp>
 #include <utils/rover_logging.hpp>
-namespace rover {
 
+namespace rover
+{
+
+#if 0 // removing volume renderer
 VolumeEngine::VolumeEngine()
 {
   m_tracer = NULL;
@@ -160,5 +163,6 @@ VolumeEngine::set_samples(const vtkm::Bounds &global_bounds, const int &samples)
   m_tracer->SetSampleDistance(sample_distance);
   m_num_samples = samples;
 }
+#endif
 
 }; //namespace rover

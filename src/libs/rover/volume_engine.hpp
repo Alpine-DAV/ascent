@@ -9,8 +9,11 @@
 #include <rover_config.h>
 #include <engine.hpp>
 #include <vtkm/rendering/ConnectivityProxy.h>
-namespace rover {
 
+namespace rover
+{
+
+#if 0 // removing volume renderer
 class VolumeEngine : public Engine
 {
 protected:
@@ -33,6 +36,7 @@ public:
   vtkmRange get_primary_range() override;
   int get_num_channels() override;
 };
+#endif
 
 }; // namespace rover
 #endif
