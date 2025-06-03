@@ -32,7 +32,7 @@ class ROVER_API Rover
 {
 public:
   vtkmCamera m_camera;
-  CameraGenerator m_camera_generator;
+  CameraGenerator m_ray_generator;
   
   Rover();
   ~Rover();
@@ -40,12 +40,17 @@ public:
   void update_settings(Node &params);
   void print_settings();
 
+  // TODO: Investigate if these can be guarded with #ifdef ROVER_PARALLEL
   void set_mpi_comm_handle(int mpi_comm_id);
   int  get_mpi_comm_handle();
 
   void add_data_set(vtkh::DataSet &);
-  void set_render_settings(const RenderSettings render_settings);
-  void set_ray_generator(RayGenerator *);
+  void update_camera();
+  void update_ray_generator();
+  void update_precision();
+
+  void set_rover_settings(const Node &settings);
+  
   void clear_data_sets();
   void set_background(const std::vector<vtkm::Float32> &background);
   void set_background(const std::vector<vtkm::Float64> &background);
@@ -58,12 +63,8 @@ public:
                 const float max_val,
                 const bool log_scale);
   void save_bov(const std::string &file_name);
-  void set_tracer_precision32();
-  void set_tracer_precision64();
   void get_result(Image<vtkm::Float32> &image);
   void get_result(Image<vtkm::Float64> &image);
-  void update_camera();
-  void update_camera_generator();
 private:
   class InternalsType;
   std::shared_ptr<InternalsType> m_internals;

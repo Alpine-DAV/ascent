@@ -38,7 +38,7 @@ class ROVER_API DataLogger
 {
 public:
   ~DataLogger();
-  static DataLogger *GetInstance();
+  static DataLogger *get_instance();
   void set_mpi_comm_id(int comm_id);
   int  get_mpi_comm_id();
   void OpenLogEntry(const std::string &entryName);

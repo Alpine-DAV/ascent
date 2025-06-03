@@ -74,7 +74,11 @@ public:
   virtual void get_result(Image<vtkm::Float64> &image) = 0;
 protected:
   std::vector<Domain>                       m_domains;
+<<<<<<< HEAD
   RenderSettings                            m_render_settings;
+=======
+  Node                                      m_settings;
+>>>>>>> 3fbe53bf (Plumb through rover settings via conduit + refactoring)
   RayGenerator                             *m_ray_generator;
   std::vector<vtkm::Float64>                m_background;
   void create_default_background(const int num_channels);

@@ -129,10 +129,10 @@ TEST(ascent_rover, test_xray_blueprint_braid)
 
     conduit::Node extracts;
     extracts["e1/type"] = "xray";
-    extracts["e1/params/absorption"] = "radial";
-    extracts["e1/params/emission"] = "radial";
-    extracts["e1/params/filename"] = query_output_file;
-    extracts["e1/params/blueprint"] = "json";
+    extracts["e1/params/rover/absorption"] = "radial";
+    extracts["e1/params/rover/emission"] = "radial";
+    extracts["e1/params/rover/filename"] = query_output_file;
+    extracts["e1/params/rover/blueprint"] = "json";
 
     conduit::Node actions;
     // add the pipeline
@@ -207,14 +207,14 @@ TEST(ascent_rover, test_xray_blueprint_braid_lowres)
 
     conduit::Node extracts;
     extracts["e1/type"] = "xray";
-    extracts["e1/params/absorption"] = "radial";
-    extracts["e1/params/emission"] = "radial";
-    extracts["e1/params/filename"] = query_output_file;
-    extracts["e1/params/blueprint"] = "json";
+    extracts["e1/params/rover/absorption"] = "radial";
+    extracts["e1/params/rover/emission"] = "radial";
+    extracts["e1/params/rover/filename"] = query_output_file;
+    extracts["e1/params/rover/blueprint"] = "json";
 
     // Output resolution
-    extracts["e1/params/camera/image_width"] = 11;
-    extracts["e1/params/camera/image_height"] = 11;
+    extracts["e1/params/rover/width"] = 11;
+    extracts["e1/params/rover/height"] = 11;
 
     // Image params
     extracts["e1/params/image_params/min_value"] = 0.006;
@@ -301,10 +301,10 @@ TEST(ascent_rover, test_xray_blueprint_curv3d)
 
     conduit::Node extracts;
     extracts["e1/type"] = "xray";
-    extracts["e1/params/absorption"] = "d";
-    extracts["e1/params/emission"] = "p";
-    extracts["e1/params/filename"] = query_output_file;
-    extracts["e1/params/blueprint"] = "json";
+    extracts["e1/params/rover/absorption"] = "d";
+    extracts["e1/params/rover/emission"] = "p";
+    extracts["e1/params/rover/filename"] = query_output_file;
+    extracts["e1/params/rover/blueprint"] = "json";
 
     conduit::Node actions;
     // add the pipeline
@@ -385,10 +385,10 @@ TEST(ascent_rover, test_xray_blueprint_curv3d_camera_params)
 
     conduit::Node extracts;
     extracts["e1/type"] = "xray";
-    extracts["e1/params/absorption"] = "d";
-    extracts["e1/params/emission"] = "p";
-    extracts["e1/params/filename"] = query_output_file;
-    extracts["e1/params/blueprint"] = "json";
+    extracts["e1/params/rover/absorption"] = "d";
+    extracts["e1/params/rover/emission"] = "p";
+    extracts["e1/params/rover/filename"] = query_output_file;
+    extracts["e1/params/rover/blueprint"] = "json";
 
     // These errors all originate from within rover
     // TODO: Setting anything for position (e.g. 0,0,0) throws a vector range error
@@ -486,10 +486,10 @@ TEST(ascent_rover, test_xray_blueprint_multi_curv3d)
 
     conduit::Node extracts;
     extracts["e1/type"] = "xray";
-    extracts["e1/params/absorption"] = "d";
-    extracts["e1/params/emission"] = "p";
-    extracts["e1/params/filename"] = query_output_file;
-    extracts["e1/params/blueprint"] = "json";
+    extracts["e1/params/rover/absorption"] = "d";
+    extracts["e1/params/rover/emission"] = "p";
+    extracts["e1/params/rover/filename"] = query_output_file;
+    extracts["e1/params/rover/blueprint"] = "json";
 
     conduit::Node actions;
     // add the pipeline
@@ -573,10 +573,10 @@ TEST(ascent_rover, test_xray_blueprint_tire)
     conduit::Node extracts;
     extracts["e1/type"] = "xray";
     // field names are pressure, sb, and temperature
-    extracts["e1/params/absorption"] = "pressure";
-    // extracts["e1/params/emission"] = "pressure";
-    extracts["e1/params/filename"] = query_output_file;
-    extracts["e1/params/blueprint"] = "json";
+    extracts["e1/params/rover/absorption"] = "pressure";
+    // extracts["e1/params/rover/emission"] = "pressure";
+    extracts["e1/params/rover/filename"] = query_output_file;
+    extracts["e1/params/rover/blueprint"] = "json";
 
     conduit::Node actions;
     // add the pipeline
@@ -658,10 +658,10 @@ TEST(ascent_rover, test_xray_blueprint_curv2d)
 
     conduit::Node extracts;
     extracts["e1/type"] = "xray";
-    extracts["e1/params/absorption"] = "d";
-    extracts["e1/params/emission"] = "p";
-    extracts["e1/params/filename"] = query_output_file;
-    extracts["e1/params/blueprint"] = "json";
+    extracts["e1/params/rover/absorption"] = "d";
+    extracts["e1/params/rover/emission"] = "p";
+    extracts["e1/params/rover/filename"] = query_output_file;
+    extracts["e1/params/rover/blueprint"] = "json";
 
     conduit::Node actions;
     // add the pipeline
@@ -745,12 +745,12 @@ TEST(ascent_rover, test_xray_serial_image_params)
     conduit::Node extracts;
     extracts["e1/type"]  = "xray";
     // populate some param examples
-    extracts["e1/params/absorption"] = "radial";
-    extracts["e1/params/precision"] = "single";
-    extracts["e1/params/filename"] = output_file;
+    extracts["e1/params/rover/absorption"] = "radial";
+    extracts["e1/params/rover/precision"] = "single";
+    extracts["e1/params/rover/filename"] = output_file;
+    extracts["e1/params/rover/unit_scalar"] = 0.001f;
     extracts["e1/params/image_params/min_value"] = 0.006f;
     extracts["e1/params/image_params/max_value"] = 1.000;
-    extracts["e1/params/unit_scalar"] = 0.001f;
     extracts["e1/params/image_params/log_scale"] = "true";
 
     conduit::Node actions;
@@ -814,9 +814,9 @@ TEST(ascent_rover, test_xray_serial)
 
     conduit::Node extracts;
     extracts["e1/type"]  = "xray";
-    extracts["e1/params/absorption"] = "radial";
-    extracts["e1/params/emission"] = "radial";
-    extracts["e1/params/filename"] = output_file;
+    extracts["e1/params/rover/absorption"] = "radial";
+    extracts["e1/params/rover/emission"] = "radial";
+    extracts["e1/params/rover/filename"] = output_file;
 
     conduit::Node actions;
     conduit::Node &add_extracts = actions.append();

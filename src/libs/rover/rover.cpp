@@ -43,6 +43,14 @@ public:
 #endif
   }
 
+  ~InternalsType()
+  {
+    if (m_scheduler)
+    {
+      delete m_scheduler;
+    }
+  }
+
   void add_data_set(vtkmDataSet &dataset)
   {
     ROVER_INFO("Adding data set");
@@ -79,11 +87,6 @@ public:
   void clear_data_sets()
   {
     m_scheduler->clear_data_sets();
-  }
-
-  ~InternalsType()
-  {
-    if(m_scheduler) delete m_scheduler;
   }
 
   void set_background(const std::vector<vtkm::Float32> &background)
@@ -208,7 +211,12 @@ public:
 
 Rover::Rover() : m_internals( new InternalsType )
 {
-
+  m_settings["rover/color_table"] = "Cool to Warm";
+  m_settings["rover/divide_emission_by_abs"] = "false";
+  m_settings["rover/num_samples"] = 400;
+  m_settings["rover/ray_scope"] = "global_rays";
+  m_settings["rover/scattering_type"] = "non_scattering";  
+  m_settings["rover/unit_scalar"] = 1.0;
 }
 
 Rover::~Rover()
@@ -221,6 +229,16 @@ Rover::~Rover()
 void
 Rover::update_settings(Node &params)
 {
+  if (params.has_child("rover"))
+  {
+    std::vector<std::string> rover_param_names = params["rover"].child_names();
+    for (const auto &param_name : rover_param_names)
+    {
+      const std::string path = "rover/" + param_name;
+      m_settings[path].set(params[path]);
+    }
+  }
+
   if (params.has_child("camera"))
   {
     m_settings["camera"].set(params["camera"]);
@@ -234,9 +252,45 @@ Rover::print_settings()
 }
 
 void
+Rover::set_mpi_comm_handle(int mpi_comm_id)
+{
+#ifdef ROVER_PARALLEL
+  this->m_internals->set_comm_handle(MPI_Comm_f2c(mpi_comm_id));
+#else
+  (void)mpi_comm_id;
+#endif
+}
+
+int
+Rover::get_mpi_comm_handle()
+{
+#ifdef ROVER_PARALLEL
+  return MPI_Comm_c2f(this->m_internals->get_comm_handle());
+#else
+  return -1;
+#endif
+}
+
+void
+Rover::add_data_set(vtkh::DataSet &dataset)
+{
+  for (int i = 0; i < dataset.GetNumberOfDomains(); i++)
+  {
+    m_internals->add_data_set(dataset.GetDomain(i));
+  }
+  m_camera.ResetToBounds(dataset.GetGlobalBounds());
+}
+
+void
 Rover::update_camera()
 {
-  // TODO: Change this to use has_child everywhere instead
+  // Early return if the default params weren't changed
+  if (!m_settings.has_child("camera"))
+  {
+    return;
+  }
+
+  // TODO: Change each instance of has_path to has_child
   if (m_settings.has_path("camera/look_at"))
   {
     float64_accessor vec3 = m_settings["camera/look_at"].value();
@@ -297,14 +351,12 @@ Rover::update_camera()
 
     m_camera.SetClippingRange(clipping_range);
   }
-
-  update_camera_generator();
 }
 
 void
-Rover::update_camera_generator()
+Rover::update_ray_generator()
 {
-  m_camera_generator.set_camera(m_camera);
+  m_ray_generator.set_camera(m_camera);
 
   int64 width = 200;
   int64 height = 200;
@@ -319,40 +371,31 @@ Rover::update_camera_generator()
     height = m_settings["camera/image_height"].value();
   }
 
-  m_camera_generator.set_width(width);
-  m_camera_generator.set_height(height);
+  m_ray_generator.set_width(width);
+  m_ray_generator.set_height(height);
 
-  set_ray_generator(&m_camera_generator);
+  m_internals->set_ray_generator(&m_ray_generator);
 }
 
 void
-Rover::set_mpi_comm_handle(int mpi_comm_id)
+Rover::update_precision()
 {
-#ifdef ROVER_PARALLEL
-  this->m_internals->set_comm_handle(MPI_Comm_f2c(mpi_comm_id));
-#else
-  (void)mpi_comm_id;
-#endif
-}
-
-int
-Rover::get_mpi_comm_handle()
-{
-#ifdef ROVER_PARALLEL
-  return MPI_Comm_c2f(this->m_internals->get_comm_handle());
-#else
-  return -1;
-#endif
-}
-
-void
-Rover::add_data_set(vtkh::DataSet &dataset)
-{
-  for (int i = 0; i < dataset.GetNumberOfDomains(); i++)
+  // Precision is an optional parameter
+  if (!m_settings.has_path("rover/precision"))
   {
-    m_internals->add_data_set(dataset.GetDomain(i));
+    // Use float32 precision by default
+    m_internals->set_tracer_precision32();
   }
-  m_camera.ResetToBounds(dataset.GetGlobalBounds());
+
+  std::string precision = m_settings["rover/precision"].to_string();
+  if (precision == "single")
+  {
+    m_internals->set_tracer_precision32();
+  }
+  else if (precision == "double")
+  {
+    m_internals->set_tracer_precision64();
+  }
 }
 
 void
@@ -368,18 +411,12 @@ Rover::clear_data_sets()
 }
 
 void
-Rover::set_ray_generator(RayGenerator *ray_generator)
-{
-  if(ray_generator == nullptr)
-  {
-    throw RoverException("Ray generator cannot  be null");
-  }
-  m_internals->set_ray_generator(ray_generator);
-}
-
-void
 Rover::execute()
 {
+  update_camera();
+  update_ray_generator();
+  update_precision();
+  m_internals->set_rover_settings(m_settings);
   m_internals->execute();
 }
 
@@ -389,7 +426,7 @@ is_float(T);
 
 template<>
 bool
-is_float<vtkm::Float32>(vtkm::Float32 )
+is_float<vtkm::Float32>(vtkm::Float32)
 {
   return true;
 }
@@ -497,17 +534,4 @@ Rover::get_result(Image<vtkm::Float64> &image)
   m_internals->get_result(image);
 }
 
-void
-Rover::set_tracer_precision32()
-{
-  m_internals->set_tracer_precision32();
-}
-
-void
-Rover::set_tracer_precision64()
-{
-  m_internals->set_tracer_precision64();
-}
-
 }; //namespace rover
-

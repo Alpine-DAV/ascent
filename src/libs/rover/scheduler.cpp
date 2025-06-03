@@ -272,7 +272,8 @@ Scheduler<FloatType>::composite()
   }
 #endif
 
-  if (m_render_settings.m_secondary_field != "")
+  std::string emission = m_settings["rover/emission"].to_string();
+  if (emission != "")
   {
     vtkh::PartialCompositor<vtkh::EmissionPartial<FloatType>> compositor;
     compositor.set_background(m_background);
@@ -461,7 +462,9 @@ Scheduler<FloatType>::trace_rays()
     partial_image.m_height = height;
     partial_image.m_buffer =
       vtkm::rendering::raytracing::ChannelBuffer<FloatType>(num_channels, 0);
-    if(m_render_settings.m_secondary_field != "")
+
+    std::string emission = m_settings["rover/emission"].to_string();
+    if(emission != "")
     {
       partial_image.m_intensities =
         vtkm::rendering::raytracing::ChannelBuffer<FloatType>(num_channels, 0);
