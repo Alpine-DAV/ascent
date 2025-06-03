@@ -4,6 +4,7 @@
 // other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+#include "image.hpp"
 #include <scheduler.hpp>
 #include <rover.hpp>
 #include <rover_exceptions.hpp>
@@ -73,7 +74,7 @@ public:
      //m_scheduler = new Scheduler<FloatType>();
      m_scheduler->set_render_settings(render_settings);
 //#endif
-   }
+  }
 
   void set_ray_generator(RayGenerator *ray_generator)
   {
@@ -210,15 +211,123 @@ public:
 
 }; //Internals Type
 
-Rover::Rover()
-  : m_internals( new InternalsType )
+Rover::Rover() : m_internals( new InternalsType )
 {
 
 }
 
 Rover::~Rover()
 {
+#ifdef ROVER_ENABLE_LOGGING
+  DataLogger::GetInstance()->WriteLog();
+#endif
+}
 
+void
+Rover::update_settings(Node &params)
+{
+  if (params.has_child("camera"))
+  {
+    m_settings["camera"].set(params["camera"]);
+  }
+}
+
+void
+Rover::print_settings()
+{
+  std::cout << m_settings.to_yaml() << std::endl;
+}
+
+void
+Rover::update_camera()
+{
+  // TODO: Change this to use has_child everywhere instead
+  if (m_settings.has_path("camera/look_at"))
+  {
+    float64_accessor vec3 = m_settings["camera/look_at"].value();
+    vtkmVec3f look_at(vec3[0], vec3[1], vec3[2]);
+    m_camera.SetLookAt(look_at);
+  }
+  
+  if (m_settings.has_path("camera/up"))
+  {
+    float64_accessor vec3 = m_settings["camera/up"].value();
+    vtkmVec3f up(vec3[0], vec3[1], vec3[2]);
+    m_camera.SetViewUp(up);
+  }
+  
+  if (m_settings.has_path("camera/fov"))
+  {
+    float64 fov = m_settings["camera/fov"].value();
+    m_camera.SetFieldOfView(fov);
+  }
+  
+  if (m_settings.has_path("camera/xpan") || m_settings.has_path("camera/ypan"))
+  {
+    float64 xpan = 0.0;
+    float64 ypan = 0.0;
+
+    if (m_settings.has_path("camera/xpan"))
+    {
+      xpan = m_settings["camera/xpan"].value();
+    }
+
+    if (m_settings.has_path("camera/ypan"))
+    {
+      ypan = m_settings["camera/ypan"].value();
+    }
+    
+    m_camera.Pan(xpan, ypan);
+  }
+  
+  if (m_settings.has_path("camera/zoom"))
+  {
+    float64 image_zoom = m_settings["camera/zoom"].value();
+    m_camera.Zoom(log(image_zoom) / log(4.0));
+  }
+  
+  if (m_settings.has_path("camera/near_plane") || m_settings.has_path("camera/far_plane"))
+  {
+    vtkm::Range clipping_range;
+
+    if (m_settings.has_path("camera/near_plane"))
+    {
+      clipping_range.Min = m_settings["camera/near_plane"].value();
+    }
+    
+    if (m_settings.has_path("camera/far_plane"))
+    {
+      clipping_range.Max = m_settings["camera/far_plane"].value();
+    }
+
+    m_camera.SetClippingRange(clipping_range);
+  }
+
+  update_camera_generator();
+}
+
+void
+Rover::update_camera_generator()
+{
+  m_camera_generator.set_camera(m_camera);
+
+  int64 width = 200;
+  int64 height = 200;
+
+  if (m_settings.has_path("camera/image_width"))
+  {
+    width = m_settings["camera/image_width"].value();
+  }
+
+  if (m_settings.has_path("camera/image_height"))
+  {
+    height = m_settings["camera/image_height"].value();
+  }
+
+  m_camera_generator.set_width(width);
+  m_camera_generator.set_height(height);
+
+  set_ray_generator(&m_camera_generator);
 }
 
 void
@@ -229,7 +338,6 @@ Rover::set_mpi_comm_handle(int mpi_comm_id)
 #else
   (void)mpi_comm_id;
 #endif
-
 }
 
 int
@@ -243,17 +351,13 @@ Rover::get_mpi_comm_handle()
 }
 
 void
-Rover::finalize()
+Rover::add_data_set(vtkh::DataSet &dataset)
 {
-#ifdef ROVER_ENABLE_LOGGING
-  DataLogger::GetInstance()->WriteLog();
-#endif
-}
-
-void
-Rover::add_data_set(vtkmDataSet &dataset)
-{
-  m_internals->add_data_set(dataset);
+  for (int i = 0; i < dataset.GetNumberOfDomains(); i++)
+  {
+    m_internals->add_data_set(dataset.GetDomain(i));
+  }
+  m_camera.ResetToBounds(dataset.GetGlobalBounds());
 }
 
 void
@@ -286,7 +390,7 @@ Rover::execute()
 
 template<typename T>
 bool
-is_float(T );
+is_float(T);
 
 template<>
 bool
