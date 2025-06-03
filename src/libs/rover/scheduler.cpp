@@ -272,8 +272,6 @@ Scheduler<FloatType>::composite()
   }
 #endif
 
-  // TODO: Secondary field should always be set for energy renders,
-  // so we should make it required at verify_params
   if (m_render_settings.m_secondary_field != "")
   {
     vtkh::PartialCompositor<vtkh::EmissionPartial<FloatType>> compositor;
@@ -363,6 +361,11 @@ Scheduler<FloatType>::trace_rays()
   int width;
   int height;
   m_ray_generator->get_dims(width, height);
+
+  if (width <= 0 || height <= 0)
+  {
+    ROVER_ERROR("Error: trace_rays failed due to non-positive output dimensions: " << width << "x" << height );
+  }
 
   //
   // ensure that the render settings are set
@@ -520,6 +523,12 @@ void Scheduler<FloatType>::save_result(std::string file_name)
   int width;
   int height;
   m_ray_generator->get_dims(width, height);
+
+  if (width <= 0 || height <= 0)
+  {
+    ROVER_ERROR("Error: save_result failed due to non-positive output dimensions: " << width << "x" << height );
+  }
+
   ROVER_INFO("Saving .png file with output size " << width << "x" << height);
   ascent::PNGEncoder encoder;
 
@@ -566,6 +575,12 @@ Scheduler<FloatType>::save_result(std::string file_name,
   int width;
   int height;
   m_ray_generator->get_dims(width, height);
+
+  if (width <= 0 || height <= 0)
+  {
+    ROVER_ERROR("Error: save_result failed due to non-positive output dimensions: " << width << "x" << height );
+  }
+
   ROVER_INFO("Saving .png file with output size " << width << "x" << height);
   ascent::PNGEncoder encoder;
 
@@ -597,6 +612,12 @@ void Scheduler<FloatType>::save_bov(std::string file_name)
   int width;
   int height;
   m_ray_generator->get_dims(width, height);
+
+  if (width <= 0 || height <= 0)
+  {
+    ROVER_ERROR("Error: save_bov failed due to non-positive output dimensions: " << width << "x" << height );
+  }
+
   ROVER_INFO("Saving bov file with output size " << width << "x" << height);
   ascent::PNGEncoder encoder;
   const int size = height * width;
@@ -627,6 +648,12 @@ Scheduler<FloatType>::to_blueprint(Node &data)
   int width;
   int height;
   m_ray_generator->get_dims(width, height);
+
+  if (width <= 0 || height <= 0)
+  {
+    ROVER_ERROR("Error: to_blueprint failed due to non-positive output dimensions: " << width << "x" << height );
+  }
+
   ROVER_INFO("Saving blueprint file with output size " << width << "x" << height);
 
   const std::string topo_name = "image_topo";
