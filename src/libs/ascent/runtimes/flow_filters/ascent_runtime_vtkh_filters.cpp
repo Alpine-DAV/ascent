@@ -3737,7 +3737,7 @@ VTKHUniformGrid::verify_params(const conduit::Node &params,
     info.reset();
 
     bool res = true;
-    //res &= check_string("field",params, info, true);
+    res &= check_string("field",params, info, false);
     res &= check_numeric("dims/i",params, info, false);
     res &= check_numeric("dims/j",params, info, false);
     res &= check_numeric("dims/k",params, info, false);
@@ -3750,14 +3750,20 @@ VTKHUniformGrid::verify_params(const conduit::Node &params,
     res &= check_numeric("spacing/dz",params, info, false);
     res &= check_numeric("invalid_value",params, info, false);
 
-    //if(params.has_child("fields") && !params["fields"].dtype().is_list())
-    //{
-    //  res = false;
-    //  info["errors"].append() = "fields is not a list";
-    //}
+    if(!params.has_child("field") && !params.has_child("fields"))
+    {
+      res = false;
+      info["errors"].append() = "Uniform Grid Sampling requires 'field' or 'fields'";
+    }
 
+    if(params.has_child("fields") && !params["fields"].dtype().is_list())
+    {
+      res = false;
+      info["errors"].append() = "'fields' is not a list";
+    }
 
     std::vector<std::string> valid_paths;
+    valid_paths.push_back("field");
     valid_paths.push_back("fields");
     valid_paths.push_back("dims/i");
     valid_paths.push_back("dims/j");
@@ -3805,9 +3811,14 @@ VTKHUniformGrid::execute()
     }
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
-    //std::string field = params()["field"].as_string();
     std::vector<std::string> field_selection;
-    if(params().has_path("fields"))
+    if(params().has_path("field"))
+    {
+      std::string field = params()["field"].as_string();
+
+      field_selection.push_back(field);
+    }
+    else if(params().has_path("fields"))
     {
       const conduit::Node &flist = params()["fields"];
       const int num_fields = flist.number_of_children();
@@ -3825,6 +3836,11 @@ VTKHUniformGrid::execute()
         field_selection.push_back(f.as_string());
       }
     }
+    else
+    {
+      ASCENT_ERROR("vtkh_uniform_grid must specify a 'field' string or 'fields' list of strings");
+    }
+
     int num_fields = field_selection.size(); 
     for(int i = 0; i < num_fields; ++i)
     {
@@ -3899,7 +3915,7 @@ VTKHUniformGrid::execute()
     grid_probe.Dims(v_dims);
     grid_probe.Origin(v_origin);
     grid_probe.Spacing(v_spacing);
-    grid_probe.Field(field_selection);
+    grid_probe.Fields(field_selection);
     grid_probe.SetInput(&data);
 
     grid_probe.Update();

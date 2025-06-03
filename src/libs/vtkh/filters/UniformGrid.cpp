@@ -991,7 +991,7 @@ UniformGrid::Spacing(const Vec3f spacing)
 }
 
 void
-UniformGrid::Field(const std::vector<std::string> fields)
+UniformGrid::Fields(const std::vector<std::string> fields)
 {
   m_fields = fields;
 }

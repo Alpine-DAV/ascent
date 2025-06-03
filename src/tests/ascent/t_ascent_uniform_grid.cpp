@@ -33,16 +33,6 @@ using namespace ascent;
 
 index_t EXAMPLE_MESH_SIDE_DIM = 20;
 
-//- 
-//  action: "add_extracts"
-//  extracts: 
-//    e1: 
-//      type: "relay"
-//      pipeline: "pl1"
-//      params: 
-//        path: "uni_grid_sample_in_x"
-//        protocol: "blueprint/mesh/hdf5"
-
 //-----------------------------------------------------------------------------
 TEST(ascent_uniform_regular_grid, test_uniform_grid_slice_along_y)
 {
@@ -423,7 +413,7 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_smaller_in_k)
       f1: 
         type: "uniform_grid"
         params: 
-          fields: ["braid"]
+          field: "braid"
           dims: 
             k: 10 
           invalid_value: -10.0

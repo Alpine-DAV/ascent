@@ -21,7 +21,7 @@ public:
   void Dims(const Vec3f dims);
   void Origin(const Vec3f origin);
   void Spacing(const Vec3f spacing);
-  void Field(const std::vector<std::string> fields);
+  void Fields(const std::vector<std::string> fields);
   void InvalidValue(const vtkm::Float64 invalid_value);
 protected:
   void PreExecute() override;
