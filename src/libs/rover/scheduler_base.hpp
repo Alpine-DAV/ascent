@@ -12,7 +12,6 @@
 #include <domain.hpp>
 #include <image.hpp>
 #include <engine.hpp>
-#include <rover_types.hpp>
 #include <ray_generators/ray_generator.hpp>
 #include <vtkm_typedefs.hpp>
 #include <conduit.hpp>
@@ -55,7 +54,7 @@ public:
   //
   // Setters
   //
-  void set_render_settings(const RenderSettings render_settings);
+  void set_rover_settings(const Node &settings);
   void add_data_set(vtkmDataSet &data_set);
   void set_domains(std::vector<Domain> &domains);
   void set_ray_generator(RayGenerator *ray_generator);
@@ -68,17 +67,13 @@ public:
   // Getters
   //
   std::vector<Domain> get_domains();
-  RenderSettings get_render_settings() const;
+  Node & get_rover_settings() const;
   vtkmDataSet    get_data_set(const int &domain);
   virtual void get_result(Image<vtkm::Float32> &image) = 0;
   virtual void get_result(Image<vtkm::Float64> &image) = 0;
 protected:
   std::vector<Domain>                       m_domains;
-<<<<<<< HEAD
-  RenderSettings                            m_render_settings;
-=======
   Node                                      m_settings;
->>>>>>> 3fbe53bf (Plumb through rover settings via conduit + refactoring)
   RayGenerator                             *m_ray_generator;
   std::vector<vtkm::Float64>                m_background;
   void create_default_background(const int num_channels);

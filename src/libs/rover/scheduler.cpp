@@ -377,7 +377,7 @@ Scheduler<FloatType>::trace_rays()
   ROVER_INFO("Scheduler set render settings for " << num_domains << " domains");
   for(int i = 0; i < num_domains; ++i)
   {
-    m_domains[i].set_render_settings(m_render_settings);
+    m_domains[i].set_rover_settings(m_settings);
   }
 
   ROVER_INFO("Done scheduler set render settings for "<<num_domains<<" domains ");

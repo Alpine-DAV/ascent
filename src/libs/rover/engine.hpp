@@ -8,7 +8,6 @@
 #define rover_engine_h
 
 #include <rover_config.h>
-#include <rover_types.hpp>
 #include <vtkm_typedefs.hpp>
 
 #include <vtkm/cont/ColorTable.h>

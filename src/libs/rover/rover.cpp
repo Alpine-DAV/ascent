@@ -57,7 +57,7 @@ public:
     m_scheduler->add_data_set(dataset);
   }
 
-  void set_render_settings(RenderSettings render_settings)
+  void set_rover_settings(const Node &settings)
   {
     ROVER_INFO("set_render_settings");
     // TODO: make copy constructors to get the members like ray_generator
@@ -75,7 +75,7 @@ public:
      //if(render_settings compared to old means new schedular)
      //if(m_scheduler == NULL) delete m_scheduler;
      //m_scheduler = new Scheduler<FloatType>();
-     m_scheduler->set_render_settings(render_settings);
+     m_scheduler->set_rover_settings(settings);
 //#endif
   }
 
@@ -399,9 +399,9 @@ Rover::update_precision()
 }
 
 void
-Rover::set_render_settings(RenderSettings render_settings)
+Rover::set_rover_settings(const Node &settings)
 {
-  m_internals->set_render_settings(render_settings);
+  m_internals->set_rover_settings(settings);
 }
 
 void

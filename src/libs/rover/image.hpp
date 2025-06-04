@@ -10,8 +10,7 @@
 #include <rover_config.h>
 #include <vector>
 #include <vtkm/cont/ArrayHandle.h>
-
-#include <rover_types.hpp>
+#include <vtkm_typedefs.hpp>
 #include <partial_image.hpp>
 
 namespace rover

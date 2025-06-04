@@ -11,9 +11,11 @@
 
 #include <memory>
 
+#include <conduit.hpp>
 #include <engine.hpp>
-#include <rover_types.hpp>
 #include <vtkm_typedefs.hpp>
+
+using namespace conduit;
 
 namespace rover {
 
@@ -28,7 +30,7 @@ public:
   void init_rays(Ray32 &rays);
   void init_rays(Ray64 &rays);
   void set_data_set(vtkmDataSet &dataset);
-  void set_render_settings(const RenderSettings &settings);
+  void set_rover_settings(const Node &settings);
   void set_primary_range(const vtkmRange &range);
   void set_composite_background(bool on);
   vtkm::Bounds get_domain_bounds();

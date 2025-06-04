@@ -19,7 +19,6 @@
 // rover includes
 #include <rover_exports.h>
 #include <rover_config.h>
-#include <rover_types.hpp>
 #include <image.hpp>
 #include <ray_generators/ray_generator.hpp>
 

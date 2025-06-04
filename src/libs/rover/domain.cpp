@@ -29,7 +29,7 @@ Domain::~Domain()
 // be called in any order
 //
 void
-Domain::set_render_settings(const RenderSettings &settings)
+Domain::set_rover_settings(const Node &settings)
 {
   //
   // Create the correct engine
