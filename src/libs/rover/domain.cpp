@@ -105,9 +105,9 @@ Domain::set_data_set(vtkmDataSet &dataset)
 void
 Domain::set_engine_fields()
 {
-  std::string absorption = m_settings["rover/absorption"].as_string();
-  std::string emission = m_settings["rover/emission"].as_string();
-  std::string color_table_name = m_settings["rover/color_table"].as_string();
+  const std::string absorption = m_settings["rover/absorption"].as_string();
+  const std::string emission = m_settings["rover/emission"].as_string();
+  const std::string color_table_name = m_settings["rover/color_table"].as_string();
   vtkmColorTable color_table(color_table_name);
 
   ROVER_INFO("Primary (absorption) field: " << absorbtion);
