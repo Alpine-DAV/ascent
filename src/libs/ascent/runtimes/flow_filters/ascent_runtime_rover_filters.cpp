@@ -261,6 +261,7 @@ RoverXRay::execute()
 
   // Fetch the dataset associated with the 'absorption' field
   std::string topo_name = collection->field_topology(absorption);
+  // TODO: Validate topo_name
   vtkh::DataSet &dataset = collection->dataset_by_topology(topo_name);
 
   // Initialize rover and configure its behavior with the input params
@@ -271,7 +272,7 @@ RoverXRay::execute()
 #ifdef ASCENT_MPI_ENABLED
   mpi_comm_id = flow::Workspace::default_mpi_comm();
   rover::Logger::get_instance()->set_mpi_comm_id(mpi_comm_id);
-  rover::DataLogger::get_instance()->set_mpi_comm_id(mpi_comm_id);
+  rover::DataLogger::GetInstance()->set_mpi_comm_id(mpi_comm_id);
   rover.set_mpi_comm_handle(mpi_comm_id);
 #endif
   

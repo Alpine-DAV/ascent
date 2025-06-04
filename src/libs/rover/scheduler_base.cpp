@@ -20,7 +20,6 @@ SchedulerBase::~SchedulerBase()
 void
 SchedulerBase::set_settings(const Node &settings)
 {
-  // In the serial scheduler, the only setting that matters is m_scattering_mode
   m_settings = settings;
 }
 

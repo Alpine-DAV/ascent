@@ -426,7 +426,7 @@ Scheduler<FloatType>::trace_rays()
     time = timer.GetElapsedTime();
     ROVER_DATA_ADD("domain_trace", time);
 #ifdef ROVER_ENABLE_LOGGING
-    DataLogger::get_instance()->GetStream()<<vtkmLogger::GetInstance()->GetStream().str();
+    DataLogger::GetInstance()->GetStream()<<vtkmLogger::GetInstance()->GetStream().str();
 #endif
     ROVER_INFO("Schedule: creating partial image in domain "<<i);
     //
@@ -471,7 +471,7 @@ Scheduler<FloatType>::trace_rays()
     }
     m_partial_images.push_back(partial_image);
   }
-  //DataLogger::get_instance()->AddLogData("blank_image", t1.GetElapsedTime());
+  //DataLogger::GetInstance()->AddLogData("blank_image", t1.GetElapsedTime());
   //ROVER_DATA_ADD("blank_image", t1.GetElapsedTime());
   t1.Start();
 

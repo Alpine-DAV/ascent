@@ -211,6 +211,7 @@ public:
 
 Rover::Rover() : m_internals(new InternalsType)
 {
+  // TODO: Figure out if color_table needs to be set by us here
   m_settings["rover/color_table"] = "Cool to Warm";
   m_settings["rover/divide_emission_by_abs"] = "false";
   m_settings["rover/num_samples"] = 400;
@@ -223,7 +224,7 @@ Rover::Rover() : m_internals(new InternalsType)
 Rover::~Rover()
 {
 #ifdef ROVER_ENABLE_LOGGING
-  DataLogger::get_instance()->WriteLog();
+  DataLogger::GetInstance()->WriteLog();
 #endif
 }
 
@@ -232,11 +233,9 @@ Rover::update_settings(Node &params)
 {
   if (params.has_child("rover"))
   {
-    std::vector<std::string> rover_param_names = params["rover"].child_names();
-    for (const auto &param_name : rover_param_names)
+    for (const auto &param_name : params["rover"].child_names())
     {
-      const std::string path = "rover/" + param_name;
-      m_settings[path].set(params[path]);
+      m_settings["rover"][param_name].set(params["rover"][param_name]);
     }
   }
 

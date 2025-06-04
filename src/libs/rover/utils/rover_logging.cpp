@@ -102,7 +102,7 @@ DataLogger::get_mpi_comm_id()
 }
 
 DataLogger*
-DataLogger::get_instance()
+DataLogger::GetInstance()
 {
   if(DataLogger::Instance == NULL)
   {
