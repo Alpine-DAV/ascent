@@ -30,9 +30,6 @@ namespace rover
 class ROVER_API Rover
 {
 public:
-  vtkmCamera m_camera;
-  CameraGenerator m_ray_generator;
-  
   Rover();
   ~Rover();
 
@@ -63,10 +60,12 @@ public:
   void get_result(Image<vtkm::Float32> &image);
   void get_result(Image<vtkm::Float64> &image);
 private:
+  Node m_settings;
+  vtkmCamera m_camera;
+  CameraGenerator m_ray_generator;
+  
   class InternalsType;
   std::shared_ptr<InternalsType> m_internals;
-protected:
-  Node m_settings;
 };
 
 }; // namespace rover

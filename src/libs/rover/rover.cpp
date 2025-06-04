@@ -209,11 +209,12 @@ public:
 
 }; //Internals Type
 
-Rover::Rover() : m_internals( new InternalsType )
+Rover::Rover() : m_internals(new InternalsType)
 {
   m_settings["rover/color_table"] = "Cool to Warm";
   m_settings["rover/divide_emission_by_abs"] = "false";
   m_settings["rover/num_samples"] = 400;
+  m_settings["rover/precision"] = "single";
   m_settings["rover/ray_scope"] = "global_rays";
   m_settings["rover/scattering_type"] = "non_scattering";  
   m_settings["rover/unit_scalar"] = 1.0;
@@ -222,7 +223,7 @@ Rover::Rover() : m_internals( new InternalsType )
 Rover::~Rover()
 {
 #ifdef ROVER_ENABLE_LOGGING
-  DataLogger::GetInstance()->WriteLog();
+  DataLogger::get_instance()->WriteLog();
 #endif
 }
 
@@ -380,13 +381,6 @@ Rover::update_ray_generator()
 void
 Rover::update_precision()
 {
-  // Precision is an optional parameter
-  if (!m_settings.has_path("rover/precision"))
-  {
-    // Use float32 precision by default
-    m_internals->set_tracer_precision32();
-  }
-
   std::string precision = m_settings["rover/precision"].as_string();
   if (precision == "single")
   {
