@@ -69,6 +69,7 @@ set(rover_headers
       ray_generators/ray_generator.hpp
       ray_generators/camera_generator.hpp
       ray_generators/visit_generator.hpp
+      rover_exports.h
       vtkm_typedefs.hpp
       # utils headers
       utils/rover_logging.hpp

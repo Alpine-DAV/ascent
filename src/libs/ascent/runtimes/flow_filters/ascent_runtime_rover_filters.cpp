@@ -134,8 +134,8 @@ RoverXRay::verify_params(const conduit::Node &params,
     res = false;
   }
 
-  bool has_width = params.has_path("rover/width");
-  bool has_height = params.has_path("rover/height");
+  const bool has_width = params.has_path("rover/width");
+  const bool has_height = params.has_path("rover/height");
 
   if (has_width && has_height)
   {
@@ -214,8 +214,8 @@ RoverXRay::verify_params(const conduit::Node &params,
     }
     else
     {
-      const std::string precision = params["rover/precision"].to_string();
-      if (precision != "single" || precision != "double")
+      const std::string precision = params["rover/precision"].as_string();
+      if (precision != "single" && precision != "double")
       {
         info["errors"].append() = "Optional parameter 'rover/precision' must be 'single' or 'double'";
         res = false;
