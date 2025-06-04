@@ -74,12 +74,11 @@ TEST(ascent_partition, test_partition_2D_multi_dom)
     conduit::Node &add_pipelines = actions.append();
     add_pipelines["action"] = "add_pipelines";
     conduit::Node &pipelines = add_pipelines["pipelines"];
-    pipelines["pl1/f1/type"] = "uniform_grid";
-    pipelines["pl1/f1/params/field"] = "density";
+    // pipelines["pl1/f1/type"] = "add_domain_ids";
     // pipelines["pl1/f1/params/output"] = "d_id_pre";
 
-    //pipelines["pl1/f2/type"]  = "partition";
-    //pipelines["pl1/f2/params/target"] = target;
+    pipelines["pl1/f2/type"]  = "partition";
+    pipelines["pl1/f2/params/target"] = target;
 
     // pipelines["pl1/f3/type"] = "add_domain_ids";
     // pipelines["pl1/f3/params/output"] = "d_id_post";

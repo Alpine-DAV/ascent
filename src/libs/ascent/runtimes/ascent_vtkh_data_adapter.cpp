@@ -2310,18 +2310,9 @@ VTKHDataAdapter::AddField(const std::string &field_name,
         if(!supported_type)
         {
 
-<<<<<<< HEAD
-          // std::cout << "WE ARE IN UNSUPPORTED DATA TYPE: "
-          //           << n_vals.dtype().name() << std::endl;
-            std::cerr << "WE ARE IN UNSUPPORTED DATA TYPE: "
-                      << n_vals.dtype().name() << std::endl;
-
-            // convert to float64, we use this as a comprise to cover the widest range
-=======
             //std::cout << "WE ARE IN UNSUPPORTED DATA TYPE: "
             //          << n_vals.dtype().name() << std::endl;
             // convert to float64, we use this as a compromise to cover the widest range
->>>>>>> develop
             vtkm::cont::ArrayHandle<vtkm::Float64> vtkm_arr;
             vtkm_arr.Allocate(num_vals);
 

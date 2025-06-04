@@ -359,7 +359,6 @@ vtkh::Render parse_render(const conduit::Node &render_node,
   // for now, all the canvases we support are the same
   // so passing MakeRender a RayTracer is ok
   //
-  std::cerr << "make render in parse render" << std::endl;
   vtkh::Render render = vtkh::MakeRender(image_width,
                                          image_height,
                                          bounds,
@@ -385,9 +384,6 @@ vtkh::Render parse_render(const conduit::Node &render_node,
   {
     vtkm::rendering::Camera camera = render.GetCamera();
     parse_camera(render_node["camera"], camera);
-    std::cerr << "CAMERA: HEREEEEEEEEEEEEEEEEEEEEEEEEEEE" << std::endl;
-    camera.Print();
-    std::cerr << "CAMERA: EEENDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD" << std::endl;
     render.SetCamera(camera);
   }
   if(render_node.has_path("shading"))
@@ -1099,7 +1095,7 @@ DefaultRender::execute()
 
     if(!input(0).check_type<vtkm::Bounds>())
     {
-        ASCENT_ERROR("'a' input must be a vktm::Bounds * instance");
+      ASCENT_ERROR("'a' input must be a vktm::Bounds * instance");
     }
 
     int mpi_comm_id = -1;
@@ -1120,7 +1116,7 @@ DefaultRender::execute()
 
     if(meta.has_path("cycle"))
     {
-        cycle = meta["cycle"].to_int32();
+      cycle = meta["cycle"].to_int32();
     }
 
     // figure out if we need the original bounds for the scene
@@ -1209,11 +1205,7 @@ DefaultRender::execute()
           if(render_node.has_path("output_path"))
           {
             output_path = render_node["output_path"].as_string();
-            int rank = 0;
-#ifdef ASCENT_MPI_ENABLED
-            MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
-            MPI_Comm_rank(mpi_comm, &rank);
-#endif
+
             // create a folder if it doesn't exist
             if(rank == 0 && !conduit::utils::is_directory(output_path))
             {
@@ -1324,6 +1316,7 @@ DefaultRender::execute()
           { 
             DataObject *source
               = graph().workspace().registry().fetch<DataObject>("source_object");
+
             std::shared_ptr<VTKHCollection> collection = source->as_vtkh_collection();
             
             if(!render_node.has_path("auto_camera/field"))
@@ -1346,6 +1339,7 @@ DefaultRender::execute()
             vtkh::DataSet &dataset = collection->dataset_by_topology(topo_name);
 
             vtkh::AutoCamera auto_cam;
+            
             int height = 1024;
             int width  = 1024;
             if(render_node.has_path("auto_camera/bins"))

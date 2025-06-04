@@ -920,9 +920,6 @@ RelayIOSave::execute()
       {
         std::vector<std::string> field_selection;
         const conduit::Node &flist = params()["fields"];
-        params().print();
-        std::cerr << "flist: " << std::endl;
-        flist.print();
         const int num_fields = flist.number_of_children();
         if(num_fields == 0)
         {

@@ -281,9 +281,8 @@ main(int argc, char *argv[])
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 #endif
 
-  conduit::Node replay_data, ascent_info;
+  conduit::Node actions, replay_data, ascent_info, ascent_opts;
   //replay_data.print();
-  conduit::Node ascent_opts;
   ascent_opts["ascent_info"] = "verbose";
 #if defined(ASCENT_REPLAY_MPI)
   ascent_opts["mpi_comm"] = MPI_Comm_c2f(MPI_COMM_WORLD);
@@ -293,7 +292,6 @@ main(int argc, char *argv[])
   // Populate actions with actions file
   //
   int mpi_comm = ascent_opts.has_child("mpi_comm") ? ascent_opts["mpi_comm"].to_int() : -1;
-  conduit::Node actions, ascent_info;
   load_actions(options.m_actions_file, mpi_comm, actions);
 
   ascent::Ascent ascent;
@@ -329,7 +327,7 @@ main(int argc, char *argv[])
     flow::Timer execute;
     ascent.execute(actions);
     ascent.info(ascent_info);
-    
+
 #if defined(ASCENT_REPLAY_MPI)
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
