@@ -283,7 +283,6 @@ RoverXRay::execute()
   // Default render settings
   //
   RenderSettings render_settings;
-  render_settings.m_render_mode = rover::energy;
   render_settings.m_primary_field = absorption;
 
   // TODO: investigate how/why this is getting set, even if emission is not specified
@@ -383,6 +382,7 @@ RoverXRay::execute()
   }
 }
 
+#if 0 // removing volume renderer
 //-----------------------------------------------------------------------------
 RoverVolume::RoverVolume()
 :Filter()
@@ -560,6 +560,7 @@ RoverVolume::execute()
 
     tracer.save_png(filename);
 }
+#endif
 
 //-----------------------------------------------------------------------------
 };
