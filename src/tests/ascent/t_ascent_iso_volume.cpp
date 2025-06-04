@@ -112,7 +112,7 @@ TEST(ascent_iso_volume, test_iso_volume)
     ascent.close();
 
     // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file));
+    EXPECT_TRUE(check_test_image(output_file,0.002));
     std::string msg = "An example of using the isovolume filter.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }

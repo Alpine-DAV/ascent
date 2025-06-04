@@ -70,10 +70,12 @@ void ascent::runtime::filters::BFlowCompose::execute()
       ASCENT_ERROR("BFlowVolume filter requires a DataObject");
   }
 
-MPI_Comm mpi_comm;
+  int mpi_comm_id = -1;
+  MPI_Comm mpi_comm;
   int my_rank = 0, n_ranks = 1;
 #ifdef ASCENT_MPI_ENABLED
-  mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
+  mpi_comm_id = flow::Workspace::default_mpi_comm();
+  mpi_comm = MPI_Comm_f2c(mpi_comm_id);
   MPI_Comm_rank(mpi_comm, &my_rank);
   MPI_Comm_size(mpi_comm, &n_ranks);
 #endif
@@ -160,7 +162,7 @@ MPI_Comm mpi_comm;
     cycle = Metadata::n_metadata["cycle"].as_int32();
   }
 
-  image_name = expand_family_name(image_name, cycle);
+  image_name = expand_path_special_variables(image_name, mpi_comm_id, cycle);
 
 #ifdef BFLOW_COMP_DEBUG
   {

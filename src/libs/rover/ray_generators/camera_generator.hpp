@@ -50,17 +50,16 @@ namespace rover {
 class ROVER_API CameraGenerator : public RayGenerator
 {
 public:
-  CameraGenerator(const vtkmCamera &camera, const int height = 512, const int width = 512);
+  CameraGenerator();
+  CameraGenerator(const vtkmCamera &camera, const int width = 200, const int height = 200);
   virtual ~CameraGenerator();
   virtual void get_rays(vtkmRayTracing::Ray<vtkm::Float32> &rays);
   virtual void get_rays(vtkmRayTracing::Ray<vtkm::Float64> &rays);
-  vtkmCamera get_camera();
+  void set_camera(vtkmCamera &camera);
   vtkmCoordinates get_coordinates();
   void set_coordinates(vtkmCoordinates coordinates);
 protected:
-  CameraGenerator();
   vtkmCoordinates m_coordinates;
-  vtkmCamera m_camera;
 };
 
 } // namespace rover

@@ -415,7 +415,7 @@ if(CUDA_FOUND)
 endif()
 
 if(HIP_FOUND)
-    list(APPEND ascent_thirdparty_libs blt_hip_runtime)
+    list(APPEND ascent_thirdparty_libs blt::hip_runtime)
 endif()
 
 if(OPENMP_FOUND)

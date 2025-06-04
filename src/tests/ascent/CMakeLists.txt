@@ -87,7 +87,7 @@ endif()
 
 
 if(HIP_FOUND)
-    list(APPEND ascent_device_deps blt_hip_runtime)
+    list(APPEND ascent_device_deps blt::hip_runtime)
 endif()
 
 
@@ -158,7 +158,7 @@ if (ENABLE_SERIAL)
         endif()
         if(HIP_FOUND)
             set_source_files_properties(${TEST}.cpp PROPERTIES LANGUAGE HIP)
-            list(APPEND ascent_device_tests_deps blt_hip)
+            list(APPEND ascent_device_tests_deps blt::hip)
         endif()
         add_cpp_test(TEST ${TEST} DEPENDS_ON ascent ${ascent_device_deps} ${ascent_device_tests_deps})
     endforeach()

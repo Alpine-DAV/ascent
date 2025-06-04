@@ -6,14 +6,14 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ## Unreleased
 ### Preferred dependency versions for ascent@develop
-- conduit@0.9.2
-- vtk-m@2.1.0 (requires [patch 1](https://github.com/Alpine-DAV/ascent/blob/0aef6cffd522be7419651e6adf586f9a553297d0/scripts/build_ascent/2024_05_03_vtkm-mr3215-ext-geom-fix.patch)
-                        [patch 2](https://github.com/Alpine-DAV/ascent/blob/develop/scripts/build_ascent/2024_07_02_vtkm-mr3246-raysubset_bugfix.patch) )
-- raja@2024.02.1
-- umpire@2024.02.1
-- camp@2024.02.1
-- kokkos@4.4.1
-- mfem@4.7
+- cmake@3.23 or newer
+- conduit@0.9.4
+- vtk-m@2.3.0
+- raja@v2025.03.1
+- umpire@v2025.03.0
+- camp@v2025.03.0
+- kokkos@4.4.01
+- mfem@4.8
 
 ### Added
 - Added use case to vtkh data adaptor for blueprint meshes with explicit mesh coordinates with implicit topology (a blueprint structured mesh).
@@ -35,12 +35,17 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added a `declare_fields` action, that allows users to explicitly list the fields to return for field filtering. This option avoids complex field parsing logic.
 - Added a 2d camera mode (`camera/2d: [left, right, bottom, top]`) to scene render cameras and the `project_2d` (scalar rendering) filter cameras.
 - Added support for `include` keyword to include children from yaml files in an input node trees
+- Added support for special keyword formatting for output paths. Current supported keywords include
+`cycle`, `family`, and `time`.
+- Added support for formatting of output paths for extracts.
 
 
 ### Changed
 - Changed the replay utility's binary names such that `replay_ser` is now `ascent_replay` and `raplay_mpi` is now `ascent_replay_mpi`. This will help prevent potential name collisions with other tools that also have replay utilities.
+- Updated several preferred tpl versions
 
 ### Fixed
+- Fixed Uniform Grid bug only accepting 2D slices along the Z-axis.
 - Resolved a few cases where MPI_COMM_WORLD was used instead instead of the selected MPI communicator.
 - Resolved a bug where a sharing a coordset between multiple polytopal topologies would corrupt mesh processing.
 - Fixed a bug with Cinema resource output that could lead to corrupted html results.

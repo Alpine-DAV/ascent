@@ -8,7 +8,7 @@ Ascent API
 ============
 The top level API for ascent consists of five calls:
 
-  - open(condiut::Node)
+  - open(conduit::Node)
   - publish(conduit::Node)
   - execute(conduit::Node)
   - info(conduit::Node)

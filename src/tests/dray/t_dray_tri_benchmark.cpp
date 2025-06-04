@@ -11,7 +11,6 @@
 #include <dray/rendering/camera.hpp>
 #include <dray/io/obj_reader.hpp>
 #include <dray/rendering/triangle_mesh.hpp>
-#include <dray/utils/ray_utils.hpp>
 #include <dray/utils/timer.hpp>
 
 #define DRAY_TRIALS 1
