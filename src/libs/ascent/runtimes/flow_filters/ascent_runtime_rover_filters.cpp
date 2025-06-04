@@ -214,7 +214,7 @@ RoverXRay::verify_params(const conduit::Node &params,
     }
     else
     {
-      std::string precision = params["rover/precision"].to_string();
+      const std::string precision = params["rover/precision"].to_string();
       if (precision != "single" || precision != "double")
       {
         info["errors"].append() = "Optional parameter 'rover/precision' must be 'single' or 'double'";
