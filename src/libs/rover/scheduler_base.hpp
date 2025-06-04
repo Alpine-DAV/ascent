@@ -54,7 +54,7 @@ public:
   //
   // Setters
   //
-  void set_rover_settings(const Node &settings);
+  void set_settings(const Node &settings);
   void add_data_set(vtkmDataSet &data_set);
   void set_domains(std::vector<Domain> &domains);
   void set_ray_generator(RayGenerator *ray_generator);

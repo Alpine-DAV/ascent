@@ -29,13 +29,13 @@ Domain::~Domain()
 // be called in any order
 //
 void
-Domain::set_rover_settings(const Node &settings)
+Domain::set_settings(const Node &settings)
 {
   //
   // Create the correct engine
   //
 
-  ROVER_INFO("Executing Domain::set_rover_settings");
+  ROVER_INFO("Executing Domain::set_settings");
 
   m_settings = settings;
 

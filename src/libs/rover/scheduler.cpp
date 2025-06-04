@@ -272,7 +272,7 @@ Scheduler<FloatType>::composite()
   }
 #endif
 
-  std::string emission = m_settings["rover/emission"].to_string();
+  std::string emission = m_settings["rover/emission"].as_string();
   if (emission != "")
   {
     vtkh::PartialCompositor<vtkh::EmissionPartial<FloatType>> compositor;
@@ -377,7 +377,7 @@ Scheduler<FloatType>::trace_rays()
   ROVER_INFO("Scheduler set render settings for " << num_domains << " domains");
   for(int i = 0; i < num_domains; ++i)
   {
-    m_domains[i].set_rover_settings(m_settings);
+    m_domains[i].set_settings(m_settings);
   }
 
   ROVER_INFO("Done scheduler set render settings for "<<num_domains<<" domains ");
@@ -463,7 +463,7 @@ Scheduler<FloatType>::trace_rays()
     partial_image.m_buffer =
       vtkm::rendering::raytracing::ChannelBuffer<FloatType>(num_channels, 0);
 
-    std::string emission = m_settings["rover/emission"].to_string();
+    std::string emission = m_settings["rover/emission"].as_string();
     if(emission != "")
     {
       partial_image.m_intensities =

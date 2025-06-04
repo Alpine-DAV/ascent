@@ -18,12 +18,9 @@ SchedulerBase::~SchedulerBase()
 }
 
 void
-SchedulerBase::set_rover_settings(const Node &settings)
+SchedulerBase::set_settings(const Node &settings)
 {
-  //
-  //  In the serial schedular, the only setting that matter are
-  //  m_render_mode and m_scattering_mode
-  //
+  // In the serial scheduler, the only setting that matters is m_scattering_mode
   m_settings = settings;
 }
 

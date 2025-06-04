@@ -115,7 +115,7 @@ RoverXRay::verify_params(const conduit::Node &params,
     res = false;
   }
 
-  std::string absorption = params["rover/absorption"].to_string();
+  std::string absorption = params["rover/absorption"].as_string();
   if (absorption == "")
   {
     info["errors"].append() = "Required parameter 'rover/absorption' cannot be an empty string";

@@ -57,9 +57,9 @@ public:
     m_scheduler->add_data_set(dataset);
   }
 
-  void set_rover_settings(const Node &settings)
+  void set_settings(const Node &settings)
   {
-    ROVER_INFO("set_render_settings");
+    ROVER_INFO("Executing InternalsType::set_settings");
     // TODO: make copy constructors to get the members like ray_generator
 //#ifdef ROVER_PARALLEL
     // logic to create the appropriate parallel scheduler
@@ -75,7 +75,7 @@ public:
      //if(render_settings compared to old means new schedular)
      //if(m_scheduler == NULL) delete m_scheduler;
      //m_scheduler = new Scheduler<FloatType>();
-     m_scheduler->set_rover_settings(settings);
+     m_scheduler->set_settings(settings);
 //#endif
   }
 
@@ -387,7 +387,7 @@ Rover::update_precision()
     m_internals->set_tracer_precision32();
   }
 
-  std::string precision = m_settings["rover/precision"].to_string();
+  std::string precision = m_settings["rover/precision"].as_string();
   if (precision == "single")
   {
     m_internals->set_tracer_precision32();
@@ -396,12 +396,6 @@ Rover::update_precision()
   {
     m_internals->set_tracer_precision64();
   }
-}
-
-void
-Rover::set_rover_settings(const Node &settings)
-{
-  m_internals->set_rover_settings(settings);
 }
 
 void
@@ -416,7 +410,7 @@ Rover::execute()
   update_camera();
   update_ray_generator();
   update_precision();
-  m_internals->set_rover_settings(m_settings);
+  m_internals->set_settings(m_settings);
   m_internals->execute();
 }
 

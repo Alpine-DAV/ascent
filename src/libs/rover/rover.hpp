@@ -48,8 +48,6 @@ public:
   void update_ray_generator();
   void update_precision();
 
-  void set_rover_settings(const Node &settings);
-  
   void clear_data_sets();
   void set_background(const std::vector<vtkm::Float32> &background);
   void set_background(const std::vector<vtkm::Float64> &background);
