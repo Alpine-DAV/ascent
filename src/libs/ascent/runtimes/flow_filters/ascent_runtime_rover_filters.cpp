@@ -289,7 +289,7 @@ RoverXRay::execute()
     cycle = metadata["cycle"].as_int32();
   }
 
-  std::string filename = params()["filename"].as_string();
+  std::string filename = params()["rover/filename"].as_string();
   if (cycle != -1)
   {
     filename = expand_path_special_variables(filename, mpi_comm_id, cycle);
@@ -297,9 +297,9 @@ RoverXRay::execute()
 
   filename = output_dir(filename);
 
-  if(params().has_path("blueprint"))
+  if(params().has_path("rover/blueprint"))
   {
-    std::string protocol = params()["blueprint"].as_string();
+    std::string protocol = params()["rover/blueprint"].as_string();
     conduit::Node multi_domain;
     conduit::Node &data = multi_domain.append();
     rover.to_blueprint(data);
