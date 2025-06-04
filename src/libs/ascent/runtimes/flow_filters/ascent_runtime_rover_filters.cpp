@@ -253,7 +253,7 @@ RoverXRay::execute()
   std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
   // Validate that the 'absorption' field exists in the dataset
-  std::string absorption = params()["rover/absorption"].as_string();
+  const std::string absorption = params()["rover/absorption"].as_string();
   if(!collection->has_field(absorption))
   {
     ASCENT_ERROR("Absorption field name '" << absorption << "' is not in the dataset");
