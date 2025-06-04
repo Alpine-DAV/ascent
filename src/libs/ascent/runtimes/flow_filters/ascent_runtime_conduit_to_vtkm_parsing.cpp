@@ -114,15 +114,6 @@ parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera)
                           view_vals[3]);
   }
 
-  if(camera_node.has_child("look_at"))
-  {
-      conduit::Node n;
-      camera_node["look_at"].to_float64_array(n);
-      const float64 *coords = n.as_float64_ptr();
-      vtkmVec3f look_at(coords[0], coords[1], coords[2]);
-      camera.SetLookAt(look_at);
-  }
-
   if(camera_node.has_child("position"))
   {
       conduit::Node n;
@@ -130,6 +121,34 @@ parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera)
       const float64 *coords = n.as_float64_ptr();
       vtkmVec3f position(coords[0], coords[1], coords[2]);
       camera.SetPosition(position);
+  }
+
+  // this is an offset from the current azimuth
+  if(camera_node.has_child("azimuth"))
+  {
+      vtkm::Float64 azimuth = camera_node["azimuth"].to_float64();
+      camera.Azimuth(azimuth);
+  }
+
+  if(camera_node.has_child("elevation"))
+  {
+      vtkm::Float64 elevation = camera_node["elevation"].to_float64();
+      camera.Elevation(elevation);
+  }
+
+  if(camera_node.has_child("zoom"))
+  {
+      double zoom = camera_node["zoom"].to_float64();
+      camera.Zoom(zoom_to_vtkm_zoom(zoom));
+  }
+
+  if(camera_node.has_child("look_at"))
+  {
+      conduit::Node n;
+      camera_node["look_at"].to_float64_array(n);
+      const float64 *coords = n.as_float64_ptr();
+      vtkmVec3f look_at(coords[0], coords[1], coords[2]);
+      camera.SetLookAt(look_at);
   }
 
   if(camera_node.has_child("up"))
@@ -155,12 +174,6 @@ parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera)
       if(camera_node.has_child("ypan")) xpan = camera_node["ypan"].to_float64();
       camera.Pan(xpan, ypan);
   }
-
-  if(camera_node.has_child("zoom"))
-  {
-      double zoom = camera_node["zoom"].to_float64();
-      camera.Zoom(zoom_to_vtkm_zoom(zoom));
-  }
   //
   // With a new potential camera position. We need to reset the
   // clipping plane as not to cut out part of the data set
@@ -178,18 +191,6 @@ parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera)
       vtkm::Range clipping_range = camera.GetClippingRange();
       clipping_range.Max = camera_node["far_plane"].to_float64();
       camera.SetClippingRange(clipping_range);
-  }
-
-  // this is an offset from the current azimuth
-  if(camera_node.has_child("azimuth"))
-  {
-      vtkm::Float64 azimuth = camera_node["azimuth"].to_float64();
-      camera.Azimuth(azimuth);
-  }
-  if(camera_node.has_child("elevation"))
-  {
-      vtkm::Float64 elevation = camera_node["elevation"].to_float64();
-      camera.Elevation(elevation);
   }
 }
 
