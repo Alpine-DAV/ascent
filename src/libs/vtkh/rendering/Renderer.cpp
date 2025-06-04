@@ -6,6 +6,8 @@
 #include <vtkh/utils/vtkm_dataset_info.hpp>
 #include <vtkm/rendering/raytracing/Logger.h>
 
+#define _DEBUG 0
+
 namespace vtkh {
 
 Renderer::Renderer()
@@ -212,15 +214,16 @@ Renderer::DoExecute()
   }
 
   int total_renders = static_cast<int>(m_renders.size());
-
+  
+#ifdef _DEBUG
   std::cerr << "total renders: " << total_renders << std::endl;
   vtkm::Bounds g_bounds = m_input->GetGlobalBounds();
   std::cerr << "Global Bounds: " << std::endl;
   std::cerr << "X: " << g_bounds.X.Min << " " << g_bounds.X.Max << std::endl;
   std::cerr << "Y: " << g_bounds.Y.Min << " " << g_bounds.Y.Max << std::endl;
   std::cerr << "Z: " << g_bounds.Z.Min << " " << g_bounds.Z.Max << std::endl;
-  std::cerr << "Global Bounds ENDKDDKDKDK: " << std::endl;
-
+#endif
+  
   int num_domains = static_cast<int>(m_input->GetNumberOfDomains());
   for(int dom = 0; dom < num_domains; ++dom)
   {
@@ -257,9 +260,10 @@ Renderer::DoExecute()
 
       Render::vtkmCanvas &canvas = m_renders[i].GetCanvas();
       const vtkmCamera &camera = m_renders[i].GetCamera();
+#ifdef _DEBUG     
       std::cerr << "CAMERA BEFORE VTKM RENDERCELLS: " << std::endl;
       camera.Print();
-      std::cerr << "CAMERA BEFORE VTKM RENDERCELLS DONE***************************" << std::endl;
+#endif
       m_mapper->SetCanvas(&canvas);
       m_mapper->RenderCells(cellset,
                             coords,
