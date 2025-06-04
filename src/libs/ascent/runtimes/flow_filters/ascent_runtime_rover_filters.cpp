@@ -225,7 +225,7 @@ RoverXRay::verify_params(const conduit::Node &params,
 
   if (params.has_path("rover/blueprint"))
   {
-    std::string protocol = params["rover/blueprint"].as_string();
+    const std::string protocol = params["rover/blueprint"].as_string();
     if (protocol != "hdf5" && protocol != "yaml" && protocol != "json")
     {
       info["errors"].append() = "Optional parameter 'rover/blueprint' must be 'hdf5' or 'yaml' or 'json'";
