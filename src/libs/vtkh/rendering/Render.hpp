@@ -29,7 +29,7 @@ public:
   ~Render();
   Render                          Copy() const;
   vtkmCanvas&                     GetCanvas();
-  vtkm::rendering::Camera&  GetCamera();
+  const vtkm::rendering::Camera&  GetCamera() const;
   std::string                     GetImageName() const;
   std::vector<std::string>        GetComments() const;
   vtkm::Bounds                    GetSceneBounds() const;
