@@ -42,6 +42,9 @@ protected:
   vtkmDataSet             m_data_set;
   vtkm::Bounds            m_global_bounds;
   vtkm::Bounds            m_domain_bounds;
+  // TODO: Can we either 1) make m_settings globally available within
+  // the rover namespace or 2) pass the needed values from m_settings
+  // as function arguments?
   Node                    m_settings;
   void                    set_engine_fields();
 }; // class domain
