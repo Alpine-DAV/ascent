@@ -154,6 +154,12 @@ Rover::update_camera()
   }
 
   // TODO: Change each instance of has_path to has_child
+  if (m_settings.has_path("camera/zoom"))
+  {
+    float64 image_zoom = m_settings["camera/zoom"].value();
+    m_camera.Zoom(log(image_zoom) / log(4.0));
+  }
+
   if (m_settings.has_path("camera/look_at"))
   {
     float64_accessor vec3 = m_settings["camera/look_at"].value();
@@ -190,12 +196,6 @@ Rover::update_camera()
     }
     
     m_camera.Pan(xpan, ypan);
-  }
-  
-  if (m_settings.has_path("camera/zoom"))
-  {
-    float64 image_zoom = m_settings["camera/zoom"].value();
-    m_camera.Zoom(log(image_zoom) / log(4.0));
   }
   
   if (m_settings.has_path("camera/near_plane") || m_settings.has_path("camera/far_plane"))
