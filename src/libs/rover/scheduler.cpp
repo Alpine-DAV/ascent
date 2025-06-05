@@ -272,7 +272,7 @@ Scheduler<FloatType>::composite()
   }
 #endif
 
-  std::string emission = m_settings["rover/emission"].as_string();
+  const std::string emission = m_settings["rover/emission"].as_string();
   if (emission != "")
   {
     vtkh::PartialCompositor<vtkh::EmissionPartial<FloatType>> compositor;
@@ -463,7 +463,7 @@ Scheduler<FloatType>::trace_rays()
     partial_image.m_buffer =
       vtkm::rendering::raytracing::ChannelBuffer<FloatType>(num_channels, 0);
 
-    std::string emission = m_settings["rover/emission"].as_string();
+    const std::string emission = m_settings["rover/emission"].as_string();
     if(emission != "")
     {
       partial_image.m_intensities =

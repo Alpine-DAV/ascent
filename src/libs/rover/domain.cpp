@@ -52,8 +52,7 @@ Domain::set_settings(const Node &settings)
 #endif
 
   auto engine = std::make_shared<EnergyEngine>();
-  float64 unit_scalar = m_settings["rover/unit_scalar"].value();
-  engine->set_unit_scalar(unit_scalar);
+  engine->set_unit_scalar(m_settings["rover/unit_scalar"].value());
   m_engine = engine;
 
 #if 0 // removing volume renderer

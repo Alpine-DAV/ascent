@@ -263,6 +263,7 @@ RoverXRay::execute()
   std::string topo_name = collection->field_topology(absorption);
   // TODO: Validate topo_name
   vtkh::DataSet &dataset = collection->dataset_by_topology(topo_name);
+  // TODO: Validate dataset
 
   // Initialize rover and configure its behavior with the input params
   Rover rover;

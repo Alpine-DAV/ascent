@@ -24,12 +24,16 @@ Rover::Rover()
   // TODO: Figure out if color_table needs to be set by us here
   m_settings["rover/color_table"] = "Cool to Warm";
   m_settings["rover/divide_emission_by_abs"] = "false";
+  m_settings["rover/height"] = 200;
   m_settings["rover/num_samples"] = 400;
   m_settings["rover/precision"] = "single";
   m_settings["rover/ray_scope"] = "global_rays";
-  m_settings["rover/scattering_type"] = "non_scattering";  
-  m_settings["rover/unit_scalar"] = 1.0;
+  m_settings["rover/scattering_type"] = "non_scattering";
+  m_settings["rover/width"] = 200;
+  m_settings["rover/unit_scalar"] = 1.0f;
 
+  // We don't instantiate the scheduler until we determine if the
+  // user has requested a specific precision to use
   m_scheduler = nullptr;
 
 #ifdef ROVER_PARALLEL
@@ -82,7 +86,7 @@ Rover::set_mpi_comm_handle(MPI_Comm comm_handle)
 {
   m_comm_handle = MPI_Comm_f2c(comm_handle);
   MPI_Comm_rank(m_comm_handle, &m_rank);
-  if(m_rank == 0)
+  if (0 == m_rank)
   {
     MPI_Comm_size(m_comm_handle, &m_num_ranks);
     ROVER_INFO("MPI Comm size: " << m_num_ranks);
@@ -99,19 +103,19 @@ Rover::get_mpi_comm_handle()
 void
 Rover::create_scheduler()
 {
-  std::string precision = m_settings["rover/precision"].as_string();
-  if (precision == "double")
+  const std::string precision = m_settings["rover/precision"].as_string();
+  if ("double" == precision)
   {
     m_scheduler = new Scheduler<vtkm::Float64>();
   }
-  else // (precision == "single")
+  else // ("single" == precision)
   {
     m_scheduler = new Scheduler<vtkm::Float32>();
   }
 
 #ifdef ROVER_PARALLEL
   // Check to see if we have been initialized
-  if(m_rank == -1)
+  if(-1 == m_rank)
   {
     ROVER_ERROR("Error - Rover::create_scheduler: MPI was not initialized");
   }
@@ -127,7 +131,7 @@ Rover::add_data_set(vtkh::DataSet &dataset)
   ROVER_INFO("Executing Rover::add_data_set");
   // The scheduler needs to be created before data can be added
   // to it, else we segfault
-  if (m_scheduler == nullptr)
+  if (!m_scheduler)
   {
     create_scheduler();
   }
@@ -217,17 +221,17 @@ Rover::update_ray_generator()
 {
   m_ray_generator.set_camera(m_camera);
 
-  int64 width = 200;
-  int64 height = 200;
+  int32 width;
+  int32 height;
 
-  if (m_settings.has_path("camera/image_width"))
+  if (m_settings.has_path("rover/width"))
   {
-    width = m_settings["camera/image_width"].value();
+    width = m_settings["rover/width"].value();
   }
 
-  if (m_settings.has_path("camera/image_height"))
+  if (m_settings.has_path("rover/height"))
   {
-    height = m_settings["camera/image_height"].value();
+    height = m_settings["rover/height"].value();
   }
 
   m_ray_generator.set_width(width);
@@ -241,7 +245,7 @@ Rover::execute()
 {
   // TODO: Not sure if this needs to be a full error. We're not in
   // an unrecoverable state, we just simply have nothing to x-ray
-  if (m_scheduler == nullptr)
+  if (!m_scheduler)
   {
     ROVER_ERROR("Error - Rover::execute: Execute called before adding a dataset");
   }
@@ -312,22 +316,24 @@ Rover::set_background(const std::vector<vtkm::Float64> &background)
 void Rover::to_blueprint(conduit::Node &dataset)
 {
 #ifdef ROVER_PARALLEL
-    if(m_rank != 0)
-    {
-      return;
-    }
+  // TODO: Support writing in parallel
+  if(m_rank != 0)
+  {
+    return;
+  }
 #endif
-    m_scheduler->to_blueprint(dataset);
+  m_scheduler->to_blueprint(dataset);
 }
 
 void
 Rover::save_png(const std::string &file_name)
 {
 #ifdef ROVER_PARALLEL
-    if(m_rank != 0)
-    {
-      return;
-    }
+  // TODO: Support writing in parallel
+  if(m_rank != 0)
+  {
+    return;
+  }
 #endif
   m_scheduler->save_result(file_name);
 }
@@ -339,6 +345,7 @@ Rover::save_png(const std::string &file_name,
                 const bool log_scale)
 {
 #ifdef ROVER_PARALLEL
+  // TODO: Support writing in parallel
   if(m_rank != 0)
   {
     return;
