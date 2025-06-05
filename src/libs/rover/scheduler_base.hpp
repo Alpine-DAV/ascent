@@ -50,7 +50,6 @@ public:
                            bool log_scale) = 0;
   virtual void save_bov(std::string file_name) = 0;
   virtual void to_blueprint(conduit::Node &dataset) = 0;
-  void clear_data_sets();
   //
   // Setters
   //

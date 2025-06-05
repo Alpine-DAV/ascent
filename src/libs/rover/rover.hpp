@@ -9,6 +9,7 @@
 
 // std includes
 #include "ray_generators/camera_generator.hpp"
+#include "scheduler_base.hpp"
 #include <memory>
 
 // tpl includes
@@ -36,19 +37,20 @@ public:
   void update_settings(Node &params);
   void print_settings();
 
-  // TODO: Investigate if these can be guarded with #ifdef ROVER_PARALLEL
-  void set_mpi_comm_handle(int mpi_comm_id);
+  #ifdef ROVER_PARALLEL
+  void set_mpi_comm_handle(MPI_Comm comm_handle);
   int  get_mpi_comm_handle();
+  #endif
 
+  void create_scheduler();
   void add_data_set(vtkh::DataSet &);
   void update_camera();
   void update_ray_generator();
-  void update_precision();
+  void execute();
 
-  void clear_data_sets();
   void set_background(const std::vector<vtkm::Float32> &background);
   void set_background(const std::vector<vtkm::Float64> &background);
-  void execute();
+  
   void about();
   void save_png(const std::string &file_name);
   void to_blueprint(conduit::Node &dataset);
@@ -63,9 +65,13 @@ private:
   Node m_settings;
   vtkmCamera m_camera;
   CameraGenerator m_ray_generator;
-  
-  class InternalsType;
-  std::shared_ptr<InternalsType> m_internals;
+  SchedulerBase *m_scheduler;
+
+#ifdef ROVER_PARALLEL
+  MPI_Comm m_comm_handle;
+  int m_rank;
+  int m_num_ranks;
+#endif
 };
 
 }; // namespace rover

@@ -277,7 +277,8 @@ RoverXRay::execute()
 #endif
   
   // Adding a dataset to rover resets the camera bounds to the dataset bounds,
-  // but any camera params passed via the input params will take precedence
+  // but any camera params passed via the input params will take precedence.
+  // It also instantiates a scheduler if one doesn't already exist.
   rover.add_data_set(dataset);
   // Calling execute initializes everything that rover needs based on the input params
   rover.execute();

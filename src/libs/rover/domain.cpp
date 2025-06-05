@@ -147,7 +147,7 @@ Domain::partial_trace(Ray32 &rays)
 PartialVector64
 Domain::partial_trace(Ray64 &rays)
 {
-  int64 num_samples = m_settings["rover/num_samples"].value();
+  int32 num_samples = m_settings["rover/num_samples"].value();
   m_engine->set_samples(m_global_bounds, num_samples);
   return m_engine->partial_trace(rays);
 }

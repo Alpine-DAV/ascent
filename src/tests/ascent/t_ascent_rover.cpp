@@ -133,6 +133,7 @@ TEST(ascent_rover, test_xray_blueprint_braid)
     extracts["e1/params/rover/emission"] = "radial";
     extracts["e1/params/rover/filename"] = query_output_file;
     extracts["e1/params/rover/blueprint"] = "json";
+    extracts["e1/params/rover/precision"] = "double";
 
     conduit::Node actions;
     // add the pipeline

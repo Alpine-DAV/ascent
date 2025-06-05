@@ -48,12 +48,6 @@ SchedulerBase::set_background(const std::vector<vtkm::Float32> &background)
 
 }
 
-void
-SchedulerBase::clear_data_sets()
-{
-  m_domains.clear();
-}
-
 std::vector<Domain>
 SchedulerBase::get_domains()
 {
