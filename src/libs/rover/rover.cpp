@@ -11,6 +11,7 @@
 #include <vtkm_typedefs.hpp>
 #include <iostream>
 #include <utils/rover_logging.hpp>
+#include <settings.hpp>
 
 #ifdef ROVER_PARALLEL
 #include <mpi.h>
@@ -19,18 +20,23 @@
 namespace rover
 {
 
+// Namespaced settings instance
+Node settings;
+
 Rover::Rover()
 {
+  // Ensure that we always start from a default state
+  rover::settings.reset();
   // TODO: Figure out if color_table needs to be set by us here
-  m_settings["rover/color_table"] = "Cool to Warm";
-  m_settings["rover/divide_emission_by_abs"] = "false";
-  m_settings["rover/height"] = 200;
-  m_settings["rover/num_samples"] = 400;
-  m_settings["rover/precision"] = "single";
-  m_settings["rover/ray_scope"] = "global_rays";
-  m_settings["rover/scattering_type"] = "non_scattering";
-  m_settings["rover/width"] = 200;
-  m_settings["rover/unit_scalar"] = 1.0f;
+  rover::settings["rover/color_table"] = "Cool to Warm";
+  rover::settings["rover/divide_emission_by_abs"] = "false";
+  rover::settings["rover/height"] = 200;
+  rover::settings["rover/num_samples"] = 400;
+  rover::settings["rover/precision"] = "single";
+  rover::settings["rover/ray_scope"] = "global_rays";
+  rover::settings["rover/scattering_type"] = "non_scattering";
+  rover::settings["rover/width"] = 200;
+  rover::settings["rover/unit_scalar"] = 1.0f;
 
   // We don't instantiate the scheduler until we determine if the
   // user has requested a specific precision to use
@@ -63,20 +69,20 @@ Rover::update_settings(Node &params)
   {
     for (const auto &param_name : params["rover"].child_names())
     {
-      m_settings["rover"][param_name].set(params["rover"][param_name]);
+      rover::settings["rover"][param_name].set(params["rover"][param_name]);
     }
   }
 
   if (params.has_child("camera"))
   {
-    m_settings["camera"].set(params["camera"]);
+    rover::settings["camera"].set(params["camera"]);
   }
 }
 
 void
 Rover::print_settings()
 {
-  std::cout << m_settings.to_yaml() << std::endl;
+  std::cout << rover::settings.to_yaml() << std::endl;
 }
 
 // TODO: Validate correctness
@@ -103,7 +109,7 @@ Rover::get_mpi_comm_handle()
 void
 Rover::create_scheduler()
 {
-  const std::string precision = m_settings["rover/precision"].as_string();
+  const std::string precision = rover::settings["rover/precision"].as_string();
   if ("double" == precision)
   {
     m_scheduler = new Scheduler<vtkm::Float64>();
@@ -121,8 +127,6 @@ Rover::create_scheduler()
   }
   m_scheduler->set_comm_handle(m_comm_handle);
 #endif
-
-  m_scheduler->set_settings(m_settings);
 }
 
 void
@@ -148,68 +152,68 @@ void
 Rover::update_camera()
 {
   // Early return if the default params weren't changed
-  if (!m_settings.has_child("camera"))
+  if (!rover::settings.has_child("camera"))
   {
     return;
   }
 
   // TODO: Change each instance of has_path to has_child
-  if (m_settings.has_path("camera/zoom"))
+  if (rover::settings.has_path("camera/zoom"))
   {
-    float64 image_zoom = m_settings["camera/zoom"].value();
+    float64 image_zoom = rover::settings["camera/zoom"].value();
     m_camera.Zoom(log(image_zoom) / log(4.0));
   }
 
-  if (m_settings.has_path("camera/look_at"))
+  if (rover::settings.has_path("camera/look_at"))
   {
-    float64_accessor vec3 = m_settings["camera/look_at"].value();
+    float64_accessor vec3 = rover::settings["camera/look_at"].value();
     vtkmVec3f look_at(vec3[0], vec3[1], vec3[2]);
     m_camera.SetLookAt(look_at);
   }
   
-  if (m_settings.has_path("camera/up"))
+  if (rover::settings.has_path("camera/up"))
   {
-    float64_accessor vec3 = m_settings["camera/up"].value();
+    float64_accessor vec3 = rover::settings["camera/up"].value();
     vtkmVec3f up(vec3[0], vec3[1], vec3[2]);
     m_camera.SetViewUp(up);
   }
   
-  if (m_settings.has_path("camera/fov"))
+  if (rover::settings.has_path("camera/fov"))
   {
-    float64 fov = m_settings["camera/fov"].value();
+    float64 fov = rover::settings["camera/fov"].value();
     m_camera.SetFieldOfView(fov);
   }
   
-  if (m_settings.has_path("camera/xpan") || m_settings.has_path("camera/ypan"))
+  if (rover::settings.has_path("camera/xpan") || rover::settings.has_path("camera/ypan"))
   {
     float64 xpan = 0.0;
     float64 ypan = 0.0;
 
-    if (m_settings.has_path("camera/xpan"))
+    if (rover::settings.has_path("camera/xpan"))
     {
-      xpan = m_settings["camera/xpan"].value();
+      xpan = rover::settings["camera/xpan"].value();
     }
 
-    if (m_settings.has_path("camera/ypan"))
+    if (rover::settings.has_path("camera/ypan"))
     {
-      ypan = m_settings["camera/ypan"].value();
+      ypan = rover::settings["camera/ypan"].value();
     }
     
     m_camera.Pan(xpan, ypan);
   }
   
-  if (m_settings.has_path("camera/near_plane") || m_settings.has_path("camera/far_plane"))
+  if (rover::settings.has_path("camera/near_plane") || rover::settings.has_path("camera/far_plane"))
   {
     vtkm::Range clipping_range;
 
-    if (m_settings.has_path("camera/near_plane"))
+    if (rover::settings.has_path("camera/near_plane"))
     {
-      clipping_range.Min = m_settings["camera/near_plane"].value();
+      clipping_range.Min = rover::settings["camera/near_plane"].value();
     }
     
-    if (m_settings.has_path("camera/far_plane"))
+    if (rover::settings.has_path("camera/far_plane"))
     {
-      clipping_range.Max = m_settings["camera/far_plane"].value();
+      clipping_range.Max = rover::settings["camera/far_plane"].value();
     }
 
     m_camera.SetClippingRange(clipping_range);
@@ -224,14 +228,14 @@ Rover::update_ray_generator()
   int32 width;
   int32 height;
 
-  if (m_settings.has_path("rover/width"))
+  if (rover::settings.has_path("rover/width"))
   {
-    width = m_settings["rover/width"].value();
+    width = rover::settings["rover/width"].value();
   }
 
-  if (m_settings.has_path("rover/height"))
+  if (rover::settings.has_path("rover/height"))
   {
-    height = m_settings["rover/height"].value();
+    height = rover::settings["rover/height"].value();
   }
 
   m_ray_generator.set_width(width);

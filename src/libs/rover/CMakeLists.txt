@@ -62,6 +62,7 @@ set(rover_headers
       rover.hpp
       scheduler.hpp
       scheduler_base.hpp
+      settings.hpp
       # engines
       engine.hpp
       energy_engine.hpp

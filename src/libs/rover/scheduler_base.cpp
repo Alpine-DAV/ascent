@@ -18,12 +18,6 @@ SchedulerBase::~SchedulerBase()
 }
 
 void
-SchedulerBase::set_settings(const Node &settings)
-{
-  m_settings = settings;
-}
-
-void
 SchedulerBase::set_ray_generator(RayGenerator *ray_generator)
 {
   m_ray_generator = ray_generator;
