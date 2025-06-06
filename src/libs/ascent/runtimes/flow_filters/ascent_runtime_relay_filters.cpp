@@ -909,12 +909,13 @@ RelayIOSave::execute()
 
     if(!params().has_path("fields") && !params().has_path("topologies"))
     {
+      ASCENT_ANNOTATE_MARK_SCOPE("relay save select all fields");
       // select all fields
       selected.set_external(*in);
     }
     else
     {
-
+      ASCENT_ANNOTATE_MARK_SCOPE("relay save select fields");
       // result of this is an "OR" of the fields and the topologies selected
       if(params().has_path("fields"))
       {
@@ -1042,6 +1043,7 @@ RelayIOSave::execute()
 
     if(!protocol_resolved.empty())
     {
+        ASCENT_ANNOTATE_MARK_SCOPE("relay save mesh blueprint save");
         mesh_blueprint_save(selected,
                             path,
                             protocol_resolved,
@@ -1051,6 +1053,7 @@ RelayIOSave::execute()
     }
     else  // catch all case for random protocol
     {
+        ASCENT_ANNOTATE_MARK_SCOPE("relay save generic save");
         conduit::relay::io::save(selected,path,protocol);
         result_path = path;
     }

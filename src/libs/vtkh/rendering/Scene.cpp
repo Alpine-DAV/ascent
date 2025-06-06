@@ -2,6 +2,7 @@
 #include <vtkh/rendering/MeshRenderer.hpp>
 #include <vtkh/rendering/VolumeRenderer.hpp>
 #include <vtkh/utils/vtkm_array_utils.hpp>
+#include <ascent_logging.hpp>
 
 #ifdef VTKH_PARALLEL
 #include <mpi.h>
@@ -123,7 +124,7 @@ Scene::AddRenderer(vtkh::Renderer *renderer)
 void
 Scene::Render()
 {
-
+  ASCENT_ANNOTATE_MARK_SCOPE("scene render");
   std::vector<vtkm::Range> ranges;
   std::vector<std::string> field_names;
   std::vector<int> is_ct_discrete;
@@ -140,18 +141,21 @@ Scene::Render()
   //
   const int render_size = m_renders.size();
   int batch_start = 0;
+  ASCENT_ANNOTATE_MARK_BEGIN("scene render batches");
   while(batch_start < render_size)
   {
+    ASCENT_ANNOTATE_MARK_SCOPE("scene render batch");
     int batch_end = std::min(m_batch_size + batch_start, render_size);
     auto begin = m_renders.begin() + batch_start;
     auto end = m_renders.begin() + batch_end;
 
     std::vector<vtkh::Render> current_batch(begin, end);
-
+    ASCENT_ANNOTATE_MARK_BEGIN("scene render batch clear canvases");
     for(auto  render : current_batch)
     {
       render.GetCanvas().Clear();
     }
+    ASCENT_ANNOTATE_MARK_END("scene render batch clear canvases");
 
     const int plot_size = m_renderers.size();
     auto renderer = m_renderers.begin();
@@ -173,6 +177,7 @@ Scene::Render()
       opaque_plots -= 1;
     }
 
+    ASCENT_ANNOTATE_MARK_BEGIN("scene render batch opaque pass");
     //
     // pass 1: opaque geometry
     //
@@ -196,6 +201,9 @@ Scene::Render()
       renderer++;
     }
 
+    ASCENT_ANNOTATE_MARK_END("scene render batch opaque pass");
+
+    ASCENT_ANNOTATE_MARK_BEGIN("scene render batch volume pass");
     //
     // pass 2: volume
     //
@@ -212,6 +220,8 @@ Scene::Render()
       current_batch  = (*renderer)->GetRenders();
       (*renderer)->ClearRenders();
     }
+
+    ASCENT_ANNOTATE_MARK_END("scene render batch volume pass");
 
     if(do_once)
     {
@@ -233,6 +243,7 @@ Scene::Render()
       do_once = false;
     }
 
+    ASCENT_ANNOTATE_MARK_BEGIN("scene render batch annotations and save");
     // render screen annotations last and save
     for(int i = 0; i < current_batch.size(); ++i)
     {
@@ -241,6 +252,7 @@ Scene::Render()
       current_batch[i].RenderBackground();
       current_batch[i].Save();
     }
+    ASCENT_ANNOTATE_MARK_END("scene render batch annotations and save");
 
     batch_start = batch_end;
   } // while
