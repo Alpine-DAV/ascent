@@ -114,8 +114,10 @@ EnergyEngine::partial_trace(Ray32 &rays)
 void
 EnergyEngine::set_unit_scalar(vtkm::Float32 unit_scalar)
 {
-    ROVER_INFO("Energy Engine setting unit scalar "<<unit_scalar);
-    m_unit_scalar = unit_scalar;
+  // TODO: Can we just ask m_settings for this when we need it
+  // rather than storing it?
+  ROVER_INFO("Energy Engine setting unit scalar "<<unit_scalar);
+  m_unit_scalar = unit_scalar;
 }
 
 void
