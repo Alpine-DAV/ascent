@@ -336,7 +336,7 @@ Image<FloatType>::flatten_optical_depths()
   }
   HandleType res;
   const int32 width = rover::settings["rover/width"].value();
-    const int32 height = rover::settings["rover/height"].value();
+  const int32 height = rover::settings["rover/height"].value();
   const int size = width * height;
   res.Allocate(num_channels * size);
   auto output = res.WritePortal();

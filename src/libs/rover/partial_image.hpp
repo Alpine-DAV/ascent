@@ -290,7 +290,7 @@ struct PartialImage
     bool has_emission = m_intensities.Buffer.GetNumberOfValues() != 0;
     const int32 width = rover::settings["rover/width"].value();
     const int32 height = rover::settings["rover/height"].value();
-    int debug = width * ( height - y) + x;
+    int debug = width * (height - y) + x;
 
     for(int i = 0; i < size; ++i)
     {
