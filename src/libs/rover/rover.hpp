@@ -17,6 +17,11 @@
 #include <vtkm_typedefs.hpp>
 #include <vtkh/DataSet.hpp>
 
+// mpi include
+#ifdef ROVER_PARALLEL
+#include <mpi.h>
+#endif
+
 // rover includes
 #include <rover_exports.h>
 #include <rover_config.h>
@@ -38,7 +43,7 @@ public:
   void print_settings();
 
   #ifdef ROVER_PARALLEL
-  void set_mpi_comm_handle(MPI_Comm comm_handle);
+  void set_mpi_comm_handle(int comm_handle);
   int  get_mpi_comm_handle();
   #endif
 

@@ -82,7 +82,7 @@ Rover::print_settings()
 // TODO: Validate correctness
 #ifdef ROVER_PARALLEL
 void
-Rover::set_mpi_comm_handle(MPI_Comm comm_handle)
+Rover::set_mpi_comm_handle(int comm_handle)
 {
   m_comm_handle = MPI_Comm_f2c(comm_handle);
   MPI_Comm_rank(m_comm_handle, &m_rank);
