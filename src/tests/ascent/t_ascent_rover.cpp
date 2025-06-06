@@ -401,8 +401,8 @@ TEST(ascent_rover, test_xray_blueprint_curv3d_camera_params)
     // extracts["e1/params/camera/position"].set_float64_ptr(vec3, 3);
     extracts["e1/params/camera/up"].set_float64_ptr(vec3, 3);
     extracts["e1/params/camera/fov"] = 60.0;
-    extracts["e1/params/camera/xpan"] = -0.1;
-    extracts["e1/params/camera/ypan"] = 0.1;
+    // extracts["e1/params/camera/xpan"] = -0.1;
+    // extracts["e1/params/camera/ypan"] = 0.1;
     extracts["e1/params/camera/zoom"] = 1.5;
     extracts["e1/params/camera/near_plane"] = 2.0;
     extracts["e1/params/camera/far_plane"] = 50.0;
