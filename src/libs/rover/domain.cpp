@@ -29,13 +29,15 @@ Domain::~Domain()
 // be called in any order
 //
 void
-Domain::set_render_settings(const RenderSettings &settings)
+Domain::set_settings(const Node &settings)
 {
   //
   // Create the correct engine
   //
 
-  ROVER_INFO("Setting render settings");
+  ROVER_INFO("Executing Domain::set_settings");
+
+  m_settings = settings;
 
 #if 0 // removing volume renderer
   if(m_render_settings.m_render_mode != volume &&
@@ -49,9 +51,8 @@ Domain::set_render_settings(const RenderSettings &settings)
   {
 #endif
 
-  ROVER_INFO("Render mode = energy");
   auto engine = std::make_shared<EnergyEngine>();
-  engine->set_unit_scalar(settings.m_energy_settings.m_unit_scalar);
+  engine->set_unit_scalar(m_settings["rover/unit_scalar"].value());
   m_engine = engine;
 
 #if 0 // removing volume renderer
@@ -67,9 +68,6 @@ Domain::set_render_settings(const RenderSettings &settings)
     //throw RoverException("Fatal Error: domain unable to create the apporpriate engine\n");
   }
 #endif
-
-  m_render_settings = settings;
-  m_render_settings.print();
 
   m_engine->set_data_set(m_data_set);
   set_engine_fields();
@@ -106,16 +104,17 @@ Domain::set_data_set(vtkmDataSet &dataset)
 void
 Domain::set_engine_fields()
 {
-  ROVER_INFO("Primary field: " << m_render_settings.m_primary_field);
-  ROVER_INFO("Secondary field: " << m_render_settings.m_secondary_field);
+  const std::string absorption = m_settings["rover/absorption"].as_string();
+  const std::string emission = m_settings["rover/emission"].as_string();
+  const std::string color_table_name = m_settings["rover/color_table"].as_string();
+  vtkmColorTable color_table(color_table_name);
 
-  // TODO: This might be redundant, surely we catch this case in verify_params?
-  // (and should if we currently don't)
-  if(m_render_settings.m_primary_field == "")
-    throw RoverException("Fatal Error: primary field not set\n");
-  m_engine->set_primary_field(m_render_settings.m_primary_field);
-  m_engine->set_secondary_field(m_render_settings.m_secondary_field);
-  m_engine->set_color_table(m_render_settings.m_color_table);
+  ROVER_INFO("Primary (absorption) field: " << absorbtion);
+  ROVER_INFO("Secondary (emission) field: " << emission);
+
+  m_engine->set_primary_field(absorption);
+  m_engine->set_secondary_field(emission);
+  m_engine->set_color_table(color_table);
 }
 
 const vtkmDataSet&
@@ -139,14 +138,16 @@ Domain::init_rays(Ray64 &rays)
 PartialVector32
 Domain::partial_trace(Ray32 &rays)
 {
-  m_engine->set_samples(m_global_bounds, m_render_settings.m_num_samples);
+  int32 num_samples = m_settings["rover/num_samples"].value();
+  m_engine->set_samples(m_global_bounds, num_samples);
   return m_engine->partial_trace(rays);
 }
 
 PartialVector64
 Domain::partial_trace(Ray64 &rays)
 {
-  m_engine->set_samples(m_global_bounds, m_render_settings.m_num_samples);
+  int32 num_samples = m_settings["rover/num_samples"].value();
+  m_engine->set_samples(m_global_bounds, num_samples);
   return m_engine->partial_trace(rays);
 }
 
@@ -165,9 +166,6 @@ Domain::set_composite_background(bool on)
 vtkmRange
 Domain::get_primary_range()
 {
-  // TODO: Redundant? Even if it's not, we can probably use something nicer
-  // than assert here
-  assert(m_render_settings.m_primary_field != "");
   return m_engine->get_primary_range();
 }
 

@@ -11,7 +11,6 @@
 #include <image.hpp>
 #include <engine.hpp>
 #include <scheduler_base.hpp>
-#include <rover_types.hpp>
 #include <ray_generators/ray_generator.hpp>
 #include <vtkm_typedefs.hpp>
 

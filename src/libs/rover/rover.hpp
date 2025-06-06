@@ -9,6 +9,7 @@
 
 // std includes
 #include "ray_generators/camera_generator.hpp"
+#include "scheduler_base.hpp"
 #include <memory>
 
 // tpl includes
@@ -16,10 +17,14 @@
 #include <vtkm_typedefs.hpp>
 #include <vtkh/DataSet.hpp>
 
+// mpi include
+#ifdef ROVER_PARALLEL
+#include <mpi.h>
+#endif
+
 // rover includes
 #include <rover_exports.h>
 #include <rover_config.h>
-#include <rover_types.hpp>
 #include <image.hpp>
 #include <ray_generators/ray_generator.hpp>
 
@@ -31,25 +36,26 @@ namespace rover
 class ROVER_API Rover
 {
 public:
-  vtkmCamera m_camera;
-  CameraGenerator m_camera_generator;
-  
   Rover();
   ~Rover();
 
   void update_settings(Node &params);
   void print_settings();
 
-  void set_mpi_comm_handle(int mpi_comm_id);
+  #ifdef ROVER_PARALLEL
+  void set_mpi_comm_handle(int comm_handle);
   int  get_mpi_comm_handle();
+  #endif
 
+  void create_scheduler();
   void add_data_set(vtkh::DataSet &);
-  void set_render_settings(const RenderSettings render_settings);
-  void set_ray_generator(RayGenerator *);
-  void clear_data_sets();
+  void update_camera();
+  void update_ray_generator();
+  void execute();
+
   void set_background(const std::vector<vtkm::Float32> &background);
   void set_background(const std::vector<vtkm::Float64> &background);
-  void execute();
+  
   void about();
   void save_png(const std::string &file_name);
   void to_blueprint(conduit::Node &dataset);
@@ -58,17 +64,19 @@ public:
                 const float max_val,
                 const bool log_scale);
   void save_bov(const std::string &file_name);
-  void set_tracer_precision32();
-  void set_tracer_precision64();
   void get_result(Image<vtkm::Float32> &image);
   void get_result(Image<vtkm::Float64> &image);
-  void update_camera();
-  void update_camera_generator();
 private:
-  class InternalsType;
-  std::shared_ptr<InternalsType> m_internals;
-protected:
   Node m_settings;
+  vtkmCamera m_camera;
+  CameraGenerator m_ray_generator;
+  SchedulerBase *m_scheduler;
+
+#ifdef ROVER_PARALLEL
+  MPI_Comm m_comm_handle;
+  int m_rank;
+  int m_num_ranks;
+#endif
 };
 
 }; // namespace rover

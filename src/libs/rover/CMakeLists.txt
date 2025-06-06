@@ -59,7 +59,6 @@ set(rover_headers
       partial_image.hpp
       rover_exports.h
       rover_exceptions.hpp
-      rover_types.hpp
       rover.hpp
       scheduler.hpp
       scheduler_base.hpp
