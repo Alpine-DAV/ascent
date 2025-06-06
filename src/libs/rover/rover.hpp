@@ -8,9 +8,6 @@
 #define rover_h
 
 // std includes
-#include "ray_generators/camera_generator.hpp"
-#include "scheduler_base.hpp"
-#include <memory>
 
 // tpl includes
 #include <conduit.hpp>
@@ -25,8 +22,11 @@
 // rover includes
 #include <rover_exports.h>
 #include <rover_config.h>
+#include <settings.hpp>
 #include <image.hpp>
 #include <ray_generators/ray_generator.hpp>
+#include <ray_generators/camera_generator.hpp>
+#include <scheduler_base.hpp>
 
 using namespace conduit;
 
@@ -67,7 +67,6 @@ public:
   void get_result(Image<vtkm::Float32> &image);
   void get_result(Image<vtkm::Float64> &image);
 private:
-  Node m_settings;
   vtkmCamera m_camera;
   CameraGenerator m_ray_generator;
   SchedulerBase *m_scheduler;

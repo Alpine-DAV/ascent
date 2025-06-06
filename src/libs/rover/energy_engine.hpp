@@ -10,7 +10,10 @@
 #include <rover_config.h>
 #include <engine.hpp>
 #include <vtkm/rendering/ConnectivityProxy.h>
-namespace rover {
+#include <settings.hpp>
+
+namespace rover
+{
 
 // TODO: We only have one engine atp, so we can merge
 // Engine and EnergyEngine

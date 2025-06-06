@@ -29,15 +29,13 @@ Domain::~Domain()
 // be called in any order
 //
 void
-Domain::set_settings(const Node &settings)
+Domain::init()
 {
   //
   // Create the correct engine
   //
 
-  ROVER_INFO("Executing Domain::set_settings");
-
-  m_settings = settings;
+  ROVER_INFO("Executing Domain::init");
 
 #if 0 // removing volume renderer
   if(m_render_settings.m_render_mode != volume &&
@@ -52,7 +50,7 @@ Domain::set_settings(const Node &settings)
 #endif
 
   auto engine = std::make_shared<EnergyEngine>();
-  engine->set_unit_scalar(m_settings["rover/unit_scalar"].value());
+  engine->set_unit_scalar(rover::settings["rover/unit_scalar"].value());
   m_engine = engine;
 
 #if 0 // removing volume renderer
@@ -104,9 +102,9 @@ Domain::set_data_set(vtkmDataSet &dataset)
 void
 Domain::set_engine_fields()
 {
-  const std::string absorption = m_settings["rover/absorption"].as_string();
-  const std::string emission = m_settings["rover/emission"].as_string();
-  const std::string color_table_name = m_settings["rover/color_table"].as_string();
+  const std::string absorption = rover::settings["rover/absorption"].as_string();
+  const std::string emission = rover::settings["rover/emission"].as_string();
+  const std::string color_table_name = rover::settings["rover/color_table"].as_string();
   vtkmColorTable color_table(color_table_name);
 
   ROVER_INFO("Primary (absorption) field: " << absorbtion);
@@ -138,7 +136,7 @@ Domain::init_rays(Ray64 &rays)
 PartialVector32
 Domain::partial_trace(Ray32 &rays)
 {
-  int32 num_samples = m_settings["rover/num_samples"].value();
+  int32 num_samples = rover::settings["rover/num_samples"].value();
   m_engine->set_samples(m_global_bounds, num_samples);
   return m_engine->partial_trace(rays);
 }
@@ -146,7 +144,7 @@ Domain::partial_trace(Ray32 &rays)
 PartialVector64
 Domain::partial_trace(Ray64 &rays)
 {
-  int32 num_samples = m_settings["rover/num_samples"].value();
+  int32 num_samples = rover::settings["rover/num_samples"].value();
   m_engine->set_samples(m_global_bounds, num_samples);
   return m_engine->partial_trace(rays);
 }

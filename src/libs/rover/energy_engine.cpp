@@ -9,7 +9,8 @@
 #include <utils/rover_logging.hpp>
 #include <vtkm/cont/DefaultTypes.h>
 
-namespace rover {
+namespace rover
+{
 
 struct ArraySizeFunctor
 {
