@@ -24,6 +24,7 @@ set(BASIC_TESTS t_ascent_smoke
                 t_ascent_external_surfaces
                 t_ascent_cinema_a
                 t_ascent_color_bar_pos
+		t_ascent_AOS_rendering
                 t_ascent_render_2d
                 t_ascent_render_3d
                 t_ascent_render_2d_poly
