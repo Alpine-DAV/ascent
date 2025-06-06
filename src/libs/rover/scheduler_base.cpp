@@ -85,7 +85,7 @@ SchedulerBase::create_default_background(const int num_channels)
   m_background.resize(num_channels);
   for(int i = 0; i < num_channels; ++i)
   {
-    m_background[i] = 1.f;
+    m_background[i] = 0.0f;
   }
 }
 
