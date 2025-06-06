@@ -54,7 +54,7 @@ protected:
   Image<FloatType>                          m_result;
   std::vector<PartialImage<FloatType>>      m_partial_images;
 
-  void add_partial(vtkmRayTracing::PartialComposite<FloatType> &partial, int width, int height);
+  void add_partial(vtkmRayTracing::PartialComposite<FloatType> &partial);
 private:
 
 };
