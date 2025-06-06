@@ -11,6 +11,7 @@
 #include <vtkm_typedefs.hpp>
 #include <iostream>
 #include <utils/rover_logging.hpp>
+#include <settings.hpp>
 
 #ifdef ROVER_PARALLEL
 #include <mpi.h>
