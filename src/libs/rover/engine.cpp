@@ -65,7 +65,7 @@ Engine::set_secondary_field()
 {
   std::string emission = rover::settings["rover/emission"].as_string();
   // Return early if emission is not specified
-  if("" == emission)
+  if ("" == emission)
   {
     ROVER_INFO("Engine::set_secondary_field: emission not specified");
     return;
@@ -82,8 +82,9 @@ Engine::init_emission(vtkm::rendering::raytracing::Ray<Precision> &rays,
 {
   const std::string emission = rover::settings["rover/emission"].as_string();
   // Return early if emission was not specified
-  if("" == emission)
+  if ("" == emission)
   {
+    ROVER_INFO("Engine::init_emission: emission not specified");
     return;
   }
 
