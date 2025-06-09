@@ -25,8 +25,6 @@ namespace rover
 template<typename FloatType>
 struct PartialImage
 {
-  int32                                    m_width;
-  int32                                    m_height;
   IdHandle                                 m_pixel_ids;
   vtkmRayTracing::ChannelBuffer<FloatType> m_buffer;          // holds the absorption
   vtkmRayTracing::ChannelBuffer<FloatType> m_intensities;     // holds the intensity emerging from each ray
@@ -47,8 +45,7 @@ struct PartialImage
 
   PartialImage()
   {
-    m_width = rover::settings["rover/width"].value();
-    m_height = rover::settings["rover/height"].value();
+
   }
 
 #if 0 // removing volume renderer
@@ -287,12 +284,15 @@ struct PartialImage
     }
   }
 
+  // TODO: Investigate if we need this
   void print_pixel(const int x, const int y)
   {
     const int size = m_pixel_ids.GetNumberOfValues();
     const int num_channels = m_buffer.GetNumChannels();
-    bool has_emission = m_intensities.Buffer.GetNumberOfValues() != 0;
-    int debug = m_width * (m_height - y) + x;
+    const bool has_emission = m_intensities.Buffer.GetNumberOfValues() != 0;
+    const int32 width = rover::settings["rover/width"].value();
+    const int32 height = rover::settings["rover/height"].value();
+    const int debug = width * (height - y) + x;
 
     for(int i = 0; i < size; ++i)
     {
@@ -313,11 +313,14 @@ struct PartialImage
 
   }// print
 
+  // TODO: Investigate if we need this
   void make_red_pixel(const int x, const int y)
   {
     const int size = m_pixel_ids.GetNumberOfValues();
     const int num_channels = m_buffer.GetNumChannels();
-    int debug = m_width * (m_height - y) + x;
+    const int32 width = rover::settings["rover/width"].value();
+    const int32 height = rover::settings["rover/height"].value();
+    const int debug = width * (height - y) + x;
 
     for(int i = 0; i < size; ++i)
     {
@@ -333,8 +336,7 @@ struct PartialImage
       }
     }
   }
-
-
 };
+
 } // namespace rover
 #endif

@@ -505,11 +505,14 @@ Scheduler<FloatType>::get_result(Image<vtkm::Float64> &image)
 template<typename FloatType>
 void Scheduler<FloatType>::save_result(std::string file_name)
 {
-  ROVER_INFO("Saving .png file with output size " << m_width << "x" << m_height);
+  const int32 width = rover::settings["rover/width"].value();
+  const int32 height = rover::settings["rover/height"].value();
+  ROVER_INFO("Saving .png file with output size " << width << "x" << height);
   ascent::PNGEncoder encoder;
 
   // if(m_render_settings.m_render_mode == energy) // removing volume renderer
   // {
+
   const int num_channels = m_result.get_num_channels();
   ROVER_INFO("Saving "<<num_channels<<" channels ");
   for(int i = 0; i < num_channels; ++i)
@@ -520,7 +523,7 @@ void Scheduler<FloatType>::save_result(std::string file_name)
     FloatType * buffer
       = get_vtkm_ptr(m_result.get_intensity(i));
 
-    encoder.EncodeChannel(buffer, m_width, m_height);
+    encoder.EncodeChannel(buffer, width, height);
     encoder.Save(sstream.str());
   }
 
@@ -548,7 +551,9 @@ Scheduler<FloatType>::save_result(std::string file_name,
                                   float max_val,
                                   bool log_scale)
 {
-  ROVER_INFO("Saving .png file with output size " << m_width << "x" << m_height);
+  const int32 width = rover::settings["rover/width"].value();
+  const int32 height = rover::settings["rover/height"].value();
+  ROVER_INFO("Saving .png file with output size " << width << "x" << height);
   ascent::PNGEncoder encoder;
 
 #if 0 // removing volume renderer
@@ -568,7 +573,7 @@ Scheduler<FloatType>::save_result(std::string file_name,
     FloatType * buffer
       = get_vtkm_ptr(m_result.get_intensity(i));
 
-    encoder.EncodeChannel(buffer, m_width, m_height);
+    encoder.EncodeChannel(buffer, width, height);
     encoder.Save(sstream.str());
   }
 }
@@ -576,9 +581,12 @@ Scheduler<FloatType>::save_result(std::string file_name,
 template<typename FloatType>
 void Scheduler<FloatType>::save_bov(std::string file_name)
 {
-  ROVER_INFO("Saving bov file with output size " << m_width << "x" << m_height);
+  const int32 width = rover::settings["rover/width"].value();
+  const int32 height = rover::settings["rover/height"].value();
+  ROVER_INFO("Saving bov file with output size " << width << "x" << height);
+
   ascent::PNGEncoder encoder;
-  const int size = m_height * m_width;
+  const int size = height * width;
 
   // if(m_render_settings.m_render_mode == energy) // removing volume renderer
   // {
@@ -603,7 +611,9 @@ template<typename FloatType>
 void
 Scheduler<FloatType>::to_blueprint(Node &data)
 {
-  ROVER_INFO("Saving blueprint file with output size " << m_width << "x" << m_height);
+  const int32 width = rover::settings["rover/width"].value();
+  const int32 height = rover::settings["rover/height"].value();
+  ROVER_INFO("Saving blueprint file with output size " << width << "x" << height);
 
   // TODO: Plumb the other "state/" info down out of *_rover_filters.cpp
   Node &xray_view = data["state/xray_view"];
@@ -628,20 +638,20 @@ Scheduler<FloatType>::to_blueprint(Node &data)
   Node &n_coords = data["coordsets"][coord_name];
   n_coords["type"] = "rectilinear";
   
-  n_coords["values/x"].set(DataType::float32(m_width + 1));
-  n_coords["values/y"].set(DataType::float32(m_height + 1));
+  n_coords["values/x"].set(DataType::float32(width + 1));
+  n_coords["values/y"].set(DataType::float32(height + 1));
   n_coords["values/z"].set(DataType::float32(num_channels + 1));
 
   float32_array x_coords = n_coords["values/x"].value();
   float32_array y_coords = n_coords["values/y"].value();
   float32_array z_coords = n_coords["values/z"].value();
 
-  for (int i = 0; i <= m_width; i++)
+  for (int i = 0; i <= width; i++)
   {
     x_coords[i] = i;
   }
 
-  for (int i = 0; i <= m_height; i++)
+  for (int i = 0; i <= height; i++)
   {
     y_coords[i] = i;
   }
@@ -685,8 +695,8 @@ Scheduler<FloatType>::to_blueprint(Node &data)
   intensities["strides"].set(DataType::int64(3));
   int64_array strides = intensities["strides"].value();
   strides[0] = 1;
-  strides[1] = m_width;
-  strides[2] = m_width * m_height;
+  strides[1] = width;
+  strides[2] = width * height;
 
   // Optical Depth
   Node &optical_depth = data["fields/optical_depth"];
