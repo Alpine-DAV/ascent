@@ -293,37 +293,35 @@ RoverXRay::execute()
 
     if (data.has_path("coordsets"))
     {
-      dif(dom.has_path("coordsets"))
+      int cycle = -1;
+      double time = -1.;
+
+      if(Metadata::n_metadata.has_path("cycle"))
       {
-        int cycle = -1;
-        double time = -1.;
-
-        if(Metadata::n_metadata.has_path("cycle"))
-        {
-          cycle = Metadata::n_metadata["cycle"].to_int32();
-        }
-        if(Metadata::n_metadata.has_path("time"))
-        {
-          time = Metadata::n_metadata["time"].to_float64();
-        }
-
-        if(cycle != -1)
-        {
-          dom["state/cycle"] = cycle;
-        }
-
-        if(time != -1.)
-        {
-          dom["state/time"] = time;
-        }
+        cycle = Metadata::n_metadata["cycle"].to_int32();
       }
+      if(Metadata::n_metadata.has_path("time"))
+      {
+        time = Metadata::n_metadata["time"].to_float64();
+      }
+
+      if(cycle != -1)
+      {
+        data["state/cycle"] = cycle;
+      }
+
+      if(time != -1.)
+      {
+        data["state/time"] = time;
+      }
+    }
 
     const int num_files = -1;
     conduit::Node extra_opts;
     std::string result_path;
 
-      std::string filename = params()["rover/filename"].as_string();
-      filename = output_dir(expand_path_special_variables(filename, ".root", mpi_comm_id));
+    std::string filename = params()["rover/filename"].as_string();
+    filename = output_dir(expand_path_special_variables(filename, ".root", mpi_comm_id));
 
     mesh_blueprint_save(multi_domain,
                         filename,
@@ -333,8 +331,8 @@ RoverXRay::execute()
                         result_path);
   }
 
-    std::string png_filename = params()["rover/filename"].as_string();
-    png_filename = output_dir(expand_path_special_variables(png_filename, ".png", mpi_comm_id));
+  std::string png_filename = params()["rover/filename"].as_string();
+  png_filename = output_dir(expand_path_special_variables(png_filename, ".png", mpi_comm_id));
 
   // Do we always want to save a png?
   if (params().has_path("image_params"))
@@ -349,14 +347,12 @@ RoverXRay::execute()
     rover.save_png(png_filename);
   }
 
-    if (params().has_path("bov_filename"))
-    {
-      std::string bov_filename = params()["bov_filename"].as_string();
-      bov_filename = output_dir(bov_filename);
-      rover.save_bov(expand_path_special_variables(bov_filename, ".bov", mpi_comm_id));
-    }
-    rover.finalize();
-
+  if (params().has_path("bov_filename"))
+  {
+    std::string bov_filename = params()["bov_filename"].as_string();
+    bov_filename = output_dir(bov_filename);
+    rover.save_bov(expand_path_special_variables(bov_filename, ".bov", mpi_comm_id));
+  }
 }
 
 #if 0 // removing volume renderer

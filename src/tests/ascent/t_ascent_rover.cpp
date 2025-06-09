@@ -163,7 +163,7 @@ TEST(ascent_rover, test_xray_blueprint_braid)
         conduit::utils::join_file_path(image_output_path, "tout_rover_xray_blueprint");
 
     render_blueprint_result("intensities", image_output_base, load_mesh);
-    EXPECT_TRUE(check_test_image(image_output_base, 0.01f, "100"));
+    EXPECT_TRUE(check_test_image(image_output_base));
 
     std::string msg = "Render an XRay diagnostic image of an example braid mesh";
     ASCENT_ACTIONS_DUMP(actions, image_output_base, msg);
@@ -335,7 +335,7 @@ TEST(ascent_rover, test_xray_blueprint_curv3d)
         conduit::utils::join_file_path(image_output_path, "tout_rover_xray_curv3d");
 
     render_blueprint_result("intensities", image_output_base, load_mesh);
-    EXPECT_TRUE(check_test_image(image_output_base, 0.01f, "48"));
+    EXPECT_TRUE(check_test_image(image_output_base, 0.01f, 48));
     
     std::string msg = "Render an XRay diagnostic image of the curv3d mesh";
     ASCENT_ACTIONS_DUMP(actions, image_output_base, msg);
@@ -423,7 +423,7 @@ TEST(ascent_rover, test_xray_blueprint_curv3d_camera_params)
     // std::cout << ascent.info().to_yaml() << std::endl;
     ascent.close();
 
-    const std::string full_outfile_name = query_output_file + "48.cycle_000048.root";
+    const std::string full_outfile_name = query_output_file + "_000048.cycle_000048.root";
 
     Node load_mesh;
     conduit::relay::io::blueprint::load_mesh(full_outfile_name, load_mesh);
@@ -433,9 +433,7 @@ TEST(ascent_rover, test_xray_blueprint_curv3d_camera_params)
     const std::string image_output_base =
         conduit::utils::join_file_path(image_output_path, "tout_rover_xray_curv3d_camera_param");
 
-    const std::string image_output_image_prefix = image_output_base + "{cycle:d}";
-
-    render_blueprint_result("intensities", image_output_image_prefix, load_mesh);
+    render_blueprint_result("intensities", image_output_base, load_mesh);
     EXPECT_TRUE(check_test_image(image_output_base, 0.01f, 48));
     
     std::string msg = "Render an XRay diagnostic image with non-default camera params";
