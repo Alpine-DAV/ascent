@@ -7,7 +7,6 @@
 #ifndef rover_partial_image_h
 #define rover_partial_image_h
 
-#include <cstdint>
 #include <rover_config.h>
 #include <settings.hpp>
 #include <vtkm_typedefs.hpp>
