@@ -58,8 +58,6 @@ VisitGenerator::VisitGenerator(const VisitParams &params)
  : RayGenerator()
 {
   m_params = params;
-  assert(m_width > 0);
-  assert(m_height > 0);
 }
 
 VisitGenerator::~VisitGenerator()
@@ -75,7 +73,9 @@ VisitGenerator::gen_rays(vtkmRayTracing::Ray<T> &rays)
   double time = 0;
   ROVER_DATA_OPEN("visit_ray_gen");
 
-  const int size = m_width * m_height;
+  const int32 width = rover::settings["rover/width"].value();
+  const int32 height = rover::settings["rover/height"].value();
+  const int size = width * height;
 
 #if (VTKM_VERSION_MAJOR >= 2) && (VTKM_VERSION_MINOR >= 1)
     vtkm::rendering::raytracing::RayOperations::Resize(rays,
@@ -103,7 +103,7 @@ VisitGenerator::gen_rays(vtkmRayTracing::Ray<T> &rays)
 
   view_height = m_params.m_parallel_scale;
   // I think this is flipped
-  view_width = view_height * (m_height / m_width);
+  view_width = view_height * (height / width);
   if(m_params.m_perspective)
   {
     T view_dist = m_params.m_parallel_scale / tan((m_params.m_view_angle * 3.1415926535) / 360.);
@@ -133,10 +133,10 @@ VisitGenerator::gen_rays(vtkmRayTracing::Ray<T> &rays)
   far_origin = m_params.m_focus + m_params.m_far_plane * m_params.m_normal;
 
   T near_dx, near_dy, far_dx, far_dy;
-  near_dx = (2. * near_width)  / m_width;
-  near_dy = (2. * near_height) / m_height;
-  far_dx  = (2. * far_width)   / m_width;
-  far_dy  = (2. * far_height)  / m_height;
+  near_dx = (2. * near_width)  / width;
+  near_dy = (2. * near_height) / height;
+  far_dx  = (2. * far_width)   / width;
+  far_dy  = (2. * far_height)  / height;
 
   auto origin_x = rays.OriginX.WritePortal();
   auto origin_y = rays.OriginY.WritePortal();
@@ -147,8 +147,8 @@ VisitGenerator::gen_rays(vtkmRayTracing::Ray<T> &rays)
   auto dir_z = rays.DirZ.WritePortal();
 
   auto pixel_id = rays.PixelIdx.WritePortal();
-  const int x_size = m_width;
-  const int y_size = m_height;
+  const int x_size = width;
+  const int y_size = height;
 
   const T x_factor = - (2. * m_params.m_image_pan[0] * m_params.m_image_zoom + 1.);
   const T x_start  = x_factor * near_width + near_dx / 2.;

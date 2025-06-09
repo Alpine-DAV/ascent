@@ -224,23 +224,6 @@ void
 Rover::update_ray_generator()
 {
   m_ray_generator.set_camera(m_camera);
-
-  int32 width;
-  int32 height;
-
-  if (rover::settings.has_path("rover/width"))
-  {
-    width = rover::settings["rover/width"].value();
-  }
-
-  if (rover::settings.has_path("rover/height"))
-  {
-    height = rover::settings["rover/height"].value();
-  }
-
-  m_ray_generator.set_width(width);
-  m_ray_generator.set_height(height);
-
   m_scheduler->set_ray_generator(&m_ray_generator);
 }
 

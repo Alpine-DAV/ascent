@@ -43,6 +43,8 @@
 #define rover_camera_generator_h
 
 #include <rover_exports.h>
+#include <settings.hpp>
+#include <utils/rover_logging.hpp>
 #include <ray_generators/ray_generator.hpp>
 
 namespace rover {
@@ -51,7 +53,7 @@ class ROVER_API CameraGenerator : public RayGenerator
 {
 public:
   CameraGenerator();
-  CameraGenerator(const vtkmCamera &camera, const int width = 200, const int height = 200);
+  CameraGenerator(const vtkmCamera &camera);
   virtual ~CameraGenerator();
   virtual void get_rays(vtkmRayTracing::Ray<vtkm::Float32> &rays);
   virtual void get_rays(vtkmRayTracing::Ray<vtkm::Float64> &rays);
