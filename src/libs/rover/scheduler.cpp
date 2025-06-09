@@ -33,7 +33,7 @@ namespace rover
 template<typename FloatType>
 Scheduler<FloatType>::Scheduler()
 {
-  m_ray_generator = NULL;
+  m_ray_generator = nullptr;
 }
 
 template<typename FloatType>
@@ -269,8 +269,6 @@ Scheduler<FloatType>::composite()
   }
 #endif
 
-  const int32 width = rover::settings["rover/width"].value();
-  const int32 height = rover::settings["rover/height"].value();
   const std::string emission = rover::settings["rover/emission"].as_string();
   if ("" != emission)
   {
@@ -353,9 +351,6 @@ Scheduler<FloatType>::trace_rays()
   m_ray_generator->reset();
   // TODO while (m_generator.has_rays())
   ROVER_INFO("Tracing rays");
-
-  const int32 width = rover::settings["rover/width"].value();
-  const int32 height = rover::settings["rover/height"].value();
 
   //
   // ensure that the render settings are set
@@ -510,9 +505,7 @@ Scheduler<FloatType>::get_result(Image<vtkm::Float64> &image)
 template<typename FloatType>
 void Scheduler<FloatType>::save_result(std::string file_name)
 {
-  const int32 width = rover::settings["rover/width"].value();
-  const int32 height = rover::settings["rover/height"].value();
-  ROVER_INFO("Saving .png file with output size " << width << "x" << height);
+  ROVER_INFO("Saving .png file with output size " << m_width << "x" << m_height);
   ascent::PNGEncoder encoder;
 
   // if(m_render_settings.m_render_mode == energy) // removing volume renderer
@@ -527,9 +520,7 @@ void Scheduler<FloatType>::save_result(std::string file_name)
     FloatType * buffer
       = get_vtkm_ptr(m_result.get_intensity(i));
 
-    const int32 width = rover::settings["rover/width"].value();
-    const int32 height = rover::settings["rover/height"].value();
-    encoder.EncodeChannel(buffer, width, height);
+    encoder.EncodeChannel(buffer, m_width, m_height);
     encoder.Save(sstream.str());
   }
 
@@ -557,9 +548,7 @@ Scheduler<FloatType>::save_result(std::string file_name,
                                   float max_val,
                                   bool log_scale)
 {
-  const int32 width = rover::settings["rover/width"].value();
-  const int32 height = rover::settings["rover/height"].value();
-  ROVER_INFO("Saving .png file with output size " << width << "x" << height);
+  ROVER_INFO("Saving .png file with output size " << m_width << "x" << m_height);
   ascent::PNGEncoder encoder;
 
 #if 0 // removing volume renderer
@@ -579,7 +568,7 @@ Scheduler<FloatType>::save_result(std::string file_name,
     FloatType * buffer
       = get_vtkm_ptr(m_result.get_intensity(i));
 
-    encoder.EncodeChannel(buffer, width, height);
+    encoder.EncodeChannel(buffer, m_width, m_height);
     encoder.Save(sstream.str());
   }
 }
@@ -587,11 +576,9 @@ Scheduler<FloatType>::save_result(std::string file_name,
 template<typename FloatType>
 void Scheduler<FloatType>::save_bov(std::string file_name)
 {
-  const int32 width = rover::settings["rover/width"].value();
-  const int32 height = rover::settings["rover/height"].value();
-  ROVER_INFO("Saving bov file with output size " << width << "x" << height);
+  ROVER_INFO("Saving bov file with output size " << m_width << "x" << m_height);
   ascent::PNGEncoder encoder;
-  const int size = height * width;
+  const int size = m_height * m_width;
 
   // if(m_render_settings.m_render_mode == energy) // removing volume renderer
   // {
@@ -616,9 +603,7 @@ template<typename FloatType>
 void
 Scheduler<FloatType>::to_blueprint(Node &data)
 {
-  int32 width = rover::settings["rover/width"].value();
-  int32 height = rover::settings["rover/height"].value();
-  ROVER_INFO("Saving blueprint file with output size " << width << "x" << height);
+  ROVER_INFO("Saving blueprint file with output size " << m_width << "x" << m_height);
 
   // TODO: Plumb the other "state/" info down out of *_rover_filters.cpp
   Node &xray_view = data["state/xray_view"];
@@ -640,23 +625,23 @@ Scheduler<FloatType>::to_blueprint(Node &data)
 
   const int num_channels = m_result.get_num_channels();
   const std::string coord_name = "image_coords";
-  Node &coordsets = data["coordsets"][coord_name];
-  coordsets["type"] = "rectilinear";
+  Node &n_coords = data["coordsets"][coord_name];
+  n_coords["type"] = "rectilinear";
   
-  coordsets["values/x"].set(DataType::float32(width + 1));
-  coordsets["values/y"].set(DataType::float32(height + 1));
-  coordsets["values/z"].set(DataType::float32(num_channels + 1));
+  n_coords["values/x"].set(DataType::float32(m_width + 1));
+  n_coords["values/y"].set(DataType::float32(m_height + 1));
+  n_coords["values/z"].set(DataType::float32(num_channels + 1));
 
-  float32_array x_coords = coordsets["values/x"].value();
-  float32_array y_coords = coordsets["values/y"].value();
-  float32_array z_coords = coordsets["values/z"].value();
+  float32_array x_coords = n_coords["values/x"].value();
+  float32_array y_coords = n_coords["values/y"].value();
+  float32_array z_coords = n_coords["values/z"].value();
 
-  for (int i = 0; i <= width; i++)
+  for (int i = 0; i <= m_width; i++)
   {
     x_coords[i] = i;
   }
 
-  for (int i = 0; i <= height; i++)
+  for (int i = 0; i <= m_height; i++)
   {
     y_coords[i] = i;
   }
@@ -666,13 +651,13 @@ Scheduler<FloatType>::to_blueprint(Node &data)
     z_coords[i] = i;
   }
 
-  coordsets["labels/x"] = "width";
-  coordsets["labels/y"] = "height";
-  coordsets["labels/z"] = "energy_group";
+  n_coords["labels/x"] = "width";
+  n_coords["labels/y"] = "height";
+  n_coords["labels/z"] = "energy_group";
 
-  coordsets["units/x"] = "pixels";
-  coordsets["units/y"] = "pixels";
-  coordsets["units/z"] = "bins";
+  n_coords["units/x"] = "pixels";
+  n_coords["units/y"] = "pixels";
+  n_coords["units/z"] = "bins";
 
   const std::string topo_name = "image_topo";
   Node &n_topo = data["topologies"][topo_name];
@@ -700,8 +685,8 @@ Scheduler<FloatType>::to_blueprint(Node &data)
   intensities["strides"].set(DataType::int64(3));
   int64_array strides = intensities["strides"].value();
   strides[0] = 1;
-  strides[1] = width;
-  strides[2] = width * height;
+  strides[1] = m_width;
+  strides[2] = m_width * m_height;
 
   // Optical Depth
   Node &optical_depth = data["fields/optical_depth"];

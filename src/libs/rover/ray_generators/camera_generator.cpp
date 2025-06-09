@@ -41,8 +41,6 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 #include <ray_generators/camera_generator.hpp>
 
-#include <vtkm/rendering/CanvasRayTracer.h>
-
 namespace rover
 {
 
@@ -68,7 +66,6 @@ CameraGenerator::get_rays(vtkmRayTracing::Ray<vtkm::Float32> &rays)
 {
   const int32 width = rover::settings["rover/width"].value();
   const int32 height = rover::settings["rover/height"].value();
-  // vtkm::rendering::CanvasRayTracer canvas(width, height);
 
   vtkm::rendering::raytracing::Camera ray_gen;
   ray_gen.SetParameters(m_camera, width, height);
@@ -85,7 +82,6 @@ CameraGenerator::get_rays(vtkmRayTracing::Ray<vtkm::Float64> &rays)
 {
   const int32 width = rover::settings["rover/width"].value();
   const int32 height = rover::settings["rover/height"].value();
-  // vtkm::rendering::CanvasRayTracer canvas(width, height);
 
   vtkm::rendering::raytracing::Camera ray_gen;
   ray_gen.SetParameters(m_camera, width, height);

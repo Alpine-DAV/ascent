@@ -99,11 +99,11 @@ VisitGenerator::gen_rays(vtkmRayTracing::Ray<T> &rays)
                  - m_params.m_view_up[1] * m_params.m_normal[0];
 
   T near_height, view_height, far_height;
-  T near_width, view_width, far_width;;
+  T near_width, view_width, far_width;
 
   view_height = m_params.m_parallel_scale;
   // I think this is flipped
-  view_width = view_height * (height / width);
+  view_width = view_height * static_cast<float>(height) / static_cast<float>(width);
   if(m_params.m_perspective)
   {
     T view_dist = m_params.m_parallel_scale / tan((m_params.m_view_angle * 3.1415926535) / 360.);

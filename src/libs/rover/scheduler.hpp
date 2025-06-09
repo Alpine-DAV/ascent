@@ -47,16 +47,14 @@ public:
   virtual void get_result(Image<vtkm::Float32> &image) override;
   virtual void get_result(Image<vtkm::Float64> &image) override;
 protected:
+  Image<FloatType>                          m_result;
+  std::vector<PartialImage<FloatType>>      m_partial_images;
+
   void composite();
   void set_global_scalar_range();
   void set_global_bounds();
   int  get_global_channels();
-  Image<FloatType>                          m_result;
-  std::vector<PartialImage<FloatType>>      m_partial_images;
-
   void add_partial(vtkmRayTracing::PartialComposite<FloatType> &partial);
-private:
-
 };
 
 }; // namespace rover

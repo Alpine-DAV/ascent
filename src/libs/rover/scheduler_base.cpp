@@ -10,6 +10,8 @@ namespace rover {
 
 SchedulerBase::SchedulerBase()
 {
+  m_width = rover::settings["rover/width"].value();
+  m_height = rover::settings["rover/height"].value();
 }
 
 SchedulerBase::~SchedulerBase()

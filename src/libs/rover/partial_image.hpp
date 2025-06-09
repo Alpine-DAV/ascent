@@ -7,6 +7,7 @@
 #ifndef rover_partial_image_h
 #define rover_partial_image_h
 
+#include <cstdint>
 #include <rover_config.h>
 #include <settings.hpp>
 #include <vtkm_typedefs.hpp>
@@ -29,6 +30,8 @@ struct PartialImage
   vtkmRayTracing::ChannelBuffer<FloatType> m_intensities;     // holds the intensity emerging from each ray
   vtkm::cont::ArrayHandle<FloatType>       m_distances;
   std::vector<FloatType>                   m_source_sig;
+  int                                      m_width;
+  int                                      m_height;
 
   void allocate(const vtkm::Id &size, const vtkm::Id &channels)
   {
@@ -44,7 +47,8 @@ struct PartialImage
 
   PartialImage()
   {
-
+    m_width = rover::settings["rover/width"].value();
+    m_height = rover::settings["rover/height"].value();
   }
 
 #if 0 // removing volume renderer
@@ -288,9 +292,7 @@ struct PartialImage
     const int size = m_pixel_ids.GetNumberOfValues();
     const int num_channels = m_buffer.GetNumChannels();
     bool has_emission = m_intensities.Buffer.GetNumberOfValues() != 0;
-    const int32 width = rover::settings["rover/width"].value();
-    const int32 height = rover::settings["rover/height"].value();
-    int debug = width * (height - y) + x;
+    int debug = m_width * (m_height - y) + x;
 
     for(int i = 0; i < size; ++i)
     {
@@ -315,9 +317,7 @@ struct PartialImage
   {
     const int size = m_pixel_ids.GetNumberOfValues();
     const int num_channels = m_buffer.GetNumChannels();
-    const int32 width = rover::settings["rover/width"].value();
-    const int32 height = rover::settings["rover/height"].value();
-    int debug = width * (height - y) + x;
+    int debug = m_width * (m_height - y) + x;
 
     for(int i = 0; i < size; ++i)
     {
