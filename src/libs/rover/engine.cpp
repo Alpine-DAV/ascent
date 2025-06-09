@@ -106,7 +106,7 @@ void
 Engine::init_rays(Ray32 &rays)
 {
   validate_tracer();
-  const int num_bins = detect_num_bins();
+  const int num_bins = get_num_channels();
   rays.Buffers.at(0).SetNumChannels(num_bins);
   rays.Buffers.at(0).InitConst(1.0f);
   init_emission(rays, num_bins);
@@ -116,7 +116,7 @@ void
 Engine::init_rays(Ray64 &rays)
 {
   validate_tracer();
-  const int num_bins = detect_num_bins();
+  const int num_bins = get_num_channels();
   rays.Buffers.at(0).SetNumChannels(num_bins);
   rays.Buffers.at(0).InitConst(1.0f);
   init_emission(rays, num_bins);
@@ -134,7 +134,7 @@ Engine::partial_trace(Ray64 &rays)
 }
 
 int
-Engine::detect_num_bins()
+Engine::get_num_channels()
 {
   vtkm::Id absorption_size = 0;
   ArraySizeFunctor functor(&absorption_size);
@@ -149,7 +149,7 @@ Engine::detect_num_bins()
   assert(absorption_size > 0);
   if (num_cells == 0)
   {
-    ROVER_ERROR("Error - Engine::detect_num_bins: num cells is 0"
+    ROVER_ERROR("Error - Engine::get_num_channels: num cells is 0"
                 << "\n        num cells " << num_cells
                 << "\n        field size " <<a bsorption_size);
     m_data_set.PrintSummary(std::cerr);
@@ -159,14 +159,14 @@ Engine::detect_num_bins()
   vtkm::Id modulo = absorption_size % num_cells;
   if (modulo != 0)
   {
-    ROVER_ERROR("Error - Engine::detect_num_bins: absorption field size is not evenly divided by num_cells"
+    ROVER_ERROR("Error - Engine::get_num_channels: absorption field size is not evenly divided by num_cells"
                 << "\n       modulo " << modulo
                 << "\n       num cells " << num_cells
                 << "\n       field size " << absorption_size);
     throw RoverException("absorption field size is not evenly divided by num_cells\n");
   }
   vtkm::Id num_bins = absorption_size / num_cells;
-  ROVER_INFO("Engine::detect_num_bins: Detected " << num_bins << " bins");
+  ROVER_INFO("Engine::get_num_channels: Detected " << num_bins << " bins");
   return static_cast<int>(num_bins);
 }
 
@@ -195,15 +195,15 @@ Engine::set_composite_background(bool on)
 }
 
 void
-Engine::set_color_map(const vtkmColorTable &color_map, int samples)
+Engine::set_color_map(const vtkmColorTable &color_table, int samples)
 {
   constexpr vtkm::Float32 conversionToFloatSpace = (1.0f / 255.0f);
   vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::UInt8, 4>> temp;
 
   // TODO: Is this where num_samples was intended to be used?
   // If so, we should query the settings here.
-  
-  color_map.Sample(samples, temp);
+
+  color_table.Sample(samples, temp);
   m_color_map.Allocate(samples);
   auto portal = m_color_map.WritePortal();
   auto colorPortal = temp.ReadPortal();

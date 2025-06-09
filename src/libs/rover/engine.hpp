@@ -45,7 +45,7 @@ public:
   void init_rays(Ray64 &rays);
   PartialVector32 partial_trace(Ray32 &rays);
   PartialVector64 partial_trace(Ray64 &rays);
-  int  detect_num_bins();
+  int  get_num_channels();
   vtkmRange get_primary_range();
   void set_primary_range(const vtkmRange &range);
   void set_composite_background(bool on);

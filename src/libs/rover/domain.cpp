@@ -85,7 +85,7 @@ Domain::init()
 int
 Domain::get_num_channels()
 {
-  return m_engine->detect_num_bins();
+  return m_engine->get_num_channels();
 }
 
 void
