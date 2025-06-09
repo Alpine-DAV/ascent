@@ -7,42 +7,56 @@
 #ifndef rover_engine_h
 #define rover_engine_h
 
+#include <vtkm/rendering/ConnectivityProxy.h>
+#include <vtkm/cont/ColorTable.h>
+
 #include <rover_config.h>
 #include <vtkm_typedefs.hpp>
+#include <settings.hpp>
 
-#include <vtkm/cont/ColorTable.h>
-namespace rover {
+namespace rover
+{
+
+struct ArraySizeFunctor
+{
+  vtkm::Id  *m_size;
+  ArraySizeFunctor(vtkm::Id *size)
+    : m_size(size)
+  {}
+  
+  template<typename T, typename Storage>
+  void operator()(const vtkm::cont::ArrayHandle<T, Storage> &array) const
+  {
+    *m_size = array.GetNumberOfValues();
+  } //operator
+};
 
 class Engine
 {
 public:
-  Engine(){};
-  virtual ~Engine(){};
+  Engine();
+  ~Engine();
 
-  virtual void set_data_set(vtkmDataSet &) = 0;
-  virtual PartialVector32 partial_trace(Ray32 &rays) = 0;
-  virtual PartialVector64 partial_trace(Ray64 &rays) = 0;
-  virtual void init_rays(Ray32 &rays) = 0;
-  virtual void init_rays(Ray64 &rays) = 0;
-  virtual void set_primary_range(const vtkmRange &range) = 0;
-  virtual void set_composite_background(bool on) = 0;
-  virtual vtkmRange get_primary_range() = 0;
-  virtual int get_num_channels() = 0;
+  void set_data_set(vtkmDataSet &);
+  PartialVector32 partial_trace(Ray32 &rays);
+  PartialVector64 partial_trace(Ray64 &rays);
+  void init_rays(Ray32 &rays);
+  void init_rays(Ray64 &rays);
+  void set_primary_range(const vtkmRange &range);
+  void set_composite_background(bool on);
+  vtkmRange get_primary_range();
+  int get_num_channels();
 
-  virtual void set_primary_field(const std::string &primary_field) = 0;
+  void set_primary_field();
+  void set_secondary_field();
 
-  virtual void set_samples(const vtkm::Bounds &global_bounds, const int &samples)
+  void set_samples(const vtkm::Bounds &global_bounds, const int &samples)
   {
     (void)samples;
     (void)global_bounds;
   }
 
-  virtual void set_secondary_field(const std::string &secondary_field)
-  {
-    m_secondary_field = secondary_field;
-  }
-
-  virtual void set_color_table(const vtkmColorTable &color_map, int samples = 1024)
+  void set_color_table(const vtkmColorTable &color_map, int samples = 1024)
   {
     constexpr vtkm::Float32 conversionToFloatSpace = (1.0f / 255.0f);
     vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::UInt8, 4>> temp;
@@ -75,8 +89,13 @@ public:
   }
 protected:
   vtkmColorMap m_color_map;
-  std::string m_primary_field;
-  std::string m_secondary_field;
+  vtkmDataSet m_data_set;
+  vtkm::rendering::ConnectivityProxy *m_tracer;
+
+  int detect_num_bins();
+  template<typename Precision>
+  void init_emission(vtkm::rendering::raytracing::Ray<Precision> &rays,
+                     const int num_bins);
 };
 
 }; // namespace rover

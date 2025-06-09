@@ -5,8 +5,7 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 #include <domain.hpp>
-#include <volume_engine.hpp>
-#include <energy_engine.hpp>
+#include <engine.hpp>
 #include <rover_exceptions.hpp>
 #include <utils/rover_logging.hpp>
 
@@ -15,7 +14,7 @@ namespace rover
 
 Domain::Domain()
 {
-  m_engine = std::make_shared<EnergyEngine>();
+  m_engine = std::make_shared<Engine>();
 }
 
 Domain::~Domain()
@@ -49,8 +48,7 @@ Domain::init()
   {
 #endif
 
-  auto engine = std::make_shared<EnergyEngine>();
-  engine->set_unit_scalar(rover::settings["rover/unit_scalar"].value());
+  auto engine = std::make_shared<Engine>();
   m_engine = engine;
 
 #if 0 // removing volume renderer
@@ -110,8 +108,8 @@ Domain::set_engine_fields()
   ROVER_INFO("Primary (absorption) field: " << absorbtion);
   ROVER_INFO("Secondary (emission) field: " << emission);
 
-  m_engine->set_primary_field(absorption);
-  m_engine->set_secondary_field(emission);
+  m_engine->set_primary_field();
+  m_engine->set_secondary_field();
   m_engine->set_color_table(color_table);
 }
 

@@ -63,9 +63,7 @@ set(rover_headers
       scheduler.hpp
       scheduler_base.hpp
       settings.hpp
-      # engines
       engine.hpp
-      energy_engine.hpp
       # ray generators headers
       ray_generators/ray_generator.hpp
       ray_generators/camera_generator.hpp
@@ -85,8 +83,7 @@ set(rover_sources
       rover.cpp
       scheduler.cpp
       scheduler_base.cpp
-      # engines
-      energy_engine.cpp
+      engine.cpp
       # ray generators
       ray_generators/ray_generator.cpp
       ray_generators/camera_generator.cpp
