@@ -10,14 +10,17 @@
 #include <rover_exceptions.hpp>
 #include <utils/rover_logging.hpp>
 
-namespace rover {
+namespace rover
+{
+
 Domain::Domain()
 {
-  m_engine = std::make_shared<VolumeEngine>();
+  m_engine = std::make_shared<EnergyEngine>();
 }
 
 Domain::~Domain()
 {
+
 }
 
 //
@@ -26,14 +29,15 @@ Domain::~Domain()
 // be called in any order
 //
 void
-Domain::set_render_settings(const RenderSettings &settings)
+Domain::init()
 {
   //
   // Create the correct engine
   //
 
-  ROVER_INFO("Setting render settings");
+  ROVER_INFO("Executing Domain::init");
 
+#if 0 // removing volume renderer
   if(m_render_settings.m_render_mode != volume &&
      settings.m_render_mode == volume)
   {
@@ -43,10 +47,13 @@ Domain::set_render_settings(const RenderSettings &settings)
   else if(m_render_settings.m_render_mode != energy &&
           settings.m_render_mode == energy)
   {
-    ROVER_INFO("Render mode = energy");
-    auto engine = std::make_shared<EnergyEngine>();
-    engine->set_unit_scalar(settings.m_energy_settings.m_unit_scalar);
-    m_engine = engine;
+#endif
+
+  auto engine = std::make_shared<EnergyEngine>();
+  engine->set_unit_scalar(rover::settings["rover/unit_scalar"].value());
+  m_engine = engine;
+
+#if 0 // removing volume renderer
   }
   else if(m_render_settings.m_render_mode != surface &&
           settings.m_render_mode == surface)
@@ -58,13 +65,12 @@ Domain::set_render_settings(const RenderSettings &settings)
     //ROVER_ERROR("Unable to create the appropriate engine");
     //throw RoverException("Fatal Error: domain unable to create the apporpriate engine\n");
   }
-
-  m_render_settings = settings;
-  m_render_settings.print();
+#endif
 
   m_engine->set_data_set(m_data_set);
   set_engine_fields();
 
+#if 0 // removing volume renderer
   if(m_render_settings.m_render_mode == volume)
   {
     ROVER_INFO("outgoing render mode = volume");
@@ -74,6 +80,8 @@ Domain::set_render_settings(const RenderSettings &settings)
   {
     ROVER_INFO("outgoing render mode = energy");
   }
+#endif
+
 }
 
 int
@@ -94,14 +102,17 @@ Domain::set_data_set(vtkmDataSet &dataset)
 void
 Domain::set_engine_fields()
 {
-  ROVER_INFO("Primary field: " << m_render_settings.m_primary_field);
-  ROVER_INFO("Secondary field: " << m_render_settings.m_secondary_field);
+  const std::string absorption = rover::settings["rover/absorption"].as_string();
+  const std::string emission = rover::settings["rover/emission"].as_string();
+  const std::string color_table_name = rover::settings["rover/color_table"].as_string();
+  vtkmColorTable color_table(color_table_name);
 
-  if(m_render_settings.m_primary_field == "")
-    throw RoverException("Fatal Error: primary field not set\n");
-  m_engine->set_primary_field(m_render_settings.m_primary_field);
-  m_engine->set_secondary_field(m_render_settings.m_secondary_field);
-  m_engine->set_color_table(m_render_settings.m_color_table);
+  ROVER_INFO("Primary (absorption) field: " << absorbtion);
+  ROVER_INFO("Secondary (emission) field: " << emission);
+
+  m_engine->set_primary_field(absorption);
+  m_engine->set_secondary_field(emission);
+  m_engine->set_color_table(color_table);
 }
 
 const vtkmDataSet&
@@ -125,16 +136,16 @@ Domain::init_rays(Ray64 &rays)
 PartialVector32
 Domain::partial_trace(Ray32 &rays)
 {
-  m_engine->set_samples(m_global_bounds,
-                        m_render_settings.m_volume_settings.m_num_samples);
+  int32 num_samples = rover::settings["rover/num_samples"].value();
+  m_engine->set_samples(m_global_bounds, num_samples);
   return m_engine->partial_trace(rays);
 }
 
 PartialVector64
 Domain::partial_trace(Ray64 &rays)
 {
-  m_engine->set_samples(m_global_bounds,
-                        m_render_settings.m_volume_settings.m_num_samples);
+  int32 num_samples = rover::settings["rover/num_samples"].value();
+  m_engine->set_samples(m_global_bounds, num_samples);
   return m_engine->partial_trace(rays);
 }
 
@@ -153,7 +164,6 @@ Domain::set_composite_background(bool on)
 vtkmRange
 Domain::get_primary_range()
 {
-  assert(m_render_settings.m_primary_field != "");
   return m_engine->get_primary_range();
 }
 

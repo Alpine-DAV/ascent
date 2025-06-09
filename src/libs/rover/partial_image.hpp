@@ -14,7 +14,7 @@
 #include <vtkm/cont/ArrayHandle.h>
 #include <vtkh/compositing/AbsorptionPartial.hpp>
 #include <vtkh/compositing/EmissionPartial.hpp>
-#include <vtkh/compositing/VolumePartial.hpp>
+// #include <vtkh/compositing/VolumePartial.hpp> // removing volume renderer
 
 namespace rover
 {
@@ -25,7 +25,7 @@ struct PartialImage
   int                                      m_height;
   int                                      m_width;
   IdHandle                                 m_pixel_ids;
-  vtkmRayTracing::ChannelBuffer<FloatType> m_buffer;          // holds either color or absorption
+  vtkmRayTracing::ChannelBuffer<FloatType> m_buffer;          // holds the absorption
   vtkmRayTracing::ChannelBuffer<FloatType> m_intensities;     // holds the intensity emerging from each ray
   vtkm::cont::ArrayHandle<FloatType>       m_distances;
   std::vector<FloatType>                   m_source_sig;
@@ -49,6 +49,7 @@ struct PartialImage
 
   }
 
+#if 0 // removing volume renderer
   void extract_partials(std::vector<vtkh::VolumePartial<FloatType>> &partials)
   {
     auto id_portal = m_pixel_ids.ReadPortal();
@@ -72,6 +73,7 @@ struct PartialImage
       partials[i].m_alpha = static_cast<float>(buffer_portal.Get(i*4+3));
     }
   }
+#endif
 
   void extract_partials(std::vector<vtkh::AbsorptionPartial<FloatType>> &partials)
   {
@@ -105,10 +107,8 @@ struct PartialImage
     auto id_portal = m_pixel_ids.ReadPortal();
     auto buffer_portal = m_buffer.Buffer.ReadPortal();
     auto intensity_portal = m_intensities.Buffer.ReadPortal();
-
     auto depth_portal = m_distances.ReadPortal();
     const int size = static_cast<int>(m_pixel_ids.GetNumberOfValues());
-
     partials.resize(size);
 
 #ifdef ROVER_OPENMP_ENABLED
@@ -130,6 +130,7 @@ struct PartialImage
     }
   }
 
+#if 0 // removing volume renderer
   void store(std::vector<vtkh::VolumePartial<FloatType>> &partials,
              const std::vector<double> &background,
              const int width,
@@ -179,6 +180,7 @@ struct PartialImage
     }
 
   }
+#endif
 
   void store(std::vector<vtkh::AbsorptionPartial<FloatType>> &partials,
              const std::vector<double> &background,

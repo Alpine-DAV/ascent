@@ -106,7 +106,7 @@ DataLogger::GetInstance()
 {
   if(DataLogger::Instance == NULL)
   {
-    DataLogger::Instance =  new DataLogger();
+    DataLogger::Instance = new DataLogger();
   }
   return DataLogger::Instance;
 }

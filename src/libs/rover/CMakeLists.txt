@@ -59,15 +59,13 @@ set(rover_headers
       partial_image.hpp
       rover_exports.h
       rover_exceptions.hpp
-      rover_types.hpp
       rover.hpp
       scheduler.hpp
       scheduler_base.hpp
-      static_scheduler.hpp
+      settings.hpp
       # engines
       engine.hpp
       energy_engine.hpp
-      volume_engine.hpp
       # ray generators headers
       ray_generators/ray_generator.hpp
       ray_generators/camera_generator.hpp
@@ -89,7 +87,6 @@ set(rover_sources
       scheduler_base.cpp
       # engines
       energy_engine.cpp
-      volume_engine.cpp
       # ray generators
       ray_generators/ray_generator.cpp
       ray_generators/camera_generator.cpp
