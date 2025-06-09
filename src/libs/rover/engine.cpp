@@ -28,6 +28,11 @@ Engine::~Engine()
 void
 Engine::validate_tracer()
 {
+  // I noticed this check happens in several places,
+  // so I pulled it out into a helper function.
+  // However, after understanding the engine code
+  // better, I suspect we'll only need to check
+  // this in 1 or 2 spots and won't need a helper.
   if (!m_tracer)
   {
     ROVER_ERROR("Error - Engine::validate_tracer: data was not set before tracing");
@@ -37,7 +42,7 @@ Engine::validate_tracer()
 void
 Engine::set_data_set(vtkm::cont::DataSet &dataset)
 {
-  ROVER_INFO("Energy Engine setting data set");
+  ROVER_INFO("Executing Engine::set_data_set");
   // TODO: Can we initialize the tracer in the constructor?
   // TODO: Investigate why we set an empty field name here,
   // do we delete and replace the tracer later on or do we
@@ -45,12 +50,6 @@ Engine::set_data_set(vtkm::cont::DataSet &dataset)
   m_tracer = new vtkm::rendering::ConnectivityProxy(dataset, "");
   m_tracer->SetRenderMode(vtkm::rendering::ConnectivityProxy::RenderMode::Energy);
   m_data_set = dataset;
-}
-
-int
-Engine::get_num_channels()
-{
-  return detect_num_bins();
 }
 
 void
@@ -180,6 +179,14 @@ Engine::get_primary_range()
 }
 
 void
+Engine::set_primary_range(const vtkmRange &range)
+{
+  ROVER_INFO("Executing Engine::set_primary_range");
+  validate_tracer();
+  m_tracer->SetScalarRange(range);
+}
+
+void
 Engine::set_composite_background(bool on)
 {
   ROVER_INFO("Executing Engine::set_composite_background");
@@ -188,11 +195,28 @@ Engine::set_composite_background(bool on)
 }
 
 void
-Engine::set_primary_range(const vtkmRange &range)
+Engine::set_color_map(const vtkmColorTable &color_map, int samples)
 {
-  ROVER_INFO("Executing Engine::set_primary_range");
-  validate_tracer();
-  return m_tracer->SetScalarRange(range);
+  constexpr vtkm::Float32 conversionToFloatSpace = (1.0f / 255.0f);
+  vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::UInt8, 4>> temp;
+
+  // TODO: Is this where num_samples was intended to be used?
+  // If so, we should query the settings here.
+  
+  color_map.Sample(samples, temp);
+  m_color_map.Allocate(samples);
+  auto portal = m_color_map.WritePortal();
+  auto colorPortal = temp.ReadPortal();
+
+  for (vtkm::Id i = 0; i < samples; ++i)
+  {
+    auto color = colorPortal.Get(i);
+    vtkm::Vec<vtkm::Float32, 4> t(color[0] * conversionToFloatSpace,
+                                  color[1] * conversionToFloatSpace,
+                                  color[2] * conversionToFloatSpace,
+                                  color[3] * conversionToFloatSpace);
+    portal.Set(i, t);
+  }
 }
 
 }; //namespace rover

@@ -85,7 +85,7 @@ Domain::init()
 int
 Domain::get_num_channels()
 {
-  return m_engine->get_num_channels();
+  return m_engine->detect_num_bins();
 }
 
 void
@@ -110,7 +110,7 @@ Domain::set_engine_fields()
 
   m_engine->set_primary_field();
   m_engine->set_secondary_field();
-  m_engine->set_color_table(color_table);
+  m_engine->set_color_map(color_table);
 }
 
 const vtkmDataSet&
@@ -134,16 +134,12 @@ Domain::init_rays(Ray64 &rays)
 PartialVector32
 Domain::partial_trace(Ray32 &rays)
 {
-  int32 num_samples = rover::settings["rover/num_samples"].value();
-  m_engine->set_samples(m_global_bounds, num_samples);
   return m_engine->partial_trace(rays);
 }
 
 PartialVector64
 Domain::partial_trace(Ray64 &rays)
 {
-  int32 num_samples = rover::settings["rover/num_samples"].value();
-  m_engine->set_samples(m_global_bounds, num_samples);
   return m_engine->partial_trace(rays);
 }
 
