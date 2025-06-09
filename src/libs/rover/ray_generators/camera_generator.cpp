@@ -66,12 +66,11 @@ CameraGenerator::get_rays(vtkmRayTracing::Ray<vtkm::Float32> &rays)
 {
   const int32 width = rover::settings["rover/width"].value();
   const int32 height = rover::settings["rover/height"].value();
-
   vtkm::rendering::raytracing::Camera ray_gen;
   ray_gen.SetParameters(m_camera, width, height);
   ray_gen.CreateRays(rays, this->m_coordinates.GetBounds());
   this->m_has_rays = false;
-  if(rays.NumRays == 0)
+  if (rays.NumRays == 0)
   {
     ROVER_WARN("CameraGenerator::get_rays: No rays were generated");
   }
@@ -82,12 +81,11 @@ CameraGenerator::get_rays(vtkmRayTracing::Ray<vtkm::Float64> &rays)
 {
   const int32 width = rover::settings["rover/width"].value();
   const int32 height = rover::settings["rover/height"].value();
-
   vtkm::rendering::raytracing::Camera ray_gen;
   ray_gen.SetParameters(m_camera, width, height);
   ray_gen.CreateRays(rays, this->m_coordinates.GetBounds());
   this->m_has_rays = false;
-  if(rays.NumRays == 0)
+  if (rays.NumRays == 0)
   {
     ROVER_WARN("CameraGenerator::get_rays: No rays were generated");
   }

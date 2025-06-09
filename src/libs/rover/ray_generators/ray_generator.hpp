@@ -43,6 +43,7 @@
 #define rover_ray_generator_h
 
 #include <vtkm_typedefs.hpp>
+#include <settings.hpp>
 
 namespace rover
 {

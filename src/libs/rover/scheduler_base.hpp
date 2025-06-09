@@ -71,8 +71,8 @@ public:
   virtual void get_result(Image<vtkm::Float32> &image) = 0;
   virtual void get_result(Image<vtkm::Float64> &image) = 0;
 protected:
-  int                                       m_width;
-  int                                       m_height;
+  int32                                     m_width;
+  int32                                     m_height;
   std::vector<Domain>                       m_domains;
   RayGenerator                             *m_ray_generator;
   std::vector<vtkm::Float64>                m_background;

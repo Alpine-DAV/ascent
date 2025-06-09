@@ -25,13 +25,13 @@ namespace rover
 template<typename FloatType>
 struct PartialImage
 {
+  int32                                    m_width;
+  int32                                    m_height;
   IdHandle                                 m_pixel_ids;
   vtkmRayTracing::ChannelBuffer<FloatType> m_buffer;          // holds the absorption
   vtkmRayTracing::ChannelBuffer<FloatType> m_intensities;     // holds the intensity emerging from each ray
   vtkm::cont::ArrayHandle<FloatType>       m_distances;
   std::vector<FloatType>                   m_source_sig;
-  int                                      m_width;
-  int                                      m_height;
 
   void allocate(const vtkm::Id &size, const vtkm::Id &channels)
   {

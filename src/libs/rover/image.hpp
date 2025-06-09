@@ -47,12 +47,12 @@ public:
                                                    Image<O> &right);
 
 protected:
+  int32                                    m_width;
+  int32                                    m_height;
   std::vector<HandleType>                  m_intensities;
   std::vector<HandleType>                  m_optical_depths;
   std::vector<bool>                        m_valid_intensities;
   std::vector<bool>                        m_valid_optical_depths;
-  int                                      m_width;
-  int                                      m_height;
 
   void init_from_partial(PartialImage<FloatType> &);
   void normalize_handle(HandleType &, bool);
