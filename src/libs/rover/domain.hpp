@@ -44,7 +44,6 @@ protected:
   vtkmDataSet             m_data_set;
   vtkm::Bounds            m_global_bounds;
   vtkm::Bounds            m_domain_bounds;
-  void                    set_engine_fields();
 }; // class domain
 } // namespace rover
 #endif

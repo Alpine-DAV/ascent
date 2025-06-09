@@ -39,6 +39,7 @@ public:
 
   void validate_tracer();
   void set_data_set(vtkmDataSet &);
+  void init();
   void set_primary_field();
   void set_secondary_field();
   void init_rays(Ray32 &rays);

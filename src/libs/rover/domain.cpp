@@ -48,9 +48,6 @@ Domain::init()
   {
 #endif
 
-  auto engine = std::make_shared<Engine>();
-  m_engine = engine;
-
 #if 0 // removing volume renderer
   }
   else if(m_render_settings.m_render_mode != surface &&
@@ -66,7 +63,7 @@ Domain::init()
 #endif
 
   m_engine->set_data_set(m_data_set);
-  set_engine_fields();
+  m_engine->init();
 
 #if 0 // removing volume renderer
   if(m_render_settings.m_render_mode == volume)
@@ -95,22 +92,6 @@ Domain::set_data_set(vtkmDataSet &dataset)
   m_engine->set_data_set(dataset);
   m_data_set = dataset;
   m_domain_bounds = m_data_set.GetCoordinateSystem().GetBounds();
-}
-
-void
-Domain::set_engine_fields()
-{
-  const std::string absorption = rover::settings["rover/absorption"].as_string();
-  const std::string emission = rover::settings["rover/emission"].as_string();
-  const std::string color_table_name = rover::settings["rover/color_table"].as_string();
-  vtkmColorTable color_table(color_table_name);
-
-  ROVER_INFO("Primary (absorption) field: " << absorbtion);
-  ROVER_INFO("Secondary (emission) field: " << emission);
-
-  m_engine->set_primary_field();
-  m_engine->set_secondary_field();
-  m_engine->set_color_map(color_table);
 }
 
 const vtkmDataSet&

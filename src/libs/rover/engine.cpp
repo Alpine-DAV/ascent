@@ -40,6 +40,15 @@ Engine::validate_tracer()
 }
 
 void
+Engine::init()
+{
+  vtkmColorTable color_table(rover::settings["rover/color_table"].as_string());
+  set_color_map(color_table);
+  set_primary_field();
+  set_secondary_field();
+}
+
+void
 Engine::set_data_set(vtkm::cont::DataSet &dataset)
 {
   ROVER_INFO("Executing Engine::set_data_set");
