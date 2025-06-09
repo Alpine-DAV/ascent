@@ -37,6 +37,7 @@ public:
   Engine();
   ~Engine();
 
+  void validate_tracer();
   void set_data_set(vtkmDataSet &);
   PartialVector32 partial_trace(Ray32 &rays);
   PartialVector64 partial_trace(Ray64 &rays);

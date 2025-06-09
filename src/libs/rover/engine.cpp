@@ -4,7 +4,6 @@
 // other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-#include "settings.hpp"
 #include <engine.hpp>
 #include <rover_exceptions.hpp>
 #include <utils/rover_logging.hpp>
@@ -27,15 +26,25 @@ Engine::~Engine()
 }
 
 void
+Engine::validate_tracer()
+{
+  if (!m_tracer)
+  {
+    ROVER_ERROR("Error - Engine::validate_tracer: data was not set before tracing");
+  }
+}
+
+void
 Engine::set_data_set(vtkm::cont::DataSet &dataset)
 {
-  ROVER_INFO("Energy Engine settting data set");
-  if(m_tracer) delete m_tracer;
-
+  ROVER_INFO("Energy Engine setting data set");
+  // TODO: Can we initialize the tracer in the constructor?
+  // TODO: Investigate why we set an empty field name here,
+  // do we delete and replace the tracer later on or do we
+  // explicitly set the field names?
   m_tracer = new vtkm::rendering::ConnectivityProxy(dataset, "");
   m_tracer->SetRenderMode(vtkm::rendering::ConnectivityProxy::RenderMode::Energy);
   m_data_set = dataset;
-
 }
 
 int
@@ -56,7 +65,7 @@ void
 Engine::set_secondary_field()
 {
   std::string emission = rover::settings["rover/emission"].as_string();
-  // Return early if emission was not specified
+  // Return early if emission is not specified
   if("" == emission)
   {
     ROVER_INFO("Engine::set_secondary_field: emission not specified");
@@ -70,7 +79,7 @@ Engine::set_secondary_field()
 template<typename Precision>
 void
 Engine::init_emission(vtkm::rendering::raytracing::Ray<Precision> &rays,
-                            const int num_bins)
+                      const int num_bins)
 {
   const std::string emission = rover::settings["rover/emission"].as_string();
   // Return early if emission was not specified
@@ -87,11 +96,6 @@ PartialVector32
 Engine::partial_trace(Ray32 &rays)
 {
   ROVER_INFO("Executing Engine::partial_trace");
-  if (!m_tracer)
-  {
-    ROVER_ERROR("Error - Engine::partial_trace: data was not set before tracing");
-  }
-
   init_rays(rays);
   m_tracer->SetUnitScalar(rover::settings["rover/unit_scalar"].value());
   m_tracer->SetRenderMode(vtkm::rendering::ConnectivityProxy::RenderMode::Energy);
@@ -102,18 +106,20 @@ Engine::partial_trace(Ray32 &rays)
 void
 Engine::init_rays(Ray32 &rays)
 {
-  int num_bins = detect_num_bins();
+  validate_tracer();
+  const int num_bins = detect_num_bins();
   rays.Buffers.at(0).SetNumChannels(num_bins);
-  rays.Buffers.at(0).InitConst(1.);
+  rays.Buffers.at(0).InitConst(1.0f);
   init_emission(rays, num_bins);
 }
 
 void
 Engine::init_rays(Ray64 &rays)
 {
-  int num_bins = detect_num_bins();
+  validate_tracer();
+  const int num_bins = detect_num_bins();
   rays.Buffers.at(0).SetNumChannels(num_bins);
-  rays.Buffers.at(0).InitConst(1.);
+  rays.Buffers.at(0).InitConst(1.0f);
   init_emission(rays, num_bins);
 }
 
@@ -121,11 +127,6 @@ PartialVector64
 Engine::partial_trace(Ray64 &rays)
 {
   ROVER_INFO("Executing Engine::partial_trace");
-  if (!m_tracer)
-  {
-    ROVER_ERROR("Error - Engine::partial_trace: data was not set before tracing");
-  }
-
   init_rays(rays);
   m_tracer->SetUnitScalar(rover::settings["rover/unit_scalar"].value());
   m_tracer->SetRenderMode(vtkm::rendering::ConnectivityProxy::RenderMode::Energy);
@@ -144,7 +145,7 @@ Engine::detect_num_bins()
                       CastAndCallForTypes<vtkm::TypeListAll, VTKM_DEFAULT_STORAGE_LIST>(functor);
   vtkm::Id num_cells = m_data_set.GetCellSet().GetNumberOfCells();
 
-  // TODO: Seemingly redundant assert + immediate conditional check
+  // TODO: Seemingly redundant assert followed by a check that num_cells == 0
   assert(num_cells > 0);
   assert(absorption_size > 0);
   if (num_cells == 0)
@@ -159,14 +160,14 @@ Engine::detect_num_bins()
   vtkm::Id modulo = absorption_size % num_cells;
   if (modulo != 0)
   {
-    ROVER_ERROR("Error - Engine::detect_num_bins: absoption does not evenly divide the number of cells"
+    ROVER_ERROR("Error - Engine::detect_num_bins: absorption field size is not evenly divided by num_cells"
                 << "\n       modulo " << modulo
                 << "\n       num cells " << num_cells
                 << "\n       field size " << absorption_size);
-    throw RoverException("absorption field size invalid (Is not evenly divided by number of cells\n");
+    throw RoverException("absorption field size is not evenly divided by num_cells\n");
   }
   vtkm::Id num_bins = absorption_size / num_cells;
-  ROVER_INFO("Detected " << num_bins << " bins");
+  ROVER_INFO("Engine::detect_num_bins: Detected " << num_bins << " bins");
   return static_cast<int>(num_bins);
 }
 
@@ -174,10 +175,7 @@ vtkmRange
 Engine::get_primary_range()
 {
   ROVER_INFO("Executing Engine::get_primary_range");
-  if (!m_tracer)
-  {
-    ROVER_ERROR("Error - Engine::get_primary_range: data was not set before tracing");
-  }
+  validate_tracer();
   return m_tracer->GetScalarFieldRange();
 }
 
@@ -185,21 +183,15 @@ void
 Engine::set_composite_background(bool on)
 {
   ROVER_INFO("Executing Engine::set_composite_background");
-  if (!m_tracer)
-  {
-    ROVER_ERROR("Error - Engine::set_composite_background: data was not set before tracing");
-  }
+  validate_tracer();
   m_tracer->SetCompositeBackground(on);
-};
+}
 
 void
 Engine::set_primary_range(const vtkmRange &range)
 {
   ROVER_INFO("Executing Engine::set_primary_range");
-  if (!m_tracer)
-  {
-    ROVER_ERROR("Error - Engine::set_primary_range: data was not set before tracing");
-  }
+  validate_tracer();
   return m_tracer->SetScalarRange(range);
 }
 
