@@ -49,7 +49,7 @@ Engine::init()
 }
 
 void
-Engine::set_data_set(vtkm::cont::DataSet &dataset)
+Engine::set_dataset(vtkm::cont::DataSet &dataset)
 {
   ROVER_INFO("Executing Engine::set_data_set");
   // TODO: Can we initialize the tracer in the constructor?
@@ -58,7 +58,7 @@ Engine::set_data_set(vtkm::cont::DataSet &dataset)
   // explicitly set the field names?
   m_tracer = new vtkm::rendering::ConnectivityProxy(dataset, "");
   m_tracer->SetRenderMode(vtkm::rendering::ConnectivityProxy::RenderMode::Energy);
-  m_data_set = dataset;
+  m_dataset = dataset;
 }
 
 void
@@ -149,10 +149,10 @@ Engine::get_num_channels()
   vtkm::Id absorption_size = 0;
   ArraySizeFunctor functor(&absorption_size);
   const std::string absorption = rover::settings["rover/absorption"].as_string();
-  m_data_set.GetField(absorption).
+  m_dataset.GetField(absorption).
                       GetData().
                       CastAndCallForTypes<vtkm::TypeListAll, VTKM_DEFAULT_STORAGE_LIST>(functor);
-  vtkm::Id num_cells = m_data_set.GetCellSet().GetNumberOfCells();
+  vtkm::Id num_cells = m_dataset.GetCellSet().GetNumberOfCells();
 
   // TODO: Seemingly redundant assert followed by a check that num_cells == 0
   assert(num_cells > 0);
@@ -162,7 +162,7 @@ Engine::get_num_channels()
     ROVER_ERROR("Error - Engine::get_num_channels: num cells is 0"
                 << "\n        num cells " << num_cells
                 << "\n        field size " <<a bsorption_size);
-    m_data_set.PrintSummary(std::cerr);
+    m_dataset.PrintSummary(std::cerr);
     throw RoverException("Failed to detect bins. Num cells cannot be 0\n");
   }
 

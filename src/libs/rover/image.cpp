@@ -71,7 +71,7 @@ template<typename FloatType>
 void
 Image<FloatType>::normalize_handle(vtkm::cont::ArrayHandle<FloatType> &handle, bool invert)
 {
-
+  // TODO: Surely we can do better than "name meaningless"
   vtkm::cont::Field as_field("name meaningless",
                              vtkm::cont::Field::Association::Points,
                              handle);

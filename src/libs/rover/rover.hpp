@@ -48,7 +48,7 @@ public:
   #endif
 
   void create_scheduler();
-  void add_data_set(vtkh::DataSet &);
+  void add_dataset(vtkh::DataSet &dataset);
   void update_camera();
   void update_ray_generator();
   void execute();

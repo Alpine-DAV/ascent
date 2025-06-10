@@ -129,9 +129,9 @@ Rover::create_scheduler()
 }
 
 void
-Rover::add_data_set(vtkh::DataSet &dataset)
+Rover::add_dataset(vtkh::DataSet &dataset)
 {
-  ROVER_INFO("Executing Rover::add_data_set");
+  ROVER_INFO("Executing Rover::add_dataset");
   // The scheduler needs to be created before data can be added
   // to it, else we segfault
   if (!m_scheduler)
@@ -141,7 +141,7 @@ Rover::add_data_set(vtkh::DataSet &dataset)
 
   for (int i = 0; i < dataset.GetNumberOfDomains(); i++)
   {
-    m_scheduler->add_data_set(dataset.GetDomain(i));
+    m_scheduler->add_dataset(dataset.GetDomain(i));
   }
 
   m_camera.ResetToBounds(dataset.GetGlobalBounds());

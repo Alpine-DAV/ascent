@@ -32,21 +32,17 @@ class SchedulerImpl : public Scheduler
 public:
   SchedulerImpl();
   ~SchedulerImpl();
+
+#ifdef ROVER_PARALLEL
+  void set_comm_handle(MPI_Comm comm_handle) override;
+#endif
+
+  void add_dataset(vtkmDataSet &dataset) override;
+  void set_ray_generator(RayGenerator *ray_generator) override;
   void trace_rays() override;
   void save_png(std::string file_name) override;
   void save_bov(std::string file_name) override;
-  void to_blueprint(conduit::Node &dataset) override;
-
-  void add_data_set(vtkmDataSet &data_set) override;
-  void set_domains(std::vector<Domain> &domains);
-  void set_ray_generator(RayGenerator *ray_generator) override;
-  void set_background(const std::vector<vtkm::Float32> &background);
-  void set_background(const std::vector<vtkm::Float64> &background);
-#ifdef ROVER_PARALLEL
-  void set_comm_handle(MPI_Comm comm_handle);
-#endif
-  std::vector<Domain> get_domains();
-  vtkmDataSet get_data_set(const int &domain);
+  void to_blueprint(Node &dataset) override;
 
 protected:
   std::vector<Domain>                       m_domains;
@@ -60,11 +56,14 @@ protected:
 #endif
 
   void create_default_background(const int num_channels);
-  void composite();
+  void set_background(const std::vector<vtkm::Float32> &background);
+  void set_background(const std::vector<vtkm::Float64> &background);
+
+  int  get_global_channels();
   void set_global_scalar_range();
   void set_global_bounds();
-  int  get_global_channels();
   void add_partial(vtkmRayTracing::PartialComposite<FloatType> &partial);
+  void composite();
 };
 
 }; // namespace rover

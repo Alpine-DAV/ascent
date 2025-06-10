@@ -27,16 +27,17 @@ class Scheduler
 {
 public:
   virtual ~Scheduler() = default;
-  virtual void add_data_set(vtkmDataSet &data_set) = 0;
+
+#ifdef ROVER_PARALLEL
+  virtual void set_comm_handle(MPI_Comm comm_handle) = 0;
+#endif
+
+  virtual void add_dataset(vtkmDataSet &dataset) = 0;
   virtual void trace_rays() = 0;
   virtual void set_ray_generator(RayGenerator *ray_generator) = 0;
   virtual void save_png(std::string file_name) = 0;
   virtual void save_bov(std::string file_name) = 0;
   virtual void to_blueprint(Node &dataset) = 0;
-  
-#ifdef ROVER_PARALLEL
-  virtual void set_comm_handle(MPI_Comm comm_handle) = 0;
-#endif
 };
 
 }; // namespace rover

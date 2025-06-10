@@ -280,7 +280,7 @@ RoverXRay::execute()
   // Adding a dataset to rover resets the camera bounds to the dataset bounds,
   // but any camera params passed via the input params will take precedence.
   // It also instantiates a scheduler if one doesn't already exist.
-  rover.add_data_set(dataset);
+  rover.add_dataset(dataset);
   // Calling execute initializes everything that rover needs based on the input params
   rover.execute();
 
@@ -297,7 +297,6 @@ RoverXRay::execute()
   {
     filename = expand_path_special_variables(filename, mpi_comm_id, cycle);
   }
-
   filename = output_dir(filename);
 
   if (params().has_path("rover/blueprint"))
@@ -309,17 +308,20 @@ RoverXRay::execute()
 
     if (data.has_path("coordsets"))
     {
-      float32 time = -1;
+      float64 time = -1;
+      // TODO: Is this ever not true?
       if (metadata.has_child("time"))
       {
-        time = metadata["time"].value();
+        time = metadata["time"].to_float64();
       }
-        
+      
+      // TODO: Is this ever not true?
       if (cycle != -1)
       {
         data["state/cycle"] = cycle;
       }
 
+      // TODO: Is this ever not true?
       if (time != -1)
       {
         data["state/time"] = time;
@@ -339,11 +341,13 @@ RoverXRay::execute()
                         result_path);
   }
 
-  // Do we always want to save a png?
+  // TODO: I don't think we want to always save a .png unconditionally,
+  // so maybe params could be reworked to request the exact types of output
+  // the user wants rover to produce
   rover.save_png(filename);
 
-  // TODO: Can't we just use rover/filename? Why would we want one
-  // filename for a .png and another filename for a .bov? We don't
+  // TODO: Can we just use rover/filename? Why would we want one
+  // filename for .png and another filename for .bov? We don't
   // currently check if rover/bov_filename is valid in verify_params.
   if (params().has_path("rover/bov_filename"))
   {
