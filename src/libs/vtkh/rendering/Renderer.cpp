@@ -215,7 +215,7 @@ Renderer::DoExecute()
 
   int total_renders = static_cast<int>(m_renders.size());
   
-#ifdef _DEBUG
+#if _DEBUG
   std::cerr << "total renders: " << total_renders << std::endl;
   vtkm::Bounds g_bounds = m_input->GetGlobalBounds();
   std::cerr << "Global Bounds: " << std::endl;
@@ -260,7 +260,7 @@ Renderer::DoExecute()
 
       Render::vtkmCanvas &canvas = m_renders[i].GetCanvas();
       const vtkmCamera &camera = m_renders[i].GetCamera();
-#ifdef _DEBUG     
+#if _DEBUG     
       std::cerr << "CAMERA BEFORE VTKM RENDERCELLS: " << std::endl;
       camera.Print();
 #endif
