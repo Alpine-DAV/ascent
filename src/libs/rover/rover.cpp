@@ -4,8 +4,7 @@
 // other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-#include "image.hpp"
-#include <scheduler.hpp>
+#include <scheduler_impl.hpp>
 #include <rover.hpp>
 #include <rover_exceptions.hpp>
 #include <vtkm_typedefs.hpp>
@@ -112,11 +111,11 @@ Rover::create_scheduler()
   const std::string precision = rover::settings["rover/precision"].as_string();
   if ("double" == precision)
   {
-    m_scheduler = new Scheduler<vtkm::Float64>();
+    m_scheduler = new SchedulerImpl<vtkm::Float64>();
   }
   else // ("single" == precision)
   {
-    m_scheduler = new Scheduler<vtkm::Float32>();
+    m_scheduler = new SchedulerImpl<vtkm::Float32>();
   }
 
 #ifdef ROVER_PARALLEL
@@ -288,18 +287,6 @@ Rover::about()
 
 }
 
-void
-Rover::set_background(const std::vector<vtkm::Float32> &background)
-{
-  m_scheduler->set_background(background);
-}
-
-void
-Rover::set_background(const std::vector<vtkm::Float64> &background)
-{
-  m_scheduler->set_background(background);
-}
-
 void Rover::to_blueprint(conduit::Node &dataset)
 {
 #ifdef ROVER_PARALLEL
@@ -345,18 +332,6 @@ void
 Rover::save_bov(const std::string &file_name)
 {
   m_scheduler->save_bov(file_name);
-}
-
-void
-Rover::get_result(Image<vtkm::Float32> &image)
-{
-  m_scheduler->get_result(image);
-}
-
-void
-Rover::get_result(Image<vtkm::Float64> &image)
-{
-  m_scheduler->get_result(image);
 }
 
 }; //namespace rover

@@ -26,7 +26,7 @@
 #include <image.hpp>
 #include <ray_generators/ray_generator.hpp>
 #include <ray_generators/camera_generator.hpp>
-#include <scheduler_base.hpp>
+#include <scheduler.hpp>
 
 using namespace conduit;
 
@@ -53,9 +53,6 @@ public:
   void update_ray_generator();
   void execute();
 
-  void set_background(const std::vector<vtkm::Float32> &background);
-  void set_background(const std::vector<vtkm::Float64> &background);
-  
   void about();
   void save_png(const std::string &file_name);
   void to_blueprint(conduit::Node &dataset);
@@ -64,12 +61,10 @@ public:
                 const float max_val,
                 const bool log_scale);
   void save_bov(const std::string &file_name);
-  void get_result(Image<vtkm::Float32> &image);
-  void get_result(Image<vtkm::Float64> &image);
 private:
   vtkmCamera m_camera;
   CameraGenerator m_ray_generator;
-  SchedulerBase *m_scheduler;
+  Scheduler *m_scheduler;
 
 #ifdef ROVER_PARALLEL
   MPI_Comm m_comm_handle;
