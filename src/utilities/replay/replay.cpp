@@ -340,7 +340,7 @@ main(int argc, char *argv[])
     }
   }
   
-#ifdef _DEBUG
+#if _DEBUG
 
   ascent_info.print();
   
