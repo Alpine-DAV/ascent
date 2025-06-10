@@ -47,29 +47,26 @@ public:
   int  get_mpi_comm_handle();
   #endif
 
-  void create_scheduler();
-  void add_data_set(vtkh::DataSet &);
+  SchedulerBase & create_scheduler();
+  void add_data_set(SchedulerBase &scheduler, vtkh::DataSet &dataset);
   void update_camera();
-  void update_ray_generator();
-  void execute();
+  void update_ray_generator(SchedulerBase &scheduler);
+  void execute(SchedulerBase &scheduler);
 
-  void set_background(const std::vector<vtkm::Float32> &background);
-  void set_background(const std::vector<vtkm::Float64> &background);
-  
   void about();
-  void save_png(const std::string &file_name);
-  void to_blueprint(conduit::Node &dataset);
-  void save_png(const std::string &file_name,
+  void save_png(SchedulerBase &scheduler, const std::string &file_name);
+  void to_blueprint(SchedulerBase &scheduler, conduit::Node &dataset);
+  void save_png(SchedulerBase &scheduler, 
+                const std::string &file_name,
                 const float min_val,
                 const float max_val,
                 const bool log_scale);
-  void save_bov(const std::string &file_name);
-  void get_result(Image<vtkm::Float32> &image);
-  void get_result(Image<vtkm::Float64> &image);
+  void save_bov(SchedulerBase &scheduler, const std::string &file_name);
+  void get_result(SchedulerBase &scheduler, Image<vtkm::Float32> &image);
+  void get_result(SchedulerBase &scheduler, Image<vtkm::Float64> &image);
 private:
   vtkmCamera m_camera;
   CameraGenerator m_ray_generator;
-  SchedulerBase *m_scheduler;
 
 #ifdef ROVER_PARALLEL
   MPI_Comm m_comm_handle;

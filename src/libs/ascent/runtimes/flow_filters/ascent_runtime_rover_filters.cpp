@@ -280,9 +280,10 @@ RoverXRay::execute()
   // Adding a dataset to rover resets the camera bounds to the dataset bounds,
   // but any camera params passed via the input params will take precedence.
   // It also instantiates a scheduler if one doesn't already exist.
-  rover.add_data_set(dataset);
+  SchedulerBase &scheduler = rover.create_scheduler();
+  rover.add_data_set(scheduler, dataset);
   // Calling execute initializes everything that rover needs based on the input params
-  rover.execute();
+  rover.execute(scheduler);
 
   Node metadata = Metadata::n_metadata;
 
@@ -305,7 +306,7 @@ RoverXRay::execute()
     std::string protocol = params()["rover/blueprint"].as_string();
     conduit::Node multi_domain;
     conduit::Node &data = multi_domain.append();
-    rover.to_blueprint(data);
+    rover.to_blueprint(scheduler, data);
 
     if (data.has_path("coordsets"))
     {
@@ -344,11 +345,11 @@ RoverXRay::execute()
     float min_value = params()["image_params/min_value"].to_float32();
     float max_value = params()["image_params/max_value"].to_float32();
     bool log_scale = params()["image_params/log_scale"].as_string() == "true";
-    rover.save_png(filename, min_value, max_value, log_scale);
+    rover.save_png(scheduler, filename, min_value, max_value, log_scale);
   }
   else
   {
-    rover.save_png(filename);
+    rover.save_png(scheduler, filename);
   }
 
   if (params().has_path("bov_filename"))
@@ -357,11 +358,11 @@ RoverXRay::execute()
     bov_filename = output_dir(bov_filename);
     if (cycle != -1)
     {
-      rover.save_bov(expand_path_special_variables(bov_filename, mpi_comm_id, cycle));
+      rover.save_bov(scheduler, expand_path_special_variables(bov_filename, mpi_comm_id, cycle));
     }
     else
     {
-      rover.save_bov(expand_path_special_variables(bov_filename, mpi_comm_id));
+      rover.save_bov(scheduler, expand_path_special_variables(bov_filename, mpi_comm_id));
     }
   }
 }
