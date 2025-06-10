@@ -161,6 +161,8 @@ TEST(ascent_AOS_rendering, test_pass_thru)
     ASCENT_INFO("Testing rendering AOS points in serial");
     
     conduit::Node actions;
+    std::cerr << "input mesh" << std::endl;
+    mesh.print();
 
     conduit::Node scenes;
     scenes["s1/plots/p1/type"] = "pseudocolor";
