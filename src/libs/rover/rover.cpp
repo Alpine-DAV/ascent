@@ -5,7 +5,6 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 #include "image.hpp"
-#include "scheduler_base.hpp"
 #include <scheduler.hpp>
 #include <rover.hpp>
 #include <rover_exceptions.hpp>
@@ -41,7 +40,7 @@ Rover::Rover()
 
   // We don't instantiate the scheduler until we determine if the
   // user has requested a specific precision to use
-  // m_scheduler = nullptr;
+  m_scheduler = nullptr;
 
 #ifdef ROVER_PARALLEL
   m_rank = 1;
@@ -51,10 +50,10 @@ Rover::Rover()
 
 Rover::~Rover()
 {
-  // if (m_scheduler)
-  // {
-  //   delete m_scheduler;
-  // }
+  if (m_scheduler)
+  {
+    delete m_scheduler;
+  }
 
 #ifdef ROVER_ENABLE_LOGGING
   DataLogger::GetInstance()->WriteLog();
@@ -107,18 +106,17 @@ Rover::get_mpi_comm_handle()
 }
 #endif
 
-SchedulerBase &
+void
 Rover::create_scheduler()
 {
-  SchedulerBase *scheduler;
   const std::string precision = rover::settings["rover/precision"].as_string();
   if ("double" == precision)
   {
-    scheduler = new Scheduler<vtkm::Float64>();
+    m_scheduler = new Scheduler<vtkm::Float64>();
   }
   else // ("single" == precision)
   {
-    scheduler = new Scheduler<vtkm::Float32>();
+    m_scheduler = new Scheduler<vtkm::Float32>();
   }
 
 #ifdef ROVER_PARALLEL
@@ -127,20 +125,24 @@ Rover::create_scheduler()
   {
     ROVER_ERROR("Error - Rover::create_scheduler: MPI was not initialized");
   }
-  scheduler->set_comm_handle(m_comm_handle);
+  m_scheduler->set_comm_handle(m_comm_handle);
 #endif
-
-  return *scheduler;
 }
 
 void
-Rover::add_data_set(SchedulerBase &scheduler, vtkh::DataSet &dataset)
+Rover::add_data_set(vtkh::DataSet &dataset)
 {
   ROVER_INFO("Executing Rover::add_data_set");
+  // The scheduler needs to be created before data can be added
+  // to it, else we segfault
+  if (!m_scheduler)
+  {
+    create_scheduler();
+  }
 
   for (int i = 0; i < dataset.GetNumberOfDomains(); i++)
   {
-    scheduler.add_data_set(dataset.GetDomain(i));
+    m_scheduler->add_data_set(dataset.GetDomain(i));
   }
 
   m_camera.ResetToBounds(dataset.GetGlobalBounds());
@@ -219,18 +221,25 @@ Rover::update_camera()
 }
 
 void
-Rover::update_ray_generator(SchedulerBase &scheduler)
+Rover::update_ray_generator()
 {
   m_ray_generator.set_camera(m_camera);
-  scheduler.set_ray_generator(&m_ray_generator);
+  m_scheduler->set_ray_generator(&m_ray_generator);
 }
 
 void
-Rover::execute(SchedulerBase &scheduler)
+Rover::execute()
 {
+  // TODO: Not sure if this needs to be a full error. We're not in
+  // an unrecoverable state, we just simply have nothing to x-ray
+  if (!m_scheduler)
+  {
+    ROVER_ERROR("Error - Rover::execute: Execute called before adding a dataset");
+  }
+
   update_camera();
-  update_ray_generator(scheduler);
-  scheduler.trace_rays();
+  update_ray_generator();
+  m_scheduler->trace_rays();
 }
 
 void
@@ -279,7 +288,19 @@ Rover::about()
 
 }
 
-void Rover::to_blueprint(SchedulerBase &scheduler, conduit::Node &dataset)
+void
+Rover::set_background(const std::vector<vtkm::Float32> &background)
+{
+  m_scheduler->set_background(background);
+}
+
+void
+Rover::set_background(const std::vector<vtkm::Float64> &background)
+{
+  m_scheduler->set_background(background);
+}
+
+void Rover::to_blueprint(conduit::Node &dataset)
 {
 #ifdef ROVER_PARALLEL
   // TODO: Support writing in parallel
@@ -288,11 +309,11 @@ void Rover::to_blueprint(SchedulerBase &scheduler, conduit::Node &dataset)
     return;
   }
 #endif
-  scheduler.to_blueprint(dataset);
+  m_scheduler->to_blueprint(dataset);
 }
 
 void
-Rover::save_png(SchedulerBase &scheduler, const std::string &file_name)
+Rover::save_png(const std::string &file_name)
 {
 #ifdef ROVER_PARALLEL
   // TODO: Support writing in parallel
@@ -301,12 +322,11 @@ Rover::save_png(SchedulerBase &scheduler, const std::string &file_name)
     return;
   }
 #endif
-  scheduler.save_result(file_name);
+  m_scheduler->save_result(file_name);
 }
 
 void
-Rover::save_png(SchedulerBase &scheduler, 
-                const std::string &file_name,
+Rover::save_png(const std::string &file_name,
                 const float min_val,
                 const float max_val,
                 const bool log_scale)
@@ -318,25 +338,25 @@ Rover::save_png(SchedulerBase &scheduler,
     return;
   }
 #endif
-  scheduler.save_result(file_name, min_val, max_val, log_scale);
+  m_scheduler->save_result(file_name, min_val, max_val, log_scale);
 }
 
 void
-Rover::save_bov(SchedulerBase &scheduler, const std::string &file_name)
+Rover::save_bov(const std::string &file_name)
 {
-  scheduler.save_bov(file_name);
+  m_scheduler->save_bov(file_name);
 }
 
 void
-Rover::get_result(SchedulerBase &scheduler, Image<vtkm::Float32> &image)
+Rover::get_result(Image<vtkm::Float32> &image)
 {
-  scheduler.get_result(image);
+  m_scheduler->get_result(image);
 }
 
 void
-Rover::get_result(SchedulerBase &scheduler, Image<vtkm::Float64> &image)
+Rover::get_result(Image<vtkm::Float64> &image)
 {
-  scheduler.get_result(image);
+  m_scheduler->get_result(image);
 }
 
 }; //namespace rover
