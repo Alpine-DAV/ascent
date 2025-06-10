@@ -5,6 +5,7 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 
+#include "settings.hpp"
 #include <assert.h>
 #include <fstream>
 #include <vtkh/compositing/PartialCompositor.hpp>
@@ -32,7 +33,7 @@ namespace rover
 template<typename FloatType>
 Scheduler<FloatType>::Scheduler()
 {
-  m_ray_generator = NULL;
+  m_ray_generator = nullptr;
 }
 
 template<typename FloatType>
@@ -214,17 +215,13 @@ Scheduler<FloatType>::set_global_bounds()
 
 template<typename FloatType>
 void
-Scheduler<FloatType>::add_partial(vtkmRayTracing::PartialComposite<FloatType> &partial,
-                                  int width,
-                                  int height)
+Scheduler<FloatType>::add_partial(vtkmRayTracing::PartialComposite<FloatType> &partial)
 {
   PartialImage<FloatType> partial_image;
   partial_image.m_pixel_ids = partial.PixelIds;
   partial_image.m_distances = partial.Distances;
   partial_image.m_buffer = partial.Buffer;
   partial_image.m_intensities = partial.Intensities;
-  partial_image.m_width = width;
-  partial_image.m_height = height;
   m_partial_images.push_back(partial_image);
 }
 
@@ -272,7 +269,8 @@ Scheduler<FloatType>::composite()
   }
 #endif
 
-  if (m_render_settings.m_secondary_field != "")
+  const std::string emission = rover::settings["rover/emission"].as_string();
+  if ("" != emission)
   {
     vtkh::PartialCompositor<vtkh::EmissionPartial<FloatType>> compositor;
     compositor.set_background(m_background);
@@ -280,8 +278,6 @@ Scheduler<FloatType>::composite()
       compositor.set_comm_handle(MPI_Comm_c2f(m_comm_handle));
 #endif
     const int num_partials = m_partial_images.size();
-    int width = m_partial_images[0].m_width;
-    int height = m_partial_images[0].m_height;
     std::vector<std::vector<vtkh::EmissionPartial<FloatType>>> partials;
     partials.resize(num_partials);
     for(int i = 0; i < num_partials; ++i)
@@ -295,7 +291,7 @@ Scheduler<FloatType>::composite()
     if(rank == 0)
     {
       // data only valid on rank = 0
-      p_result.store(result,m_background, width, height);
+      p_result.store(result, m_background);
     }
 
     m_result = p_result;
@@ -309,8 +305,6 @@ Scheduler<FloatType>::composite()
     compositor.set_comm_handle(MPI_Comm_c2f(m_comm_handle));
 #endif
     const int num_partials = m_partial_images.size();
-    int width = m_partial_images[0].m_width;
-    int height = m_partial_images[0].m_height;
     std::vector<std::vector<vtkh::AbsorptionPartial<FloatType>>> partials;
     partials.resize(num_partials);
     for(int i = 0; i < num_partials; ++i)
@@ -324,7 +318,7 @@ Scheduler<FloatType>::composite()
     if(rank == 0)
     {
       // data only valid on rank = 0
-      p_result.store(result,m_background, width, height);
+      p_result.store(result, m_background);
     }
 
     m_result = p_result;
@@ -358,15 +352,6 @@ Scheduler<FloatType>::trace_rays()
   // TODO while (m_generator.has_rays())
   ROVER_INFO("Tracing rays");
 
-  int width;
-  int height;
-  m_ray_generator->get_dims(width, height);
-
-  if (width <= 0 || height <= 0)
-  {
-    ROVER_ERROR("Error: trace_rays failed due to non-positive output dimensions: " << width << "x" << height );
-  }
-
   //
   // ensure that the render settings are set
   //
@@ -376,7 +361,7 @@ Scheduler<FloatType>::trace_rays()
   ROVER_INFO("Scheduler set render settings for " << num_domains << " domains");
   for(int i = 0; i < num_domains; ++i)
   {
-    m_domains[i].set_render_settings(m_render_settings);
+    m_domains[i].init();
   }
 
   ROVER_INFO("Done scheduler set render settings for "<<num_domains<<" domains ");
@@ -433,7 +418,7 @@ Scheduler<FloatType>::trace_rays()
     //
     for(size_t p = 0; p < partials.size(); ++p)
     {
-      add_partial(partials[p], width, height);
+      add_partial(partials[p]);
     }
 
     timer.Start();
@@ -457,11 +442,11 @@ Scheduler<FloatType>::trace_rays()
   if(num_domains == 0 || m_partial_images.size() == 0)
   {
     PartialImage<FloatType> partial_image;
-    partial_image.m_width = width;
-    partial_image.m_height = height;
     partial_image.m_buffer =
       vtkm::rendering::raytracing::ChannelBuffer<FloatType>(num_channels, 0);
-    if(m_render_settings.m_secondary_field != "")
+
+    const std::string emission = rover::settings["rover/emission"].as_string();
+    if("" != emission)
     {
       partial_image.m_intensities =
         vtkm::rendering::raytracing::ChannelBuffer<FloatType>(num_channels, 0);
@@ -520,20 +505,14 @@ Scheduler<FloatType>::get_result(Image<vtkm::Float64> &image)
 template<typename FloatType>
 void Scheduler<FloatType>::save_result(std::string file_name)
 {
-  int width;
-  int height;
-  m_ray_generator->get_dims(width, height);
-
-  if (width <= 0 || height <= 0)
-  {
-    ROVER_ERROR("Error: save_result failed due to non-positive output dimensions: " << width << "x" << height );
-  }
-
+  const int32 width = rover::settings["rover/width"].value();
+  const int32 height = rover::settings["rover/height"].value();
   ROVER_INFO("Saving .png file with output size " << width << "x" << height);
   ascent::PNGEncoder encoder;
 
   // if(m_render_settings.m_render_mode == energy) // removing volume renderer
   // {
+
   const int num_channels = m_result.get_num_channels();
   ROVER_INFO("Saving "<<num_channels<<" channels ");
   for(int i = 0; i < num_channels; ++i)
@@ -572,15 +551,8 @@ Scheduler<FloatType>::save_result(std::string file_name,
                                   float max_val,
                                   bool log_scale)
 {
-  int width;
-  int height;
-  m_ray_generator->get_dims(width, height);
-
-  if (width <= 0 || height <= 0)
-  {
-    ROVER_ERROR("Error: save_result failed due to non-positive output dimensions: " << width << "x" << height );
-  }
-
+  const int32 width = rover::settings["rover/width"].value();
+  const int32 height = rover::settings["rover/height"].value();
   ROVER_INFO("Saving .png file with output size " << width << "x" << height);
   ascent::PNGEncoder encoder;
 
@@ -609,16 +581,10 @@ Scheduler<FloatType>::save_result(std::string file_name,
 template<typename FloatType>
 void Scheduler<FloatType>::save_bov(std::string file_name)
 {
-  int width;
-  int height;
-  m_ray_generator->get_dims(width, height);
-
-  if (width <= 0 || height <= 0)
-  {
-    ROVER_ERROR("Error: save_bov failed due to non-positive output dimensions: " << width << "x" << height );
-  }
-
+  const int32 width = rover::settings["rover/width"].value();
+  const int32 height = rover::settings["rover/height"].value();
   ROVER_INFO("Saving bov file with output size " << width << "x" << height);
+
   ascent::PNGEncoder encoder;
   const int size = height * width;
 
@@ -645,21 +611,9 @@ template<typename FloatType>
 void
 Scheduler<FloatType>::to_blueprint(Node &data)
 {
-  int width;
-  int height;
-  m_ray_generator->get_dims(width, height);
-
-  if (width <= 0 || height <= 0)
-  {
-    ROVER_ERROR("Error: to_blueprint failed due to non-positive output dimensions: " << width << "x" << height );
-  }
-
+  const int32 width = rover::settings["rover/width"].value();
+  const int32 height = rover::settings["rover/height"].value();
   ROVER_INFO("Saving blueprint file with output size " << width << "x" << height);
-
-  const std::string topo_name = "image_topo";
-  const std::string coord_name = "image_coords";
-
-  const int num_channels = m_result.get_num_channels();
 
   // TODO: Plumb the other "state/" info down out of *_rover_filters.cpp
   Node &xray_view = data["state/xray_view"];
@@ -676,7 +630,12 @@ Scheduler<FloatType>::to_blueprint(Node &data)
   xray_view["xpan"] = xy_pan[0];
   xray_view["ypan"] = xy_pan[1];
 
-  Node &n_coords = data["coordsets/" + coord_name];
+  Node &xray_query = data["xray_query"];
+  xray_query.set(rover::settings["rover"]);
+
+  const int num_channels = m_result.get_num_channels();
+  const std::string coord_name = "image_coords";
+  Node &n_coords = data["coordsets"][coord_name];
   n_coords["type"] = "rectilinear";
   
   n_coords["values/x"].set(DataType::float32(width + 1));
@@ -710,7 +669,8 @@ Scheduler<FloatType>::to_blueprint(Node &data)
   n_coords["units/y"] = "pixels";
   n_coords["units/z"] = "bins";
 
-  Node &n_topo = data["topologies/" + topo_name];
+  const std::string topo_name = "image_topo";
+  Node &n_topo = data["topologies"][topo_name];
   n_topo["coordset"] = coord_name;
   n_topo["type"] = "rectilinear";
 

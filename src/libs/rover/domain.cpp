@@ -5,8 +5,7 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 #include <domain.hpp>
-#include <volume_engine.hpp>
-#include <energy_engine.hpp>
+#include <engine.hpp>
 #include <rover_exceptions.hpp>
 #include <utils/rover_logging.hpp>
 
@@ -15,7 +14,7 @@ namespace rover
 
 Domain::Domain()
 {
-  m_engine = std::make_shared<EnergyEngine>();
+  m_engine = std::make_shared<Engine>();
 }
 
 Domain::~Domain()
@@ -29,13 +28,13 @@ Domain::~Domain()
 // be called in any order
 //
 void
-Domain::set_render_settings(const RenderSettings &settings)
+Domain::init()
 {
   //
   // Create the correct engine
   //
 
-  ROVER_INFO("Setting render settings");
+  ROVER_INFO("Executing Domain::init");
 
 #if 0 // removing volume renderer
   if(m_render_settings.m_render_mode != volume &&
@@ -48,11 +47,6 @@ Domain::set_render_settings(const RenderSettings &settings)
           settings.m_render_mode == energy)
   {
 #endif
-
-  ROVER_INFO("Render mode = energy");
-  auto engine = std::make_shared<EnergyEngine>();
-  engine->set_unit_scalar(settings.m_energy_settings.m_unit_scalar);
-  m_engine = engine;
 
 #if 0 // removing volume renderer
   }
@@ -68,11 +62,8 @@ Domain::set_render_settings(const RenderSettings &settings)
   }
 #endif
 
-  m_render_settings = settings;
-  m_render_settings.print();
-
   m_engine->set_data_set(m_data_set);
-  set_engine_fields();
+  m_engine->init();
 
 #if 0 // removing volume renderer
   if(m_render_settings.m_render_mode == volume)
@@ -103,21 +94,6 @@ Domain::set_data_set(vtkmDataSet &dataset)
   m_domain_bounds = m_data_set.GetCoordinateSystem().GetBounds();
 }
 
-void
-Domain::set_engine_fields()
-{
-  ROVER_INFO("Primary field: " << m_render_settings.m_primary_field);
-  ROVER_INFO("Secondary field: " << m_render_settings.m_secondary_field);
-
-  // TODO: This might be redundant, surely we catch this case in verify_params?
-  // (and should if we currently don't)
-  if(m_render_settings.m_primary_field == "")
-    throw RoverException("Fatal Error: primary field not set\n");
-  m_engine->set_primary_field(m_render_settings.m_primary_field);
-  m_engine->set_secondary_field(m_render_settings.m_secondary_field);
-  m_engine->set_color_table(m_render_settings.m_color_table);
-}
-
 const vtkmDataSet&
 Domain::get_data_set()
 {
@@ -139,14 +115,12 @@ Domain::init_rays(Ray64 &rays)
 PartialVector32
 Domain::partial_trace(Ray32 &rays)
 {
-  m_engine->set_samples(m_global_bounds, m_render_settings.m_num_samples);
   return m_engine->partial_trace(rays);
 }
 
 PartialVector64
 Domain::partial_trace(Ray64 &rays)
 {
-  m_engine->set_samples(m_global_bounds, m_render_settings.m_num_samples);
   return m_engine->partial_trace(rays);
 }
 
@@ -165,9 +139,6 @@ Domain::set_composite_background(bool on)
 vtkmRange
 Domain::get_primary_range()
 {
-  // TODO: Redundant? Even if it's not, we can probably use something nicer
-  // than assert here
-  assert(m_render_settings.m_primary_field != "");
   return m_engine->get_primary_range();
 }
 
