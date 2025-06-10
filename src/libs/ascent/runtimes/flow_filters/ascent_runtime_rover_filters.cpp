@@ -146,7 +146,7 @@ RoverXRay::verify_params(const conduit::Node &params,
     }
     else
     {
-      int width = params["rover/width"].to_int32();
+      const int32 width = params["rover/width"].value();
       if (width <= 0)
       {
         info["errors"].append() = "Optional parameter 'rover/width' must be greater than 0";
@@ -161,7 +161,7 @@ RoverXRay::verify_params(const conduit::Node &params,
     }
     else
     {
-      int height = params["rover/height"].to_int32();
+      const int32 height = params["rover/height"].value();
       if (height <= 0)
       {
         info["errors"].append() = "Optional parameter 'rover/height' must be greater than 0";
@@ -286,10 +286,10 @@ RoverXRay::execute()
 
   Node metadata = Metadata::n_metadata;
 
-  int cycle = -1;
-  if (metadata.has_path("cycle"))
+  int32 cycle = -1;
+  if (metadata.has_child("cycle"))
   {
-    cycle = metadata["cycle"].as_int32();
+    cycle = metadata["cycle"].value();
   }
 
   std::string filename = params()["rover/filename"].as_string();
@@ -300,32 +300,33 @@ RoverXRay::execute()
 
   filename = output_dir(filename);
 
-  if(params().has_path("rover/blueprint"))
+  if (params().has_path("rover/blueprint"))
   {
-    std::string protocol = params()["rover/blueprint"].as_string();
+    const std::string protocol = params()["rover/blueprint"].as_string();
     conduit::Node multi_domain;
     conduit::Node &data = multi_domain.append();
     rover.to_blueprint(data);
 
     if (data.has_path("coordsets"))
     {
-      double time = -1;
-      if (metadata.has_path("time"))
+      float32 time = -1;
+      if (metadata.has_child("time"))
       {
-        time = metadata["time"].to_float64();
+        time = metadata["time"].value();
       }
         
-      if(cycle != -1)
+      if (cycle != -1)
       {
         data["state/cycle"] = cycle;
       }
 
-      if(time != -1)
+      if (time != -1)
       {
         data["state/time"] = time;
       }
     }
 
+    // TODO: Why is this hardcoded to -1?
     const int num_files = -1;
     conduit::Node extra_opts;
     std::string result_path;
@@ -339,30 +340,24 @@ RoverXRay::execute()
   }
 
   // Do we always want to save a png?
-  if (params().has_path("image_params"))
-  {
-    float min_value = params()["image_params/min_value"].to_float32();
-    float max_value = params()["image_params/max_value"].to_float32();
-    bool log_scale = params()["image_params/log_scale"].as_string() == "true";
-    rover.save_png(filename, min_value, max_value, log_scale);
-  }
-  else
-  {
-    rover.save_png(filename);
-  }
+  rover.save_png(filename);
 
-  if (params().has_path("bov_filename"))
+  // TODO: Can't we just use rover/filename? Why would we want one
+  // filename for a .png and another filename for a .bov? We don't
+  // currently check if rover/bov_filename is valid in verify_params.
+  if (params().has_path("rover/bov_filename"))
   {
-    std::string bov_filename = params()["bov_filename"].as_string();
+    std::string bov_filename = params()["rover/bov_filename"].as_string();
     bov_filename = output_dir(bov_filename);
     if (cycle != -1)
     {
-      rover.save_bov(expand_path_special_variables(bov_filename, mpi_comm_id, cycle));
+      bov_filename = expand_path_special_variables(bov_filename, mpi_comm_id, cycle);
     }
     else
     {
-      rover.save_bov(expand_path_special_variables(bov_filename, mpi_comm_id));
+      bov_filename = expand_path_special_variables(bov_filename, mpi_comm_id);
     }
+    rover.save_bov(bov_filename);
   }
 }
 

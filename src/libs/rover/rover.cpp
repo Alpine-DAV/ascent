@@ -245,9 +245,6 @@ void
 Rover::about()
 {
   std::cout<<"rover version: xx.xx.xx\n";
-
-  //if(is_float(FloatType())) std::cout<<"Single precision\n";
-  //else std::cout<<"Double precision\n";
   std::cout<<"Other important information\n";
   std::cout<<"                                 *@@                                    \n";
   std::cout<<"       @@@@@@@@@@@@@@,          @@&@@              %@@@                 \n";
@@ -300,7 +297,7 @@ void Rover::to_blueprint(conduit::Node &dataset)
 }
 
 void
-Rover::save_png(const std::string &file_name)
+Rover::save_png(const std::string &filename)
 {
 #ifdef ROVER_PARALLEL
   // TODO: Support writing in parallel
@@ -309,29 +306,13 @@ Rover::save_png(const std::string &file_name)
     return;
   }
 #endif
-  m_scheduler->save_result(file_name);
+  m_scheduler->save_png(filename);
 }
 
 void
-Rover::save_png(const std::string &file_name,
-                const float min_val,
-                const float max_val,
-                const bool log_scale)
+Rover::save_bov(const std::string &filename)
 {
-#ifdef ROVER_PARALLEL
-  // TODO: Support writing in parallel
-  if(m_rank != 0)
-  {
-    return;
-  }
-#endif
-  m_scheduler->save_result(file_name, min_val, max_val, log_scale);
-}
-
-void
-Rover::save_bov(const std::string &file_name)
-{
-  m_scheduler->save_bov(file_name);
+  m_scheduler->save_bov(filename);
 }
 
 }; //namespace rover

@@ -54,13 +54,9 @@ public:
   void execute();
 
   void about();
-  void save_png(const std::string &file_name);
+  void save_png(const std::string &filename);
   void to_blueprint(conduit::Node &dataset);
-  void save_png(const std::string &file_name,
-                const float min_val,
-                const float max_val,
-                const bool log_scale);
-  void save_bov(const std::string &file_name);
+  void save_bov(const std::string &filename);
 private:
   vtkmCamera m_camera;
   CameraGenerator m_ray_generator;

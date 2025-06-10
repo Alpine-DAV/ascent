@@ -33,11 +33,7 @@ public:
   SchedulerImpl();
   ~SchedulerImpl();
   void trace_rays() override;
-  void save_result(std::string file_name) override;
-  void save_result(std::string file_name,
-                   float min_val,
-                   float max_val,
-                   bool log_scale) override;
+  void save_png(std::string file_name) override;
   void save_bov(std::string file_name) override;
   void to_blueprint(conduit::Node &dataset) override;
 

@@ -30,11 +30,7 @@ public:
   virtual void add_data_set(vtkmDataSet &data_set) = 0;
   virtual void trace_rays() = 0;
   virtual void set_ray_generator(RayGenerator *ray_generator) = 0;
-  virtual void save_result(std::string file_name) = 0;
-  virtual void save_result(std::string file_name,
-                           float min_val,
-                           float max_val,
-                           bool log_scale) = 0;
+  virtual void save_png(std::string file_name) = 0;
   virtual void save_bov(std::string file_name) = 0;
   virtual void to_blueprint(Node &dataset) = 0;
   

@@ -564,10 +564,24 @@ SchedulerImpl<FloatType>::trace_rays()
 }
 
 template<typename FloatType>
-void SchedulerImpl<FloatType>::save_result(std::string file_name)
+void SchedulerImpl<FloatType>::save_png(std::string filename)
 {
   const int32 width = rover::settings["rover/width"].value();
   const int32 height = rover::settings["rover/height"].value();
+  bool has_image_params = false;
+  bool log_scale;
+  float32 min_value;
+  float32 max_value;
+  
+  if (rover::settings.has_child("image_params"))
+  {
+    // If any of these are set, verify_params ensures that they all are set
+    has_image_params = true;
+    min_value = rover::settings["image_params/min_value"].value();
+    max_value = rover::settings["image_params/max_value"].value();
+    log_scale = rover::settings["image_params/log_scale"].as_string() == "true";
+  }
+
   ROVER_INFO("Saving .png file with output size " << width << "x" << height);
   ascent::PNGEncoder encoder;
 
@@ -575,12 +589,21 @@ void SchedulerImpl<FloatType>::save_result(std::string file_name)
   // {
 
   const int num_channels = m_result.get_num_channels();
-  ROVER_INFO("Saving "<<num_channels<<" channels ");
+  ROVER_INFO("Saving " << num_channels << " channels");
   for(int i = 0; i < num_channels; ++i)
   {
     std::stringstream sstream;
-    sstream<<file_name<<"_"<<i<<".png";
-    m_result.normalize_intensity(i);
+    sstream << filename << "_" << i << ".png";
+    
+    if (has_image_params)
+    {
+      m_result.normalize_intensity(i, min_value, max_value, log_scale);
+    }
+    else
+    {
+      m_result.normalize_intensity(i);
+    }
+    
     FloatType * buffer
       = get_vtkm_ptr(m_result.get_intensity(i));
 
@@ -603,40 +626,6 @@ void SchedulerImpl<FloatType>::save_result(std::string file_name)
     encoder.Save(file_name + ".png");
   }
 #endif
-}
-
-template<typename FloatType>
-void
-SchedulerImpl<FloatType>::save_result(std::string file_name,
-                                  float min_val,
-                                  float max_val,
-                                  bool log_scale)
-{
-  const int32 width = rover::settings["rover/width"].value();
-  const int32 height = rover::settings["rover/height"].value();
-  ROVER_INFO("Saving .png file with output size " << width << "x" << height);
-  ascent::PNGEncoder encoder;
-
-#if 0 // removing volume renderer
-  if(!(m_render_settings.m_render_mode == energy))
-  {
-    throw RoverException("Error: can only save images with min and max in energy mode");
-  }
-#endif
-
-  const int num_channels = m_result.get_num_channels();
-  ROVER_INFO("Saving " << num_channels << " channels");
-  for(int i = 0; i < num_channels; ++i)
-  {
-    std::stringstream sstream;
-    sstream<<file_name<<"_"<<i<<".png";
-    m_result.normalize_intensity(i, min_val, max_val, log_scale);
-    FloatType * buffer
-      = get_vtkm_ptr(m_result.get_intensity(i));
-
-    encoder.EncodeChannel(buffer, width, height);
-    encoder.Save(sstream.str());
-  }
 }
 
 template<typename FloatType>
