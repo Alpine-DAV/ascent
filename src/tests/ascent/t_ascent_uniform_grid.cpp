@@ -69,47 +69,42 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_slice_along_y)
     //
     // Create the actions.
     //
-
-    conduit::Node pipelines;
-    // pipeline 1
-    pipelines["pl1/f1/type"] = "uniform_grid";
-    conduit::Node &params = pipelines["pl1/f1/params"];
-    params["field"] = "braid";      
-    params["dims/i"] = EXAMPLE_MESH_SIDE_DIM-10;
-    params["dims/k"] = EXAMPLE_MESH_SIDE_DIM-10;
-    params["dims/j"] = 0;
-    params["invalid_value"] = -10.0;      
-
-    conduit::Node scenes;
-    scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/field"] = "braid";
-    scenes["s1/plots/p1/pipeline"] = "pl1";
-    scenes["s1/renders/r1/camera/elevation"] = 30;
-
-    scenes["s1/renders/r1/image_prefix"] = output_file;
-
+    std::string acts_str = R"xyzxyz(
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "uniform_grid"
+        params: 
+          fields: ["braid"]
+          dims: 
+            i: 10
+            j: 0
+            k: 10
+          invalid_value: -10.0
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "braid"
+          pipeline: "pl1"
+      renders: 
+        r1: 
+          camera: 
+            elevation: 30
+)xyzxyz";
     conduit::Node actions;
-    // add the pipeline
-    conduit::Node &add_pipelines = actions.append();
-    add_pipelines["action"] = "add_pipelines";
-    add_pipelines["pipelines"] = pipelines;
-    // add the scenes
-    conduit::Node &add_scenes= actions.append();
-    add_scenes["action"] = "add_scenes";
-    add_scenes["scenes"] = scenes;
-    //add the extracts
-//    conduit::Node &add_extracts= actions.append();
-//    add_extracts["action"] = "add_extracts";
-//    conduit::Node &extracts = add_extracts["extracts"];
-//    extracts["e1/type"] = "relay";
-//    extracts["e1/pipeline"] = "pl1";
-//    extracts["e1/params/path"] = output_file + "_blueprint";
-//    extracts["e1/params/protocol"] = "hdf5";
+    actions.parse(acts_str,"yaml");
+    actions[1]["scenes/s1/renders/r1/image_prefix"] = output_file;
+    //actions.print();
 
     //
     // Run Ascent
     //
-
     Ascent ascent;
 
     Node ascent_opts;
@@ -161,46 +156,42 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_sample_along_x)
     // Create the actions.
     //
 
-    conduit::Node pipelines;
-    // pipeline 1
-    pipelines["pl1/f1/type"] = "uniform_grid";
-    conduit::Node &params = pipelines["pl1/f1/params"];
-    params["field"] = "braid";      
-    params["dims/j"] = EXAMPLE_MESH_SIDE_DIM-10;
-    params["dims/k"] = EXAMPLE_MESH_SIDE_DIM-10;
-    //params["dims/j"] = 0;
-    params["invalid_value"] = -10.0;      
-
-    conduit::Node scenes;
-    scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/field"] = "braid";
-    scenes["s1/plots/p1/pipeline"] = "pl1";
-    scenes["s1/renders/r1/camera/azimuth"] = 90;
-
-    scenes["s1/renders/r1/image_prefix"] = output_file;
-
+    std::string acts_str = R"xyzxyz(
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "uniform_grid"
+        params: 
+          fields: ["braid"]
+          dims: 
+            i: 0
+            j: 10 
+            k: 10 
+          invalid_value: -10.0
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "braid"
+          pipeline: "pl1"
+      renders: 
+        r1: 
+          camera: 
+            azimuth: 90
+)xyzxyz";
     conduit::Node actions;
-    // add the pipeline
-    conduit::Node &add_pipelines = actions.append();
-    add_pipelines["action"] = "add_pipelines";
-    add_pipelines["pipelines"] = pipelines;
-    // add the scenes
-    conduit::Node &add_scenes= actions.append();
-    add_scenes["action"] = "add_scenes";
-    add_scenes["scenes"] = scenes;
-    //add the extracts
-//    conduit::Node &add_extracts= actions.append();
-//    add_extracts["action"] = "add_extracts";
-//    conduit::Node &extracts = add_extracts["extracts"];
-//    extracts["e1/type"] = "relay";
-//    extracts["e1/pipeline"] = "pl1";
-//    extracts["e1/params/path"] = output_file + "_blueprint";
-//    extracts["e1/params/protocol"] = "hdf5";
+    actions.parse(acts_str,"yaml");
+    actions[1]["scenes/s1/renders/r1/image_prefix"] = output_file;
+    //actions.print();
 
     //
     // Run Ascent
     //
-
     Ascent ascent;
 
     Node ascent_opts;
@@ -252,43 +243,36 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_smaller_in_i)
     // Create the actions.
     //
 
-    conduit::Node pipelines;
-    // pipeline 1
-    pipelines["pl1/f1/type"] = "uniform_grid";
-    conduit::Node &params = pipelines["pl1/f1/params"];
-    params["field"] = "braid";      
-    params["dims/i"] = EXAMPLE_MESH_SIDE_DIM-10;
-    params["invalid_value"] = -10.0;      
-
-    conduit::Node scenes;
-    scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/field"] = "braid";
-    scenes["s1/plots/p1/pipeline"] = "pl1";
-
-    scenes["s1/image_prefix"] = output_file;
-
+    std::string acts_str = R"xyzxyz(
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "uniform_grid"
+        params: 
+          fields: ["braid"]
+          dims: 
+            i: 10 
+          invalid_value: -10.0
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "braid"
+          pipeline: "pl1"
+)xyzxyz";
     conduit::Node actions;
-    // add the pipeline
-    conduit::Node &add_pipelines = actions.append();
-    add_pipelines["action"] = "add_pipelines";
-    add_pipelines["pipelines"] = pipelines;
-    // add the scenes
-    conduit::Node &add_scenes= actions.append();
-    add_scenes["action"] = "add_scenes";
-    add_scenes["scenes"] = scenes;
-    //add the extracts
-//    conduit::Node &add_extracts= actions.append();
-//    add_extracts["action"] = "add_extracts";
-//    conduit::Node &extracts = add_extracts["extracts"];
-//    extracts["e1/type"] = "relay";
-//    extracts["e1/pipeline"] = "pl1";
-//    extracts["e1/params/path"] = output_file + "_blueprint";
-//    extracts["e1/params/protocol"] = "hdf5";
+    actions.parse(acts_str,"yaml");
+    actions[1]["scenes/s1/image_prefix"] = output_file;
+    //actions.print();
 
     //
     // Run Ascent
     //
-
     Ascent ascent;
 
     Node ascent_opts;
@@ -340,35 +324,36 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_smaller_in_j)
     // Create the actions.
     //
 
-    conduit::Node pipelines;
-    // pipeline 1
-    pipelines["pl1/f1/type"] = "uniform_grid";
-    conduit::Node &params = pipelines["pl1/f1/params"];
-    params["field"] = "braid";      
-    params["dims/j"] = EXAMPLE_MESH_SIDE_DIM-10;
-    params["invalid_value"] = -10.0;      
-
-    conduit::Node scenes;
-    scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/field"] = "braid";
-    scenes["s1/plots/p1/pipeline"] = "pl1";
-
-    scenes["s1/image_prefix"] = output_file;
-
+    std::string acts_str = R"xyzxyz(
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "uniform_grid"
+        params: 
+          fields: ["braid"]
+          dims: 
+            j: 10 
+          invalid_value: -10.0
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "braid"
+          pipeline: "pl1"
+)xyzxyz";
     conduit::Node actions;
-    // add the pipeline
-    conduit::Node &add_pipelines = actions.append();
-    add_pipelines["action"] = "add_pipelines";
-    add_pipelines["pipelines"] = pipelines;
-    // add the scenes
-    conduit::Node &add_scenes= actions.append();
-    add_scenes["action"] = "add_scenes";
-    add_scenes["scenes"] = scenes;
+    actions.parse(acts_str,"yaml");
+    actions[1]["scenes/s1/image_prefix"] = output_file;
+    //actions.print();
 
     //
     // Run Ascent
     //
-
     Ascent ascent;
 
     Node ascent_opts;
@@ -420,31 +405,36 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_smaller_in_k)
     // Create the actions.
     //
 
-    conduit::Node pipelines;
-    // pipeline 1
-    pipelines["pl1/f1/type"] = "uniform_grid";
-    conduit::Node &params = pipelines["pl1/f1/params"];
-    params["field"] = "braid";      
-    params["dims/k"] = EXAMPLE_MESH_SIDE_DIM-10;
-    params["invalid_value"] = -10.0;      
-
-    conduit::Node scenes;
-    scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/field"] = "braid";
-    scenes["s1/plots/p1/pipeline"] = "pl1";
-
-    scenes["s1/renders/r1/image_prefix"] = output_file;
-    scenes["s1/renders/r1/camera/azimuth"] = 90.0;
-
+    std::string acts_str = R"xyzxyz(
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "uniform_grid"
+        params: 
+          field: "braid"
+          dims: 
+            k: 10 
+          invalid_value: -10.0
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "braid"
+          pipeline: "pl1"
+      renders: 
+        r1: 
+          camera: 
+            azimuth: 90
+)xyzxyz";
     conduit::Node actions;
-    // add the pipeline
-    conduit::Node &add_pipelines = actions.append();
-    add_pipelines["action"] = "add_pipelines";
-    add_pipelines["pipelines"] = pipelines;
-    // add the scenes
-    conduit::Node &add_scenes= actions.append();
-    add_scenes["action"] = "add_scenes";
-    add_scenes["scenes"] = scenes;
+    actions.parse(acts_str,"yaml");
+    actions[1]["scenes/s1/renders/r1/image_prefix"] = output_file;
+    //actions.print();
 
     //
     // Run Ascent
@@ -500,32 +490,34 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_smaller_by10_than_input)
     // Create the actions.
     //
 
-    conduit::Node pipelines;
-    // pipeline 1
-    pipelines["pl1/f1/type"] = "uniform_grid";
-    conduit::Node &params = pipelines["pl1/f1/params"];
-    params["field"] = "braid";      
-    params["dims/i"] = EXAMPLE_MESH_SIDE_DIM-10;
-    params["dims/j"] = EXAMPLE_MESH_SIDE_DIM-10;
-    params["dims/k"] = EXAMPLE_MESH_SIDE_DIM-10;
-    params["invalid_value"] = -10.0;      
-
-    conduit::Node scenes;
-    scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/field"] = "braid";
-    scenes["s1/plots/p1/pipeline"] = "pl1";
-
-    scenes["s1/image_prefix"] = output_file;
-
+    std::string acts_str = R"xyzxyz(
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "uniform_grid"
+        params: 
+          fields: ["braid"]
+          dims: 
+            i: 10
+            j: 10
+            k: 10
+          invalid_value: -10.0
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "braid"
+          pipeline: "pl1"
+)xyzxyz";
     conduit::Node actions;
-    // add the pipeline
-    conduit::Node &add_pipelines = actions.append();
-    add_pipelines["action"] = "add_pipelines";
-    add_pipelines["pipelines"] = pipelines;
-    // add the scenes
-    conduit::Node &add_scenes= actions.append();
-    add_scenes["action"] = "add_scenes";
-    add_scenes["scenes"] = scenes;
+    actions.parse(acts_str,"yaml");
+    actions[1]["scenes/s1/renders/r1/image_prefix"] = output_file;
+    //actions.print();
 
     //
     // Run Ascent
@@ -582,32 +574,34 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_equal_size_input)
     // Create the actions.
     //
 
-    conduit::Node pipelines;
-    // pipeline 1
-    pipelines["pl1/f1/type"] = "uniform_grid";
-    conduit::Node &params = pipelines["pl1/f1/params"];
-    params["field"] = "braid";      
-    params["dims/i"] = EXAMPLE_MESH_SIDE_DIM;
-    params["dims/j"] = EXAMPLE_MESH_SIDE_DIM;
-    params["dims/k"] = EXAMPLE_MESH_SIDE_DIM;
-    params["invalid_value"] = -10.0;      
-
-    conduit::Node scenes;
-    scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/field"] = "braid";
-    scenes["s1/plots/p1/pipeline"] = "pl1";
-
-    scenes["s1/image_prefix"] = output_file;
-
+    std::string acts_str = R"xyzxyz(
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "uniform_grid"
+        params: 
+          fields: ["braid"]
+          dims: 
+            i: 20
+            j: 20
+            k: 20
+          invalid_value: -10.0
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "braid"
+          pipeline: "pl1"
+)xyzxyz";
     conduit::Node actions;
-    // add the pipeline
-    conduit::Node &add_pipelines = actions.append();
-    add_pipelines["action"] = "add_pipelines";
-    add_pipelines["pipelines"] = pipelines;
-    // add the scenes
-    conduit::Node &add_scenes= actions.append();
-    add_scenes["action"] = "add_scenes";
-    add_scenes["scenes"] = scenes;
+    actions.parse(acts_str,"yaml");
+    actions[1]["scenes/s1/renders/r1/image_prefix"] = output_file;
+    //actions.print();
 
     //
     // Run Ascent
@@ -664,43 +658,45 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_equal_size_input_increased_s
     // Create the actions.
     //
 
-    conduit::Node pipelines;
-    // pipeline 1
-    pipelines["pl1/f1/type"] = "uniform_grid";
-    conduit::Node &params = pipelines["pl1/f1/params"];
-    params["field"] = "braid";      
-    params["spacing/dx"] = 2.0;      
-    params["spacing/dy"] = 2.0;      
-    params["spacing/dz"] = 2.0;      
-    params["invalid_value"] = -10.0;      
-
-    pipelines["pl1/f2/type"] = "slice";
-    // filter knobs
-    conduit::Node &slice_params = pipelines["pl1/f2/params"];
-    slice_params["point/x"] = 0.f;
-    slice_params["point/y"] = 0.f;
-    slice_params["point/z"] = 0.f;
-
-    slice_params["normal/x"] = 0.f;
-    slice_params["normal/y"] = 0.f;
-    slice_params["normal/z"] = 1.f;
-
-    conduit::Node scenes;
-    scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/field"] = "braid";
-    scenes["s1/plots/p1/pipeline"] = "pl1";
-
-    scenes["s1/image_prefix"] = output_file;
-
+    std::string acts_str = R"xyzxyz(
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "uniform_grid"
+        params: 
+          fields: ["braid"]
+          spacing: 
+            dx: 2.0
+            dy: 2.0
+            dz: 2.0
+          invalid_value: -10.0
+      f2: 
+        type: "slice"
+        params: 
+          point: 
+            x: 0.0
+            y: 0.0
+            z: 0.0
+          normal: 
+            x: 0.0
+            y: 0.0
+            z: 1.0
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "braid"
+          pipeline: "pl1"
+)xyzxyz";
     conduit::Node actions;
-    // add the pipeline
-    conduit::Node &add_pipelines = actions.append();
-    add_pipelines["action"] = "add_pipelines";
-    add_pipelines["pipelines"] = pipelines;
-    // add the scenes
-    conduit::Node &add_scenes= actions.append();
-    add_scenes["action"] = "add_scenes";
-    add_scenes["scenes"] = scenes;
+    actions.parse(acts_str,"yaml");
+    actions[1]["scenes/s1/renders/r1/image_prefix"] = output_file;
+    //actions.print();
 
     //
     // Run Ascent
@@ -757,32 +753,34 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_equal_size_input_decreased_s
     // Create the actions.
     //
 
-    conduit::Node pipelines;
-    // pipeline 1
-    pipelines["pl1/f1/type"] = "uniform_grid";
-    conduit::Node &params = pipelines["pl1/f1/params"];
-    params["field"] = "braid";      
-    params["spacing/dx"] = 0.5;      
-    params["spacing/dy"] = 0.5;      
-    params["spacing/dz"] = 0.5;      
-    params["invalid_value"] = -10.0;      
-
-    conduit::Node scenes;
-    scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/field"] = "braid";
-    scenes["s1/plots/p1/pipeline"] = "pl1";
-
-    scenes["s1/image_prefix"] = output_file;
-
+    std::string acts_str = R"xyzxyz(
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "uniform_grid"
+        params: 
+          fields: ["braid"]
+          spacing: 
+            dx: 0.5
+            dy: 0.5
+            dz: 0.5
+          invalid_value: -10.0
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "braid"
+          pipeline: "pl1"
+)xyzxyz";
     conduit::Node actions;
-    // add the pipeline
-    conduit::Node &add_pipelines = actions.append();
-    add_pipelines["action"] = "add_pipelines";
-    add_pipelines["pipelines"] = pipelines;
-    // add the scenes
-    conduit::Node &add_scenes= actions.append();
-    add_scenes["action"] = "add_scenes";
-    add_scenes["scenes"] = scenes;
+    actions.parse(acts_str,"yaml");
+    actions[1]["scenes/s1/renders/r1/image_prefix"] = output_file;
+    //actions.print();
 
     //
     // Run Ascent
@@ -839,43 +837,45 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_equal_size_input_shift_origi
     // Create the actions.
     //
 
-    conduit::Node pipelines;
-    // pipeline 1
-    pipelines["pl1/f1/type"] = "uniform_grid";
-    conduit::Node &params = pipelines["pl1/f1/params"];
-    params["field"] = "braid";      
-    params["origin/x"] = -5.0;        
-    params["origin/y"] = -5.0;        
-    params["origin/z"] = -5.0;        
-    params["invalid_value"] = -10.0;      
-
-    pipelines["pl1/f2/type"] = "slice";
-    // filter knobs
-    conduit::Node &slice_params = pipelines["pl1/f2/params"];
-    slice_params["point/x"] = 0.f;
-    slice_params["point/y"] = 0.f;
-    slice_params["point/z"] = 0.f;
-
-    slice_params["normal/x"] = 0.f;
-    slice_params["normal/y"] = 0.f;
-    slice_params["normal/z"] = 1.f;
-
-    conduit::Node scenes;
-    scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/field"] = "braid";
-    scenes["s1/plots/p1/pipeline"] = "pl1";
-
-    scenes["s1/image_prefix"] = output_file;
-
+    std::string acts_str = R"xyzxyz(
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "uniform_grid"
+        params: 
+          fields: ["braid"]
+          origin: 
+            x: -5.0
+            y: -5.0
+            z: -5.0
+          invalid_value: -10.0
+      f2: 
+        type: "slice"
+        params: 
+          point: 
+            x: 0.0
+            y: 0.0
+            z: 0.0
+          normal: 
+            x: 0.0
+            y: 0.0
+            z: 1.0
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "braid"
+          pipeline: "pl1"
+)xyzxyz";
     conduit::Node actions;
-    // add the pipeline
-    conduit::Node &add_pipelines = actions.append();
-    add_pipelines["action"] = "add_pipelines";
-    add_pipelines["pipelines"] = pipelines;
-    // add the scenes
-    conduit::Node &add_scenes= actions.append();
-    add_scenes["action"] = "add_scenes";
-    add_scenes["scenes"] = scenes;
+    actions.parse(acts_str,"yaml");
+    actions[1]["scenes/s1/renders/r1/image_prefix"] = output_file;
+    //actions.print();
 
     //
     // Run Ascent
@@ -932,41 +932,43 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_equal_size_input_shift_origi
     // Create the actions.
     //
 
-    conduit::Node pipelines;
-    // pipeline 1
-    pipelines["pl1/f1/type"] = "uniform_grid";
-    conduit::Node &params = pipelines["pl1/f1/params"];
-    params["field"] = "braid";      
-    params["origin/x"] = 0.0;        
-    params["invalid_value"] = -10.0;      
-
-    pipelines["pl1/f2/type"] = "slice";
-    // filter knobs
-    conduit::Node &slice_params = pipelines["pl1/f2/params"];
-    slice_params["point/x"] = 0.f;
-    slice_params["point/y"] = 0.f;
-    slice_params["point/z"] = 0.f;
-
-    slice_params["normal/x"] = 0.f;
-    slice_params["normal/y"] = 0.f;
-    slice_params["normal/z"] = 1.f;
-
-    conduit::Node scenes;
-    scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/field"] = "braid";
-    scenes["s1/plots/p1/pipeline"] = "pl1";
-
-    scenes["s1/image_prefix"] = output_file;
-
+    std::string acts_str = R"xyzxyz(
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "uniform_grid"
+        params: 
+          fields: ["braid"]
+          origin: 
+            x: 0.0
+          invalid_value: -10.0
+      f2: 
+        type: "slice"
+        params: 
+          point: 
+            x: 0.0
+            y: 0.0
+            z: 0.0
+          normal: 
+            x: 0.0
+            y: 0.0
+            z: 1.0
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "braid"
+          pipeline: "pl1"
+)xyzxyz";
     conduit::Node actions;
-    // add the pipeline
-    conduit::Node &add_pipelines = actions.append();
-    add_pipelines["action"] = "add_pipelines";
-    add_pipelines["pipelines"] = pipelines;
-    // add the scenes
-    conduit::Node &add_scenes= actions.append();
-    add_scenes["action"] = "add_scenes";
-    add_scenes["scenes"] = scenes;
+    actions.parse(acts_str,"yaml");
+    actions[1]["scenes/s1/renders/r1/image_prefix"] = output_file;
+    //actions.print();
 
     //
     // Run Ascent
@@ -1023,41 +1025,43 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_equal_size_input_shift_origi
     // Create the actions.
     //
 
-    conduit::Node pipelines;
-    // pipeline 1
-    pipelines["pl1/f1/type"] = "uniform_grid";
-    conduit::Node &params = pipelines["pl1/f1/params"];
-    params["field"] = "braid";      
-    params["origin/y"] = 0.0;        
-    params["invalid_value"] = -10.0;      
-
-    pipelines["pl1/f2/type"] = "slice";
-    // filter knobs
-    conduit::Node &slice_params = pipelines["pl1/f2/params"];
-    slice_params["point/x"] = 0.f;
-    slice_params["point/y"] = 0.f;
-    slice_params["point/z"] = 0.f;
-
-    slice_params["normal/x"] = 0.f;
-    slice_params["normal/y"] = 0.f;
-    slice_params["normal/z"] = 1.f;
-
-    conduit::Node scenes;
-    scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/field"] = "braid";
-    scenes["s1/plots/p1/pipeline"] = "pl1";
-
-    scenes["s1/image_prefix"] = output_file;
-
+    std::string acts_str = R"xyzxyz(
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "uniform_grid"
+        params: 
+          fields: ["braid"]
+          origin: 
+            y: 0.0
+          invalid_value: -10.0
+      f2: 
+        type: "slice"
+        params: 
+          point: 
+            x: 0.0
+            y: 0.0
+            z: 0.0
+          normal: 
+            x: 0.0
+            y: 0.0
+            z: 1.0
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "braid"
+          pipeline: "pl1"
+)xyzxyz";
     conduit::Node actions;
-    // add the pipeline
-    conduit::Node &add_pipelines = actions.append();
-    add_pipelines["action"] = "add_pipelines";
-    add_pipelines["pipelines"] = pipelines;
-    // add the scenes
-    conduit::Node &add_scenes= actions.append();
-    add_scenes["action"] = "add_scenes";
-    add_scenes["scenes"] = scenes;
+    actions.parse(acts_str,"yaml");
+    actions[1]["scenes/s1/renders/r1/image_prefix"] = output_file;
+    //actions.print();
 
     //
     // Run Ascent
@@ -1114,41 +1118,43 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_equal_size_input_shift_origi
     // Create the actions.
     //
 
-    conduit::Node pipelines;
-    // pipeline 1
-    pipelines["pl1/f1/type"] = "uniform_grid";
-    conduit::Node &params = pipelines["pl1/f1/params"];
-    params["field"] = "braid";      
-    params["origin/z"] = 0.0;        
-    params["invalid_value"] = -10.0;      
-
-    pipelines["pl1/f2/type"] = "slice";
-    // filter knobs
-    conduit::Node &slice_params = pipelines["pl1/f2/params"];
-    slice_params["point/x"] = 0.f;
-    slice_params["point/y"] = 0.f;
-    slice_params["point/z"] = 0.f;
-
-    slice_params["normal/x"] = 0.f;
-    slice_params["normal/y"] = 0.f;
-    slice_params["normal/z"] = 1.f;
-
-    conduit::Node scenes;
-    scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/field"] = "braid";
-    scenes["s1/plots/p1/pipeline"] = "pl1";
-
-    scenes["s1/image_prefix"] = output_file;
-
+    std::string acts_str = R"xyzxyz(
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "uniform_grid"
+        params: 
+          fields: ["braid"]
+          origin: 
+            z: 0.0
+          invalid_value: -10.0
+      f2: 
+        type: "slice"
+        params: 
+          point: 
+            x: 0.0
+            y: 0.0
+            z: 0.0
+          normal: 
+            x: 0.0
+            y: 0.0
+            z: 1.0
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "braid"
+          pipeline: "pl1"
+)xyzxyz";
     conduit::Node actions;
-    // add the pipeline
-    conduit::Node &add_pipelines = actions.append();
-    add_pipelines["action"] = "add_pipelines";
-    add_pipelines["pipelines"] = pipelines;
-    // add the scenes
-    conduit::Node &add_scenes= actions.append();
-    add_scenes["action"] = "add_scenes";
-    add_scenes["scenes"] = scenes;
+    actions.parse(acts_str,"yaml");
+    actions[1]["scenes/s1/renders/r1/image_prefix"] = output_file;
+    //actions.print();
 
     //
     // Run Ascent
@@ -1205,43 +1211,45 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_larger_by5_than_input)
     // Create the actions.
     //
 
-    conduit::Node pipelines;
-    // pipeline 1
-    pipelines["pl1/f1/type"] = "uniform_grid";
-    conduit::Node &params = pipelines["pl1/f1/params"];
-    params["field"] = "braid";      
-    params["dims/i"] = EXAMPLE_MESH_SIDE_DIM+5;
-    params["dims/j"] = EXAMPLE_MESH_SIDE_DIM+5;
-    params["dims/k"] = EXAMPLE_MESH_SIDE_DIM+5;
-    params["invalid_value"] = -10.0;      
-
-    pipelines["pl1/f2/type"] = "slice";
-    // filter knobs
-    conduit::Node &slice_params = pipelines["pl1/f2/params"];
-    slice_params["point/x"] = 0.f;
-    slice_params["point/y"] = 0.f;
-    slice_params["point/z"] = 0.f;
-
-    slice_params["normal/x"] = 0.f;
-    slice_params["normal/y"] = 0.f;
-    slice_params["normal/z"] = 1.f;
-
-    conduit::Node scenes;
-    scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/field"] = "braid";
-    scenes["s1/plots/p1/pipeline"] = "pl1";
-
-    scenes["s1/image_prefix"] = output_file;
-
+    std::string acts_str = R"xyzxyz(
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "uniform_grid"
+        params: 
+          fields: ["braid"]
+          dims: 
+            i: 25
+            j: 25
+            k: 25
+          invalid_value: -10.0
+      f2: 
+        type: "slice"
+        params: 
+          point: 
+            x: 0.0
+            y: 0.0
+            z: 0.0
+          normal: 
+            x: 0.0
+            y: 0.0
+            z: 1.0
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "braid"
+          pipeline: "pl1"
+)xyzxyz";
     conduit::Node actions;
-    // add the pipeline
-    conduit::Node &add_pipelines = actions.append();
-    add_pipelines["action"] = "add_pipelines";
-    add_pipelines["pipelines"] = pipelines;
-    // add the scenes
-    conduit::Node &add_scenes= actions.append();
-    add_scenes["action"] = "add_scenes";
-    add_scenes["scenes"] = scenes;
+    actions.parse(acts_str,"yaml");
+    actions[1]["scenes/s1/renders/r1/image_prefix"] = output_file;
+    //actions.print();
 
     //
     // Run Ascent
@@ -1298,43 +1306,45 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_larger_by5_than_input_large_
     // Create the actions.
     //
 
-    conduit::Node pipelines;
-    // pipeline 1
-    pipelines["pl1/f1/type"] = "uniform_grid";
-    conduit::Node &params = pipelines["pl1/f1/params"];
-    params["field"] = "braid";      
-    params["dims/i"] = EXAMPLE_MESH_SIDE_DIM+5;
-    params["dims/j"] = EXAMPLE_MESH_SIDE_DIM+5;
-    params["dims/k"] = EXAMPLE_MESH_SIDE_DIM+5;
-    params["invalid_value"] = -100.0;      
-
-    pipelines["pl1/f2/type"] = "slice";
-    // filter knobs
-    conduit::Node &slice_params = pipelines["pl1/f2/params"];
-    slice_params["point/x"] = 0.f;
-    slice_params["point/y"] = 0.f;
-    slice_params["point/z"] = 0.f;
-
-    slice_params["normal/x"] = 0.f;
-    slice_params["normal/y"] = 0.f;
-    slice_params["normal/z"] = 1.f;
-
-    conduit::Node scenes;
-    scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/field"] = "braid";
-    scenes["s1/plots/p1/pipeline"] = "pl1";
-
-    scenes["s1/image_prefix"] = output_file;
-
+    std::string acts_str = R"xyzxyz(
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "uniform_grid"
+        params: 
+          fields: ["braid"]
+          dims: 
+            i: 25
+            j: 25
+            k: 25
+          invalid_value: -100.0
+      f2: 
+        type: "slice"
+        params: 
+          point: 
+            x: 0.0
+            y: 0.0
+            z: 0.0
+          normal: 
+            x: 0.0
+            y: 0.0
+            z: 1.0
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "braid"
+          pipeline: "pl1"
+)xyzxyz";
     conduit::Node actions;
-    // add the pipeline
-    conduit::Node &add_pipelines = actions.append();
-    add_pipelines["action"] = "add_pipelines";
-    add_pipelines["pipelines"] = pipelines;
-    // add the scenes
-    conduit::Node &add_scenes= actions.append();
-    add_scenes["action"] = "add_scenes";
-    add_scenes["scenes"] = scenes;
+    actions.parse(acts_str,"yaml");
+    actions[1]["scenes/s1/renders/r1/image_prefix"] = output_file;
+    //actions.print();
 
     //
     // Run Ascent
@@ -1391,28 +1401,29 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_default_values)
     // Create the actions.
     //
 
-    conduit::Node pipelines;
-    // pipeline 1
-    pipelines["pl1/f1/type"] = "uniform_grid";
-    conduit::Node &params = pipelines["pl1/f1/params"];
-    params["field"] = "braid";      
-
-    conduit::Node scenes;
-    scenes["s1/plots/p1/type"]         = "pseudocolor";
-    scenes["s1/plots/p1/field"] = "braid";
-    scenes["s1/plots/p1/pipeline"] = "pl1";
-
-    scenes["s1/image_prefix"] = output_file;
-
+    std::string acts_str = R"xyzxyz(
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "uniform_grid"
+        params: 
+          fields: ["braid"]
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "braid"
+          pipeline: "pl1"
+)xyzxyz";
     conduit::Node actions;
-    // add the pipeline
-    conduit::Node &add_pipelines = actions.append();
-    add_pipelines["action"] = "add_pipelines";
-    add_pipelines["pipelines"] = pipelines;
-    // add the scenes
-    conduit::Node &add_scenes= actions.append();
-    add_scenes["action"] = "add_scenes";
-    add_scenes["scenes"] = scenes;
+    actions.parse(acts_str,"yaml");
+    actions[1]["scenes/s1/renders/r1/image_prefix"] = output_file;
+    //actions.print();
 
     //
     // Run Ascent

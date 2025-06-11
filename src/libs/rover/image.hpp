@@ -47,8 +47,6 @@ public:
                                                    Image<O> &right);
 
 protected:
-  int                                      m_height;
-  int                                      m_width;
   std::vector<HandleType>                  m_intensities;
   std::vector<HandleType>                  m_optical_depths;
   std::vector<bool>                        m_valid_intensities;

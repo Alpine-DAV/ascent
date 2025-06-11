@@ -10,6 +10,7 @@ namespace rover {
 
 SchedulerBase::SchedulerBase()
 {
+
 }
 
 SchedulerBase::~SchedulerBase()

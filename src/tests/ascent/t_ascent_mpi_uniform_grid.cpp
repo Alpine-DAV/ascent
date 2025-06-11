@@ -101,40 +101,21 @@ TEST(ascent_mpi_uniform_uniform_grid, test_mpi_uniform_grid)
 
 
     string output_path = prepare_output_dir();
-    string output_file = conduit::utils::join_file_path(output_path,"tout_mpi_uniform_grid");
-    
+    string output_file_dist = conduit::utils::join_file_path(output_path,"tout_mpi_uniform_sample_dist");
+    string output_file_rank = conduit::utils::join_file_path(output_path,"tout_mpi_uniform_sample_rank");
+
     // remove old images before rendering
     if(par_rank == 0)
-      remove_test_image(output_file);
-
+    {
+      remove_test_image(output_file_dist);
+      remove_test_image(output_file_rank);
+    }
     //
     // Create the actions.
     //
 
     conduit::Node pipelines;
-    // pipeline 1
-    pipelines["pl1/f1/type"] = "uniform_grid";
-    conduit::Node &params = pipelines["pl1/f1/params"];
-    params["invalid_value"] = -100.0;      
-    params["field"] = "dist"; 
-
-    conduit::Node scenes;
-    scenes["s1/plots/p1/type"] = "pseudocolor";
-    scenes["s1/plots/p1/field"] = "dist";
-    scenes["s1/plots/p1/pipeline"] = "pl1";
-
-    scenes["s1/image_prefix"] = output_file;
-
     conduit::Node actions;
-    // add the pipeline
-    conduit::Node &add_pipelines = actions.append();
-    add_pipelines["action"] = "add_pipelines";
-    add_pipelines["pipelines"] = pipelines;
-    // add the scenes
-    conduit::Node &add_scenes= actions.append();
-    add_scenes["action"] = "add_scenes";
-    add_scenes["scenes"] = scenes;
-
 //    conduit::Node extracts;
 //
 //    extracts["e1/type"]  = "relay";
@@ -143,6 +124,47 @@ TEST(ascent_mpi_uniform_uniform_grid, test_mpi_uniform_grid)
 //    conduit::Node &add_ext= actions.append();
 //    add_ext["action"] = "add_extracts";
 //    add_ext["extracts"] = extracts;
+//          dims: 
+//            i: 10
+//            j: 10
+//            k: 0
+
+    std::string acts_str = R"xyzxyz(
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "uniform_grid"
+        params: 
+          fields: ["dist","rank"]
+          invalid_value: -10.0
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "dist"
+          pipeline: "pl1"
+      renders: 
+        r1: 
+    s2: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "rank"
+          pipeline: "pl1"
+      renders: 
+        r1: 
+)xyzxyz";
+
+    actions.parse(acts_str,"yaml");
+    actions[1]["scenes/s1/renders/r1/image_prefix"] = output_file_dist;
+    actions[1]["scenes/s2/renders/r1/image_prefix"] = output_file_rank;
+
+    //actions.print();
 
     //
     // Run Ascent
@@ -162,9 +184,10 @@ TEST(ascent_mpi_uniform_uniform_grid, test_mpi_uniform_grid)
     // check that we created an image
     if(par_rank == 0)
     {
-      EXPECT_TRUE(check_test_image(output_file, 0.001f, 0));
+      EXPECT_TRUE(check_test_image(output_file_dist, 0.001f, 0));
+      EXPECT_TRUE(check_test_image(output_file_rank, 0.001f, 0));
       std::string msg = "An example of using the mpi uniform grid filter.";
-      ASCENT_ACTIONS_DUMP_CYCLE(actions,output_file,msg,0);
+      ASCENT_ACTIONS_DUMP(actions,output_file_dist,msg);
     }
 }
 

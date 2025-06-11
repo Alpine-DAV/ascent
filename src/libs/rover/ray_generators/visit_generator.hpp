@@ -43,9 +43,11 @@
 #define rover_visit_generator_h
 
 #include <rover_exports.h>
+#include <settings.hpp>
 #include <ray_generators/ray_generator.hpp>
 
-namespace rover {
+namespace rover
+{
 
 class ROVER_API VisitGenerator : public RayGenerator
 {
@@ -92,7 +94,6 @@ public:
       std::cout<<"zoom          : "<<m_image_zoom<<"\n";
       std::cout<<"perspective   : "<<m_perspective<<"\n";
     }
-
 
   };
 
