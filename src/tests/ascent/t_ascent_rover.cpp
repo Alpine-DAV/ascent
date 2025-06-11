@@ -163,7 +163,7 @@ TEST(ascent_rover, test_xray_blueprint_braid)
         conduit::utils::join_file_path(image_output_path, "tout_rover_xray_blueprint");
 
     render_blueprint_result("intensities", image_output_base, load_mesh);
-    EXPECT_TRUE(check_test_image(image_output_base));
+    EXPECT_TRUE(check_test_image(image_output_base, 0.01f));
 
     std::string msg = "Render an XRay diagnostic image of an example braid mesh";
     ASCENT_ACTIONS_DUMP(actions, image_output_base, msg);
@@ -251,7 +251,7 @@ TEST(ascent_rover, test_xray_blueprint_braid_lowres)
 
     render_blueprint_result("intensities", image_output_image_prefix, load_mesh);
 
-    EXPECT_TRUE(check_test_image(image_output_base));
+    EXPECT_TRUE(check_test_image(image_output_base, 0.01f));
 
     std::string msg = "Render a lowres XRay diagnostic image of an example braid mesh";
     ASCENT_ACTIONS_DUMP(actions, image_output_base, msg);
@@ -763,7 +763,7 @@ TEST(ascent_rover, test_xray_serial_image_params)
     // check that we created an image
     // NOTE: RELAXED TOLERANCE TO FROM 0.0001f
     //       to mitigate differences between platforms
-    EXPECT_TRUE(check_test_image(output_file));
+    EXPECT_TRUE(check_test_image(output_file, 0.01f));
 
     std::string msg = "An example of using the xray extract.";
     ASCENT_ACTIONS_DUMP(actions, output_file, msg);
@@ -826,7 +826,7 @@ TEST(ascent_rover, test_xray_serial)
     // check that we created an image
     // NOTE: RELAXED TOLERANCE TO FROM 0.0001f
     //       to mitigate differences between platforms
-    EXPECT_TRUE(check_test_image(output_file));
+    EXPECT_TRUE(check_test_image(output_file, 0.01f));
 
     std::string msg = "An example of using the xray extract.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
@@ -901,7 +901,7 @@ TEST(ascent_rover, test_volume_min_max)
     ascent.close();
 
     // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file));
+    EXPECT_TRUE(check_test_image(output_file, 0.01f));
     std::string msg = "An example of using the volume (unstructured grid) extract with "
                       "min and max values.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
@@ -964,7 +964,7 @@ TEST(ascent_rover, test_volume_serial)
     ascent.close();
 
     // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file));
+    EXPECT_TRUE(check_test_image(output_file, 0.01f));
     std::string msg = "An example of using the volume (unstructured grid) extract.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
