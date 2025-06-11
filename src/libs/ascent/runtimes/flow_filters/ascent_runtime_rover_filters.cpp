@@ -146,8 +146,7 @@ RoverXRay::verify_params(const conduit::Node &params,
     }
     else
     {
-      // TODO: User-facing numeric scalars should use wide types
-      const int32 width = params["rover/width"].value();
+      const int64 width = params["rover/width"].to_int64();
       if (width <= 0)
       {
         info["errors"].append() = "Optional parameter 'rover/width' must be greater than 0";
@@ -162,8 +161,7 @@ RoverXRay::verify_params(const conduit::Node &params,
     }
     else
     {
-      // TODO: User-facing numeric scalars should use wide types
-      const int32 height = params["rover/height"].value();
+      const int64 height = params["rover/height"].to_int64();
       if (height <= 0)
       {
         info["errors"].append() = "Optional parameter 'rover/height' must be greater than 0";
@@ -182,7 +180,7 @@ RoverXRay::verify_params(const conduit::Node &params,
     res = false;
   }
 
-  if (params.has_path("image_params"))
+  if (params.has_child("image_params"))
   {
     if (!params.has_path("image_params/log_scale") ||
         !params["image_params/log_scale"].dtype().is_string())

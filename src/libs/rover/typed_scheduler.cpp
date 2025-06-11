@@ -5,7 +5,7 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 // rover includes
-#include <scheduler_typed.hpp>
+#include <typed_scheduler.hpp>
 
 using namespace conduit;
 
@@ -13,7 +13,7 @@ namespace rover
 {
 
 template<typename FloatType>
-SchedulerTyped<FloatType>::SchedulerTyped()
+TypedScheduler<FloatType>::TypedScheduler()
 {
   // TODO: Maybe we can just pass a RayGenerator when constructing
   // a new scheduler, since we already instantiate it beforehand
@@ -23,7 +23,7 @@ SchedulerTyped<FloatType>::SchedulerTyped()
 #ifdef ROVER_PARALLEL
 template<typename FloatType>
 void
-SchedulerTyped<FloatType>::set_comm_handle(MPI_Comm comm_handle)
+TypedScheduler<FloatType>::set_comm_handle(MPI_Comm comm_handle)
 {
   m_comm_handle = comm_handle;
 }
@@ -31,9 +31,9 @@ SchedulerTyped<FloatType>::set_comm_handle(MPI_Comm comm_handle)
 
 template<typename FloatType>
 void
-SchedulerTyped<FloatType>::add_dataset(vtkmDataSet &dataset)
+TypedScheduler<FloatType>::add_dataset(vtkmDataSet &dataset)
 {
-  ROVER_INFO("SchedulerTyped::add_dataset: adding domain " << m_domains.size());
+  ROVER_INFO("TypedScheduler::add_dataset: adding domain " << m_domains.size());
   Domain domain;
   domain.set_dataset(dataset);
   m_domains.push_back(domain);
@@ -41,14 +41,14 @@ SchedulerTyped<FloatType>::add_dataset(vtkmDataSet &dataset)
 
 template<typename FloatType>
 void
-SchedulerTyped<FloatType>::set_ray_generator(RayGenerator *ray_generator)
+TypedScheduler<FloatType>::set_ray_generator(RayGenerator *ray_generator)
 {
   m_ray_generator = ray_generator;
 }
 
 template<typename FloatType>
 void
-SchedulerTyped<FloatType>::create_default_background(const int num_channels)
+TypedScheduler<FloatType>::create_default_background(const int num_channels)
 {
   // Initialize background intensities to 0.0f
   m_background.resize(num_channels, 0.0f);
@@ -56,7 +56,7 @@ SchedulerTyped<FloatType>::create_default_background(const int num_channels)
 
 template<typename FloatType>
 void
-SchedulerTyped<FloatType>::set_background(const std::vector<vtkm::Float32> &background)
+TypedScheduler<FloatType>::set_background(const std::vector<vtkm::Float32> &background)
 {
   // TODO: See if this is done better with std::transform
   const size_t size = background.size();
@@ -70,14 +70,14 @@ SchedulerTyped<FloatType>::set_background(const std::vector<vtkm::Float32> &back
 
 template<typename FloatType>
 void
-SchedulerTyped<FloatType>::set_background(const std::vector<vtkm::Float64> &background)
+TypedScheduler<FloatType>::set_background(const std::vector<vtkm::Float64> &background)
 {
   m_background = background;
 }
 
 template<typename FloatType>
 int
-SchedulerTyped<FloatType>::get_global_channels()
+TypedScheduler<FloatType>::get_global_channels()
 {
   // TODO: See if this is done better with std::max_element
   int num_channels = 1;
@@ -104,7 +104,7 @@ SchedulerTyped<FloatType>::get_global_channels()
 
 template<typename FloatType>
 void
-SchedulerTyped<FloatType>::set_global_range_and_bounds()
+TypedScheduler<FloatType>::set_global_range_and_bounds()
 {
   const int num_domains = m_domains.size();
   vtkmRange global_range;
@@ -212,7 +212,7 @@ SchedulerTyped<FloatType>::set_global_range_and_bounds()
 
 template<typename FloatType>
 void
-SchedulerTyped<FloatType>::add_partial(vtkmRayTracing::PartialComposite<FloatType> &partial)
+TypedScheduler<FloatType>::add_partial(vtkmRayTracing::PartialComposite<FloatType> &partial)
 {
   // TODO: We might be able to simplify this by using emplace_back
   PartialImage<FloatType> partial_image;
@@ -225,7 +225,7 @@ SchedulerTyped<FloatType>::add_partial(vtkmRayTracing::PartialComposite<FloatTyp
 
 template<typename FloatType>
 void
-SchedulerTyped<FloatType>::composite()
+TypedScheduler<FloatType>::composite()
 {
   // TODO: This function has a lot of duplication that can
   // probably be improved
@@ -328,9 +328,9 @@ SchedulerTyped<FloatType>::composite()
 
 template<typename FloatType>
 void
-SchedulerTyped<FloatType>::trace_rays()
+TypedScheduler<FloatType>::trace_rays()
 {
-  ROVER_INFO("Executing SchedulerTyped::trace_rays");
+  ROVER_INFO("Executing TypedScheduler::trace_rays");
   vtkmTimer tot_timer;
   vtkmTimer timer;
   tot_timer.Start();
@@ -346,13 +346,13 @@ SchedulerTyped<FloatType>::trace_rays()
   m_ray_generator->reset();
 
   const int num_domains = static_cast<int>(m_domains.size());
-  ROVER_INFO("SchedulerTyped set render settings for " << num_domains << " domains");
+  ROVER_INFO("TypedScheduler set render settings for " << num_domains << " domains");
   for (int i = 0; i < num_domains; ++i)
   {
     m_domains[i].init();
   }
 
-  ROVER_INFO("Done SchedulerTyped set render settings for " << num_domains << " domains");
+  ROVER_INFO("Done TypedScheduler set render settings for " << num_domains << " domains");
   time = timer.GetElapsedTime();
   ROVER_DATA_ADD("setup", time);
 
@@ -475,14 +475,14 @@ SchedulerTyped<FloatType>::trace_rays()
   double tot_time = tot_timer.GetElapsedTime();
   ROVER_DATA_CLOSE(tot_time);
 
-  ROVER_INFO("Finished SchedulerTyped::trace_rays");
+  ROVER_INFO("Finished TypedScheduler::trace_rays");
 }
 
 template<typename FloatType>
-void SchedulerTyped<FloatType>::save_png(std::string filename)
+void TypedScheduler<FloatType>::save_png(std::string filename)
 {
-  const int32 width = rover::settings["rover/width"].value();
-  const int32 height = rover::settings["rover/height"].value();
+  const int64 width = rover::settings["rover/width"].to_int64();
+  const int64 height = rover::settings["rover/height"].to_int64();
 
   // Optional params that the user may have set
   bool has_image_params = false;
@@ -545,11 +545,11 @@ void SchedulerTyped<FloatType>::save_png(std::string filename)
 }
 
 template<typename FloatType>
-void SchedulerTyped<FloatType>::save_bov(std::string file_name)
+void TypedScheduler<FloatType>::save_bov(std::string file_name)
 {
-  const int32 width = rover::settings["rover/width"].value();
-  const int32 height = rover::settings["rover/height"].value();
-  const int size = height * width;
+  const int64 width = rover::settings["rover/width"].to_int64();
+  const int64 height = rover::settings["rover/height"].to_int64();
+  const long size = height * width;
 
   ROVER_INFO("Saving bov file with output size " << width << "x" << height);
   ascent::PNGEncoder encoder;
@@ -576,7 +576,7 @@ void SchedulerTyped<FloatType>::save_bov(std::string file_name)
 
 template<typename FloatType>
 void
-SchedulerTyped<FloatType>::to_blueprint(Node &data)
+TypedScheduler<FloatType>::to_blueprint(Node &data)
 {
   ROVER_INFO("Saving blueprint file with output size " << width << "x" << height);
 
@@ -603,8 +603,8 @@ SchedulerTyped<FloatType>::to_blueprint(Node &data)
   Node &n_coords = data["coordsets"][coord_name];
   n_coords["type"] = "rectilinear";
   
-  const int32 width = rover::settings["rover/width"].value();
-  const int32 height = rover::settings["rover/height"].value();
+  const int64 width = rover::settings["rover/width"].to_int64();
+  const int64 height = rover::settings["rover/height"].to_int64();
 
   n_coords["values/x"].set(DataType::float32(width + 1));
   n_coords["values/y"].set(DataType::float32(height + 1));
@@ -691,7 +691,7 @@ SchedulerTyped<FloatType>::to_blueprint(Node &data)
 }
 
 // Explicit instantiation
-template class SchedulerTyped<vtkm::Float32>;
-template class SchedulerTyped<vtkm::Float64>;
+template class TypedScheduler<vtkm::Float32>;
+template class TypedScheduler<vtkm::Float64>;
 
 }; // namespace rover

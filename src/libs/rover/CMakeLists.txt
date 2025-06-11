@@ -61,7 +61,7 @@ set(rover_headers
       rover_exceptions.hpp
       rover.hpp
       scheduler.hpp
-      scheduler_typed.hpp
+      typed_scheduler.hpp
       settings.hpp
       engine.hpp
       # ray generators headers
@@ -81,7 +81,7 @@ set(rover_sources
       domain.cpp
       image.cpp
       rover.cpp
-      scheduler_typed.cpp
+      typed_scheduler.cpp
       engine.cpp
       # ray generators
       ray_generators/ray_generator.cpp

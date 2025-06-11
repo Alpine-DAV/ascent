@@ -4,8 +4,8 @@
 // other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-#ifndef ROVER_SCHEDULER_TYPED_H
-#define ROVER_SCHEDULER_TYPED_H
+#ifndef ROVER_TYPED_SCHEDULER_H
+#define ROVER_TYPED_SCHEDULER_H
 
 // tpl includes
 #include <conduit.hpp>
@@ -31,10 +31,10 @@ namespace rover
 {
 
 template<typename FloatType>
-class SchedulerTyped : public Scheduler
+class TypedScheduler : public Scheduler
 {
 public:
-  SchedulerTyped();
+  TypedScheduler();
 
 #ifdef ROVER_PARALLEL
   void set_comm_handle(MPI_Comm comm_handle) override;

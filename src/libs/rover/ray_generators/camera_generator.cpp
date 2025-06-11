@@ -64,8 +64,8 @@ CameraGenerator::~CameraGenerator()
 void
 CameraGenerator::get_rays(vtkmRayTracing::Ray<vtkm::Float32> &rays)
 {
-  const int32 width = rover::settings["rover/width"].value();
-  const int32 height = rover::settings["rover/height"].value();
+  const int64 width = rover::settings["rover/width"].to_int64();
+  const int64 height = rover::settings["rover/height"].to_int64();
   vtkm::rendering::raytracing::Camera ray_gen;
   ray_gen.SetParameters(m_camera, width, height);
   ray_gen.CreateRays(rays, this->m_coordinates.GetBounds());
@@ -79,8 +79,8 @@ CameraGenerator::get_rays(vtkmRayTracing::Ray<vtkm::Float32> &rays)
 void
 CameraGenerator::get_rays(vtkmRayTracing::Ray<vtkm::Float64> &rays)
 {
-  const int32 width = rover::settings["rover/width"].value();
-  const int32 height = rover::settings["rover/height"].value();
+  const int64 width = rover::settings["rover/width"].to_int64();
+  const int64 height = rover::settings["rover/height"].to_int64();
   vtkm::rendering::raytracing::Camera ray_gen;
   ray_gen.SetParameters(m_camera, width, height);
   ray_gen.CreateRays(rays, this->m_coordinates.GetBounds());

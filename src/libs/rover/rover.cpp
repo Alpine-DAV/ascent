@@ -4,7 +4,7 @@
 // other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-#include <scheduler_typed.hpp>
+#include <typed_scheduler.hpp>
 #include <rover.hpp>
 #include <rover_exceptions.hpp>
 #include <vtkm_typedefs.hpp>
@@ -111,11 +111,11 @@ Rover::create_scheduler()
   const std::string precision = rover::settings["rover/precision"].as_string();
   if ("double" == precision)
   {
-    m_scheduler = new SchedulerTyped<vtkm::Float64>();
+    m_scheduler = new TypedScheduler<vtkm::Float64>();
   }
   else // ("single" == precision)
   {
-    m_scheduler = new SchedulerTyped<vtkm::Float32>();
+    m_scheduler = new TypedScheduler<vtkm::Float32>();
   }
 
 #ifdef ROVER_PARALLEL
