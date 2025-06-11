@@ -284,22 +284,6 @@ RoverXRay::execute()
   // Calling execute initializes everything that rover needs based on the input params
   rover.execute();
 
-  Node metadata = Metadata::n_metadata;
-
-  int cycle = -1;
-  if (metadata.has_path("cycle"))
-  {
-    cycle = metadata["cycle"].as_int32();
-  }
-
-  std::string filename = params()["rover/filename"].as_string();
-  if (cycle != -1)
-  {
-    filename = expand_path_special_variables(filename, mpi_comm_id, cycle);
-  }
-
-  filename = output_dir(filename);
-
   if(params().has_path("rover/blueprint"))
   {
     std::string protocol = params()["rover/blueprint"].as_string();
@@ -309,18 +293,24 @@ RoverXRay::execute()
 
     if (data.has_path("coordsets"))
     {
-      double time = -1;
-      if (metadata.has_path("time"))
+      int cycle = -1;
+      double time = -1.;
+
+      if(Metadata::n_metadata.has_path("cycle"))
       {
-        time = metadata["time"].to_float64();
+        cycle = Metadata::n_metadata["cycle"].to_int32();
       }
-        
+      if(Metadata::n_metadata.has_path("time"))
+      {
+        time = Metadata::n_metadata["time"].to_float64();
+      }
+
       if(cycle != -1)
       {
         data["state/cycle"] = cycle;
       }
 
-      if(time != -1)
+      if(time != -1.)
       {
         data["state/time"] = time;
       }
@@ -330,6 +320,9 @@ RoverXRay::execute()
     conduit::Node extra_opts;
     std::string result_path;
 
+    std::string filename = params()["rover/filename"].as_string();
+    filename = output_dir(expand_path_special_variables(filename, ".root", mpi_comm_id));
+
     mesh_blueprint_save(multi_domain,
                         filename,
                         protocol,
@@ -338,31 +331,27 @@ RoverXRay::execute()
                         result_path);
   }
 
+  std::string png_filename = params()["rover/filename"].as_string();
+  png_filename = output_dir(expand_path_special_variables(png_filename, ".png", mpi_comm_id));
+
   // Do we always want to save a png?
   if (params().has_path("image_params"))
   {
     float min_value = params()["image_params/min_value"].to_float32();
     float max_value = params()["image_params/max_value"].to_float32();
     bool log_scale = params()["image_params/log_scale"].as_string() == "true";
-    rover.save_png(filename, min_value, max_value, log_scale);
+    rover.save_png(png_filename, min_value, max_value, log_scale);
   }
   else
   {
-    rover.save_png(filename);
+    rover.save_png(png_filename);
   }
 
   if (params().has_path("bov_filename"))
   {
     std::string bov_filename = params()["bov_filename"].as_string();
     bov_filename = output_dir(bov_filename);
-    if (cycle != -1)
-    {
-      rover.save_bov(expand_path_special_variables(bov_filename, mpi_comm_id, cycle));
-    }
-    else
-    {
-      rover.save_bov(expand_path_special_variables(bov_filename, mpi_comm_id));
-    }
+    rover.save_bov(expand_path_special_variables(bov_filename, ".bov", mpi_comm_id));
   }
 }
 
@@ -524,23 +513,8 @@ RoverVolume::execute()
     tracer.set_ray_generator(&generator);
     tracer.execute();
 
-    Node meta = Metadata::n_metadata;
-    int cycle = -1;
-    if(meta.has_path("cycle"))
-    {
-      cycle = meta["cycle"].as_int32();
-    }
-
     std::string filename = params()["filename"].as_string();
-    if(cycle != -1)
-    {
-      filename = expand_path_special_variables(filename, mpi_comm_id, cycle);
-    }
-    else
-    {
-      filename = expand_path_special_variables(filename, mpi_comm_id);
-    }
-    filename = output_dir(filename);
+    filename = output_dir(expand_path_special_variables(filename, ".png", mpi_comm_id));
 
     tracer.save_png(filename);
 }

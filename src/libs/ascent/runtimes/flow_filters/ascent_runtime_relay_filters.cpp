@@ -731,7 +731,7 @@ RelayIOSave::execute()
 
     std::string path, protocol;
     path = params()["path"].as_string();
-    path = expand_path_special_variables(path, mpi_comm_id, 0, false);
+    path = expand_path_special_variables(path, ".root", mpi_comm_id, false);
     path = output_dir(path);
 
     if(params().has_child("protocol"))

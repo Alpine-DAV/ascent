@@ -26,10 +26,11 @@ using namespace std;
 using namespace conduit;
 
 //-----------------------------------------------------------------------------
+
 inline void
-remove_test_image(const std::string &path, const std::string num = "100")
+remove_test_image(const std::string &path, const std::string &num)
 {
-    if(conduit::utils::is_file(path + num + ".png"))
+    if(conduit::utils::is_file(path  + num + ".png"))
     {
         conduit::utils::remove_file(path + num + ".png");
     }
@@ -41,6 +42,16 @@ remove_test_image(const std::string &path, const std::string num = "100")
 
 }
 
+inline void
+remove_test_image(const std::string &path, 
+                  const int num = 100,
+                  const std::string &fmt = "%06d")
+{
+    char num_str[50];
+    snprintf(num_str, sizeof(num_str), fmt.c_str(), num);
+    std::string fmt_num = std::string(path.back() != '_' ? "_" : "") + num_str;
+    remove_test_image(path, fmt_num);
+}
 
 //-----------------------------------------------------------------------------
 inline void
@@ -163,10 +174,11 @@ check_test_image(const std::string &path,
 
 //-----------------------------------------------------------------------------
 inline bool
-check_test_image(const std::string &path, const float tolerance = 0.001f, std::string num = "100")
+check_test_image(const std::string &path, const float tolerance, const std::string &num)
 {
     Node info;
     std::string png_path = path + num + ".png";
+
     // for now, just check if the file exists.
     bool res = conduit::utils::is_file(png_path);
     info["test_file/path"] = png_path;
@@ -218,6 +230,17 @@ check_test_image(const std::string &path, const float tolerance = 0.001f, std::s
     return res;
 }
 
+inline bool
+check_test_image(const std::string &path, 
+                 const float tolerance = 0.001f,
+                 const int num = 100,
+                 const std::string &fmt = "%06d")
+{
+    char num_str[50];
+    snprintf(num_str, sizeof(num_str), fmt.c_str(), num);
+    std::string fmt_num = std::string(path.back() != '_' ? "_" : "") + num_str;
+    return check_test_image(path, tolerance, fmt_num);
+}
 
 inline bool
 check_test_file(const std::string &path)
@@ -682,16 +705,25 @@ add_matset_to_spiral(Node &n_mesh, const int ndomains)
     }
 }
 
-
-// Macro to save ascent actions file
-#define ASCENT_ACTIONS_DUMP(actions,name,msg) \
+// Macro to save ascent actions file with a custom cycle and format
+#define ASCENT_ACTIONS_DUMP_CYCLE_FMT(actions,name,msg,num,fmt) \
+  char num_str[50]; \
+  snprintf(num_str, sizeof(num_str), fmt, num); \
+  std::string fmt_num = std::string(#name[sizeof(#name)-2] != '_' ? "_" : "") + num_str; \
   std::string actions_str = actions.to_yaml(); \
   std::ofstream out; \
-  out.open(name+"100_actions.yaml"); \
+  out.open(name+fmt_num+".yaml"); \
   out<<"#"<<msg<<"\n"; \
   out<<actions_str; \
   out.close();
 
+// Macro to save ascent actions file with a custom cycle number
+#define ASCENT_ACTIONS_DUMP_CYCLE(actions,name,msg,num) \
+  ASCENT_ACTIONS_DUMP_CYCLE_FMT(actions,name,msg,num,"%06d")
+
+// Macro to save ascent actions file with default cycle and formatting
+#define ASCENT_ACTIONS_DUMP(actions,name,msg) \
+  ASCENT_ACTIONS_DUMP_CYCLE(actions,name,msg,100)
 
 //-----------------------------------------------------------------------------
 #endif
