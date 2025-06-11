@@ -4,26 +4,8 @@
 // other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-
-#include "settings.hpp"
-#include <assert.h>
-#include <fstream>
-#include <vtkh/compositing/PartialCompositor.hpp>
+// rover includes
 #include <scheduler_typed.hpp>
-#include <png_utils/ascent_png_encoder.hpp>
-#include <utils/rover_logging.hpp>
-#include <vtkm/rendering/CanvasRayTracer.h>
-#include <vtkm_typedefs.hpp>
-#include <ray_generators/camera_generator.hpp>
-#include <rover_exceptions.hpp>
-
-#include <conduit.hpp>
-#include <conduit_relay.hpp>
-#include <conduit_blueprint.hpp>
-
-#ifdef ROVER_PARALLEL
-#include <mpi.h>
-#endif
 
 using namespace conduit;
 

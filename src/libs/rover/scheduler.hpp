@@ -4,15 +4,16 @@
 // other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-#ifndef rover_scheduler_base_h
-#define rover_scheduler_base_h
+#ifndef ROVER_SCHEDULER_H
+#define ROVER_SCHEDULER_H
 
-#include "ray_generators/ray_generator.hpp"
-#include <rover_config.h>
-#include <image.hpp>
-#include <vtkm_typedefs.hpp>
+// tpl includes
 #include <conduit.hpp>
 
+// rover includes
+#include "ray_generators/ray_generator.hpp"
+
+// mpi include
 #ifdef ROVER_PARALLEL
 #include <mpi.h>
 #endif
@@ -33,8 +34,8 @@ public:
 #endif
 
   virtual void add_dataset(vtkmDataSet &dataset) = 0;
-  virtual void trace_rays() = 0;
   virtual void set_ray_generator(RayGenerator *ray_generator) = 0;
+  virtual void trace_rays() = 0;
   virtual void save_png(std::string file_name) = 0;
   virtual void save_bov(std::string file_name) = 0;
   virtual void to_blueprint(Node &dataset) = 0;

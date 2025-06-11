@@ -4,22 +4,26 @@
 // other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-#ifndef rover_scheduler_h
-#define rover_scheduler_h
+#ifndef ROVER_SCHEDULER_TYPED_H
+#define ROVER_SCHEDULER_TYPED_H
 
-#include <rover_config.h>
-#include <domain.hpp>
-#include <image.hpp>
-#include <engine.hpp>
-#include <scheduler.hpp>
-#include <ray_generators/ray_generator.hpp>
-#include <vtkm_typedefs.hpp>
+// tpl includes
 #include <conduit.hpp>
-#include <settings.hpp>
+#include <conduit_blueprint.hpp>
+#include <vtkh/compositing/PartialCompositor.hpp>
 
+// mpi include
 #ifdef ROVER_PARALLEL
 #include <mpi.h>
 #endif
+
+// rover includes
+#include <domain.hpp>
+#include <image.hpp>
+#include <png_utils/ascent_png_encoder.hpp>
+#include <ray_generators/camera_generator.hpp>
+#include <rover_exceptions.hpp>
+#include <scheduler.hpp>
 
 using namespace conduit;
 
