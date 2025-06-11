@@ -40,20 +40,13 @@
 //
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 #include <ray_generators/ray_generator.hpp>
-namespace rover {
 
-RayGenerator::RayGenerator(int height,
-                           int width)
+namespace rover
 {
-  m_height = height;
-  m_width = width;
-  m_has_rays = true;
-}
 
 RayGenerator::RayGenerator()
-  : m_height(512),
-    m_width(512)
 {
+  m_has_rays = true;
 }
 
 RayGenerator::~RayGenerator()
@@ -61,11 +54,10 @@ RayGenerator::~RayGenerator()
 
 }
 
-void
-RayGenerator::get_dims(int &height, int &width) const
+vtkmCamera&
+RayGenerator::get_camera()
 {
-  height = m_height;
-  width  = m_width;
+  return m_camera;
 }
 
 bool
@@ -78,24 +70,6 @@ void
 RayGenerator::reset()
 {
   m_has_rays = true;
-}
-
-void
-RayGenerator::set_width(int width)
-{
-  m_width = width;
-}
-
-void
-RayGenerator::set_height(int height)
-{
-  m_height = height;
-}
-
-int
-RayGenerator::get_size() const
-{
-  return m_height * m_width;
 }
 
 } // naspace rover

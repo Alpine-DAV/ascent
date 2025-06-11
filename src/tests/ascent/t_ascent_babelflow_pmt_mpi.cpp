@@ -207,7 +207,7 @@ TEST(ascent_babelfow_pmt_mpi, test_babelfow_pmt_mpi)
   MPI_Barrier(MPI_COMM_WORLD);
 
   // Check that we created an image
-  EXPECT_TRUE(check_test_image(output_file, 0.1, "0"));
+  EXPECT_TRUE(check_test_image(output_file, 0.1, 0));
 }
 
 

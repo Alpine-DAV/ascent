@@ -34,7 +34,7 @@ class Test_Ascent_MPI_Render(unittest.TestCase):
 
 
         obase = "tout_python_ascent_mpi_render_2d"
-        ofile = obase + "100.png"
+        ofile = obase + "_000100.png"
         # clean up old results if they exist
         if MPI.COMM_WORLD.rank == 0 and os.path.isfile(ofile):
             os.remove(ofile)
@@ -47,7 +47,7 @@ class Test_Ascent_MPI_Render(unittest.TestCase):
                                               0,
                                               n_mesh)
         # shift data for rank > 1
-        x_origin = MPI.COMM_WORLD.rank * 20 - 10;
+        x_origin = MPI.COMM_WORLD.rank * 20 - 10
 
         n_mesh["state/domain_id"] = MPI.COMM_WORLD.rank
         n_mesh["coordsets/coords/origin/x"] = x_origin
@@ -90,7 +90,7 @@ class Test_Ascent_MPI_Render(unittest.TestCase):
             return
 
         obase = "tout_python_ascent_mpi_render_3d"
-        ofile = obase + "100.png"
+        ofile = obase + "_000100.png"
         # clean up old results if they exist
         if MPI.COMM_WORLD.rank == 0 and os.path.isfile(ofile):
             os.remove(ofile)

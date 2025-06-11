@@ -4,302 +4,242 @@
 // other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+#include "image.hpp"
 #include <scheduler.hpp>
 #include <rover.hpp>
 #include <rover_exceptions.hpp>
 #include <vtkm_typedefs.hpp>
 #include <iostream>
 #include <utils/rover_logging.hpp>
+#include <settings.hpp>
 
 #ifdef ROVER_PARALLEL
 #include <mpi.h>
 #endif
 
-namespace rover {
-
-class Rover::InternalsType
+namespace rover
 {
-public:
-  enum TracePrecision {ROVER_FLOAT, ROVER_DOUBLE};
-protected:
-  SchedulerBase            *m_scheduler;
-  TracePrecision            m_precision;
-#ifdef ROVER_PARALLEL
-  MPI_Comm                  m_comm_handle;
-  int                       m_rank;
-  int                       m_num_ranks;
-#endif
 
-  void reset_render_mode(RenderMode render_mode)
-  {
-
-  }
-
-public:
-  InternalsType()
-  {
-    m_precision = ROVER_FLOAT;
-    m_scheduler = new Scheduler<vtkm::Float32>();
-
-#ifdef ROVER_PARALLEL
-    m_rank = 1;
-    m_num_ranks = -1;
-#endif
-  }
-
-  void add_data_set(vtkmDataSet &dataset)
-  {
-    ROVER_INFO("Adding data set");
-    m_scheduler->add_data_set(dataset);
-  }
-
-  void set_render_settings(RenderSettings render_settings)
-  {
-    ROVER_INFO("set_render_settings");
-    // TODO: make copy constructors to get the members like ray_generator
-//#ifdef ROVER_PARALLEL
-    // logic to create the appropriate parallel scheduler
-    //
-    // ray tracing = dynamic scheduler, scattering | no_scattering
-    // volume/engery = scattering + local_scope -> dynamic scheduler
-    //                 non_scattering + global_scope ->static scheduler
-    //
-    // Note: I wanted to allow for the case of scattering + global scope. This could
-    //       be benificial in the case where we may or may not scatter in a given
-    //       domain. Thus, avoid waiting for the ray to emerge or throw out the results
-//#else
-     //if(render_settings compared to old means new schedular)
-     //if(m_scheduler == NULL) delete m_scheduler;
-     //m_scheduler = new Scheduler<FloatType>();
-     m_scheduler->set_render_settings(render_settings);
-//#endif
-   }
-
-  void set_ray_generator(RayGenerator *ray_generator)
-  {
-    m_scheduler->set_ray_generator(ray_generator);
-  }
-
-  void clear_data_sets()
-  {
-    m_scheduler->clear_data_sets();
-  }
-
-  ~InternalsType()
-  {
-    if(m_scheduler) delete m_scheduler;
-  }
-
-  void set_background(const std::vector<vtkm::Float32> &background)
-  {
-    m_scheduler->set_background(background);
-  }
-
-  void set_background(const std::vector<vtkm::Float64> &background)
-  {
-    m_scheduler->set_background(background);
-  }
-
-  void to_blueprint(conduit::Node &dataset)
-  {
-#ifdef ROVER_PARALLEL
-    if(m_rank != 0)
-    {
-      return;
-    }
-#endif
-    m_scheduler->to_blueprint(dataset);
-  }
-
-  void save_png(const std::string &file_name)
-  {
-#ifdef ROVER_PARALLEL
-    if(m_rank != 0)
-    {
-      return;
-    }
-#endif
-    m_scheduler->save_result(file_name);
-  }
-  void save_png(const std::string &file_name,
-                const float min_val,
-                const float max_val,
-                const bool log_scale)
-  {
-#ifdef ROVER_PARALLEL
-    if(m_rank != 0)
-    {
-      return;
-    }
-#endif
-    m_scheduler->save_result(file_name, min_val, max_val, log_scale);
-  }
-
-  void save_bov(const std::string &file_name)
-  {
-#ifdef ROVER_PARALLEL
-    if(m_rank != 0)
-    {
-      return;
-    }
-#endif
-    m_scheduler->save_bov(file_name);
-  }
-
-  void execute()
-  {
-#ifdef ROVER_PARALLEL
-    //
-    // Check to see if we have been initialized
-    //
-    if(m_rank == -1)
-    {
-      ROVER_ERROR("Execute call with MPI enbaled, but never initialized with comm handle");
-    }
-
-    m_scheduler->set_comm_handle(m_comm_handle);
-#endif
-    m_scheduler->trace_rays();
-  }
-#ifdef ROVER_PARALLEL
-  void set_comm_handle(MPI_Comm comm_handle)
-  {
-    m_comm_handle = comm_handle;
-    MPI_Comm_rank(m_comm_handle, &m_rank);
-    if(m_rank == 0)
-    {
-      MPI_Comm_size(m_comm_handle, &m_num_ranks);
-      ROVER_INFO("MPI Comm size : "<<m_num_ranks);
-    }
-  }
-
-  MPI_Comm get_comm_handle()
-  {
-    return m_comm_handle;
-  }
-#endif
-  void get_result(Image<vtkm::Float32> &image)
-  {
-    m_scheduler->get_result(image);
-  }
-
-  void get_result(Image<vtkm::Float64> &image)
-  {
-    m_scheduler->get_result(image);
-  }
-
-  void set_tracer_precision32()
-  {
-    if(m_precision == ROVER_DOUBLE)
-    {
-      std::vector<Domain> domains = m_scheduler->get_domains();
-      delete m_scheduler;
-      m_scheduler = new Scheduler<vtkm::Float32>();
-    }
-  }
-
-  void set_tracer_precision64()
-  {
-    if(m_precision == ROVER_FLOAT)
-    {
-      std::vector<Domain> domains = m_scheduler->get_domains();
-      delete m_scheduler;
-      m_scheduler = new Scheduler<vtkm::Float64>();
-    }
-  }
-
-}; //Internals Type
+// Namespaced settings instance
+Node settings;
 
 Rover::Rover()
-  : m_internals( new InternalsType )
 {
+  // Ensure that we always start from a default state
+  rover::settings.reset();
+  // TODO: Figure out if color_table needs to be set by us here
+  rover::settings["rover/color_table"] = "Cool to Warm";
+  rover::settings["rover/divide_emission_by_abs"] = "false";
+  rover::settings["rover/height"] = 200;
+  rover::settings["rover/num_samples"] = 400;
+  rover::settings["rover/precision"] = "single";
+  rover::settings["rover/ray_scope"] = "global_rays";
+  rover::settings["rover/scattering_type"] = "non_scattering";
+  rover::settings["rover/width"] = 200;
+  rover::settings["rover/unit_scalar"] = 1.0f;
 
+  // We don't instantiate the scheduler until we determine if the
+  // user has requested a specific precision to use
+  m_scheduler = nullptr;
+
+#ifdef ROVER_PARALLEL
+  m_rank = 1;
+  m_num_ranks = -1;
+#endif
 }
 
 Rover::~Rover()
 {
+  if (m_scheduler)
+  {
+    delete m_scheduler;
+  }
 
-}
-
-void
-Rover::set_mpi_comm_handle(int mpi_comm_id)
-{
-#ifdef ROVER_PARALLEL
-  this->m_internals->set_comm_handle(MPI_Comm_f2c(mpi_comm_id));
-#else
-  (void)mpi_comm_id;
-#endif
-
-}
-
-int
-Rover::get_mpi_comm_handle()
-{
-#ifdef ROVER_PARALLEL
-  return MPI_Comm_c2f(this->m_internals->get_comm_handle());
-#else
-  return -1;
-#endif
-}
-
-void
-Rover::finalize()
-{
 #ifdef ROVER_ENABLE_LOGGING
   DataLogger::GetInstance()->WriteLog();
 #endif
 }
 
 void
-Rover::add_data_set(vtkmDataSet &dataset)
+Rover::update_settings(Node &params)
 {
-  m_internals->add_data_set(dataset);
-}
+  ROVER_INFO("Executing Rover::update_settings");
 
-void
-Rover::set_render_settings(RenderSettings render_settings)
-{
-  m_internals->set_render_settings(render_settings);
-}
-
-void
-Rover::clear_data_sets()
-{
-  m_internals->clear_data_sets();
-}
-
-void
-Rover::set_ray_generator(RayGenerator *ray_generator)
-{
-  if(ray_generator == nullptr)
+  if (params.has_child("rover"))
   {
-    throw RoverException("Ray generator cannot  be null");
+    for (const auto &param_name : params["rover"].child_names())
+    {
+      rover::settings["rover"][param_name].set(params["rover"][param_name]);
+    }
   }
-  m_internals->set_ray_generator(ray_generator);
+
+  if (params.has_child("camera"))
+  {
+    rover::settings["camera"].set(params["camera"]);
+  }
+}
+
+void
+Rover::print_settings()
+{
+  std::cout << rover::settings.to_yaml() << std::endl;
+}
+
+// TODO: Validate correctness
+#ifdef ROVER_PARALLEL
+void
+Rover::set_mpi_comm_handle(int comm_handle)
+{
+  m_comm_handle = MPI_Comm_f2c(comm_handle);
+  MPI_Comm_rank(m_comm_handle, &m_rank);
+  if (0 == m_rank)
+  {
+    MPI_Comm_size(m_comm_handle, &m_num_ranks);
+    ROVER_INFO("MPI Comm size: " << m_num_ranks);
+  }
+}
+
+int
+Rover::get_mpi_comm_handle()
+{
+  return MPI_Comm_c2f(m_comm_handle);
+}
+#endif
+
+void
+Rover::create_scheduler()
+{
+  const std::string precision = rover::settings["rover/precision"].as_string();
+  if ("double" == precision)
+  {
+    m_scheduler = new Scheduler<vtkm::Float64>();
+  }
+  else // ("single" == precision)
+  {
+    m_scheduler = new Scheduler<vtkm::Float32>();
+  }
+
+#ifdef ROVER_PARALLEL
+  // Check to see if we have been initialized
+  if(-1 == m_rank)
+  {
+    ROVER_ERROR("Error - Rover::create_scheduler: MPI was not initialized");
+  }
+  m_scheduler->set_comm_handle(m_comm_handle);
+#endif
+}
+
+void
+Rover::add_data_set(vtkh::DataSet &dataset)
+{
+  ROVER_INFO("Executing Rover::add_data_set");
+  // The scheduler needs to be created before data can be added
+  // to it, else we segfault
+  if (!m_scheduler)
+  {
+    create_scheduler();
+  }
+
+  for (int i = 0; i < dataset.GetNumberOfDomains(); i++)
+  {
+    m_scheduler->add_data_set(dataset.GetDomain(i));
+  }
+
+  m_camera.ResetToBounds(dataset.GetGlobalBounds());
+}
+
+void
+Rover::update_camera()
+{
+  // Early return if the default params weren't changed
+  if (!rover::settings.has_child("camera"))
+  {
+    return;
+  }
+
+  // TODO: Change each instance of has_path to has_child
+  if (rover::settings.has_path("camera/zoom"))
+  {
+    float64 image_zoom = rover::settings["camera/zoom"].value();
+    m_camera.Zoom(log(image_zoom) / log(4.0));
+  }
+
+  if (rover::settings.has_path("camera/look_at"))
+  {
+    float64_accessor vec3 = rover::settings["camera/look_at"].value();
+    vtkmVec3f look_at(vec3[0], vec3[1], vec3[2]);
+    m_camera.SetLookAt(look_at);
+  }
+  
+  if (rover::settings.has_path("camera/up"))
+  {
+    float64_accessor vec3 = rover::settings["camera/up"].value();
+    vtkmVec3f up(vec3[0], vec3[1], vec3[2]);
+    m_camera.SetViewUp(up);
+  }
+  
+  if (rover::settings.has_path("camera/fov"))
+  {
+    float64 fov = rover::settings["camera/fov"].value();
+    m_camera.SetFieldOfView(fov);
+  }
+  
+  if (rover::settings.has_path("camera/xpan") || rover::settings.has_path("camera/ypan"))
+  {
+    float64 xpan = 0.0;
+    float64 ypan = 0.0;
+
+    if (rover::settings.has_path("camera/xpan"))
+    {
+      xpan = rover::settings["camera/xpan"].value();
+    }
+
+    if (rover::settings.has_path("camera/ypan"))
+    {
+      ypan = rover::settings["camera/ypan"].value();
+    }
+    
+    m_camera.Pan(xpan, ypan);
+  }
+  
+  if (rover::settings.has_path("camera/near_plane") || rover::settings.has_path("camera/far_plane"))
+  {
+    vtkm::Range clipping_range;
+
+    if (rover::settings.has_path("camera/near_plane"))
+    {
+      clipping_range.Min = rover::settings["camera/near_plane"].value();
+    }
+    
+    if (rover::settings.has_path("camera/far_plane"))
+    {
+      clipping_range.Max = rover::settings["camera/far_plane"].value();
+    }
+
+    m_camera.SetClippingRange(clipping_range);
+  }
+}
+
+void
+Rover::update_ray_generator()
+{
+  m_ray_generator.set_camera(m_camera);
+  m_scheduler->set_ray_generator(&m_ray_generator);
 }
 
 void
 Rover::execute()
 {
-  m_internals->execute();
-}
+  // TODO: Not sure if this needs to be a full error. We're not in
+  // an unrecoverable state, we just simply have nothing to x-ray
+  if (!m_scheduler)
+  {
+    ROVER_ERROR("Error - Rover::execute: Execute called before adding a dataset");
+  }
 
-template<typename T>
-bool
-is_float(T );
-
-template<>
-bool
-is_float<vtkm::Float32>(vtkm::Float32 )
-{
-  return true;
-}
-
-template<>
-bool
-is_float<vtkm::Float64>(vtkm::Float64)
-{
-  return false;
+  update_camera();
+  update_ray_generator();
+  m_scheduler->trace_rays();
 }
 
 void
@@ -349,26 +289,40 @@ Rover::about()
 }
 
 void
-Rover::set_background(const std::vector<vtkm::Float64> &background)
+Rover::set_background(const std::vector<vtkm::Float32> &background)
 {
-  m_internals->set_background(background);
+  m_scheduler->set_background(background);
 }
 
 void
-Rover::set_background(const std::vector<vtkm::Float32> &background)
+Rover::set_background(const std::vector<vtkm::Float64> &background)
 {
-  m_internals->set_background(background);
+  m_scheduler->set_background(background);
 }
 
 void Rover::to_blueprint(conduit::Node &dataset)
 {
-  m_internals->to_blueprint(dataset);
+#ifdef ROVER_PARALLEL
+  // TODO: Support writing in parallel
+  if(m_rank != 0)
+  {
+    return;
+  }
+#endif
+  m_scheduler->to_blueprint(dataset);
 }
 
 void
 Rover::save_png(const std::string &file_name)
 {
-  m_internals->save_png(file_name);
+#ifdef ROVER_PARALLEL
+  // TODO: Support writing in parallel
+  if(m_rank != 0)
+  {
+    return;
+  }
+#endif
+  m_scheduler->save_result(file_name);
 }
 
 void
@@ -377,38 +331,32 @@ Rover::save_png(const std::string &file_name,
                 const float max_val,
                 const bool log_scale)
 {
-  m_internals->save_png(file_name, min_val, max_val, log_scale);
+#ifdef ROVER_PARALLEL
+  // TODO: Support writing in parallel
+  if(m_rank != 0)
+  {
+    return;
+  }
+#endif
+  m_scheduler->save_result(file_name, min_val, max_val, log_scale);
 }
 
 void
 Rover::save_bov(const std::string &file_name)
 {
-  m_internals->save_bov(file_name);
+  m_scheduler->save_bov(file_name);
 }
 
 void
 Rover::get_result(Image<vtkm::Float32> &image)
 {
-  m_internals->get_result(image);
+  m_scheduler->get_result(image);
 }
 
 void
 Rover::get_result(Image<vtkm::Float64> &image)
 {
-  m_internals->get_result(image);
-}
-
-void
-Rover::set_tracer_precision32()
-{
-  m_internals->set_tracer_precision32();
-}
-
-void
-Rover::set_tracer_precision64()
-{
-  m_internals->set_tracer_precision64();
+  m_scheduler->get_result(image);
 }
 
 }; //namespace rover
-

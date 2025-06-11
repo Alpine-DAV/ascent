@@ -7,20 +7,31 @@
 #ifndef rover_h
 #define rover_h
 
-#include <rover_config.h>
-
-#include <image.hpp>
-#include <rover_exports.h>
-#include <rover_types.hpp>
-#include <ray_generators/ray_generator.hpp>
-// vtk-m includes
-#include <vtkm_typedefs.hpp>
-
 // std includes
-#include <memory>
-#include <conduit.hpp>
 
-namespace rover {
+// tpl includes
+#include <conduit.hpp>
+#include <vtkm_typedefs.hpp>
+#include <vtkh/DataSet.hpp>
+
+// mpi include
+#ifdef ROVER_PARALLEL
+#include <mpi.h>
+#endif
+
+// rover includes
+#include <rover_exports.h>
+#include <rover_config.h>
+#include <settings.hpp>
+#include <image.hpp>
+#include <ray_generators/ray_generator.hpp>
+#include <ray_generators/camera_generator.hpp>
+#include <scheduler_base.hpp>
+
+using namespace conduit;
+
+namespace rover
+{
 
 class ROVER_API Rover
 {
@@ -28,18 +39,23 @@ public:
   Rover();
   ~Rover();
 
-  void set_mpi_comm_handle(int mpi_comm_id);
+  void update_settings(Node &params);
+  void print_settings();
+
+  #ifdef ROVER_PARALLEL
+  void set_mpi_comm_handle(int comm_handle);
   int  get_mpi_comm_handle();
+  #endif
 
-  void finalize();
+  void create_scheduler();
+  void add_data_set(vtkh::DataSet &);
+  void update_camera();
+  void update_ray_generator();
+  void execute();
 
-  void add_data_set(vtkmDataSet &);
-  void set_render_settings(const RenderSettings render_settings);
-  void set_ray_generator(RayGenerator *);
-  void clear_data_sets();
   void set_background(const std::vector<vtkm::Float32> &background);
   void set_background(const std::vector<vtkm::Float64> &background);
-  void execute();
+  
   void about();
   void save_png(const std::string &file_name);
   void to_blueprint(conduit::Node &dataset);
@@ -48,13 +64,18 @@ public:
                 const float max_val,
                 const bool log_scale);
   void save_bov(const std::string &file_name);
-  void set_tracer_precision32();
-  void set_tracer_precision64();
   void get_result(Image<vtkm::Float32> &image);
   void get_result(Image<vtkm::Float64> &image);
 private:
-  class InternalsType;
-  std::shared_ptr<InternalsType> m_internals;
+  vtkmCamera m_camera;
+  CameraGenerator m_ray_generator;
+  SchedulerBase *m_scheduler;
+
+#ifdef ROVER_PARALLEL
+  MPI_Comm m_comm_handle;
+  int m_rank;
+  int m_num_ranks;
+#endif
 };
 
 }; // namespace rover

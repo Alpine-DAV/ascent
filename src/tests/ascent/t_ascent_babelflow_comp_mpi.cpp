@@ -146,7 +146,7 @@ TEST(ascent_babelflow_comp_mpi, test_babelflow_comp_radixk)
     MPI_Barrier(comm);
 
     // Check that we created an image
-    EXPECT_TRUE(check_test_image(output_file, 0.1, "2200"));
+    EXPECT_TRUE(check_test_image(output_file, 0.1, 2200));
 }
 
 //-----------------------------------------------------------------------------
@@ -266,7 +266,7 @@ TEST(ascent_babelflow_comp_mpi, test_babelflow_comp_reduce)
     MPI_Barrier(comm);
 
     // Check that we created an image
-    EXPECT_TRUE(check_test_image(output_file, 0.1, "2200"));
+    EXPECT_TRUE(check_test_image(output_file, 0.1, 2200));
 }
 
 //-----------------------------------------------------------------------------

@@ -107,7 +107,8 @@ AscentRuntime::AscentRuntime()
  m_rank(0),
  m_default_output_dir("."),
  m_session_name("ascent_session"),
- m_field_filtering(false)
+ m_field_filtering(false),
+ m_family_value_seed(0)
 {
     m_ghost_fields.append() = "ascent_ghosts";
     flow::filters::register_builtin();
@@ -392,6 +393,11 @@ AscentRuntime::Initialize(const conduit::Node &options)
       {
         m_field_filtering = true;
       }
+    }
+
+    if(options.has_path("family_value_seed"))
+    {
+        m_family_value_seed = options["family_value_seed"].to_value();
     }
 
     Node msg;
@@ -1475,6 +1481,7 @@ AscentRuntime::PopulateMetadata()
   Metadata::n_metadata["ghost_field"] = m_ghost_fields;
   Metadata::n_metadata["default_dir"] = m_default_output_dir;
   Metadata::n_metadata["comments"] = m_comments;
+  Metadata::n_metadata["family_value_seed"] = m_family_value_seed;
 
 }
 //-----------------------------------------------------------------------------

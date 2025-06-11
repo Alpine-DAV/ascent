@@ -8,13 +8,15 @@
 #define rover_partial_image_h
 
 #include <rover_config.h>
+#include <settings.hpp>
+#include <vtkm_typedefs.hpp>
 
 #include <vector>
 
 #include <vtkm/cont/ArrayHandle.h>
 #include <vtkh/compositing/AbsorptionPartial.hpp>
 #include <vtkh/compositing/EmissionPartial.hpp>
-#include <vtkh/compositing/VolumePartial.hpp>
+// #include <vtkh/compositing/VolumePartial.hpp> // removing volume renderer
 
 namespace rover
 {
@@ -22,10 +24,8 @@ namespace rover
 template<typename FloatType>
 struct PartialImage
 {
-  int                                      m_height;
-  int                                      m_width;
   IdHandle                                 m_pixel_ids;
-  vtkmRayTracing::ChannelBuffer<FloatType> m_buffer;          // holds either color or absorption
+  vtkmRayTracing::ChannelBuffer<FloatType> m_buffer;          // holds the absorption
   vtkmRayTracing::ChannelBuffer<FloatType> m_intensities;     // holds the intensity emerging from each ray
   vtkm::cont::ArrayHandle<FloatType>       m_distances;
   std::vector<FloatType>                   m_source_sig;
@@ -43,12 +43,11 @@ struct PartialImage
   }
 
   PartialImage()
-    : m_height(0),
-      m_width(0)
   {
 
   }
 
+#if 0 // removing volume renderer
   void extract_partials(std::vector<vtkh::VolumePartial<FloatType>> &partials)
   {
     auto id_portal = m_pixel_ids.ReadPortal();
@@ -72,6 +71,7 @@ struct PartialImage
       partials[i].m_alpha = static_cast<float>(buffer_portal.Get(i*4+3));
     }
   }
+#endif
 
   void extract_partials(std::vector<vtkh::AbsorptionPartial<FloatType>> &partials)
   {
@@ -105,10 +105,8 @@ struct PartialImage
     auto id_portal = m_pixel_ids.ReadPortal();
     auto buffer_portal = m_buffer.Buffer.ReadPortal();
     auto intensity_portal = m_intensities.Buffer.ReadPortal();
-
     auto depth_portal = m_distances.ReadPortal();
     const int size = static_cast<int>(m_pixel_ids.GetNumberOfValues());
-
     partials.resize(size);
 
 #ifdef ROVER_OPENMP_ENABLED
@@ -130,6 +128,7 @@ struct PartialImage
     }
   }
 
+#if 0 // removing volume renderer
   void store(std::vector<vtkh::VolumePartial<FloatType>> &partials,
              const std::vector<double> &background,
              const int width,
@@ -179,14 +178,11 @@ struct PartialImage
     }
 
   }
+#endif
 
   void store(std::vector<vtkh::AbsorptionPartial<FloatType>> &partials,
-             const std::vector<double> &background,
-             const int width,
-             const int height)
+             const std::vector<double> &background)
   {
-    m_width = width;
-    m_height = height;
     const int size = static_cast<int>(partials.size());
     const int num_bins = static_cast<int>(partials.at(0).m_bins.size());
     allocate(size,num_bins);
@@ -219,12 +215,8 @@ struct PartialImage
   }
 
   void store(std::vector<vtkh::EmissionPartial<FloatType>> &partials,
-             const std::vector<double> &background,
-             const int width,
-             const int height)
+             const std::vector<double> &background)
   {
-    m_width = width;
-    m_height = height;
     const int size = static_cast<int>(partials.size());
     const int num_bins = static_cast<int>(partials.at(0).m_bins.size());
     allocate(size,num_bins);
@@ -291,12 +283,15 @@ struct PartialImage
     }
   }
 
+  // TODO: Investigate if we need this
   void print_pixel(const int x, const int y)
   {
     const int size = m_pixel_ids.GetNumberOfValues();
     const int num_channels = m_buffer.GetNumChannels();
-    bool has_emission = m_intensities.Buffer.GetNumberOfValues() != 0;
-    int debug = m_width * ( m_height - y) + x;
+    const bool has_emission = m_intensities.Buffer.GetNumberOfValues() != 0;
+    const int32 width = rover::settings["rover/width"].value();
+    const int32 height = rover::settings["rover/height"].value();
+    const int debug = width * (height - y) + x;
 
     for(int i = 0; i < size; ++i)
     {
@@ -317,11 +312,14 @@ struct PartialImage
 
   }// print
 
+  // TODO: Investigate if we need this
   void make_red_pixel(const int x, const int y)
   {
     const int size = m_pixel_ids.GetNumberOfValues();
     const int num_channels = m_buffer.GetNumChannels();
-    int debug = m_width * ( m_height - y) + x;
+    const int32 width = rover::settings["rover/width"].value();
+    const int32 height = rover::settings["rover/height"].value();
+    const int debug = width * (height - y) + x;
 
     for(int i = 0; i < size; ++i)
     {
@@ -337,8 +335,7 @@ struct PartialImage
       }
     }
   }
-
-
 };
+
 } // namespace rover
 #endif

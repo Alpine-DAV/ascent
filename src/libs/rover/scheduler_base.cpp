@@ -10,21 +10,12 @@ namespace rover {
 
 SchedulerBase::SchedulerBase()
 {
+
 }
 
 SchedulerBase::~SchedulerBase()
 {
 
-}
-
-void
-SchedulerBase::set_render_settings(const RenderSettings render_settings)
-{
-  //
-  //  In the serial schedular, the only setting that matter are
-  //  m_render_mode and m_scattering_mode
-  //
-  m_render_settings = render_settings;
 }
 
 void
@@ -50,12 +41,6 @@ SchedulerBase::set_background(const std::vector<vtkm::Float32> &background)
     m_background[i] = static_cast<vtkm::Float64>(background[i]);
   }
 
-}
-
-void
-SchedulerBase::clear_data_sets()
-{
-  m_domains.clear();
 }
 
 std::vector<Domain>
@@ -85,7 +70,7 @@ SchedulerBase::create_default_background(const int num_channels)
   m_background.resize(num_channels);
   for(int i = 0; i < num_channels; ++i)
   {
-    m_background[i] = 1.f;
+    m_background[i] = 0.0f;
   }
 }
 

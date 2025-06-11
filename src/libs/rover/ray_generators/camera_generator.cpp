@@ -41,9 +41,8 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 #include <ray_generators/camera_generator.hpp>
 
-#include <vtkm/rendering/CanvasRayTracer.h>
-
-namespace rover {
+namespace rover
+{
 
 CameraGenerator::CameraGenerator()
  : RayGenerator()
@@ -51,8 +50,8 @@ CameraGenerator::CameraGenerator()
 
 }
 
-CameraGenerator::CameraGenerator(const vtkmCamera &camera, const int height, const int width)
- : RayGenerator(height, width)
+CameraGenerator::CameraGenerator(const vtkmCamera &camera)
+ : RayGenerator()
 {
   m_camera = camera;
 }
@@ -65,31 +64,37 @@ CameraGenerator::~CameraGenerator()
 void
 CameraGenerator::get_rays(vtkmRayTracing::Ray<vtkm::Float32> &rays)
 {
-  vtkm::rendering::CanvasRayTracer canvas(m_width, m_height);
+  const int32 width = rover::settings["rover/width"].value();
+  const int32 height = rover::settings["rover/height"].value();
   vtkm::rendering::raytracing::Camera ray_gen;
-  ray_gen.SetParameters(m_camera, m_width, m_height);
-
+  ray_gen.SetParameters(m_camera, width, height);
   ray_gen.CreateRays(rays, this->m_coordinates.GetBounds());
   this->m_has_rays = false;
-  if(rays.NumRays == 0) std::cout<<"CameraGenerator Warning no rays were generated\n";
+  if (rays.NumRays == 0)
+  {
+    ROVER_WARN("CameraGenerator::get_rays: No rays were generated");
+  }
 }
 
 void
 CameraGenerator::get_rays(vtkmRayTracing::Ray<vtkm::Float64> &rays)
 {
-  vtkm::rendering::CanvasRayTracer canvas(m_width, m_height);
+  const int32 width = rover::settings["rover/width"].value();
+  const int32 height = rover::settings["rover/height"].value();
   vtkm::rendering::raytracing::Camera ray_gen;
-  ray_gen.SetParameters(m_camera, m_width, m_height);
-
+  ray_gen.SetParameters(m_camera, width, height);
   ray_gen.CreateRays(rays, this->m_coordinates.GetBounds());
   this->m_has_rays = false;
-  if(rays.NumRays == 0) std::cout<<"CameraGenerator Warning no rays were generated\n";
+  if (rays.NumRays == 0)
+  {
+    ROVER_WARN("CameraGenerator::get_rays: No rays were generated");
+  }
 }
 
-vtkmCamera
-CameraGenerator::get_camera()
+void
+CameraGenerator::set_camera(vtkmCamera &camera)
 {
-  return m_camera;
+  m_camera = camera;
 }
 
 vtkmCoordinates
