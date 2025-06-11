@@ -195,11 +195,11 @@ if(NOT ANARI_DIR)
     set(ANARI_DIR ${ASCENT_ANARI_DIR})
 endif()
 
-if(EXISTS ${ANARI_DIR}/lib64/cmake/Kokkos/)
+if(EXISTS ${ANARI_DIR}/lib64/cmake/anari/)
     set(ANARI_CMAKE_CONFIG_DIR ${ANARI_DIR}/lib64/cmake/anari/)
 endif()
 
-if(EXISTS ${ANARI_DIR}/lib/cmake/Kokkos/)
+if(EXISTS ${ANARI_DIR}/lib/cmake/anari/)
     set(ANARI_CMAKE_CONFIG_DIR ${ANARI_DIR}/lib/cmake/anari/)
 endif()
 
