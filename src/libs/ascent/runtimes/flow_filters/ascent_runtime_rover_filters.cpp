@@ -346,9 +346,7 @@ RoverXRay::execute()
   // the user wants rover to produce
   rover.save_png(filename);
 
-  // TODO: Can we just use rover/filename? Why would we want one
-  // filename for .png and another filename for .bov? We don't
-  // currently check if rover/bov_filename is valid in verify_params.
+  // TODO: We don't check if rover/bov_filename is valid in verify_params
   if (params().has_path("rover/bov_filename"))
   {
     std::string bov_filename = params()["rover/bov_filename"].as_string();

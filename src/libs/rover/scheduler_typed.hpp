@@ -27,11 +27,11 @@ namespace rover
 {
 
 template<typename FloatType>
-class SchedulerImpl : public Scheduler
+class SchedulerTyped : public Scheduler
 {
 public:
-  SchedulerImpl();
-  ~SchedulerImpl();
+  SchedulerTyped();
+  ~SchedulerTyped();
 
 #ifdef ROVER_PARALLEL
   void set_comm_handle(MPI_Comm comm_handle) override;
