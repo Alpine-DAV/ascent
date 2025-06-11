@@ -4,10 +4,8 @@
 // other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-#ifndef rover_h
-#define rover_h
-
-// std includes
+#ifndef ROVER_H
+#define ROVER_H
 
 // tpl includes
 #include <conduit.hpp>

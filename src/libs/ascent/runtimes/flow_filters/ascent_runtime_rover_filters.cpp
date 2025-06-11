@@ -146,6 +146,7 @@ RoverXRay::verify_params(const conduit::Node &params,
     }
     else
     {
+      // TODO: User-facing numeric scalars should use wide types
       const int32 width = params["rover/width"].value();
       if (width <= 0)
       {
@@ -161,6 +162,7 @@ RoverXRay::verify_params(const conduit::Node &params,
     }
     else
     {
+      // TODO: User-facing numeric scalars should use wide types
       const int32 height = params["rover/height"].value();
       if (height <= 0)
       {
@@ -284,55 +286,31 @@ RoverXRay::execute()
   // Calling execute initializes everything that rover needs based on the input params
   rover.execute();
 
-  Node metadata = Metadata::n_metadata;
-
-  int32 cycle = -1;
-  if (metadata.has_child("cycle"))
-  {
-    cycle = metadata["cycle"].value();
-  }
-
-  std::string filename = params()["rover/filename"].as_string();
-  if (cycle != -1)
-  {
-    filename = expand_path_special_variables(filename, mpi_comm_id, cycle);
-  }
-  filename = output_dir(filename);
-
   if (params().has_path("rover/blueprint"))
   {
-    const std::string protocol = params()["rover/blueprint"].as_string();
     conduit::Node multi_domain;
     conduit::Node &data = multi_domain.append();
     rover.to_blueprint(data);
 
     if (data.has_path("coordsets"))
     {
-      float64 time = -1;
-      // TODO: Is this ever not true?
-      if (metadata.has_child("time"))
+      if(Metadata::n_metadata.has_child("cycle"))
       {
-        time = metadata["time"].to_float64();
-      }
-      
-      // TODO: Is this ever not true?
-      if (cycle != -1)
-      {
-        data["state/cycle"] = cycle;
+        data["state/cycle"].set(Metadata::n_metadata["cycle"]);
       }
 
-      // TODO: Is this ever not true?
-      if (time != -1)
+      if(Metadata::n_metadata.has_child("time"))
       {
-        data["state/time"] = time;
+        data["state/time"].set(Metadata::n_metadata["time"]);
       }
     }
 
-    // TODO: Why is this hardcoded to -1?
+    std::string filename = params()["rover/filename"].as_string();
+    filename = output_dir(expand_path_special_variables(filename, ".root", mpi_comm_id));
+    const std::string protocol = params()["rover/blueprint"].as_string();
     const int num_files = -1;
     conduit::Node extra_opts;
     std::string result_path;
-
     mesh_blueprint_save(multi_domain,
                         filename,
                         protocol,
@@ -344,22 +322,16 @@ RoverXRay::execute()
   // TODO: I don't think we want to always save a .png unconditionally,
   // so maybe params could be reworked to request the exact types of output
   // the user wants rover to produce
-  rover.save_png(filename);
+  std::string png_filename = params()["rover/filename"].as_string();
+  png_filename = output_dir(expand_path_special_variables(png_filename, ".png", mpi_comm_id));
+  rover.save_png(png_filename);
 
   // TODO: We don't check if rover/bov_filename is valid in verify_params
   if (params().has_path("rover/bov_filename"))
   {
     std::string bov_filename = params()["rover/bov_filename"].as_string();
     bov_filename = output_dir(bov_filename);
-    if (cycle != -1)
-    {
-      bov_filename = expand_path_special_variables(bov_filename, mpi_comm_id, cycle);
-    }
-    else
-    {
-      bov_filename = expand_path_special_variables(bov_filename, mpi_comm_id);
-    }
-    rover.save_bov(bov_filename);
+    rover.save_bov(expand_path_special_variables(bov_filename, ".bov", mpi_comm_id));
   }
 }
 
@@ -521,23 +493,8 @@ RoverVolume::execute()
     tracer.set_ray_generator(&generator);
     tracer.execute();
 
-    Node meta = Metadata::n_metadata;
-    int cycle = -1;
-    if(meta.has_path("cycle"))
-    {
-      cycle = meta["cycle"].as_int32();
-    }
-
     std::string filename = params()["filename"].as_string();
-    if(cycle != -1)
-    {
-      filename = expand_path_special_variables(filename, mpi_comm_id, cycle);
-    }
-    else
-    {
-      filename = expand_path_special_variables(filename, mpi_comm_id);
-    }
-    filename = output_dir(filename);
+    filename = output_dir(expand_path_special_variables(filename, ".png", mpi_comm_id));
 
     tracer.save_png(filename);
 }

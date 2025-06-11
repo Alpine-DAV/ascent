@@ -103,8 +103,6 @@ TEST(ascent_mpi_uniform_uniform_grid, test_mpi_uniform_grid)
     string output_path = prepare_output_dir();
     string output_file_dist = conduit::utils::join_file_path(output_path,"tout_mpi_uniform_sample_dist");
     string output_file_rank = conduit::utils::join_file_path(output_path,"tout_mpi_uniform_sample_rank");
-    string image_file_dist = conduit::utils::join_file_path(output_path,"tout_mpi_uniform_sample_dist10");
-    string image_file_rank = conduit::utils::join_file_path(output_path,"tout_mpi_uniform_sample_rank10");
 
     // remove old images before rendering
     if(par_rank == 0)
@@ -163,8 +161,8 @@ TEST(ascent_mpi_uniform_uniform_grid, test_mpi_uniform_grid)
 )xyzxyz";
 
     actions.parse(acts_str,"yaml");
-    actions[1]["scenes/s1/renders/r1/image_prefix"] = image_file_dist;
-    actions[1]["scenes/s2/renders/r1/image_prefix"] = image_file_rank;
+    actions[1]["scenes/s1/renders/r1/image_prefix"] = output_file_dist;
+    actions[1]["scenes/s2/renders/r1/image_prefix"] = output_file_rank;
 
     //actions.print();
 
@@ -186,8 +184,8 @@ TEST(ascent_mpi_uniform_uniform_grid, test_mpi_uniform_grid)
     // check that we created an image
     if(par_rank == 0)
     {
-      EXPECT_TRUE(check_test_image(output_file_dist));
-      EXPECT_TRUE(check_test_image(output_file_rank));
+      EXPECT_TRUE(check_test_image(output_file_dist, 0.001f, 0));
+      EXPECT_TRUE(check_test_image(output_file_rank, 0.001f, 0));
       std::string msg = "An example of using the mpi uniform grid filter.";
       ASCENT_ACTIONS_DUMP(actions,output_file_dist,msg);
     }

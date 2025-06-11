@@ -487,8 +487,8 @@ void SchedulerTyped<FloatType>::save_png(std::string filename)
   // Optional params that the user may have set
   bool has_image_params = false;
   bool log_scale;
-  float32 min_value;
-  float32 max_value;
+  float64 min_value;
+  float64 max_value;
   
   if (rover::settings.has_child("image_params"))
   {
@@ -578,8 +578,6 @@ template<typename FloatType>
 void
 SchedulerTyped<FloatType>::to_blueprint(Node &data)
 {
-  const int32 width = rover::settings["rover/width"].value();
-  const int32 height = rover::settings["rover/height"].value();
   ROVER_INFO("Saving blueprint file with output size " << width << "x" << height);
 
   // TODO: Plumb the other "state/" info down out of *_rover_filters.cpp
@@ -605,6 +603,9 @@ SchedulerTyped<FloatType>::to_blueprint(Node &data)
   Node &n_coords = data["coordsets"][coord_name];
   n_coords["type"] = "rectilinear";
   
+  const int32 width = rover::settings["rover/width"].value();
+  const int32 height = rover::settings["rover/height"].value();
+
   n_coords["values/x"].set(DataType::float32(width + 1));
   n_coords["values/y"].set(DataType::float32(height + 1));
   n_coords["values/z"].set(DataType::float32(num_channels + 1));

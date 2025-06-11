@@ -30,7 +30,7 @@ class Test_Ascent_Render(unittest.TestCase):
             return
 
         obase = "tout_python_ascent_render_2d"
-        ofile = obase + "100.png"
+        ofile = obase + "_000100.png"
         # clean up old results if they exist
         if os.path.isfile(ofile):
             os.remove(ofile)
@@ -75,7 +75,7 @@ class Test_Ascent_Render(unittest.TestCase):
             return
 
         obase = "tout_python_ascent_render_3d"
-        ofile = obase + "100.png"
+        ofile = obase + "_000100.png"
         # clean up old results if they exist
         if os.path.isfile(ofile):
             os.remove(ofile)
@@ -128,7 +128,7 @@ class Test_Ascent_Render(unittest.TestCase):
         opts = conduit.Node()
         opts["exceptions"] = "forward"
         a.open(opts)
-        a.publish(mesh);
+        a.publish(mesh)
 
         actions = conduit.Node()
 
