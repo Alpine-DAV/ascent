@@ -35,7 +35,6 @@ class SchedulerTyped : public Scheduler
 {
 public:
   SchedulerTyped();
-  ~SchedulerTyped();
 
 #ifdef ROVER_PARALLEL
   void set_comm_handle(MPI_Comm comm_handle) override;
@@ -64,8 +63,7 @@ protected:
   void set_background(const std::vector<vtkm::Float64> &background);
 
   int  get_global_channels();
-  void set_global_scalar_range();
-  void set_global_bounds();
+  void set_global_range_and_bounds();
   void add_partial(vtkmRayTracing::PartialComposite<FloatType> &partial);
   void composite();
 };
