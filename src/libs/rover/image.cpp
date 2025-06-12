@@ -49,7 +49,7 @@ Image<FloatType>::normalize_handle(vtkm::cont::ArrayHandle<FloatType> &handle,
   auto portal = handle.WritePortal();
   const int64 width = rover::settings["rover/width"].to_int64();
   const int64 height = rover::settings["rover/height"].to_int64();
-  const long size = width * height;
+  const int64 size = width * height;
 
 #ifdef ROVER_OPENMP_ENABLED
   #pragma omp parallel for
@@ -85,7 +85,7 @@ Image<FloatType>::normalize_handle(vtkm::cont::ArrayHandle<FloatType> &handle, b
   auto portal = handle.WritePortal();
   const int64 width = rover::settings["rover/width"].to_int64();
   const int64 height = rover::settings["rover/height"].to_int64();
-  const long size = width * height;
+  const int64 size = width * height;
 
 #ifdef ROVER_OPENMP_ENABLED
   #pragma omp parallel for
@@ -228,7 +228,7 @@ Image<FloatType>::init_from_partial(PartialImage<FloatType> &partial)
 
   const int64 width = rover::settings["rover/width"].to_int64();
   const int64 height = rover::settings["rover/height"].to_int64();
-  const long channel_size = width * height;
+  const int64 channel_size = width * height;
   const int num_channels = partial.m_buffer.GetNumChannels();
   for (int i = 0; i < num_channels; ++i)
   {
@@ -300,7 +300,7 @@ Image<FloatType>::flatten_intensities()
   HandleType res;
   const int64 width = rover::settings["rover/width"].to_int64();
   const int64 height = rover::settings["rover/height"].to_int64();
-  const long size = width * height;
+  const int64 size = width * height;
   res.Allocate(num_channels * size);
   auto output = res.WritePortal();
   for(int c = 0; c < num_channels; ++c)
@@ -333,7 +333,7 @@ Image<FloatType>::flatten_optical_depths()
   HandleType res;
   const int64 width = rover::settings["rover/width"].to_int64();
   const int64 height = rover::settings["rover/height"].to_int64();
-  const long size = width * height;
+  const int64 size = width * height;
   res.Allocate(num_channels * size);
   auto output = res.WritePortal();
   for(int c = 0; c < num_channels; ++c)
@@ -348,15 +348,6 @@ Image<FloatType>::flatten_optical_depths()
     }
   }
   return res;
-}
-
-template<typename FloatType>
-int
-Image<FloatType>::get_size()
-{
-  const int64 width = rover::settings["rover/width"].to_int64();
-  const int64 height = rover::settings["rover/height"].to_int64();
-  return width * height;
 }
 
 template<typename FloatType>

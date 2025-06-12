@@ -549,7 +549,7 @@ void TypedScheduler<FloatType>::save_bov(std::string file_name)
 {
   const int64 width = rover::settings["rover/width"].to_int64();
   const int64 height = rover::settings["rover/height"].to_int64();
-  const long size = height * width;
+  const int64 size = height * width;
 
   ROVER_INFO("Saving bov file with output size " << width << "x" << height);
   ascent::PNGEncoder encoder;

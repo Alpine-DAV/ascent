@@ -41,7 +41,6 @@ public:
   template<typename O> void operator=(Image<O> &other);
   HandleType flatten_intensities();
   HandleType flatten_optical_depths();
-  int get_size();
   template<typename T,
            typename O> friend void init_from_image(Image<T> &left,
                                                    Image<O> &right);
