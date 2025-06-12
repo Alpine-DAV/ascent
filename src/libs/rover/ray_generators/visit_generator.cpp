@@ -72,9 +72,9 @@ VisitGenerator::gen_rays(vtkmRayTracing::Ray<T> &rays)
   vtkmTimer timer;
   double time = 0;
   ROVER_DATA_OPEN("visit_ray_gen");
-  const int32 width = rover::settings["rover/width"].value();
-  const int32 height = rover::settings["rover/height"].value();
-  const int size = width * height;
+  const int64 width = rover::settings["rover/width"].to_int64();
+  const int64 height = rover::settings["rover/height"].to_int64();
+  const int64 size = width * height;
 
 #if (VTKM_VERSION_MAJOR >= 2) && (VTKM_VERSION_MINOR >= 1)
     vtkm::rendering::raytracing::RayOperations::Resize(rays,
