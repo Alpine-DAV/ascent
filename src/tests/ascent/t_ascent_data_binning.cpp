@@ -1103,7 +1103,7 @@ TEST(ascent_binning, filter_braid_binning_bins)
 
   EXPECT_TRUE(check_test_image(output_file, 0.1));
   std::string msg = "An example of data binning, binning spatially and summing a field.";
-  ASCENT_ACTIONS_DUMP(actions,output_file + "_dump",msg);
+  ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
 

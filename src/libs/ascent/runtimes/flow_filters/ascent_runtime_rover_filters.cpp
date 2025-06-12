@@ -104,74 +104,83 @@ bool
 RoverXRay::verify_params(const conduit::Node &params,
                                conduit::Node &info)
 {
+  // TODO: We want to be more rigorous about param checking at some point, so
+  // that rover can safely assume its inputs are valid
   info.reset();
   bool res = true;
 
-  if (!params.has_child("absorption") || !params["absorption"].dtype().is_string())
+  if (!params.has_path("rover/absorption") || !params["rover/absorption"].dtype().is_string())
   {
-    info["errors"].append() = "Missing required string parameter 'absorption'";
+    info["errors"].append() = "Missing required string parameter 'rover/absorption'";
     res = false;
   }
 
-  if (!params.has_child("filename") || !params["filename"].dtype().is_string())
+  const std::string absorption = params["rover/absorption"].as_string();
+  if ("" == absorption)
   {
-    info["errors"].append() = "Missing required string parameter 'filename'";
+    info["errors"].append() = "Required parameter 'rover/absorption' cannot be an empty string";
     res = false;
   }
 
-  if (params.has_child("emission") && !params["emission"].dtype().is_string())
+  if (!params.has_path("rover/filename") || !params["rover/filename"].dtype().is_string())
   {
-    info["errors"].append() = "Optional parameter 'emission' must be a string";
+    info["errors"].append() = "Missing required string parameter 'rover/filename'";
     res = false;
   }
 
-  bool has_width = params.has_child("width");
-  bool has_height = params.has_child("height");
+  if (params.has_path("rover/emission") && !params["rover/emission"].dtype().is_string())
+  {
+    info["errors"].append() = "Optional parameter 'rover/emission' must be a string";
+    res = false;
+  }
+
+  const bool has_width = params.has_path("rover/width");
+  const bool has_height = params.has_path("rover/height");
 
   if (has_width && has_height)
   {
-    if (!params["width"].dtype().is_integer())
+    if (!params["rover/width"].dtype().is_integer())
     {
-      info["errors"].append() = "Optional parameter 'width' must be an integer";
+      info["errors"].append() = "Optional parameter 'rover/width' must be an integer";
       res = false;
     }
     else
     {
-      int width = params["width"].to_int32();
+      const int64 width = params["rover/width"].to_int64();
       if (width <= 0)
       {
-        info["errors"].append() = "Optional parameter 'width' must be greater than 0";
+        info["errors"].append() = "Optional parameter 'rover/width' must be greater than 0";
         res = false;
       }
     }
 
-    if (!params["height"].dtype().is_integer())
+    if (!params["rover/height"].dtype().is_integer())
     {
-      info["errors"].append() = "Optional parameter 'height' must be an integer";
+      info["errors"].append() = "Optional parameter 'rover/height' must be an integer";
       res = false;
     }
     else
     {
-      int height = params["height"].to_int32();
+      const int64 height = params["rover/height"].to_int64();
       if (height <= 0)
       {
-        info["errors"].append() = "Optional parameter 'height' must be greater than 0";
+        info["errors"].append() = "Optional parameter 'rover/height' must be greater than 0";
         res = false;
       }
     }
   }
   else if (has_width && !has_height)
   {
-    info["errors"].append() = "Optional parameter 'width' requires 'height' to also be set";
+    info["errors"].append() = "Optional parameter 'rover/width' requires 'rover/height' to also be set";
     res = false;
   }
   else if (!has_width && has_height)
   {
-    info["errors"].append() = "Optional parameter 'height' requires 'width' to also be set";
+    info["errors"].append() = "Optional parameter 'rover/height' requires 'rover/width' to also be set";
     res = false;
   }
 
-  if (params.has_path("image_params"))
+  if (params.has_child("image_params"))
   {
     if (!params.has_path("image_params/log_scale") ||
         !params["image_params/log_scale"].dtype().is_string())
@@ -195,30 +204,31 @@ RoverXRay::verify_params(const conduit::Node &params,
     }
   }
 
-  if (params.has_child("precision"))
+  if (params.has_path("rover/precision"))
   {
-    if (!params["precision"].dtype().is_string())
+    if (!params["rover/precision"].dtype().is_string())
     {
-      info["errors"].append() = "Optional parameter 'precision' must be a string";
+      info["errors"].append() = "Optional parameter 'rover/precision' must be a string";
+      info["errors"].append() = "Optional parameter 'rover/precision' must be 'single' or 'double'";
       res = false;
     }
     else
     {
-      std::string precision = params["precision"].as_string();
-      if (precision != "single" || precision != "double")
+      const std::string precision = params["rover/precision"].as_string();
+      if (precision != "single" && precision != "double")
       {
-        info["errors"].append() = "Parameter 'precision' must be 'single' or 'double'";
+        info["errors"].append() = "Optional parameter 'rover/precision' must be 'single' or 'double'";
         res = false;
       }
     }
   }
 
-  if (params.has_child("blueprint"))
+  if (params.has_path("rover/blueprint"))
   {
-    std::string protocol = params["blueprint"].as_string();
+    const std::string protocol = params["rover/blueprint"].as_string();
     if (protocol != "hdf5" && protocol != "yaml" && protocol != "json")
     {
-      info["errors"].append() = "Parameter 'blueprint' must be 'hdf5' or 'yaml' or 'json'";
+      info["errors"].append() = "Optional parameter 'rover/blueprint' must be 'hdf5' or 'yaml' or 'json'";
       res = false;
     }
   }
@@ -242,17 +252,20 @@ RoverXRay::execute()
   }
   std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
-  std::string absorption = params()["absorption"].as_string();
+  // Validate that the 'absorption' field exists in the dataset
+  const std::string absorption = params()["rover/absorption"].as_string();
   if(!collection->has_field(absorption))
   {
     ASCENT_ERROR("Absorption field name '" << absorption << "' is not in the dataset");
   }
 
+  // Fetch the dataset associated with the 'absorption' field
   std::string topo_name = collection->field_topology(absorption);
-
-  // Returns an empty dataset if topo_name doesn't exist in the collection
+  // TODO: Validate topo_name
   vtkh::DataSet &dataset = collection->dataset_by_topology(topo_name);
+  // TODO: Validate dataset
 
+  // Initialize rover and configure its behavior with the input params
   Rover rover;
   rover.update_settings(params());
 
@@ -260,93 +273,42 @@ RoverXRay::execute()
 #ifdef ASCENT_MPI_ENABLED
   mpi_comm_id = flow::Workspace::default_mpi_comm();
   rover::Logger::get_instance()->set_mpi_comm_id(mpi_comm_id);
-  // these use different styles of naming functions ....
   rover::DataLogger::GetInstance()->set_mpi_comm_id(mpi_comm_id);
   rover.set_mpi_comm_handle(mpi_comm_id);
 #endif
-
-  if (params().has_path("precision"))
-  {
-    std::string precision = params()["precision"].as_string();
-    if (precision == "double")
-    {
-      rover.set_tracer_precision64();
-    }
-  }
   
-  // Adding a dataset to rover resets the camera bounds to the dataset bounds
-  rover.add_data_set(dataset);
-  // We then want to override the dataset-adjusted camera per the input params
-  rover.update_camera();
-
-  //
-  // Default render settings
-  //
-  RenderSettings render_settings;
-  render_settings.m_render_mode = rover::energy;
-  render_settings.m_primary_field = absorption;
-
-  // TODO: investigate how/why this is getting set, even if emission is not specified
-  // example: if absorption == "radial", why is emission also == "radial"
-  if (params().has_path("emission"))
-  {
-    render_settings.m_secondary_field = params()["emission"].as_string();
-  }
-
-  if(params().has_path("unit_scalar"))
-  {
-    render_settings.m_energy_settings.m_unit_scalar = params()["unit_scalar"].to_float64();
-  }
-
-  rover.set_render_settings(render_settings);
+  // Adding a dataset to rover resets the camera bounds to the dataset bounds,
+  // but any camera params passed via the input params will take precedence.
+  // It also instantiates a scheduler if one doesn't already exist.
+  rover.add_dataset(dataset);
+  // Calling execute initializes everything that rover needs based on the input params
   rover.execute();
 
-  Node metadata = Metadata::n_metadata;
-
-  int cycle = -1;
-  if (metadata.has_path("cycle"))
+  if (params().has_path("rover/blueprint"))
   {
-    cycle = metadata["cycle"].as_int32();
-  }
-
-  std::string filename = params()["filename"].as_string();
-  if (cycle != -1)
-  {
-    filename = expand_path_special_variables(filename, mpi_comm_id, cycle);
-  }
-
-  filename = output_dir(filename);
-
-  if(params().has_path("blueprint"))
-  {
-    std::string protocol = params()["blueprint"].as_string();
     conduit::Node multi_domain;
     conduit::Node &data = multi_domain.append();
     rover.to_blueprint(data);
 
     if (data.has_path("coordsets"))
     {
-      double time = -1;
-      if (metadata.has_path("time"))
+      if(Metadata::n_metadata.has_child("cycle"))
       {
-        time = metadata["time"].to_float64();
-      }
-        
-      if(cycle != -1)
-      {
-        data["state/cycle"] = cycle;
+        data["state/cycle"].set(Metadata::n_metadata["cycle"]);
       }
 
-      if(time != -1)
+      if(Metadata::n_metadata.has_child("time"))
       {
-        data["state/time"] = time;
+        data["state/time"].set(Metadata::n_metadata["time"]);
       }
     }
 
+    std::string filename = params()["rover/filename"].as_string();
+    filename = output_dir(expand_path_special_variables(filename, ".root", mpi_comm_id));
+    const std::string protocol = params()["rover/blueprint"].as_string();
     const int num_files = -1;
     conduit::Node extra_opts;
     std::string result_path;
-
     mesh_blueprint_save(multi_domain,
                         filename,
                         protocol,
@@ -355,34 +317,23 @@ RoverXRay::execute()
                         result_path);
   }
 
-  // Do we always want to save a png?
-  if (params().has_path("image_params"))
-  {
-    float min_value = params()["image_params/min_value"].to_float32();
-    float max_value = params()["image_params/max_value"].to_float32();
-    bool log_scale = params()["image_params/log_scale"].as_string() == "true";
-    rover.save_png(filename, min_value, max_value, log_scale);
-  }
-  else
-  {
-    rover.save_png(filename);
-  }
+  // TODO: I don't think we want to always save a .png unconditionally,
+  // so maybe params could be reworked to request the exact types of output
+  // the user wants rover to produce
+  std::string png_filename = params()["rover/filename"].as_string();
+  png_filename = output_dir(expand_path_special_variables(png_filename, ".png", mpi_comm_id));
+  rover.save_png(png_filename);
 
-  if (params().has_path("bov_filename"))
+  // TODO: We don't check if rover/bov_filename is valid in verify_params
+  if (params().has_path("rover/bov_filename"))
   {
-    std::string bov_filename = params()["bov_filename"].as_string();
+    std::string bov_filename = params()["rover/bov_filename"].as_string();
     bov_filename = output_dir(bov_filename);
-    if (cycle != -1)
-    {
-      rover.save_bov(expand_path_special_variables(bov_filename, mpi_comm_id, cycle));
-    }
-    else
-    {
-      rover.save_bov(expand_path_special_variables(bov_filename, mpi_comm_id));
-    }
+    rover.save_bov(expand_path_special_variables(bov_filename, ".bov", mpi_comm_id));
   }
 }
 
+#if 0 // removing volume renderer
 //-----------------------------------------------------------------------------
 RoverVolume::RoverVolume()
 :Filter()
@@ -540,26 +491,12 @@ RoverVolume::execute()
     tracer.set_ray_generator(&generator);
     tracer.execute();
 
-    Node meta = Metadata::n_metadata;
-    int cycle = -1;
-    if(meta.has_path("cycle"))
-    {
-      cycle = meta["cycle"].as_int32();
-    }
-
     std::string filename = params()["filename"].as_string();
-    if(cycle != -1)
-    {
-      filename = expand_path_special_variables(filename, mpi_comm_id, cycle);
-    }
-    else
-    {
-      filename = expand_path_special_variables(filename, mpi_comm_id);
-    }
-    filename = output_dir(filename);
+    filename = output_dir(expand_path_special_variables(filename, ".png", mpi_comm_id));
 
     tracer.save_png(filename);
 }
+#endif
 
 //-----------------------------------------------------------------------------
 };

@@ -10,8 +10,7 @@
 #include <rover_config.h>
 #include <vector>
 #include <vtkm/cont/ArrayHandle.h>
-
-#include <rover_types.hpp>
+#include <vtkm_typedefs.hpp>
 #include <partial_image.hpp>
 
 namespace rover
@@ -42,14 +41,11 @@ public:
   template<typename O> void operator=(Image<O> &other);
   HandleType flatten_intensities();
   HandleType flatten_optical_depths();
-  int get_size();
   template<typename T,
            typename O> friend void init_from_image(Image<T> &left,
                                                    Image<O> &right);
 
 protected:
-  int                                      m_height;
-  int                                      m_width;
   std::vector<HandleType>                  m_intensities;
   std::vector<HandleType>                  m_optical_depths;
   std::vector<bool>                        m_valid_intensities;

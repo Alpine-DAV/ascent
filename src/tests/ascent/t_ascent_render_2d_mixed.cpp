@@ -159,7 +159,7 @@ TEST(ascent_pipeline, test_render_2d_mixed)
 
     //
     // // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file, 0.001f, "0"));
+    EXPECT_TRUE(check_test_image(output_file, 0.001f, 0));
 }
 
 //-----------------------------------------------------------------------------
@@ -287,7 +287,7 @@ TEST(ascent_pipeline, test_extract_and_render_2d_mixed)
     //std::cout << info.to_yaml() << std::endl;
  
     // check result
-    EXPECT_TRUE(check_test_image(output_file, 0.001f, "0"));
+    EXPECT_TRUE(check_test_image(output_file, 0.001f, 0));
 
     // load back the extract
     conduit::Node n_load, verify_info;
@@ -322,6 +322,6 @@ TEST(ascent_pipeline, test_extract_and_render_2d_mixed)
     ascent2.close();
 
     // check result
-    EXPECT_TRUE(check_test_image(output_final_render, 0.001f, "0"));
+    EXPECT_TRUE(check_test_image(output_final_render, 0.001f, 0));
     
 }

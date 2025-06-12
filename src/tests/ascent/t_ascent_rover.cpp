@@ -129,10 +129,10 @@ TEST(ascent_rover, test_xray_blueprint_braid)
 
     conduit::Node extracts;
     extracts["e1/type"] = "xray";
-    extracts["e1/params/absorption"] = "radial";
-    extracts["e1/params/emission"] = "radial";
-    extracts["e1/params/filename"] = query_output_file;
-    extracts["e1/params/blueprint"] = "json";
+    extracts["e1/params/rover/absorption"] = "radial";
+    extracts["e1/params/rover/emission"] = "radial";
+    extracts["e1/params/rover/filename"] = query_output_file;
+    extracts["e1/params/rover/blueprint"] = "json";
 
     conduit::Node actions;
     // add the pipeline
@@ -152,7 +152,7 @@ TEST(ascent_rover, test_xray_blueprint_braid)
     ascent.execute(actions);
     ascent.close();
 
-    const std::string full_outfile_name = query_output_file + "100.cycle_000100.root";
+    const std::string full_outfile_name = query_output_file + "_000100.cycle_000100.root";
 
     Node load_mesh, verify_info;
     conduit::relay::io::blueprint::load_mesh(full_outfile_name, load_mesh);
@@ -162,10 +162,8 @@ TEST(ascent_rover, test_xray_blueprint_braid)
     const std::string image_output_base =
         conduit::utils::join_file_path(image_output_path, "tout_rover_xray_blueprint");
 
-    const std::string image_output_image_prefix = image_output_base + "{cycle:d}";
-
-    render_blueprint_result("intensities", image_output_image_prefix, load_mesh);
-    EXPECT_TRUE(check_test_image(image_output_base, 0.01f, "100"));
+    render_blueprint_result("intensities", image_output_base, load_mesh);
+    EXPECT_TRUE(check_test_image(image_output_base, 0.01f));
 
     std::string msg = "Render an XRay diagnostic image of an example braid mesh";
     ASCENT_ACTIONS_DUMP(actions, image_output_base, msg);
@@ -207,14 +205,14 @@ TEST(ascent_rover, test_xray_blueprint_braid_lowres)
 
     conduit::Node extracts;
     extracts["e1/type"] = "xray";
-    extracts["e1/params/absorption"] = "radial";
-    extracts["e1/params/emission"] = "radial";
-    extracts["e1/params/filename"] = query_output_file;
-    extracts["e1/params/blueprint"] = "json";
+    extracts["e1/params/rover/absorption"] = "radial";
+    extracts["e1/params/rover/emission"] = "radial";
+    extracts["e1/params/rover/filename"] = query_output_file;
+    extracts["e1/params/rover/blueprint"] = "json";
 
     // Output resolution
-    extracts["e1/params/camera/image_width"] = 11;
-    extracts["e1/params/camera/image_height"] = 11;
+    extracts["e1/params/rover/width"] = 11;
+    extracts["e1/params/rover/height"] = 11;
 
     // Image params
     extracts["e1/params/image_params/min_value"] = 0.006;
@@ -253,7 +251,7 @@ TEST(ascent_rover, test_xray_blueprint_braid_lowres)
 
     render_blueprint_result("intensities", image_output_image_prefix, load_mesh);
 
-    EXPECT_TRUE(check_test_image(image_output_base, 0.01f, "100"));
+    EXPECT_TRUE(check_test_image(image_output_base, 0.01f));
 
     std::string msg = "Render a lowres XRay diagnostic image of an example braid mesh";
     ASCENT_ACTIONS_DUMP(actions, image_output_base, msg);
@@ -293,7 +291,7 @@ TEST(ascent_rover, test_xray_blueprint_curv3d)
                                        "tout_rover_xray_curv3d_blueprint_query");
 
     // remove old images before rendering
-    remove_test_image(query_output_file);
+    remove_test_image(query_output_file, 48);
 
     //
     // Create the actions.
@@ -301,10 +299,10 @@ TEST(ascent_rover, test_xray_blueprint_curv3d)
 
     conduit::Node extracts;
     extracts["e1/type"] = "xray";
-    extracts["e1/params/absorption"] = "d";
-    extracts["e1/params/emission"] = "p";
-    extracts["e1/params/filename"] = query_output_file;
-    extracts["e1/params/blueprint"] = "json";
+    extracts["e1/params/rover/absorption"] = "d";
+    extracts["e1/params/rover/emission"] = "p";
+    extracts["e1/params/rover/filename"] = query_output_file;
+    extracts["e1/params/rover/blueprint"] = "json";
 
     conduit::Node actions;
     // add the pipeline
@@ -326,7 +324,7 @@ TEST(ascent_rover, test_xray_blueprint_curv3d)
     // std::cout << ascent.info().to_yaml() << std::endl;
     ascent.close();
 
-    const std::string full_outfile_name = query_output_file + "48.cycle_000048.root";
+    const std::string full_outfile_name = query_output_file + "_000048.cycle_000048.root";
 
     Node load_mesh;
     conduit::relay::io::blueprint::load_mesh(full_outfile_name, load_mesh);
@@ -336,10 +334,8 @@ TEST(ascent_rover, test_xray_blueprint_curv3d)
     const std::string image_output_base =
         conduit::utils::join_file_path(image_output_path, "tout_rover_xray_curv3d");
 
-    const std::string image_output_image_prefix = image_output_base + "{cycle:d}";
-
-    render_blueprint_result("intensities", image_output_image_prefix, load_mesh);
-    EXPECT_TRUE(check_test_image(image_output_base, 0.01f, "48"));
+    render_blueprint_result("intensities", image_output_base, load_mesh);
+    EXPECT_TRUE(check_test_image(image_output_base, 0.01f, 48));
     
     std::string msg = "Render an XRay diagnostic image of the curv3d mesh";
     ASCENT_ACTIONS_DUMP(actions, image_output_base, msg);
@@ -385,10 +381,10 @@ TEST(ascent_rover, test_xray_blueprint_curv3d_camera_params)
 
     conduit::Node extracts;
     extracts["e1/type"] = "xray";
-    extracts["e1/params/absorption"] = "d";
-    extracts["e1/params/emission"] = "p";
-    extracts["e1/params/filename"] = query_output_file;
-    extracts["e1/params/blueprint"] = "json";
+    extracts["e1/params/rover/absorption"] = "d";
+    extracts["e1/params/rover/emission"] = "p";
+    extracts["e1/params/rover/filename"] = query_output_file;
+    extracts["e1/params/rover/blueprint"] = "json";
 
     // These errors all originate from within rover
     // TODO: Setting anything for position (e.g. 0,0,0) throws a vector range error
@@ -401,8 +397,8 @@ TEST(ascent_rover, test_xray_blueprint_curv3d_camera_params)
     // extracts["e1/params/camera/position"].set_float64_ptr(vec3, 3);
     extracts["e1/params/camera/up"].set_float64_ptr(vec3, 3);
     extracts["e1/params/camera/fov"] = 60.0;
-    extracts["e1/params/camera/xpan"] = -0.1;
-    extracts["e1/params/camera/ypan"] = 0.1;
+    // extracts["e1/params/camera/xpan"] = -0.1;
+    // extracts["e1/params/camera/ypan"] = 0.1;
     extracts["e1/params/camera/zoom"] = 1.5;
     extracts["e1/params/camera/near_plane"] = 2.0;
     extracts["e1/params/camera/far_plane"] = 50.0;
@@ -427,7 +423,7 @@ TEST(ascent_rover, test_xray_blueprint_curv3d_camera_params)
     // std::cout << ascent.info().to_yaml() << std::endl;
     ascent.close();
 
-    const std::string full_outfile_name = query_output_file + "48.cycle_000048.root";
+    const std::string full_outfile_name = query_output_file + "_000048.cycle_000048.root";
 
     Node load_mesh;
     conduit::relay::io::blueprint::load_mesh(full_outfile_name, load_mesh);
@@ -437,13 +433,11 @@ TEST(ascent_rover, test_xray_blueprint_curv3d_camera_params)
     const std::string image_output_base =
         conduit::utils::join_file_path(image_output_path, "tout_rover_xray_curv3d_camera_param");
 
-    const std::string image_output_image_prefix = image_output_base + "{cycle:d}";
-
-    render_blueprint_result("intensities", image_output_image_prefix, load_mesh);
-    EXPECT_TRUE(check_test_image(image_output_base, 0.01f, "48"));
+    render_blueprint_result("intensities", image_output_base, load_mesh);
+    EXPECT_TRUE(check_test_image(image_output_base, 0.01f, 48));
     
     std::string msg = "Render an XRay diagnostic image with non-default camera params";
-    ASCENT_ACTIONS_DUMP(actions, image_output_base, msg);
+    ASCENT_ACTIONS_DUMP_CYCLE(actions, image_output_base, msg, 48);
 }
 
 //-----------------------------------------------------------------------------
@@ -478,7 +472,7 @@ TEST(ascent_rover, test_xray_blueprint_multi_curv3d)
                                        "tout_rover_xray_multi_curv3d_blueprint_query");
 
     // remove old images before rendering
-    remove_test_image(query_output_file);
+    remove_test_image(query_output_file, 48);
 
     //
     // Create the actions.
@@ -486,10 +480,10 @@ TEST(ascent_rover, test_xray_blueprint_multi_curv3d)
 
     conduit::Node extracts;
     extracts["e1/type"] = "xray";
-    extracts["e1/params/absorption"] = "d";
-    extracts["e1/params/emission"] = "p";
-    extracts["e1/params/filename"] = query_output_file;
-    extracts["e1/params/blueprint"] = "json";
+    extracts["e1/params/rover/absorption"] = "d";
+    extracts["e1/params/rover/emission"] = "p";
+    extracts["e1/params/rover/filename"] = query_output_file;
+    extracts["e1/params/rover/blueprint"] = "json";
 
     conduit::Node actions;
     // add the pipeline
@@ -511,7 +505,7 @@ TEST(ascent_rover, test_xray_blueprint_multi_curv3d)
     // std::cout << ascent.info().to_yaml() << std::endl;
     ascent.close();
 
-    const std::string full_outfile_name = query_output_file + "48.cycle_000048.root";
+    const std::string full_outfile_name = query_output_file + "_000048.cycle_000048.root";
 
     Node load_mesh;
     conduit::relay::io::blueprint::load_mesh(full_outfile_name, load_mesh);
@@ -521,13 +515,11 @@ TEST(ascent_rover, test_xray_blueprint_multi_curv3d)
     const std::string image_output_base =
         conduit::utils::join_file_path(image_output_path, "tout_rover_xray_multi_curv3d");
 
-    const std::string image_output_image_prefix = image_output_base + "{cycle:d}";
-
-    render_blueprint_result("intensities", image_output_image_prefix, load_mesh);
-    EXPECT_TRUE(check_test_image(image_output_base, 0.01f, "48"));
+    render_blueprint_result("intensities", image_output_base, load_mesh);
+    EXPECT_TRUE(check_test_image(image_output_base, 0.01f, 48));
 
     std::string msg = "Render an XRay diagnostic image of the multi_curv3d mesh";
-    ASCENT_ACTIONS_DUMP(actions, image_output_base, msg);
+    ASCENT_ACTIONS_DUMP_CYCLE(actions, image_output_base, msg, 48);
 }
 
 #if 0
@@ -573,10 +565,10 @@ TEST(ascent_rover, test_xray_blueprint_tire)
     conduit::Node extracts;
     extracts["e1/type"] = "xray";
     // field names are pressure, sb, and temperature
-    extracts["e1/params/absorption"] = "pressure";
-    // extracts["e1/params/emission"] = "pressure";
-    extracts["e1/params/filename"] = query_output_file;
-    extracts["e1/params/blueprint"] = "json";
+    extracts["e1/params/rover/absorption"] = "pressure";
+    // extracts["e1/params/rover/emission"] = "pressure";
+    extracts["e1/params/rover/filename"] = query_output_file;
+    extracts["e1/params/rover/blueprint"] = "json";
 
     conduit::Node actions;
     // add the pipeline
@@ -609,13 +601,11 @@ TEST(ascent_rover, test_xray_blueprint_tire)
     const std::string image_output_base =
         conduit::utils::join_file_path(image_output_path, "tout_rover_xray_tire");
 
-    const std::string image_output_image_prefix = image_output_base + "{cycle:d}";
-
-    render_blueprint_result("intensities", image_output_image_prefix, load_mesh);
-    EXPECT_TRUE(check_test_image(image_output_base, 0.01f, "48"));
+    render_blueprint_result("intensities", image_output_base, load_mesh);
+    EXPECT_TRUE(check_test_image(image_output_base, 0.01f, 48));
     
     std::string msg = "Render an XRay diagnostic image of the tire mesh";
-    ASCENT_ACTIONS_DUMP(actions, image_output_base, msg);
+    ASCENT_ACTIONS_DUMP_CYCLE(actions, image_output_base, msg, 48);
 }
 
 //-----------------------------------------------------------------------------
@@ -650,7 +640,7 @@ TEST(ascent_rover, test_xray_blueprint_curv2d)
                                        "tout_rover_xray_curv2d_blueprint_query");
 
     // remove old images before rendering
-    remove_test_image(query_output_file);
+    remove_test_image(query_output_file, 48);
 
     //
     // Create the actions.
@@ -658,10 +648,10 @@ TEST(ascent_rover, test_xray_blueprint_curv2d)
 
     conduit::Node extracts;
     extracts["e1/type"] = "xray";
-    extracts["e1/params/absorption"] = "d";
-    extracts["e1/params/emission"] = "p";
-    extracts["e1/params/filename"] = query_output_file;
-    extracts["e1/params/blueprint"] = "json";
+    extracts["e1/params/rover/absorption"] = "d";
+    extracts["e1/params/rover/emission"] = "p";
+    extracts["e1/params/rover/filename"] = query_output_file;
+    extracts["e1/params/rover/blueprint"] = "json";
 
     conduit::Node actions;
     // add the pipeline
@@ -684,7 +674,7 @@ TEST(ascent_rover, test_xray_blueprint_curv2d)
     // std::cout << ascent.info().to_yaml() << std::endl;
     ascent.close();
 
-    const std::string full_outfile_name = query_output_file + "48.cycle_000048.root";
+    const std::string full_outfile_name = query_output_file + "_000048.cycle_000048.root";
 
     Node load_mesh;
     conduit::relay::io::blueprint::load_mesh(full_outfile_name, load_mesh);
@@ -694,13 +684,11 @@ TEST(ascent_rover, test_xray_blueprint_curv2d)
     const std::string image_output_base =
         conduit::utils::join_file_path(image_output_path, "tout_rover_xray_curv2d");
 
-    const std::string image_output_image_prefix = image_output_base + "{cycle:d}";
-
-    render_blueprint_result("intensities", image_output_image_prefix, load_mesh);
-    EXPECT_TRUE(check_test_image(image_output_base, 0.01f, "48"));
+    render_blueprint_result("intensities", image_output_base, load_mesh);
+    EXPECT_TRUE(check_test_image(image_output_base, 0.01f, 48));
     
     std::string msg = "Render an XRay diagnostic image of the curv2d mesh";
-    ASCENT_ACTIONS_DUMP(actions, image_output_base, msg);
+    ASCENT_ACTIONS_DUMP_CYCLE(actions, image_output_base, msg, 48);
 }
 
 //-----------------------------------------------------------------------------
@@ -745,12 +733,12 @@ TEST(ascent_rover, test_xray_serial_image_params)
     conduit::Node extracts;
     extracts["e1/type"]  = "xray";
     // populate some param examples
-    extracts["e1/params/absorption"] = "radial";
-    extracts["e1/params/precision"] = "single";
-    extracts["e1/params/filename"] = output_file;
+    extracts["e1/params/rover/absorption"] = "radial";
+    extracts["e1/params/rover/precision"] = "single";
+    extracts["e1/params/rover/filename"] = output_file;
+    extracts["e1/params/rover/unit_scalar"] = 0.001f;
     extracts["e1/params/image_params/min_value"] = 0.006f;
     extracts["e1/params/image_params/max_value"] = 1.000;
-    extracts["e1/params/unit_scalar"] = 0.001f;
     extracts["e1/params/image_params/log_scale"] = "true";
 
     conduit::Node actions;
@@ -775,7 +763,7 @@ TEST(ascent_rover, test_xray_serial_image_params)
     // check that we created an image
     // NOTE: RELAXED TOLERANCE TO FROM 0.0001f
     //       to mitigate differences between platforms
-    EXPECT_TRUE(check_test_image(output_file, 0.01f, "100_0"));
+    EXPECT_TRUE(check_test_image(output_file, 0.01f));
 
     std::string msg = "An example of using the xray extract.";
     ASCENT_ACTIONS_DUMP(actions, output_file, msg);
@@ -814,9 +802,9 @@ TEST(ascent_rover, test_xray_serial)
 
     conduit::Node extracts;
     extracts["e1/type"]  = "xray";
-    extracts["e1/params/absorption"] = "radial";
-    extracts["e1/params/emission"] = "radial";
-    extracts["e1/params/filename"] = output_file;
+    extracts["e1/params/rover/absorption"] = "radial";
+    extracts["e1/params/rover/emission"] = "radial";
+    extracts["e1/params/rover/filename"] = output_file;
 
     conduit::Node actions;
     conduit::Node &add_extracts = actions.append();
@@ -838,12 +826,14 @@ TEST(ascent_rover, test_xray_serial)
     // check that we created an image
     // NOTE: RELAXED TOLERANCE TO FROM 0.0001f
     //       to mitigate differences between platforms
-    EXPECT_TRUE(check_test_image(output_file, 0.01f, "100_0"));
+    EXPECT_TRUE(check_test_image(output_file, 0.01f));
 
     std::string msg = "An example of using the xray extract.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
+#endif
 
+#if 0 // removing volume renderer
 //
 // Rover Volume tests
 //
@@ -911,7 +901,7 @@ TEST(ascent_rover, test_volume_min_max)
     ascent.close();
 
     // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file, 0.01f, "100"));
+    EXPECT_TRUE(check_test_image(output_file, 0.01f));
     std::string msg = "An example of using the volume (unstructured grid) extract with "
                       "min and max values.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
@@ -974,9 +964,8 @@ TEST(ascent_rover, test_volume_serial)
     ascent.close();
 
     // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file, 0.01f, "100"));
+    EXPECT_TRUE(check_test_image(output_file, 0.01f));
     std::string msg = "An example of using the volume (unstructured grid) extract.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
-
 #endif

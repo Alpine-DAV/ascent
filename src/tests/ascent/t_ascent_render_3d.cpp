@@ -841,7 +841,7 @@ TEST(ascent_render_3d, test_render_3d_name_format)
     string output_file = conduit::utils::join_file_path(output_path,"tout_render_3d_name_format");
 
     // remove old images before rendering
-    remove_test_image(output_file, "0100");
+    remove_test_image(output_file, 100, "%04d");
 
 
     //
@@ -851,7 +851,7 @@ TEST(ascent_render_3d, test_render_3d_name_format)
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]         = "pseudocolor";
     scenes["s1/plots/p1/field"] = "braid";
-    scenes["s1/renders/r1/image_prefix"]  = output_file + "%04d";
+    scenes["s1/renders/r1/image_prefix"]  = output_file + "_%04d";
     scenes["s1/renders/r1/annotations"] = "false";
 
     conduit::Node actions;
@@ -875,9 +875,9 @@ TEST(ascent_render_3d, test_render_3d_name_format)
     ascent.close();
 
     // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file, 0.0001f, "0100"));
+    EXPECT_TRUE(check_test_image(output_file, 0.0001f, 100, "%04d"));
     std::string msg = "An example of rendering to a filename using format specifiers.";
-    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+    ASCENT_ACTIONS_DUMP_CYCLE_FMT(actions,output_file,msg,100,"%04d");
 }
 
 TEST(ascent_render_3d, test_render_3d_name_format_keywords)
@@ -904,8 +904,8 @@ TEST(ascent_render_3d, test_render_3d_name_format_keywords)
     string output_path = prepare_output_dir();
     string image_prefix = "t_output_path_{family:05d}_{cycle:04d}_{time:0.4f}";
     const string output_file = conduit::utils::join_file_path(output_path,image_prefix);
-    const string output_file_final_1 = conduit::utils::join_file_path(output_path,"t_output_path_00100_0100_3.1415.png");
-    const string output_file_final_2 = conduit::utils::join_file_path(output_path,"t_output_path_00101_0100_3.1415.png");
+    const string output_file_final_1 = conduit::utils::join_file_path(output_path,"t_output_path_00200_0100_3.1415.png");
+    const string output_file_final_2 = conduit::utils::join_file_path(output_path,"t_output_path_00201_0100_3.1415.png");
 
     string image_prefix_only_format = "t_output_path_%03d_only_format";
     const string output_file_only_format = conduit::utils::join_file_path(output_path,image_prefix_only_format);
@@ -913,21 +913,12 @@ TEST(ascent_render_3d, test_render_3d_name_format_keywords)
 
     string image_prefix_no_format = "t_output_path_no_format_";
     const string output_file_no_format = conduit::utils::join_file_path(output_path,image_prefix_no_format);
-    const string output_file_no_format_final = conduit::utils::join_file_path(output_path,"t_output_path_no_format_100.png");
+    const string output_file_no_format_final = conduit::utils::join_file_path(output_path,"t_output_path_no_format_000100.png");
     
     remove_test_image(output_file_final_1);
     remove_test_image(output_file_final_2);
     remove_test_image(output_file_only_format_final);
     remove_test_image(output_file_no_format_final);
-
-    // Use Ascent to export our mesh to blueprint flavored hdf5 files
-    Ascent a;
-
-    // open ascent
-    a.open();
-
-    // publish mesh to ascent
-    a.publish(mesh);
 
     // setup actions
     Node actions;
@@ -956,11 +947,23 @@ TEST(ascent_render_3d, test_render_3d_name_format_keywords)
     // print our full actions tree
     std::cout << actions.to_yaml() << std::endl;
 
+    // Use Ascent to export our mesh to blueprint flavored hdf5 files
+    Ascent ascent;
+
+    // open ascent
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent_opts["family_value_seed"] = 200;
+    ascent.open(ascent_opts);
+
+    // publish mesh to ascent
+    ascent.publish(mesh);
+
     // execute the actions
-    a.execute(actions);
+    ascent.execute(actions);
 
     // close ascent
-    a.close();
+    ascent.close();
 
     EXPECT_TRUE(conduit::utils::is_file(output_file_final_1));
     EXPECT_TRUE(conduit::utils::is_file(output_file_final_2));

@@ -71,7 +71,6 @@ TEST(ascent_mpi_add_mpi_ranks, test_mpi_add_mpi_ranks)
 
     string output_path = prepare_output_dir();
     string output_file = conduit::utils::join_file_path(output_path,"tout_mpi_add_ranks");
-    string image_file = conduit::utils::join_file_path(output_path,"tout_mpi_add_ranks10");
 
     // remove old images before rendering
     if(par_rank == 0)
@@ -100,7 +99,7 @@ TEST(ascent_mpi_add_mpi_ranks, test_mpi_add_mpi_ranks)
     scenes["s1/plots/p1/field"] = "rank";
     scenes["s1/plots/p1/pipeline"] = "pl1";
     scenes["s1/plots/p1/color_table/discrete"] = "true";
-    scenes["s1/image_prefix"] = image_file;
+    scenes["s1/image_prefix"] = output_file;
 
     //
     // Run Ascent
@@ -118,9 +117,9 @@ TEST(ascent_mpi_add_mpi_ranks, test_mpi_add_mpi_ranks)
     // check that we created an image
     if(par_rank == 0)
     {
-      EXPECT_TRUE(check_test_image(output_file));
+      EXPECT_TRUE(check_test_image(output_file, 0.001f, 0));
       std::string msg = "An example of adding mpi ranks to the data.";
-      ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+      ASCENT_ACTIONS_DUMP_CYCLE(actions,output_file,msg,0);
     }
 }
 

@@ -315,8 +315,8 @@ TEST(ascent_runtime_options, test_timings_tear_updown)
     timings_file = conduit::utils::join_file_path(output_path,timings_file);
 
     // remove old images before rendering
-    remove_test_image(output_file, "100");
-    remove_test_image(output_file, "101");
+    remove_test_image(output_file, 100);
+    remove_test_image(output_file, 101);
     remove_test_file(output_actions);
     remove_test_file(timings_file);
 

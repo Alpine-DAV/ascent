@@ -4,6 +4,7 @@
 // other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+#include "settings.hpp"
 #include <image.hpp>
 #include <rover_exceptions.hpp>
 #include <utils/rover_logging.hpp>
@@ -46,7 +47,10 @@ Image<FloatType>::normalize_handle(vtkm::cont::ArrayHandle<FloatType> &handle,
   FloatType inv_delta;
   inv_delta = min_scalar == max_scalar ? 1.f : 1.f / (max_scalar - min_scalar);
   auto portal = handle.WritePortal();
-  const int size = m_width * m_height;
+  const int64 width = rover::settings["rover/width"].to_int64();
+  const int64 height = rover::settings["rover/height"].to_int64();
+  const int64 size = width * height;
+
 #ifdef ROVER_OPENMP_ENABLED
   #pragma omp parallel for
 #endif
@@ -68,7 +72,7 @@ template<typename FloatType>
 void
 Image<FloatType>::normalize_handle(vtkm::cont::ArrayHandle<FloatType> &handle, bool invert)
 {
-
+  // TODO: Surely we can do better than "name meaningless"
   vtkm::cont::Field as_field("name meaningless",
                              vtkm::cont::Field::Association::Points,
                              handle);
@@ -79,7 +83,10 @@ Image<FloatType>::normalize_handle(vtkm::cont::ArrayHandle<FloatType> &handle, b
   FloatType inv_delta;
   inv_delta = min_scalar == max_scalar ? 1.f : 1.f / (max_scalar - min_scalar);
   auto portal = handle.WritePortal();
-  const int size = m_width * m_height;
+  const int64 width = rover::settings["rover/width"].to_int64();
+  const int64 height = rover::settings["rover/height"].to_int64();
+  const int64 size = width * height;
+
 #ifdef ROVER_OPENMP_ENABLED
   #pragma omp parallel for
 #endif
@@ -94,8 +101,6 @@ Image<FloatType>::normalize_handle(vtkm::cont::ArrayHandle<FloatType> &handle, b
 
 template<typename FloatType>
 Image<FloatType>::Image()
-  : m_width(0),
-    m_height(0)
 {
 
 }
@@ -134,8 +139,6 @@ void cast_array_handle(vtkm::cont::ArrayHandle<T> &cast_to,
 //
 template<typename T, typename O> void init_from_image(Image<T> &left, Image<O> &right)
 {
-  left.m_height = right.m_height;
-  left.m_width = right.m_width;
   left.m_valid_intensities = right.m_valid_intensities;
   left.m_valid_optical_depths = right.m_valid_optical_depths;
 
@@ -150,8 +153,6 @@ template<typename T, typename O> void init_from_image(Image<T> &left, Image<O> &
 template<> void init_from_image<vtkm::Float32, vtkm::Float32>(Image<vtkm::Float32> &left,
                                                               Image<vtkm::Float32> &right)
 {
-  left.m_height = right.m_height;;
-  left.m_width = right.m_width;
   left.m_intensities = right.m_intensities;
   left.m_optical_depths = right.m_optical_depths;
   left.m_valid_intensities = right.m_valid_intensities;
@@ -161,8 +162,6 @@ template<> void init_from_image<vtkm::Float32, vtkm::Float32>(Image<vtkm::Float3
 template<> void init_from_image<vtkm::Float64, vtkm::Float64>(Image<vtkm::Float64> &left,
                                                               Image<vtkm::Float64> &right)
 {
-  left.m_height = right.m_height;;
-  left.m_width = right.m_width;
   left.m_intensities = right.m_intensities;
   left.m_optical_depths = right.m_optical_depths;
   left.m_valid_intensities = right.m_valid_intensities;
@@ -227,43 +226,33 @@ Image<FloatType>::init_from_partial(PartialImage<FloatType> &partial)
   m_valid_intensities.clear();
   m_valid_optical_depths.clear();
 
-  m_height = partial.m_height;
-  m_width  = partial.m_width;
-
-  assert(m_width >= 0);
-  assert(m_height >= 0);
-
+  const int64 width = rover::settings["rover/width"].to_int64();
+  const int64 height = rover::settings["rover/height"].to_int64();
+  const int64 channel_size = width * height;
   const int num_channels = partial.m_buffer.GetNumChannels();
-  for(int i = 0; i < num_channels; ++i)
+  for (int i = 0; i < num_channels; ++i)
   {
     vtkmRayTracing::ChannelBuffer<FloatType> channel = partial.m_buffer.GetChannel( i );
     const FloatType default_value = partial.m_source_sig.size() != 0 ? partial.m_source_sig[i] : 0.0f;
-    const int channel_size = m_height * m_width;
     vtkmRayTracing::ChannelBuffer<FloatType>  expand;
     expand = channel.ExpandBuffer(partial.m_pixel_ids,
                                   channel_size,
                                   default_value);
-
     m_optical_depths.push_back(expand.Buffer);
     m_valid_optical_depths.push_back(true);
-
   }
 
-  for(int i = 0; i < num_channels; ++i)
+  for (int i = 0; i < num_channels; ++i)
   {
     vtkmRayTracing::ChannelBuffer<FloatType> channel = partial.m_intensities.GetChannel( i );
     const FloatType default_value = partial.m_source_sig.size() != 0 ? partial.m_source_sig[i] : 0.0f;
-    const int channel_size = m_height * m_width;
     vtkmRayTracing::ChannelBuffer<FloatType>  expand;
     expand = channel.ExpandBuffer(partial.m_pixel_ids,
                                   channel_size,
                                   default_value);
-
     m_intensities.push_back(expand.Buffer);
     m_valid_intensities.push_back(true);
-
   }
-
 }
 
 template<typename FloatType>
@@ -309,7 +298,9 @@ Image<FloatType>::flatten_intensities()
     }
   }
   HandleType res;
-  const int size = m_width * m_height;
+  const int64 width = rover::settings["rover/width"].to_int64();
+  const int64 height = rover::settings["rover/height"].to_int64();
+  const int64 size = width * height;
   res.Allocate(num_channels * size);
   auto output = res.WritePortal();
   for(int c = 0; c < num_channels; ++c)
@@ -340,7 +331,9 @@ Image<FloatType>::flatten_optical_depths()
     }
   }
   HandleType res;
-  const int size = m_width * m_height;
+  const int64 width = rover::settings["rover/width"].to_int64();
+  const int64 height = rover::settings["rover/height"].to_int64();
+  const int64 size = width * height;
   res.Allocate(num_channels * size);
   auto output = res.WritePortal();
   for(int c = 0; c < num_channels; ++c)
@@ -355,13 +348,6 @@ Image<FloatType>::flatten_optical_depths()
     }
   }
   return res;
-}
-
-template<typename FloatType>
-int
-Image<FloatType>::get_size()
-{
-  return  m_width * m_height;
 }
 
 template<typename FloatType>

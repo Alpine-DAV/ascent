@@ -4,18 +4,16 @@
 // other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-#ifndef rover_static_schedular_h
-#define rover_static_schedular_h
+#ifndef ROVER_SETTINGS_H
+#define ROVER_SETTINGS_H
 
-#include <scheduler.h>
+#include <conduit.hpp>
 
-namespace rover {
-// static scedular handles the case where all ranks get all rays
-// and takes care of the compositing.
-class StaticSchedular : public Schedular
+using namespace conduit;
+
+namespace rover
 {
-public:
-protected:
-};
+  extern Node settings;
 } // namespace rover
-#endif
+
+#endif // ROVER_SETTINGS_H
