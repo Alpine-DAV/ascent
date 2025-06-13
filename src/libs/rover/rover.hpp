@@ -37,6 +37,7 @@ public:
   Rover();
   ~Rover();
 
+  void update_metadata(Node &metadata);
   void update_settings(Node &params);
   void print_settings();
 

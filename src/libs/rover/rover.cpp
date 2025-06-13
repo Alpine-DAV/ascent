@@ -26,6 +26,12 @@ Rover::Rover()
 {
   // Ensure that we always start from a default state
   rover::settings.reset();
+
+  // Metadata
+  rover::settings["state/time"] = -1.0f;
+  rover::settings["state/cycle"] = -1;
+
+  // Settings
   // TODO: Figure out if color_table needs to be set by us here
   rover::settings["rover/color_table"] = "Cool to Warm";
   rover::settings["rover/divide_emission_by_abs"] = "false";
@@ -57,6 +63,20 @@ Rover::~Rover()
 #ifdef ROVER_ENABLE_LOGGING
   DataLogger::GetInstance()->WriteLog();
 #endif
+}
+
+void
+Rover::update_metadata(Node &metadata)
+{
+  if (metadata.has_child("time"))
+  {
+    rover::settings["state/time"].set(metadata["time"]);
+  }
+
+  if (metadata.has_child("cycle"))
+  {
+    rover::settings["state/cycle"].set(metadata["cycle"]);
+  }
 }
 
 void

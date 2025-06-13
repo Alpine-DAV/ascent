@@ -5,7 +5,9 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 // rover includes
+#include "settings.hpp"
 #include "vtkm_typedefs.hpp"
+#include <algorithm>
 #include <typed_scheduler.hpp>
 
 using namespace conduit;
@@ -613,15 +615,17 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
 
   Node &state = data["state"];
   Node &xray_query = data["xray_query"];
-  Node &topologies = data["topologies"];
   Node &coordsets = data["coordsets"];
+  Node &topologies = data["topologies"];
   Node &fields = data["fields"];
 
   //
   // State
   //
 
-  // TODO: Plumb the other "state/" info down out of *_rover_filters.cpp
+  state["time"].set(rover::settings["state/time"]);
+  state["cycle"].set(rover::settings["state/cycle"]);
+
   Node &xray_view = state["xray_view"];
   xray_view["position"].set(&position[0], 3);
   xray_view["look_at"].set(&look_at[0], 3);
@@ -633,20 +637,22 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
   xray_view["xpan"] = xy_pan[0];
   xray_view["ypan"] = xy_pan[1];
 
-  //
-  // X-ray Query
-  //
-
   xray_query.set(rover::settings["rover"]);
+
+  Node &xray_data = state["xray_data"];
+  xray_data["detector_width"] = detector_width;
+  xray_data["detector_height"] = detector_height;
+  xray_data["intensity_max"].set(DataType::float64(1));
+  xray_data["intensity_min"].set(DataType::float64(1));
+  xray_data["optical_depth_max"].set(DataType::float64(1));
+  xray_data["optical_depth_min"].set(DataType::float64(1));
+  xray_data["image_topo_order_of_domain_variables"] = "xyz";
+
+  state["domain_id"] = 0;
 
   //
   // Image mesh
   //
-
-  // Topology
-  Node &image_topo = topologies["image_topo"];
-  image_topo["coordset"] = "image_coords";
-  image_topo["type"] = "rectilinear";
 
   // Coordset
   Node &image_coords = coordsets["image_coords"];
@@ -686,6 +692,11 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
   // if (m_render_settings.m_render_mode == energy) // removing volume renderer
   // {
 
+  // Topology
+  Node &image_topo = topologies["image_topo"];
+  image_topo["coordset"] = "image_coords";
+  image_topo["type"] = "rectilinear";
+
   if (!m_result.has_intensity(0) || !m_result.has_optical_depth(0))
   {
     ROVER_ERROR("intensity and optical depth must both be available")
@@ -699,6 +710,11 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
   vtkm::cont::ArrayHandle<FloatType> intensity_values = m_result.flatten_intensities();
   FloatType *intensity_buffer = get_vtkm_ptr(intensity_values);
   const int num_intensity_values = intensity_values.GetNumberOfValues();
+
+  auto intensity_min_max = std::minmax_element(intensity_buffer, intensity_buffer + num_intensity_values);
+  xray_data["intensity_max"].set(intensity_min_max.second);
+  xray_data["intensity_min"].set(intensity_min_max.first);
+  
   intensities["values"].set(intensity_buffer, num_intensity_values);
   intensities["strides"].set(DataType::int64(3));
   int64_array strides = intensities["strides"].value();
@@ -713,17 +729,17 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
   vtkm::cont::ArrayHandle<FloatType> optical_values = m_result.flatten_optical_depths();
   FloatType *optical_buffer = get_vtkm_ptr(optical_values);
   const int num_optical_values = optical_values.GetNumberOfValues();
+
+  auto optical_min_max = std::minmax_element(optical_buffer, optical_buffer + num_optical_values);
+  xray_data["optical_depth_max"].set(optical_min_max.second);
+  xray_data["optical_depth_min"].set(optical_min_max.first);
+
   optical_depth["values"].set(optical_buffer, num_optical_values);
   optical_depth["strides"].set(intensities["strides"]);
 
   //
   // Spatial mesh
   //
-
-  // Topology
-  Node &spatial_topo = topologies["spatial_topo"];
-  spatial_topo["coordset"] = "spatial_coords";
-  spatial_topo["type"] = "rectilinear";
 
   // Coordset
   Node &spatial_coords = coordsets["spatial_coords"];
@@ -758,6 +774,11 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
   spatial_coords["labels/x"] = "width";
   spatial_coords["labels/y"] = "height";
   spatial_coords["labels/z"] = "energy_group";
+
+  // Topology
+  Node &spatial_topo = topologies["spatial_topo"];
+  spatial_topo["coordset"] = "spatial_coords";
+  spatial_topo["type"] = "rectilinear";
 
   // Fields
   Node &intensities_spatial = fields["intensities_spatial"];
