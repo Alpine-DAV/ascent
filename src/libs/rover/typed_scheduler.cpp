@@ -5,6 +5,7 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 // rover includes
+#include "vtkm_typedefs.hpp"
 #include <typed_scheduler.hpp>
 
 using namespace conduit;
@@ -578,72 +579,109 @@ template<typename FloatType>
 void
 TypedScheduler<FloatType>::to_blueprint(Node &data)
 {
+  const int64 width = rover::settings["rover/width"].to_int64();
+  const int64 height = rover::settings["rover/height"].to_int64();
+  const int num_channels = m_result.get_num_channels();
+
+  vtkmCamera camera = m_ray_generator->get_camera();
+  vtkmVec3f position = camera.GetPosition();
+  vtkmVec3f look_at = camera.GetLookAt();
+  vtkmVec3f up = camera.GetViewUp();
+  const double image_zoom = camera.GetZoom();
+  const double view_angle = camera.GetFieldOfView();
+  const double near_plane = camera.GetClippingRange().Min;
+  const double far_plane = camera.GetClippingRange().Max;
+  vtkmVec2f xy_pan = camera.GetPan();
+
+  // Non-perspective calculations pulled from VisIt
+  const double distance = vtkm::Magnitude(look_at - position);
+  // TODO: Make sure that this is a valid way to compute view_height
+  const double view_height = 2.0 * distance * tan((view_angle * vtkm::Pi_180()) / 2.0);
+  const double view_width = (static_cast<float>(width) / static_cast<float>(height)) * view_height;
+  const double near_height = view_height / image_zoom;
+  const double near_width = view_width / image_zoom;
+  const double far_height = near_height;
+  const double far_width = near_width;
+  const double detector_width = 2.0 * near_width;
+  const double detector_height = 2.0 * near_height;
+  const double far_detector_width = 2.0 * far_width;
+  const double far_detector_height = 2.0 * far_height;
+  const double near_dx = detector_width / width;
+  const double near_dy = detector_height / height;
+
   ROVER_INFO("Saving blueprint file with output size " << width << "x" << height);
 
-  // TODO: Plumb the other "state/" info down out of *_rover_filters.cpp
-  Node &xray_view = data["state/xray_view"];
-  vtkmCamera camera = m_ray_generator->get_camera();
-  xray_view["position"].set(&camera.GetPosition()[0], 3);
-  xray_view["look_at"].set(&camera.GetLookAt()[0], 3);
-  xray_view["up"].set(&camera.GetViewUp()[0], 3);
-  xray_view["zoom"] = camera.GetZoom();
-  xray_view["fov"] = camera.GetFieldOfView();
-  xray_view["near_plane"] = camera.GetClippingRange().Min;
-  xray_view["far_plane"] = camera.GetClippingRange().Max;
+  Node &state = data["state"];
+  Node &xray_query = data["xray_query"];
+  Node &topologies = data["topologies"];
+  Node &coordsets = data["coordsets"];
+  Node &fields = data["fields"];
 
-  auto xy_pan = camera.GetPan();
+  //
+  // State
+  //
+
+  // TODO: Plumb the other "state/" info down out of *_rover_filters.cpp
+  Node &xray_view = state["xray_view"];
+  xray_view["position"].set(&position[0], 3);
+  xray_view["look_at"].set(&look_at[0], 3);
+  xray_view["up"].set(&up[0], 3);
+  xray_view["zoom"] = image_zoom;
+  xray_view["fov"] = view_angle;
+  xray_view["near_plane"] = near_plane;
+  xray_view["far_plane"] = far_plane;
   xray_view["xpan"] = xy_pan[0];
   xray_view["ypan"] = xy_pan[1];
 
-  Node &xray_query = data["xray_query"];
+  //
+  // X-ray Query
+  //
+
   xray_query.set(rover::settings["rover"]);
 
-  const int num_channels = m_result.get_num_channels();
-  const std::string coord_name = "image_coords";
-  Node &n_coords = data["coordsets"][coord_name];
-  n_coords["type"] = "rectilinear";
-  
-  const int64 width = rover::settings["rover/width"].to_int64();
-  const int64 height = rover::settings["rover/height"].to_int64();
+  //
+  // Image mesh
+  //
 
-  n_coords["values/x"].set(DataType::float32(width + 1));
-  n_coords["values/y"].set(DataType::float32(height + 1));
-  n_coords["values/z"].set(DataType::float32(num_channels + 1));
+  // Topology
+  Node &image_topo = topologies["image_topo"];
+  image_topo["coordset"] = "image_coords";
+  image_topo["type"] = "rectilinear";
 
-  float32_array x_coords = n_coords["values/x"].value();
-  float32_array y_coords = n_coords["values/y"].value();
-  float32_array z_coords = n_coords["values/z"].value();
+  // Coordset
+  Node &image_coords = coordsets["image_coords"];
+  image_coords["type"] = "rectilinear";
 
-  // TODO: See if this is better done with std::iota
+  image_coords["values/x"].set(DataType::float64(width + 1));
+  image_coords["values/y"].set(DataType::float64(height + 1));
+  image_coords["values/z"].set(DataType::float64(num_channels + 1));
+
+  float64_array image_coords_x = image_coords["values/x"].value();
+  float64_array image_coords_y = image_coords["values/y"].value();
+  float64_array image_coords_z = image_coords["values/z"].value();
+
   for (int i = 0; i <= width; i++)
   {
-    x_coords[i] = i;
+    image_coords_x[i] = i;
   }
 
-  // TODO: See if this is better done with std::iota
   for (int i = 0; i <= height; i++)
   {
-    y_coords[i] = i;
+    image_coords_y[i] = i;
   }
 
-  // TODO: See if this is better done with std::iota
   for (int i = 0; i <= num_channels; i++)
   {
-    z_coords[i] = i;
+    image_coords_z[i] = i;
   }
 
-  n_coords["labels/x"] = "width";
-  n_coords["labels/y"] = "height";
-  n_coords["labels/z"] = "energy_group";
+  image_coords["labels/x"] = "width";
+  image_coords["labels/y"] = "height";
+  image_coords["labels/z"] = "energy_group";
 
-  n_coords["units/x"] = "pixels";
-  n_coords["units/y"] = "pixels";
-  n_coords["units/z"] = "bins";
-
-  const std::string topo_name = "image_topo";
-  Node &n_topo = data["topologies"][topo_name];
-  n_topo["coordset"] = coord_name;
-  n_topo["type"] = "rectilinear";
+  image_coords["units/x"] = "pixels";
+  image_coords["units/y"] = "pixels";
+  image_coords["units/z"] = "bins";
 
   // if (m_render_settings.m_render_mode == energy) // removing volume renderer
   // {
@@ -653,14 +691,13 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
     ROVER_ERROR("intensity and optical depth must both be available")
   }
 
-  // Intensity
-  Node &intensities = data["fields/intensities"];
-  intensities["topology"] = topo_name;
+  // Fields
+  Node &intensities = fields["intensities"];
+  intensities["topology"] = "image_topo";
   intensities["association"] = "element";
   intensities["units"] = "intensity units";
   vtkm::cont::ArrayHandle<FloatType> intensity_values = m_result.flatten_intensities();
   FloatType *intensity_buffer = get_vtkm_ptr(intensity_values);
-  // can't set external since this goes out of scope
   const int num_intensity_values = intensity_values.GetNumberOfValues();
   intensities["values"].set(intensity_buffer, num_intensity_values);
   intensities["strides"].set(DataType::int64(3));
@@ -669,17 +706,67 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
   strides[1] = width;
   strides[2] = width * height;
 
-  // Optical Depth
-  Node &optical_depth = data["fields/optical_depth"];
-  optical_depth["topology"] = topo_name;
+  Node &optical_depth = fields["optical_depth"];
+  optical_depth["topology"] = "image_topo";
   optical_depth["association"] = "element";
   optical_depth["units"] = "path length metadata";
   vtkm::cont::ArrayHandle<FloatType> optical_values = m_result.flatten_optical_depths();
   FloatType *optical_buffer = get_vtkm_ptr(optical_values);
-  // can't set external since this goes out of scope
   const int num_optical_values = optical_values.GetNumberOfValues();
   optical_depth["values"].set(optical_buffer, num_optical_values);
   optical_depth["strides"].set(intensities["strides"]);
+
+  //
+  // Spatial mesh
+  //
+
+  // Topology
+  Node &spatial_topo = topologies["spatial_topo"];
+  spatial_topo["coordset"] = "spatial_coords";
+  spatial_topo["type"] = "rectilinear";
+
+  // Coordset
+  Node &spatial_coords = coordsets["spatial_coords"];
+  spatial_coords["type"] = "rectilinear";
+  spatial_coords["values/x"].set(conduit::DataType::float64(width + 1));
+  spatial_coords["values/y"].set(conduit::DataType::float64(height + 1));
+  spatial_coords["values/z"].set(conduit::DataType::float64(num_channels + 1));        
+
+  float64_array spatial_coords_x = spatial_coords["values/x"].value();
+  float64_array spatial_coords_y = spatial_coords["values/y"].value();
+  float64_array spatial_coords_z = spatial_coords["values/z"].value();
+
+  for (int i = 0; i <= width; i++)
+  {
+    spatial_coords_x[i] = i * near_dx;
+  }
+  
+  for (int i = 0; i <= height; i++)
+  {
+    spatial_coords_y[i] = i * near_dy;
+  }
+
+  for (int i = 0; i <= num_channels; i++)
+  {
+    spatial_coords_z[i] = i;
+  }  
+
+  spatial_coords["units/x"] = "no units provided";
+  spatial_coords["units/y"] = "no units provided";
+  spatial_coords["units/z"] = "no units provided";
+
+  spatial_coords["labels/x"] = "width";
+  spatial_coords["labels/y"] = "height";
+  spatial_coords["labels/z"] = "energy_group";
+
+  // Fields
+  Node &intensities_spatial = fields["intensities_spatial"];
+  intensities_spatial.set(intensities);
+  intensities_spatial["topology"] = "spatial_topo";
+
+  Node &optical_depth_spatial = fields["optical_depth_spatial"];
+  optical_depth_spatial.set(optical_depth);
+  optical_depth_spatial["topology"] = "spatial_topo";
 
   // } // removing volume renderer
 

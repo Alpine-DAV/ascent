@@ -28,7 +28,8 @@ typedef vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32, 4> > vtkmColorBuffer;
 //typedef vtkm::rendering::raytracing::Camera                   vtkmCamera;
 typedef vtkm::rendering::Camera                               vtkmCamera;
 typedef vtkm::cont::ArrayHandle<vtkm::Id>                     IdHandle;
-typedef vtkm::Vec<vtkm::Float32,3>                            vtkmVec3f;
+typedef vtkm::Vec<vtkm::Float32, 2>                           vtkmVec2f;
+typedef vtkm::Vec<vtkm::Float32, 3>                           vtkmVec3f;
 typedef vtkm::cont::Timer                                     vtkmTimer;
 typedef vtkm::rendering::raytracing::Logger                   vtkmLogger;
 
