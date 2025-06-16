@@ -176,63 +176,83 @@ Rover::update_camera()
     return;
   }
 
-  // TODO: Change each instance of has_path to has_child
-  if (rover::settings.has_path("camera/zoom"))
+  const Node &n_camera = rover::settings["camera"];
+
+  if (n_camera.has_child("azimuth"))
   {
-    float64 image_zoom = rover::settings["camera/zoom"].value();
-    m_camera.Zoom(log(image_zoom) / log(4.0));
+    const float64 azimuth = n_camera["azimuth"].to_float64();
+    m_camera.Azimuth(azimuth);
   }
 
-  if (rover::settings.has_path("camera/look_at"))
+  if (n_camera.has_child("elevation"))
   {
-    float64_accessor vec3 = rover::settings["camera/look_at"].value();
-    vtkmVec3f look_at(vec3[0], vec3[1], vec3[2]);
+    const float64 elevation = n_camera["elevation"].to_float64();
+    m_camera.Elevation(elevation);
+  }
+
+  if (n_camera.has_child("zoom"))
+  {
+    const float64 zoom = n_camera["zoom"].to_float64();
+    m_camera.Zoom(log(zoom) / log(4.0));
+  }
+
+  if (n_camera.has_child("look_at"))
+  {
+    const float64_accessor vec3 = n_camera["look_at"].value();
+    const vtkmVec3f look_at(vec3[0], vec3[1], vec3[2]);
     m_camera.SetLookAt(look_at);
   }
   
-  if (rover::settings.has_path("camera/up"))
+  if (n_camera.has_child("up"))
   {
-    float64_accessor vec3 = rover::settings["camera/up"].value();
-    vtkmVec3f up(vec3[0], vec3[1], vec3[2]);
+    const float64_accessor vec3 = n_camera["up"].value();
+    const vtkmVec3f up(vec3[0], vec3[1], vec3[2]);
     m_camera.SetViewUp(up);
   }
   
-  if (rover::settings.has_path("camera/fov"))
+  if (n_camera.has_child("fov"))
   {
-    float64 fov = rover::settings["camera/fov"].value();
+    const float64 fov = n_camera["fov"].to_float64();
     m_camera.SetFieldOfView(fov);
   }
   
-  if (rover::settings.has_path("camera/xpan") || rover::settings.has_path("camera/ypan"))
-  {
-    float64 xpan = 0.0;
-    float64 ypan = 0.0;
+  const bool has_xpan = n_camera.has_child("xpan");
+  const bool has_ypan = n_camera.has_child("ypan");
 
-    if (rover::settings.has_path("camera/xpan"))
+  if (has_xpan || has_ypan)
+  {
+    const vtkmVec2f pan = m_camera.GetPan();
+    float64 xpan = pan[0];
+    float64 ypan = pan[1];
+
+    if (has_xpan)
     {
-      xpan = rover::settings["camera/xpan"].value();
+      xpan = n_camera["xpan"].to_float64();
     }
 
-    if (rover::settings.has_path("camera/ypan"))
+    if (has_ypan)
     {
-      ypan = rover::settings["camera/ypan"].value();
+      ypan = n_camera["ypan"].to_float64();
     }
     
     m_camera.Pan(xpan, ypan);
   }
   
-  if (rover::settings.has_path("camera/near_plane") || rover::settings.has_path("camera/far_plane"))
-  {
-    vtkm::Range clipping_range;
+  const bool has_near_plane = n_camera.has_child("near_plane");
+  const bool has_far_plane = n_camera.has_child("far_plane");
 
-    if (rover::settings.has_path("camera/near_plane"))
+  if (has_near_plane || has_far_plane)
+  {
+    vtkm::Range clipping_range = m_camera.GetClippingRange();
+
+    if (has_near_plane)
     {
-      clipping_range.Min = rover::settings["camera/near_plane"].value();
+      clipping_range.Min = n_camera["near_plane"].to_float64();
     }
     
-    if (rover::settings.has_path("camera/far_plane"))
+    if (has_far_plane)
     {
-      clipping_range.Max = rover::settings["camera/far_plane"].value();
+      clipping_range.Max = n_camera["far_plane"].to_float64();
     }
 
     m_camera.SetClippingRange(clipping_range);
