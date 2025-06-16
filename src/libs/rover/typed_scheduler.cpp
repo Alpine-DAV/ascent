@@ -589,7 +589,7 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
   vtkmVec3f position = camera.GetPosition();
   vtkmVec3f look_at = camera.GetLookAt();
   vtkmVec3f up = camera.GetViewUp();
-  const double image_zoom = camera.GetZoom();
+  const double zoom = camera.GetZoom();
   const double view_angle = camera.GetFieldOfView();
   const double near_plane = camera.GetClippingRange().Min;
   const double far_plane = camera.GetClippingRange().Max;
@@ -600,8 +600,8 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
   // TODO: Make sure that this is a valid way to compute view_height
   const double view_height = 2.0 * distance * tan((view_angle * vtkm::Pi_180()) / 2.0);
   const double view_width = (static_cast<float>(width) / static_cast<float>(height)) * view_height;
-  const double near_height = view_height / image_zoom;
-  const double near_width = view_width / image_zoom;
+  const double near_height = view_height / zoom;
+  const double near_width = view_width / zoom;
   const double far_height = near_height;
   const double far_width = near_width;
   const double detector_width = 2.0 * near_width;
@@ -628,7 +628,7 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
 
   Node &xray_view = state["xray_view"];
   xray_view["position"].set(&position[0], 3);
-  xray_view["zoom"] = image_zoom;
+  xray_view["zoom"] = zoom;
   xray_view["look_at"].set(&look_at[0], 3);
   xray_view["up"].set(&up[0], 3);
   xray_view["fov"] = view_angle;
