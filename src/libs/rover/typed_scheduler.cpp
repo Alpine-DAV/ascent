@@ -628,14 +628,15 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
 
   Node &xray_view = state["xray_view"];
   xray_view["position"].set(&position[0], 3);
+  xray_view["zoom"] = image_zoom;
   xray_view["look_at"].set(&look_at[0], 3);
   xray_view["up"].set(&up[0], 3);
-  xray_view["zoom"] = image_zoom;
   xray_view["fov"] = view_angle;
-  xray_view["near_plane"] = near_plane;
-  xray_view["far_plane"] = far_plane;
+  xray_view["parallel_scale"] = view_height / 2.0;
   xray_view["xpan"] = xy_pan[0];
   xray_view["ypan"] = xy_pan[1];
+  xray_view["near_plane"] = near_plane;
+  xray_view["far_plane"] = far_plane;
 
   xray_query.set(rover::settings["rover"]);
 
@@ -725,7 +726,7 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
   Node &optical_depth = fields["optical_depth"];
   optical_depth["topology"] = "image_topo";
   optical_depth["association"] = "element";
-  optical_depth["units"] = "path length metadata";
+  optical_depth["units"] = "optical depth metadata";
   vtkm::cont::ArrayHandle<FloatType> optical_values = m_result.flatten_optical_depths();
   FloatType *optical_buffer = get_vtkm_ptr(optical_values);
   const int num_optical_values = optical_values.GetNumberOfValues();
