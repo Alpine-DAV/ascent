@@ -176,48 +176,48 @@ Rover::update_camera()
     return;
   }
 
-  const Node &n_camera = rover::settings["camera"];
+  const Node &camera_params = rover::settings["camera"];
 
-  if (n_camera.has_child("azimuth"))
+  if (camera_params.has_child("azimuth"))
   {
-    const float64 azimuth = n_camera["azimuth"].to_float64();
+    const float64 azimuth = camera_params["azimuth"].to_float64();
     m_camera.Azimuth(azimuth);
   }
 
-  if (n_camera.has_child("elevation"))
+  if (camera_params.has_child("elevation"))
   {
-    const float64 elevation = n_camera["elevation"].to_float64();
+    const float64 elevation = camera_params["elevation"].to_float64();
     m_camera.Elevation(elevation);
   }
 
-  if (n_camera.has_child("zoom"))
+  if (camera_params.has_child("zoom"))
   {
-    const float64 zoom = n_camera["zoom"].to_float64();
+    const float64 zoom = camera_params["zoom"].to_float64();
     m_camera.Zoom(log(zoom) / log(4.0));
   }
 
-  if (n_camera.has_child("look_at"))
+  if (camera_params.has_child("look_at"))
   {
-    const float64_accessor vec3 = n_camera["look_at"].value();
+    const float64_accessor vec3 = camera_params["look_at"].value();
     const vtkmVec3f look_at(vec3[0], vec3[1], vec3[2]);
     m_camera.SetLookAt(look_at);
   }
   
-  if (n_camera.has_child("up"))
+  if (camera_params.has_child("up"))
   {
-    const float64_accessor vec3 = n_camera["up"].value();
+    const float64_accessor vec3 = camera_params["up"].value();
     const vtkmVec3f up(vec3[0], vec3[1], vec3[2]);
     m_camera.SetViewUp(up);
   }
   
-  if (n_camera.has_child("fov"))
+  if (camera_params.has_child("fov"))
   {
-    const float64 fov = n_camera["fov"].to_float64();
+    const float64 fov = camera_params["fov"].to_float64();
     m_camera.SetFieldOfView(fov);
   }
   
-  const bool has_xpan = n_camera.has_child("xpan");
-  const bool has_ypan = n_camera.has_child("ypan");
+  const bool has_xpan = camera_params.has_child("xpan");
+  const bool has_ypan = camera_params.has_child("ypan");
 
   if (has_xpan || has_ypan)
   {
@@ -227,19 +227,19 @@ Rover::update_camera()
 
     if (has_xpan)
     {
-      xpan = n_camera["xpan"].to_float64();
+      xpan = camera_params["xpan"].to_float64();
     }
 
     if (has_ypan)
     {
-      ypan = n_camera["ypan"].to_float64();
+      ypan = camera_params["ypan"].to_float64();
     }
     
     m_camera.Pan(xpan, ypan);
   }
   
-  const bool has_near_plane = n_camera.has_child("near_plane");
-  const bool has_far_plane = n_camera.has_child("far_plane");
+  const bool has_near_plane = camera_params.has_child("near_plane");
+  const bool has_far_plane = camera_params.has_child("far_plane");
 
   if (has_near_plane || has_far_plane)
   {
@@ -247,12 +247,12 @@ Rover::update_camera()
 
     if (has_near_plane)
     {
-      clipping_range.Min = n_camera["near_plane"].to_float64();
+      clipping_range.Min = camera_params["near_plane"].to_float64();
     }
     
     if (has_far_plane)
     {
-      clipping_range.Max = n_camera["far_plane"].to_float64();
+      clipping_range.Max = camera_params["far_plane"].to_float64();
     }
 
     m_camera.SetClippingRange(clipping_range);
