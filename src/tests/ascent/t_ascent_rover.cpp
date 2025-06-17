@@ -68,9 +68,11 @@ render_blueprint(const string &field_name,
     pl["f1/params/box/max/z"] = 0.0;
 
     Node scenes;
-    // TODO: Remove this once issue #1559 is fixed
     if (field_name.find("spatial") != std::string::npos)
     {
+        scenes["s1/renders/r1/camera/azimuth"] = 45.0;
+        
+        // TODO: Remove this once issue #1559 is fixed
         scenes["s1/plots/p1/pipeline"] = "pl1";
     }
 
