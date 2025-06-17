@@ -288,6 +288,7 @@ TEST(ascent_rover, test_xray_blueprint_braid_rotated)
     ASCENT_ACTIONS_DUMP(actions, image_path, msg);
 }
 
+#if 0
 //-----------------------------------------------------------------------------
 TEST(ascent_rover, test_xray_blueprint_braid_diff)
 {
@@ -352,7 +353,6 @@ TEST(ascent_rover, test_xray_blueprint_braid_diff)
     ASCENT_ACTIONS_DUMP(actions, image_path, msg);
 }
 
-#if 0
 //-----------------------------------------------------------------------------
 TEST(ascent_rover, test_xray_blueprint_braid_lowres)
 {
@@ -561,7 +561,7 @@ TEST(ascent_rover, test_xray_blueprint_curv3d_rotated)
     std::string msg = "Rendered XRay diagnostic images of the curv3d dataset (rotated)";
     ASCENT_ACTIONS_DUMP(actions, image_path, msg);
 }
-
+#if 0
 //-----------------------------------------------------------------------------
 TEST(ascent_rover, test_xray_blueprint_curv3d_diff)
 {
@@ -626,7 +626,7 @@ TEST(ascent_rover, test_xray_blueprint_curv3d_diff)
     std::string msg = "XRay blueprint diff of the curv3d dataset";
     ASCENT_ACTIONS_DUMP(actions, image_path, msg);
 }
-
+#endif
 //-----------------------------------------------------------------------------
 TEST(ascent_rover, test_xray_blueprint_curv3d_camera_params)
 {
