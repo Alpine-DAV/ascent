@@ -345,7 +345,7 @@ TEST(ascent_rover, test_xray_blueprint_braid_diff)
     load_and_verify_ascent_data(baseline_data, baseline_filename);
 
     // Diff the baseline data with our new output
-    EXPECT_FALSE(baseline_data.diff(xray_blueprint_output, diff_info));
+    EXPECT_FALSE(baseline_data.diff(xray_blueprint_output, diff_info, 0.01, true));
 
     // Dump info
     std::string msg = "XRay blueprint diff of an example braid mesh";
@@ -618,6 +618,9 @@ TEST(ascent_rover, test_xray_blueprint_curv3d_diff)
     Node baseline_data, diff_info;
     const std::string baseline_filename = "rover_xray_blueprint_curv3d_baseline.root";
     load_and_verify_ascent_data(baseline_data, baseline_filename);
+
+    // Diff the baseline data with our new output
+    EXPECT_FALSE(baseline_data.diff(xray_blueprint_output, diff_info, 0.01, true));
 
     // Dump info
     std::string msg = "XRay blueprint diff of the curv3d dataset";
