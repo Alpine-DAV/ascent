@@ -623,9 +623,16 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
   // State
   //
 
-  state["time"].set(rover::settings["state/time"]);
-  state["cycle"].set(rover::settings["state/cycle"]);
+  if (rover::settings.has_path("state/time"))
+  {
+    state["time"].set(rover::settings["state/time"]);
+  }
 
+  if (rover::settings.has_path("state/cycle"))
+  {
+    state["cycle"].set(rover::settings["state/cycle"]);
+  }
+  
   Node &xray_view = state["xray_view"];
   xray_view["position"].set(&position[0], 3);
   xray_view["zoom"] = zoom;
@@ -723,6 +730,7 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
   strides[1] = width;
   strides[2] = width * height;
 
+  // TODO: This seems to be broken
   Node &optical_depth = fields["optical_depth"];
   optical_depth["topology"] = "image_topo";
   optical_depth["association"] = "element";
@@ -786,6 +794,7 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
   intensities_spatial.set(intensities);
   intensities_spatial["topology"] = "spatial_topo";
 
+  // TODO: This seems to be broken
   Node &optical_depth_spatial = fields["optical_depth_spatial"];
   optical_depth_spatial.set(optical_depth);
   optical_depth_spatial["topology"] = "spatial_topo";

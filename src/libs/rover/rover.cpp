@@ -27,10 +27,6 @@ Rover::Rover()
   // Ensure that we always start from a default state
   rover::settings.reset();
 
-  // Metadata
-  rover::settings["state/time"] = -1.0f;
-  rover::settings["state/cycle"] = -1;
-
   // Settings
   // TODO: Figure out if color_table needs to be set by us here
   rover::settings["rover/color_table"] = "Cool to Warm";
