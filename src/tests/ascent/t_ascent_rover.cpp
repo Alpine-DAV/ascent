@@ -288,7 +288,6 @@ TEST(ascent_rover, test_xray_blueprint_braid_rotated)
     ASCENT_ACTIONS_DUMP(actions, image_path, msg);
 }
 
-#if 0
 //-----------------------------------------------------------------------------
 TEST(ascent_rover, test_xray_blueprint_braid_diff)
 {
@@ -346,13 +345,20 @@ TEST(ascent_rover, test_xray_blueprint_braid_diff)
     load_and_verify_ascent_data(baseline_data, baseline_filename);
 
     // Diff the baseline data with our new output
-    EXPECT_FALSE(baseline_data.diff(xray_blueprint_output, diff_info, 0.01, true));
+    const bool has_differences = baseline_data.diff(xray_blueprint_output, diff_info, 0.01, true);
+    if (has_differences)
+    {
+        ASCENT_INFO("Found differences in the braid blueprint diff:\n");
+        diff_info.print();
+    }
+    EXPECT_FALSE(has_differences);
 
     // Dump info
     std::string msg = "XRay blueprint diff of an example braid mesh";
     ASCENT_ACTIONS_DUMP(actions, image_path, msg);
 }
 
+#if 0
 //-----------------------------------------------------------------------------
 TEST(ascent_rover, test_xray_blueprint_braid_lowres)
 {
@@ -561,7 +567,7 @@ TEST(ascent_rover, test_xray_blueprint_curv3d_rotated)
     std::string msg = "Rendered XRay diagnostic images of the curv3d dataset (rotated)";
     ASCENT_ACTIONS_DUMP(actions, image_path, msg);
 }
-#if 0
+
 //-----------------------------------------------------------------------------
 TEST(ascent_rover, test_xray_blueprint_curv3d_diff)
 {
@@ -620,13 +626,19 @@ TEST(ascent_rover, test_xray_blueprint_curv3d_diff)
     load_and_verify_ascent_data(baseline_data, baseline_filename);
 
     // Diff the baseline data with our new output
-    EXPECT_FALSE(baseline_data.diff(xray_blueprint_output, diff_info, 0.01, true));
+    const bool has_differences = baseline_data.diff(xray_blueprint_output, diff_info, 0.01, true);
+    if (has_differences)
+    {
+        ASCENT_INFO("Found differences in the curv3d blueprint diff:\n");
+        diff_info.print();
+    }
+    EXPECT_FALSE(has_differences);
 
     // Dump info
     std::string msg = "XRay blueprint diff of the curv3d dataset";
     ASCENT_ACTIONS_DUMP(actions, image_path, msg);
 }
-#endif
+
 //-----------------------------------------------------------------------------
 TEST(ascent_rover, test_xray_blueprint_curv3d_camera_params)
 {
