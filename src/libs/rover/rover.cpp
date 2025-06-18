@@ -4,8 +4,7 @@
 // other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-#include "image.hpp"
-#include <scheduler.hpp>
+#include <typed_scheduler.hpp>
 #include <rover.hpp>
 #include <rover_exceptions.hpp>
 #include <vtkm_typedefs.hpp>
@@ -112,11 +111,11 @@ Rover::create_scheduler()
   const std::string precision = rover::settings["rover/precision"].as_string();
   if ("double" == precision)
   {
-    m_scheduler = new Scheduler<vtkm::Float64>();
+    m_scheduler = new TypedScheduler<vtkm::Float64>();
   }
   else // ("single" == precision)
   {
-    m_scheduler = new Scheduler<vtkm::Float32>();
+    m_scheduler = new TypedScheduler<vtkm::Float32>();
   }
 
 #ifdef ROVER_PARALLEL
@@ -130,9 +129,9 @@ Rover::create_scheduler()
 }
 
 void
-Rover::add_data_set(vtkh::DataSet &dataset)
+Rover::add_dataset(vtkh::DataSet &dataset)
 {
-  ROVER_INFO("Executing Rover::add_data_set");
+  ROVER_INFO("Executing Rover::add_dataset");
   // The scheduler needs to be created before data can be added
   // to it, else we segfault
   if (!m_scheduler)
@@ -142,7 +141,7 @@ Rover::add_data_set(vtkh::DataSet &dataset)
 
   for (int i = 0; i < dataset.GetNumberOfDomains(); i++)
   {
-    m_scheduler->add_data_set(dataset.GetDomain(i));
+    m_scheduler->add_dataset(dataset.GetDomain(i));
   }
 
   m_camera.ResetToBounds(dataset.GetGlobalBounds());
@@ -246,9 +245,6 @@ void
 Rover::about()
 {
   std::cout<<"rover version: xx.xx.xx\n";
-
-  //if(is_float(FloatType())) std::cout<<"Single precision\n";
-  //else std::cout<<"Double precision\n";
   std::cout<<"Other important information\n";
   std::cout<<"                                 *@@                                    \n";
   std::cout<<"       @@@@@@@@@@@@@@,          @@&@@              %@@@                 \n";
@@ -288,18 +284,6 @@ Rover::about()
 
 }
 
-void
-Rover::set_background(const std::vector<vtkm::Float32> &background)
-{
-  m_scheduler->set_background(background);
-}
-
-void
-Rover::set_background(const std::vector<vtkm::Float64> &background)
-{
-  m_scheduler->set_background(background);
-}
-
 void Rover::to_blueprint(conduit::Node &dataset)
 {
 #ifdef ROVER_PARALLEL
@@ -313,7 +297,7 @@ void Rover::to_blueprint(conduit::Node &dataset)
 }
 
 void
-Rover::save_png(const std::string &file_name)
+Rover::save_png(const std::string &filename)
 {
 #ifdef ROVER_PARALLEL
   // TODO: Support writing in parallel
@@ -322,41 +306,13 @@ Rover::save_png(const std::string &file_name)
     return;
   }
 #endif
-  m_scheduler->save_result(file_name);
+  m_scheduler->save_png(filename);
 }
 
 void
-Rover::save_png(const std::string &file_name,
-                const float min_val,
-                const float max_val,
-                const bool log_scale)
+Rover::save_bov(const std::string &filename)
 {
-#ifdef ROVER_PARALLEL
-  // TODO: Support writing in parallel
-  if(m_rank != 0)
-  {
-    return;
-  }
-#endif
-  m_scheduler->save_result(file_name, min_val, max_val, log_scale);
-}
-
-void
-Rover::save_bov(const std::string &file_name)
-{
-  m_scheduler->save_bov(file_name);
-}
-
-void
-Rover::get_result(Image<vtkm::Float32> &image)
-{
-  m_scheduler->get_result(image);
-}
-
-void
-Rover::get_result(Image<vtkm::Float64> &image)
-{
-  m_scheduler->get_result(image);
+  m_scheduler->save_bov(filename);
 }
 
 }; //namespace rover

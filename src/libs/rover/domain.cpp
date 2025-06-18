@@ -62,7 +62,7 @@ Domain::init()
   }
 #endif
 
-  m_engine->set_data_set(m_data_set);
+  m_engine->set_dataset(m_dataset);
   m_engine->init();
 
 #if 0 // removing volume renderer
@@ -86,18 +86,18 @@ Domain::get_num_channels()
 }
 
 void
-Domain::set_data_set(vtkmDataSet &dataset)
+Domain::set_dataset(vtkmDataSet &dataset)
 {
   ROVER_INFO("Setting dataset");
-  m_engine->set_data_set(dataset);
-  m_data_set = dataset;
-  m_domain_bounds = m_data_set.GetCoordinateSystem().GetBounds();
+  m_engine->set_dataset(dataset);
+  m_dataset = dataset;
+  m_domain_bounds = m_dataset.GetCoordinateSystem().GetBounds();
 }
 
 const vtkmDataSet&
-Domain::get_data_set()
+Domain::get_dataset()
 {
-  return m_data_set;
+  return m_dataset;
 }
 
 void

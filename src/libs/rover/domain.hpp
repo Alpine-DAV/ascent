@@ -27,12 +27,12 @@ public:
   ~Domain();
 
   void init();
-  const vtkmDataSet& get_data_set();
+  const vtkmDataSet& get_dataset();
   PartialVector32 partial_trace(Ray32 &rays);
   PartialVector64 partial_trace(Ray64 &rays);
   void init_rays(Ray32 &rays);
   void init_rays(Ray64 &rays);
-  void set_data_set(vtkmDataSet &dataset);
+  void set_dataset(vtkmDataSet &dataset);
   void set_primary_range(const vtkmRange &range);
   void set_composite_background(bool on);
   vtkm::Bounds get_domain_bounds();
@@ -41,7 +41,7 @@ public:
   int get_num_channels();
 protected:
   std::shared_ptr<Engine> m_engine;
-  vtkmDataSet             m_data_set;
+  vtkmDataSet             m_dataset;
   vtkm::Bounds            m_global_bounds;
   vtkm::Bounds            m_domain_bounds;
 }; // class domain
