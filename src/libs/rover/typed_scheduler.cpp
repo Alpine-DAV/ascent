@@ -650,11 +650,11 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
   Node &xray_data = state["xray_data"];
   xray_data["detector_width"] = detector_width;
   xray_data["detector_height"] = detector_height;
-  xray_data["intensity_max"].set(DataType::float64(1));
-  xray_data["intensity_min"].set(DataType::float64(1));
+  xray_data["intensity_max"];
+  xray_data["intensity_min"];
   // TODO: Uncomment this when optical_depth is fixed
-  // xray_data["optical_depth_max"].set(DataType::float64(1));
-  // xray_data["optical_depth_min"].set(DataType::float64(1));
+  // xray_data["optical_depth_max"];
+  // xray_data["optical_depth_min"];
   xray_data["image_topo_order_of_domain_variables"] = "xyz";
 
   state["domain_id"] = 0;
