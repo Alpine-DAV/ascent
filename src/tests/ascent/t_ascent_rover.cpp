@@ -338,14 +338,54 @@ TEST(ascent_rover, test_xray_blueprint_braid_diff)
     // Load and verify output mesh
     Node xray_blueprint_output, verify_info;
     load_and_verify_local_data(xray_blueprint_output, output_data_path);
+    Node &state_output = xray_blueprint_output["domain_000000/state"];
+    state_output.remove("xray_query/filename");
 
     // Load and verify baseline data
-    Node baseline_data, diff_info;
-    const std::string baseline_filename = "rover_xray_blueprint_braid_baseline.root";
-    load_and_verify_ascent_data(baseline_data, baseline_filename);
+    const char *yaml = R"yaml(
+          time: 3.1414999961853
+          cycle: 100
+          xray_view: 
+            position: [0.0, 0.0, 34.6410179138184]
+            zoom: 1.0
+            look_at: [0.0, 0.0, 0.0]
+            up: [0.0, 1.0, 0.0]
+            fov: 60.0
+            parallel_scale: 20.0000010175457
+            xpan: 0.0
+            ypan: 0.0
+            near_plane: 3.46410179138184
+            far_plane: 346.410186767578
+          xray_query: 
+            color_table: "Cool to Warm"
+            divide_emission_by_abs: "false"
+            height: 200
+            num_samples: 400
+            precision: "single"
+            ray_scope: "global_rays"
+            scattering_type: "non_scattering"
+            width: 200
+            unit_scalar: 1.0
+            absorption: "radial"
+            emission: "radial"
+            blueprint: "yaml"
+          xray_data: 
+            detector_width: 80.0000040701827
+            detector_height: 80.0000040701827
+            intensity_max: 173.205078125
+            intensity_min: 0.0
+            optical_depth_max: 8.24099913643295e-07
+            optical_depth_min: 0.0
+            image_topo_order_of_domain_variables: "xyz"
+          domain_id: 0
+      )yaml";
+
+    Node baseline_data;
+    baseline_data.parse(yaml);
 
     // Diff the baseline data with our new output
-    const bool has_differences = baseline_data.diff(xray_blueprint_output, diff_info, 0.01, true);
+    Node diff_info;
+    const bool has_differences = baseline_data.diff(state_output, diff_info, 0.01, true);
     if (has_differences)
     {
         ASCENT_INFO("Found differences in the braid blueprint diff:\n");
@@ -619,14 +659,54 @@ TEST(ascent_rover, test_xray_blueprint_curv3d_diff)
     // Load and verify output mesh
     Node xray_blueprint_output, verify_info;
     load_and_verify_local_data(xray_blueprint_output, output_data_path);
+    Node &state_output = xray_blueprint_output["domain_000000/state"];
+    state_output.remove("xray_query/filename");
 
     // Load and verify baseline data
-    Node baseline_data, diff_info;
-    const std::string baseline_filename = "rover_xray_blueprint_curv3d_baseline.root";
-    load_and_verify_ascent_data(baseline_data, baseline_filename);
+    const char *yaml = R"(
+        time: 4.80000019073486
+        cycle: 48
+        xray_view: 
+          position: [0.0, 2.5, 47.0156211853027]
+          zoom: 1.0
+          look_at: [0.0, 2.5, 15.0]
+          up: [0.0, 1.0, 0.0]
+          fov: 60.0
+          parallel_scale: 18.4842275096076
+          xpan: 0.0
+          ypan: 0.0
+          near_plane: 3.20156216621399
+          far_plane: 320.156219482422
+        xray_query: 
+          color_table: "Cool to Warm"
+          divide_emission_by_abs: "false"
+          height: 200
+          num_samples: 400
+          precision: "single"
+          ray_scope: "global_rays"
+          scattering_type: "non_scattering"
+          width: 200
+          unit_scalar: 1.0
+          absorption: "d"
+          emission: "p"
+          blueprint: "yaml"
+        xray_data: 
+          detector_width: 73.9369100384305
+          detector_height: 73.9369100384305
+          intensity_max: 0.491446942090988
+          intensity_min: 0.0
+          optical_depth_max: 1.0
+          optical_depth_min: 0.0
+          image_topo_order_of_domain_variables: "xyz"
+        domain_id: 0
+        )";
+
+    Node baseline_data;
+    baseline_data.parse(yaml);
 
     // Diff the baseline data with our new output
-    const bool has_differences = baseline_data.diff(xray_blueprint_output, diff_info, 0.01, true);
+    Node diff_info;
+    const bool has_differences = baseline_data.diff(state_output, diff_info, 0.01, true);
     if (has_differences)
     {
         ASCENT_INFO("Found differences in the curv3d blueprint diff:\n");

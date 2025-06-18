@@ -614,7 +614,6 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
   ROVER_INFO("Saving blueprint file with output size " << width << "x" << height);
 
   Node &state = data["state"];
-  Node &xray_query = data["xray_query"];
   Node &coordsets = data["coordsets"];
   Node &topologies = data["topologies"];
   Node &fields = data["fields"];
@@ -645,6 +644,7 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
   xray_view["near_plane"] = near_plane;
   xray_view["far_plane"] = far_plane;
 
+  Node &xray_query = state["xray_query"];
   xray_query.set(rover::settings["rover"]);
 
   Node &xray_data = state["xray_data"];
@@ -720,8 +720,10 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
   const int num_intensity_values = intensity_values.GetNumberOfValues();
 
   auto intensity_min_max = std::minmax_element(intensity_buffer, intensity_buffer + num_intensity_values);
-  xray_data["intensity_max"].set(intensity_min_max.second);
-  xray_data["intensity_min"].set(intensity_min_max.first);
+  const float64 intensity_max = *intensity_min_max.second;
+  const float64 intensity_min = *intensity_min_max.first;
+  xray_data["intensity_max"].set(intensity_max);
+  xray_data["intensity_min"].set(intensity_min);
   
   intensities["values"].set(intensity_buffer, num_intensity_values);
   intensities["strides"].set(DataType::int64(3));
@@ -740,8 +742,10 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
   const int num_optical_values = optical_values.GetNumberOfValues();
 
   auto optical_min_max = std::minmax_element(optical_buffer, optical_buffer + num_optical_values);
-  xray_data["optical_depth_max"].set(optical_min_max.second);
-  xray_data["optical_depth_min"].set(optical_min_max.first);
+  const float64 optical_depth_max = *optical_min_max.second;
+  const float64 optical_depth_min = *optical_min_max.first;
+  xray_data["optical_depth_max"].set(optical_depth_max);
+  xray_data["optical_depth_min"].set(optical_depth_min);
 
   optical_depth["values"].set(optical_buffer, num_optical_values);
   optical_depth["strides"].set(intensities["strides"]);

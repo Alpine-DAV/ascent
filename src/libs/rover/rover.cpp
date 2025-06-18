@@ -62,7 +62,7 @@ Rover::~Rover()
 }
 
 void
-Rover::update_metadata(Node &metadata)
+Rover::update_time_and_cycle(Node &metadata)
 {
   if (metadata.has_child("time"))
   {

@@ -267,7 +267,7 @@ RoverXRay::execute()
 
   // Initialize rover and configure its behavior with the input params
   Rover rover;
-  rover.update_metadata(Metadata::n_metadata);
+  rover.update_time_and_cycle(Metadata::n_metadata);
   rover.update_settings(params());
 
   int mpi_comm_id = -1;
