@@ -652,8 +652,9 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
   xray_data["detector_height"] = detector_height;
   xray_data["intensity_max"].set(DataType::float64(1));
   xray_data["intensity_min"].set(DataType::float64(1));
-  xray_data["optical_depth_max"].set(DataType::float64(1));
-  xray_data["optical_depth_min"].set(DataType::float64(1));
+  // TODO: Uncomment this when optical_depth is fixed
+  // xray_data["optical_depth_max"].set(DataType::float64(1));
+  // xray_data["optical_depth_min"].set(DataType::float64(1));
   xray_data["image_topo_order_of_domain_variables"] = "xyz";
 
   state["domain_id"] = 0;
@@ -741,11 +742,12 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
   FloatType *optical_buffer = get_vtkm_ptr(optical_values);
   const int num_optical_values = optical_values.GetNumberOfValues();
 
-  auto optical_min_max = std::minmax_element(optical_buffer, optical_buffer + num_optical_values);
-  const float64 optical_depth_max = *optical_min_max.second;
-  const float64 optical_depth_min = *optical_min_max.first;
-  xray_data["optical_depth_max"].set(optical_depth_max);
-  xray_data["optical_depth_min"].set(optical_depth_min);
+  // TODO: Uncomment this when optical_depth is fixed
+  // auto optical_min_max = std::minmax_element(optical_buffer, optical_buffer + num_optical_values);
+  // const float64 optical_depth_max = *optical_min_max.second;
+  // const float64 optical_depth_min = *optical_min_max.first;
+  // xray_data["optical_depth_max"].set(optical_depth_max);
+  // xray_data["optical_depth_min"].set(optical_depth_min);
 
   optical_depth["values"].set(optical_buffer, num_optical_values);
   optical_depth["strides"].set(intensities["strides"]);

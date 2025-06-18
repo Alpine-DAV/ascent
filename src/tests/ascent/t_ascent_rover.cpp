@@ -374,8 +374,6 @@ TEST(ascent_rover, test_xray_blueprint_braid_diff)
             detector_height: 80.0000040701827
             intensity_max: 173.205078125
             intensity_min: 0.0
-            optical_depth_max: 8.24099913643295e-07
-            optical_depth_min: 0.0
             image_topo_order_of_domain_variables: "xyz"
           domain_id: 0
       )yaml";
@@ -695,8 +693,6 @@ TEST(ascent_rover, test_xray_blueprint_curv3d_diff)
           detector_height: 73.9369100384305
           intensity_max: 0.491446942090988
           intensity_min: 0.0
-          optical_depth_max: 1.0
-          optical_depth_min: 0.0
           image_topo_order_of_domain_variables: "xyz"
         domain_id: 0
         )";
