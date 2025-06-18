@@ -342,7 +342,7 @@ TEST(ascent_rover, test_xray_blueprint_braid_diff)
     state_output.remove("xray_query/filename");
 
     // Load and verify baseline data
-    const char *yaml = R"yaml(
+    const std::string yaml = R"yaml(
           time: 3.1414999961853
           cycle: 100
           xray_view: 
@@ -661,7 +661,7 @@ TEST(ascent_rover, test_xray_blueprint_curv3d_diff)
     state_output.remove("xray_query/filename");
 
     // Load and verify baseline data
-    const char *yaml = R"(
+    const std::string yaml = R"(
         time: 4.80000019073486
         cycle: 48
         xray_view: 
