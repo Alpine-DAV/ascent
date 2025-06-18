@@ -13,6 +13,7 @@
 #include <ascent.hpp>
 #include <flow_timer.hpp>
 #include <conduit_relay_io_blueprint.hpp>
+#include <conduit_fmt/conduit_fmt.h>
 
 #include <fstream>
 #include <vector>
@@ -313,6 +314,9 @@ main(int argc, char *argv[])
   ascent_opts["ascent_info"] = "verbose";
 #if defined(ASCENT_REPLAY_MPI)
   ascent_opts["mpi_comm"] = MPI_Comm_c2f(sub_comm_world);
+  ascent_opts["logging/file_pattern"] = 
+        conduit_fmt::format("ascent_log_output_comm-group-{color:03d}",
+                            conduit_fmt::arg("color",color)) + "_rank-{rank:05d}.yaml";
 #endif
 
   //
