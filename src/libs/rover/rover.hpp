@@ -37,6 +37,7 @@ public:
   Rover();
   ~Rover();
 
+  void update_time_and_cycle(Node &metadata);
   void update_settings(Node &params);
   void print_settings();
 

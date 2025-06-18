@@ -267,6 +267,7 @@ RoverXRay::execute()
 
   // Initialize rover and configure its behavior with the input params
   Rover rover;
+  rover.update_time_and_cycle(Metadata::n_metadata);
   rover.update_settings(params());
 
   int mpi_comm_id = -1;
@@ -289,19 +290,6 @@ RoverXRay::execute()
     conduit::Node multi_domain;
     conduit::Node &data = multi_domain.append();
     rover.to_blueprint(data);
-
-    if (data.has_path("coordsets"))
-    {
-      if(Metadata::n_metadata.has_child("cycle"))
-      {
-        data["state/cycle"].set(Metadata::n_metadata["cycle"]);
-      }
-
-      if(Metadata::n_metadata.has_child("time"))
-      {
-        data["state/time"].set(Metadata::n_metadata["time"]);
-      }
-    }
 
     std::string filename = params()["rover/filename"].as_string();
     filename = output_dir(expand_path_special_variables(filename, ".root", mpi_comm_id));
