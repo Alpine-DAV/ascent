@@ -231,12 +231,17 @@ int check_directory_for_family_value(const std::string& path_string,
       std::smatch file_match;
       if (std::regex_search(file_name, file_match, search_pattern))
       {
-
-        // If we find a match that is greater than the current family value, update to a new value
-        int matched_value = static_cast<int>(std::stod(file_match[1].str()));
-        if (matched_value >= family_value)
+        std::string match_string = file_match[1].str();
+        
+        // If a family value stored in the file name, check it and update the family value if needed
+        if (match_string.size() != 0)
         {
-          family_value = matched_value + 1;
+            int matched_value = static_cast<int>(std::stod(match_string));
+            // If we find a match that is greater than the current family value, update to a new value
+            if (matched_value >= family_value)
+            {
+                family_value = matched_value + 1;
+            }
         }
       }
     }
