@@ -655,6 +655,11 @@ if [ ! -d ${vtkm_src_dir} ]; then
   echo "**** Downloading ${vtkm_tarball}"
   curl -L https://gitlab.kitware.com/vtk/vtk-m/-/archive/${vtkm_version}/vtk-m-${vtkm_version}.tar.gz -o ${vtkm_tarball}
   tar ${tar_extra_args} -xzf ${vtkm_tarball} -C ${source_dir}
+
+  # apply patches
+  cd ${vtkm_src_dir}
+  patch -p1 < ${script_dir}/2025_06_18_vtkm_z_extents_ray_culling_bugfix_viskores_mr109.patch
+  cd ${root_dir}
 fi
 
 
