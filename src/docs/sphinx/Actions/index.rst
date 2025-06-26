@@ -24,6 +24,7 @@ Ascent Actions
    VTKmColorTables
    DRayColorTables
    ParaViewVisualization
+   PathStringFormatting
 ..
 
 .. future:

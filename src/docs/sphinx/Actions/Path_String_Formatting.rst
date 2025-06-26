@@ -15,11 +15,11 @@ generate unique file paths.
 Supported Number Formats
 ------------------------
 
-The formatting uses c++ generic `sprintf()` formatting as a backend so it will work exactly like
+The formatting uses c++ generic ``sprintf()`` formatting as a backend so it will work exactly like
 regular string formatting. For reference, we specifically support the following formatting values.
 
 .. note::
-    The following examples are formatting the value `23.657`
+    The following examples are formatting the value ``23.657``
 
 .. list-table::
     :widths: 15 75 25 25
@@ -58,21 +58,21 @@ regular string formatting. For reference, we specifically support the following 
       - 2.2E
       - 2.37E+01
     * - g
-      - formats as either `e` or `f`, whichever is shorter
+      - formats as either ``e`` or ``f``, whichever is shorter
       - 2.4g
       - 23.66
     * - G
-      - formats as either `E` or `F`, whichever is shorter
+      - formats as either ``E`` or ``F``, whichever is shorter
       - 2.4G
       - 23.66
 
 
 Formatting Syntax
 -----------------
-To use Ascent's keyword formatting, insert the desired keyword in curly braces `{}` in your file
+To use Ascent's keyword formatting, insert the desired keyword in curly braces ``{}`` in your file
 path string optionally followed by a colon and the format specifier. 
 
-Syntax: `{keyword:format}`
+Syntax: ``{keyword:format}``
 
 If no format specifier is given, the default format for each keyword will be used (see bellow).
 
@@ -85,10 +85,10 @@ with their corresponding values, allowing for dynamic and unique file naming.
 Cycle
 ^^^^^
 
-The current simulation cycle (integer, default format=`06d`)
+The current simulation cycle (integer, default format= ``06d``)
 
 This is the default value used for formatting. When standard formatting convention is used in the
-path such as `%03d`, the cycle value will be inserted at runtime. Additionally, in cases where no
+path such as ``%03d``, the cycle value will be inserted at runtime. Additionally, in cases where no
 formatting is provided, the cycle value will be appended to the end of the path name. 
 
 .. list-table::
@@ -132,10 +132,10 @@ formatting is provided, the cycle value will be appended to the end of the path 
 Time
 ^^^^
 
-The simulation time (floating-point, default format=`g`)
+The simulation time (floating-point, default format= ``g``)
 
 .. note::
-    The following examples use `3.14159` as the time value
+    The following examples use ``3.14159`` as the time value
 
 .. list-table::
     :widths: 50 50 75
@@ -163,24 +163,26 @@ The simulation time (floating-point, default format=`g`)
 Family
 ^^^^^^
 
-A unique value based on existing files in the output directory (integer, default format=`06d`)
+A unique value based on existing files in the output directory (integer, default format= ``06d``)
 
 The family value is used to avoid overwriting existing files in the output directory with a
 matching output file pattern, including those from previous runs of Ascent. It is set to one
 greater than the maximum detected family value of the matching file pattern, or zero if no
 matching files are found.
 
-A minimum family value can be passed to ascent through the options using the `family_value_seed`
+A minimum family value can be passed to ascent through the options using the ``family_value_seed``
 keyword. This will force all family values to be greater than or equal to the seed value.
 
 .. code-block:: cpp
+    :caption: Example of setting the family_value_seed
+
     Node ascent_opts;
     ascent_opts["runtime/type"] = "ascent";
     ascent_opts["family_value_seed"] = 200;
     ascent.open(ascent_opts);
 
 .. note::
-    For the following examples we will assume that there is an existing file named path_0015.png
+    For the following examples we will assume that there is an existing file named ``path_0015.png``
     in the output directory.
 
 .. list-table::
@@ -237,10 +239,10 @@ Error Handling and Edge Cases
 -----------------------------
  - If an invalid keyword is passed, Ascent will throw a warning and not format that keyword.
  - If an invalid format is passed, Ascent will throw a warning and use the default formatting for that keyword.
- - If a file with the same name already exists and the family value is not used, the file will be overwritten.
+ - If a file with the same name already exists and the ``family`` value is not used, the file will be overwritten.
 
 Best Practices
 --------------
- - Always use zero-padding for cycle and family values to ensure files are sorted correctly.
- - Use the `family` keyword when you want to guarantee unique output file names across multiple runs.
+ - Always use zero-padding for ``cycle`` and ``family`` values to ensure files are sorted correctly.
+ - Use the ``family`` keyword when you want to guarantee unique output file names across multiple runs.
  - Use descriptive prefixes and suffixes in your paths for clarity.
