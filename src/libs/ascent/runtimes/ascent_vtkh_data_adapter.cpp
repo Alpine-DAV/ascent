@@ -1336,16 +1336,46 @@ VTKHDataAdapter::RectilinearBlueprintToVTKmDataSet
 
     int32 ndims = 2;
 
-    // todo assumes float64
-    const float64 *x_coords_ptr = n_coords["values/x"].as_float64_ptr();
-    const float64 *y_coords_ptr = n_coords["values/y"].as_float64_ptr();
+    const float64 *x_coords_ptr;
+    if (!n_coords["values/x"].dtype().is_float64())
+    {
+        Node temp_x;
+        n_coords["values/x"].to_float64_array(temp_x);
+        x_coords_ptr = temp_x.value();
+    }
+    else
+    {
+        x_coords_ptr = n_coords["values/x"].as_float64_ptr();
+    }
+    
+    const float64 *y_coords_ptr;
+    if (!n_coords["values/y"].dtype().is_float64())
+    {
+        Node temp_y;
+        n_coords["values/y"].to_float64_array(temp_y);
+        y_coords_ptr = temp_y.value();
+    }
+    else
+    {
+        y_coords_ptr = n_coords["values/y"].as_float64_ptr();
+    }
+
     const float64 *z_coords_ptr = NULL;
 
     if(n_coords.has_path("values/z"))
     {
         ndims = 3;
         z_npts = n_coords["values/z"].dtype().number_of_elements();
-        z_coords_ptr = n_coords["values/z"].as_float64_ptr();
+        if (!n_coords["values/z"].dtype().is_float64())
+        {
+            Node temp_z;
+            n_coords["values/z"].to_float64_array(temp_z);
+            z_coords_ptr = temp_z.value();
+        }
+        else
+        {
+            z_coords_ptr = n_coords["values/z"].as_float64_ptr();
+        }
     }
 
     vtkm::cont::ArrayHandle<vtkm::Float64> x_coords_handle;
