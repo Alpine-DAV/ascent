@@ -144,7 +144,7 @@ TEST(ascent_data_adapter, vtkm_rectilinear_non_float64)
     }
 
     Node test_data;
-    const std::string data_filename = "tout_rover_xray_query100.cycle_000100.root";
+    const std::string data_filename = "rectilinear_mesh_int_values.root";
     const std::string data_path = conduit::utils::join_file_path(std::string(ASCENT_T_DATA_DIR), data_filename);
     conduit::relay::io::blueprint::load_mesh(data_path, test_data);
 

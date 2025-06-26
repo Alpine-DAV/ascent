@@ -71,7 +71,7 @@
         "time": 3.1414999961853,
         "path": "mesh/state",
         "number_of_domains": 1,
-        "partition_pattern": "tout_rover_xray_query100.cycle_000100.root:/"
+        "partition_pattern": "rectilinear_mesh_int_values.root:/"
       },
       "coordsets": 
       {
@@ -126,6 +126,6 @@
   },
   "number_of_files": 1,
   "number_of_trees": 1,
-  "file_pattern": "tout_rover_xray_query100.cycle_000100.root",
+  "file_pattern": "rectilinear_mesh_int_values.root",
   "tree_pattern": "/"
 }
