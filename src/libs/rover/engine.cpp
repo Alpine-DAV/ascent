@@ -44,8 +44,6 @@ Engine::init()
 {
   vtkmColorTable color_table(rover::settings["rover/color_table"].as_string());
   set_color_map(color_table);
-  set_primary_field();
-  set_secondary_field();
 }
 
 void
@@ -56,32 +54,11 @@ Engine::set_dataset(vtkm::cont::DataSet &dataset)
   // TODO: Investigate why we set an empty field name here,
   // do we delete and replace the tracer later on or do we
   // explicitly set the field names?
-  m_tracer = new vtkm::rendering::ConnectivityProxy(dataset, "");
-  m_tracer->SetRenderMode(vtkm::rendering::ConnectivityProxy::RenderMode::Energy);
-  m_dataset = dataset;
-}
-
-void
-Engine::set_primary_field()
-{
   const std::string absorption = rover::settings["rover/absorption"].as_string();
-  ROVER_INFO("Engine::set_primary_field: using '" << absorption << "'");
+  m_tracer = new vtkh::rendering::ConnectivityProxy(dataset, absorption);
+  m_tracer->SetRenderMode(vtkh::rendering::ConnectivityProxy::RenderMode::Energy);
   m_tracer->SetScalarField(absorption);
-}
-
-void
-Engine::set_secondary_field()
-{
-  std::string emission = rover::settings["rover/emission"].as_string();
-  // Return early if emission is not specified
-  if ("" == emission)
-  {
-    ROVER_INFO("Engine::set_secondary_field: emission not specified");
-    return;
-  }
-
-  ROVER_INFO("Engine::set_secondary_field: using '" << emission << "'");
-  m_tracer->SetEmissionField(emission);
+  m_dataset = dataset;
 }
 
 template<typename Precision>
@@ -96,18 +73,18 @@ Engine::init_emission(vtkm::rendering::raytracing::Ray<Precision> &rays,
     ROVER_INFO("Engine::init_emission: emission not specified");
     return;
   }
-
+  m_tracer->SetEmissionField(emission);
   rays.AddBuffer(num_bins, "emission");
-  rays.GetBuffer("emission").InitConst(0);
+  rays.GetBuffer("emission").InitConst(0.0f);
 }
 
-PartialVector32
+std::vector<vtkh::rendering::raytracing::PartialComposite<vtkm::Float32>>
 Engine::partial_trace(Ray32 &rays)
 {
   ROVER_INFO("Executing Engine::partial_trace");
   init_rays(rays);
   m_tracer->SetUnitScalar(rover::settings["rover/unit_scalar"].value());
-  m_tracer->SetRenderMode(vtkm::rendering::ConnectivityProxy::RenderMode::Energy);
+  m_tracer->SetRenderMode(vtkh::rendering::ConnectivityProxy::RenderMode::Energy);
   m_tracer->SetColorMap(m_color_map);
   return m_tracer->PartialTrace(rays);
 }
@@ -118,8 +95,11 @@ Engine::init_rays(Ray32 &rays)
   validate_tracer();
   const int num_bins = get_num_channels();
   rays.Buffers.at(0).SetNumChannels(num_bins);
+  // TODO: I think this should be init with background intensities
   rays.Buffers.at(0).InitConst(1.0f);
   init_emission(rays, num_bins);
+  rays.AddBuffer(num_bins, "optical_depths");
+  rays.GetBuffer("optical_depths").InitConst(1.0f);
 }
 
 void
@@ -128,17 +108,20 @@ Engine::init_rays(Ray64 &rays)
   validate_tracer();
   const int num_bins = get_num_channels();
   rays.Buffers.at(0).SetNumChannels(num_bins);
+  // TODO: I think this should be init with background intensities
   rays.Buffers.at(0).InitConst(1.0f);
   init_emission(rays, num_bins);
+  rays.AddBuffer(num_bins, "optical_depths");
+  rays.GetBuffer("optical_depths").InitConst(1.0f);
 }
 
-PartialVector64
+std::vector<vtkh::rendering::raytracing::PartialComposite<vtkm::Float64>>
 Engine::partial_trace(Ray64 &rays)
 {
   ROVER_INFO("Executing Engine::partial_trace");
   init_rays(rays);
   m_tracer->SetUnitScalar(rover::settings["rover/unit_scalar"].value());
-  m_tracer->SetRenderMode(vtkm::rendering::ConnectivityProxy::RenderMode::Energy);
+  m_tracer->SetRenderMode(vtkh::rendering::ConnectivityProxy::RenderMode::Energy);
   m_tracer->SetColorMap(m_color_map);
   return m_tracer->PartialTrace(rays);
 }

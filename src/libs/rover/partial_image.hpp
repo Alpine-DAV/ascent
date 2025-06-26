@@ -25,8 +25,9 @@ template<typename FloatType>
 struct PartialImage
 {
   IdHandle                                 m_pixel_ids;
-  vtkmRayTracing::ChannelBuffer<FloatType> m_buffer;          // holds the absorption
-  vtkmRayTracing::ChannelBuffer<FloatType> m_intensities;     // holds the intensity emerging from each ray
+  vtkm::rendering::raytracing::ChannelBuffer<FloatType> m_buffer;          // holds the absorption
+  vtkm::rendering::raytracing::ChannelBuffer<FloatType> m_intensities;     // holds the intensity emerging from each ray
+  vtkm::rendering::raytracing::ChannelBuffer<FloatType> m_optical_depths;
   vtkm::cont::ArrayHandle<FloatType>       m_distances;
   std::vector<FloatType>                   m_source_sig;
 
@@ -36,9 +37,10 @@ struct PartialImage
     m_distances.Allocate(size);
     m_buffer.SetNumChannels(channels);
     m_buffer.Resize(size);
-
     m_intensities.SetNumChannels(channels);
     m_intensities.Resize(size);
+    m_optical_depths.SetNumChannels(channels);
+    m_optical_depths.Resize(size);
     m_source_sig.resize(channels);
   }
 
@@ -105,6 +107,7 @@ struct PartialImage
     auto id_portal = m_pixel_ids.ReadPortal();
     auto buffer_portal = m_buffer.Buffer.ReadPortal();
     auto intensity_portal = m_intensities.Buffer.ReadPortal();
+    auto optical_depth_portal = m_optical_depths.Buffer.ReadPortal();
     auto depth_portal = m_distances.ReadPortal();
     const int size = static_cast<int>(m_pixel_ids.GetNumberOfValues());
     partials.resize(size);
@@ -118,12 +121,14 @@ struct PartialImage
       partials[index].m_depth = depth_portal.Get(index);
       partials[index].m_bins.resize(num_bins);
       partials[index].m_emission_bins.resize(num_bins);
+      partials[index].m_optical_depth_bins.resize(num_bins);
 
       const int starting_index = index * num_bins;
       for(int i = 0; i < num_bins; ++i)
       {
         partials[index].m_bins[i] = buffer_portal.Get(starting_index + i);
         partials[index].m_emission_bins[i] = intensity_portal.Get(starting_index + i);
+        partials[index].m_optical_depth_bins[i] = optical_depth_portal.Get(starting_index + i);
       }
     }
   }
@@ -197,14 +202,14 @@ struct PartialImage
 #endif
     for(int i = 0; i < size; ++i)
     {
-      id_portal.Set(i, partials[i].m_pixel_id );
-      depth_portal.Set(i, partials[i].m_depth );
+      id_portal.Set(i, partials[i].m_pixel_id);
+      depth_portal.Set(i, partials[i].m_depth);
       const int starting_index = i * num_bins;
 
-      for(int ii = 0; ii < num_bins; ++ii)
+      for(int j = 0; j < num_bins; ++j)
       {
-        buffer_portal.Set(starting_index + ii, partials[i].m_bins[ii]);
-        intensity_portal.Set( starting_index + ii, partials[i].m_bins[ii] * background[ii]);
+        buffer_portal.Set(starting_index + j, partials[i].m_bins[j]);
+        intensity_portal.Set(starting_index + j, partials[i].m_bins[j]);
       }
     }
 
@@ -225,22 +230,25 @@ struct PartialImage
     auto buffer_portal = m_buffer.Buffer.WritePortal();
     auto depth_portal = m_distances.WritePortal();
     auto intensity_portal = m_intensities.Buffer.WritePortal();
+    auto optical_depth_portal = m_optical_depths.Buffer.WritePortal();
 
 #ifdef ROVER_OPENMP_ENABLED
     #pragma omp parallel for
 #endif
     for(int i = 0; i < size; ++i)
     {
-      id_portal.Set(i, partials[i].m_pixel_id );
-      depth_portal.Set(i, partials[i].m_depth );
+      id_portal.Set(i, partials[i].m_pixel_id);
+      depth_portal.Set(i, partials[i].m_depth);
       const int starting_index = i * num_bins;
 
-      for(int ii = 0; ii < num_bins; ++ii)
+      for(int j = 0; j < num_bins; ++j)
       {
-        buffer_portal.Set(starting_index + ii, partials[i].m_bins[ii]);
-        FloatType out_intensity;
-        out_intensity = partials[i].m_emission_bins[ii] +  partials[i].m_bins[ii] * background[ii];
-        intensity_portal.Set( starting_index + ii, out_intensity);
+        const int starting_index_j = starting_index + j;
+        // TODO: Change names of all buffers and bins
+        // TODO: Add comment explaining what's going on here
+        buffer_portal.Set(starting_index_j, partials[i].m_bins[j]);
+        intensity_portal.Set(starting_index_j, partials[i].m_emission_bins[j] + partials[i].m_bins[j] * background[j]);
+        optical_depth_portal.Set(starting_index_j, partials[i].m_optical_depth_bins[j]);
       }
     }
 

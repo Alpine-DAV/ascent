@@ -4,11 +4,16 @@
 set(vtkh_rendering_headers
     Annotator.hpp
     AutoCamera.hpp
+    ConnectivityProxy.hpp
+    ConnectivityTracer.hpp
     LineRenderer.hpp
+    MeshConnectivityBuilder.cpp
+    MeshConnectivityContainers.cpp
     MeshRenderer.hpp
     RayTracer.hpp
     Render.hpp
     Renderer.hpp
+    PartialComposite.hpp
     PointRenderer.hpp
     ScalarRenderer.hpp
     Scene.hpp
@@ -18,7 +23,11 @@ set(vtkh_rendering_headers
 set(vtkh_rendering_sources
     Annotator.cpp
     AutoCamera.cpp
+    ConnectivityProxy.cpp
+    ConnectivityTracer.cpp
     LineRenderer.cpp
+    MeshConnectivityBuilder.cpp
+    MeshConnectivityContainers.cpp
     MeshRenderer.cpp
     RayTracer.cpp
     Render.cpp

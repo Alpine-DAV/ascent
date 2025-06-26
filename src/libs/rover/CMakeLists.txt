@@ -51,7 +51,8 @@ if(KOKKOS_FOUND)
 endif()
 
 set(rover_thirdparty_deps ${rover_base_deps}
-                          vtkh)
+                          vtkh
+                          vtkh_rendering)
 
 set(rover_headers
       domain.hpp
@@ -132,6 +133,7 @@ if(MPI_FOUND)
 
   set(rover_mpi_thirdparty_deps ${rover_base_deps}
                                 vtkh_mpi
+                                vtkh_rendering_mpi
                                 conduit::conduit_mpi
                                 ${ascent_blt_mpi_deps}
                                 )

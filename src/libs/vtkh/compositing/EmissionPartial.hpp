@@ -55,6 +55,7 @@ struct EmissionPartial
   double                 m_depth;
   std::vector<FloatType> m_bins;
   std::vector<FloatType> m_emission_bins;
+  std::vector<FloatType> m_optical_depth_bins;
 
   EmissionPartial()
     : m_pixel_id(0),

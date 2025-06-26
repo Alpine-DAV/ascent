@@ -7,7 +7,7 @@
 #ifndef rover_engine_h
 #define rover_engine_h
 
-#include <vtkm/rendering/ConnectivityProxy.h>
+#include <vtkh/rendering/ConnectivityProxy.hpp>
 #include <vtkm/cont/ColorTable.h>
 
 #include <rover_config.h>
@@ -40,12 +40,10 @@ public:
   void validate_tracer();
   void set_dataset(vtkmDataSet &dataset);
   void init();
-  void set_primary_field();
-  void set_secondary_field();
   void init_rays(Ray32 &rays);
   void init_rays(Ray64 &rays);
-  PartialVector32 partial_trace(Ray32 &rays);
-  PartialVector64 partial_trace(Ray64 &rays);
+  std::vector<vtkh::rendering::raytracing::PartialComposite<vtkm::Float32>> partial_trace(Ray32 &rays);
+  std::vector<vtkh::rendering::raytracing::PartialComposite<vtkm::Float64>> partial_trace(Ray64 &rays);
   int  get_num_channels();
   vtkmRange get_primary_range();
   void set_primary_range(const vtkmRange &range);
@@ -54,7 +52,7 @@ public:
 
 protected:
   vtkmDataSet m_dataset;
-  vtkm::rendering::ConnectivityProxy *m_tracer;
+  vtkh::rendering::ConnectivityProxy *m_tracer;
   vtkmColorMap m_color_map;
 
   template<typename Precision>

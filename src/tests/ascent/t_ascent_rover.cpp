@@ -54,7 +54,7 @@ render_blueprint(const string &field_name,
                  const double detector_width)
 {
     // Define Ascent actions
-    // TODO: Remove this once issue #1559 is fixed
+    // TODO: Remove this now
     Node pipelines;
     Node &pl = pipelines["pl1"];
     pl["f1/type"] = "clip";
@@ -108,9 +108,9 @@ render_all_fields(const Node &data,
     
     // TODO: Undo this once optical_depth is fixed
     const std::vector<std::string> fields {"intensities", 
-                                        //    "optical_depth",
+                                           "optical_depth",
                                            "intensities_spatial",
-                                        //    "optical_depth_spatial"
+                                           "optical_depth_spatial"
                                           };
     for (auto field : fields)
     {
@@ -360,7 +360,6 @@ TEST(ascent_rover, test_xray_blueprint_braid_diff)
             color_table: "Cool to Warm"
             divide_emission_by_abs: "false"
             height: 200
-            num_samples: 400
             precision: "single"
             ray_scope: "global_rays"
             scattering_type: "non_scattering"
@@ -374,6 +373,8 @@ TEST(ascent_rover, test_xray_blueprint_braid_diff)
             detector_height: 80.0000040701827
             intensity_max: 173.205078125
             intensity_min: 0.0
+            optical_depth_max: 2699.02744396615
+            optical_depth_min: 0.0
             image_topo_order_of_domain_variables: "xyz"
           domain_id: 0
       )yaml";
@@ -679,7 +680,6 @@ TEST(ascent_rover, test_xray_blueprint_curv3d_diff)
           color_table: "Cool to Warm"
           divide_emission_by_abs: "false"
           height: 200
-          num_samples: 400
           precision: "single"
           ray_scope: "global_rays"
           scattering_type: "non_scattering"
@@ -693,6 +693,8 @@ TEST(ascent_rover, test_xray_blueprint_curv3d_diff)
           detector_height: 73.9369100384305
           intensity_max: 0.491446942090988
           intensity_min: 0.0
+          optical_depth_max: 126.497874413073
+          optical_depth_min: 0.0
           image_topo_order_of_domain_variables: "xyz"
         domain_id: 0
         )";

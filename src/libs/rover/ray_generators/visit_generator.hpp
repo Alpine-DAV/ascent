@@ -48,7 +48,7 @@
 
 namespace rover
 {
-
+  // TODO: Change to visitcamera ray generator
 class ROVER_API VisitGenerator : public RayGenerator
 {
 public:

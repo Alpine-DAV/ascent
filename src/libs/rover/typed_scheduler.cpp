@@ -54,6 +54,7 @@ void
 TypedScheduler<FloatType>::create_default_background(const int num_channels)
 {
   // Initialize background intensities to 0.0f
+  // TODO: Make it an option to set a background value
   m_background.resize(num_channels, 0.0f);
 }
 
@@ -215,7 +216,7 @@ TypedScheduler<FloatType>::set_global_range_and_bounds()
 
 template<typename FloatType>
 void
-TypedScheduler<FloatType>::add_partial(vtkmRayTracing::PartialComposite<FloatType> &partial)
+TypedScheduler<FloatType>::add_partial(vtkh::rendering::raytracing::PartialComposite<FloatType> &partial)
 {
   // TODO: We might be able to simplify this by using emplace_back
   PartialImage<FloatType> partial_image;
@@ -223,6 +224,7 @@ TypedScheduler<FloatType>::add_partial(vtkmRayTracing::PartialComposite<FloatTyp
   partial_image.m_distances = partial.Distances;
   partial_image.m_buffer = partial.Buffer;
   partial_image.m_intensities = partial.Intensities;
+  partial_image.m_optical_depths = partial.OpticalDepths;
   m_partial_images.push_back(partial_image);
 }
 
@@ -376,6 +378,7 @@ TypedScheduler<FloatType>::trace_rays()
     vtkmLogger::GetInstance()->Clear();
 
     // TODO: Don't love that we need dynamic_cast
+    // TODO: Actually support both cases, vtkm and visit. Add tests
     if (!dynamic_cast<CameraGenerator*>(m_ray_generator))
     {
       throw RoverException("Error: RayGenerator instance must be a CameraGenerator");
@@ -399,7 +402,7 @@ TypedScheduler<FloatType>::trace_rays()
     ROVER_INFO("Tracing domain " << i);
 
     timer.Start();
-    std::vector<vtkmRayTracing::PartialComposite<FloatType>> partials;
+    std::vector<vtkh::rendering::raytracing::PartialComposite<FloatType>> partials;
     partials = m_domains[i].partial_trace(rays);
     time = timer.GetElapsedTime();
     ROVER_DATA_ADD("domain_trace", time);
@@ -652,9 +655,8 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
   xray_data["detector_height"] = detector_height;
   xray_data["intensity_max"];
   xray_data["intensity_min"];
-  // TODO: Uncomment this when optical_depth is fixed
-  // xray_data["optical_depth_max"];
-  // xray_data["optical_depth_min"];
+  xray_data["optical_depth_max"];
+  xray_data["optical_depth_min"];
   xray_data["image_topo_order_of_domain_variables"] = "xyz";
 
   state["domain_id"] = 0;
@@ -741,9 +743,9 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
   const int num_optical_values = optical_values.GetNumberOfValues();
 
   // TODO: Uncomment this when optical_depth is fixed
-  // auto optical_min_max = std::minmax_element(optical_buffer, optical_buffer + num_optical_values);
-  // xray_data["optical_depth_max"].set(optical_min_max.second);
-  // xray_data["optical_depth_min"].set(optical_min_max.first);
+  auto optical_min_max = std::minmax_element(optical_buffer, optical_buffer + num_optical_values);
+  xray_data["optical_depth_max"].set(optical_min_max.second);
+  xray_data["optical_depth_min"].set(optical_min_max.first);
 
   optical_depth["values"].set(optical_buffer, num_optical_values);
   optical_depth["strides"].set(intensities["strides"]);

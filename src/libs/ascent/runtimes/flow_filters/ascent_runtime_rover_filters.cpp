@@ -308,6 +308,7 @@ RoverXRay::execute()
   // TODO: I don't think we want to always save a .png unconditionally,
   // so maybe params could be reworked to request the exact types of output
   // the user wants rover to produce
+  // TODO: This doesn't work, warn the user
   std::string png_filename = params()["rover/filename"].as_string();
   png_filename = output_dir(expand_path_special_variables(png_filename, ".png", mpi_comm_id));
   rover.save_png(png_filename);

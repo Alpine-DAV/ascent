@@ -112,13 +112,13 @@ Domain::init_rays(Ray64 &rays)
   m_engine->init_rays(rays);
 }
 
-PartialVector32
+std::vector<vtkh::rendering::raytracing::PartialComposite<vtkm::Float32>>
 Domain::partial_trace(Ray32 &rays)
 {
   return m_engine->partial_trace(rays);
 }
 
-PartialVector64
+std::vector<vtkh::rendering::raytracing::PartialComposite<vtkm::Float64>>
 Domain::partial_trace(Ray64 &rays)
 {
   return m_engine->partial_trace(rays);
