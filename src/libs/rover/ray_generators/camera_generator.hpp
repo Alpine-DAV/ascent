@@ -50,7 +50,7 @@
 namespace rover {
 
 // TODO: Rename this to vtkmcamera ray generator
-class CameraGenerator : public RayGenerator
+class ROVER_API CameraGenerator : public RayGenerator
 {
 public:
   CameraGenerator();
