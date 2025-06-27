@@ -428,3 +428,22 @@ TEST(ascent_utils, ascent_string_fmt_family_check_extension_sometimes_added) {
     std::cout << result_2 << std::endl;
     EXPECT_TRUE(result_2 == expected_result_2);
 }
+
+TEST(ascent_utils, ascent_string_fmt_family_check_dir_no_fmt) {
+    string output_path = prepare_output_dir();
+    Metadata::n_metadata["family_value_seed"] = 0;
+
+    string pre_existing_file = conduit::utils::join_file_path(output_path, "t_output_path_family_check_dir_no_fmt.root");
+    std::ofstream file_1(pre_existing_file);
+    if (file_1.is_open()) {
+        file_1 << "This is a fake file for testing.\n";
+        file_1.close();
+    }
+
+    string output_file = conduit::utils::join_file_path(output_path, "t_output_path_family_check_dir_no_fmt.root");
+    
+    int result = ascent::get_family_value(output_file, ".root", -1, 0);
+    EXPECT_TRUE(result == 0);
+    
+    remove_test_file(pre_existing_file);
+}

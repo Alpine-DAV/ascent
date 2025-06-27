@@ -20,6 +20,8 @@
 #include <limits.h>
 #include <cstdlib>
 
+#include <ascent_logging.hpp>
+
 using namespace conduit;
 using namespace std;
 
@@ -90,6 +92,7 @@ void
 Workspace::ExecutionPlan::generate(Graph &graph,
                                    conduit::Node &traversals)
 {
+    ASCENT_ANNOTATE_MARK_SCOPE("execution plan generate");
     traversals.reset();
 
     Node snks;
@@ -133,6 +136,7 @@ Workspace::ExecutionPlan::generate(Graph &graph,
 
     // execute bf traversal from each snk
 
+    ASCENT_ANNOTATE_MARK_BEGIN("graph topo sort");
     NodeConstIterator snk_itr(&snks);
     while(snk_itr.has_next())
     {
@@ -145,6 +149,7 @@ Workspace::ExecutionPlan::generate(Graph &graph,
             traversals.append().set(snk_trav);
         }
     }
+    ASCENT_ANNOTATE_MARK_END("graph topo sort");
 }
 
 
@@ -155,6 +160,7 @@ Workspace::ExecutionPlan::bf_topo_sort_visit(Graph &graph,
                                              conduit::Node &tags,
                                              conduit::Node &trav)
 {
+
     if( tags[f_name].as_int32() != 0 )
     {
         return;
@@ -267,23 +273,30 @@ Workspace::traversals(Node &traversals)
 void
 Workspace::execute()
 {
+    ASCENT_ANNOTATE_MARK_SCOPE("workspace execute");
+
     Timer t_total_exec;
     Node traversals;
     ExecutionPlan::generate(graph(),traversals);
     // execute traversals
     NodeIterator travs_itr = traversals.children();
 
+    ASCENT_ANNOTATE_MARK_BEGIN("traversals iterate");
+
     while(travs_itr.has_next())
     {
+        ASCENT_ANNOTATE_MARK_SCOPE("traversal filters iterate");
         NodeIterator trav_itr(&travs_itr.next());
-
         while(trav_itr.has_next())
         {
+
             Node &t = trav_itr.next();
 
             std::string  f_name = trav_itr.name();
             int          uref   = t.to_int32();
             Filter      *f      = graph().filters()[f_name];
+
+            ASCENT_ANNOTATE_MARK_BEGIN("filter execute: " << f->type_name());
 
             f->reset_inputs_and_output();
 
@@ -297,11 +310,9 @@ Workspace::execute()
                 std::string f_input_name = graph().edges_in(f_name)[port_name].as_string();
                 f->set_input(port_name,&registry().fetch(f_input_name));
             }
-
             Timer t_flt_exec;
             // execute
             f->execute();
-
             if(m_enable_timings)
             {
                 m_timing_info << g_timing_exec_count
@@ -333,8 +344,12 @@ Workspace::execute()
                 std::string f_input_name = graph().edges_in(f_name)[port_name].as_string();
                 registry().consume(f_input_name);
             }
+
+            ASCENT_ANNOTATE_MARK_END("filter execute: " << f->type_name());
         }
     }
+
+    ASCENT_ANNOTATE_MARK_END("traversals iterate");
 
     if(m_enable_timings)
     {
@@ -344,9 +359,6 @@ Workspace::execute()
                       <<"\n";
         g_timing_exec_count++;
     }
-
-
-
 }
 //-----------------------------------------------------------------------------
 
