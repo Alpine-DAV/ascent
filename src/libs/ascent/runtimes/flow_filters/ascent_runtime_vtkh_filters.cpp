@@ -66,6 +66,7 @@
 #include <vtkh/filters/ParticleAdvection.hpp>
 #include <vtkh/filters/Recenter.hpp>
 #include <vtkh/filters/UniformGrid.hpp>
+#include <vtkh/filters/Sample.hpp>
 #include <vtkh/filters/Slice.hpp>
 #include <vtkh/filters/Statistics.hpp>
 #include <vtkh/filters/Streamline.hpp>
@@ -3706,8 +3707,8 @@ VTKHGradient::execute()
     delete grad_output;
     set_output<DataObject>(res);
 }
-//-----------------------------------------------------------------------------
 
+//-----------------------------------------------------------------------------
 VTKHUniformGrid::VTKHUniformGrid()
 :Filter()
 {
@@ -3929,6 +3930,244 @@ VTKHUniformGrid::execute()
     delete grid_output;
     set_output<DataObject>(res);
 }
+
+
+//-----------------------------------------------------------------------------
+VTKHSample::VTKHSample()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHSample::~VTKHSample()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHSample::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_sample";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHSample::verify_params(const conduit::Node &params,
+                          conduit::Node &info)
+{
+    info.reset();
+
+    bool res = true;
+    res &= check_string("field",params, info, false);
+    res &= check_numeric("invalid_value",params, info, false);
+    
+    res &= check_numeric("line/num_samples",params, info, false);
+    res &= check_numeric("line/start/x",params, info, false);
+    res &= check_numeric("line/start/y",params, info, false);
+    res &= check_numeric("line/start/z",params, info, false);
+    res &= check_numeric("line/end/x",params, info, false);
+    res &= check_numeric("line/end/y",params, info, false);
+    res &= check_numeric("line/end/z",params, info, false);
+
+    res &= check_numeric("points/x",params, info, false);
+    res &= check_numeric("points/y",params, info, false);
+    res &= check_numeric("points/z",params, info, false);
+
+
+    if(!params.has_child("field") && !params.has_child("fields"))
+    {
+      res = false;
+      info["errors"].append() = "Sampling requires 'field' or 'fields'";
+    }
+
+    if(params.has_child("fields") && !params["fields"].dtype().is_list())
+    {
+      res = false;
+      info["errors"].append() = "'fields' is not a list";
+    }
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("field");
+    valid_paths.push_back("fields");
+    valid_paths.push_back("invalid_value");
+
+    valid_paths.push_back("line/num_samples");
+    valid_paths.push_back("line/start/x");
+    valid_paths.push_back("line/start/y");
+    valid_paths.push_back("line/start/z");
+    valid_paths.push_back("line/end/x");
+    valid_paths.push_back("line/end/y");
+    valid_paths.push_back("line/end/z");
+
+    valid_paths.push_back("points/x");
+    valid_paths.push_back("points/y");
+    valid_paths.push_back("points/z");
+
+    std::string surprises = "";
+
+    std::vector<std::string> ignore_paths;
+    ignore_paths.push_back("fields");
+
+    if(params.number_of_children() != 0)
+    {
+      surprises = surprise_check(valid_paths, ignore_paths, params);
+    }
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHSample::execute()
+{
+
+    if(!input(0).check_type<DataObject>())
+    {
+        ASCENT_ERROR("vtkh_uniform_grid input must be a data object");
+    }
+
+    DataObject *data_object = input<DataObject>(0);
+    if(!data_object->is_valid())
+    {
+      set_output<DataObject>(data_object);
+      return;
+    }
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
+
+    std::vector<std::string> field_selection;
+    if(params().has_path("field"))
+    {
+      std::string field = params()["field"].as_string();
+
+      field_selection.push_back(field);
+    }
+    else if(params().has_path("fields"))
+    {
+      const conduit::Node &flist = params()["fields"];
+      const int num_fields = flist.number_of_children();
+      if(num_fields == 0)
+      {
+        ASCENT_ERROR("vtkh_sample fields selection list must be non-empty");
+      }
+      for(int i = 0; i < num_fields; ++i)
+      {
+        const conduit::Node &f = flist.child(i);
+        if(!f.dtype().is_string())
+        {
+           ASCENT_ERROR("vtkh_sample fields selection list values must be a string");
+        }
+        field_selection.push_back(f.as_string());
+      }
+    }
+    else
+    {
+      ASCENT_ERROR("vtkh_sample must specify a 'field' string or 'fields' list of strings");
+    }
+
+    int num_fields = field_selection.size(); 
+    for(int i = 0; i < num_fields; ++i)
+    {
+      if(!collection->has_field(field_selection[i]))
+      {
+        bool throw_error = false;
+        detail::field_error(field_selection[i], this->name(), collection, throw_error);
+        // this creates a data object with an invalid source
+        set_output<DataObject>(new DataObject());
+        return;
+      }
+    }
+
+    std::string field = field_selection[0];
+    std::string topo_name = collection->field_topology(field);
+    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+
+    vtkh::Sample sampler;
+
+    if(params().has_path("line"))
+    {
+      const Node &line_p = params()["line"];
+      int num_samples = line_p["num_samples"].to_int();
+
+      double sx = line_p["start/x"].to_double();
+      double sy = line_p["start/y"].to_double();
+      double sz = line_p["start"].has_child("z") ? line_p["start/z"].to_double() : 0.0;
+      double ex = line_p["end/x"].to_double();
+      double ey = line_p["end/y"].to_double();
+      double ez = line_p["end"].has_child("z") ? line_p["end/z"].to_double() : 0.0;
+
+      sampler.Line(num_samples,
+                   sx, sy, sz, 
+                   ex, ey, ez);
+    }
+    else if(params().has_path("points"))
+    {
+        vtkm::cont::ArrayHandle<vtkm::Float64> x_hnd, y_hnd, z_hnd;
+        
+        int spatial_dims = 2;
+        float64_accessor x_vals, y_vals, z_vals;
+        const Node &pts_p = params()["points"];
+        x_vals = pts_p["x"].value();
+        y_vals = pts_p["y"].value();
+
+        int npts = x_vals.dtype().number_of_elements();
+        x_hnd.Allocate(npts);
+        y_hnd.Allocate(npts);
+
+        if(pts_p.has_child("z"))
+        {
+          spatial_dims = 3;
+          z_vals = pts_p["z"].value();
+          z_hnd.Allocate(npts);
+        }
+
+        for(int i=0;i<npts;i++)
+        {
+            x_hnd.WritePortal().Set(i,x_vals[i]);
+            y_hnd.WritePortal().Set(i,y_vals[i]);
+            if(spatial_dims ==3)
+            {
+                z_hnd.WritePortal().Set(i,z_vals[i]);
+            }
+        }
+        
+        sampler.Points(x_hnd, y_hnd, z_hnd);
+
+    }
+
+    double invalid_value = 0.0;
+    if(params().has_path("invalid_value"))
+    {
+      invalid_value = params()["invalid_value"].as_float64();
+    }
+
+
+
+    sampler.InvalidValue(invalid_value);
+    sampler.Fields(field_selection);
+    sampler.SetInput(&data);
+
+    sampler.Update();
+
+    vtkh::DataSet *grid_output = sampler.GetOutput();
+
+    VTKHCollection *new_coll = new VTKHCollection();
+    new_coll->add(*grid_output, topo_name);
+    // re wrap in data object
+    DataObject *res =  new DataObject(new_coll);
+    delete grid_output;
+    set_output<DataObject>(res);
+}
+
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------

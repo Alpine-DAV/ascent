@@ -410,6 +410,19 @@ public:
 };
 
 //-----------------------------------------------------------------------------
+class ASCENT_API VTKHSample : public ::flow::Filter
+{
+public:
+    VTKHSample();
+    virtual ~VTKHSample();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual bool   verify_params(const conduit::Node &params,
+                                 conduit::Node &info);
+    virtual void   execute();
+};
+
+//-----------------------------------------------------------------------------
 class ASCENT_API VTKHHistogram : public ::flow::Filter
 {
 public:

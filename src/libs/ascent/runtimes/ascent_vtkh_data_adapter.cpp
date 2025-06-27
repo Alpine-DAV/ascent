@@ -274,11 +274,8 @@ GetExplicitCoordinateSystem(const conduit::Node &n_coords,
 
     if(z_element_stride == 0)
     {
-      z_coords_handle.Allocate(nverts);
-      // TODO: Set on device?
-      // This does not get initialized to zero
+      z_coords_handle.AllocateAndFill(nverts,0.0);
       T *z = vtkh::GetVTKMPointer(z_coords_handle);
-      memset(z, 0, nverts * sizeof(T));
     }
     else if(z_element_stride == 1)
     {
