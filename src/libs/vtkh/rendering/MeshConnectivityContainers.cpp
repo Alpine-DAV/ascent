@@ -7,19 +7,8 @@
 //  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
 //  PURPOSE.  See the above copyright notice for more information.
 //============================================================================
-#include <sstream>
 
 #include "MeshConnectivityContainers.hpp"
-
-#include <vtkm/CellShape.h>
-#include <vtkm/cont/ErrorBadValue.h>
-#include <vtkm/cont/Timer.h>
-#include <vtkm/cont/internal/DeviceAdapterListHelpers.h>
-#include <vtkm/rendering/raytracing/BoundingVolumeHierarchy.h>
-#include <vtkm/rendering/raytracing/Logger.h>
-#include <vtkm/rendering/raytracing/MeshConnectivity.h>
-#include <vtkm/rendering/raytracing/Ray.h>
-#include <vtkm/rendering/raytracing/TriangleIntersector.h>
 
 namespace vtkh
 {

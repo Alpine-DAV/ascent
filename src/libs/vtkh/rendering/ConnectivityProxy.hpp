@@ -10,18 +10,15 @@
 #ifndef vtkh_rendering_ConnectivityProxy_h
 #define vtkh_rendering_ConnectivityProxy_h
 
-#include <memory>
-
 #include "PartialComposite.hpp"
 
 #include <vtkh/vtkh_exports.h>
 
 #include <vtkm/cont/DataSet.h>
 #include <vtkm/rendering/CanvasRayTracer.h>
-#include <vtkm/rendering/Mapper.h>
-#include <vtkm/rendering/View.h>
 #include <vtkm/rendering/raytracing/Camera.h>
 #include <vtkm/rendering/raytracing/Ray.h>
+#include <vtkm/rendering/raytracing/RayOperations.h>
 
 namespace vtkh
 {

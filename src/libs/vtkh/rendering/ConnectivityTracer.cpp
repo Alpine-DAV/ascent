@@ -10,26 +10,6 @@
 #include "ConnectivityTracer.hpp"
 #include "MeshConnectivityBuilder.hpp"
 
-#include <vtkm/cont/DeviceAdapterAlgorithm.h>
-#include <vtkm/cont/ErrorBadValue.h>
-#include <vtkm/cont/Timer.h>
-#include <vtkm/cont/TryExecute.h>
-#include <vtkm/cont/internal/DeviceAdapterListHelpers.h>
-
-#include <vtkm/rendering/raytracing/Camera.h>
-#include <vtkm/rendering/raytracing/CellIntersector.h>
-#include <vtkm/rendering/raytracing/CellSampler.h>
-#include <vtkm/rendering/raytracing/CellTables.h>
-#include <vtkm/rendering/raytracing/MeshConnectivityBuilder.h>
-#include <vtkm/rendering/raytracing/Ray.h>
-#include <vtkm/rendering/raytracing/RayOperations.h>
-#include <vtkm/rendering/raytracing/Worklets.h>
-
-#include <vtkm/worklet/DispatcherMapField.h>
-#include <vtkm/worklet/DispatcherMapTopology.h>
-#include <vtkm/worklet/WorkletMapField.h>
-#include <vtkm/worklet/WorkletMapTopology.h>
-
 #include <iomanip>
 
 #ifndef CELL_SHAPE_ZOO

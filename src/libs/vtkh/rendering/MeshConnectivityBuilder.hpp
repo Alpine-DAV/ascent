@@ -14,7 +14,9 @@
 
 #include <vtkh/vtkh_exports.h>
 
-#include <vtkm/cont/DataSet.h>
+#include <vtkm/cont/Algorithm.h>
+#include <vtkm/cont/Timer.h>
+#include <vtkm/rendering/raytracing/MortonCodes.h>
 
 namespace vtkh
 {

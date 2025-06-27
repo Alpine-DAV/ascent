@@ -9,20 +9,6 @@
 //============================================================================
 #include "MeshConnectivityBuilder.hpp"
 
-#include <vtkm/cont/Algorithm.h>
-#include <vtkm/cont/Timer.h>
-
-#include <vtkm/worklet/DispatcherMapField.h>
-#include <vtkm/worklet/DispatcherMapTopology.h>
-#include <vtkm/worklet/WorkletMapField.h>
-#include <vtkm/worklet/WorkletMapTopology.h>
-
-#include <vtkm/rendering/raytracing/CellTables.h>
-#include <vtkm/rendering/raytracing/Logger.h>
-#include <vtkm/rendering/raytracing/MortonCodes.h>
-#include <vtkm/rendering/raytracing/RayTracingTypeDefs.h>
-#include <vtkm/rendering/raytracing/Worklets.h>
-
 namespace vtkh
 {
 namespace rendering

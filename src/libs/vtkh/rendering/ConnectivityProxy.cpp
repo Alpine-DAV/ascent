@@ -11,13 +11,6 @@
 #include "ConnectivityProxy.hpp"
 #include "ConnectivityTracer.hpp"
 
-#include <vtkm/rendering/CanvasRayTracer.h>
-#include <vtkm/rendering/Mapper.h>
-#include <vtkm/rendering/raytracing/Logger.h>
-#include <vtkm/rendering/raytracing/RayOperations.h>
-
-#include <memory>
-
 namespace vtkh
 {
 namespace rendering

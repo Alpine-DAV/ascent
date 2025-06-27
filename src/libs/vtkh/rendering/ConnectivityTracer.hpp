@@ -15,11 +15,12 @@
 
 #include <vtkh/vtkh_exports.h>
 
-#include <vtkm/cont/ArrayHandle.h>
 #include <vtkm/cont/CellLocatorGeneral.h>
-
-
-
+#include <vtkm/cont/Timer.h>
+#include <vtkm/rendering/raytracing/CellIntersector.h>
+#include <vtkm/rendering/raytracing/CellSampler.h>
+#include <vtkm/rendering/raytracing/RayOperations.h>
+#include <vtkm/worklet/WorkletMapField.h>
 
 namespace vtkh
 {

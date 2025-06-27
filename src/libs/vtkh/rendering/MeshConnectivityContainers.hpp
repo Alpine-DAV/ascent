@@ -12,9 +12,7 @@
 
 #include <vtkh/vtkh_exports.h>
 
-#include <vtkm/cont/DataSet.h>
 #include <vtkm/rendering/raytracing/MeshConnectivity.h>
-#include <vtkm/rendering/raytracing/TriangleIntersector.h>
 
 namespace vtkh
 {
