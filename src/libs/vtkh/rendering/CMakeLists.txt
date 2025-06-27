@@ -7,8 +7,8 @@ set(vtkh_rendering_headers
     ConnectivityProxy.hpp
     ConnectivityTracer.hpp
     LineRenderer.hpp
-    MeshConnectivityBuilder.cpp
-    MeshConnectivityContainers.cpp
+    MeshConnectivityBuilder.hpp
+    MeshConnectivityContainers.hpp
     MeshRenderer.hpp
     RayTracer.hpp
     Render.hpp
