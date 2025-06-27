@@ -24,10 +24,12 @@ namespace rover
 template<typename FloatType>
 struct PartialImage
 {
+  // TODO: Improve naming to reflect what these things actually represent,
+  // will require changes elsewhere (absorptionpartial and emissionpartial)
   IdHandle                                 m_pixel_ids;
-  vtkm::rendering::raytracing::ChannelBuffer<FloatType> m_buffer;          // holds the absorption
-  vtkm::rendering::raytracing::ChannelBuffer<FloatType> m_intensities;     // holds the intensity emerging from each ray
-  vtkm::rendering::raytracing::ChannelBuffer<FloatType> m_optical_depths;
+  vtkmRayTracing::ChannelBuffer<FloatType> m_buffer;          // holds the absorption
+  vtkmRayTracing::ChannelBuffer<FloatType> m_intensities;     // holds the intensity emerging from each ray
+  vtkmRayTracing::ChannelBuffer<FloatType> m_optical_depths;
   vtkm::cont::ArrayHandle<FloatType>       m_distances;
   std::vector<FloatType>                   m_source_sig;
 
@@ -209,7 +211,7 @@ struct PartialImage
       for(int j = 0; j < num_bins; ++j)
       {
         buffer_portal.Set(starting_index + j, partials[i].m_bins[j]);
-        intensity_portal.Set(starting_index + j, partials[i].m_bins[j]);
+        intensity_portal.Set(starting_index + j, partials[i].m_bins[j] * background[j]);
       }
     }
 

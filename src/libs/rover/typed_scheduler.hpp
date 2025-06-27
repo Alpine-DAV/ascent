@@ -65,7 +65,7 @@ protected:
 
   int  get_global_channels();
   void set_global_range_and_bounds();
-  void add_partial(vtkh::rendering::raytracing::PartialComposite<FloatType> &partial);
+  void add_partial(vtkhRayTracing::PartialComposite<FloatType> &partial);
   void composite();
 };
 

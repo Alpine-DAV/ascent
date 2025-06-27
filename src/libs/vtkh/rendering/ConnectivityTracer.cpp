@@ -211,6 +211,7 @@ void ConnectivityTracer::SetColorMap(const vtkm::cont::ArrayHandle<vtkm::Vec4f_3
   ColorMap = colorMap;
 }
 
+// TODO: Comment out volume functionality
 void ConnectivityTracer::SetVolumeData(const vtkm::cont::Field& scalarField,
                                        const vtkm::Range& scalarBounds,
                                        const vtkm::cont::UnknownCellSet& cellSet,

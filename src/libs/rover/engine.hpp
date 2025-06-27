@@ -42,8 +42,8 @@ public:
   void init();
   void init_rays(Ray32 &rays);
   void init_rays(Ray64 &rays);
-  std::vector<vtkh::rendering::raytracing::PartialComposite<vtkm::Float32>> partial_trace(Ray32 &rays);
-  std::vector<vtkh::rendering::raytracing::PartialComposite<vtkm::Float64>> partial_trace(Ray64 &rays);
+  PartialVector32 partial_trace(Ray32 &rays);
+  PartialVector64 partial_trace(Ray64 &rays);
   int  get_num_channels();
   vtkmRange get_primary_range();
   void set_primary_range(const vtkmRange &range);
@@ -56,7 +56,7 @@ protected:
   vtkmColorMap m_color_map;
 
   template<typename Precision>
-  void init_emission(vtkm::rendering::raytracing::Ray<Precision> &rays,
+  void init_emission(vtkmRayTracing::Ray<Precision> &rays,
                      const int num_bins);
 };
 

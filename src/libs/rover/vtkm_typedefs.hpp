@@ -6,7 +6,11 @@
 
 #ifndef rover_vtkm_typedefs_h
 #define rover_vtkm_typedefs_h
+
 #include <rover_config.h>
+
+#include <vtkh/rendering/PartialComposite.hpp>
+
 #include <vtkm/cont/DataSet.h>
 #include <vtkm/cont/Timer.h>
 #include <vtkm/cont/ColorTable.h>
@@ -15,6 +19,14 @@
 #include <vtkm/rendering/raytracing/Logger.h>
 
 namespace rover {
+
+
+// vtkh
+namespace vtkhRayTracing = vtkh::rendering::raytracing;
+typedef std::vector<vtkh::rendering::raytracing::PartialComposite<vtkm::Float32>> PartialVector32;
+typedef std::vector<vtkh::rendering::raytracing::PartialComposite<vtkm::Float64>> PartialVector64;
+
+// vtkm
 namespace vtkmRayTracing = vtkm::rendering::raytracing;
 typedef vtkm::Range                                           vtkmRange;
 typedef vtkm::cont::DataSet                                   vtkmDataSet;
@@ -22,10 +34,10 @@ typedef vtkm::cont::CoordinateSystem                          vtkmCoordinates;
 typedef vtkm::rendering::raytracing::Ray<vtkm::Float32>       Ray32;
 typedef vtkm::rendering::raytracing::Ray<vtkm::Float64>       Ray64;
 typedef vtkm::cont::ColorTable                                vtkmColorTable;
-typedef vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32, 4> > vtkmColorMap;
-typedef vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32, 4> > vtkmColorBuffer;
-//typedef vtkm::rendering::raytracing::Camera                   vtkmCamera;
+typedef vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32, 4>> vtkmColorMap;
+typedef vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32, 4>> vtkmColorBuffer;
 typedef vtkm::rendering::Camera                               vtkmCamera;
+typedef vtkm::rendering::raytracing::Camera                   vtkmRayCamera;
 typedef vtkm::cont::ArrayHandle<vtkm::Id>                     IdHandle;
 typedef vtkm::Vec<vtkm::Float32, 2>                           vtkmVec2f;
 typedef vtkm::Vec<vtkm::Float32, 3>                           vtkmVec3f;

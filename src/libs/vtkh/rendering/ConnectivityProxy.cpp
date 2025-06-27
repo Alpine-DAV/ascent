@@ -46,7 +46,7 @@ public:
   {
     Dataset = dataSet;
     CoordinateName = coordinateName;
-    Mode = RenderMode::Volume;
+    Mode = RenderMode::Energy;
     CompositeBackground = true;
     if (!fieldName.empty())
     {

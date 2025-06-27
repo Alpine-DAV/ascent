@@ -216,7 +216,7 @@ TypedScheduler<FloatType>::set_global_range_and_bounds()
 
 template<typename FloatType>
 void
-TypedScheduler<FloatType>::add_partial(vtkh::rendering::raytracing::PartialComposite<FloatType> &partial)
+TypedScheduler<FloatType>::add_partial(vtkhRayTracing::PartialComposite<FloatType> &partial)
 {
   // TODO: We might be able to simplify this by using emplace_back
   PartialImage<FloatType> partial_image;
@@ -402,7 +402,7 @@ TypedScheduler<FloatType>::trace_rays()
     ROVER_INFO("Tracing domain " << i);
 
     timer.Start();
-    std::vector<vtkh::rendering::raytracing::PartialComposite<FloatType>> partials;
+    std::vector<vtkhRayTracing::PartialComposite<FloatType>> partials;
     partials = m_domains[i].partial_trace(rays);
     time = timer.GetElapsedTime();
     ROVER_DATA_ADD("domain_trace", time);
@@ -441,13 +441,13 @@ TypedScheduler<FloatType>::trace_rays()
   {
     PartialImage<FloatType> partial_image;
     partial_image.m_buffer =
-      vtkm::rendering::raytracing::ChannelBuffer<FloatType>(num_channels, 0);
+      vtkmRayTracing::ChannelBuffer<FloatType>(num_channels, 0);
 
     const std::string emission = rover::settings["rover/emission"].as_string();
     if ("" != emission)
     {
       partial_image.m_intensities =
-        vtkm::rendering::raytracing::ChannelBuffer<FloatType>(num_channels, 0);
+        vtkmRayTracing::ChannelBuffer<FloatType>(num_channels, 0);
     }
     m_partial_images.push_back(partial_image);
   }

@@ -4,6 +4,7 @@
 // other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+#include "vtkm_typedefs.hpp"
 #include <engine.hpp>
 #include <rover_exceptions.hpp>
 #include <utils/rover_logging.hpp>
@@ -56,14 +57,13 @@ Engine::set_dataset(vtkm::cont::DataSet &dataset)
   // explicitly set the field names?
   const std::string absorption = rover::settings["rover/absorption"].as_string();
   m_tracer = new vtkh::rendering::ConnectivityProxy(dataset, absorption);
-  m_tracer->SetRenderMode(vtkh::rendering::ConnectivityProxy::RenderMode::Energy);
   m_tracer->SetScalarField(absorption);
   m_dataset = dataset;
 }
 
 template<typename Precision>
 void
-Engine::init_emission(vtkm::rendering::raytracing::Ray<Precision> &rays,
+Engine::init_emission(vtkmRayTracing::Ray<Precision> &rays,
                       const int num_bins)
 {
   const std::string emission = rover::settings["rover/emission"].as_string();
@@ -78,13 +78,12 @@ Engine::init_emission(vtkm::rendering::raytracing::Ray<Precision> &rays,
   rays.GetBuffer("emission").InitConst(0.0f);
 }
 
-std::vector<vtkh::rendering::raytracing::PartialComposite<vtkm::Float32>>
+PartialVector32
 Engine::partial_trace(Ray32 &rays)
 {
   ROVER_INFO("Executing Engine::partial_trace");
   init_rays(rays);
   m_tracer->SetUnitScalar(rover::settings["rover/unit_scalar"].value());
-  m_tracer->SetRenderMode(vtkh::rendering::ConnectivityProxy::RenderMode::Energy);
   m_tracer->SetColorMap(m_color_map);
   return m_tracer->PartialTrace(rays);
 }
@@ -115,13 +114,12 @@ Engine::init_rays(Ray64 &rays)
   rays.GetBuffer("optical_depths").InitConst(1.0f);
 }
 
-std::vector<vtkh::rendering::raytracing::PartialComposite<vtkm::Float64>>
+PartialVector64
 Engine::partial_trace(Ray64 &rays)
 {
   ROVER_INFO("Executing Engine::partial_trace");
   init_rays(rays);
   m_tracer->SetUnitScalar(rover::settings["rover/unit_scalar"].value());
-  m_tracer->SetRenderMode(vtkh::rendering::ConnectivityProxy::RenderMode::Energy);
   m_tracer->SetColorMap(m_color_map);
   return m_tracer->PartialTrace(rays);
 }
