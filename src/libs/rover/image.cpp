@@ -211,27 +211,26 @@ Image<FloatType>::init_from_partial(PartialImage<FloatType> &partial)
   const int64 channel_size = width * height;
   const int num_channels = partial.m_buffer.GetNumChannels();
 
+  // TODO: This could be simplified with a helper function
   for (int i = 0; i < num_channels; i++)
   {
-    {
-      vtkmRayTracing::ChannelBuffer<FloatType> channel = partial.m_intensities.GetChannel( i );
-      const FloatType default_value = partial.m_source_sig[i];
-      vtkmRayTracing::ChannelBuffer<FloatType>  expand;
-      expand = channel.ExpandBuffer(partial.m_pixel_ids,
-                                    channel_size,
-                                    default_value);
-      m_intensities.push_back(expand.Buffer);
-    }
-    
-    {
-      vtkmRayTracing::ChannelBuffer<FloatType> channel = partial.m_optical_depths.GetChannel( i );
-      const FloatType default_value = 0.0f;
-      vtkmRayTracing::ChannelBuffer<FloatType>  expand;
-      expand = channel.ExpandBuffer(partial.m_pixel_ids,
-                                    channel_size,
-                                    default_value);
-      m_optical_depths.push_back(expand.Buffer);
-    }
+    // Intensities
+    vtkmRayTracing::ChannelBuffer<FloatType> intensity_channel = partial.m_intensities.GetChannel(i);
+    const FloatType intensity_default = partial.m_source_sig[i];
+    vtkmRayTracing::ChannelBuffer<FloatType> intensity_expanded;
+    intensity_expanded = intensity_channel.ExpandBuffer(partial.m_pixel_ids,
+                                                        channel_size,
+                                                        intensity_default);
+    m_intensities.push_back(intensity_expanded.Buffer);
+
+    // Optical depths
+    vtkmRayTracing::ChannelBuffer<FloatType> optical_depth_channel = partial.m_optical_depths.GetChannel(i);
+    const FloatType optical_depth_default = 0.0f;
+    vtkmRayTracing::ChannelBuffer<FloatType> optical_depth_expanded;
+    optical_depth_expanded = optical_depth_channel.ExpandBuffer(partial.m_pixel_ids,
+                                                                channel_size,
+                                                                optical_depth_default);
+    m_optical_depths.push_back(optical_depth_expanded.Buffer);
   }
 }
 
