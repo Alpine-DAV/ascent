@@ -167,9 +167,9 @@ public:
   }
 
   VTKM_CONT
-  PartialVector64 PartialTrace(vtkm::rendering::raytracing::Ray<vtkm::Float64>& rays)
+  void PartialTrace(vtkm::rendering::raytracing::Ray<vtkm::Float64> &rays,
+                    PartialVector64 &partials)
   {
-
     if (this->Mode == RenderMode::Volume)
     {
       Tracer.SetVolumeData(this->Dataset.GetField(this->FieldName),
@@ -187,11 +187,12 @@ public:
                            this->Dataset.GetField(this->EmissionFieldName));
     }
 
-    return Tracer.PartialTrace(rays);
+    Tracer.PartialTrace(rays, partials);
   }
 
   VTKM_CONT
-  PartialVector32 PartialTrace(vtkm::rendering::raytracing::Ray<vtkm::Float32>& rays)
+  void PartialTrace(vtkm::rendering::raytracing::Ray<vtkm::Float32>& rays,
+                    PartialVector32 &partials)
   {
     if (this->Mode == RenderMode::Volume)
     {
@@ -210,7 +211,7 @@ public:
                            this->Dataset.GetField(this->EmissionFieldName));
     }
 
-    return Tracer.PartialTrace(rays);
+    Tracer.PartialTrace(rays, partials);
   }
 
   VTKM_CONT
@@ -399,8 +400,8 @@ void ConnectivityProxy::Trace(vtkm::rendering::raytracing::Ray<vtkm::Float64>& r
 }
 
 VTKM_CONT
-PartialVector32 ConnectivityProxy::PartialTrace(
-  vtkm::rendering::raytracing::Ray<vtkm::Float32>& rays)
+void ConnectivityProxy::PartialTrace(vtkm::rendering::raytracing::Ray<vtkm::Float32> &rays,
+                                     PartialVector32 &partials)
 {
   vtkm::rendering::raytracing::Logger* logger = vtkm::rendering::raytracing::Logger::GetInstance();
   logger->OpenLogEntry("connectivity_trace_32");
@@ -413,10 +414,9 @@ PartialVector32 ConnectivityProxy::PartialTrace(
     logger->AddLogData("volume_mode", "false");
   }
 
-  PartialVector32 res = Internals->PartialTrace(rays);
+  Internals->PartialTrace(rays, partials);
 
   logger->CloseLogEntry(-1.0);
-  return res;
 }
 
 VTKM_CONT
@@ -439,8 +439,8 @@ void ConnectivityProxy::Trace(vtkm::rendering::raytracing::Ray<vtkm::Float32>& r
 }
 
 VTKM_CONT
-PartialVector64 ConnectivityProxy::PartialTrace(
-  vtkm::rendering::raytracing::Ray<vtkm::Float64>& rays)
+void ConnectivityProxy::PartialTrace(vtkm::rendering::raytracing::Ray<vtkm::Float64> &rays,
+                                     PartialVector64 &partials)
 {
   vtkm::rendering::raytracing::Logger* logger = vtkm::rendering::raytracing::Logger::GetInstance();
   logger->OpenLogEntry("connectivity_trace_64");
@@ -453,10 +453,9 @@ PartialVector64 ConnectivityProxy::PartialTrace(
     logger->AddLogData("volume_mode", "false");
   }
 
-  PartialVector64 res = Internals->PartialTrace(rays);
+  Internals->PartialTrace(rays, partials);
 
   logger->CloseLogEntry(-1.0);
-  return res;
 }
 
 VTKM_CONT

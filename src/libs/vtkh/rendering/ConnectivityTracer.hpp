@@ -143,7 +143,8 @@ public:
   /// puzzle pieces. Note: rays will be compacted
   ///
   template <typename FloatType>
-  std::vector<PartialComposite<FloatType>> PartialTrace(vtkm::rendering::raytracing::Ray<FloatType>& rays);
+  void PartialTrace(vtkm::rendering::raytracing::Ray<FloatType> &rays,
+                    std::vector<PartialComposite<FloatType>> &partials);
 
   ///
   /// Integrates the active rays though the mesh until all rays

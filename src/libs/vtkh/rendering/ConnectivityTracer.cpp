@@ -1426,15 +1426,14 @@ void ConnectivityTracer::FullTrace(vtkm::rendering::raytracing::Ray<FloatType>& 
 }
 
 template <typename FloatType>
-std::vector<PartialComposite<FloatType>> ConnectivityTracer::PartialTrace(vtkm::rendering::raytracing::Ray<FloatType>& rays)
+void ConnectivityTracer::PartialTrace(vtkm::rendering::raytracing::Ray<FloatType> &rays,
+                                      std::vector<PartialComposite<FloatType>> &partials)
 {
 
   //this->CountRayStatus = true;
   bool hasPathLengths = rays.HasBuffer("path_lengths");
   this->RaysLost = 0;
   vtkm::rendering::raytracing::RayOperations::ResetStatus(rays, RAY_EXITED_MESH);
-
-  std::vector<PartialComposite<FloatType>> partials;
 
   if (this->CountRayStatus)
   {
@@ -1506,8 +1505,6 @@ std::vector<PartialComposite<FloatType>> ConnectivityTracer::PartialTrace(vtkm::
       this->OffsetMinDistances(rays);
     }
   } while (workRemaining);
-
-  return partials;
 }
 
 template class detail::RayTracking<vtkm::Float32>;
@@ -1518,8 +1515,9 @@ template class detail::RayTracking<vtkm::Float64>;
 
 template void ConnectivityTracer::FullTrace<vtkm::Float32>(vtkm::rendering::raytracing::Ray<vtkm::Float32>& rays);
 
-template std::vector<PartialComposite<vtkm::Float32>>
-ConnectivityTracer::PartialTrace<vtkm::Float32>(vtkm::rendering::raytracing::Ray<vtkm::Float32>& rays);
+template void
+ConnectivityTracer::PartialTrace<vtkm::Float32>(vtkm::rendering::raytracing::Ray<vtkm::Float32> &rays,
+                                                std::vector<PartialComposite<vtkm::Float32>> &partials);
 
 template void ConnectivityTracer::IntegrateMeshSegment<vtkm::Float32>(vtkm::rendering::raytracing::Ray<vtkm::Float32>& rays);
 
@@ -1527,8 +1525,9 @@ template void ConnectivityTracer::FindMeshEntry<vtkm::Float32>(vtkm::rendering::
 
 template void ConnectivityTracer::FullTrace<vtkm::Float64>(vtkm::rendering::raytracing::Ray<vtkm::Float64>& rays);
 
-template std::vector<PartialComposite<vtkm::Float64>>
-ConnectivityTracer::PartialTrace<vtkm::Float64>(vtkm::rendering::raytracing::Ray<vtkm::Float64>& rays);
+template void
+ConnectivityTracer::PartialTrace<vtkm::Float64>(vtkm::rendering::raytracing::Ray<vtkm::Float64> &rays,
+                                                std::vector<PartialComposite<vtkm::Float64>> &partials);
 
 template void ConnectivityTracer::IntegrateMeshSegment<vtkm::Float64>(vtkm::rendering::raytracing::Ray<vtkm::Float64>& rays);
 

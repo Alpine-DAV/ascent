@@ -78,14 +78,14 @@ Engine::init_emission(vtkmRayTracing::Ray<Precision> &rays,
   rays.GetBuffer("emission").InitConst(0.0f);
 }
 
-PartialVector32
-Engine::partial_trace(Ray32 &rays)
+void
+Engine::partial_trace(Ray32 &rays, PartialVector32 &partials)
 {
   ROVER_INFO("Executing Engine::partial_trace");
   init_rays(rays);
   m_tracer->SetUnitScalar(rover::settings["rover/unit_scalar"].value());
   m_tracer->SetColorMap(m_color_map);
-  return m_tracer->PartialTrace(rays);
+  m_tracer->PartialTrace(rays, partials);
 }
 
 void
@@ -114,14 +114,14 @@ Engine::init_rays(Ray64 &rays)
   rays.GetBuffer("optical_depths").InitConst(1.0f);
 }
 
-PartialVector64
-Engine::partial_trace(Ray64 &rays)
+void
+Engine::partial_trace(Ray64 &rays, PartialVector64 &partials)
 {
   ROVER_INFO("Executing Engine::partial_trace");
   init_rays(rays);
   m_tracer->SetUnitScalar(rover::settings["rover/unit_scalar"].value());
   m_tracer->SetColorMap(m_color_map);
-  return m_tracer->PartialTrace(rays);
+  m_tracer->PartialTrace(rays, partials);
 }
 
 int

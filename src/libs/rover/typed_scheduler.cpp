@@ -403,7 +403,7 @@ TypedScheduler<FloatType>::trace_rays()
 
     timer.Start();
     std::vector<vtkhRayTracing::PartialComposite<FloatType>> partials;
-    partials = m_domains[i].partial_trace(rays);
+    m_domains[i].partial_trace(rays, partials);
     time = timer.GetElapsedTime();
     ROVER_DATA_ADD("domain_trace", time);
 

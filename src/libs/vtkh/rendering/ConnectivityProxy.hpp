@@ -74,8 +74,8 @@ public:
   void Trace(vtkm::rendering::raytracing::Ray<vtkm::Float64>& rays);
   void Trace(vtkm::rendering::raytracing::Ray<vtkm::Float32>& rays);
 
-  PartialVector64 PartialTrace(vtkm::rendering::raytracing::Ray<vtkm::Float64>& rays);
-  PartialVector32 PartialTrace(vtkm::rendering::raytracing::Ray<vtkm::Float32>& rays);
+  void PartialTrace(vtkm::rendering::raytracing::Ray<vtkm::Float64>& rays, PartialVector64& partials);
+  void PartialTrace(vtkm::rendering::raytracing::Ray<vtkm::Float32>& rays, PartialVector32& partials);
 
 protected:
   struct InternalsType;
