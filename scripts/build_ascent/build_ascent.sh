@@ -771,7 +771,7 @@ fi # build_camp
 ################
 # RAJA
 ################
-raja_version=v2025.03.1
+raja_version=v2025.03.2
 raja_src_dir=$(ospath ${source_dir}/RAJA-${raja_version})
 raja_build_dir=$(ospath ${build_dir}/raja-${raja_version})
 raja_install_dir=$(ospath ${install_dir}/raja-${raja_version}/)
