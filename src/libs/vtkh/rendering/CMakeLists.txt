@@ -9,6 +9,7 @@ set(vtkh_rendering_headers
     RayTracer.hpp
     Render.hpp
     Renderer.hpp
+    PartialComposite.hpp
     PointRenderer.hpp
     ScalarRenderer.hpp
     Scene.hpp
@@ -36,7 +37,7 @@ install(FILES ${vtkh_rendering_headers}
 
 ###############################################################################
 if (ENABLE_SERIAL)
-    set(vtkh_rendering_deps vtkh_core vtkh_utils vtkh_filters vtkh_compositing ${vtkh_base_deps} m)
+    set(vtkh_rendering_deps vtkh_core vtkh_utils vtkh_filters vtkh_compositing ${vtkh_base_deps})
 
     blt_add_library(NAME vtkh_rendering
                     SOURCES ${vtkh_rendering_sources}
@@ -65,7 +66,7 @@ endif()
 ###############################################################################
 if (MPI_FOUND)
 
-    set(vtkh_rendering_mpi_deps vtkh_core_mpi vtkh_utils_mpi vtkh_filters_mpi vtkh_compositing_mpi ${vtkh_base_deps} m)
+    set(vtkh_rendering_mpi_deps vtkh_core_mpi vtkh_utils_mpi vtkh_filters_mpi vtkh_compositing_mpi ${vtkh_base_deps})
 
     blt_add_library(NAME vtkh_rendering_mpi
                     SOURCES ${vtkh_rendering_sources}
