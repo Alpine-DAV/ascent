@@ -468,6 +468,16 @@ RoverXRay::verify_params(const conduit::Node &params,
 void
 RoverXRay::execute()
 {
+  // MPI
+  int mpi_comm_id = -1;
+  int mpi_rank = 0;
+#ifdef ASCENT_MPI_ENABLED
+  mpi_comm_id = flow::Workspace::default_mpi_comm();
+  rover::Logger::get_instance()->set_mpi_comm_id(mpi_comm_id);
+  rover::DataLogger::GetInstance()->set_mpi_comm_id(mpi_comm_id);
+  MPI_Comm_rank(mpi_comm_id, &mpi_rank);
+#endif
+
   const conduit::Node &n_params = params();
   const conduit::Node &n_rover = n_params["rover"];
 
@@ -488,27 +498,31 @@ RoverXRay::execute()
   const std::string absorption = n_rover["absorption"].as_string();
   if(!collection->has_field(absorption))
   {
-    ASCENT_ERROR("Absorption field name '" << absorption << "' is not in the dataset");
+    ASCENT_ERROR("The dataset does not have a field called '" << absorption << "'");
   }
 
-  // Get the dataset associated with the 'absorption' field
-  std::string topo_name = collection->field_topology(absorption);
-  // TODO: Validate topo_name
+  // Validate that the 'absorption' field has a topology
+  const std::string topo_name = collection->field_topology(absorption);
+  if ("" == topo_name)
+  {
+    ASCENT_ERROR("The dataset does not have a topology associated with the '" << absorption << "' field");
+  }
+
+  // Validate that the dataset is non-empty
   vtkh::DataSet &dataset = collection->dataset_by_topology(topo_name);
-  // TODO: Validate dataset
+  // Only rank 0 will have the data at this point
+  if (0 == mpi_rank && dataset.IsEmpty())
+  {
+    ASCENT_ERROR("The dataset does not have a topololgy associated with the '" << absorption << "' field");
+  }
 
   // Initialize rover and configure its behavior with the input params
   Rover rover;
-  rover.update_time_and_cycle(Metadata::n_metadata);
-  rover.update_settings(n_params);
-
-  int mpi_comm_id = -1;
 #ifdef ASCENT_MPI_ENABLED
-  mpi_comm_id = flow::Workspace::default_mpi_comm();
-  rover::Logger::get_instance()->set_mpi_comm_id(mpi_comm_id);
-  rover::DataLogger::GetInstance()->set_mpi_comm_id(mpi_comm_id);
   rover.set_mpi_comm_handle(mpi_comm_id);
 #endif
+  rover.update_time_and_cycle(Metadata::n_metadata);
+  rover.update_settings(n_params);
   
   // Adding a dataset to rover resets the camera bounds to the dataset bounds,
   // but any camera params passed via the input params will take precedence.
