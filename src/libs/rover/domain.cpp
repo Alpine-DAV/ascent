@@ -64,7 +64,6 @@ Domain::init()
 #endif
 
   m_engine->set_dataset(m_dataset);
-  m_engine->init();
 
 #if 0 // removing volume renderer
   if(m_render_settings.m_render_mode == volume)

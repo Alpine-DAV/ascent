@@ -25,18 +25,14 @@ Node settings;
 
 Rover::Rover()
 {
-  // Ensure that we always start from a default state
+  // Always start from a default state
   rover::metadata.reset();
   rover::settings.reset();
 
   // Settings
-  // TODO: Figure out if color_table needs to be set by us here
-  rover::settings["color_table"] = "Cool to Warm";
   rover::settings["divide_emis_by_absorb"] = "false";
   rover::settings["height"] = 200;
   rover::settings["precision"] = "single";
-  rover::settings["ray_scope"] = "global_rays";
-  rover::settings["scattering_type"] = "non_scattering";
   rover::settings["width"] = 200;
   rover::settings["unit_scalar"] = 1.0f;
 

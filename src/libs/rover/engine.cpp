@@ -41,13 +41,6 @@ Engine::validate_tracer()
 }
 
 void
-Engine::init()
-{
-  vtkmColorTable color_table(rover::settings["color_table"].as_string());
-  set_color_map(color_table);
-}
-
-void
 Engine::set_dataset(vtkm::cont::DataSet &dataset)
 {
   ROVER_INFO("Executing Engine::set_data_set");
@@ -183,31 +176,6 @@ Engine::set_composite_background(bool on)
   ROVER_INFO("Executing Engine::set_composite_background");
   validate_tracer();
   m_tracer->SetCompositeBackground(on);
-}
-
-void
-Engine::set_color_map(const vtkmColorTable &color_table, int samples)
-{
-  constexpr vtkm::Float32 conversionToFloatSpace = (1.0f / 255.0f);
-  vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::UInt8, 4>> temp;
-
-  // TODO: Is this where num_samples was intended to be used?
-  // If so, we should query the settings here.
-
-  color_table.Sample(samples, temp);
-  m_color_map.Allocate(samples);
-  auto portal = m_color_map.WritePortal();
-  auto colorPortal = temp.ReadPortal();
-
-  for (vtkm::Id i = 0; i < samples; ++i)
-  {
-    auto color = colorPortal.Get(i);
-    vtkm::Vec<vtkm::Float32, 4> t(color[0] * conversionToFloatSpace,
-                                  color[1] * conversionToFloatSpace,
-                                  color[2] * conversionToFloatSpace,
-                                  color[3] * conversionToFloatSpace);
-    portal.Set(i, t);
-  }
 }
 
 }; //namespace rover

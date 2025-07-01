@@ -360,12 +360,9 @@ TEST(ascent_rover, test_xray_blueprint_braid_diff)
             near_plane: 3.46410179138184
             far_plane: 346.410186767578
           xray_query: 
-            color_table: "Cool to Warm"
             divide_emis_by_absorb: "false"
             height: 200
             precision: "single"
-            ray_scope: "global_rays"
-            scattering_type: "non_scattering"
             width: 200
             unit_scalar: 1.0
             absorption: "radial"
@@ -685,12 +682,9 @@ TEST(ascent_rover, test_xray_blueprint_curv3d_diff)
           near_plane: 3.20156216621399
           far_plane: 320.156219482422
         xray_query: 
-          color_table: "Cool to Warm"
           divide_emis_by_absorb: "false"
           height: 200
           precision: "single"
-          ray_scope: "global_rays"
-          scattering_type: "non_scattering"
           width: 200
           unit_scalar: 1.0
           absorption: "d"
