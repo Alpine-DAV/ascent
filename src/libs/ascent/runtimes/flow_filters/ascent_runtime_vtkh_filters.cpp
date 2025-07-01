@@ -4033,7 +4033,7 @@ VTKHSample::execute()
 
     if(!input(0).check_type<DataObject>())
     {
-        ASCENT_ERROR("vtkh_uniform_grid input must be a data object");
+        ASCENT_ERROR("vtkh_sample input must be a data object");
     }
 
     DataObject *data_object = input<DataObject>(0);
