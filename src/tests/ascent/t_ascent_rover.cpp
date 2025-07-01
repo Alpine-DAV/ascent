@@ -205,7 +205,8 @@ TEST(ascent_rover, test_xray_blueprint_braid)
     extracts["e1/params/rover/absorption"] = "radial";
     extracts["e1/params/rover/emission"] = "radial";
     extracts["e1/params/rover/filename"] = query_path;
-    extracts["e1/params/rover/blueprint"] = "yaml";
+    extracts["e1/params/rover/blueprint_output"] = "true";
+    extracts["e1/params/rover/blueprint_protocol"] = "yaml";
 
     Node actions;
     Node &add_extracts = actions.append();
@@ -264,7 +265,8 @@ TEST(ascent_rover, test_xray_blueprint_braid_rotated)
     extracts["e1/params/rover/absorption"] = "radial";
     extracts["e1/params/rover/emission"] = "radial";
     extracts["e1/params/rover/filename"] = query_path;
-    extracts["e1/params/rover/blueprint"] = "yaml";
+    extracts["e1/params/rover/blueprint_output"] = "true";
+    extracts["e1/params/rover/blueprint_protocol"] = "yaml";
     extracts["e1/params/camera/azimuth"] = 45.0;
     extracts["e1/params/camera/elevation"] = 45.0;
 
@@ -325,7 +327,8 @@ TEST(ascent_rover, test_xray_blueprint_braid_diff)
     extracts["e1/params/rover/absorption"] = "radial";
     extracts["e1/params/rover/emission"] = "radial";
     extracts["e1/params/rover/filename"] = query_path;
-    extracts["e1/params/rover/blueprint"] = "yaml";
+    extracts["e1/params/rover/blueprint_output"] = "true";
+    extracts["e1/params/rover/blueprint_protocol"] = "yaml";
 
     Node actions;
     Node &add_extracts = actions.append();
@@ -367,7 +370,8 @@ TEST(ascent_rover, test_xray_blueprint_braid_diff)
             unit_scalar: 1.0
             absorption: "radial"
             emission: "radial"
-            blueprint: "yaml"
+            blueprint_output: "true"
+            blueprint_protocol: "yaml"
           xray_data: 
             detector_width: 80.0000040701827
             detector_height: 80.0000040701827
@@ -435,7 +439,8 @@ TEST(ascent_rover, test_xray_blueprint_braid_lowres)
     extracts["e1/params/rover/absorption"] = "radial";
     extracts["e1/params/rover/emission"] = "radial";
     extracts["e1/params/rover/filename"] = query_output_file;
-    extracts["e1/params/rover/blueprint"] = "json";
+    extracts["e1/params/rover/blueprint_output"] = "true";
+    extracts["e1/params/rover/blueprint_protocol"] = "yaml";
 
     // Output resolution
     extracts["e1/params/rover/width"] = 11;
@@ -523,7 +528,8 @@ TEST(ascent_rover, test_xray_blueprint_curv3d)
     extracts["e1/params/rover/absorption"] = "d";
     extracts["e1/params/rover/emission"] = "p";
     extracts["e1/params/rover/filename"] = query_path;
-    extracts["e1/params/rover/blueprint"] = "yaml";
+    extracts["e1/params/rover/blueprint_output"] = "true";
+    extracts["e1/params/rover/blueprint_protocol"] = "yaml";
 
     conduit::Node actions;
     conduit::Node &add_extracts = actions.append();
@@ -583,7 +589,8 @@ TEST(ascent_rover, test_xray_blueprint_curv3d_rotated)
     extracts["e1/params/rover/absorption"] = "d";
     extracts["e1/params/rover/emission"] = "p";
     extracts["e1/params/rover/filename"] = query_path;
-    extracts["e1/params/rover/blueprint"] = "yaml";
+    extracts["e1/params/rover/blueprint_output"] = "true";
+    extracts["e1/params/rover/blueprint_protocol"] = "yaml";
     extracts["e1/params/camera/azimuth"] = 45.0;
     extracts["e1/params/camera/elevation"] = 45.0;
 
@@ -645,7 +652,8 @@ TEST(ascent_rover, test_xray_blueprint_curv3d_diff)
     extracts["e1/params/rover/absorption"] = "d";
     extracts["e1/params/rover/emission"] = "p";
     extracts["e1/params/rover/filename"] = query_path;
-    extracts["e1/params/rover/blueprint"] = "yaml";
+    extracts["e1/params/rover/blueprint_output"] = "true";
+    extracts["e1/params/rover/blueprint_protocol"] = "yaml";
 
     conduit::Node actions;
     conduit::Node &add_extracts = actions.append();
@@ -687,7 +695,8 @@ TEST(ascent_rover, test_xray_blueprint_curv3d_diff)
           unit_scalar: 1.0
           absorption: "d"
           emission: "p"
-          blueprint: "yaml"
+          blueprint_output: "true"
+          blueprint_protocol: "yaml"
         xray_data: 
           detector_width: 73.9369100384305
           detector_height: 73.9369100384305
@@ -755,7 +764,8 @@ TEST(ascent_rover, test_xray_blueprint_curv3d_camera_params)
     extracts["e1/params/rover/absorption"] = "d";
     extracts["e1/params/rover/emission"] = "p";
     extracts["e1/params/rover/filename"] = query_path;
-    extracts["e1/params/rover/blueprint"] = "yaml";
+    extracts["e1/params/rover/blueprint_output"] = "true";
+    extracts["e1/params/rover/blueprint_protocol"] = "yaml";
 
     // These errors all originate from within rover
     // TODO: Setting anything for position (e.g. 0,0,0) throws a vector range error
@@ -832,7 +842,8 @@ TEST(ascent_rover, test_xray_blueprint_multi_curv3d)
     extracts["e1/params/rover/absorption"] = "d";
     extracts["e1/params/rover/emission"] = "p";
     extracts["e1/params/rover/filename"] = query_path;
-    extracts["e1/params/rover/blueprint"] = "yaml";
+    extracts["e1/params/rover/blueprint_output"] = "true";
+    extracts["e1/params/rover/blueprint_protocol"] = "yaml";
 
     conduit::Node actions;
     conduit::Node &add_extracts = actions.append();
@@ -892,7 +903,8 @@ TEST(ascent_rover, test_xray_blueprint_multi_curv3d_rotated)
     extracts["e1/params/rover/absorption"] = "d";
     extracts["e1/params/rover/emission"] = "p";
     extracts["e1/params/rover/filename"] = query_path;
-    extracts["e1/params/rover/blueprint"] = "yaml";
+    extracts["e1/params/rover/blueprint_output"] = "true";
+    extracts["e1/params/rover/blueprint_protocol"] = "yaml";
     extracts["e1/params/camera/azimuth"] = 45.0;
     extracts["e1/params/camera/elevation"] = 45.0;
 
@@ -961,7 +973,8 @@ TEST(ascent_rover, test_xray_blueprint_tire)
     extracts["e1/params/rover/absorption"] = "pressure";
     // extracts["e1/params/rover/emission"] = "pressure";
     extracts["e1/params/rover/filename"] = query_output_file;
-    extracts["e1/params/rover/blueprint"] = "json";
+    extracts["e1/params/rover/blueprint_output"] = "true";
+    extracts["e1/params/rover/blueprint_protocol"] = "yaml";
 
     conduit::Node actions;
     // add the pipeline
@@ -1044,7 +1057,8 @@ TEST(ascent_rover, test_xray_blueprint_curv2d)
     extracts["e1/params/rover/absorption"] = "d";
     extracts["e1/params/rover/emission"] = "p";
     extracts["e1/params/rover/filename"] = query_output_file;
-    extracts["e1/params/rover/blueprint"] = "json";
+    extracts["e1/params/rover/blueprint_output"] = "true";
+    extracts["e1/params/rover/blueprint_protocol"] = "yaml";
 
     conduit::Node actions;
     // add the pipeline

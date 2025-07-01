@@ -163,21 +163,66 @@ RoverXRay::verify_params(const conduit::Node &params,
   // Optional rover parameters
   //
 
-  if (n_rover.has_child("blueprint"))
+  const bool has_blueprint_output = n_rover.has_child("blueprint_output");
+  if (has_blueprint_output)
   {
-    if (!n_rover["blueprint"].dtype().is_string())
+    if (!n_rover["blueprint_output"].dtype().is_string())
     {
-      info["errors"].append() = "Optional string parameter 'rover/blueprint' is not a string";
+      info["errors"].append() = "Optional bool string parameter 'rover/blueprint_output' is not a string";
       res = false;
     }
-    else
+    
+    const std::string blueprint_output = n_rover["blueprint_output"].as_string();
+    if ("true" != blueprint_output && "false" != blueprint_output)
     {
-      const std::string protocol = n_rover["blueprint"].as_string();
-      if ("hdf5" != protocol && "yaml" != protocol && "json" != protocol)
-      {
-        info["errors"].append() = "Optional string parameter 'rover/blueprint' must be 'hdf5' or 'yaml' or 'json'";
-        res = false;
-      }
+      info["errors"].append() = "Optional bool string parameter 'rover/blueprint_output' must be 'true' or 'false'";
+      res = false;
+    }
+  }
+
+  const bool has_blueprint_protocol = n_rover.has_child("blueprint_protocol");
+  if (has_blueprint_protocol)
+  {
+    if (!n_rover["blueprint_protocol"].dtype().is_string())
+    {
+      info["errors"].append() = "Optional string parameter 'rover/blueprint_protocol' is not a string";
+      res = false;
+    }
+    
+    const std::string blueprint_protocol = n_rover["blueprint_protocol"].as_string();
+    if ("hdf5" != blueprint_protocol && "yaml" != blueprint_protocol && "json" != blueprint_protocol)
+    {
+      info["errors"].append() = "Optional string parameter 'rover/blueprint_protocol' must be 'hdf5' or 'yaml' or 'json'";
+      res = false;
+    }
+  }
+  
+  // If either 'rover/blueprint_output' or 'rover/blueprint_protocol' are set, they must both be set
+  if (has_blueprint_output && !has_blueprint_protocol)
+  {
+    info["errors"].append() = "Optional bool string parameter 'rover/blueprint_output' requires 'rover/blueprint_protocol' to also be set";
+    res = false;
+  }
+  else if (!has_blueprint_output && has_blueprint_protocol)
+  {
+    info["errors"].append() = "Optional string parameter 'rover/blueprint_protocol' requires 'rover/blueprint_output' to also be set";
+    res = false;
+  }
+
+  const bool has_bov_output = n_rover.has_child("bov_output");
+  if (has_bov_output)
+  {
+    if (!n_rover["bov_output"].dtype().is_string())
+    {
+      info["errors"].append() = "Optional bool string parameter 'rover/bov_output' is not a string";
+      res = false;
+    }
+    
+    const std::string bov_output = n_rover["bov_output"].as_string();
+    if ("true" != bov_output && "false" != bov_output)
+    {
+      info["errors"].append() = "Optional bool string parameter 'rover/bov_output' must be 'true' or 'false'";
+      res = false;
     }
   }
 
@@ -234,6 +279,30 @@ RoverXRay::verify_params(const conduit::Node &params,
     }
   }
 
+  const bool has_png_output = n_rover.has_child("png_output");
+  if (has_png_output)
+  {
+    if (!n_rover["bov_output"].dtype().is_string())
+    {
+      info["errors"].append() = "Optional bool string parameter 'rover/png_output' is not a string";
+      res = false;
+    }
+    
+    const std::string png_output = n_rover["png_output"].as_string();
+    if ("true" != png_output && "false" != png_output)
+    {
+      info["errors"].append() = "Optional bool string parameter 'rover/png_output' must be 'true' or 'false'";
+      res = false;
+    }
+  }
+
+  // This won't be necessary once rover becomes a filter
+  if (!has_blueprint_output && !has_bov_output && !has_png_output)
+  {
+    info["errors"].append() = "Expected at least one output type. Options are 'rover/blueprint_output', 'rover/bov_output', or 'rover/png_output'";
+    res = false;
+  }
+
   if (n_rover.has_child("precision"))
   {
     if (!n_rover["precision"].dtype().is_string())
@@ -271,6 +340,18 @@ RoverXRay::verify_params(const conduit::Node &params,
     }
   }
 
+  // If either 'rover/width' or 'rover/height' are set, they must both be set
+  if (has_width && !has_height)
+  {
+    info["errors"].append() = "Optional integer parameter 'rover/width' requires 'rover/height' to also be set";
+    res = false;
+  }
+  else if (!has_width && has_height)
+  {
+    info["errors"].append() = "Optional integer parameter 'rover/height' requires 'rover/width' to also be set";
+    res = false;
+  }
+
   if (n_rover.has_child("unit_scalar"))
   {
     if (!n_rover["unit_scalar"].dtype().is_number())
@@ -287,18 +368,6 @@ RoverXRay::verify_params(const conduit::Node &params,
         res = false;
       }
     }
-  }
-
-  // If either 'width' or 'height' are set, they must both be set
-  if (has_width && !has_height)
-  {
-    info["errors"].append() = "Optional integer parameter 'rover/width' requires 'rover/height' to also be set";
-    res = false;
-  }
-  else if (!has_width && has_height)
-  {
-    info["errors"].append() = "Optional integer parameter 'rover/height' requires 'rover/width' to also be set";
-    res = false;
   }
 
   //
@@ -372,11 +441,14 @@ RoverXRay::verify_params(const conduit::Node &params,
     "image_params/max_value",
     "image_params/min_value",
     "rover/absorption",
-    "rover/blueprint",
+    "rover/blueprint_output",
+    "rover/blueprint_protocol",
+    "rover/bov_output",
     "rover/divide_emis_by_absorb",
     "rover/emission",
     "rover/filename",
     "rover/height",
+    "rover/png_output",
     "rover/precision",
     "rover/width",
     "rover/unit_scalar"
@@ -446,46 +518,63 @@ RoverXRay::execute()
   // Calling execute initializes everything that rover needs based on the input params
   rover.execute();
 
-  if (n_rover.has_child("blueprint"))
-  {
-    conduit::Node multi_domain;
-    conduit::Node &data = multi_domain.append();
-    rover.to_blueprint(data);
+  //
+  // Outputs
+  //
 
-    const std::string blueprint_filename = output_dir(expand_path_special_variables(
-                                              n_rover["filename"].as_string(),
-                                              ".root",
-                                              mpi_comm_id));
-    const std::string protocol = n_rover["blueprint"].as_string();
-    const int num_files = -1;
-    conduit::Node extra_opts;
-    std::string result_path;
-    mesh_blueprint_save(multi_domain,
-                        blueprint_filename,
-                        protocol,
-                        num_files,
-                        extra_opts,
-                        result_path);
+  const std::string filename = n_rover["filename"].as_string();
+
+  if (n_rover.has_child("blueprint_output"))
+  {
+    const std::string blueprint_output = n_rover["blueprint_output"].as_string();
+    if ("true" == blueprint_output)
+    {
+      conduit::Node multi_domain;
+      conduit::Node &data = multi_domain.append();
+      rover.to_blueprint(data);
+  
+      const std::string blueprint_filename = output_dir(expand_path_special_variables(
+                                                filename,
+                                                ".root",
+                                                mpi_comm_id));
+      const std::string blueprint_protocol = n_rover["blueprint_protocol"].as_string();
+      const int num_files = -1;
+      conduit::Node extra_opts;
+      std::string result_path;
+      mesh_blueprint_save(multi_domain,
+                          blueprint_filename,
+                          blueprint_protocol,
+                          num_files,
+                          extra_opts,
+                          result_path);
+    }
+  }  
+
+  if (n_rover.has_child("bov_output"))
+  {
+    const std::string bov_output = n_rover["bov_output"].as_string();
+    if ("true" == bov_output)
+    {
+      const std::string bov_filename = output_dir(expand_path_special_variables(
+                                                    filename,
+                                                    ".bov",
+                                                    mpi_comm_id));
+      rover.save_bov(bov_filename);
+    }
   }
 
-  // TODO: I don't think we want to always save a .png unconditionally,
-  // so maybe params could be reworked to request the exact types of output
-  // the user wants rover to produce
-  // TODO: This doesn't work, warn the user
-  const std::string png_filename = output_dir(expand_path_special_variables(
-                                                n_rover["filename"].as_string(),
-                                                ".png",
-                                                mpi_comm_id));
-  rover.save_png(png_filename);
-
-  // TODO: We don't check if rover/bov_filename is valid in verify_params
-  if (n_rover.has_child("bov_filename"))
+  if (n_rover.has_child("png_output"))
   {
-    const std::string bov_filename = output_dir(expand_path_special_variables(
-                                                  n_rover["bov_filename"].as_string(),
-                                                  ".bov",
-                                                  mpi_comm_id));
-    rover.save_bov(bov_filename);
+    const std::string png_output = n_rover["png_output"].as_string();
+    if ("true" == png_output)
+    {
+      ASCENT_WARN("Rover's png output is currently broken\n");
+      const std::string png_filename = output_dir(expand_path_special_variables(
+                                                    filename,
+                                                    ".png",
+                                                    mpi_comm_id));
+      rover.save_png(png_filename);
+    }
   }
 }
 
