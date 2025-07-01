@@ -274,7 +274,7 @@ TypedScheduler<FloatType>::composite()
   }
 #endif
 
-  const std::string emission = rover::settings["rover/emission"].as_string();
+  const std::string emission = rover::settings["emission"].as_string();
   if ("" != emission)
   {
     vtkh::PartialCompositor<vtkh::EmissionPartial<FloatType>> compositor;
@@ -443,7 +443,7 @@ TypedScheduler<FloatType>::trace_rays()
     partial_image.m_buffer =
       vtkmRayTracing::ChannelBuffer<FloatType>(num_channels, 0);
 
-    const std::string emission = rover::settings["rover/emission"].as_string();
+    const std::string emission = rover::settings["emission"].as_string();
     if ("" != emission)
     {
       partial_image.m_intensities =
@@ -487,8 +487,8 @@ TypedScheduler<FloatType>::trace_rays()
 template<typename FloatType>
 void TypedScheduler<FloatType>::save_png(std::string filename)
 {
-  const int64 width = rover::settings["rover/width"].to_int64();
-  const int64 height = rover::settings["rover/height"].to_int64();
+  const int64 width = rover::settings["width"].to_int64();
+  const int64 height = rover::settings["height"].to_int64();
 
   // Optional params that the user may have set
   bool has_image_params = false;
@@ -553,8 +553,8 @@ void TypedScheduler<FloatType>::save_png(std::string filename)
 template<typename FloatType>
 void TypedScheduler<FloatType>::save_bov(std::string file_name)
 {
-  const int64 width = rover::settings["rover/width"].to_int64();
-  const int64 height = rover::settings["rover/height"].to_int64();
+  const int64 width = rover::settings["width"].to_int64();
+  const int64 height = rover::settings["height"].to_int64();
   const int64 size = height * width;
 
   ROVER_INFO("Saving bov file with output size " << width << "x" << height);
@@ -584,8 +584,8 @@ template<typename FloatType>
 void
 TypedScheduler<FloatType>::to_blueprint(Node &data)
 {
-  const int64 width = rover::settings["rover/width"].to_int64();
-  const int64 height = rover::settings["rover/height"].to_int64();
+  const int64 width = rover::settings["width"].to_int64();
+  const int64 height = rover::settings["height"].to_int64();
   const int num_channels = m_result.get_num_channels();
 
   vtkmCamera camera = m_ray_generator->get_camera();
@@ -625,14 +625,14 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
   // State
   //
 
-  if (rover::settings.has_path("state/time"))
+  if (rover::metadata.has_child("time"))
   {
-    state["time"].set(rover::settings["state/time"]);
+    state["time"].set(rover::metadata["time"]);
   }
 
-  if (rover::settings.has_path("state/cycle"))
+  if (rover::metadata.has_path("cycle"))
   {
-    state["cycle"].set(rover::settings["state/cycle"]);
+    state["cycle"].set(rover::metadata["cycle"]);
   }
   
   Node &xray_view = state["xray_view"];
@@ -648,7 +648,7 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
   xray_view["far_plane"] = far_plane;
 
   Node &xray_query = state["xray_query"];
-  xray_query.set(rover::settings["rover"]);
+  xray_query.set(rover::settings);
 
   Node &xray_data = state["xray_data"];
   xray_data["detector_width"] = detector_width;

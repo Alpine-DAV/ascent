@@ -43,7 +43,7 @@ Engine::validate_tracer()
 void
 Engine::init()
 {
-  vtkmColorTable color_table(rover::settings["rover/color_table"].as_string());
+  vtkmColorTable color_table(rover::settings["color_table"].as_string());
   set_color_map(color_table);
 }
 
@@ -55,7 +55,7 @@ Engine::set_dataset(vtkm::cont::DataSet &dataset)
   // TODO: Investigate why we set an empty field name here,
   // do we delete and replace the tracer later on or do we
   // explicitly set the field names?
-  const std::string absorption = rover::settings["rover/absorption"].as_string();
+  const std::string absorption = rover::settings["absorption"].as_string();
   m_tracer = new vtkh::rendering::ConnectivityProxy(dataset, absorption);
   m_tracer->SetScalarField(absorption);
   m_dataset = dataset;
@@ -66,7 +66,7 @@ void
 Engine::init_emission(vtkmRayTracing::Ray<Precision> &rays,
                       const int num_bins)
 {
-  const std::string emission = rover::settings["rover/emission"].as_string();
+  const std::string emission = rover::settings["emission"].as_string();
   // Return early if emission was not specified
   if ("" == emission)
   {
@@ -83,7 +83,7 @@ Engine::partial_trace(Ray32 &rays, PartialVector32 &partials)
 {
   ROVER_INFO("Executing Engine::partial_trace");
   init_rays(rays);
-  m_tracer->SetUnitScalar(rover::settings["rover/unit_scalar"].value());
+  m_tracer->SetUnitScalar(rover::settings["unit_scalar"].value());
   m_tracer->SetColorMap(m_color_map);
   m_tracer->PartialTrace(rays, partials);
 }
@@ -119,7 +119,7 @@ Engine::partial_trace(Ray64 &rays, PartialVector64 &partials)
 {
   ROVER_INFO("Executing Engine::partial_trace");
   init_rays(rays);
-  m_tracer->SetUnitScalar(rover::settings["rover/unit_scalar"].value());
+  m_tracer->SetUnitScalar(rover::settings["unit_scalar"].value());
   m_tracer->SetColorMap(m_color_map);
   m_tracer->PartialTrace(rays, partials);
 }
@@ -129,7 +129,7 @@ Engine::get_num_channels()
 {
   vtkm::Id absorption_size = 0;
   ArraySizeFunctor functor(&absorption_size);
-  const std::string absorption = rover::settings["rover/absorption"].as_string();
+  const std::string absorption = rover::settings["absorption"].as_string();
   m_dataset.GetField(absorption).
                       GetData().
                       CastAndCallForTypes<vtkm::TypeListAll, VTKM_DEFAULT_STORAGE_LIST>(functor);

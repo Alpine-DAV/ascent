@@ -72,8 +72,8 @@ VisitGenerator::gen_rays(vtkmRayTracing::Ray<T> &rays)
   vtkmTimer timer;
   double time = 0;
   ROVER_DATA_OPEN("visit_ray_gen");
-  const int64 width = rover::settings["rover/width"].to_int64();
-  const int64 height = rover::settings["rover/height"].to_int64();
+  const int64 width = rover::settings["width"].to_int64();
+  const int64 height = rover::settings["height"].to_int64();
   const int64 size = width * height;
 
   // TODO: Do we care about supporting old versions of vtkm? This

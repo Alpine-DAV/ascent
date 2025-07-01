@@ -299,8 +299,8 @@ struct PartialImage
     const int size = m_pixel_ids.GetNumberOfValues();
     const int num_channels = m_buffer.GetNumChannels();
     const bool has_emission = m_intensities.Buffer.GetNumberOfValues() != 0;
-    const int64 width = rover::settings["rover/width"].to_int64();
-    const int64 height = rover::settings["rover/height"].to_int64();
+    const int64 width = rover::settings["width"].to_int64();
+    const int64 height = rover::settings["height"].to_int64();
     const int64 debug = width * (height - y) + x;
 
     for(int i = 0; i < size; ++i)
@@ -327,8 +327,8 @@ struct PartialImage
   {
     const int size = m_pixel_ids.GetNumberOfValues();
     const int num_channels = m_buffer.GetNumChannels();
-    const int64 width = rover::settings["rover/width"].to_int64();
-    const int64 height = rover::settings["rover/height"].to_int64();
+    const int64 width = rover::settings["width"].to_int64();
+    const int64 height = rover::settings["height"].to_int64();
     const int64 debug = width * (height - y) + x;
 
     for(int i = 0; i < size; ++i)

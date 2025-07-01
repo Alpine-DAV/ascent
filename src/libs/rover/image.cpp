@@ -47,8 +47,8 @@ Image<FloatType>::normalize_handle(vtkm::cont::ArrayHandle<FloatType> &handle,
   FloatType inv_delta;
   inv_delta = min_scalar == max_scalar ? 1.f : 1.f / (max_scalar - min_scalar);
   auto portal = handle.WritePortal();
-  const int64 width = rover::settings["rover/width"].to_int64();
-  const int64 height = rover::settings["rover/height"].to_int64();
+  const int64 width = rover::settings["width"].to_int64();
+  const int64 height = rover::settings["height"].to_int64();
   const int64 size = width * height;
 
 #ifdef ROVER_OPENMP_ENABLED
@@ -83,8 +83,8 @@ Image<FloatType>::normalize_handle(vtkm::cont::ArrayHandle<FloatType> &handle, b
   FloatType inv_delta;
   inv_delta = min_scalar == max_scalar ? 1.f : 1.f / (max_scalar - min_scalar);
   auto portal = handle.WritePortal();
-  const int64 width = rover::settings["rover/width"].to_int64();
-  const int64 height = rover::settings["rover/height"].to_int64();
+  const int64 width = rover::settings["width"].to_int64();
+  const int64 height = rover::settings["height"].to_int64();
   const int64 size = width * height;
 
 #ifdef ROVER_OPENMP_ENABLED
@@ -206,8 +206,8 @@ Image<FloatType>::init_from_partial(PartialImage<FloatType> &partial)
   m_intensities.clear();
   m_optical_depths.clear();
 
-  const int64 width = rover::settings["rover/width"].to_int64();
-  const int64 height = rover::settings["rover/height"].to_int64();
+  const int64 width = rover::settings["width"].to_int64();
+  const int64 height = rover::settings["height"].to_int64();
   const int64 channel_size = width * height;
   const int num_channels = partial.m_buffer.GetNumChannels();
 
@@ -263,8 +263,8 @@ Image<FloatType>::flatten_intensities()
   const int num_channels = this->get_num_channels();
 
   HandleType res;
-  const int64 width = rover::settings["rover/width"].to_int64();
-  const int64 height = rover::settings["rover/height"].to_int64();
+  const int64 width = rover::settings["width"].to_int64();
+  const int64 height = rover::settings["height"].to_int64();
   const int64 size = width * height;
   res.Allocate(num_channels * size);
   auto output = res.WritePortal();
@@ -290,8 +290,8 @@ Image<FloatType>::flatten_optical_depths()
   const int num_channels = this->get_num_channels();
 
   HandleType res;
-  const int64 width = rover::settings["rover/width"].to_int64();
-  const int64 height = rover::settings["rover/height"].to_int64();
+  const int64 width = rover::settings["width"].to_int64();
+  const int64 height = rover::settings["height"].to_int64();
   const int64 size = width * height;
   res.Allocate(num_channels * size);
   auto output = res.WritePortal();
