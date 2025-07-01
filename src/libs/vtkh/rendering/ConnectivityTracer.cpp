@@ -1455,14 +1455,14 @@ void ConnectivityTracer::PartialTrace(vtkm::rendering::raytracing::Ray<FloatType
     IntegrateMeshSegment(rays);
 
     PartialComposite<FloatType> partial;
-    partial.Buffer = rays.Buffers.at(0).Copy();
-    partial.OpticalDepths = rays.GetBuffer("optical_depths").Copy();
+    partial.Transmission = rays.Buffers.at(0).Copy();
+    partial.OpticalDepth = rays.GetBuffer("optical_depths").Copy();
     vtkm::cont::Algorithm::Copy(rays.Distance, partial.Distances);
     vtkm::cont::Algorithm::Copy(rays.PixelIdx, partial.PixelIds);
 
-    if (HasEmission && this->Integrator == Energy)
+    if (HasEmission)
     {
-      partial.Intensities = rays.GetBuffer("emission").Copy();
+      partial.Intensity = rays.GetBuffer("emission").Copy();
     }
     if (hasPathLengths)
     {

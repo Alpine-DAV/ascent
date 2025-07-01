@@ -27,9 +27,9 @@ struct VTKH_API PartialComposite
 {
   vtkm::cont::ArrayHandle<vtkm::Id> PixelIds;   // pixel that owns composite
   vtkm::cont::ArrayHandle<FloatType> Distances; // distance of composite end
-  vtkm::rendering::raytracing::ChannelBuffer<FloatType> Buffer;              // holds either color or absorption
-  vtkm::rendering::raytracing::ChannelBuffer<FloatType> Intensities;           // holds the intensity emerging from each ray
-  vtkm::rendering::raytracing::ChannelBuffer<FloatType> OpticalDepths;
+  vtkm::rendering::raytracing::ChannelBuffer<FloatType> Transmission;              // holds either color or absorption
+  vtkm::rendering::raytracing::ChannelBuffer<FloatType> Intensity;           // holds the intensity emerging from each ray
+  vtkm::rendering::raytracing::ChannelBuffer<FloatType> OpticalDepth;
   vtkm::cont::ArrayHandle<FloatType> PathLengths; // Total distance traversed through the mesh
 };
 }

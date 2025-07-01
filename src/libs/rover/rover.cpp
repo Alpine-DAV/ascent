@@ -86,6 +86,11 @@ Rover::update_settings(const Node &params)
   {
     rover::settings["camera"].set(params["camera"]);
   }
+
+  if (params.has_child("image_params"))
+  {
+    rover::settings["image_params"].set(params["image_params"]);
+  }
 }
 
 void

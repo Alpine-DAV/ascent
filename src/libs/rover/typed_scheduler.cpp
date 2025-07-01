@@ -222,9 +222,9 @@ TypedScheduler<FloatType>::add_partial(vtkhRayTracing::PartialComposite<FloatTyp
   PartialImage<FloatType> partial_image;
   partial_image.m_pixel_ids = partial.PixelIds;
   partial_image.m_distances = partial.Distances;
-  partial_image.m_buffer = partial.Buffer;
-  partial_image.m_intensities = partial.Intensities;
-  partial_image.m_optical_depths = partial.OpticalDepths;
+  partial_image.m_transmission = partial.Transmission;
+  partial_image.m_intensity = partial.Intensity;
+  partial_image.m_optical_depth = partial.OpticalDepth;
   m_partial_images.push_back(partial_image);
 }
 
@@ -440,13 +440,13 @@ TypedScheduler<FloatType>::trace_rays()
   if (num_domains == 0 || m_partial_images.size() == 0)
   {
     PartialImage<FloatType> partial_image;
-    partial_image.m_buffer =
+    partial_image.m_transmission =
       vtkmRayTracing::ChannelBuffer<FloatType>(num_channels, 0);
 
     const std::string emission = rover::settings["emission"].as_string();
     if ("" != emission)
     {
-      partial_image.m_intensities =
+      partial_image.m_intensity =
         vtkmRayTracing::ChannelBuffer<FloatType>(num_channels, 0);
     }
     m_partial_images.push_back(partial_image);
@@ -718,7 +718,7 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
   intensities["topology"] = "image_topo";
   intensities["association"] = "element";
   intensities["units"] = "intensity units";
-  vtkm::cont::ArrayHandle<FloatType> intensity_values = m_result.flatten_intensities();
+  vtkm::cont::ArrayHandle<FloatType> intensity_values = m_result.flatten_intensity_values();
   FloatType *intensity_buffer = get_vtkm_ptr(intensity_values);
   const int num_intensity_values = intensity_values.GetNumberOfValues();
 
@@ -738,7 +738,7 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
   optical_depth["topology"] = "image_topo";
   optical_depth["association"] = "element";
   optical_depth["units"] = "optical depth metadata";
-  vtkm::cont::ArrayHandle<FloatType> optical_values = m_result.flatten_optical_depths();
+  vtkm::cont::ArrayHandle<FloatType> optical_values = m_result.flatten_optical_depth_values();
   FloatType *optical_buffer = get_vtkm_ptr(optical_values);
   const int num_optical_values = optical_values.GetNumberOfValues();
 
