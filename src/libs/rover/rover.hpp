@@ -37,8 +37,8 @@ public:
   Rover();
   ~Rover();
 
-  void update_time_and_cycle(Node &metadata);
-  void update_settings(Node &params);
+  void update_time_and_cycle(const Node &metadata);
+  void update_settings(const Node &params);
   void print_settings();
 
   #ifdef ROVER_PARALLEL

@@ -30,7 +30,7 @@ Rover::Rover()
   // Settings
   // TODO: Figure out if color_table needs to be set by us here
   rover::settings["rover/color_table"] = "Cool to Warm";
-  rover::settings["rover/divide_emission_by_abs"] = "false";
+  rover::settings["rover/divide_emis_by_absorb"] = "false";
   rover::settings["rover/height"] = 200;
   rover::settings["rover/precision"] = "single";
   rover::settings["rover/ray_scope"] = "global_rays";
@@ -61,7 +61,7 @@ Rover::~Rover()
 }
 
 void
-Rover::update_time_and_cycle(Node &metadata)
+Rover::update_time_and_cycle(const Node &metadata)
 {
   if (metadata.has_child("time"))
   {
@@ -75,7 +75,7 @@ Rover::update_time_and_cycle(Node &metadata)
 }
 
 void
-Rover::update_settings(Node &params)
+Rover::update_settings(const Node &params)
 {
   ROVER_INFO("Executing Rover::update_settings");
 

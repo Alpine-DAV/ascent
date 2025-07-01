@@ -358,7 +358,7 @@ TEST(ascent_rover, test_xray_blueprint_braid_diff)
             far_plane: 346.410186767578
           xray_query: 
             color_table: "Cool to Warm"
-            divide_emission_by_abs: "false"
+            divide_emis_by_absorb: "false"
             height: 200
             precision: "single"
             ray_scope: "global_rays"
@@ -678,7 +678,7 @@ TEST(ascent_rover, test_xray_blueprint_curv3d_diff)
           far_plane: 320.156219482422
         xray_query: 
           color_table: "Cool to Warm"
-          divide_emission_by_abs: "false"
+          divide_emis_by_absorb: "false"
           height: 200
           precision: "single"
           ray_scope: "global_rays"
