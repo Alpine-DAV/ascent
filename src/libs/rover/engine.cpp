@@ -61,7 +61,7 @@ Engine::init_emission(vtkmRayTracing::Ray<Precision> &rays,
 {
   const std::string emission = rover::settings["emission"].as_string();
   // Return early if emission was not specified
-  if ("" == emission)
+  if (emission.empty())
   {
     ROVER_INFO("Engine::init_emission: emission not specified");
     return;

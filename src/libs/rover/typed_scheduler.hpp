@@ -41,7 +41,7 @@ public:
   void set_comm_handle(MPI_Comm comm_handle) override;
 #endif
 
-  void add_dataset(vtkmDataSet &dataset) override;
+  void add_dataset(vtkh::DataSet &dataset) override;
   void set_ray_generator(RayGenerator *ray_generator) override;
   void trace_rays() override;
   void save_png(std::string file_name) override;
@@ -59,14 +59,13 @@ protected:
   MPI_Comm                                  m_comm_handle;
 #endif
 
-  void create_default_background(const int num_channels);
-  void set_background(const std::vector<vtkm::Float32> &background);
-  void set_background(const std::vector<vtkm::Float64> &background);
-
+  void create_background(const int num_channels);
   int  get_global_channels();
   void set_global_range_and_bounds();
-  void add_partial(vtkhRayTracing::PartialComposite<FloatType> &partial);
+  void add_partial(const vtkhRayTracing::PartialComposite<FloatType> &partial);
   void composite();
+  template<typename PartialType>
+  void typed_composite();
 };
 
 }; // namespace rover

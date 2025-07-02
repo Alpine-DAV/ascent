@@ -155,11 +155,7 @@ Rover::add_dataset(vtkh::DataSet &dataset)
     create_scheduler();
   }
 
-  for (int i = 0; i < dataset.GetNumberOfDomains(); i++)
-  {
-    m_scheduler->add_dataset(dataset.GetDomain(i));
-  }
-
+  m_scheduler->add_dataset(dataset);
   m_camera.ResetToBounds(dataset.GetGlobalBounds());
 }
 

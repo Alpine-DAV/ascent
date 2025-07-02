@@ -18,6 +18,12 @@ Domain::Domain()
   m_engine = std::make_shared<Engine>();
 }
 
+Domain::Domain(vtkmDataSet &dataset)
+{
+  m_engine = std::make_shared<Engine>();
+  set_dataset(dataset);
+}
+
 Domain::~Domain()
 {
 
@@ -79,7 +85,7 @@ Domain::init()
 
 }
 
-int
+const int
 Domain::get_num_channels()
 {
   return m_engine->get_num_channels();
@@ -142,7 +148,7 @@ Domain::get_primary_range()
   return m_engine->get_primary_range();
 }
 
-vtkm::Bounds
+vtkm::Bounds&
 Domain::get_domain_bounds()
 {
   return m_domain_bounds;

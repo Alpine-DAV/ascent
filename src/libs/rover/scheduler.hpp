@@ -9,6 +9,7 @@
 
 // tpl includes
 #include <conduit.hpp>
+#include <vtkh/DataSet.hpp>
 
 // rover includes
 #include "ray_generators/ray_generator.hpp"
@@ -33,7 +34,7 @@ public:
   virtual void set_comm_handle(MPI_Comm comm_handle) = 0;
 #endif
 
-  virtual void add_dataset(vtkmDataSet &dataset) = 0;
+  virtual void add_dataset(vtkh::DataSet &dataset) = 0;
   virtual void set_ray_generator(RayGenerator *ray_generator) = 0;
   virtual void trace_rays() = 0;
   virtual void save_png(std::string file_name) = 0;

@@ -35,12 +35,15 @@ TypedScheduler<FloatType>::set_comm_handle(MPI_Comm comm_handle)
 
 template<typename FloatType>
 void
-TypedScheduler<FloatType>::add_dataset(vtkmDataSet &dataset)
+TypedScheduler<FloatType>::add_dataset(vtkh::DataSet &dataset)
 {
-  ROVER_INFO("TypedScheduler::add_dataset: adding domain " << m_domains.size());
-  Domain domain;
-  domain.set_dataset(dataset);
-  m_domains.push_back(domain);
+  const int num_domains = dataset.GetNumberOfDomains();
+  m_domains.reserve(num_domains);
+  for (int i = 0; i < num_domains; i++)
+  {
+    ROVER_INFO("TypedScheduler::add_dataset: adding domain " << m_domains.size());
+    m_domains.emplace_back(dataset.GetDomain(i));
+  }
 }
 
 template<typename FloatType>
@@ -52,7 +55,7 @@ TypedScheduler<FloatType>::set_ray_generator(RayGenerator *ray_generator)
 
 template<typename FloatType>
 void
-TypedScheduler<FloatType>::create_default_background(const int num_channels)
+TypedScheduler<FloatType>::create_background(const int num_channels)
 {
   // Initialize background intensities to 0.0f (by default)
   const float64 background_intensity = rover::settings["background_intensity"].to_float64();
@@ -60,35 +63,13 @@ TypedScheduler<FloatType>::create_default_background(const int num_channels)
 }
 
 template<typename FloatType>
-void
-TypedScheduler<FloatType>::set_background(const std::vector<vtkm::Float32> &background)
-{
-  // TODO: See if this is done better with std::transform
-  const size_t size = background.size();
-  m_background.resize(size);
-
-  for (size_t i = 0; i < size; ++i)
-  {
-    m_background[i] = static_cast<vtkm::Float64>(background[i]);
-  }
-}
-
-template<typename FloatType>
-void
-TypedScheduler<FloatType>::set_background(const std::vector<vtkm::Float64> &background)
-{
-  m_background = background;
-}
-
-template<typename FloatType>
 int
 TypedScheduler<FloatType>::get_global_channels()
 {
-  // TODO: See if this is done better with std::max_element
   int num_channels = 1;
-  for (size_t i = 0; i < m_domains.size(); ++i)
+  for (auto& domain : m_domains)
   {
-    num_channels = std::max(num_channels, m_domains[i].get_num_channels());
+    num_channels = std::max(num_channels, domain.get_num_channels());
   }
 
 #ifdef ROVER_PARALLEL
@@ -205,10 +186,10 @@ TypedScheduler<FloatType>::set_global_range_and_bounds()
   ROVER_INFO("Global range " << global_range);
   ROVER_INFO("Global bounds " << global_bounds);
 
-  for (int i = 0; i < num_domains; ++i)
+  for (auto& domain : m_domains)
   {
-    m_domains[i].set_primary_range(global_range);
-    m_domains[i].set_global_bounds(global_bounds);
+    domain.set_primary_range(global_range);
+    domain.set_global_bounds(global_bounds);
   }
 
   time = timer.GetElapsedTime();
@@ -217,7 +198,7 @@ TypedScheduler<FloatType>::set_global_range_and_bounds()
 
 template<typename FloatType>
 void
-TypedScheduler<FloatType>::add_partial(vtkhRayTracing::PartialComposite<FloatType> &partial)
+TypedScheduler<FloatType>::add_partial(const vtkhRayTracing::PartialComposite<FloatType> &partial)
 {
   // TODO: We might be able to simplify this by using emplace_back
   PartialImage<FloatType> partial_image;
@@ -233,12 +214,52 @@ template<typename FloatType>
 void
 TypedScheduler<FloatType>::composite()
 {
-  // TODO: This function has a lot of duplication that can
-  // probably be improved
+  const std::string emission = rover::settings["emission"].as_string();
+  if (!emission.empty())
+  {
+    typed_composite<vtkh::EmissionPartial<FloatType>>();
+  }
+  else // (emission.empty())
+  {
+    typed_composite<vtkh::AbsorptionPartial<FloatType>>();
+  }
+  ROVER_INFO("Schedule: compositing complete");
+}
+
+template<typename FloatType>
+template<typename PartialType>
+void
+TypedScheduler<FloatType>::typed_composite()
+{
   int rank = 0;
 #ifdef ROVER_PARALLEL
   MPI_Comm_rank(m_comm_handle, &rank);
 #endif
+
+  vtkh::PartialCompositor<PartialType> compositor;
+  compositor.set_background(m_background);
+#ifdef ROVER_PARALLEL
+  compositor.set_comm_handle(MPI_Comm_c2f(m_comm_handle));
+#endif
+
+  const int num_partials = m_partial_images.size();
+  std::vector<std::vector<PartialType>> partials(num_partials);
+
+  for (int i = 0; i < num_partials; ++i)
+  {
+    m_partial_images[i].extract_partials(partials[i]);
+  }
+
+  std::vector<PartialType> result;
+  compositor.composite(partials, result);
+  PartialImage<FloatType> p_result;
+
+  if (0 == rank)
+  {
+    p_result.store(result, m_background);
+  }
+
+  m_result = p_result;
 
 #if 0 // removing volume renderer
   if (m_render_settings.m_render_mode == volume)
@@ -273,63 +294,8 @@ TypedScheduler<FloatType>::composite()
   else
   {
   }
-#endif
-
-  const std::string emission = rover::settings["emission"].as_string();
-  if ("" != emission)
-  {
-    vtkh::PartialCompositor<vtkh::EmissionPartial<FloatType>> compositor;
-    compositor.set_background(m_background);
-#ifdef ROVER_PARALLEL
-    compositor.set_comm_handle(MPI_Comm_c2f(m_comm_handle));
-#endif
-    const int num_partials = m_partial_images.size();
-    std::vector<std::vector<vtkh::EmissionPartial<FloatType>>> partials(num_partials);
-
-    for (int i = 0; i < num_partials; ++i)
-    {
-      m_partial_images[i].extract_partials(partials[i]);
-    }
-    std::vector<vtkh::EmissionPartial<FloatType>> result;
-    compositor.composite(partials, result);
-    PartialImage<FloatType> p_result;
-
-    if (0 == rank)
-    {
-      // Data is only valid on rank = 0
-      p_result.store(result, m_background);
-    }
-
-    m_result = p_result;
   }
-  else // The case where only the absorption field is set
-  {
-    vtkh::PartialCompositor<vtkh::AbsorptionPartial<FloatType>> compositor;
-    compositor.set_background(m_background);
-#ifdef ROVER_PARALLEL
-    compositor.set_comm_handle(MPI_Comm_c2f(m_comm_handle));
 #endif
-    const int num_partials = m_partial_images.size();
-    std::vector<std::vector<vtkh::AbsorptionPartial<FloatType>>> partials;
-    partials.resize(num_partials);
-    for (int i = 0; i < num_partials; ++i)
-    {
-      m_partial_images[i].extract_partials(partials[i]);
-    }
-    std::vector<vtkh::AbsorptionPartial<FloatType>> result;
-    compositor.composite(partials, result);
-    PartialImage<FloatType> p_result;
-
-    if (0 == rank)
-    {
-      // data only valid on rank = 0
-      p_result.store(result, m_background);
-    }
-
-    m_result = p_result;
-  }
-  // } // removing volume renderer
-  ROVER_INFO("Schedule: compositing complete");
 }
 
 template<typename FloatType>
@@ -352,22 +318,20 @@ TypedScheduler<FloatType>::trace_rays()
   m_ray_generator->reset();
 
   const int num_domains = static_cast<int>(m_domains.size());
-  ROVER_INFO("TypedScheduler set render settings for " << num_domains << " domains");
-  for (int i = 0; i < num_domains; ++i)
-  {
-    m_domains[i].init();
-  }
-
-  ROVER_INFO("Done TypedScheduler set render settings for " << num_domains << " domains");
-  time = timer.GetElapsedTime();
-  ROVER_DATA_ADD("setup", time);
-
   set_global_range_and_bounds();
 
   vtkmTimer trace_timer;
   trace_timer.Start();
 
-  // TODO: See if we can make this loop more lightweight
+  // TODO: Don't love that we need dynamic_cast
+  // TODO: Actually support both cases, vtkm and visit. Add tests
+  auto *cast_ray_generator = dynamic_cast<VtkmRayGenerator*>(m_ray_generator);
+  if (!cast_ray_generator)
+  {
+    throw RoverException("Error: RayGenerator instance must be a CameraGenerator");
+  }
+  vtkmRayTracing::Ray<FloatType> rays;
+
   for (int i = 0; i < num_domains; ++i)
   {
     vtkmTimer domain_timer;
@@ -378,23 +342,13 @@ TypedScheduler<FloatType>::trace_rays()
 
     vtkmLogger::GetInstance()->Clear();
 
-    // TODO: Don't love that we need dynamic_cast
-    // TODO: Actually support both cases, vtkm and visit. Add tests
-    if (!dynamic_cast<VtkmRayGenerator*>(m_ray_generator))
-    {
-      throw RoverException("Error: RayGenerator instance must be a CameraGenerator");
-    }
-
-    VtkmRayGenerator *generator = dynamic_cast<VtkmRayGenerator*>(m_ray_generator);
     // Setting the coordinate system miminizes the number of rays generated
-    generator->set_coordinates(m_domains[i].get_dataset().GetCoordinateSystem());
+    cast_ray_generator->set_coordinates(m_domains[i].get_dataset().GetCoordinateSystem());
     ROVER_INFO("Generating rays for domian " << i);
 
     timer.Start();
 
-    vtkmRayTracing::Ray<FloatType> rays;
-    m_ray_generator->get_rays(rays);
-
+    cast_ray_generator->get_rays(rays);
     ROVER_INFO("Generated " << rays.NumRays << " rays");
     m_domains[i].init_rays(rays);
 
@@ -414,10 +368,10 @@ TypedScheduler<FloatType>::trace_rays()
 
     ROVER_INFO("Schedule: creating partial image in domain "<<i);
 
-    // Create a partial images from the completed rays
-    for (size_t p = 0; p < partials.size(); ++p)
+    // Create a partial image from the completed rays
+    for (const auto& partial : partials)
     {
-      add_partial(partials[p]);
+      add_partial(partial);
     }
 
     timer.Start();
@@ -438,14 +392,14 @@ TypedScheduler<FloatType>::trace_rays()
   t1.Start();
 
   // Add a blank partial image if we had no domains
-  if (num_domains == 0 || m_partial_images.size() == 0)
+  if (num_domains == 0 || m_partial_images.empty())
   {
     PartialImage<FloatType> partial_image;
     partial_image.m_transmission =
       vtkmRayTracing::ChannelBuffer<FloatType>(num_channels, 0);
 
     const std::string emission = rover::settings["emission"].as_string();
-    if ("" != emission)
+    if (!emission.empty())
     {
       partial_image.m_intensity =
         vtkmRayTracing::ChannelBuffer<FloatType>(num_channels, 0);
@@ -456,9 +410,9 @@ TypedScheduler<FloatType>::trace_rays()
   ROVER_DATA_ADD("blank_partial_image", t1.GetElapsedTime());
   t1.Start();
 
-  if (m_background.size() == 0)
+  if (m_background.empty())
   {
-    create_default_background(num_channels);
+    create_background(num_channels);
   }
 
   ROVER_DATA_ADD("default_bg", t1.GetElapsedTime());

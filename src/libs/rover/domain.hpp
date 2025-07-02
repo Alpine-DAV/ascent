@@ -24,6 +24,7 @@ class Domain
 {
 public:
   Domain();
+  Domain(vtkmDataSet &dataset);
   ~Domain();
 
   void init();
@@ -35,10 +36,10 @@ public:
   void set_dataset(vtkmDataSet &dataset);
   void set_primary_range(const vtkmRange &range);
   void set_composite_background(bool on);
-  vtkm::Bounds get_domain_bounds();
+  vtkm::Bounds& get_domain_bounds();
   vtkmRange get_primary_range();
   void set_global_bounds(vtkm::Bounds bounds);
-  int get_num_channels();
+  const int get_num_channels();
 protected:
   std::shared_ptr<Engine> m_engine;
   vtkmDataSet             m_dataset;

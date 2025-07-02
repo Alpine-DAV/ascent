@@ -134,7 +134,7 @@ RoverXRay::verify_params(const conduit::Node &params,
   }
 
   const std::string absorption = n_rover["absorption"].as_string();
-  if ("" == absorption)
+  if (absorption.empty())
   {
     info["errors"].append() = "Expected string parameter 'rover/absorption' cannot be an empty string";
     res = false;
@@ -152,7 +152,7 @@ RoverXRay::verify_params(const conduit::Node &params,
   }
 
   const std::string filename = n_rover["filename"].as_string();
-  if ("" == filename)
+  if (filename.empty())
   {
     info["errors"].append() = "Expected string parameter 'rover/filename' cannot be an empty string";
     res = false;
@@ -270,7 +270,7 @@ RoverXRay::verify_params(const conduit::Node &params,
     }
 
     const std::string emission = n_rover["emission"].as_string();
-    if ("" == emission)
+    if (emission.empty())
     {
       info["errors"].append() = "Optional string parameter 'rover/emission' cannot be an empty string";
       res = false;
@@ -521,7 +521,7 @@ RoverXRay::execute()
 
   // Validate that the 'absorption' field has a topology
   const std::string topo_name = collection->field_topology(absorption);
-  if ("" == topo_name)
+  if (topo_name.empty())
   {
     ASCENT_ERROR("The dataset does not have a topology associated with the '" << absorption << "' field");
   }
