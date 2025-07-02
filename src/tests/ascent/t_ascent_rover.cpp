@@ -726,6 +726,7 @@ TEST(ascent_rover, test_xray_blueprint_multi_curv3d)
     extracts["e1/params/rover/filename"] = query_path;
     extracts["e1/params/rover/blueprint_output"] = "true";
     extracts["e1/params/rover/blueprint_protocol"] = "yaml";
+    extracts["e1/params/rover/divide_emis_by_absorb"] = "true";
 
     conduit::Node actions;
     conduit::Node &add_extracts = actions.append();

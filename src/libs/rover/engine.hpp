@@ -51,7 +51,6 @@ public:
 protected:
   vtkmDataSet m_dataset;
   vtkh::rendering::ConnectivityProxy *m_tracer;
-  vtkmColorMap m_color_map;
 
   template<typename Precision>
   void init_emission(vtkmRayTracing::Ray<Precision> &rays,

@@ -215,7 +215,7 @@ Image<FloatType>::init_from_partial(PartialImage<FloatType> &partial)
   for (int i = 0; i < num_channels; ++i)
   {
     // Intensities
-    expand_and_push(i, 
+    expand_and_push(i,
                     partial.m_intensity,
                     partial.m_source_sig[i],
                     m_intensity_values);

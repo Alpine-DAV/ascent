@@ -761,11 +761,6 @@ public:
       absorb *= UnitScalar;
       emission *= UnitScalar;
 
-      if (DivideEmisByAbsorb)
-      {
-        emission /= absorb;
-      }
-
       FloatType tmp = vtkm::Exp(-absorb * segmentLength);
 
       //
@@ -789,7 +784,23 @@ public:
       FloatType opticalDepth = static_cast<FloatType>(opticalDepthBins.Get(rayOffsetI));
 
       absorptionBins.Set(rayOffsetI, absorbIntensity * tmp);
-      emissionBins.Set(rayOffsetI, emissionIntensity * tmp + emission * (1.0f - tmp));
+
+      if (DivideEmisByAbsorb)
+      {
+        if (absorb > 0)
+        {
+          emissionBins.Set(rayOffsetI, emissionIntensity * tmp + (emission / absorb) * (1.0f - tmp));
+        }
+        else // (absorb <= 0)
+        {
+          emissionBins.Set(rayOffsetI, emissionIntensity * tmp + emission * segmentLength);
+        }
+      }
+      else // (!DivideEmisByAbsorb)
+      {
+        emissionBins.Set(rayOffsetI, emissionIntensity * tmp + emission * (1.0f - tmp));
+      }
+      
       opticalDepthBins.Set(rayOffsetI, opticalDepth + absorb * segmentLength);
     }
     currentDistance = exitDistance;
@@ -1260,12 +1271,11 @@ void ConnectivityTracer::IntegrateCells(vtkm::rendering::raytracing::Ray<FloatTy
   timer.Start();
   if (HasEmission)
   {
-    bool divideEmisByAbsorp = false;
     vtkm::cont::ArrayHandle<FloatType> absorp = rays.Buffers.at(0).Buffer;
     vtkm::cont::ArrayHandle<FloatType> emission = rays.GetBuffer("emission").Buffer;
     vtkm::cont::ArrayHandle<FloatType> optical_depth = rays.GetBuffer("optical_depths").Buffer;
     vtkm::worklet::DispatcherMapField<IntegrateEmission> dispatcher(
-      IntegrateEmission(rays.Buffers.at(0).GetNumChannels(), UnitScalar, divideEmisByAbsorp));
+      IntegrateEmission(rays.Buffers.at(0).GetNumChannels(), UnitScalar, DivideEmisByAbsorb));
     dispatcher.Invoke(rays.Status,
                       *(tracker.EnterDist),
                       *(tracker.ExitDist),

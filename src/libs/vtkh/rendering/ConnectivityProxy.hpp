@@ -64,6 +64,7 @@ public:
   void SetCompositeBackground(bool on);
   void SetDebugPrints(bool on);
   void SetUnitScalar(vtkm::Float32 unitScalar);
+  void SetDivideEmisByAbsorb(const bool divide_emis_by_absorb);
   void SetEpsilon(vtkm::Float64 epsilon); // epsilon for bumping lost rays
 
   vtkm::Bounds GetSpatialBounds();
