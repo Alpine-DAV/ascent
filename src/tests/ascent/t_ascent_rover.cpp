@@ -219,6 +219,58 @@ TEST(ascent_rover, test_xray_blueprint_braid)
     // Load and verify output mesh
     Node xray_blueprint_output, verify_info;
     load_and_verify_local_data(xray_blueprint_output, output_data_path);
+    Node &state_output = xray_blueprint_output["domain_000000/state"];
+    state_output.remove("xray_query/filename");
+
+    // Load and verify baseline data
+    const std::string yaml = R"yaml(
+          time: 3.1414999961853
+          cycle: 100
+          xray_view: 
+            position: [0.0, 0.0, 34.6410179138184]
+            zoom: 1.0
+            look_at: [0.0, 0.0, 0.0]
+            up: [0.0, 1.0, 0.0]
+            fov: 60.0
+            parallel_scale: 20.0000010175457
+            xpan: 0.0
+            ypan: 0.0
+            near_plane: 3.46410179138184
+            far_plane: 346.410186767578
+          xray_query: 
+            background_intensity: 0.0
+            divide_emis_by_absorb: "false"
+            height: 200
+            precision: "single"
+            width: 200
+            unit_scalar: 1.0
+            absorption: "radial"
+            emission: "radial"
+            blueprint_output: "true"
+            blueprint_protocol: "yaml"
+          xray_data: 
+            detector_width: 80.0000040701827
+            detector_height: 80.0000040701827
+            intensity_max: 173.205078125
+            intensity_min: 0.0
+            optical_depth_max: 2699.02744396615
+            optical_depth_min: 0.0
+            image_topo_order_of_domain_variables: "xyz"
+          domain_id: 0
+      )yaml";
+
+    Node baseline_data;
+    baseline_data.parse(yaml);
+
+    // Diff the baseline data with our new output
+    Node diff_info;
+    const bool has_differences = baseline_data.diff(state_output, diff_info, 0.01, true);
+    if (has_differences)
+    {
+        ASCENT_INFO("Found differences in the braid blueprint diff:\n");
+        diff_info.print();
+    }
+    EXPECT_FALSE(has_differences);
 
     // Render and verify each field
     render_all_fields(xray_blueprint_output, image_path, cycle);
@@ -288,115 +340,6 @@ TEST(ascent_rover, test_xray_blueprint_braid_rotated)
 
     // Dump info
     std::string msg = "Rendered XRay diagnostic images of an example braid mesh (rotated)";
-    ASCENT_ACTIONS_DUMP(actions, image_path, msg);
-}
-
-//-----------------------------------------------------------------------------
-TEST(ascent_rover, test_xray_blueprint_braid_diff)
-{
-    ASCENT_INFO("Testing xray extract on conduit braid example (blueprint diff)\n");
-
-    if (is_vtkm_disabled())
-    {
-        return; // Returning early is equivalent to passing the test
-    }
-
-    // Test names
-    const std::string query_name = "tout_rover_xray_blueprint_braid_diff";
-    const std::string query_ext_name = "_000100.cycle_000100.root";
-    const std::string image_name = "tout_rover_xray_blueprint_braid_diff";
-
-    // Setup paths
-    const std::string output_path = prepare_output_dir();
-    const std::string query_path = conduit::utils::join_file_path(output_path, 
-                                                                 query_name);
-    const std::string output_data_path = query_path + query_ext_name;
-    const std::string image_path = conduit::utils::join_file_path(output_path,
-                                                                 image_name);
-
-    // Remove old test image
-    const int cycle = 100;
-    remove_test_image(query_path, cycle);
-
-    // Generate and verify test data
-    Node test_data;
-    get_valid_test_data(test_data);
-
-    // Define Ascent actions
-    Node extracts;
-    extracts["e1/type"] = "xray";
-    extracts["e1/params/rover/absorption"] = "radial";
-    extracts["e1/params/rover/emission"] = "radial";
-    extracts["e1/params/rover/filename"] = query_path;
-    extracts["e1/params/rover/blueprint_output"] = "true";
-    extracts["e1/params/rover/blueprint_protocol"] = "yaml";
-
-    Node actions;
-    Node &add_extracts = actions.append();
-    add_extracts["action"] = "add_extracts";
-    add_extracts["extracts"] = extracts;
-
-    // Execute Ascent actions
-    execute_ascent(test_data, actions);
-
-    // Load and verify output mesh
-    Node xray_blueprint_output, verify_info;
-    load_and_verify_local_data(xray_blueprint_output, output_data_path);
-    Node &state_output = xray_blueprint_output["domain_000000/state"];
-    state_output.remove("xray_query/filename");
-
-    // Load and verify baseline data
-    const std::string yaml = R"yaml(
-          time: 3.1414999961853
-          cycle: 100
-          xray_view: 
-            position: [0.0, 0.0, 34.6410179138184]
-            zoom: 1.0
-            look_at: [0.0, 0.0, 0.0]
-            up: [0.0, 1.0, 0.0]
-            fov: 60.0
-            parallel_scale: 20.0000010175457
-            xpan: 0.0
-            ypan: 0.0
-            near_plane: 3.46410179138184
-            far_plane: 346.410186767578
-          xray_query: 
-            background_intensity: 0.0
-            divide_emis_by_absorb: "false"
-            height: 200
-            precision: "single"
-            width: 200
-            unit_scalar: 1.0
-            absorption: "radial"
-            emission: "radial"
-            blueprint_output: "true"
-            blueprint_protocol: "yaml"
-          xray_data: 
-            detector_width: 80.0000040701827
-            detector_height: 80.0000040701827
-            intensity_max: 173.205078125
-            intensity_min: 0.0
-            optical_depth_max: 2699.02744396615
-            optical_depth_min: 0.0
-            image_topo_order_of_domain_variables: "xyz"
-          domain_id: 0
-      )yaml";
-
-    Node baseline_data;
-    baseline_data.parse(yaml);
-
-    // Diff the baseline data with our new output
-    Node diff_info;
-    const bool has_differences = baseline_data.diff(state_output, diff_info, 0.01, true);
-    if (has_differences)
-    {
-        ASCENT_INFO("Found differences in the braid blueprint diff:\n");
-        diff_info.print();
-    }
-    EXPECT_FALSE(has_differences);
-
-    // Dump info
-    std::string msg = "XRay blueprint diff of an example braid mesh";
     ASCENT_ACTIONS_DUMP(actions, image_path, msg);
 }
 
@@ -541,6 +484,58 @@ TEST(ascent_rover, test_xray_blueprint_curv3d)
     // Load and verify output mesh
     Node xray_blueprint_output, verify_info;
     load_and_verify_local_data(xray_blueprint_output, output_data_path);
+    Node &state_output = xray_blueprint_output["domain_000000/state"];
+    state_output.remove("xray_query/filename");
+
+    // Load and verify baseline data
+    const std::string yaml = R"(
+        time: 4.80000019073486
+        cycle: 48
+        xray_view: 
+          position: [0.0, 2.5, 47.0156211853027]
+          zoom: 1.0
+          look_at: [0.0, 2.5, 15.0]
+          up: [0.0, 1.0, 0.0]
+          fov: 60.0
+          parallel_scale: 18.4842275096076
+          xpan: 0.0
+          ypan: 0.0
+          near_plane: 3.20156216621399
+          far_plane: 320.156219482422
+        xray_query: 
+          background_intensity: 0.0
+          divide_emis_by_absorb: "false"
+          height: 200
+          precision: "single"
+          width: 200
+          unit_scalar: 1.0
+          absorption: "d"
+          emission: "p"
+          blueprint_output: "true"
+          blueprint_protocol: "yaml"
+        xray_data: 
+          detector_width: 73.9369100384305
+          detector_height: 73.9369100384305
+          intensity_max: 0.491446942090988
+          intensity_min: 0.0
+          optical_depth_max: 126.497874413073
+          optical_depth_min: 0.0
+          image_topo_order_of_domain_variables: "xyz"
+        domain_id: 0
+        )";
+
+    Node baseline_data;
+    baseline_data.parse(yaml);
+
+    // Diff the baseline data with our new output
+    Node diff_info;
+    const bool has_differences = baseline_data.diff(state_output, diff_info, 0.01, true);
+    if (has_differences)
+    {
+        ASCENT_INFO("Found differences in the curv3d blueprint diff:\n");
+        diff_info.print();
+    }
+    EXPECT_FALSE(has_differences);
 
     // Render and verify each field
     render_all_fields(xray_blueprint_output, image_path, cycle);
@@ -610,116 +605,6 @@ TEST(ascent_rover, test_xray_blueprint_curv3d_rotated)
 
     // Dump info
     std::string msg = "Rendered XRay diagnostic images of the curv3d dataset (rotated)";
-    ASCENT_ACTIONS_DUMP(actions, image_path, msg);
-}
-
-//-----------------------------------------------------------------------------
-TEST(ascent_rover, test_xray_blueprint_curv3d_diff)
-{
-    ASCENT_INFO("Testing xray extract on curv3d data (blueprint diff)\n");
-
-    if (is_vtkm_disabled())
-    {
-        return; // Returning early is equivalent to passing the test
-    }
-
-    // Test names
-    const std::string query_name = "tout_rover_xray_blueprint_curv3d";
-    const std::string query_ext_name = "_000048.cycle_000048.root";
-    const std::string image_name = "tout_rover_xray_blueprint_curv3d";
-    
-    // Setup paths
-    const std::string output_path = prepare_output_dir();
-    const std::string query_path = conduit::utils::join_file_path(output_path, 
-                                                                 query_name);
-    const std::string output_data_path = query_path + query_ext_name;
-    const std::string image_path = conduit::utils::join_file_path(output_path,
-                                                                 image_name);
-
-    // Remove old test image
-    const int cycle = 48;
-    remove_test_image(query_path, cycle);
-
-    // Load and verify test data
-    Node test_data;
-    const std::string filename = "curv3d_blueprint.cycle_000048.root";
-    load_and_verify_ascent_data(test_data, filename);
-
-    // Define Ascent actions
-    conduit::Node extracts;
-    extracts["e1/type"] = "xray";
-    extracts["e1/params/rover/absorption"] = "d";
-    extracts["e1/params/rover/emission"] = "p";
-    extracts["e1/params/rover/filename"] = query_path;
-    extracts["e1/params/rover/blueprint_output"] = "true";
-    extracts["e1/params/rover/blueprint_protocol"] = "yaml";
-
-    conduit::Node actions;
-    conduit::Node &add_extracts = actions.append();
-    add_extracts["action"] = "add_extracts";
-    add_extracts["extracts"] = extracts;
-
-    // Execute Ascent actions
-    execute_ascent(test_data, actions);
-
-    // Load and verify output mesh
-    Node xray_blueprint_output, verify_info;
-    load_and_verify_local_data(xray_blueprint_output, output_data_path);
-    Node &state_output = xray_blueprint_output["domain_000000/state"];
-    state_output.remove("xray_query/filename");
-
-    // Load and verify baseline data
-    const std::string yaml = R"(
-        time: 4.80000019073486
-        cycle: 48
-        xray_view: 
-          position: [0.0, 2.5, 47.0156211853027]
-          zoom: 1.0
-          look_at: [0.0, 2.5, 15.0]
-          up: [0.0, 1.0, 0.0]
-          fov: 60.0
-          parallel_scale: 18.4842275096076
-          xpan: 0.0
-          ypan: 0.0
-          near_plane: 3.20156216621399
-          far_plane: 320.156219482422
-        xray_query: 
-          background_intensity: 0.0
-          divide_emis_by_absorb: "false"
-          height: 200
-          precision: "single"
-          width: 200
-          unit_scalar: 1.0
-          absorption: "d"
-          emission: "p"
-          blueprint_output: "true"
-          blueprint_protocol: "yaml"
-        xray_data: 
-          detector_width: 73.9369100384305
-          detector_height: 73.9369100384305
-          intensity_max: 0.491446942090988
-          intensity_min: 0.0
-          optical_depth_max: 126.497874413073
-          optical_depth_min: 0.0
-          image_topo_order_of_domain_variables: "xyz"
-        domain_id: 0
-        )";
-
-    Node baseline_data;
-    baseline_data.parse(yaml);
-
-    // Diff the baseline data with our new output
-    Node diff_info;
-    const bool has_differences = baseline_data.diff(state_output, diff_info, 0.01, true);
-    if (has_differences)
-    {
-        ASCENT_INFO("Found differences in the curv3d blueprint diff:\n");
-        diff_info.print();
-    }
-    EXPECT_FALSE(has_differences);
-
-    // Dump info
-    std::string msg = "XRay blueprint diff of the curv3d dataset";
     ASCENT_ACTIONS_DUMP(actions, image_path, msg);
 }
 
