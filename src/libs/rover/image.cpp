@@ -180,23 +180,14 @@ template<typename FloatType>
 bool
 Image<FloatType>::has_intensity(const int &channel_num) const
 {
-  if(channel_num < 0 || channel_num >= m_intensity_values.size())
-  {
-    return false;
-  }
-  return true;
+  return channel_num >= 0 && channel_num < m_intensity_values.size();
 }
 
 template<typename FloatType>
 bool
 Image<FloatType>::has_optical_depth(const int &channel_num) const
 {
-  if(channel_num < 0 || channel_num >= m_optical_depth_values.size())
-  {
-    return false;
-  }
-
-  return true;
+  return channel_num >= 0 && channel_num < m_optical_depth_values.size();
 }
 
 template<typename FloatType>
@@ -211,26 +202,29 @@ Image<FloatType>::init_from_partial(PartialImage<FloatType> &partial)
   const int64 channel_size = width * height;
   const int num_channels = partial.m_transmission.GetNumChannels();
 
-  // TODO: This could be simplified with a helper function
-  for (int i = 0; i < num_channels; i++)
+  // Helper lambda to expand a channel and push its buffer to the output vector
+  auto expand_and_push = [&](int channel_index,
+                                       auto& channel_group,
+                                       auto default_value,
+                                       auto& output_vector) {
+    auto channel = channel_group.GetChannel(channel_index);
+    auto expanded = channel.ExpandBuffer(partial.m_pixel_ids, channel_size, default_value);
+    output_vector.push_back(expanded.Buffer);
+  };
+
+  for (int i = 0; i < num_channels; ++i)
   {
     // Intensities
-    vtkmRayTracing::ChannelBuffer<FloatType> intensity_channel = partial.m_intensity.GetChannel(i);
-    const FloatType intensity_default = partial.m_source_sig[i];
-    vtkmRayTracing::ChannelBuffer<FloatType> intensity_expanded;
-    intensity_expanded = intensity_channel.ExpandBuffer(partial.m_pixel_ids,
-                                                        channel_size,
-                                                        intensity_default);
-    m_intensity_values.push_back(intensity_expanded.Buffer);
+    expand_and_push(i, 
+                    partial.m_intensity,
+                    partial.m_source_sig[i],
+                    m_intensity_values);
 
     // Optical depths
-    vtkmRayTracing::ChannelBuffer<FloatType> optical_depth_channel = partial.m_optical_depth.GetChannel(i);
-    const FloatType optical_depth_default = 0.0f;
-    vtkmRayTracing::ChannelBuffer<FloatType> optical_depth_expanded;
-    optical_depth_expanded = optical_depth_channel.ExpandBuffer(partial.m_pixel_ids,
-                                                                channel_size,
-                                                                optical_depth_default);
-    m_optical_depth_values.push_back(optical_depth_expanded.Buffer);
+    expand_and_push(i,
+                    partial.m_optical_depth,
+                    static_cast<FloatType>(0.0f),
+                    m_optical_depth_values);
   }
 }
 

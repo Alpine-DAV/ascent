@@ -688,7 +688,6 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
   strides[1] = width;
   strides[2] = width * height;
 
-  // TODO: This seems to be broken
   Node &optical_depth = fields["optical_depth"];
   optical_depth["topology"] = "image_topo";
   optical_depth["association"] = "element";
@@ -697,7 +696,6 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
   FloatType *optical_buffer = get_vtkm_ptr(optical_values);
   const int num_optical_values = optical_values.GetNumberOfValues();
 
-  // TODO: Uncomment this when optical_depth is fixed
   auto optical_min_max = std::minmax_element(optical_buffer, optical_buffer + num_optical_values);
   xray_data["optical_depth_max"].set(optical_min_max.second);
   xray_data["optical_depth_min"].set(optical_min_max.first);
