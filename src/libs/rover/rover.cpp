@@ -30,6 +30,7 @@ Rover::Rover()
   rover::settings.reset();
 
   // Settings
+  rover::settings["background_intensity"] = 0.0f;
   rover::settings["divide_emis_by_absorb"] = "false";
   rover::settings["height"] = 200;
   rover::settings["precision"] = "single";

@@ -267,6 +267,7 @@ TEST(ascent_rover, test_xray_blueprint_braid_rotated)
     extracts["e1/params/rover/filename"] = query_path;
     extracts["e1/params/rover/blueprint_output"] = "true";
     extracts["e1/params/rover/blueprint_protocol"] = "yaml";
+    extracts["e1/params/rover/background_intensity"] = 100.0f;
     extracts["e1/params/camera/azimuth"] = 45.0;
     extracts["e1/params/camera/elevation"] = 45.0;
 
@@ -360,6 +361,7 @@ TEST(ascent_rover, test_xray_blueprint_braid_diff)
             near_plane: 3.46410179138184
             far_plane: 346.410186767578
           xray_query: 
+            background_intensity: 0.0
             divide_emis_by_absorb: "false"
             height: 200
             precision: "single"
@@ -682,6 +684,7 @@ TEST(ascent_rover, test_xray_blueprint_curv3d_diff)
           near_plane: 3.20156216621399
           far_plane: 320.156219482422
         xray_query: 
+          background_intensity: 0.0
           divide_emis_by_absorb: "false"
           height: 200
           precision: "single"

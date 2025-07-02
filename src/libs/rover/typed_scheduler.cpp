@@ -54,9 +54,9 @@ template<typename FloatType>
 void
 TypedScheduler<FloatType>::create_default_background(const int num_channels)
 {
-  // Initialize background intensities to 0.0f
-  // TODO: Make it an option to set a background value
-  m_background.resize(num_channels, 0.0f);
+  // Initialize background intensities to 0.0f (by default)
+  const float64 background_intensity = rover::settings["background_intensity"].to_float64();
+  m_background.resize(num_channels, background_intensity);
 }
 
 template<typename FloatType>
@@ -524,7 +524,7 @@ void TypedScheduler<FloatType>::save_png(std::string filename)
     {
       m_result.normalize_intensity(i, min_value, max_value, log_scale);
     }
-    else
+    else // (!has_image_params)
     {
       m_result.normalize_intensity(i);
     }

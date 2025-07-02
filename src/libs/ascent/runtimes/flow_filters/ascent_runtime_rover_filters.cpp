@@ -162,6 +162,24 @@ RoverXRay::verify_params(const conduit::Node &params,
   // Optional rover parameters
   //
 
+  if (n_rover.has_child("background_intensity"))
+  {
+    if (!n_rover["background_intensity"].dtype().is_number())
+    {
+      info["errors"].append() = "Optional numeric parameter 'rover/background_intensity' is not numeric";
+      res = false;
+    }
+    else // (n_rover["background_intensity"].dtype().is_number()
+    {
+      const float64 background_intensity = n_rover["background_intensity"].to_float64();
+      if (background_intensity < 0)
+      {
+        info["errors"].append() = "Optional numeric parameter 'rover/unit_scalar' must be positive";
+        res = false;
+      }
+    }
+  }
+
   const bool has_blueprint_output = n_rover.has_child("blueprint_output");
   if (has_blueprint_output)
   {
@@ -232,7 +250,7 @@ RoverXRay::verify_params(const conduit::Node &params,
       info["errors"].append() = "Optional bool string parameter 'rover/divide_emis_by_absorb' is not a string";
       res = false;
     }
-    else
+    else // (n_rover["divide_emis_by_absorb"].dtype().is_string())
     {
       const std::string divide_emis_by_absorb = n_rover["divide_emis_by_absorb"].as_string();
       if ("true" != divide_emis_by_absorb && "false" != divide_emis_by_absorb)
@@ -267,7 +285,7 @@ RoverXRay::verify_params(const conduit::Node &params,
       info["errors"].append() = "Optional integer parameter 'rover/height' is not an integer";
       res = false;
     }
-    else
+    else // (n_rover["height"].dtype().is_integer())
     {
       const int64 height = n_rover["height"].to_int64();
       if (height <= 0)
@@ -309,7 +327,7 @@ RoverXRay::verify_params(const conduit::Node &params,
       info["errors"].append() = "Optional string parameter 'rover/precision' is not a string";
       res = false;
     }
-    else
+    else // (n_rover["precision"].dtype().is_string())
     {
       const std::string precision = n_rover["precision"].as_string();
       if ("single" != precision && "double" != precision)
@@ -328,7 +346,7 @@ RoverXRay::verify_params(const conduit::Node &params,
       info["errors"].append() = "Optional integer parameter 'rover/width' is not an integer";
       res = false;
     }
-    else
+    else // (n_rover["width"].dtype().is_integer())
     {
       const int64 width = n_rover["width"].to_int64();
       if (width <= 0)
@@ -358,7 +376,7 @@ RoverXRay::verify_params(const conduit::Node &params,
       info["errors"].append() = "Optional numeric parameter 'rover/unit_scalar' is not numeric";
       res = false;
     }
-    else
+    else // (n_rover["unit_scalar"].dtype().is_number()
     {
       const float64 unit_scalar = n_rover["unit_scalar"].to_float64();
       if (unit_scalar <= 0)
@@ -388,7 +406,7 @@ RoverXRay::verify_params(const conduit::Node &params,
       info["errors"].append() = "Optional bool string parameter 'image_params/log_scale' is not a string";
       res = false;
     }
-    else
+    else // (n_image.has_child("log_scale") && n_image["log_scale"].dtype().is_string())
     {
       const std::string log_scale = n_image["log_scale"].as_string();
       if ("true" != log_scale && "false" != log_scale)
@@ -440,6 +458,7 @@ RoverXRay::verify_params(const conduit::Node &params,
     "image_params/max_value",
     "image_params/min_value",
     "rover/absorption",
+    "rover/background_intensity",
     "rover/blueprint_output",
     "rover/blueprint_protocol",
     "rover/bov_output",
