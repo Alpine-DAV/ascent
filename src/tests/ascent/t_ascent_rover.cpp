@@ -54,38 +54,19 @@ render_blueprint(const string &field_name,
                  const double detector_width)
 {
     // Define Ascent actions
-    // TODO: Remove this now
-    Node pipelines;
-    Node &pl = pipelines["pl1"];
-    pl["f1/type"] = "clip";
-    pl["f1/params/topology"] = "image_topo";
-    pl["f1/params/invert"] = "true";
-    pl["f1/params/box/min/x"] = 0.0;
-    pl["f1/params/box/min/y"] = 0.0;
-    pl["f1/params/box/min/z"] = 0.0;
-    pl["f1/params/box/max/x"] = detector_width;
-    pl["f1/params/box/max/y"] = detector_width;
-    pl["f1/params/box/max/z"] = 0.0;
 
     Node scenes;
-    if (field_name.find("spatial") != std::string::npos)
-    {
-        scenes["s1/renders/r1/camera/azimuth"] = 45.0;
-        
-        // TODO: Remove this once issue #1559 is fixed
-        scenes["s1/plots/p1/pipeline"] = "pl1";
-    }
-
     scenes["s1/plots/p1/type"] = "pseudocolor";
     scenes["s1/plots/p1/field"] = field_name;
     scenes["s1/renders/r1/image_prefix"] = output_path;
 
-    Node actions;
-    // TODO: Remove this once issue #1559 is fixed
-    Node &add_pipelines = actions.append();
-    add_pipelines["action"] = "add_pipelines";
-    add_pipelines["pipelines"] = pipelines;
+    // Rotate spatial meshes for variety
+    if (field_name.find("spatial") != std::string::npos)
+    {
+        scenes["s1/renders/r1/camera/azimuth"] = 45.0;
+    }
 
+    Node actions;
     Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
@@ -144,10 +125,10 @@ get_valid_test_data(Node &data)
 {
     Node verify_info;
     conduit::blueprint::mesh::examples::braid("hexs",
-                                                     EXAMPLE_MESH_SIDE_DIM,
-                                                     EXAMPLE_MESH_SIDE_DIM,
-                                                     EXAMPLE_MESH_SIDE_DIM,
-                                                   data);
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data, verify_info));
 }
 
@@ -186,10 +167,10 @@ TEST(ascent_rover, test_xray_blueprint_braid)
     // Setup paths
     const std::string output_path = prepare_output_dir();
     const std::string query_path = conduit::utils::join_file_path(output_path, 
-                                                                 query_name);
+                                                                  query_name);
     const std::string output_data_path = query_path + query_ext_name;
     const std::string image_path = conduit::utils::join_file_path(output_path,
-                                                                 image_name);
+                                                                  image_name);
 
     // Remove old test image
     const int cycle = 100;
@@ -264,7 +245,10 @@ TEST(ascent_rover, test_xray_blueprint_braid)
 
     // Diff the baseline data with our new output
     Node diff_info;
-    const bool has_differences = baseline_data.diff(state_output, diff_info, 0.01, true);
+    const bool has_differences = baseline_data.diff(state_output,
+                                                    diff_info,
+                                                    0.01,
+                                                    true);
     if (has_differences)
     {
         ASCENT_INFO("Found differences in the braid blueprint diff:\n");
@@ -298,10 +282,10 @@ TEST(ascent_rover, test_xray_blueprint_braid_rotated)
     // Setup paths
     const std::string output_path = prepare_output_dir();
     const std::string query_path = conduit::utils::join_file_path(output_path, 
-                                                                 query_name);
+                                                                  query_name);
     const std::string output_data_path = query_path + query_ext_name;
     const std::string image_path = conduit::utils::join_file_path(output_path,
-                                                                 image_name);
+                                                                  image_name);
 
     // Remove old test image
     const int cycle = 100;
@@ -450,10 +434,10 @@ TEST(ascent_rover, test_xray_blueprint_curv3d)
     // Setup paths
     const std::string output_path = prepare_output_dir();
     const std::string query_path = conduit::utils::join_file_path(output_path, 
-                                                                 query_name);
+                                                                  query_name);
     const std::string output_data_path = query_path + query_ext_name;
     const std::string image_path = conduit::utils::join_file_path(output_path,
-                                                                 image_name);
+                                                                  image_name);
 
     // Remove old test image
     const int cycle = 48;
@@ -529,7 +513,10 @@ TEST(ascent_rover, test_xray_blueprint_curv3d)
 
     // Diff the baseline data with our new output
     Node diff_info;
-    const bool has_differences = baseline_data.diff(state_output, diff_info, 0.01, true);
+    const bool has_differences = baseline_data.diff(state_output,
+                                                    diff_info,
+                                                    0.01,
+                                                    true);
     if (has_differences)
     {
         ASCENT_INFO("Found differences in the curv3d blueprint diff:\n");
@@ -563,10 +550,10 @@ TEST(ascent_rover, test_xray_blueprint_curv3d_rotated)
     // Setup paths
     const std::string output_path = prepare_output_dir();
     const std::string query_path = conduit::utils::join_file_path(output_path, 
-                                                                 query_name);
+                                                                  query_name);
     const std::string output_data_path = query_path + query_ext_name;
     const std::string image_path = conduit::utils::join_file_path(output_path,
-                                                                 image_name);
+                                                                  image_name);
 
     // Remove old test image
     const int cycle = 48;
@@ -626,10 +613,10 @@ TEST(ascent_rover, test_xray_blueprint_curv3d_camera_params)
     // Setup paths
     const std::string output_path = prepare_output_dir();
     const std::string query_path = conduit::utils::join_file_path(output_path, 
-                                                                 query_name);
+                                                                  query_name);
     const std::string output_data_path = query_path + query_ext_name;
     const std::string image_path = conduit::utils::join_file_path(output_path,
-                                                                 image_name);
+                                                                  image_name);
 
     // Remove old test image
     const int cycle = 48;
@@ -704,10 +691,10 @@ TEST(ascent_rover, test_xray_blueprint_multi_curv3d)
     // Setup paths
     const std::string output_path = prepare_output_dir();
     const std::string query_path = conduit::utils::join_file_path(output_path, 
-                                                                 query_name);
+                                                                  query_name);
     const std::string output_data_path = query_path + query_ext_name;
     const std::string image_path = conduit::utils::join_file_path(output_path,
-                                                                 image_name);
+                                                                  image_name);
 
     // Remove old test image
     const int cycle = 48;
@@ -766,10 +753,10 @@ TEST(ascent_rover, test_xray_blueprint_multi_curv3d_rotated)
     // Setup paths
     const std::string output_path = prepare_output_dir();
     const std::string query_path = conduit::utils::join_file_path(output_path, 
-                                                                 query_name);
+                                                                  query_name);
     const std::string output_data_path = query_path + query_ext_name;
     const std::string image_path = conduit::utils::join_file_path(output_path,
-                                                                 image_name);
+                                                                  image_name);
 
     // Remove old test image
     const int cycle = 48;
