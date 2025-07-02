@@ -51,6 +51,7 @@
 #include <vtkh/rendering/PointRenderer.hpp>
 #include <vtkh/rendering/VolumeRenderer.hpp>
 #include <vtkh/rendering/ANARIVolumeRenderer.hpp>
+#include <vtkh/rendering/ANARITriangleRenderer.hpp>
 #include <vtkh/rendering/AutoCamera.hpp>
 #include <vtkm/cont/DataSet.h>
 
@@ -307,6 +308,11 @@ public:
 
   ~AscentScene()
   {}
+
+  int GetRendererCount()
+  {
+    return m_renderer_count;
+  }
 
   void AddRenderer(RendererContainer *container)
   {
@@ -1551,6 +1557,7 @@ AddPlot::declare_interface(Node &i)
 void
 AddPlot::execute()
 {
+  std::cerr << "ADD PLOT" << std::endl;
     if(!input(0).check_type<detail::AscentScene>())
     {
         ASCENT_ERROR("'scene' must be a AscentScene * instance");
@@ -1768,9 +1775,13 @@ CreatePlot::execute()
     {
       renderer = new vtkh::MeshRenderer();
     }
-    else if(type == "anari")
+    else if(type == "anari_volume")
     {
       renderer = new vtkh::ANARIVolumeRenderer();
+    }
+    else if(type == "anari_pseudocolor")
+    {
+      renderer = new vtkh::ANARITriangleRenderer();
     }
     else
     {
@@ -2067,6 +2078,8 @@ ExecScene::execute()
 
     detail::AscentScene *scene = input<detail::AscentScene>(0);
     std::vector<vtkh::Render> * renders = input<std::vector<vtkh::Render>>(1);
+    int renderer_count = scene->GetRendererCount();
+    std::cerr <<" renderer_count: " << renderer_count << std::endl;
     scene->Execute(*renders);
 
     // the images should exist now so add them to the image list

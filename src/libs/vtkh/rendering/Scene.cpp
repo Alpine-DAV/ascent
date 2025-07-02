@@ -73,10 +73,10 @@ Scene::IsVolume(vtkh::Renderer *renderer)
     is_volume = true;
   }
   //TODO: Decide if ANARI stays just a volume renderer 
-  //else if(dynamic_cast<vtkh::ANARIVolumeRenderer*>(renderer) != nullptr)
-  //{
-  //  is_volume = true;
-  //}
+  else if(dynamic_cast<vtkh::ANARIVolumeRenderer*>(renderer) != nullptr)
+  {
+    is_volume = true;
+  }
   return is_volume;
 }
 

@@ -3,6 +3,7 @@
 #==============================================================================
 set(vtkh_rendering_headers
     ANARIVolumeRenderer.hpp
+    ANARITriangleRenderer.hpp
     Annotator.hpp
     AutoCamera.hpp
     LineRenderer.hpp
@@ -18,6 +19,7 @@ set(vtkh_rendering_headers
 
 set(vtkh_rendering_sources
     ANARIVolumeRenderer.cpp
+    ANARITriangleRenderer.cpp
     Annotator.cpp
     AutoCamera.cpp
     LineRenderer.cpp
