@@ -42,23 +42,27 @@
 #ifndef rover_visit_generator_h
 #define rover_visit_generator_h
 
+#include "ray_generator.hpp"
+
+#include <vtkm/rendering/raytracing/RayOperations.h>
+#include <vtkm/Version.h>
+
 #include <rover_exports.h>
 #include <settings.hpp>
-#include <ray_generators/ray_generator.hpp>
+#include <utils/rover_logging.hpp>
 
 namespace rover
 {
-  // TODO: Change to visitcamera ray generator
-class ROVER_API VisitGenerator : public RayGenerator
+
+class ROVER_API VisitRayGenerator : public RayGenerator
 {
 public:
   struct VisitParams
   {
-    vtkm::Vec<double,3> m_normal;
-    vtkm::Vec<double,3> m_focus;
-    vtkm::Vec<double,3> m_view_up;
-
-    vtkm::Vec<double,2> m_image_pan;
+    vtkm::Vec<double, 3> m_normal;
+    vtkm::Vec<double, 3> m_focus;
+    vtkm::Vec<double, 3> m_view_up;
+    vtkm::Vec<double, 2> m_image_pan;
 
     double                 m_view_angle;
     double                 m_parallel_scale;
@@ -97,8 +101,8 @@ public:
 
   };
 
-  VisitGenerator(const VisitParams &params);
-  virtual ~VisitGenerator();
+  VisitRayGenerator(const VisitParams &params);
+  virtual ~VisitRayGenerator();
 
   virtual void get_rays(Ray32 &rays);
   virtual void get_rays(Ray64 &rays);
@@ -106,7 +110,7 @@ public:
   void set_params(const VisitParams &params);
   void print_params() const;
 protected:
-  VisitGenerator();
+  VisitRayGenerator();
   VisitParams m_params;
   template<typename T> void gen_rays(vtkmRayTracing::Ray<T> &rays);
 };

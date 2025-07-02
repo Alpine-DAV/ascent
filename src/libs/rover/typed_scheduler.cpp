@@ -5,6 +5,7 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 // rover includes
+#include "ray_generators/vtkm_ray_generator.hpp"
 #include "settings.hpp"
 #include "vtkm_typedefs.hpp"
 #include <algorithm>
@@ -379,12 +380,12 @@ TypedScheduler<FloatType>::trace_rays()
 
     // TODO: Don't love that we need dynamic_cast
     // TODO: Actually support both cases, vtkm and visit. Add tests
-    if (!dynamic_cast<CameraGenerator*>(m_ray_generator))
+    if (!dynamic_cast<VtkmRayGenerator*>(m_ray_generator))
     {
       throw RoverException("Error: RayGenerator instance must be a CameraGenerator");
     }
 
-    CameraGenerator *generator = dynamic_cast<CameraGenerator*>(m_ray_generator);
+    VtkmRayGenerator *generator = dynamic_cast<VtkmRayGenerator*>(m_ray_generator);
     // Setting the coordinate system miminizes the number of rays generated
     generator->set_coordinates(m_domains[i].get_dataset().GetCoordinateSystem());
     ROVER_INFO("Generating rays for domian " << i);

@@ -42,7 +42,6 @@
 #if defined(ASCENT_VTKM_ENABLED)
 #include <rover.hpp>
 #include <rover/utils/rover_logging.hpp>
-#include <ray_generators/camera_generator.hpp>
 #include <vtkh/vtkh.hpp>
 #include <vtkh/DataSet.hpp>
 #include <ascent_vtkh_data_adapter.hpp>

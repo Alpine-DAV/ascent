@@ -22,7 +22,7 @@
 #include <domain.hpp>
 #include <image.hpp>
 #include <png_utils/ascent_png_encoder.hpp>
-#include <ray_generators/camera_generator.hpp>
+#include <ray_generators/vtkm_ray_generator.hpp>
 #include <rover_exceptions.hpp>
 #include <scheduler.hpp>
 
