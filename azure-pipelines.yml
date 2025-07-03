@@ -252,6 +252,8 @@ stages:
            # include host config
            export CMAKE_OPTS="${CMAKE_OPTS} -C ${HOST_CONFIG} -S src -B build"
            # extra settings
+           # disable link time optimization, avoids in c++ stdlib linking issues with spack tpls in our container
+           export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_CXX_FLAGS=\"-fno-lto\""
            export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_PYTHON=${ENABLE_PYTHON}"
            export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_APCOMP=${ENABLE_APCOMP}"
            export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_DRAY=${ENABLE_DRAY}"
