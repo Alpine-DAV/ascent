@@ -1340,9 +1340,11 @@ VTKHDataAdapter::RectilinearBlueprintToVTKmDataSet
         (!n_coords["values/x"].dtype().is_float64() || 
          !n_coords["values/y"].dtype().is_float64()))
     {
-        ASCENT_ERROR("Zero-copy requested, but x or y coordinate data is not float64.\n" <<
+        ASCENT_WARN("Zero-copy requested, but either x or y coordinate data is not float64." <<
                     "x type: " << n_coords["values/x"].dtype().name() << 
-                    ", y type: " << n_coords["values/y"].dtype().name());
+                    ", y type: " << n_coords["values/y"].dtype().name() << 
+                    ". Turning zero-copy off.");
+        zero_copy = false;
     }
 
     const float64 *x_coords_ptr;
@@ -1373,10 +1375,12 @@ VTKHDataAdapter::RectilinearBlueprintToVTKmDataSet
     Node temp_z;
     if(n_coords.has_path("values/z"))
     {
-        if (zero_copy && !n_coords["values/y"].dtype().is_float64())
+        if (zero_copy && !n_coords["values/z"].dtype().is_float64())
         {
-            ASCENT_ERROR("Zero-copy requested, but z coordinate data is not float64.\n" <<
-                        "z type: " << n_coords["values/z"].dtype().name());
+            ASCENT_WARN("Zero-copy requested, but z coordinate data is " << 
+                        n_coords["values/z"].dtype().name() << 
+                        " not float64. Turning zero-copy off.");
+            zero_copy = false;
         }
         ndims = 3;
         z_npts = n_coords["values/z"].dtype().number_of_elements();
