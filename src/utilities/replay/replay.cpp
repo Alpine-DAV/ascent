@@ -45,9 +45,9 @@ void usage()
   std::cout<<"              Each file will be loaded and sent to Ascent in order.\n";
   std::cout<<"  --actions : a yaml file containing ascent actions. Default value\n";
   std::cout<<"              is 'ascent_actions.yaml'.\n";
-  std::cout<<"  --groups  : for ascent_replay_mpi, specify the number of parallelin time\n";
+  std::cout<<"  --groups  : for ascent_replay_mpi, specify the number of parallel in time\n";
   std::cout<<"              groups the processes are split into. Default value is the\n";
-  std::cout<<"              square root of the number of availible processes.\n\n";
+  std::cout<<"              square root of the number of available processes.\n\n";
   std::cout<<"======================== Examples =========================\n";
   std::cout<<"./ascent_replay --root=clover.cycle_000060.root\n";
   std::cout<<"./ascent_replay --root=clover.cycle_000060.root --actions=my_actions.yaml\n";
@@ -60,7 +60,7 @@ struct Options
   std::string m_actions_file = "ascent_actions.yaml";
   std::string m_root_file;
   std::string m_cycles_file;
-  int m_num_groups = -1;
+  int m_num_groups = 1;
 
   void parse(int argc, char** argv)
   {
@@ -81,6 +81,10 @@ struct Options
       else if(contains(argv[i], "--groups="))
       {
         m_num_groups = stoi(get_arg(argv[i]));
+      }
+      else if(std::string(argv[i]) == "--groups")
+      {
+        m_num_groups = -1; // Will be set to a value later once the comm is initialized
       }
       else
       {
