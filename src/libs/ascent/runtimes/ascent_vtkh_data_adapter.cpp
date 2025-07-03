@@ -1336,45 +1336,58 @@ VTKHDataAdapter::RectilinearBlueprintToVTKmDataSet
 
     int32 ndims = 2;
 
-    const float64 *x_coords_ptr;
-    if (!n_coords["values/x"].dtype().is_float64())
+    if (zero_copy && 
+        (!n_coords["values/x"].dtype().is_float64() || 
+         !n_coords["values/y"].dtype().is_float64()))
     {
-        Node temp_x;
-        n_coords["values/x"].to_float64_array(temp_x);
-        x_coords_ptr = temp_x.value();
+        ASCENT_ERROR("Zero-copy requested, but x or y coordinate data is not float64.\n" <<
+                    "x type: " << n_coords["values/x"].dtype().name() << 
+                    ", y type: " << n_coords["values/y"].dtype().name());
     }
-    else
+
+    const float64 *x_coords_ptr;
+    Node temp_x;
+    if (n_coords["values/x"].dtype().is_float64())
     {
         x_coords_ptr = n_coords["values/x"].as_float64_ptr();
     }
+    else
+    {
+        n_coords["values/x"].to_float64_array(temp_x);
+        x_coords_ptr = temp_x.value();
+    }
     
     const float64 *y_coords_ptr;
-    if (!n_coords["values/y"].dtype().is_float64())
-    {
-        Node temp_y;
-        n_coords["values/y"].to_float64_array(temp_y);
-        y_coords_ptr = temp_y.value();
-    }
-    else
+    Node temp_y;
+    if (n_coords["values/y"].dtype().is_float64())
     {
         y_coords_ptr = n_coords["values/y"].as_float64_ptr();
     }
+    else
+    {
+        n_coords["values/y"].to_float64_array(temp_y);
+        y_coords_ptr = temp_y.value();
+    }
 
     const float64 *z_coords_ptr = NULL;
-
+    Node temp_z;
     if(n_coords.has_path("values/z"))
     {
+        if (zero_copy && !n_coords["values/y"].dtype().is_float64())
+        {
+            ASCENT_ERROR("Zero-copy requested, but z coordinate data is not float64.\n" <<
+                        "z type: " << n_coords["values/z"].dtype().name());
+        }
         ndims = 3;
         z_npts = n_coords["values/z"].dtype().number_of_elements();
-        if (!n_coords["values/z"].dtype().is_float64())
+        if (n_coords["values/z"].dtype().is_float64())
         {
-            Node temp_z;
-            n_coords["values/z"].to_float64_array(temp_z);
-            z_coords_ptr = temp_z.value();
+            z_coords_ptr = n_coords["values/z"].as_float64_ptr();
         }
         else
         {
-            z_coords_ptr = n_coords["values/z"].as_float64_ptr();
+            n_coords["values/z"].to_float64_array(temp_z);
+            z_coords_ptr = temp_z.value();
         }
     }
 
