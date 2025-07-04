@@ -86,15 +86,49 @@ anari_device_load()
   return dev;
 }
 
-static void 
-setColorMap(anari_cpp::Device d, vtkm::interop::anari::ANARIMapper& mapper, vtkm::cont::ColorTable &color_table, vtkm::Range &field_range)
-{
+//static void setColorMap(anari_cpp::Device d, vtkm::interop::anari::ANARIMapper& mapper, vtkm::Range &range)
+//{
+//  auto colorArray = anari_cpp::newArray1D(d, ANARI_FLOAT32_VEC3, 3);
+//  auto* colors = anari_cpp::map<vtkm::Vec3f_32>(d, colorArray);
+//  colors[0] = vtkm::Vec3f_32(0.23, 0.29, 0.75);
+//  colors[1] = vtkm::Vec3f_32(0.87, 0.87, 0.87);
+//  colors[2] = vtkm::Vec3f_32(0.71, 0.02, 0.15);
+////color table point: 0 rgba: 0 0.231373 0.298039 0.752941
+////color table point: 1 rgba: 0.5 0.865 0.865 0.865
+////color table point: 2 rgba: 1 0.705882 0.0156863 0.14902
+//  anari_cpp::unmap(d, colorArray);
+//
+//  auto opacityArray = anari_cpp::newArray1D(d, ANARI_FLOAT32, 2);
+//  auto* opacities = anari_cpp::map<float>(d, opacityArray);
+//  opacities[0] = 0.f;
+//  opacities[1] = 1.f;
+//  anari_cpp::unmap(d, opacityArray);
+//
+//  float min = range.Min;
+//  float max = range.Max;
+//  mapper.SetANARIColorMap(colorArray, opacityArray, true);
+//  mapper.SetANARIColorMapValueRange(vtkm::Vec2f_32(min, max));
+//  mapper.SetANARIColorMapOpacityScale(0.5f);
+//}
 
-  auto colorArray = anari_cpp::newArray1D(d, ANARI_FLOAT32_VEC3, 3);
+static void setColorMap(anari_cpp::Device d, vtkm::interop::anari::ANARIMapper& mapper, vtkm::Range &range, vtkm::cont::ColorTable &color_table)
+{
+  vtkm::Int32 num_points = color_table.GetNumberOfPoints(); 
+  std::cerr << "color table num_points: " << num_points << std::endl;
+  auto colorArray = anari_cpp::newArray1D(d, ANARI_FLOAT32_VEC3, num_points);
   auto* colors = anari_cpp::map<vtkm::Vec3f_32>(d, colorArray);
-  colors[0] = vtkm::Vec3f_32(0.f, 0.f, 1.f);
-  colors[1] = vtkm::Vec3f_32(0.f, 1.f, 0.f);
-  colors[2] = vtkm::Vec3f_32(1.f, 0.f, 0.f);
+  for(int i = 0; i < num_points; i++)
+  {
+    vtkm::Vec4f_64 color; 
+    //returned as location, RGB
+    color_table.GetPoint(i,color);
+    std::cerr << "color table point: " << i << " rgba: " << color[0] << " " << color[1] << " " << color[2] << " "<< color[3] << std::endl;
+    colors[i] = vtkm::Vec3f_32((float)color[1], (float)color[2], (float)color[3]);
+    //colors[i] = vtkm::Vec3f_64(i%2, i%1, i%2);
+  }
+//color table point: 0 rgba: 0 0.231373 0.298039 0.752941
+//color table point: 1 rgba: 0.5 0.865 0.865 0.865
+//color table point: 2 rgba: 1 0.705882 0.0156863 0.14902
   anari_cpp::unmap(d, colorArray);
 
   auto opacityArray = anari_cpp::newArray1D(d, ANARI_FLOAT32, 2);
@@ -103,9 +137,55 @@ setColorMap(anari_cpp::Device d, vtkm::interop::anari::ANARIMapper& mapper, vtkm
   opacities[1] = 1.f;
   anari_cpp::unmap(d, opacityArray);
 
+  float min = range.Min;
+  float max = range.Max;
+  mapper.SetANARIColorMap(colorArray, opacityArray, true);
+  mapper.SetANARIColorMapValueRange(vtkm::Vec2f_32(min, max));
+  mapper.SetANARIColorMapOpacityScale(0.5f);
+}
+
+
+static void 
+setColorMap2(anari_cpp::Device d, vtkm::interop::anari::ANARIMapper& mapper, vtkm::cont::ColorTable &color_table, vtkm::Range &field_range)
+{
+  vtkm::Int32 num_points = color_table.GetNumberOfPoints(); 
+  std::cerr << "color table num_points: " << num_points << std::endl;
+  auto colorArray = anari_cpp::newArray1D(d, ANARI_FLOAT64_VEC3, num_points);
+  auto* colors = anari_cpp::map<vtkm::Vec3f_64>(d, colorArray);
+  for(int i = 0; i < num_points; i++)
+  {
+    vtkm::Vec4f_64 color; 
+    //returned as location, RGB
+    color_table.GetPoint(i,color);
+    std::cerr << "color table point: " << i << " rgba: " << color[0] << " " << color[1] << " " << color[2] << " "<< color[3] << std::endl;
+    //colors[i] = vtkm::Vec3f_64(color[1], color[2], color[3]);
+    //colors[i] = vtkm::Vec3f_64(i%2, i%1, i%2);
+  }
+  colors[0] = vtkm::Vec3f_32(0.f, 0.f, 1.f);
+  colors[1] = vtkm::Vec3f_32(0.f, 1.f, 0.f);
+  colors[2] = vtkm::Vec3f_32(1.f, 0.f, 0.f);
+
+  anari_cpp::unmap(d, colorArray);
+
+  vtkm::Int32 num_points_alpha = color_table.GetNumberOfPointsAlpha(); 
+  std::cerr << "color table num_points_alpha: " << num_points_alpha << std::endl;
+  auto opacityArray = anari_cpp::newArray1D(d, ANARI_FLOAT64, num_points_alpha);
+  auto* opacities = anari_cpp::map<float>(d, opacityArray);
+  for(int i = 0; i < num_points_alpha; i++)
+  {
+    vtkm::Vec4f_64 alpha; 
+    //returned as location, alpha, midpoint and sharpness 
+    color_table.GetPointAlpha(i,alpha);
+    std::cerr << "alpha table point: " << i << " : " << alpha[0] << " " << alpha[1] << " " << alpha[2] << " "<< alpha[3] << std::endl;
+    opacities[i] = alpha[1];
+  }
+  opacities[0] = 0.;
+  opacities[1] = 1.;
+  anari_cpp::unmap(d, opacityArray);
+
   vtkm::Float64 min = field_range.Min;
   vtkm::Float64 max = field_range.Max;
-  vtkm::Int32 numPoints = color_table.GetNumberOfPoints();
+  std::cerr << "field min max: " << min << " " << max << std::endl;
   mapper.SetANARIColorMap(colorArray, opacityArray, true);
   mapper.SetANARIColorMapValueRange(vtkm::Vec2f_64(min, max));
 //  mapper.SetANARIColorMapOpacityScale(0.5f);
@@ -117,6 +197,7 @@ setColorMap(anari_cpp::Device d, vtkm::interop::anari::ANARIMapper& mapper, vtkm
 ANARITriangleRenderer::ANARITriangleRenderer()
 {
   m_color_table = vtkm::cont::ColorTable("Cool to Warm");
+  std::cerr << "colortable: " << m_color_table.GetName() << std::endl;
   m_device = detail::anari_device_load();
   m_renderer = anari_cpp::newObject<anari_cpp::Renderer>(m_device,"default");
   m_frame = anari_cpp::newObject<anari_cpp::Frame>(m_device);
@@ -184,13 +265,44 @@ ANARITriangleRenderer::Update()
 void
 ANARITriangleRenderer::DoExecute()
 {
+  //old from Qi:
+  //shouldn't need this since calling 
+  //Renderer::PreExecute sets m_range & m_bounds to global values
+  // Compute value range if necessary
+  //if (!scalar_range.IsNonEmpty()) 
+  //{
+  //  auto ranges = dset.GetGlobalRange(field_name);
+  //  auto size = ranges.GetNumberOfValues();
+  //  if (size != 1) 
+  //  {
+  //    ASCENT_ERROR("Anari Triangle only supports scalar fields");
+  //  }
+  //  auto portal = ranges.ReadPortal();
+  //  for (int cc = 0; cc < size; ++cc)
+  //  {
+  //    auto range = portal.Get(cc);
+  //    scalar_range.Include(range);
+  //    break;
+  //  }
+  //}
 
   // Build Scene
+  std::cerr << "ANARI TriRenderer DoExecute: " << std::endl;
   vtkm::interop::anari::ANARIScene scene(m_device);
   int num_domains = m_input->GetNumberOfDomains();
-  //vtkm::Range field_range = m_input->GetGlobalRange(m_field_name).ReadPortal().Get(0);
+  std::cerr << "num_domains: " << num_domains<< std::endl;
+  vtkm::Range field_range = m_input->GetGlobalRange(m_field_name).ReadPortal().Get(0);
+  std::cerr << "field range: " << field_range.Min << " " << field_range.Max << std::endl;
+  std::cerr << "m_field_name: " << m_field_name << std::endl;
   for (int i = 0; i < num_domains; ++i)
   {
+    //std::cerr << "CELLSET: " << std::endl;
+    //m_input->GetDomain(i).GetCellSet().PrintSummary(std::cerr);
+    //std::cerr << "COORDSET: " << std::endl;
+    //m_input->GetDomain(i).GetCoordinateSystem().PrintSummary(std::cerr);
+    //std::cerr << "FIELD: " << std::endl;
+    //m_input->GetDomain(i).GetField(m_field_name).PrintSummary(std::cerr);
+    std::cerr << " unstructured" << std::endl;
 
     auto& mTri = scene.AddMapper(vtkm::interop::anari::ANARIMapperTriangles(m_device));
     mTri.SetName(("triangle_" + std::to_string(i)).c_str());
@@ -199,10 +311,13 @@ ANARITriangleRenderer::DoExecute()
       m_input->GetDomain(i).GetCoordinateSystem(), 
       m_input->GetDomain(i).GetField(m_field_name) 
     });
-    mTri.SetColorTable(m_color_table);
-    //vtkh::detail::setColorMap(m_device, mTri, m_color_table, field_range);
+    //mTri.SetColorTable(m_color_table);
+    vtkh::detail::setColorMap(m_device, mTri, field_range, m_color_table);
+    //vtkh::detail::setColorMap2(m_device, mTri, m_color_table, field_range);
+    //std::cerr << "color_table range: " << ct_range.Max << " " << ct_range.Min << std::endl;
 }
   int num_renders = static_cast<int>(m_renders.size());
+  std::cerr << "num renders to get canvas from: " << num_renders << std::endl;
   for(int i = 0; i < num_renders; ++i)
   {
     vtkm::rendering::Camera cam = m_renders[i].GetCamera();
@@ -272,9 +387,9 @@ ANARITriangleRenderer::DoExecute()
     const auto a_colors = anari_cpp::map<vtkm::Vec4f_32>(m_device, m_frame, "channel.color");
     const auto a_depths = anari_cpp::map<vtkm::Float32>(m_device, m_frame, "channel.depth");
 
-    //ascent::PNGEncoder encoder;
-    //encoder.Encode((float *)a_colors.data, a_colors.width, a_colors.height);
-    //encoder.Save("encoder_image.png");
+    ascent::PNGEncoder encoder;
+    encoder.Encode((float *)a_colors.data, a_colors.width, a_colors.height);
+    encoder.Save("encoder_image.png");
     auto v_colors = canvas.GetColorBuffer().WritePortal();
     auto v_depths = canvas.GetDepthBuffer().WritePortal();
     const float *d_pixels = anari::map<float>(m_device, m_frame, "channel.depth").data;
@@ -324,6 +439,7 @@ ANARITriangleRenderer::PostExecute()
   int total_renders = static_cast<int>(m_renders.size());
   if(m_do_composite)
   {
+    std::cerr << "we are in ANARITriangleRenderer::PostExecute \n total_renders: " << total_renders << std::endl;
     this->Composite(total_renders);
   }
 }
