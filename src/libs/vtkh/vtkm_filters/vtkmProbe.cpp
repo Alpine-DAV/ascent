@@ -1,6 +1,8 @@
+#include <vtkh/Error.hpp>
 #include "vtkmProbe.hpp"
 #include <vtkm/filter/resampling/Probe.h>
 #include <vtkm/cont/DataSetBuilderUniform.h>
+
 
 namespace vtkh
 {
@@ -131,7 +133,9 @@ vtkmProbe::Run(vtkm::cont::DataSet &input)
   }
   else // error
   {
-      // TODO: ERROR!
+      std::ostringstream oss;
+      oss << "vtkmProbe does not recognize sampled mode: " << m_mode;
+      throw Error(oss.str());
   }
 
   probe.SetGeometry(ds_probe);
