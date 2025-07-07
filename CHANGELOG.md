@@ -47,6 +47,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ### Fixed
 - Fix parse_camera where order you apply camera operations matters.
+- Fixed WarpX filter that was not allowing for rendering of the output streamlines
 - Fixed Uniform Grid bug only accepting 2D slices along the Z-axis.
 - Resolved a few cases where MPI_COMM_WORLD was used instead instead of the selected MPI communicator.
 - Resolved a bug where a sharing a coordset between multiple polytopal topologies would corrupt mesh processing.

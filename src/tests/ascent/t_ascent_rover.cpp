@@ -15,7 +15,6 @@
 
 #include <ascent.hpp>
 
-#include <iostream>
 #include <math.h>
 
 #include <conduit_blueprint.hpp>
@@ -34,33 +33,11 @@ constexpr index_t EXAMPLE_MESH_SIDE_DIM = 20;
 // Utilities
 //
 
-void render_blueprint_result(const string &field_name,
-                             const string &output_file,
-                             const Node &data)
+void
+execute_ascent(const Node& data,
+               const Node& actions)
 {
-    //
-    // Create the actions.
-    //
-
-    Node scenes;
-    scenes["s1/plots/p1/type"] = "pseudocolor";
-    scenes["s1/plots/p1/field"] = field_name;
-    scenes["s1/renders/r1/image_prefix"] = output_file;
-
-    Node actions;
-    Node &add_plots = actions.append();
-    add_plots["action"] = "add_scenes";
-    add_plots["scenes"] = scenes;
-
-    // Helps identify which ascent execute is throwing errors
-    ASCENT_INFO("Executing render_blueprint_result\n");
-
-    //
-    // Run Ascent
-    //
-
     Ascent ascent;
-
     Node ascent_opts;
     ascent.open(ascent_opts);
     ascent.publish(data);
@@ -70,25 +47,121 @@ void render_blueprint_result(const string &field_name,
     ascent.close();
 }
 
-bool is_vtkm_disabled(const Node &about)
+void
+render_blueprint(const string &field_name,
+                 const string &output_path,
+                 const Node &data,
+                 const double detector_width)
 {
-    bool vtk_disabled = about["runtimes/ascent/vtkm/status"].as_string() == "disabled";
-    if (vtk_disabled)
+    // Define Ascent actions
+    // TODO: Remove this once issue #1559 is fixed
+    Node pipelines;
+    Node &pl = pipelines["pl1"];
+    pl["f1/type"] = "clip";
+    pl["f1/params/topology"] = "image_topo";
+    pl["f1/params/invert"] = "true";
+    pl["f1/params/box/min/x"] = 0.0;
+    pl["f1/params/box/min/y"] = 0.0;
+    pl["f1/params/box/min/z"] = 0.0;
+    pl["f1/params/box/max/x"] = detector_width;
+    pl["f1/params/box/max/y"] = detector_width;
+    pl["f1/params/box/max/z"] = 0.0;
+
+    Node scenes;
+    if (field_name.find("spatial") != std::string::npos)
     {
-        ASCENT_INFO("vtkm support disabled, skipping test\n");
+        scenes["s1/renders/r1/camera/azimuth"] = 45.0;
+        
+        // TODO: Remove this once issue #1559 is fixed
+        scenes["s1/plots/p1/pipeline"] = "pl1";
     }
-    return vtk_disabled;
+
+    scenes["s1/plots/p1/type"] = "pseudocolor";
+    scenes["s1/plots/p1/field"] = field_name;
+    scenes["s1/renders/r1/image_prefix"] = output_path;
+
+    Node actions;
+    // TODO: Remove this once issue #1559 is fixed
+    Node &add_pipelines = actions.append();
+    add_pipelines["action"] = "add_pipelines";
+    add_pipelines["pipelines"] = pipelines;
+
+    Node &add_plots = actions.append();
+    add_plots["action"] = "add_scenes";
+    add_plots["scenes"] = scenes;
+
+    // Execute Ascent actions
+    execute_ascent(data, actions);
 }
 
-void get_valid_test_data(Node &data)
+void
+render_all_fields(const Node &data,
+                  const std::string output_path,
+                  const int cycle)
+{
+    // This is here to help identify which ascent execute is throwing an error
+    ASCENT_INFO("Executing render_all_fields\n");
+
+    // TODO: Remove this once issue #1559 is fixed
+    const Node &xray_data = data["domain_000000/state/xray_data"];
+    const double detector_width = xray_data["detector_width"].to_double();
+    
+    // TODO: Undo this once optical_depth is fixed
+    const std::vector<std::string> fields {"intensities", 
+                                        //    "optical_depth",
+                                           "intensities_spatial",
+                                        //    "optical_depth_spatial"
+                                          };
+    for (auto field : fields)
+    {
+        std::string full_output_path = output_path + "_" + field;
+        render_blueprint(field, full_output_path, data, detector_width);
+        EXPECT_TRUE(check_test_image(full_output_path, 0.01f, cycle));
+    }
+}
+
+void
+load_and_verify_local_data(Node &data,
+                           const std::string data_path)
+{
+    Node verify_info;
+    conduit::relay::io::blueprint::load_mesh(data_path, data);
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data, verify_info));
+}
+
+void
+load_and_verify_ascent_data(Node &baseline_data,
+                            const std::string filename)
+{
+    Node verify_info;
+    const std::string baseline_path = conduit::utils::join_file_path(std::string(ASCENT_T_DATA_DIR), filename);
+    conduit::relay::io::blueprint::load_mesh(baseline_path, baseline_data);
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(baseline_data, verify_info));
+}
+
+void
+get_valid_test_data(Node &data)
 {
     Node verify_info;
     conduit::blueprint::mesh::examples::braid("hexs",
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              data);
+                                                     EXAMPLE_MESH_SIDE_DIM,
+                                                     EXAMPLE_MESH_SIDE_DIM,
+                                                     EXAMPLE_MESH_SIDE_DIM,
+                                                   data);
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data, verify_info));
+}
+
+const bool
+is_vtkm_disabled()
+{
+    Node n;
+    ascent::about(n);
+    const bool disabled = "disabled" == n["runtimes/ascent/vtkm/status"].as_string();
+    if (disabled)
+    {
+        ASCENT_INFO("Ascent was built without vtkm, skipping test\n");
+    }
+    return disabled;
 }
 
 //
@@ -98,79 +171,232 @@ void get_valid_test_data(Node &data)
 //-----------------------------------------------------------------------------
 TEST(ascent_rover, test_xray_blueprint_braid)
 {
-    // the vtkm runtime is currently our only rendering runtime
-    Node n;
-    ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(is_vtkm_disabled(n))
+    ASCENT_INFO("Testing xray extract on conduit braid example\n");
+
+    if (is_vtkm_disabled())
     {
-        return;
+        return; // Returning early is equivalent to passing the test
     }
 
-    //
-    // Create an example mesh.
-    //
-    
-    Node data;
-    get_valid_test_data(data);
+    // Test names
+    const std::string query_name = "tout_rover_xray_blueprint_braid";
+    const std::string query_ext_name = "_000100.cycle_000100.root";
+    const std::string image_name = "tout_rover_xray_blueprint_braid";
 
-    ASCENT_INFO("Testing xray_extract on conduit braid example\n");
+    // Setup paths
+    const std::string output_path = prepare_output_dir();
+    const std::string query_path = conduit::utils::join_file_path(output_path, 
+                                                                 query_name);
+    const std::string output_data_path = query_path + query_ext_name;
+    const std::string image_path = conduit::utils::join_file_path(output_path,
+                                                                 image_name);
 
-    const std::string query_output_path = prepare_output_dir();
-    const std::string query_output_file = 
-        conduit::utils::join_file_path(query_output_path, "tout_rover_xray_query");
+    // Remove old test image
+    const int cycle = 100;
+    remove_test_image(query_path, cycle);
 
-    // remove old images before rendering
-    remove_test_image(query_output_file);
+    // Generate and verify test data
+    Node test_data;
+    get_valid_test_data(test_data);
 
-    //
-    // Create the actions.
-    //
-
-    conduit::Node extracts;
+    // Define Ascent actions
+    Node extracts;
     extracts["e1/type"] = "xray";
     extracts["e1/params/rover/absorption"] = "radial";
     extracts["e1/params/rover/emission"] = "radial";
-    extracts["e1/params/rover/filename"] = query_output_file;
-    extracts["e1/params/rover/blueprint"] = "json";
+    extracts["e1/params/rover/filename"] = query_path;
+    extracts["e1/params/rover/blueprint"] = "yaml";
 
-    conduit::Node actions;
-    // add the pipeline
-    conduit::Node &add_extracts = actions.append();
+    Node actions;
+    Node &add_extracts = actions.append();
     add_extracts["action"] = "add_extracts";
     add_extracts["extracts"] = extracts;
 
-    //
-    // Run Ascent
-    //
+    // Execute Ascent actions
+    execute_ascent(test_data, actions);
 
-    Ascent ascent;
+    // Load and verify output mesh
+    Node xray_blueprint_output, verify_info;
+    load_and_verify_local_data(xray_blueprint_output, output_data_path);
 
-    Node ascent_opts;
-    ascent.open(ascent_opts);
-    ascent.publish(data);
-    ascent.execute(actions);
-    ascent.close();
+    // Render and verify each field
+    render_all_fields(xray_blueprint_output, image_path, cycle);
 
-    const std::string full_outfile_name = query_output_file + "_000100.cycle_000100.root";
+    // Dump info
+    std::string msg = "Rendered XRay diagnostic images of an example braid mesh";
+    ASCENT_ACTIONS_DUMP(actions, image_path, msg);
+}
 
-    Node load_mesh, verify_info;
-    conduit::relay::io::blueprint::load_mesh(full_outfile_name, load_mesh);
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(load_mesh, verify_info));
+//-----------------------------------------------------------------------------
+TEST(ascent_rover, test_xray_blueprint_braid_rotated)
+{
+    ASCENT_INFO("Testing xray extract on conduit braid example (rotated)\n");
 
-    const std::string image_output_path = prepare_output_dir();
-    const std::string image_output_base =
-        conduit::utils::join_file_path(image_output_path, "tout_rover_xray_blueprint");
+    if (is_vtkm_disabled())
+    {
+        return; // Returning early is equivalent to passing the test
+    }
 
-    render_blueprint_result("intensities", image_output_base, load_mesh);
-    EXPECT_TRUE(check_test_image(image_output_base, 0.01f));
+    // Test names
+    const std::string query_name = "tout_rover_xray_blueprint_braid_rotated";
+    const std::string query_ext_name = "_000100.cycle_000100.root";
+    const std::string image_name = "tout_rover_xray_blueprint_braid_rotated";
 
-    std::string msg = "Render an XRay diagnostic image of an example braid mesh";
-    ASCENT_ACTIONS_DUMP(actions, image_output_base, msg);
+    // Setup paths
+    const std::string output_path = prepare_output_dir();
+    const std::string query_path = conduit::utils::join_file_path(output_path, 
+                                                                 query_name);
+    const std::string output_data_path = query_path + query_ext_name;
+    const std::string image_path = conduit::utils::join_file_path(output_path,
+                                                                 image_name);
+
+    // Remove old test image
+    const int cycle = 100;
+    remove_test_image(query_path, cycle);
+
+    // Generate and verify test data
+    Node test_data;
+    get_valid_test_data(test_data);
+
+    // Define Ascent actions
+    Node extracts;
+    extracts["e1/type"] = "xray";
+    extracts["e1/params/rover/absorption"] = "radial";
+    extracts["e1/params/rover/emission"] = "radial";
+    extracts["e1/params/rover/filename"] = query_path;
+    extracts["e1/params/rover/blueprint"] = "yaml";
+    extracts["e1/params/camera/azimuth"] = 45.0;
+    extracts["e1/params/camera/elevation"] = 45.0;
+
+    Node actions;
+    Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    add_extracts["extracts"] = extracts;
+
+    // Execute Ascent actions
+    execute_ascent(test_data, actions);
+
+    // Load and verify output mesh
+    Node xray_blueprint_output, verify_info;
+    load_and_verify_local_data(xray_blueprint_output, output_data_path);
+
+    // Render and verify each field
+    render_all_fields(xray_blueprint_output, image_path, cycle);
+
+    // Dump info
+    std::string msg = "Rendered XRay diagnostic images of an example braid mesh (rotated)";
+    ASCENT_ACTIONS_DUMP(actions, image_path, msg);
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_rover, test_xray_blueprint_braid_diff)
+{
+    ASCENT_INFO("Testing xray extract on conduit braid example (blueprint diff)\n");
+
+    if (is_vtkm_disabled())
+    {
+        return; // Returning early is equivalent to passing the test
+    }
+
+    // Test names
+    const std::string query_name = "tout_rover_xray_blueprint_braid_diff";
+    const std::string query_ext_name = "_000100.cycle_000100.root";
+    const std::string image_name = "tout_rover_xray_blueprint_braid_diff";
+
+    // Setup paths
+    const std::string output_path = prepare_output_dir();
+    const std::string query_path = conduit::utils::join_file_path(output_path, 
+                                                                 query_name);
+    const std::string output_data_path = query_path + query_ext_name;
+    const std::string image_path = conduit::utils::join_file_path(output_path,
+                                                                 image_name);
+
+    // Remove old test image
+    const int cycle = 100;
+    remove_test_image(query_path, cycle);
+
+    // Generate and verify test data
+    Node test_data;
+    get_valid_test_data(test_data);
+
+    // Define Ascent actions
+    Node extracts;
+    extracts["e1/type"] = "xray";
+    extracts["e1/params/rover/absorption"] = "radial";
+    extracts["e1/params/rover/emission"] = "radial";
+    extracts["e1/params/rover/filename"] = query_path;
+    extracts["e1/params/rover/blueprint"] = "yaml";
+
+    Node actions;
+    Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    add_extracts["extracts"] = extracts;
+
+    // Execute Ascent actions
+    execute_ascent(test_data, actions);
+
+    // Load and verify output mesh
+    Node xray_blueprint_output, verify_info;
+    load_and_verify_local_data(xray_blueprint_output, output_data_path);
+    Node &state_output = xray_blueprint_output["domain_000000/state"];
+    state_output.remove("xray_query/filename");
+
+    // Load and verify baseline data
+    const std::string yaml = R"yaml(
+          time: 3.1414999961853
+          cycle: 100
+          xray_view: 
+            position: [0.0, 0.0, 34.6410179138184]
+            zoom: 1.0
+            look_at: [0.0, 0.0, 0.0]
+            up: [0.0, 1.0, 0.0]
+            fov: 60.0
+            parallel_scale: 20.0000010175457
+            xpan: 0.0
+            ypan: 0.0
+            near_plane: 3.46410179138184
+            far_plane: 346.410186767578
+          xray_query: 
+            color_table: "Cool to Warm"
+            divide_emission_by_abs: "false"
+            height: 200
+            num_samples: 400
+            precision: "single"
+            ray_scope: "global_rays"
+            scattering_type: "non_scattering"
+            width: 200
+            unit_scalar: 1.0
+            absorption: "radial"
+            emission: "radial"
+            blueprint: "yaml"
+          xray_data: 
+            detector_width: 80.0000040701827
+            detector_height: 80.0000040701827
+            intensity_max: 173.205078125
+            intensity_min: 0.0
+            image_topo_order_of_domain_variables: "xyz"
+          domain_id: 0
+      )yaml";
+
+    Node baseline_data;
+    baseline_data.parse(yaml);
+
+    // Diff the baseline data with our new output
+    Node diff_info;
+    const bool has_differences = baseline_data.diff(state_output, diff_info, 0.01, true);
+    if (has_differences)
+    {
+        ASCENT_INFO("Found differences in the braid blueprint diff:\n");
+        diff_info.print();
+    }
+    EXPECT_FALSE(has_differences);
+
+    // Dump info
+    std::string msg = "XRay blueprint diff of an example braid mesh";
+    ASCENT_ACTIONS_DUMP(actions, image_path, msg);
 }
 
 #if 0
-
 //-----------------------------------------------------------------------------
 TEST(ascent_rover, test_xray_blueprint_braid_lowres)
 {
@@ -256,135 +482,278 @@ TEST(ascent_rover, test_xray_blueprint_braid_lowres)
     std::string msg = "Render a lowres XRay diagnostic image of an example braid mesh";
     ASCENT_ACTIONS_DUMP(actions, image_output_base, msg);
 }
-
 #endif
 
 //-----------------------------------------------------------------------------
 TEST(ascent_rover, test_xray_blueprint_curv3d)
 {
-    // the vtkm runtime is currently our only rendering runtime
-    Node n;
-    ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(is_vtkm_disabled(n))
+    ASCENT_INFO("Testing xray extract on curv3d data\n");
+
+    if (is_vtkm_disabled())
     {
-        return;
+        return; // Returning early is equivalent to passing the test
     }
 
-    //
-    // Open an example mesh.
-    //
-    Node data, verify_info;
-    const std::string root_file = 
-        conduit::utils::join_file_path(std::string(ASCENT_T_DATA_DIR),
-                                       "curv3d_blueprint.cycle_000048.root");
+    // Test names
+    const std::string query_name = "tout_rover_xray_blueprint_curv3d";
+    const std::string query_ext_name = "_000048.cycle_000048.root";
+    const std::string image_name = "tout_rover_xray_blueprint_curv3d";
+    
+    // Setup paths
+    const std::string output_path = prepare_output_dir();
+    const std::string query_path = conduit::utils::join_file_path(output_path, 
+                                                                 query_name);
+    const std::string output_data_path = query_path + query_ext_name;
+    const std::string image_path = conduit::utils::join_file_path(output_path,
+                                                                 image_name);
 
-    conduit::relay::io::blueprint::load_mesh(root_file, data);
+    // Remove old test image
+    const int cycle = 48;
+    remove_test_image(query_path, cycle);
 
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(data, verify_info));
+    // Load and verify test data
+    Node test_data;
+    const std::string filename = "curv3d_blueprint.cycle_000048.root";
+    load_and_verify_ascent_data(test_data, filename);
 
-    ASCENT_INFO("Testing xray_extract on curv3d example\n");
-
-    const std::string query_output_path = prepare_output_dir();
-    const std::string query_output_file = 
-        conduit::utils::join_file_path(query_output_path,
-                                       "tout_rover_xray_curv3d_blueprint_query");
-
-    // remove old images before rendering
-    remove_test_image(query_output_file, 48);
-
-    //
-    // Create the actions.
-    //
-
+    // Define Ascent actions
     conduit::Node extracts;
     extracts["e1/type"] = "xray";
     extracts["e1/params/rover/absorption"] = "d";
     extracts["e1/params/rover/emission"] = "p";
-    extracts["e1/params/rover/filename"] = query_output_file;
-    extracts["e1/params/rover/blueprint"] = "json";
+    extracts["e1/params/rover/filename"] = query_path;
+    extracts["e1/params/rover/blueprint"] = "yaml";
 
     conduit::Node actions;
-    // add the pipeline
     conduit::Node &add_extracts = actions.append();
     add_extracts["action"] = "add_extracts";
     add_extracts["extracts"] = extracts;
 
-    //
-    // Run Ascent
-    //
+    // Execute Ascent actions
+    execute_ascent(test_data, actions);
 
-    Ascent ascent;
+    // Load and verify output mesh
+    Node xray_blueprint_output, verify_info;
+    load_and_verify_local_data(xray_blueprint_output, output_data_path);
 
-    Node ascent_opts;
-    ascent.open(ascent_opts);
-    ascent.publish(data);
-    ascent.execute(actions);
-    // TODO can we ask Ascent for the name of the file it wrote?
-    // std::cout << ascent.info().to_yaml() << std::endl;
-    ascent.close();
+    // Render and verify each field
+    render_all_fields(xray_blueprint_output, image_path, cycle);
 
-    const std::string full_outfile_name = query_output_file + "_000048.cycle_000048.root";
+    // Dump info
+    std::string msg = "Rendered XRay diagnostic images of the curv3d dataset";
+    ASCENT_ACTIONS_DUMP(actions, image_path, msg);
+}
 
-    Node load_mesh;
-    conduit::relay::io::blueprint::load_mesh(full_outfile_name, load_mesh);
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(load_mesh, verify_info));
+//-----------------------------------------------------------------------------
+TEST(ascent_rover, test_xray_blueprint_curv3d_rotated)
+{
+    ASCENT_INFO("Testing xray extract on curv3d data (rotated)\n");
 
-    const std::string image_output_path = prepare_output_dir();
-    const std::string image_output_base =
-        conduit::utils::join_file_path(image_output_path, "tout_rover_xray_curv3d");
+    if (is_vtkm_disabled())
+    {
+        return; // Returning early is equivalent to passing the test
+    }
 
-    render_blueprint_result("intensities", image_output_base, load_mesh);
-    EXPECT_TRUE(check_test_image(image_output_base, 0.01f, 48));
+    // Test names
+    const std::string query_name = "tout_rover_xray_blueprint_curv3d_rotated";
+    const std::string query_ext_name = "_000048.cycle_000048.root";
+    const std::string image_name = "tout_rover_xray_blueprint_curv3d_rotated";
     
-    std::string msg = "Render an XRay diagnostic image of the curv3d mesh";
-    ASCENT_ACTIONS_DUMP(actions, image_output_base, msg);
+    // Setup paths
+    const std::string output_path = prepare_output_dir();
+    const std::string query_path = conduit::utils::join_file_path(output_path, 
+                                                                 query_name);
+    const std::string output_data_path = query_path + query_ext_name;
+    const std::string image_path = conduit::utils::join_file_path(output_path,
+                                                                 image_name);
+
+    // Remove old test image
+    const int cycle = 48;
+    remove_test_image(query_path, cycle);
+
+    // Load and verify test data
+    Node test_data;
+    const std::string filename = "curv3d_blueprint.cycle_000048.root";
+    load_and_verify_ascent_data(test_data, filename);
+
+    // Define Ascent actions
+    conduit::Node extracts;
+    extracts["e1/type"] = "xray";
+    extracts["e1/params/rover/absorption"] = "d";
+    extracts["e1/params/rover/emission"] = "p";
+    extracts["e1/params/rover/filename"] = query_path;
+    extracts["e1/params/rover/blueprint"] = "yaml";
+    extracts["e1/params/camera/azimuth"] = 45.0;
+    extracts["e1/params/camera/elevation"] = 45.0;
+
+    conduit::Node actions;
+    conduit::Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    add_extracts["extracts"] = extracts;
+
+    // Execute Ascent actions
+    execute_ascent(test_data, actions);
+
+    // Load and verify output mesh
+    Node xray_blueprint_output, verify_info;
+    load_and_verify_local_data(xray_blueprint_output, output_data_path);
+
+    // Render and verify each field
+    render_all_fields(xray_blueprint_output, image_path, cycle);
+
+    // Dump info
+    std::string msg = "Rendered XRay diagnostic images of the curv3d dataset (rotated)";
+    ASCENT_ACTIONS_DUMP(actions, image_path, msg);
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_rover, test_xray_blueprint_curv3d_diff)
+{
+    ASCENT_INFO("Testing xray extract on curv3d data (blueprint diff)\n");
+
+    if (is_vtkm_disabled())
+    {
+        return; // Returning early is equivalent to passing the test
+    }
+
+    // Test names
+    const std::string query_name = "tout_rover_xray_blueprint_curv3d";
+    const std::string query_ext_name = "_000048.cycle_000048.root";
+    const std::string image_name = "tout_rover_xray_blueprint_curv3d";
+    
+    // Setup paths
+    const std::string output_path = prepare_output_dir();
+    const std::string query_path = conduit::utils::join_file_path(output_path, 
+                                                                 query_name);
+    const std::string output_data_path = query_path + query_ext_name;
+    const std::string image_path = conduit::utils::join_file_path(output_path,
+                                                                 image_name);
+
+    // Remove old test image
+    const int cycle = 48;
+    remove_test_image(query_path, cycle);
+
+    // Load and verify test data
+    Node test_data;
+    const std::string filename = "curv3d_blueprint.cycle_000048.root";
+    load_and_verify_ascent_data(test_data, filename);
+
+    // Define Ascent actions
+    conduit::Node extracts;
+    extracts["e1/type"] = "xray";
+    extracts["e1/params/rover/absorption"] = "d";
+    extracts["e1/params/rover/emission"] = "p";
+    extracts["e1/params/rover/filename"] = query_path;
+    extracts["e1/params/rover/blueprint"] = "yaml";
+
+    conduit::Node actions;
+    conduit::Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    add_extracts["extracts"] = extracts;
+
+    // Execute Ascent actions
+    execute_ascent(test_data, actions);
+
+    // Load and verify output mesh
+    Node xray_blueprint_output, verify_info;
+    load_and_verify_local_data(xray_blueprint_output, output_data_path);
+    Node &state_output = xray_blueprint_output["domain_000000/state"];
+    state_output.remove("xray_query/filename");
+
+    // Load and verify baseline data
+    const std::string yaml = R"(
+        time: 4.80000019073486
+        cycle: 48
+        xray_view: 
+          position: [0.0, 2.5, 47.0156211853027]
+          zoom: 1.0
+          look_at: [0.0, 2.5, 15.0]
+          up: [0.0, 1.0, 0.0]
+          fov: 60.0
+          parallel_scale: 18.4842275096076
+          xpan: 0.0
+          ypan: 0.0
+          near_plane: 3.20156216621399
+          far_plane: 320.156219482422
+        xray_query: 
+          color_table: "Cool to Warm"
+          divide_emission_by_abs: "false"
+          height: 200
+          num_samples: 400
+          precision: "single"
+          ray_scope: "global_rays"
+          scattering_type: "non_scattering"
+          width: 200
+          unit_scalar: 1.0
+          absorption: "d"
+          emission: "p"
+          blueprint: "yaml"
+        xray_data: 
+          detector_width: 73.9369100384305
+          detector_height: 73.9369100384305
+          intensity_max: 0.491446942090988
+          intensity_min: 0.0
+          image_topo_order_of_domain_variables: "xyz"
+        domain_id: 0
+        )";
+
+    Node baseline_data;
+    baseline_data.parse(yaml);
+
+    // Diff the baseline data with our new output
+    Node diff_info;
+    const bool has_differences = baseline_data.diff(state_output, diff_info, 0.01, true);
+    if (has_differences)
+    {
+        ASCENT_INFO("Found differences in the curv3d blueprint diff:\n");
+        diff_info.print();
+    }
+    EXPECT_FALSE(has_differences);
+
+    // Dump info
+    std::string msg = "XRay blueprint diff of the curv3d dataset";
+    ASCENT_ACTIONS_DUMP(actions, image_path, msg);
 }
 
 //-----------------------------------------------------------------------------
 TEST(ascent_rover, test_xray_blueprint_curv3d_camera_params)
 {
-    // the vtkm runtime is currently our only rendering runtime
-    Node n;
-    ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(is_vtkm_disabled(n))
+    ASCENT_INFO("Testing xray extract on curv3d data (all camera params)\n");
+
+    if (is_vtkm_disabled())
     {
-        return;
+        return; // Returning early is equivalent to passing the test
     }
 
-    //
-    // Open an example mesh.
-    //
-    Node data, verify_info;
-    const std::string root_file = 
-        conduit::utils::join_file_path(std::string(ASCENT_T_DATA_DIR),
-                                       "curv3d_blueprint.cycle_000048.root");
+    // Test names
+    const std::string query_name = "tout_rover_xray_blueprint_curv3d_camera_params";
+    const std::string query_ext_name = "_000048.cycle_000048.root";
+    const std::string image_name = "tout_rover_xray_blueprint_curv3d_camera_params";
 
-    conduit::relay::io::blueprint::load_mesh(root_file, data);
+    // Setup paths
+    const std::string output_path = prepare_output_dir();
+    const std::string query_path = conduit::utils::join_file_path(output_path, 
+                                                                 query_name);
+    const std::string output_data_path = query_path + query_ext_name;
+    const std::string image_path = conduit::utils::join_file_path(output_path,
+                                                                 image_name);
 
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(data, verify_info));
+    // Remove old test image
+    const int cycle = 48;
+    remove_test_image(query_path, cycle);
 
-    ASCENT_INFO("Testing xray_extract on curv3d example\n");
+    // Load and verify test data
+    Node test_data;
+    const std::string filename = "curv3d_blueprint.cycle_000048.root";
+    load_and_verify_ascent_data(test_data, filename);
 
-    const std::string query_output_path = prepare_output_dir();
-    const std::string query_output_file = 
-        conduit::utils::join_file_path(query_output_path,
-                                       "tout_rover_xray_curv3d_blueprint_camera_param_query");
-
-    // remove old images before rendering
-    remove_test_image(query_output_file);
-
-    //
-    // Create the actions.
-    //
-
+    // Define Ascent actions
     conduit::Node extracts;
     extracts["e1/type"] = "xray";
     extracts["e1/params/rover/absorption"] = "d";
     extracts["e1/params/rover/emission"] = "p";
-    extracts["e1/params/rover/filename"] = query_output_file;
-    extracts["e1/params/rover/blueprint"] = "json";
+    extracts["e1/params/rover/filename"] = query_path;
+    extracts["e1/params/rover/blueprint"] = "yaml";
 
     // These errors all originate from within rover
     // TODO: Setting anything for position (e.g. 0,0,0) throws a vector range error
@@ -404,126 +773,148 @@ TEST(ascent_rover, test_xray_blueprint_curv3d_camera_params)
     extracts["e1/params/camera/far_plane"] = 50.0;
 
     conduit::Node actions;
-    // add the pipeline
     conduit::Node &add_extracts = actions.append();
     add_extracts["action"] = "add_extracts";
     add_extracts["extracts"] = extracts;
 
-    //
-    // Run Ascent
-    //
+    // Execute Ascent actions
+    execute_ascent(test_data, actions);
 
-    Ascent ascent;
+    // Load and verify output mesh
+    Node xray_blueprint_output, verify_info;
+    load_and_verify_local_data(xray_blueprint_output, output_data_path);
 
-    Node ascent_opts;
-    ascent.open(ascent_opts);
-    ascent.publish(data);
-    ascent.execute(actions);
-    // TODO can we ask Ascent for the name of the file it wrote?
-    // std::cout << ascent.info().to_yaml() << std::endl;
-    ascent.close();
+    // Render and verify each field
+    render_all_fields(xray_blueprint_output, image_path, cycle);
 
-    const std::string full_outfile_name = query_output_file + "_000048.cycle_000048.root";
-
-    Node load_mesh;
-    conduit::relay::io::blueprint::load_mesh(full_outfile_name, load_mesh);
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(load_mesh, verify_info));
-
-    const std::string image_output_path = prepare_output_dir();
-    const std::string image_output_base =
-        conduit::utils::join_file_path(image_output_path, "tout_rover_xray_curv3d_camera_param");
-
-    render_blueprint_result("intensities", image_output_base, load_mesh);
-    EXPECT_TRUE(check_test_image(image_output_base, 0.01f, 48));
-    
-    std::string msg = "Render an XRay diagnostic image with non-default camera params";
-    ASCENT_ACTIONS_DUMP_CYCLE(actions, image_output_base, msg, 48);
+    // Dump info
+    std::string msg = "Rendered XRay diagnostic images of the curv3d dataset (all camera params)";
+    ASCENT_ACTIONS_DUMP(actions, image_path, msg);
 }
 
 //-----------------------------------------------------------------------------
 TEST(ascent_rover, test_xray_blueprint_multi_curv3d)
 {
-    // the vtkm runtime is currently our only rendering runtime
-    Node n;
-    ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(is_vtkm_disabled(n))
+    ASCENT_INFO("Testing xray extract on multi_curv3d data\n");
+
+    if (is_vtkm_disabled())
     {
-        return;
+        return; // Returning early is equivalent to passing the test
     }
 
-    //
-    // Open an example mesh.
-    //
-    Node data, verify_info;
-    const std::string root_file = 
-        conduit::utils::join_file_path(std::string(ASCENT_T_DATA_DIR),
-                                       "multi_curv3d_blueprint.cycle_000048.root");
+    // Test names
+    const std::string query_name = "tout_rover_xray_blueprint_multi_curv3d";
+    const std::string query_ext_name = "_000048.cycle_000048.root";
+    const std::string image_name = "tout_rover_xray_blueprint_multi_curv3d";
+    
+    // Setup paths
+    const std::string output_path = prepare_output_dir();
+    const std::string query_path = conduit::utils::join_file_path(output_path, 
+                                                                 query_name);
+    const std::string output_data_path = query_path + query_ext_name;
+    const std::string image_path = conduit::utils::join_file_path(output_path,
+                                                                 image_name);
 
-    conduit::relay::io::blueprint::load_mesh(root_file, data);
+    // Remove old test image
+    const int cycle = 48;
+    remove_test_image(query_path, cycle);
 
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(data, verify_info));
+    // Load and verify test data
+    Node test_data;
+    const std::string filename = "multi_curv3d_blueprint.cycle_000048.root";
+    load_and_verify_ascent_data(test_data, filename);
 
-    ASCENT_INFO("Testing xray_extract on multi_curv3d example\n");
-
-    const std::string query_output_path = prepare_output_dir();
-    const std::string query_output_file = 
-        conduit::utils::join_file_path(query_output_path,
-                                       "tout_rover_xray_multi_curv3d_blueprint_query");
-
-    // remove old images before rendering
-    remove_test_image(query_output_file, 48);
-
-    //
-    // Create the actions.
-    //
-
+    // Define Ascent actions
     conduit::Node extracts;
     extracts["e1/type"] = "xray";
     extracts["e1/params/rover/absorption"] = "d";
     extracts["e1/params/rover/emission"] = "p";
-    extracts["e1/params/rover/filename"] = query_output_file;
-    extracts["e1/params/rover/blueprint"] = "json";
+    extracts["e1/params/rover/filename"] = query_path;
+    extracts["e1/params/rover/blueprint"] = "yaml";
 
     conduit::Node actions;
-    // add the pipeline
     conduit::Node &add_extracts = actions.append();
     add_extracts["action"] = "add_extracts";
     add_extracts["extracts"] = extracts;
 
-    //
-    // Run Ascent
-    //
+    // Execute Ascent actions
+    execute_ascent(test_data, actions);
 
-    Ascent ascent;
+    // Verify output mesh
+    Node xray_blueprint_output, verify_info;
+    load_and_verify_local_data(xray_blueprint_output, output_data_path);
 
-    Node ascent_opts;
-    ascent.open(ascent_opts);
-    ascent.publish(data);
-    ascent.execute(actions);
-    // TODO can we ask Ascent for the name of the file it wrote?
-    // std::cout << ascent.info().to_yaml() << std::endl;
-    ascent.close();
+    // Render and verify each field
+    render_all_fields(xray_blueprint_output, image_path, cycle);
 
-    const std::string full_outfile_name = query_output_file + "_000048.cycle_000048.root";
+    // Dump info
+    std::string msg = "Rendered XRay diagnostic images of the multi_curv3d dataset";
+    ASCENT_ACTIONS_DUMP(actions, image_path, msg);
+}
 
-    Node load_mesh;
-    conduit::relay::io::blueprint::load_mesh(full_outfile_name, load_mesh);
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(load_mesh, verify_info));
+//-----------------------------------------------------------------------------
+TEST(ascent_rover, test_xray_blueprint_multi_curv3d_rotated)
+{
+    ASCENT_INFO("Testing xray extract on multi_curv3d data (rotated)\n");
 
-    const std::string image_output_path = prepare_output_dir();
-    const std::string image_output_base =
-        conduit::utils::join_file_path(image_output_path, "tout_rover_xray_multi_curv3d");
+    if (is_vtkm_disabled())
+    {
+        return; // Returning early is equivalent to passing the test
+    }
 
-    render_blueprint_result("intensities", image_output_base, load_mesh);
-    EXPECT_TRUE(check_test_image(image_output_base, 0.01f, 48));
+    // Test names
+    const std::string query_name = "tout_rover_xray_blueprint_multi_curv3d_rotated";
+    const std::string query_ext_name = "_000048.cycle_000048.root";
+    const std::string image_name = "tout_rover_xray_blueprint_multi_curv3d_rotated";
+    
+    // Setup paths
+    const std::string output_path = prepare_output_dir();
+    const std::string query_path = conduit::utils::join_file_path(output_path, 
+                                                                 query_name);
+    const std::string output_data_path = query_path + query_ext_name;
+    const std::string image_path = conduit::utils::join_file_path(output_path,
+                                                                 image_name);
 
-    std::string msg = "Render an XRay diagnostic image of the multi_curv3d mesh";
-    ASCENT_ACTIONS_DUMP_CYCLE(actions, image_output_base, msg, 48);
+    // Remove old test image
+    const int cycle = 48;
+    remove_test_image(query_path, cycle);
+
+    // Load and verify test data
+    Node test_data;
+    const std::string filename = "multi_curv3d_blueprint.cycle_000048.root";
+    load_and_verify_ascent_data(test_data, filename);
+
+    // Define Ascent actions
+    conduit::Node extracts;
+    extracts["e1/type"] = "xray";
+    extracts["e1/params/rover/absorption"] = "d";
+    extracts["e1/params/rover/emission"] = "p";
+    extracts["e1/params/rover/filename"] = query_path;
+    extracts["e1/params/rover/blueprint"] = "yaml";
+    extracts["e1/params/camera/azimuth"] = 45.0;
+    extracts["e1/params/camera/elevation"] = 45.0;
+
+    conduit::Node actions;
+    conduit::Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    add_extracts["extracts"] = extracts;
+
+    // Execute Ascent actions
+    execute_ascent(test_data, actions);
+
+    // Load and verify output mesh
+    Node xray_blueprint_output, verify_info;
+    load_and_verify_local_data(xray_blueprint_output, output_data_path);
+
+    // Render and verify each field
+    render_all_fields(xray_blueprint_output, image_path, cycle);
+
+    // Dump info
+    std::string msg = "Rendered XRay diagnostic images of the multi_curv3d dataset (rotated)";
+    ASCENT_ACTIONS_DUMP(actions, image_path, msg);
 }
 
 #if 0
-
 //-----------------------------------------------------------------------------
 TEST(ascent_rover, test_xray_blueprint_tire)
 {
