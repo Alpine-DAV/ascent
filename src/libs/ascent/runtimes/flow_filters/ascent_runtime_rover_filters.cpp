@@ -146,7 +146,7 @@ RoverXRay::verify_params(const conduit::Node &params,
     }
     else
     {
-      int width = params["rover/width"].to_int32();
+      const int64 width = params["rover/width"].to_int64();
       if (width <= 0)
       {
         info["errors"].append() = "Optional parameter 'rover/width' must be greater than 0";
@@ -161,7 +161,7 @@ RoverXRay::verify_params(const conduit::Node &params,
     }
     else
     {
-      int height = params["rover/height"].to_int32();
+      const int64 height = params["rover/height"].to_int64();
       if (height <= 0)
       {
         info["errors"].append() = "Optional parameter 'rover/height' must be greater than 0";
@@ -180,7 +180,7 @@ RoverXRay::verify_params(const conduit::Node &params,
     res = false;
   }
 
-  if (params.has_path("image_params"))
+  if (params.has_child("image_params"))
   {
     if (!params.has_path("image_params/log_scale") ||
         !params["image_params/log_scale"].dtype().is_string())
@@ -267,6 +267,7 @@ RoverXRay::execute()
 
   // Initialize rover and configure its behavior with the input params
   Rover rover;
+  rover.update_time_and_cycle(Metadata::n_metadata);
   rover.update_settings(params());
 
   int mpi_comm_id = -1;
@@ -280,49 +281,22 @@ RoverXRay::execute()
   // Adding a dataset to rover resets the camera bounds to the dataset bounds,
   // but any camera params passed via the input params will take precedence.
   // It also instantiates a scheduler if one doesn't already exist.
-  rover.add_data_set(dataset);
+  rover.add_dataset(dataset);
   // Calling execute initializes everything that rover needs based on the input params
   rover.execute();
 
-  if(params().has_path("rover/blueprint"))
+  if (params().has_path("rover/blueprint"))
   {
-    std::string protocol = params()["rover/blueprint"].as_string();
     conduit::Node multi_domain;
     conduit::Node &data = multi_domain.append();
     rover.to_blueprint(data);
 
-    if (data.has_path("coordsets"))
-    {
-      int cycle = -1;
-      double time = -1.;
-
-      if(Metadata::n_metadata.has_path("cycle"))
-      {
-        cycle = Metadata::n_metadata["cycle"].to_int32();
-      }
-      if(Metadata::n_metadata.has_path("time"))
-      {
-        time = Metadata::n_metadata["time"].to_float64();
-      }
-
-      if(cycle != -1)
-      {
-        data["state/cycle"] = cycle;
-      }
-
-      if(time != -1.)
-      {
-        data["state/time"] = time;
-      }
-    }
-
+    std::string filename = params()["rover/filename"].as_string();
+    filename = output_dir(expand_path_special_variables(filename, ".root", mpi_comm_id));
+    const std::string protocol = params()["rover/blueprint"].as_string();
     const int num_files = -1;
     conduit::Node extra_opts;
     std::string result_path;
-
-    std::string filename = params()["rover/filename"].as_string();
-    filename = output_dir(expand_path_special_variables(filename, ".root", mpi_comm_id));
-
     mesh_blueprint_save(multi_domain,
                         filename,
                         protocol,
@@ -331,25 +305,17 @@ RoverXRay::execute()
                         result_path);
   }
 
+  // TODO: I don't think we want to always save a .png unconditionally,
+  // so maybe params could be reworked to request the exact types of output
+  // the user wants rover to produce
   std::string png_filename = params()["rover/filename"].as_string();
   png_filename = output_dir(expand_path_special_variables(png_filename, ".png", mpi_comm_id));
+  rover.save_png(png_filename);
 
-  // Do we always want to save a png?
-  if (params().has_path("image_params"))
+  // TODO: We don't check if rover/bov_filename is valid in verify_params
+  if (params().has_path("rover/bov_filename"))
   {
-    float min_value = params()["image_params/min_value"].to_float32();
-    float max_value = params()["image_params/max_value"].to_float32();
-    bool log_scale = params()["image_params/log_scale"].as_string() == "true";
-    rover.save_png(png_filename, min_value, max_value, log_scale);
-  }
-  else
-  {
-    rover.save_png(png_filename);
-  }
-
-  if (params().has_path("bov_filename"))
-  {
-    std::string bov_filename = params()["bov_filename"].as_string();
+    std::string bov_filename = params()["rover/bov_filename"].as_string();
     bov_filename = output_dir(bov_filename);
     rover.save_bov(expand_path_special_variables(bov_filename, ".bov", mpi_comm_id));
   }

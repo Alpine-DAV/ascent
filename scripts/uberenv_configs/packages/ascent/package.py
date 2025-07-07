@@ -198,14 +198,14 @@ class Ascent(CMakePackage, CudaPackage):
     #######################
     with when("+raja"):
         depends_on("raja")
-        depends_on("raja@2024.02.1:2024.02.99", when="@0.9.3:")
+        depends_on("raja@2024.02.1:2026.12.99", when="@0.9.3:")
         depends_on("raja+openmp", when="+openmp")
         depends_on("raja~openmp", when="~openmp")
 
     with when("+umpire"):
         depends_on("umpire")
         depends_on("umpire@:2023.06.0", when="@:0.9.2")
-        depends_on("umpire@2024.02.1:2024.02.99", when="@0.9.3:")
+        depends_on("umpire@2024.02.1:2026.12.99", when="@0.9.3:")
 
     #######################
     # BabelFlow

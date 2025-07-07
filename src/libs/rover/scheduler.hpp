@@ -4,57 +4,41 @@
 // other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-#ifndef rover_scheduler_h
-#define rover_scheduler_h
+#ifndef ROVER_SCHEDULER_H
+#define ROVER_SCHEDULER_H
 
-#include <domain.hpp>
-#include <image.hpp>
-#include <engine.hpp>
-#include <scheduler_base.hpp>
-#include <ray_generators/ray_generator.hpp>
-#include <vtkm_typedefs.hpp>
+// tpl includes
+#include <conduit.hpp>
 
-//
-// Scheduler types:
-//  static: all ranks gets all rays
-//  normal compositing -
-//    back to front (energy): absorbtion, absorbtion + emmission
-//    front to back (volume): normal volume rendering
-//  dynamic(scattering):
-//    domain passing -
-//      front to back: volume rendering and ray tracing
-//      back to front: both energy types.
-//
-//
-//
-namespace rover {
+// rover includes
+#include "ray_generators/ray_generator.hpp"
 
-template<typename FloatType>
-class Scheduler : public SchedulerBase
+// mpi include
+#ifdef ROVER_PARALLEL
+#include <mpi.h>
+#endif
+
+using namespace conduit;
+
+namespace rover
+{
+
+// Exists for type erasure purposes
+class Scheduler
 {
 public:
-  Scheduler();
-  virtual ~Scheduler();
-  void trace_rays() override;
-  void save_result(std::string file_name) override;
-  void save_result(std::string file_name,
-                   float min_val,
-                   float max_val,
-                   bool log_scale) override;
-  void save_bov(std::string file_name) override;
-  virtual void to_blueprint(conduit::Node &dataset) override;
+  virtual ~Scheduler() = default;
 
-  virtual void get_result(Image<vtkm::Float32> &image) override;
-  virtual void get_result(Image<vtkm::Float64> &image) override;
-protected:
-  Image<FloatType>                          m_result;
-  std::vector<PartialImage<FloatType>>      m_partial_images;
+#ifdef ROVER_PARALLEL
+  virtual void set_comm_handle(MPI_Comm comm_handle) = 0;
+#endif
 
-  void composite();
-  void set_global_scalar_range();
-  void set_global_bounds();
-  int  get_global_channels();
-  void add_partial(vtkmRayTracing::PartialComposite<FloatType> &partial);
+  virtual void add_dataset(vtkmDataSet &dataset) = 0;
+  virtual void set_ray_generator(RayGenerator *ray_generator) = 0;
+  virtual void trace_rays() = 0;
+  virtual void save_png(std::string file_name) = 0;
+  virtual void save_bov(std::string file_name) = 0;
+  virtual void to_blueprint(Node &dataset) = 0;
 };
 
 }; // namespace rover

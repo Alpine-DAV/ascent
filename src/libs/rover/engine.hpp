@@ -38,7 +38,7 @@ public:
   ~Engine();
 
   void validate_tracer();
-  void set_data_set(vtkmDataSet &);
+  void set_dataset(vtkmDataSet &dataset);
   void init();
   void set_primary_field();
   void set_secondary_field();
@@ -53,7 +53,7 @@ public:
   void set_color_map(const vtkmColorTable &color_map, int samples = 1024);
 
 protected:
-  vtkmDataSet m_data_set;
+  vtkmDataSet m_dataset;
   vtkm::rendering::ConnectivityProxy *m_tracer;
   vtkmColorMap m_color_map;
 
