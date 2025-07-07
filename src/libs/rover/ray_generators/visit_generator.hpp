@@ -48,7 +48,7 @@
 
 namespace rover
 {
-
+  // TODO: Change to visitcamera ray generator
 class ROVER_API VisitGenerator : public RayGenerator
 {
 public:
@@ -100,8 +100,8 @@ public:
   VisitGenerator(const VisitParams &params);
   virtual ~VisitGenerator();
 
-  virtual void get_rays(vtkmRayTracing::Ray<vtkm::Float32> &rays);
-  virtual void get_rays(vtkmRayTracing::Ray<vtkm::Float64> &rays);
+  virtual void get_rays(Ray32 &rays);
+  virtual void get_rays(Ray64 &rays);
 
   void set_params(const VisitParams &params);
   void print_params() const;

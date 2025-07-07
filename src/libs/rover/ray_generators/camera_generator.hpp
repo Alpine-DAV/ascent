@@ -49,14 +49,15 @@
 
 namespace rover {
 
+// TODO: Rename this to vtkmcamera ray generator
 class ROVER_API CameraGenerator : public RayGenerator
 {
 public:
   CameraGenerator();
   CameraGenerator(const vtkmCamera &camera);
   virtual ~CameraGenerator();
-  virtual void get_rays(vtkmRayTracing::Ray<vtkm::Float32> &rays);
-  virtual void get_rays(vtkmRayTracing::Ray<vtkm::Float64> &rays);
+  virtual void get_rays(Ray32 &rays);
+  virtual void get_rays(Ray64 &rays);
   void set_camera(vtkmCamera &camera);
   vtkmCoordinates get_coordinates();
   void set_coordinates(vtkmCoordinates coordinates);

@@ -76,11 +76,13 @@ VisitGenerator::gen_rays(vtkmRayTracing::Ray<T> &rays)
   const int64 height = rover::settings["rover/height"].to_int64();
   const int64 size = width * height;
 
+  // TODO: Do we care about supporting old versions of vtkm? This
+  // makes more sense in the context of being a standalone library
 #if (VTKM_VERSION_MAJOR >= 2) && (VTKM_VERSION_MINOR >= 1)
-    vtkm::rendering::raytracing::RayOperations::Resize(rays,
+    vtkmRayTracing::RayOperations::Resize(rays,
                                                        size);
 #else
-    vtkm::rendering::raytracing::RayOperations::Resize(rays,
+    vtkmRayTracing::RayOperations::Resize(rays,
                                                        size,
                                                        vtkm::cont::DeviceAdapterTagSerial());
 #endif
@@ -212,13 +214,13 @@ VisitGenerator::gen_rays(vtkmRayTracing::Ray<T> &rays)
 }
 
 void
-VisitGenerator::get_rays(vtkmRayTracing::Ray<vtkm::Float32> &rays)
+VisitGenerator::get_rays(Ray32 &rays)
 {
   gen_rays(rays);
 }
 
 void
-VisitGenerator::get_rays(vtkmRayTracing::Ray<vtkm::Float64> &rays)
+VisitGenerator::get_rays(Ray64 &rays)
 {
   gen_rays(rays);
 }
@@ -234,6 +236,5 @@ VisitGenerator::print_params() const
 {
   m_params.print();
 }
-
 
 } // namespace rover

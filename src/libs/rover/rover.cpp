@@ -32,7 +32,6 @@ Rover::Rover()
   rover::settings["rover/color_table"] = "Cool to Warm";
   rover::settings["rover/divide_emission_by_abs"] = "false";
   rover::settings["rover/height"] = 200;
-  rover::settings["rover/num_samples"] = 400;
   rover::settings["rover/precision"] = "single";
   rover::settings["rover/ray_scope"] = "global_rays";
   rover::settings["rover/scattering_type"] = "non_scattering";
@@ -82,6 +81,7 @@ Rover::update_settings(Node &params)
 
   if (params.has_child("rover"))
   {
+    // TODO: use .update
     for (const auto &param_name : params["rover"].child_names())
     {
       rover::settings["rover"][param_name].set(params["rover"][param_name]);

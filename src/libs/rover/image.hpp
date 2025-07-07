@@ -48,8 +48,6 @@ public:
 protected:
   std::vector<HandleType>                  m_intensities;
   std::vector<HandleType>                  m_optical_depths;
-  std::vector<bool>                        m_valid_intensities;
-  std::vector<bool>                        m_valid_optical_depths;
 
   void init_from_partial(PartialImage<FloatType> &);
   void normalize_handle(HandleType &, bool);
