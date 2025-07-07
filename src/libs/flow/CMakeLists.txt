@@ -42,7 +42,13 @@ set(flow_headers
 
 set(flow_thirdparty_libs
     conduit
-    conduit_relay)
+    conduit_relay
+    ascent_logging)
+
+if(CALIPER_FOUND)
+    list(APPEND flow_thirdparty_libs caliper)
+endif()
+
 
 #
 # Flows python interpreter support enables

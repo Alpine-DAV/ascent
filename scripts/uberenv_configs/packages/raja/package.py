@@ -34,6 +34,13 @@ class Raja(CachedCMakePackage, CudaPackage, ROCmPackage):
     version("develop", branch="develop", submodules=submodules)
     version("main", branch="main", submodules=submodules)
     version(
+        "2025.03.2",
+        tag="v2025.03.2",
+        commit="6e36a94380adbe88fed11a3213fc08461428ece0",
+        submodules=submodules,
+        preferred=True,
+    )
+    version(
         "2025.03.1",
         tag="v2025.03.1",
         commit="ffa7b92377705aff855b4bf602e197ae4f8e8cc3",

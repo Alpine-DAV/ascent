@@ -30,6 +30,7 @@ class Umpire(CachedCMakePackage, CudaPackage, ROCmPackage):
         tag="v2025.03.0",
         commit="1ed0669c57f041baa1f1070693991c3a7a43e7ee",
         submodules=False,
+        preferred=True,
     )
     version(
         "2024.07.0",

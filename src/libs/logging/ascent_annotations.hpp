@@ -29,16 +29,38 @@
 //
 //-----------------------------------------------------------------------------
 #if defined(ASCENT_LOGGING_ENABLE_CALIPER)
-#define ASCENT_ANNOTATE_MARK_BEGIN( name ) CALI_MARK_BEGIN( name )
-#define ASCENT_ANNOTATE_MARK_END( name ) CALI_MARK_END( name )
+//-----------------------------------------------------------------------------
+#define ASCENT_ANNOTATE_MARK_BEGIN( name )                                     \
+{                                                                              \
+    std::ostringstream ascent_oss_annot;                                       \
+    ascent_oss_annot << name;                                                  \
+    CALI_MARK_BEGIN( ascent_oss_annot.str().c_str() );                         \
+}                                                                              \
+//-----------------------------------------------------------------------------
+#define ASCENT_ANNOTATE_MARK_END( name )                                       \
+{                                                                              \
+    std::ostringstream ascent_oss_annot;                                       \
+    ascent_oss_annot << name;                                                  \
+    CALI_MARK_END( ascent_oss_annot.str().c_str() );                           \
+}                                                                              \
+//-----------------------------------------------------------------------------
 #define ASCENT_ANNOTATE_MARK_FUNCTION CALI_CXX_MARK_FUNCTION
-#define ASCENT_ANNOTATE_MARK_SCOPE( name )  CALI_CXX_MARK_SCOPE( name )
+//-----------------------------------------------------------------------------
+#define ASCENT_ANNOTATE_MARK_SCOPE( name )                                     \
+    std::ostringstream ascent_oss_annot;                                       \
+    ascent_oss_annot << name;                                                  \
+    CALI_CXX_MARK_SCOPE( ascent_oss_annot.str().c_str() );                     \
+
+//-----------------------------------------------------------------------------
 #else // these are empty when caliper is not enabled
+//-----------------------------------------------------------------------------
 #define ASCENT_ANNOTATE_MARK_BEGIN( name )
 #define ASCENT_ANNOTATE_MARK_END( name )
 #define ASCENT_ANNOTATE_MARK_FUNCTION
 #define ASCENT_ANNOTATE_MARK_SCOPE( name )
+//-----------------------------------------------------------------------------
 #endif
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --

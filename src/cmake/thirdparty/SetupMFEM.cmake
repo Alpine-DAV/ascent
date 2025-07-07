@@ -152,7 +152,7 @@ if(MFEM_MPI_ENABLED)
     message(FATAL_ERROR "MFEM was build with MPI support (config.mk has MFEM_USE_MPI = YES)"
                         " but MPI::MPI_CXX target is missing.")
     endif()
-    list(APPEND MFEM_LIBRARIES MPI::MPI_CXX)
+    list(APPEND MFEM_LIBRARIES ${ascent_blt_mpi_deps})
 endif()
 
 if(NOT MFEM_FOUND)
