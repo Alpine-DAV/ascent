@@ -5,6 +5,16 @@
 namespace vtkh
 {
 
+namespace detail
+{
+  void addField(std::vector<std::string>& vec, const std::string& str) {
+    if (std::find(vec.begin(), vec.end(), str) == vec.end()) {
+        vec.push_back(str);
+    }
+  }
+
+}//end detail
+
 Filter::Filter()
 {
   m_input = nullptr;
@@ -108,16 +118,20 @@ Filter::PostExecute()
 void
 Filter::MapAllFields()
 {
-  if(m_input->GetNumberOfDomains() > 0)
-  {
-    vtkm::cont::DataSet dom = m_input->GetDomain(0);
-    vtkm::IdComponent num_fields = dom.GetNumberOfFields();
-    for(vtkm::IdComponent i = 0; i < num_fields; ++i)
+    int num_domains = m_input->GetNumberOfDomains();
+    if(num_domains > 0)
     {
-      std::string field_name = dom.GetField(i).GetName();
-      m_map_fields.push_back(field_name);
+        for(int i = 0; i < num_domains; i++)
+        {
+            vtkm::cont::DataSet dom = m_input->GetDomain(i);
+            vtkm::IdComponent num_fields = dom.GetNumberOfFields();
+            for(vtkm::IdComponent i = 0; i < num_fields; ++i)
+            {
+                std::string field_name = dom.GetField(i).GetName();
+                detail::addField(m_map_fields,field_name);
+            }
+        }
     }
-  }
 }
 
 void
