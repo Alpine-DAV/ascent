@@ -511,7 +511,7 @@ RoverXRay::execute()
   mpi_comm_id = flow::Workspace::default_mpi_comm();
   rover::Logger::get_instance()->set_mpi_comm_id(mpi_comm_id);
   rover::DataLogger::GetInstance()->set_mpi_comm_id(mpi_comm_id);
-  MPI_Comm_rank(mpi_comm_id, &mpi_rank);
+  MPI_Comm_rank(MPI_Comm_f2c(mpi_comm_id), &mpi_rank);
 #endif
 
   const conduit::Node &n_params = params();
