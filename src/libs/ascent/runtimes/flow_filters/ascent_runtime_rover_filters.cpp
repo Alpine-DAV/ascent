@@ -169,7 +169,7 @@ RoverXRay::verify_params(const conduit::Node &params,
       info["errors"].append() = "Optional numeric parameter 'rover/background_intensity' is not numeric";
       res = false;
     }
-    else // (n_rover["background_intensity"].dtype().is_number()
+    else // (n_rover["background_intensity"].dtype().is_number())
     {
       const float64 background_intensity = n_rover["background_intensity"].to_float64();
       if (background_intensity < 0)
@@ -491,7 +491,7 @@ RoverXRay::verify_params(const conduit::Node &params,
   };
 
   const std::string surprises = surprise_check(valid_paths, params);
-  if ("" != surprises)
+  if (!surprises.empty())
   {
     info["errors"].append() = surprises;
     res = false;
