@@ -32,6 +32,7 @@ Rover::Rover()
   // Settings
   rover::settings["background_intensity"] = 0.0f;
   rover::settings["divide_emis_by_absorb"] = "false";
+  rover::settings["enable_imaging_planes"] = "true"; // TODO: Remove this once issue #1559 is fixed
   rover::settings["height"] = 200;
   rover::settings["precision"] = "single";
   rover::settings["width"] = 200;
@@ -157,6 +158,12 @@ Rover::add_dataset(vtkh::DataSet &dataset)
 
   m_scheduler->add_dataset(dataset);
   m_camera.ResetToBounds(dataset.GetGlobalBounds());
+  // TODO: Do we want to further tighten the bounds? vtkm sets
+  // very conservative near and far planes with respect to the data's
+  // bounding box, which in turn negatively affect the imaging plane
+  // and ray meshes. The user can manually tune these params, but
+  // automatically tightening them would provide a better default
+  // out-of-the-box experience.
 }
 
 void

@@ -277,6 +277,23 @@ RoverXRay::verify_params(const conduit::Node &params,
     }
   }
 
+  // TODO: Remove this once issue #1559 is fixed
+  if (n_rover.has_child("enable_imaging_planes"))
+  {
+    if (!n_rover["enable_imaging_planes"].dtype().is_string())
+    {
+      info["errors"].append() = "Optional bool string parameter 'rover/enable_imaging_planes' is not a string";
+      res = false;
+    }
+
+    const std::string enable_imaging_planes = n_rover["enable_imaging_planes"].as_string();
+    if ("true" != enable_imaging_planes && "false" != enable_imaging_planes)
+    {
+      info["errors"].append() = "Optional bool string parameter 'rover/enable_imaging_planes' must be 'true' or 'false'";
+      res = false;
+    }
+  }
+
   const bool has_height = n_rover.has_child("height");
   if (has_height)
   {
@@ -464,6 +481,7 @@ RoverXRay::verify_params(const conduit::Node &params,
     "rover/bov_output",
     "rover/divide_emis_by_absorb",
     "rover/emission",
+    "rover/enable_imaging_planes", // TODO: Remove this once #1559 is fixed
     "rover/filename",
     "rover/height",
     "rover/png_output",

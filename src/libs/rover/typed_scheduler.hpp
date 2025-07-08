@@ -17,7 +17,6 @@
 #ifdef ROVER_PARALLEL
 #include <mpi.h>
 #endif
-
 // rover includes
 #include <domain.hpp>
 #include <image.hpp>
@@ -47,6 +46,40 @@ public:
   void save_png(std::string file_name) override;
   void save_bov(std::string file_name) override;
   void to_blueprint(Node &dataset) override;
+
+  void write_blueprint_imaging_plane(Node &data_out,
+                                     const std::string plane_name,
+                                     const double plane_width,
+                                     const double plane_height,
+                                     const vtkmVec3f &center,
+                                     const vtkmVec3f &left,
+                                     const vtkmVec3f &up,
+                                     vtkmVec3f &llc,
+                                     vtkmVec3f &lrc,
+                                     vtkmVec3f &ulc,
+                                     vtkmVec3f &urc);
+
+  void write_blueprint_ray_corners_mesh(Node &data_out,
+                                        const vtkmVec3f &llc_near,
+                                        const vtkmVec3f &llc_far,
+                                        const vtkmVec3f &lrc_near,
+                                        const vtkmVec3f &lrc_far,
+                                        const vtkmVec3f &urc_near,
+                                        const vtkmVec3f &urc_far,
+                                        const vtkmVec3f &ulc_near,
+                                        const vtkmVec3f &ulc_far);
+
+  void write_blueprint_rays_mesh(Node &data_out,
+                                 const int64 image_width,
+                                 const int64 image_height,
+                                 const double detector_width,
+                                 const double detector_height,
+                                 const vtkmVec3f &lrc_near,
+                                 const double far_detector_width,
+                                 const double far_detector_height,
+                                 const vtkmVec3f &lrc_far,
+                                 const vtkmVec3f &left,
+                                 const vtkmVec3f &up);
 
 protected:
   std::vector<Domain>                       m_domains;
