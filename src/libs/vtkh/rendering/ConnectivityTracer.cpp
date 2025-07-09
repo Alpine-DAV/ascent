@@ -737,75 +737,91 @@ public:
                                    const vtkm::Id& currentCell,
                                    const vtkm::Id& rayIndex) const
   {
-    if (rayStatus != RAY_ACTIVE)
-    {
-      return;
-    }
-    if (exitDistance <= enterDistance)
+    if (rayStatus != RAY_ACTIVE || exitDistance <= enterDistance)
     {
       return;
     }
 
     FloatType segmentLength = exitDistance - enterDistance;
-
     vtkm::Id rayOffset = NumBins * rayIndex;
     vtkm::Id cellOffset = NumBins * currentCell;
-    for (vtkm::Int32 i = 0; i < NumBins; ++i)
+
+    //
+    // Traditionally, we would only keep track of a single intensity value per ray
+    // per bin and we would integrate from the beginning to end of the ray. In a
+    // distributed memory setting, we would move cell data around so that the
+    // entire ray could be traced, but in situ, moving that much cell data around
+    // could blow memory. Here we are keeping track of two values. Total absorption
+    // through this contiguous segment of the mesh, and the amount of emitted energy
+    // that makes it out of this mesh segment. If this is really run on a single node,
+    // we can get the final energy value by multiplying the background intensity by
+    // the total absorption of the mesh segment and add in the amount of emitted
+    // energy that escapes.
+    //
+
+    // NumBins can potentially be a very large number, so the loops are duplicated
+    // like this to avoid checking if DivideEmisByAbsorb == true each iteration.
+
+    if (DivideEmisByAbsorb)
     {
-      const int cellOffsetI = cellOffset + i;
-      BOUNDS_CHECK(absorptionData, cellOffset + i);
-      FloatType absorb = static_cast<FloatType>(absorptionData.Get(cellOffset + i));
-      BOUNDS_CHECK(emissionData, cellOffset + i);
-      FloatType emission = static_cast<FloatType>(emissionData.Get(cellOffset + i));
-
-      absorb *= UnitScalar;
-      emission *= UnitScalar;
-
-      FloatType tmp = vtkm::Exp(-absorb * segmentLength);
-
-      //
-      // Traditionally, we would only keep track of a single intensity value per ray
-      // per bin and we would integrate from the beginning to end of the ray. In a
-      // distributed memory setting, we would move cell data around so that the
-      // entire ray could be traced, but in situ, moving that much cell data around
-      // could blow memory. Here we are keeping track of two values. Total absorption
-      // through this contiguous segment of the mesh, and the amount of emitted energy
-      // that makes it out of this mesh segment. If this is really run on a single node,
-      // we can get the final energy value by multiplying the background intensity by
-      // the total absorption of the mesh segment and add in the amount of emitted
-      // energy that escapes.
-      //
-      const int rayOffsetI = rayOffset + i;
-      BOUNDS_CHECK(absorptionBins, rayOffsetI);
-      FloatType absorbIntensity = static_cast<FloatType>(absorptionBins.Get(rayOffsetI));
-      BOUNDS_CHECK(emissionBins, rayOffsetI);
-      FloatType emissionIntensity = static_cast<FloatType>(emissionBins.Get(rayOffsetI));
-      BOUNDS_CHECK(opticalDepthBins, rayOffsetI);
-      FloatType opticalDepth = static_cast<FloatType>(opticalDepthBins.Get(rayOffsetI));
-
-      absorptionBins.Set(rayOffsetI, absorbIntensity * tmp);
-
-      if (DivideEmisByAbsorb)
+      for (vtkm::Int32 i = 0; i < NumBins; i++)
       {
-        if (absorb > 0)
-        {
-          emissionBins.Set(rayOffsetI, emissionIntensity * tmp + (emission / absorb) * (1.0f - tmp));
-        }
-        else // (absorb <= 0)
-        {
-          emissionBins.Set(rayOffsetI, emissionIntensity * tmp + emission * segmentLength);
-        }
+        const int cellOffsetI = cellOffset + i;
+        BOUNDS_CHECK(absorptionData, cellOffsetI);
+        FloatType absorb = static_cast<FloatType>(absorptionData.Get(cellOffsetI));
+        BOUNDS_CHECK(emissionData, cellOffsetI);
+        FloatType emission = static_cast<FloatType>(emissionData.Get(cellOffsetI));
+  
+        absorb *= UnitScalar;
+        emission *= UnitScalar;
+        FloatType tmp = vtkm::Exp(-absorb * segmentLength);
+  
+        const int rayOffsetI = rayOffset + i;
+        BOUNDS_CHECK(absorptionBins, rayOffsetI);
+        FloatType absorbIntensity = static_cast<FloatType>(absorptionBins.Get(rayOffsetI));
+        BOUNDS_CHECK(emissionBins, rayOffsetI);
+        FloatType emissionIntensity = static_cast<FloatType>(emissionBins.Get(rayOffsetI));
+        BOUNDS_CHECK(opticalDepthBins, rayOffsetI);
+        FloatType opticalDepth = static_cast<FloatType>(opticalDepthBins.Get(rayOffsetI));
+  
+        absorptionBins.Set(rayOffsetI, absorbIntensity * tmp);
+        // The only difference with this loop vs the other is that we do (emission / absorb) here.
+        emissionBins.Set(rayOffsetI, emissionIntensity * tmp + (emission / absorb) * (1.0f - tmp));
+        opticalDepthBins.Set(rayOffsetI, opticalDepth + absorb * segmentLength);
       }
-      else // (!DivideEmisByAbsorb)
+    }
+    else // (!DivideEmisByAbsorb)
+    {
+      for (vtkm::Int32 i = 0; i < NumBins; i++)
       {
+        const int cellOffsetI = cellOffset + i;
+        BOUNDS_CHECK(absorptionData, cellOffsetI);
+        FloatType absorb = static_cast<FloatType>(absorptionData.Get(cellOffsetI));
+        BOUNDS_CHECK(emissionData, cellOffsetI);
+        FloatType emission = static_cast<FloatType>(emissionData.Get(cellOffsetI));
+  
+        absorb *= UnitScalar;
+        emission *= UnitScalar;
+        FloatType tmp = vtkm::Exp(-absorb * segmentLength);
+  
+        const int rayOffsetI = rayOffset + i;
+        BOUNDS_CHECK(absorptionBins, rayOffsetI);
+        FloatType absorbIntensity = static_cast<FloatType>(absorptionBins.Get(rayOffsetI));
+        BOUNDS_CHECK(emissionBins, rayOffsetI);
+        FloatType emissionIntensity = static_cast<FloatType>(emissionBins.Get(rayOffsetI));
+        BOUNDS_CHECK(opticalDepthBins, rayOffsetI);
+        FloatType opticalDepth = static_cast<FloatType>(opticalDepthBins.Get(rayOffsetI));
+  
+        absorptionBins.Set(rayOffsetI, absorbIntensity * tmp);
+        // Here we just use emission directly
         emissionBins.Set(rayOffsetI, emissionIntensity * tmp + emission * (1.0f - tmp));
+        opticalDepthBins.Set(rayOffsetI, opticalDepth + absorb * segmentLength);
       }
-      
-      opticalDepthBins.Set(rayOffsetI, opticalDepth + absorb * segmentLength);
     }
     currentDistance = exitDistance;
   }
 };
+
 //
 //  IdentifyMissedRay is a debugging routine that detects
 //  rays that fail to have any value because of a external

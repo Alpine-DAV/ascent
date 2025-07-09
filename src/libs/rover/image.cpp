@@ -9,6 +9,7 @@
 #include <rover_exceptions.hpp>
 #include <utils/rover_logging.hpp>
 
+#include <vector>
 #include <vtkm/cont/Field.h>
 
 namespace rover
@@ -204,15 +205,16 @@ Image<FloatType>::init_from_partial(PartialImage<FloatType> &partial)
 
   // Helper lambda to expand a channel and push its buffer to the output vector
   auto expand_and_push = [&](int channel_index,
-                                       auto& channel_group,
-                                       auto default_value,
-                                       auto& output_vector) {
-    auto channel = channel_group.GetChannel(channel_index);
-    auto expanded = channel.ExpandBuffer(partial.m_pixel_ids, channel_size, default_value);
+                                       vtkmRayTracing::ChannelBuffer<FloatType>& channel_group,
+                                       FloatType default_value,
+                                       std::vector<HandleType>& output_vector)
+  {
+    vtkmRayTracing::ChannelBuffer<FloatType> channel = channel_group.GetChannel(channel_index);
+    vtkmRayTracing::ChannelBuffer<FloatType> expanded = channel.ExpandBuffer(partial.m_pixel_ids, channel_size, default_value);
     output_vector.push_back(expanded.Buffer);
   };
 
-  for (int i = 0; i < num_channels; ++i)
+  for (int i = 0; i < num_channels; i++)
   {
     // Intensities
     expand_and_push(i,

@@ -27,7 +27,7 @@ struct PartialImage
   // TODO: Improve naming to reflect what these things actually represent,
   // will require changes elsewhere (absorptionpartial and emissionpartial)
   IdHandle                                 m_pixel_ids;
-  vtkmRayTracing::ChannelBuffer<FloatType> m_transmission;          // holds the absorption
+  vtkmRayTracing::ChannelBuffer<FloatType> m_transmission;  // holds the fraction of incomcing intensity that survives absorption
   vtkmRayTracing::ChannelBuffer<FloatType> m_intensity;     // holds the intensity emerging from each ray
   vtkmRayTracing::ChannelBuffer<FloatType> m_optical_depth;
   vtkm::cont::ArrayHandle<FloatType>       m_distances;
@@ -81,7 +81,7 @@ struct PartialImage
   {
     const int num_bins = m_transmission.GetNumChannels();
     auto id_portal = m_pixel_ids.ReadPortal();
-    auto buffer_portal = m_transmission.Buffer.ReadPortal();
+    auto transmission_portal = m_transmission.Buffer.ReadPortal();
     auto depth_portal = m_distances.ReadPortal();
     const int size = static_cast<int>(m_pixel_ids.GetNumberOfValues());
     partials.resize(size);
@@ -98,7 +98,7 @@ struct PartialImage
       const int starting_index = index * num_bins;
       for(int i = 0; i < num_bins; ++i)
       {
-        partials[index].m_bins[i] = buffer_portal.Get(starting_index + i);
+        partials[index].m_bins[i] = transmission_portal.Get(starting_index + i);
       }
     }
   }
@@ -107,7 +107,7 @@ struct PartialImage
   {
     const int num_bins = m_transmission.GetNumChannels();
     auto id_portal = m_pixel_ids.ReadPortal();
-    auto buffer_portal = m_transmission.Buffer.ReadPortal();
+    auto transmission_portal = m_transmission.Buffer.ReadPortal();
     auto intensity_portal = m_intensity.Buffer.ReadPortal();
     auto optical_depth_portal = m_optical_depth.Buffer.ReadPortal();
     auto depth_portal = m_distances.ReadPortal();
@@ -128,7 +128,7 @@ struct PartialImage
       const int starting_index = index * num_bins;
       for(int i = 0; i < num_bins; ++i)
       {
-        partials[index].m_bins[i] = buffer_portal.Get(starting_index + i);
+        partials[index].m_bins[i] = transmission_portal.Get(starting_index + i);
         partials[index].m_emission_bins[i] = intensity_portal.Get(starting_index + i);
         partials[index].m_optical_depth_bins[i] = optical_depth_portal.Get(starting_index + i);
       }
@@ -195,7 +195,7 @@ struct PartialImage
     allocate(size,num_bins);
 
     auto id_portal = m_pixel_ids.WritePortal();
-    auto buffer_portal = m_transmission.Buffer.WritePortal();
+    auto transmission_portal = m_transmission.Buffer.WritePortal();
     auto depth_portal = m_distances.WritePortal();
     auto intensity_portal = m_intensity.Buffer.WritePortal();
 
@@ -210,7 +210,7 @@ struct PartialImage
 
       for(int j = 0; j < num_bins; ++j)
       {
-        buffer_portal.Set(starting_index + j, partials[i].m_bins[j]);
+        transmission_portal.Set(starting_index + j, partials[i].m_bins[j]);
         intensity_portal.Set(starting_index + j, partials[i].m_bins[j] * background[j]);
       }
     }
@@ -229,7 +229,7 @@ struct PartialImage
     allocate(size,num_bins);
 
     auto id_portal = m_pixel_ids.WritePortal();
-    auto buffer_portal = m_transmission.Buffer.WritePortal();
+    auto transmission_portal = m_transmission.Buffer.WritePortal();
     auto depth_portal = m_distances.WritePortal();
     auto intensity_portal = m_intensity.Buffer.WritePortal();
     auto optical_depth_portal = m_optical_depth.Buffer.WritePortal();
@@ -246,9 +246,8 @@ struct PartialImage
       for(int j = 0; j < num_bins; ++j)
       {
         const int starting_index_j = starting_index + j;
-        // TODO: Change names of all buffers and bins
         // TODO: Add comment explaining what's going on here
-        buffer_portal.Set(starting_index_j, partials[i].m_bins[j]);
+        transmission_portal.Set(starting_index_j, partials[i].m_bins[j]);
         intensity_portal.Set(starting_index_j, partials[i].m_emission_bins[j] + partials[i].m_bins[j] * background[j]);
         optical_depth_portal.Set(starting_index_j, partials[i].m_optical_depth_bins[j]);
       }
@@ -289,58 +288,6 @@ struct PartialImage
         }
 
         int_portal.Set(offset + b, emis + buffer_portal.Get(offset + b) * m_source_sig[b]);
-      }
-    }
-  }
-
-  // For debugging
-  void print_pixel(const int x, const int y)
-  {
-    const int size = m_pixel_ids.GetNumberOfValues();
-    const int num_channels = m_transmission.GetNumChannels();
-    const bool has_emission = m_intensity.Buffer.GetNumberOfValues() != 0;
-    const int64 width = rover::settings["width"].to_int64();
-    const int64 height = rover::settings["height"].to_int64();
-    const int64 debug = width * (height - y) + x;
-
-    for(int i = 0; i < size; ++i)
-    {
-      if(m_pixel_ids.ReadPortal().Get(i) == debug)
-      {
-        int offset = i * num_channels;
-        for(int j = 0; j < num_channels ; ++j)
-        {
-          std::cout<<m_transmission.Buffer.ReadPortal().Get(offset + j)<<" ";
-          if(has_emission)
-          {
-            std::cout<<"("<<m_intensity.Buffer.ReadPortal().Get(offset + j)<<") ";
-          }
-        }
-        std::cout<<"\n";
-      }
-    }
-  }
-
-  // For debugging
-  void make_red_pixel(const int x, const int y)
-  {
-    const int size = m_pixel_ids.GetNumberOfValues();
-    const int num_channels = m_transmission.GetNumChannels();
-    const int64 width = rover::settings["width"].to_int64();
-    const int64 height = rover::settings["height"].to_int64();
-    const int64 debug = width * (height - y) + x;
-
-    for(int i = 0; i < size; ++i)
-    {
-      if(m_pixel_ids.ReadPortal().Get(i) == debug)
-      {
-        int offset = i * num_channels;
-        m_transmission.Buffer.WritePortal().Set(offset , 1.f);
-        for(int j = 1; j < num_channels -1; ++j)
-        {
-          m_transmission.Buffer.WritePortal().Set(offset + j, 0.f);
-        }
-        m_transmission.Buffer.WritePortal().Set(offset + num_channels-1,1.f);
       }
     }
   }

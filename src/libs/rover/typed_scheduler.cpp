@@ -214,6 +214,7 @@ template<typename FloatType>
 void
 TypedScheduler<FloatType>::composite()
 {
+  // TODO: Combine AbsorptionPartial and EmissionPartial
   const std::string emission = rover::settings["emission"].as_string();
   if (!emission.empty())
   {
@@ -833,8 +834,9 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
   const double far_detector_height = far_height * 2.0f;
   const double far_detector_width = far_detector_height * aspect_ratio;
 
-  const double spatial_dx = view_width * 2.0f / image_width;
-  const double spatial_dy = view_height * 2.0f / image_height;
+  // The spatial meshes should have the same dimensions as the near plane
+  const double spatial_dx = near_width * 2.0f / image_width;
+  const double spatial_dy = near_height * 2.0f / image_height;
 
   vtkmVec3f llc_near;
   vtkmVec3f lrc_near;
@@ -889,8 +891,8 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
   xray_query.set(rover::settings);
 
   Node &xray_data = state["xray_data"];
-  xray_data["detector_width"] = detector_width * 10.0f; // TODO: Needs validation against VisIt
-  xray_data["detector_height"] = detector_height * 10.0f; // TODO: Needs validation against VisIt
+  xray_data["detector_width"] = detector_width; // TODO: Needs validation against VisIt
+  xray_data["detector_height"] = detector_height; // TODO: Needs validation against VisIt
   xray_data["intensity_max"];
   xray_data["intensity_min"];
   xray_data["optical_depth_max"];
