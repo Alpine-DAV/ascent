@@ -20,6 +20,7 @@
 #include <math.h>
 
 #include <conduit_blueprint.hpp>
+#include <conduit_relay.hpp>
 
 #include "t_config.hpp"
 #include "t_utils.hpp"
@@ -128,6 +129,34 @@ TEST(ascent_data_adapter, vtkm_rectilinear_2d_to_blueprint)
     bool success = conduit::blueprint::verify("mesh",blueprint,info);
     if(!success) info.print();
     EXPECT_TRUE(success);
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_data_adapter, vtkm_rectilinear_non_float64)
+{
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        return;
+    }
+
+    Node test_data;
+    const std::string data_filename = "rectilinear_mesh_int_values.root";
+    const std::string data_path = conduit::utils::join_file_path(std::string(ASCENT_T_DATA_DIR), data_filename);
+    conduit::relay::io::blueprint::load_mesh(data_path, test_data);
+
+    Node verify_info;
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(test_data, verify_info));
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,
+                                    "tout_vtkm_rectilinear");
+
+    std::string topo_name = "image_topo";
+    VTKHDataAdapter::BlueprintToVTKmDataSet(test_data["domain_000000"], false, topo_name);
 }
 
 //-----------------------------------------------------------------------------
