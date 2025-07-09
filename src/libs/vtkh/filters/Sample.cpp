@@ -1,5 +1,5 @@
 
-#include <vtkh/filters/UniformGrid.hpp>
+#include <vtkh/filters/Sample.hpp>
 #include <vtkh/Error.hpp>
 #include <vtkh/vtkm_filters/vtkmProbe.hpp>
 #include <vtkh/utils/vtkm_array_utils.hpp>
@@ -19,130 +19,34 @@
 #include <vtkm/worklet/WorkletMapField.h>
 #include <vtkm/worklet/DispatcherMapField.h>
 
-using scalarI = vtkm::cont::ArrayHandle<vtkm::Int32>;
-using scalarF = vtkm::cont::ArrayHandle<vtkm::Float32>;
-using scalarD = vtkm::cont::ArrayHandle<vtkm::Float64>;
-using vec3_32  = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32,3>>;
-using vec3_64  = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,3>>;
-using vec2_32  = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32,2>>;
-using vec2_64  = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,2>>;
-using Vec2d    = vtkm::Vec<double, 2>;
-using Vec3d    = vtkm::Vec<double, 3>;
+using Scalar_i32_hnd = vtkm::cont::ArrayHandle<vtkm::Int32>;
+using Scalar_f32_hnd = vtkm::cont::ArrayHandle<vtkm::Float32>;
+using Scalar_f64_hnd = vtkm::cont::ArrayHandle<vtkm::Float64>;
+
+using Vec2_f32_hnd  = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32,2>>;
+using Vec2_f64_hnd  = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,2>>;
+
+using Vec3_f32_hnd  = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32,3>>;
+using Vec3_f64_hnd  = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,3>>;
+
+using Vec2_f32    = vtkm::Vec<vtkm::Float32, 2>;
+using Vec3_f32    = vtkm::Vec<vtkm::Float32, 3>;
+
+using Vec2_f64    = vtkm::Vec<vtkm::Float32, 2>;
+using Vec3_f64    = vtkm::Vec<vtkm::Float32, 3>;
+
 
 #define _DEBUG 0
 
+//---------------------------------------------------------------------------//
 namespace vtkh
 {
 
+//---------------------------------------------------------------------------//
 namespace detail
 {
 
-vtkm::cont::Field 
-MakeEmptyField(std::string field_name , vtkm::Id field_id, Vec3f dims, vtkm::cont::Field::Association assoc)
-{
-  int num_values = 0;
-  if(assoc == vtkm::cont::Field::Association::Cells) //cell centered field
-  {
-    int nx = (dims[0] > 1) ? (dims[0] - 1) : 1;
-    int ny = (dims[1] > 1) ? (dims[1] - 1) : 1;
-    int nz = (dims[2] > 1) ? (dims[2] - 1) : 1;
-
-    num_values = nx * ny * nz;
-  }
-  else
-  {
-    int nx = (dims[0] > 0) ? (dims[0]) : 1;
-    int ny = (dims[1] > 0) ? (dims[1]) : 1;
-    int nz = (dims[2] > 0) ? (dims[2]) : 1;
-
-    num_values = nx * ny * nz;
-  }
-
-  if(field_id == 0)
-  {
-    std::vector<int> v_empty(num_values, 0.0);
-    scalarI ah_empty = vtkm::cont::make_ArrayHandle(v_empty.data(),num_values,vtkm::CopyFlag::On);
-    vtkm::cont::Field f_empty(field_name,
-                              assoc,
-                              ah_empty);
-    return f_empty;
-  }
-  else if(field_id == 1)
-  {
-    std::vector<float> v_empty(num_values, 0.0);
-    scalarF ah_empty = vtkm::cont::make_ArrayHandle(v_empty.data(),num_values,vtkm::CopyFlag::On);
-    vtkm::cont::Field f_empty(field_name,
-                              assoc,
-                              ah_empty);
-    return f_empty;
-  }
-  else if(field_id == 2)
-  {
-    std::vector<double> v_empty(num_values, 0.0);
-    scalarD ah_empty = vtkm::cont::make_ArrayHandle(v_empty.data(),num_values,vtkm::CopyFlag::On);
-    vtkm::cont::Field f_empty(field_name,
-                              assoc,
-                              ah_empty);
-    return f_empty;
-  }
-  else if(field_id == 3)
-  {
-    vec2_32 ah_empty = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32,2>>();
-    // note Vec2f was declared as float64 in the vtkmProbe filter ...
-    vtkm::Vec<vtkm::Float32,2> empty_vec = vtkm::make_Vec(0.0,0.0);
-    for(int i = 0; i < num_values; ++i)
-    {
-
-      ah_empty.WritePortal().Set(i,empty_vec);
-    }
-    vtkm::cont::Field f_empty(field_name,
-                              assoc,
-                              ah_empty);
-    return f_empty;
-  }
-  else if(field_id == 4)
-  {
-    vec2_64 ah_empty = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,2>>();
-    vtkm::Vec<vtkm::Float32,2> empty_vec = vtkm::make_Vec(0.0,0.0);
-    for(int i = 0; i < num_values; ++i)
-    {
-      ah_empty.WritePortal().Set(i,empty_vec);
-    }
-    vtkm::cont::Field f_empty(field_name,
-                              assoc,
-                              ah_empty);
-    return f_empty;
-  }
-  else if(field_id == 5)
-  {
-    vec3_32 ah_empty = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32,3>>();
-    vtkm::Vec<vtkm::Float32,3> empty_vec = vtkm::make_Vec(0.0,0.0,0.0);
-    for(int i = 0; i < num_values; ++i)
-    {
-      ah_empty.WritePortal().Set(i,empty_vec);
-    }
-    vtkm::cont::Field f_empty(field_name,
-                              assoc,
-                              ah_empty);
-    return f_empty;
-  }
-  else if(field_id == 6)
-  {
-    vec3_64 ah_empty = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,3>>();
-    for(int i = 0; i < num_values; ++i)
-    {
-      Vec3d empty_vec = vtkm::make_Vec(0.0,0.0,0.0);
-      ah_empty.WritePortal().Set(i,empty_vec);
-    }
-    vtkm::cont::Field f_empty(field_name,
-                              assoc,
-                              ah_empty);
-    return f_empty;
-  }
-  vtkm::cont::Field field;
-  return field;
-}
-
+//---------------------------------------------------------------------------//
 #ifdef VTKH_PARALLEL
 class GlobalReduceField
 {
@@ -151,14 +55,20 @@ class GlobalReduceField
   vtkm::Float64             m_invalid_value;
 
 public:
-  GlobalReduceField(const vtkm::cont::DataSet &dataset, const std::string &field, vtkm::Float64 &invalid_value)
+  //-------------------------------------------------------------------------//
+  GlobalReduceField(const vtkm::cont::DataSet &dataset,
+                    const std::string &field,
+                    vtkm::Float64 &invalid_value)
     : m_dataset(dataset),
       m_field(field),
       m_invalid_value(invalid_value)
   {}
+
+  //-------------------------------------------------------------------------//
   ~GlobalReduceField()
   {}
 
+  //-------------------------------------------------------------------------//
   vtkm::cont::DataSet Reduce()
   {
     vtkm::cont::DataSet res;
@@ -167,25 +77,28 @@ public:
     ReduceField r_field(field, m_dataset, m_invalid_value);
     vtkm::cont::Field res_field = r_field.reduce();
     res.AddField(res_field);
-
     return res;
   }
 
+  //-------------------------------------------------------------------------//
   struct ReduceField
   {
     vtkm::cont::Field &m_input_field;
     const vtkm::cont::DataSet &m_data_set;
     vtkm::Float64 &m_invalid_value;
   
+    //-----------------------------------------------------------------------//
     ReduceField(vtkm::cont::Field &input_field,
-                const vtkm::cont::DataSet &data_set, 
+                const vtkm::cont::DataSet &data_set,
                 vtkm::Float64 &invalid_value)
       : m_input_field(input_field),
         m_data_set(data_set),
         m_invalid_value(invalid_value)
     {}
 
-    vtkm::cont::Field reduce()
+    //-----------------------------------------------------------------------//
+    vtkm::cont::Field
+    reduce()
     {
       if(m_input_field.GetName() == "HIDDEN")
       {
@@ -228,9 +141,9 @@ public:
       for(int j = 0; j < num_points; ++j)
       {
         if(mask_portal.Get(j) == 0)
-	      {
+        {
           l_rank_mask[j] = par_rank;
-	      }
+        }
       }
 
       //take Max to figure out which ranks own which points
@@ -238,13 +151,13 @@ public:
 
       //combine fields
       ////send to root process
-      if(uah_field.CanConvert<scalarI>())
+      if(uah_field.CanConvert<Scalar_i32_hnd>())
       {
 #if _DEBUG 
         std::cerr << "In scalar int global reduce for field: " << m_input_field.GetName() << std::endl;
 #endif
         //loop through field, zero out invalid and unowned values
-        scalarI ah_field = m_input_field.GetData().AsArrayHandle<scalarI>();
+        Scalar_i32_hnd ah_field = m_input_field.GetData().AsArrayHandle<Scalar_i32_hnd>();
         int *local_field = GetVTKMPointer(ah_field);
         std::vector<int> global_field(num_points,0);
 
@@ -269,7 +182,7 @@ public:
             }
           }
           
-          scalarI ah_out = vtkm::cont::make_ArrayHandle(global_field.data(),num_points,vtkm::CopyFlag::On);
+          Scalar_i32_hnd ah_out = vtkm::cont::make_ArrayHandle(global_field.data(),num_points,vtkm::CopyFlag::On);
           vtkm::cont::Field out_field(m_input_field.GetName(),
                                       m_input_field.GetAssociation(),
                                       ah_out);
@@ -279,14 +192,14 @@ public:
         {
           res = m_input_field;
         }
-      }//end scalarI
-      else if(uah_field.CanConvert<scalarF>())
+      }//end Scalar_i32_hnd
+      else if(uah_field.CanConvert<Scalar_f32_hnd>())
       {
 #if _DEBUG 
         std::cerr << "In scalar float global reduce for field: " << m_input_field.GetName() << std::endl;
 #endif
         //loop through field, zero out invalid value
-        scalarF ah_field = m_input_field.GetData().AsArrayHandle<scalarF>();
+        Scalar_f32_hnd ah_field = m_input_field.GetData().AsArrayHandle<Scalar_f32_hnd>();
         float * local_field = GetVTKMPointer(ah_field);
         std::vector<float> global_field(num_points,0);
 
@@ -310,7 +223,7 @@ public:
               global_field[i] = (float) m_invalid_value;
             }
           }
-          scalarF ah_out = vtkm::cont::make_ArrayHandle(global_field.data(),num_points,vtkm::CopyFlag::On);
+          Scalar_f32_hnd ah_out = vtkm::cont::make_ArrayHandle(global_field.data(),num_points,vtkm::CopyFlag::On);
           vtkm::cont::Field out_field(m_input_field.GetName(),
 
                                       m_input_field.GetAssociation(),
@@ -323,12 +236,12 @@ public:
           res = m_input_field;
         }
       }//end scalarF
-      else if(uah_field.CanConvert<scalarD>())
+      else if(uah_field.CanConvert<Scalar_f64_hnd>())
       {
 #if _DEBUG 
         std::cerr << "In scalar double global reduce for field: " << m_input_field.GetName() << std::endl;
 #endif
-        scalarD ah_field = uah_field.AsArrayHandle<scalarD>();
+        Scalar_f64_hnd ah_field = uah_field.AsArrayHandle<Scalar_f64_hnd>();
         //loop through field, zero out invalid value
         for(int i = 0; i < num_points; ++i)
         {
@@ -351,8 +264,8 @@ public:
               global_field[i] = (double)m_invalid_value;
             }
           }
-          
-          scalarD ah_out = vtkm::cont::make_ArrayHandle(global_field.data(),num_points,vtkm::CopyFlag::On);
+
+          Scalar_f64_hnd ah_out = vtkm::cont::make_ArrayHandle(global_field.data(),num_points,vtkm::CopyFlag::On);
           vtkm::cont::Field out_field(m_input_field.GetName(),
                                       m_input_field.GetAssociation(),
                                       ah_out);
@@ -363,10 +276,10 @@ public:
           res = m_input_field;
         }
       } //end scalarD
-      else if(uah_field.CanConvert<vec2_32>())
+      else if(uah_field.CanConvert<Vec2_f32_hnd>())
       {
         //loop through field, zero out invalid value
-        vec2_32 ah_field = m_input_field.GetData().AsArrayHandle<vec2_32>();
+        Vec2_f32_hnd ah_field = m_input_field.GetData().AsArrayHandle<Vec2_f32_hnd>();
         std::vector<float> local_x_points(num_points,(float)0.0);
         std::vector<float> local_y_points(num_points,(float)0.0);
         std::vector<float> global_x_points(num_points,(float)0.0);
@@ -390,7 +303,7 @@ public:
 
         if(par_rank == 0)
         {
-            vec2_32 ah_out = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32,2>>();
+            Vec2_f32_hnd ah_out;
             ah_out.Allocate(num_points);
             for(int i = 0; i < num_points; ++i)
             {
@@ -413,11 +326,11 @@ public:
         {
           res = m_input_field;
         }
-      }//end vec2_32
-      else if(uah_field.CanConvert<vec2_64>())
+      }//end Vec2_f32_hnd
+      else if(uah_field.CanConvert<Vec2_f64_hnd>())
       {
         //loop through field, zero out invalid value
-        vec2_64 ah_field = m_input_field.GetData().AsArrayHandle<vec2_64>();
+        Vec2_f64_hnd ah_field = m_input_field.GetData().AsArrayHandle<Vec2_f64_hnd>();
         std::vector<double> local_x_points(num_points,(double)0.0);
         std::vector<double> local_y_points(num_points,(double)0.0);
         std::vector<double> global_x_points(num_points,(double)0.0);
@@ -441,7 +354,7 @@ public:
 
         if(par_rank == 0)
         {
-          vec2_64 ah_out = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,2>>();
+          Vec2_f64_hnd ah_out;
           ah_out.Allocate(num_points);
           for(int i = 0; i < num_points; ++i)
           {
@@ -461,11 +374,11 @@ public:
         }
         else
           res = m_input_field;
-      }//end vec2_64
-      else if(uah_field.CanConvert<vec3_32>())
+      }//end Vec2_f64_hnd
+      else if(uah_field.CanConvert<Vec3_f32_hnd>())
       {
         //loop through field, zero out invalid value
-        vec3_32 ah_field = m_input_field.GetData().AsArrayHandle<vec3_32>();
+        Vec3_f32_hnd ah_field = m_input_field.GetData().AsArrayHandle<Vec3_f32_hnd>();
         std::vector<float> local_x_points(num_points,0);
         std::vector<float> local_y_points(num_points,0);
         std::vector<float> local_z_points(num_points,0);
@@ -491,7 +404,7 @@ public:
 
         if(par_rank == 0)
         {
-          vec3_32 ah_out = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32,3>>();
+          Vec3_f32_hnd ah_out = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32,3>>();
           ah_out.Allocate(num_points);
           for(int i = 0; i < num_points; ++i)
           {
@@ -518,11 +431,11 @@ public:
         {
           res = m_input_field;
         }
-      }//end vec3_32
-      else if(uah_field.CanConvert<vec3_64>())
+      }//end Vec3_f32_hnd
+      else if(uah_field.CanConvert<Vec3_f64_hnd>())
       {
         //loop through field, zero out invalid value
-        vec3_64 ah_field = m_input_field.GetData().AsArrayHandle<vec3_64>();
+        Vec3_f64_hnd ah_field = m_input_field.GetData().AsArrayHandle<Vec3_f64_hnd>();
         std::vector<double> local_x_points(num_points,0);
         std::vector<double> local_y_points(num_points,0);
         std::vector<double> local_z_points(num_points,0);
@@ -550,7 +463,7 @@ public:
 
         if(par_rank == 0)
         {
-          vec3_64 ah_out = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,3>>();
+          Vec3_f64_hnd ah_out;
           ah_out.Allocate(num_points);
           for(int i = 0; i < num_points; ++i)
           {
@@ -588,7 +501,7 @@ public:
 
 };//class globalReduceField
 #endif
-
+//---------------------------------------------------------------------------//
 class LocalReduceField
 {
   vtkm::cont::DataSet &m_dataset;
@@ -598,18 +511,26 @@ class LocalReduceField
   vtkm::Float64       m_invalid_value;
 
 public:
-  LocalReduceField(vtkm::cont::DataSet &dataset, vtkm::cont::Field &field, vtkm::cont::Field &mask, const std::string &field_name, vtkm::Float64 invalid_value)
+  //-------------------------------------------------------------------------//
+  LocalReduceField(vtkm::cont::DataSet &dataset,
+                   vtkm::cont::Field &field,
+                   vtkm::cont::Field &mask,
+                   const std::string &field_name,
+                   vtkm::Float64 invalid_value)
     : m_dataset(dataset),
       m_field(field),
       m_mask(mask),
       m_field_name(field_name),
       m_invalid_value(invalid_value)
   {}
-
+  
+  //-------------------------------------------------------------------------//
   ~LocalReduceField()
   {}
-
-  void LocalReduce()
+  
+  //-------------------------------------------------------------------------//
+  void
+  LocalReduce()
   {
     vtkm::cont::UnknownArrayHandle uah_field = m_field.GetData();
     vtkm::cont::UnknownArrayHandle uah_local_field = m_dataset.GetField(m_field_name).GetData();
@@ -637,11 +558,11 @@ public:
     
     int num_points = tmp_mask_portal.GetNumberOfValues();
 
-    if(uah_field.CanConvert<scalarI>())
+    if(uah_field.CanConvert<Scalar_i32_hnd>())
     {
       //loop through field, zero out invalid values
-      scalarI tmp_data = m_field.GetData().AsArrayHandle<scalarI>();
-      scalarI local_data = m_dataset.GetField(m_field_name).GetData().AsArrayHandle<scalarI>();
+      Scalar_i32_hnd tmp_data = m_field.GetData().AsArrayHandle<Scalar_i32_hnd>();
+      Scalar_i32_hnd local_data = m_dataset.GetField(m_field_name).GetData().AsArrayHandle<Scalar_i32_hnd>();
       int *tmp_field = GetVTKMPointer(tmp_data);
       int *local_field = GetVTKMPointer(local_data);
 
@@ -656,12 +577,12 @@ public:
           w_local_mask_portal.Set(i,0);
         }
       }
-    }//end scalarI
-    else if(uah_field.CanConvert<scalarF>())
+    }//end Scalar_i32_hnd
+    else if(uah_field.CanConvert<Scalar_f32_hnd>())
     {
       //loop through field, zero out invalid values
-      scalarF tmp_data = m_field.GetData().AsArrayHandle<scalarF>();
-      scalarF local_data = m_dataset.GetField(m_field_name).GetData().AsArrayHandle<scalarF>();
+      Scalar_f32_hnd tmp_data = m_field.GetData().AsArrayHandle<Scalar_f32_hnd>();
+      Scalar_f32_hnd local_data = m_dataset.GetField(m_field_name).GetData().AsArrayHandle<Scalar_f32_hnd>();
       float *tmp_field = GetVTKMPointer(tmp_data);
       float *local_field = GetVTKMPointer(local_data);
 
@@ -676,12 +597,12 @@ public:
           w_local_mask_portal.Set(i,0);
         }
       }
-    }//end scalarF
-    else if(uah_field.CanConvert<scalarD>())
+    }//end Scalar_f32_hnd
+    else if(uah_field.CanConvert<Scalar_f64_hnd>())
     {
       //loop through field, zero out invalid values
-      scalarD tmp_data = m_field.GetData().AsArrayHandle<scalarD>();
-      scalarD local_data = m_dataset.GetField(m_field_name).GetData().AsArrayHandle<scalarD>();
+      Scalar_f64_hnd tmp_data = m_field.GetData().AsArrayHandle<Scalar_f64_hnd>();
+      Scalar_f64_hnd local_data = m_dataset.GetField(m_field_name).GetData().AsArrayHandle<Scalar_f64_hnd>();
       double *tmp_field = GetVTKMPointer(tmp_data);
       double *local_field = GetVTKMPointer(local_data);
 
@@ -696,12 +617,12 @@ public:
           w_local_mask_portal.Set(i,0);
         }
       }
-    } //end scalarD
-    else if(uah_field.CanConvert<vec2_32>())
+    } //end Scalar_f64_hnd
+    else if(uah_field.CanConvert<Vec2_f32_hnd>())
     {
       //loop through field, zero out invalid values
-      vec2_32 tmp_data = m_field.GetData().AsArrayHandle<vec2_32>();
-      vec2_32 local_data = m_dataset.GetField(m_field_name).GetData().AsArrayHandle<vec2_32>();
+      Vec2_f32_hnd tmp_data = m_field.GetData().AsArrayHandle<Vec2_f32_hnd>();
+      Vec2_f32_hnd local_data = m_dataset.GetField(m_field_name).GetData().AsArrayHandle<Vec2_f32_hnd>();
 
       for(int i = 0; i < num_points; ++i)
       {
@@ -720,12 +641,12 @@ public:
           local_data.WritePortal().Set(i,vec);
         }
       }
-    }//end vec2_32
-    else if(uah_field.CanConvert<vec2_64>())
+    }//end Vec2_f32_hnd
+    else if(uah_field.CanConvert<Vec2_f64_hnd>())
     {
       //loop through field, zero out invalid values
-      vec2_64 tmp_data = m_field.GetData().AsArrayHandle<vec2_64>();
-      vec2_64 local_data = m_dataset.GetField(m_field_name).GetData().AsArrayHandle<vec2_64>();
+      Vec2_f64_hnd tmp_data = m_field.GetData().AsArrayHandle<Vec2_f64_hnd>();
+      Vec2_f64_hnd local_data = m_dataset.GetField(m_field_name).GetData().AsArrayHandle<Vec2_f64_hnd>();
 
       for(int i = 0; i < num_points; ++i)
       {
@@ -744,12 +665,12 @@ public:
           local_data.WritePortal().Set(i,vec);
         }
       }
-    }//end vec2_64
-    else if(uah_field.CanConvert<vec3_32>())
+    }//end Vec2_f64_hnd
+    else if(uah_field.CanConvert<Vec3_f32_hnd>())
     {
       //loop through field, zero out invalid values
-      vec3_32 tmp_data = m_field.GetData().AsArrayHandle<vec3_32>();
-      vec3_32 local_data = m_dataset.GetField(m_field_name).GetData().AsArrayHandle<vec3_32>();
+      Vec3_f32_hnd tmp_data   = m_field.GetData().AsArrayHandle<Vec3_f32_hnd>();
+      Vec3_f32_hnd local_data = m_dataset.GetField(m_field_name).GetData().AsArrayHandle<Vec3_f32_hnd>();
 
       for(int i = 0; i < num_points; ++i)
       {
@@ -771,12 +692,12 @@ public:
           local_data.WritePortal().Set(i,vec);
         }
       }
-    }//end vec3_32
-    else if(uah_field.CanConvert<vec3_64>())
+    }//end Vec3_f32_hnd
+    else if(uah_field.CanConvert<Vec3_f64_hnd>())
     {
       //loop through field, zero out invalid values
-      vec3_64 tmp_data = m_field.GetData().AsArrayHandle<vec3_64>();
-      vec3_64 local_data = m_dataset.GetField(m_field_name).GetData().AsArrayHandle<vec3_64>();
+      Vec3_f64_hnd tmp_data = m_field.GetData().AsArrayHandle<Vec3_f64_hnd>();
+      Vec3_f64_hnd local_data = m_dataset.GetField(m_field_name).GetData().AsArrayHandle<Vec3_f64_hnd>();
 
       for(int i = 0; i < num_points; ++i)
       {
@@ -798,7 +719,7 @@ public:
           local_data.WritePortal().Set(i,vec);
         }
       }
-    }//end vec3_64
+    }//end Vec3_f64_hnd
     else
     {
         return;
@@ -808,25 +729,29 @@ public:
 
 } //namespace detail
 
-UniformGrid::UniformGrid()
+//---------------------------------------------------------------------------//
+Sample::Sample()
 	: m_invalid_value(std::numeric_limits<double>::min())
 {
 
 }
 
-UniformGrid::~UniformGrid()
+//---------------------------------------------------------------------------//
+Sample::~Sample()
 {
 
 }
 
+//---------------------------------------------------------------------------//
 void
-UniformGrid::PreExecute()
+Sample::PreExecute()
 {
   Filter::PreExecute();
 }
 
+//---------------------------------------------------------------------------//
 void
-UniformGrid::DoExecute()
+Sample::DoExecute()
 {
 #ifdef VTKH_PARALLEL
   // Setup VTK-h and VTK-m comm.
@@ -835,7 +760,7 @@ UniformGrid::DoExecute()
   int par_rank;
   int par_size;
   MPI_Comm_rank(mpi_comm, &par_rank);
-  MPI_Comm_size(mpi_comm, &par_size);  
+  MPI_Comm_size(mpi_comm, &par_size);
 #endif
 
   this->m_output = new DataSet();
@@ -877,9 +802,7 @@ UniformGrid::DoExecute()
       {
         //Uniform Grid Sample
         vtkh::vtkmProbe probe;
-        probe.setBoxDims(m_dims);
-        probe.setBoxOrigin(m_origin);
-        probe.setBoxSpacing(m_spacing);
+        probe.setPoints(m_points_xs,m_points_ys,m_points_zs);
         probe.setInvalidValue(m_invalid_value);
         auto dataset = probe.Run(dom);
         vtkm::cont::Field tmp_field = dataset.GetField(field_name);
@@ -913,7 +836,11 @@ UniformGrid::DoExecute()
         }
         else
         {
-          vtkh::detail::LocalReduceField localreducefield(local_res,tmp_field,valid_field, field_name, m_invalid_value);
+          vtkh::detail::LocalReduceField localreducefield(local_res,
+                                                          tmp_field,
+                                                          valid_field,
+                                                          field_name,
+                                                          m_invalid_value);
           localreducefield.LocalReduce();
         }
       }
@@ -962,44 +889,90 @@ UniformGrid::DoExecute()
 #endif
 }
 
+//---------------------------------------------------------------------------//
 void
-UniformGrid::PostExecute()
+Sample::PostExecute()
 {
   Filter::PostExecute();
 }
 
+//---------------------------------------------------------------------------//
 std::string
-UniformGrid::GetName() const
+Sample::GetName() const
 {
-  return "vtkh::UniformGrid";
+  return "vtkh::Sample";
+}
+//---------------------------------------------------------------------------//
+void
+Sample::Line(int num_samples,
+             double x_start,
+             double y_start,
+             double z_start,
+             double x_end,
+             double y_end,
+             double z_end)
+
+{
+    int line_spatial_dims = 3;
+    // check for 2d case
+    if(z_start == z_end)
+    {
+        line_spatial_dims = 2;
+    }
+
+    // alloc array handles to hold num_samples
+    // alloc xs, ys
+    m_points_xs.Allocate(num_samples);
+    m_points_ys.Allocate(num_samples);
+    if(line_spatial_dims ==3)
+    {
+      // alloc z
+      m_points_zs.Allocate(num_samples);
+    }
+    else
+    {
+      m_points_zs.Allocate(0);
+    }
+
+    double line_dpos   = 1.0 / double(num_samples);
+
+    for(int i=0;i<num_samples;i++)
+    {
+        double line_pos = i * line_dpos;
+        double x = (x_end - x_start) * line_pos + x_start;
+        double y = (y_end - y_start) * line_pos + y_start;
+        m_points_xs.WritePortal().Set(i,x);
+        m_points_ys.WritePortal().Set(i,y);
+
+        if(line_spatial_dims ==3)
+        {
+            double z = (z_end - z_start) * line_pos + z_start;
+            m_points_zs.WritePortal().Set(i,z);
+        }
+    }
 }
 
+//---------------------------------------------------------------------------//
 void
-UniformGrid::Dims(const Vec3f dims)
+Sample::Points(vtkm::cont::ArrayHandle<vtkm::Float64> xs,
+               vtkm::cont::ArrayHandle<vtkm::Float64> ys,
+               vtkm::cont::ArrayHandle<vtkm::Float64> zs)
 {
-  m_dims = dims;
+  m_points_xs = xs;
+  m_points_ys = ys;
+  m_points_zs = zs;
 }
 
+//---------------------------------------------------------------------------//
 void
-UniformGrid::Origin(const Vec3f origin)
-{
-  m_origin = origin;
-}
-
-void
-UniformGrid::Spacing(const Vec3f spacing)
-{
-  m_spacing = spacing;
-}
-
-void
-UniformGrid::Fields(const std::vector<std::string> fields)
+Sample::Fields(const std::vector<std::string> fields)
 {
   m_fields = fields;
 }
 
+//---------------------------------------------------------------------------//
 void
-UniformGrid::InvalidValue(const vtkm::Float64 invalid_value)
+Sample::InvalidValue(const vtkm::Float64 invalid_value)
 {
   m_invalid_value = invalid_value;
 }
