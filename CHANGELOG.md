@@ -40,7 +40,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added support for special keyword formatting for output paths. Current supported keywords include
 `cycle`, `family`, and `time`.
 - Added support for formatting of output paths for extracts.
-
+- Added support for parallel timestep mode to replay allowing for parallel in time processes in addition to pre-existing distributed-memory parallelism.
 
 ### Changed
 - Changed the replay utility's binary names such that `replay_ser` is now `ascent_replay` and `raplay_mpi` is now `ascent_replay_mpi`. This will help prevent potential name collisions with other tools that also have replay utilities.
