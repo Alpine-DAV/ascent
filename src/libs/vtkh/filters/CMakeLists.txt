@@ -33,6 +33,7 @@ set(vtkh_filters_headers
     Statistics.hpp
     Streamline.hpp
     UniformGrid.hpp
+    Sample.hpp
     VectorComponent.hpp
     VectorMagnitude.hpp
     WarpXStreamline.hpp
@@ -73,6 +74,7 @@ set(vtkh_filters_sources
     Statistics.cpp
     Streamline.cpp
     UniformGrid.cpp
+    Sample.cpp
     VectorComponent.cpp
     VectorMagnitude.cpp
     WarpXStreamline.cpp
