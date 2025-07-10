@@ -1,4 +1,4 @@
-#include "ANARITriangleRenderer.hpp"
+#include "ANARIRenderer.hpp"
 
 #include <vtkh/utils/vtkm_array_utils.hpp>
 #include <vtkh/compositing/Compositor.hpp>
@@ -11,10 +11,8 @@
 #include <mpi.h>
 #endif
 
-#include <vtkm/interop/anari/ANARIMapperTriangles.h>
 #include <vtkm/interop/anari/ANARIScene.h>
 #include <vtkm/rendering/CanvasRayTracer.h>
-#include <vtkm/rendering/MapperRayTracer.h>
 #include <vtkm/cont/ColorTable.h>
 #include <vtkm/rendering/ConnectivityProxy.h>
 #include <vtkm/rendering/raytracing/Camera.h>
@@ -114,7 +112,6 @@ anari_device_load()
 static void setColorMap(anari_cpp::Device d, vtkm::interop::anari::ANARIMapper& mapper, vtkm::Range &range, vtkm::cont::ColorTable &color_table)
 {
   vtkm::Int32 num_points = color_table.GetNumberOfPoints(); 
-  std::cerr << "color table num_points: " << num_points << std::endl;
   auto colorArray = anari_cpp::newArray1D(d, ANARI_FLOAT32_VEC3, num_points);
   auto* colors = anari_cpp::map<vtkm::Vec3f_32>(d, colorArray);
   for(int i = 0; i < num_points; i++)
@@ -122,7 +119,6 @@ static void setColorMap(anari_cpp::Device d, vtkm::interop::anari::ANARIMapper& 
     vtkm::Vec4f_64 color; 
     //returned as location, RGB
     color_table.GetPoint(i,color);
-    std::cerr << "color table point: " << i << " rgba: " << color[0] << " " << color[1] << " " << color[2] << " "<< color[3] << std::endl;
     colors[i] = vtkm::Vec3f_32((float)color[1], (float)color[2], (float)color[3]);
     //colors[i] = vtkm::Vec3f_64(i%2, i%1, i%2);
   }
@@ -149,7 +145,6 @@ static void
 setColorMap2(anari_cpp::Device d, vtkm::interop::anari::ANARIMapper& mapper, vtkm::cont::ColorTable &color_table, vtkm::Range &field_range)
 {
   vtkm::Int32 num_points = color_table.GetNumberOfPoints(); 
-  std::cerr << "color table num_points: " << num_points << std::endl;
   auto colorArray = anari_cpp::newArray1D(d, ANARI_FLOAT64_VEC3, num_points);
   auto* colors = anari_cpp::map<vtkm::Vec3f_64>(d, colorArray);
   for(int i = 0; i < num_points; i++)
@@ -157,7 +152,6 @@ setColorMap2(anari_cpp::Device d, vtkm::interop::anari::ANARIMapper& mapper, vtk
     vtkm::Vec4f_64 color; 
     //returned as location, RGB
     color_table.GetPoint(i,color);
-    std::cerr << "color table point: " << i << " rgba: " << color[0] << " " << color[1] << " " << color[2] << " "<< color[3] << std::endl;
     //colors[i] = vtkm::Vec3f_64(color[1], color[2], color[3]);
     //colors[i] = vtkm::Vec3f_64(i%2, i%1, i%2);
   }
@@ -168,7 +162,6 @@ setColorMap2(anari_cpp::Device d, vtkm::interop::anari::ANARIMapper& mapper, vtk
   anari_cpp::unmap(d, colorArray);
 
   vtkm::Int32 num_points_alpha = color_table.GetNumberOfPointsAlpha(); 
-  std::cerr << "color table num_points_alpha: " << num_points_alpha << std::endl;
   auto opacityArray = anari_cpp::newArray1D(d, ANARI_FLOAT64, num_points_alpha);
   auto* opacities = anari_cpp::map<float>(d, opacityArray);
   for(int i = 0; i < num_points_alpha; i++)
@@ -176,7 +169,6 @@ setColorMap2(anari_cpp::Device d, vtkm::interop::anari::ANARIMapper& mapper, vtk
     vtkm::Vec4f_64 alpha; 
     //returned as location, alpha, midpoint and sharpness 
     color_table.GetPointAlpha(i,alpha);
-    std::cerr << "alpha table point: " << i << " : " << alpha[0] << " " << alpha[1] << " " << alpha[2] << " "<< alpha[3] << std::endl;
     opacities[i] = alpha[1];
   }
   opacities[0] = 0.;
@@ -185,7 +177,6 @@ setColorMap2(anari_cpp::Device d, vtkm::interop::anari::ANARIMapper& mapper, vtk
 
   vtkm::Float64 min = field_range.Min;
   vtkm::Float64 max = field_range.Max;
-  std::cerr << "field min max: " << min << " " << max << std::endl;
   mapper.SetANARIColorMap(colorArray, opacityArray, true);
   mapper.SetANARIColorMapValueRange(vtkm::Vec2f_64(min, max));
 //  mapper.SetANARIColorMapOpacityScale(0.5f);
@@ -194,10 +185,9 @@ setColorMap2(anari_cpp::Device d, vtkm::interop::anari::ANARIMapper& mapper, vtk
 
 } //  namespace detail
 
-ANARITriangleRenderer::ANARITriangleRenderer()
+ANARIRenderer::ANARIRenderer()
 {
   m_color_table = vtkm::cont::ColorTable("Cool to Warm");
-  std::cerr << "colortable: " << m_color_table.GetName() << std::endl;
   m_device = detail::anari_device_load();
   m_renderer = anari_cpp::newObject<anari_cpp::Renderer>(m_device,"default");
   m_frame = anari_cpp::newObject<anari_cpp::Frame>(m_device);
@@ -229,12 +219,48 @@ ANARITriangleRenderer::ANARITriangleRenderer()
   //m_has_unstructured = false;
 }
 
-ANARITriangleRenderer::~ANARITriangleRenderer()
+ANARIRenderer::~ANARIRenderer()
 {
 }
 
+void 
+ANARIRenderer::SetRenderers(std::vector<vtkh::ANARIRenderer*> anari_renderers)
+{
+  m_anari_renderers = anari_renderers;
+}
+
+void 
+ANARIRenderer::SetNumberOfSamples(int num_samples)
+{
+  m_num_samples = num_samples;
+}
+
+bool
+ANARIRenderer::IsANARITriangle(ANARIRenderer *renderer)
+{
+  return dynamic_cast<ANARITriangleRenderer*>(renderer) != nullptr;
+}
+
+bool
+ANARIRenderer::IsANARIVolume(ANARIRenderer *renderer)
+{
+  return dynamic_cast<ANARIVolumeRenderer*>(renderer) != nullptr;
+}
+
+bool
+ANARIRenderer::IsANARIPoint(ANARIRenderer *renderer)
+{
+  return dynamic_cast<ANARIPointRenderer*>(renderer) != nullptr;
+}
+
+bool
+ANARIRenderer::IsANARIGlyph(ANARIRenderer *renderer)
+{
+  return dynamic_cast<ANARIGlyphRenderer*>(renderer) != nullptr;
+}
+
 void
-ANARITriangleRenderer::Update()
+ANARIRenderer::Update()
 {
   VTKH_DATA_OPEN(this->GetName());
 #ifdef VTKH_ENABLE_LOGGING
@@ -262,62 +288,88 @@ ANARITriangleRenderer::Update()
   VTKH_DATA_CLOSE();
 }
 
+
 void
-ANARITriangleRenderer::DoExecute()
+ANARIRenderer::DoExecute()
 {
-  //old from Qi:
-  //shouldn't need this since calling 
-  //Renderer::PreExecute sets m_range & m_bounds to global values
-  // Compute value range if necessary
-  //if (!scalar_range.IsNonEmpty()) 
-  //{
-  //  auto ranges = dset.GetGlobalRange(field_name);
-  //  auto size = ranges.GetNumberOfValues();
-  //  if (size != 1) 
-  //  {
-  //    ASCENT_ERROR("Anari Triangle only supports scalar fields");
-  //  }
-  //  auto portal = ranges.ReadPortal();
-  //  for (int cc = 0; cc < size; ++cc)
-  //  {
-  //    auto range = portal.Get(cc);
-  //    scalar_range.Include(range);
-  //    break;
-  //  }
-  //}
-
   // Build Scene
-  std::cerr << "ANARI TriRenderer DoExecute: " << std::endl;
   vtkm::interop::anari::ANARIScene scene(m_device);
-  int num_domains = m_input->GetNumberOfDomains();
-  std::cerr << "num_domains: " << num_domains<< std::endl;
-  vtkm::Range field_range = m_input->GetGlobalRange(m_field_name).ReadPortal().Get(0);
-  std::cerr << "field range: " << field_range.Min << " " << field_range.Max << std::endl;
-  std::cerr << "m_field_name: " << m_field_name << std::endl;
-  for (int i = 0; i < num_domains; ++i)
-  {
-    //std::cerr << "CELLSET: " << std::endl;
-    //m_input->GetDomain(i).GetCellSet().PrintSummary(std::cerr);
-    //std::cerr << "COORDSET: " << std::endl;
-    //m_input->GetDomain(i).GetCoordinateSystem().PrintSummary(std::cerr);
-    //std::cerr << "FIELD: " << std::endl;
-    //m_input->GetDomain(i).GetField(m_field_name).PrintSummary(std::cerr);
-    std::cerr << " unstructured" << std::endl;
+  int num_renderers = m_anari_renderers.size();
+  bool isVol, isTri, isGlyph, isPoint;
 
-    auto& mTri = scene.AddMapper(vtkm::interop::anari::ANARIMapperTriangles(m_device));
-    mTri.SetName(("triangle_" + std::to_string(i)).c_str());
-    mTri.SetActor({ 
-      m_input->GetDomain(i).GetCellSet(), 
-      m_input->GetDomain(i).GetCoordinateSystem(), 
-      m_input->GetDomain(i).GetField(m_field_name) 
-    });
-    //mTri.SetColorTable(m_color_table);
-    vtkh::detail::setColorMap(m_device, mTri, field_range, m_color_table);
-    //vtkh::detail::setColorMap2(m_device, mTri, m_color_table, field_range);
-    //std::cerr << "color_table range: " << ct_range.Max << " " << ct_range.Min << std::endl;
-}
+  //loop through anari renderers
+  //add them all to a scene 
+  //with their respective mappers
+  for(int i = 0; i < num_renderers; i++)
+  {
+    vtkm::Range field_range = m_input->GetGlobalRange(m_field_name).ReadPortal().Get(0);
+    int num_domains = m_input->GetNumberOfDomains();
+    auto a_renderer = m_anari_renderers[i];
+    
+    isVol = IsANARIVolume(a_renderer);
+    isTri = IsANARITriangle(a_renderer);
+    isPoint = IsANARIPoint(a_renderer);
+    isGlyph = IsANARIGlyph(a_renderer);
+    //loop through domains 
+    //add them to ANARI scene
+    for (int i = 0; i < num_domains; ++i)
+    {
+      if(isVol)
+      {
+        auto& mVol = scene.AddMapper(vtkm::interop::anari::ANARIMapperVolume(m_device));
+        mVol.SetName(("volume_" + std::to_string(i)).c_str());
+        mVol.SetActor({ 
+          m_input->GetDomain(i).GetCellSet(), 
+          m_input->GetDomain(i).GetCoordinateSystem(), 
+          m_input->GetDomain(i).GetField(m_field_name) 
+        });
+        vtkh::detail::setColorMap(m_device, mVol, field_range, m_color_table);
+
+      }
+      else if(isTri)
+      {
+        auto& mTri = scene.AddMapper(vtkm::interop::anari::ANARIMapperTriangles(m_device));
+        mTri.SetName(("triangle_" + std::to_string(i)).c_str());
+        mTri.SetActor({ 
+          m_input->GetDomain(i).GetCellSet(), 
+          m_input->GetDomain(i).GetCoordinateSystem(), 
+          m_input->GetDomain(i).GetField(m_field_name) 
+        });
+        vtkh::detail::setColorMap(m_device, mTri, field_range, m_color_table);
+      }
+      else if(isPoint)
+      {
+        auto& mPoint = scene.AddMapper(vtkm::interop::anari::ANARIMapperPoints(m_device));
+        mPoint.SetName(("points_" + std::to_string(i)).c_str());
+        mPoint.SetActor({ 
+          m_input->GetDomain(i).GetCellSet(), 
+          m_input->GetDomain(i).GetCoordinateSystem(), 
+          m_input->GetDomain(i).GetField(m_field_name) 
+        });
+        vtkh::detail::setColorMap(m_device, mPoint, field_range, m_color_table);
+
+      }
+      else if(isGlyph)
+      {
+        auto& mGlyph = scene.AddMapper(vtkm::interop::anari::ANARIMapperGlyphs(m_device));
+        mGlyph.SetName(("glyphs_" + std::to_string(i)).c_str());
+        mGlyph.SetActor({ 
+          m_input->GetDomain(i).GetCellSet(), 
+          m_input->GetDomain(i).GetCoordinateSystem(), 
+          m_input->GetDomain(i).GetField(m_field_name) 
+        });
+        vtkh::detail::setColorMap(m_device, mGlyph, field_range, m_color_table);
+        
+      }
+      else
+      {
+        //TODO: Error
+        std::cerr << "This ANARI Renderer is not supported yet" << std::endl;
+      }
+    }
+  }
+  
   int num_renders = static_cast<int>(m_renders.size());
-  std::cerr << "num renders to get canvas from: " << num_renders << std::endl;
   for(int i = 0; i < num_renders; ++i)
   {
     vtkm::rendering::Camera cam = m_renders[i].GetCamera();
@@ -428,33 +480,32 @@ ANARITriangleRenderer::DoExecute()
 
 
 void
-ANARITriangleRenderer::PreExecute()
+ANARIRenderer::PreExecute()
 {
   Renderer::PreExecute();
 }
 
 void
-ANARITriangleRenderer::PostExecute()
+ANARIRenderer::PostExecute()
 {
   int total_renders = static_cast<int>(m_renders.size());
   if(m_do_composite)
   {
-    std::cerr << "we are in ANARITriangleRenderer::PostExecute \n total_renders: " << total_renders << std::endl;
     this->Composite(total_renders);
   }
 }
 
 
 Renderer::vtkmCanvasPtr
-ANARITriangleRenderer::GetNewCanvas(int width, int height)
+ANARIRenderer::GetNewCanvas(int width, int height)
 {
   return std::make_shared<vtkm::rendering::CanvasRayTracer>(width, height);
 }
 
 std::string
-ANARITriangleRenderer::GetName() const
+ANARIRenderer::GetName() const
 {
-  return "vtkh::ANARITriangleRenderer";
+  return "vtkh::ANARIRenderer";
 }
 
 } // namespace vtkh

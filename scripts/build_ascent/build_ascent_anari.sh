@@ -18,4 +18,4 @@
 set -eu -o pipefail
 
 # 2024-10-14 ANARI support is handled by our unified script
-env build_anari=true ./build_ascent.sh
+env build_anari=true enable_mpi=ON ./build_ascent.sh
