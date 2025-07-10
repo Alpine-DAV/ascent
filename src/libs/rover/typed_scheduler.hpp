@@ -11,6 +11,7 @@
 #include <conduit.hpp>
 #include <conduit_blueprint.hpp>
 #include <vtkh/compositing/PartialCompositor.hpp>
+#include <vtkh/rendering/PartialComposite.hpp>
 
 // mpi include
 #ifdef ROVER_PARALLEL
@@ -64,7 +65,7 @@ protected:
 
   int  get_global_channels();
   void set_global_range_and_bounds();
-  void add_partial(vtkmRayTracing::PartialComposite<FloatType> &partial);
+  void add_partial(vtkhRayTracing::PartialComposite<FloatType> &partial);
   void composite();
 };
 

@@ -17,6 +17,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ### Added
 - Added ability to specify either fields (list of strings) or field (string) for uniform grid sample filter
+- Added a `sample` filter that allows you to sample field values at a list of explicit points or along a line.
 - Added use case to vtkh data adaptor for blueprint meshes with explicit mesh coordinates with implicit topology (a blueprint structured mesh).
 - Added a compressed color table format.
 - Added action options relating to logging functionality including `open_log`, `flush_log`, and `close_log` to toggle logging as well as `set_log_threshold` and `set_echo_threshold` to control logging and standard output levels.
@@ -39,13 +40,14 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added support for special keyword formatting for output paths. Current supported keywords include
 `cycle`, `family`, and `time`.
 - Added support for formatting of output paths for extracts.
-
+- Added support for parallel timestep mode to replay allowing for parallel in time processes in addition to pre-existing distributed-memory parallelism.
 
 ### Changed
 - Changed the replay utility's binary names such that `replay_ser` is now `ascent_replay` and `raplay_mpi` is now `ascent_replay_mpi`. This will help prevent potential name collisions with other tools that also have replay utilities.
 - Updated several preferred tpl versions
 
 ### Fixed
+- Fixed WarpX filter that was not allowing for rendering of the output streamlines
 - Fixed Uniform Grid bug only accepting 2D slices along the Z-axis.
 - Resolved a few cases where MPI_COMM_WORLD was used instead instead of the selected MPI communicator.
 - Resolved a bug where a sharing a coordset between multiple polytopal topologies would corrupt mesh processing.

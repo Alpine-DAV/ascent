@@ -28,8 +28,8 @@ public:
 
   void init();
   const vtkmDataSet& get_dataset();
-  PartialVector32 partial_trace(Ray32 &rays);
-  PartialVector64 partial_trace(Ray64 &rays);
+  void partial_trace(Ray32 &rays, PartialVector32 &partials);
+  void partial_trace(Ray64 &rays, PartialVector64 &partials);
   void init_rays(Ray32 &rays);
   void init_rays(Ray64 &rays);
   void set_dataset(vtkmDataSet &dataset);

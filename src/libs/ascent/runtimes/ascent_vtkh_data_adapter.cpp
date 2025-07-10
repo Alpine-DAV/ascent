@@ -274,11 +274,8 @@ GetExplicitCoordinateSystem(const conduit::Node &n_coords,
 
     if(z_element_stride == 0)
     {
-      z_coords_handle.Allocate(nverts);
-      // TODO: Set on device?
-      // This does not get initialized to zero
+      z_coords_handle.AllocateAndFill(nverts,0.0);
       T *z = vtkh::GetVTKMPointer(z_coords_handle);
-      memset(z, 0, nverts * sizeof(T));
     }
     else if(z_element_stride == 1)
     {
@@ -1336,16 +1333,63 @@ VTKHDataAdapter::RectilinearBlueprintToVTKmDataSet
 
     int32 ndims = 2;
 
-    // todo assumes float64
-    const float64 *x_coords_ptr = n_coords["values/x"].as_float64_ptr();
-    const float64 *y_coords_ptr = n_coords["values/y"].as_float64_ptr();
-    const float64 *z_coords_ptr = NULL;
+    if (zero_copy && 
+        (!n_coords["values/x"].dtype().is_float64() || 
+         !n_coords["values/y"].dtype().is_float64()))
+    {
+        ASCENT_WARN("Zero-copy requested, but either x or y coordinate data is not float64." <<
+                    "x type: " << n_coords["values/x"].dtype().name() << 
+                    ", y type: " << n_coords["values/y"].dtype().name() << 
+                    ". Turning zero-copy off.");
+        zero_copy = false;
+    }
 
+    const float64 *x_coords_ptr;
+    Node temp_x;
+    if (n_coords["values/x"].dtype().is_float64())
+    {
+        x_coords_ptr = n_coords["values/x"].as_float64_ptr();
+    }
+    else
+    {
+        n_coords["values/x"].to_float64_array(temp_x);
+        x_coords_ptr = temp_x.value();
+    }
+    
+    const float64 *y_coords_ptr;
+    Node temp_y;
+    if (n_coords["values/y"].dtype().is_float64())
+    {
+        y_coords_ptr = n_coords["values/y"].as_float64_ptr();
+    }
+    else
+    {
+        n_coords["values/y"].to_float64_array(temp_y);
+        y_coords_ptr = temp_y.value();
+    }
+
+    const float64 *z_coords_ptr = NULL;
+    Node temp_z;
     if(n_coords.has_path("values/z"))
     {
+        if (zero_copy && !n_coords["values/z"].dtype().is_float64())
+        {
+            ASCENT_WARN("Zero-copy requested, but z coordinate data is " << 
+                        n_coords["values/z"].dtype().name() << 
+                        " not float64. Turning zero-copy off.");
+            zero_copy = false;
+        }
         ndims = 3;
         z_npts = n_coords["values/z"].dtype().number_of_elements();
-        z_coords_ptr = n_coords["values/z"].as_float64_ptr();
+        if (n_coords["values/z"].dtype().is_float64())
+        {
+            z_coords_ptr = n_coords["values/z"].as_float64_ptr();
+        }
+        else
+        {
+            n_coords["values/z"].to_float64_array(temp_z);
+            z_coords_ptr = temp_z.value();
+        }
     }
 
     vtkm::cont::ArrayHandle<vtkm::Float64> x_coords_handle;

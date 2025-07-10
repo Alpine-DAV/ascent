@@ -218,6 +218,7 @@ void DataObject::reset(conduit::Node *dataset)
 #if defined(ASCENT_DRAY_ENABLED)
 std::shared_ptr<dray::Collection> DataObject::as_dray_collection()
 {
+  ASCENT_ANNOTATE_MARK_SCOPE("ascent data object as dray collection");
   if(m_source == Source::INVALID)
   {
     ASCENT_ERROR("Source never initialized: default constructed");
@@ -231,6 +232,7 @@ std::shared_ptr<dray::Collection> DataObject::as_dray_collection()
   {
     if(m_source == Source::HIGH_BP)
     {
+      ASCENT_ANNOTATE_MARK_SCOPE("high order bp to dray");
       std::shared_ptr<dray::Collection> collection(new dray::Collection());
       const int num_domains = m_high_bp->number_of_children();
       for(int i = 0; i < num_domains; ++i)
@@ -244,7 +246,8 @@ std::shared_ptr<dray::Collection> DataObject::as_dray_collection()
     }
     else
     {
-      // attempt to conver this to low order and go
+      ASCENT_ANNOTATE_MARK_SCOPE("low order bp to dray");
+      // attempt to convert this to low order and go
       std::shared_ptr<conduit::Node> low_order = as_low_order_bp();
       std::shared_ptr<dray::Collection> collection(new dray::Collection());
       const int domains = low_order->number_of_children();
@@ -268,6 +271,7 @@ std::shared_ptr<dray::Collection> DataObject::as_dray_collection()
 #if defined(ASCENT_VTKM_ENABLED)
 std::shared_ptr<VTKHCollection> DataObject::as_vtkh_collection()
 {
+  ASCENT_ANNOTATE_MARK_SCOPE("ascent data object as vtkh collection");
   if(m_source == Source::INVALID)
   {
     ASCENT_ERROR("Source never initialized: default constructed");
@@ -281,6 +285,7 @@ std::shared_ptr<VTKHCollection> DataObject::as_vtkh_collection()
   {
     if(m_source == Source::HIGH_BP && m_low_bp == nullptr)
     {
+      ASCENT_ANNOTATE_MARK_SCOPE("lor");
       std::shared_ptr<conduit::Node>  low_order(Transmogrifier::low_order(*m_high_bp));
       m_low_bp = low_order;
     }
@@ -293,6 +298,7 @@ std::shared_ptr<VTKHCollection> DataObject::as_vtkh_collection()
     {
       if (Transmogrifier::is_poly(*m_low_bp))
       {
+        ASCENT_ANNOTATE_MARK_SCOPE("to poly");
         Transmogrifier::to_poly(*m_low_bp, n_poly);
         to_vtkh = &n_poly;
         zero_copy = false;
@@ -302,12 +308,13 @@ std::shared_ptr<VTKHCollection> DataObject::as_vtkh_collection()
         to_vtkh = &(*m_low_bp);
       }
     }
-
+    ASCENT_ANNOTATE_MARK_BEGIN("convert to vtkh");
     // convert to vtkh
     std::shared_ptr<VTKHCollection>
       vtkh_dset(VTKHDataAdapter::BlueprintToVTKHCollection(*to_vtkh, zero_copy));
 
     m_vtkh = vtkh_dset;
+    ASCENT_ANNOTATE_MARK_END("convert to vtkh");
     
     return m_vtkh;
   }
@@ -325,6 +332,7 @@ void DataObject::reset_vtkh_collection()
 
 std::shared_ptr<conduit::Node>  DataObject::as_low_order_bp()
 {
+  ASCENT_ANNOTATE_MARK_SCOPE("ascent data object as low order bp");
   if(m_source == Source::INVALID)
   {
     ASCENT_ERROR("Source never initialized: default constructed");
@@ -337,6 +345,7 @@ std::shared_ptr<conduit::Node>  DataObject::as_low_order_bp()
 
   if(m_source == Source::HIGH_BP)
   {
+    ASCENT_ANNOTATE_MARK_SCOPE("lor");
     std::shared_ptr<conduit::Node>  low_order(Transmogrifier::low_order(*m_high_bp));
     m_low_bp = low_order;
   }
@@ -344,6 +353,7 @@ std::shared_ptr<conduit::Node>  DataObject::as_low_order_bp()
   else if(m_source == Source::VTKH)
   {
 
+    ASCENT_ANNOTATE_MARK_SCOPE("vtkh to bp");
     conduit::Node *out_data = new conduit::Node();
     bool zero_copy = true;
     VTKHDataAdapter::VTKHCollectionToBlueprintDataSet(m_vtkh.get(), *out_data, true);
@@ -359,6 +369,7 @@ std::shared_ptr<conduit::Node>  DataObject::as_low_order_bp()
 
 std::shared_ptr<conduit::Node>  DataObject::as_high_order_bp()
 {
+  ASCENT_ANNOTATE_MARK_SCOPE("ascent data object as high order bp");
   if(m_source == Source::INVALID)
   {
     ASCENT_ERROR("Source never initialized: default constructed");
@@ -369,7 +380,7 @@ std::shared_ptr<conduit::Node>  DataObject::as_high_order_bp()
     return m_high_bp;
   }
 
-  ASCENT_ERROR("converting from low order to high order is not currenlty supported");
+  ASCENT_ERROR("converting from low order to high order is not currently supported");
 #else
   ASCENT_ERROR("Cannot provide high order blueprint. MFEM support not enabled.");
 #endif
@@ -379,6 +390,7 @@ std::shared_ptr<conduit::Node>  DataObject::as_high_order_bp()
 
 std::shared_ptr<conduit::Node>  DataObject::as_node()
 {
+  ASCENT_ANNOTATE_MARK_SCOPE("ascent data object as conduit node");
   if(m_source == Source::INVALID)
   {
     ASCENT_ERROR("Source never initialized: default constructed");
@@ -387,6 +399,7 @@ std::shared_ptr<conduit::Node>  DataObject::as_node()
   if(m_source == Source::VTKH && m_low_bp == nullptr)
 
   {
+    ASCENT_ANNOTATE_MARK_SCOPE("vtkh to conduit");
     conduit::Node *out_data = new conduit::Node();
     bool zero_copy = true;
     VTKHDataAdapter::VTKHCollectionToBlueprintDataSet(m_vtkh.get(), *out_data, zero_copy);

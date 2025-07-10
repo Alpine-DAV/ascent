@@ -53,8 +53,8 @@ class RayGenerator
 public:
   RayGenerator();
   virtual ~RayGenerator();
-  virtual void get_rays(vtkmRayTracing::Ray<vtkm::Float32> &rays) = 0;
-  virtual void get_rays(vtkmRayTracing::Ray<vtkm::Float64> &rays) = 0;
+  virtual void get_rays(Ray32 &rays) = 0;
+  virtual void get_rays(Ray64 &rays) = 0;
 
   vtkmCamera& get_camera();
   bool get_has_rays() const;

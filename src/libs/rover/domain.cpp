@@ -4,6 +4,7 @@
 // other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+#include "vtkm_typedefs.hpp"
 #include <domain.hpp>
 #include <engine.hpp>
 #include <rover_exceptions.hpp>
@@ -112,16 +113,16 @@ Domain::init_rays(Ray64 &rays)
   m_engine->init_rays(rays);
 }
 
-PartialVector32
-Domain::partial_trace(Ray32 &rays)
+void
+Domain::partial_trace(Ray32 &rays, PartialVector32 &partials)
 {
-  return m_engine->partial_trace(rays);
+  m_engine->partial_trace(rays, partials);
 }
 
-PartialVector64
-Domain::partial_trace(Ray64 &rays)
+void
+Domain::partial_trace(Ray64 &rays, PartialVector64 &partials)
 {
-  return m_engine->partial_trace(rays);
+  m_engine->partial_trace(rays, partials);
 }
 
 void
