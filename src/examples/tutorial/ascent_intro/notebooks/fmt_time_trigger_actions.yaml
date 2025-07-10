@@ -19,3 +19,4 @@
           type: "pseudocolor"
           field: "braid"
       image_prefix: "out_fmt_time_trigger-int_{time:04d}"
+      
