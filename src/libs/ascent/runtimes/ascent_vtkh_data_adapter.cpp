@@ -1337,7 +1337,7 @@ VTKHDataAdapter::RectilinearBlueprintToVTKmDataSet
         (!n_coords["values/x"].dtype().is_float64() || 
          !n_coords["values/y"].dtype().is_float64()))
     {
-        ASCENT_WARN("Zero-copy requested, but either x or y coordinate data is not float64." <<
+        ASCENT_INFO("Zero-copy requested, but either x or y coordinate data is not float64." <<
                     "x type: " << n_coords["values/x"].dtype().name() << 
                     ", y type: " << n_coords["values/y"].dtype().name() << 
                     ". Turning zero-copy off.");
@@ -1374,8 +1374,8 @@ VTKHDataAdapter::RectilinearBlueprintToVTKmDataSet
     {
         if (zero_copy && !n_coords["values/z"].dtype().is_float64())
         {
-            ASCENT_WARN("Zero-copy requested, but z coordinate data is " << 
-                        n_coords["values/z"].dtype().name() << 
+            ASCENT_INFO("Zero-copy requested, but z coordinate data is " <<
+                        n_coords["values/z"].dtype().name() <<
                         " not float64. Turning zero-copy off.");
             zero_copy = false;
         }

@@ -157,13 +157,10 @@ Rover::add_dataset(vtkh::DataSet &dataset)
   }
 
   m_scheduler->add_dataset(dataset);
+  // ResetToBounds automatically sets a conservative far plane,
+  // which can be manually overriden in cases where reasonable
+  // imaging plane meshes are desired
   m_camera.ResetToBounds(dataset.GetGlobalBounds());
-  // TODO: Do we want to further tighten the bounds? vtkm sets
-  // very conservative near and far planes with respect to the data's
-  // bounding box, which in turn negatively affect the imaging plane
-  // and ray meshes. The user can manually tune these params, but
-  // automatically tightening them would provide a better default
-  // out-of-the-box experience.
 }
 
 void

@@ -27,7 +27,7 @@ struct PartialImage
   // TODO: Improve naming to reflect what these things actually represent,
   // will require changes elsewhere (absorptionpartial and emissionpartial)
   IdHandle                                 m_pixel_ids;
-  vtkmRayTracing::ChannelBuffer<FloatType> m_transmission;  // holds the fraction of incomcing intensity that survives absorption
+  vtkmRayTracing::ChannelBuffer<FloatType> m_transmission;  // holds the fraction of incoming intensity that survives absorption
   vtkmRayTracing::ChannelBuffer<FloatType> m_intensity;     // holds the intensity emerging from each ray
   vtkmRayTracing::ChannelBuffer<FloatType> m_optical_depth;
   vtkm::cont::ArrayHandle<FloatType>       m_distances;
