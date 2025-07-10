@@ -6,6 +6,7 @@
   "spack_configs_path": "scripts/uberenv_configs/spack_configs",
   "spack_packages_path": "scripts/uberenv_configs/packages",
   "spack_skip_externals": "true",
+  "spack_setup_clingo": "false",
   "spack_url": "https://github.com/spack/spack",
   "spack_commit": "2bfcc69fa870d3c6919be87593f22647981b648a",
   "spack_host_config_patches":
