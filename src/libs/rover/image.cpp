@@ -9,7 +9,6 @@
 #include <rover_exceptions.hpp>
 #include <utils/rover_logging.hpp>
 
-#include <vector>
 #include <vtkm/cont/Field.h>
 
 namespace rover
