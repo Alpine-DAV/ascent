@@ -242,7 +242,7 @@ void conduit_node_to_vtkm_bounds(const conduit::Node &bounds,
                                  vtkm::Bounds &res)
 {
     res.X.Min = bounds["xmin"].to_float64();
-    res.X.Min = bounds["xmax"].to_float64();
+    res.X.Max = bounds["xmax"].to_float64();
     res.Y.Min = bounds["ymin"].to_float64();
     res.Y.Max = bounds["ymax"].to_float64();
     res.Z.Min = bounds["zmin"].to_float64();
