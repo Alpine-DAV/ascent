@@ -20,23 +20,23 @@ namespace rover
 {
 
 // Namespaced settings instance
+Node metadata;
 Node settings;
 
 Rover::Rover()
 {
-  // Ensure that we always start from a default state
+  // Always start from a default state
+  rover::metadata.reset();
   rover::settings.reset();
 
   // Settings
-  // TODO: Figure out if color_table needs to be set by us here
-  rover::settings["rover/color_table"] = "Cool to Warm";
-  rover::settings["rover/divide_emission_by_abs"] = "false";
-  rover::settings["rover/height"] = 200;
-  rover::settings["rover/precision"] = "single";
-  rover::settings["rover/ray_scope"] = "global_rays";
-  rover::settings["rover/scattering_type"] = "non_scattering";
-  rover::settings["rover/width"] = 200;
-  rover::settings["rover/unit_scalar"] = 1.0f;
+  rover::settings["background_intensity"] = 0.0f;
+  rover::settings["divide_emis_by_absorb"] = "false";
+  rover::settings["enable_imaging_planes"] = "true"; // TODO: Remove this once issue #1559 is fixed
+  rover::settings["height"] = 200;
+  rover::settings["precision"] = "single";
+  rover::settings["width"] = 200;
+  rover::settings["unit_scalar"] = 1.0f;
 
   // We don't instantiate the scheduler until we determine if the
   // user has requested a specific precision to use
@@ -61,36 +61,37 @@ Rover::~Rover()
 }
 
 void
-Rover::update_time_and_cycle(Node &metadata)
+Rover::update_time_and_cycle(const Node &metadata)
 {
   if (metadata.has_child("time"))
   {
-    rover::settings["state/time"].set(metadata["time"]);
+    rover::metadata["time"].set(metadata["time"]);
   }
 
   if (metadata.has_child("cycle"))
   {
-    rover::settings["state/cycle"].set(metadata["cycle"]);
+    rover::metadata["cycle"].set(metadata["cycle"]);
   }
 }
 
 void
-Rover::update_settings(Node &params)
+Rover::update_settings(const Node &params)
 {
   ROVER_INFO("Executing Rover::update_settings");
 
   if (params.has_child("rover"))
   {
-    // TODO: use .update
-    for (const auto &param_name : params["rover"].child_names())
-    {
-      rover::settings["rover"][param_name].set(params["rover"][param_name]);
-    }
+    rover::settings.update(params["rover"]);
   }
 
   if (params.has_child("camera"))
   {
     rover::settings["camera"].set(params["camera"]);
+  }
+
+  if (params.has_child("image_params"))
+  {
+    rover::settings["image_params"].set(params["image_params"]);
   }
 }
 
@@ -124,7 +125,7 @@ Rover::get_mpi_comm_handle()
 void
 Rover::create_scheduler()
 {
-  const std::string precision = rover::settings["rover/precision"].as_string();
+  const std::string precision = rover::settings["precision"].as_string();
   if ("double" == precision)
   {
     m_scheduler = new TypedScheduler<vtkm::Float64>();
@@ -155,11 +156,10 @@ Rover::add_dataset(vtkh::DataSet &dataset)
     create_scheduler();
   }
 
-  for (int i = 0; i < dataset.GetNumberOfDomains(); i++)
-  {
-    m_scheduler->add_dataset(dataset.GetDomain(i));
-  }
-
+  m_scheduler->add_dataset(dataset);
+  // ResetToBounds automatically sets a conservative far plane,
+  // which can be manually overriden in cases where reasonable
+  // imaging plane meshes are desired
   m_camera.ResetToBounds(dataset.GetGlobalBounds());
 }
 
@@ -172,6 +172,7 @@ Rover::update_camera()
     return;
   }
 
+  // The order in which these parameters are applied matters
   const Node &camera_params = rover::settings["camera"];
 
   if (camera_params.has_child("azimuth"))
@@ -348,6 +349,13 @@ Rover::save_png(const std::string &filename)
 void
 Rover::save_bov(const std::string &filename)
 {
+#ifdef ROVER_PARALLEL
+  // TODO: Support writing in parallel
+  if(m_rank != 0)
+  {
+    return;
+  }
+#endif
   m_scheduler->save_bov(filename);
 }
 

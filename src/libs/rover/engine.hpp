@@ -39,7 +39,6 @@ public:
 
   void validate_tracer();
   void set_dataset(vtkmDataSet &dataset);
-  void init();
   void init_rays(Ray32 &rays);
   void init_rays(Ray64 &rays);
   void partial_trace(Ray32 &rays, PartialVector32 &partials);
@@ -48,12 +47,10 @@ public:
   vtkmRange get_primary_range();
   void set_primary_range(const vtkmRange &range);
   void set_composite_background(bool on);
-  void set_color_map(const vtkmColorTable &color_map, int samples = 1024);
 
 protected:
   vtkmDataSet m_dataset;
   vtkh::rendering::ConnectivityProxy *m_tracer;
-  vtkmColorMap m_color_map;
 
   template<typename Precision>
   void init_emission(vtkmRayTracing::Ray<Precision> &rays,

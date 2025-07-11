@@ -39,74 +39,32 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-#include <ray_generators/camera_generator.hpp>
+#ifndef rover_camera_generator_h
+#define rover_camera_generator_h
+
+#include "ray_generator.hpp"
+
+#include <rover_exports.h>
+#include <settings.hpp>
+#include <utils/rover_logging.hpp>
 
 namespace rover
 {
 
-CameraGenerator::CameraGenerator()
- : RayGenerator()
+class ROVER_API VtkmRayGenerator : public RayGenerator
 {
-
-}
-
-CameraGenerator::CameraGenerator(const vtkmCamera &camera)
- : RayGenerator()
-{
-  m_camera = camera;
-}
-
-CameraGenerator::~CameraGenerator()
-{
-
-}
-
-void
-CameraGenerator::get_rays(Ray32 &rays)
-{
-  const int64 width = rover::settings["rover/width"].to_int64();
-  const int64 height = rover::settings["rover/height"].to_int64();
-  vtkmRayCamera ray_gen;
-  ray_gen.SetParameters(m_camera, width, height);
-  ray_gen.CreateRays(rays, this->m_coordinates.GetBounds());
-  this->m_has_rays = false;
-  if (rays.NumRays == 0)
-  {
-    ROVER_WARN("CameraGenerator::get_rays: No rays were generated");
-  }
-}
-
-void
-CameraGenerator::get_rays(Ray64 &rays)
-{
-  const int64 width = rover::settings["rover/width"].to_int64();
-  const int64 height = rover::settings["rover/height"].to_int64();
-  vtkmRayCamera ray_gen;
-  ray_gen.SetParameters(m_camera, width, height);
-  ray_gen.CreateRays(rays, this->m_coordinates.GetBounds());
-  this->m_has_rays = false;
-  if (rays.NumRays == 0)
-  {
-    ROVER_WARN("CameraGenerator::get_rays: No rays were generated");
-  }
-}
-
-void
-CameraGenerator::set_camera(vtkmCamera &camera)
-{
-  m_camera = camera;
-}
-
-vtkmCoordinates
-CameraGenerator::get_coordinates()
-{
-  return m_coordinates;
-}
-
-void
-CameraGenerator::set_coordinates(vtkmCoordinates coordinates)
-{
-  m_coordinates = coordinates;
-}
+public:
+  VtkmRayGenerator();
+  VtkmRayGenerator(const vtkmCamera &camera);
+  virtual ~VtkmRayGenerator();
+  virtual void get_rays(Ray32 &rays);
+  virtual void get_rays(Ray64 &rays);
+  void set_camera(vtkmCamera &camera);
+  vtkmCoordinates get_coordinates();
+  void set_coordinates(vtkmCoordinates coordinates);
+protected:
+  vtkmCoordinates m_coordinates;
+};
 
 } // namespace rover
+#endif

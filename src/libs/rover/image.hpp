@@ -25,8 +25,8 @@ public:
   Image();
   Image(PartialImage<FloatType> &partial);
 
-  HandleType  get_intensity(const int &channel_num);
-  HandleType  get_optical_depth(const int &channel_num);
+  HandleType get_intensity(const int &channel_num);
+  HandleType get_optical_depth(const int &channel_num);
   int get_num_channels() const;
   bool has_intensity(const int &channel_num) const;
   bool has_optical_depth(const int &channel_num) const;
@@ -39,15 +39,15 @@ public:
   void normalize_optical_depth(const int &channel_num);
   void operator=(PartialImage<FloatType> partial);
   template<typename O> void operator=(Image<O> &other);
-  HandleType flatten_intensities();
-  HandleType flatten_optical_depths();
+  HandleType flatten_intensity_values();
+  HandleType flatten_optical_depth_values();
   template<typename T,
            typename O> friend void init_from_image(Image<T> &left,
                                                    Image<O> &right);
 
 protected:
-  std::vector<HandleType>                  m_intensities;
-  std::vector<HandleType>                  m_optical_depths;
+  std::vector<HandleType> m_intensity_values;
+  std::vector<HandleType> m_optical_depth_values;
 
   void init_from_partial(PartialImage<FloatType> &);
   void normalize_handle(HandleType &, bool);

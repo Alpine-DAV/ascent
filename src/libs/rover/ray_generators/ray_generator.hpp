@@ -48,11 +48,14 @@
 namespace rover
 {
 
+// TODO: Since the visit ray generator ultimately modifies a vtkm camera anyways, better
+// organization could be to make the base RayGenerator become the vtkm ray generator. Then the visit ray
+// generator would inherit from it, and would only have one job of applying visit params to the inhereted vtkm camera.
 class RayGenerator
 {
 public:
   RayGenerator();
-  virtual ~RayGenerator();
+  virtual ~RayGenerator() = 0;
   virtual void get_rays(Ray32 &rays) = 0;
   virtual void get_rays(Ray64 &rays) = 0;
 

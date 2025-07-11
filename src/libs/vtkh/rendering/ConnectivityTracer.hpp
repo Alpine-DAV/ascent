@@ -119,6 +119,7 @@ public:
   void SetDebugOn(bool on) { CountRayStatus = on; }
 
   void SetUnitScalar(const vtkm::Float32 unitScalar) { UnitScalar = unitScalar; }
+  void SetDivideEmisByAbsorb(const bool divide_emis_by_absorb) {DivideEmisByAbsorb = divide_emis_by_absorb; }
   void SetEpsilon(const vtkm::Float64 epsilon) { BumpEpsilon = epsilon; }
 
 
@@ -212,6 +213,7 @@ protected:
   bool CreatePartialComposites;
   bool FieldAssocPoints;
   bool HasEmission; // Mode for integrating through energy bins
+  bool DivideEmisByAbsorb;
 
   // timers
   vtkm::Float64 IntersectTime;
