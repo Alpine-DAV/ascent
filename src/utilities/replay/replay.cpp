@@ -13,10 +13,12 @@
 #include <ascent.hpp>
 #include <flow_timer.hpp>
 #include <conduit_relay_io_blueprint.hpp>
+#include <conduit_fmt/conduit_fmt.h>
 
 #include <fstream>
 #include <vector>
 #include <algorithm>
+#include <cmath>
 
 #if defined(ASCENT_REPLAY_MPI)
 #include <mpi.h>
@@ -42,7 +44,10 @@ void usage()
   std::cout<<"  --cycles  : a text file containing a list of root files, one per line.\n";
   std::cout<<"              Each file will be loaded and sent to Ascent in order.\n";
   std::cout<<"  --actions : a yaml file containing ascent actions. Default value\n";
-  std::cout<<"              is 'ascent_actions.yaml'.\n\n";
+  std::cout<<"              is 'ascent_actions.yaml'.\n";
+  std::cout<<"  --groups  : for ascent_replay_mpi, specify the number of parallel in time\n";
+  std::cout<<"              groups the processes are split into. Default value is the\n";
+  std::cout<<"              square root of the number of available processes.\n\n";
   std::cout<<"======================== Examples =========================\n";
   std::cout<<"./ascent_replay --root=clover.cycle_000060.root\n";
   std::cout<<"./ascent_replay --root=clover.cycle_000060.root --actions=my_actions.yaml\n";
@@ -55,6 +60,8 @@ struct Options
   std::string m_actions_file = "ascent_actions.yaml";
   std::string m_root_file;
   std::string m_cycles_file;
+  int m_num_groups = -1;
+  bool use_parallel_in_time = false;
 
   void parse(int argc, char** argv)
   {
@@ -71,6 +78,19 @@ struct Options
       else if(contains(argv[i], "--actions="))
       {
         m_actions_file = get_arg(argv[i]);
+      }
+      else if(contains(argv[i], "--groups="))
+      {
+#if defined(ASCENT_REPLAY_MPI)
+        use_parallel_in_time = true;
+        m_num_groups = stoi(get_arg(argv[i]));
+#endif
+      }
+      else if(std::string(argv[i]) == "--groups")
+      {
+#if defined(ASCENT_REPLAY_MPI)
+        use_parallel_in_time = true;
+#endif
       }
       else
       {
@@ -246,6 +266,9 @@ void load_actions(const std::string &file_name, int mpi_comm_id, conduit::Node &
 int
 main(int argc, char *argv[])
 {
+  //
+  // Load Replay Options
+  //
   Options options;
   options.parse(argc, argv);
 
@@ -272,12 +295,35 @@ main(int argc, char *argv[])
   }
 
   int comm_size = 1;
-  int rank = 0;
-
+  int rank, sub_rank = 0;
+  int num_process_groups = 1;
+  int color = 0;
 #if defined(ASCENT_REPLAY_MPI)
   MPI_Init(NULL,NULL);
   MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+  // Determine how many sub_comms we should be creating
+  MPI_Comm sub_comm_world;
+  if (options.use_parallel_in_time) {
+    num_process_groups = options.m_num_groups > 0 ? options.m_num_groups 
+                                                    : static_cast<int>(std::floor(std::sqrt(comm_size)));
+    if(num_process_groups > comm_size)
+    {
+        num_process_groups = comm_size;
+    }
+
+    // Split processes into multiple comm worlds to do parallel in time processing
+  
+    color = rank % num_process_groups;
+    MPI_Comm_split(MPI_COMM_WORLD, color, rank, &sub_comm_world);
+    MPI_Comm_rank(sub_comm_world, &sub_rank);
+  }
+  else
+  {
+    sub_comm_world = MPI_COMM_WORLD;
+    sub_rank = rank;
+  }
 #endif
 
   conduit::Node replay_data;
@@ -285,7 +331,12 @@ main(int argc, char *argv[])
   conduit::Node ascent_opts;
   ascent_opts["ascent_info"] = "verbose";
 #if defined(ASCENT_REPLAY_MPI)
-  ascent_opts["mpi_comm"] = MPI_Comm_c2f(MPI_COMM_WORLD);
+  ascent_opts["mpi_comm"] = MPI_Comm_c2f(options.use_parallel_in_time ? sub_comm_world : MPI_COMM_WORLD);
+  if (options.use_parallel_in_time) {
+    ascent_opts["logging/file_pattern"] = 
+        conduit_fmt::format("ascent_log_output_comm-group-{color:03d}",
+                            conduit_fmt::arg("color",color)) + "_rank-{rank:05d}.yaml";
+  }
 #endif
 
   //
@@ -298,11 +349,14 @@ main(int argc, char *argv[])
   ascent::Ascent ascent;
   ascent.open(ascent_opts);
 
-  for(int i = 0; i < time_steps.size(); ++i)
+  for(int i = color; i < time_steps.size(); i += num_process_groups)
   {
-    if(rank == 0)
+    if(sub_rank == 0)
     {
-      std::cout<< "[" << i << "]: Root file "<<time_steps[i]<<"\n";
+      if (options.use_parallel_in_time) {
+        std::cout << "[group: " << rank << "]";
+      }
+      std::cout << "[" << i << "]: Root file " << time_steps[i] << std::endl;
     }
     flow::Timer load;
 
@@ -314,24 +368,24 @@ main(int argc, char *argv[])
 #endif
 
 #if defined(ASCENT_REPLAY_MPI)
-    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(sub_comm_world);
 #endif
     float load_time = load.elapsed();
 
     flow::Timer publish;
     ascent.publish(replay_data);
 #if defined(ASCENT_REPLAY_MPI)
-    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(sub_comm_world);
 #endif
     float publish_time = publish.elapsed();
 
     flow::Timer execute;
     ascent.execute(actions);
 #if defined(ASCENT_REPLAY_MPI)
-    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(sub_comm_world);
 #endif
     float execute_time = execute.elapsed();
-    if(rank == 0)
+    if(sub_rank == 0)
     {
       std::cout<< "[" << i << "]: Load -----: "<<load_time<<"\n";
       std::cout<< "[" << i << "]: Publish --: "<<publish_time<<"\n";
@@ -342,6 +396,9 @@ main(int argc, char *argv[])
   ascent.close();
 
 #if defined(ASCENT_REPLAY_MPI)
+  if (options.use_parallel_in_time) {
+    MPI_Comm_free(&sub_comm_world);
+  }
   MPI_Finalize();
 #endif
   return 0;
