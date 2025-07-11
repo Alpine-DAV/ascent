@@ -128,6 +128,8 @@ Scene::AddRenderer(vtkh::Renderer *renderer)
       m_renderers.push_back(renderer);
     }
   }
+  else if(is_anari)
+  {
     auto anari_renderer = dynamic_cast<vtkh::ANARIRenderer*>(renderer);
     m_anari_renderers.push_back(anari_renderer);
   }

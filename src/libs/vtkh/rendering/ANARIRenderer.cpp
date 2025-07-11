@@ -34,9 +34,14 @@ static void StatusFunc(const void* userData,
                        ANARIStatusCode /*code*/,
                        const char* message)
 {
-  bool verbose = *(bool*)userData;
-  if (!verbose)
-    return;
+//  bool verbose = *(bool*)userData;
+//  if (!verbose)
+//    return;
+  (void)userData;
+  //(void)device;
+  (void)source;
+  //(void)sourceType;
+  //(void)code;
 
   if (severity == ANARI_SEVERITY_FATAL_ERROR)
   {
@@ -188,24 +193,6 @@ setColorMap2(anari_cpp::Device d, vtkm::interop::anari::ANARIMapper& mapper, vtk
 ANARIRenderer::ANARIRenderer()
 {
   m_color_table = vtkm::cont::ColorTable("Cool to Warm");
-  m_device = detail::anari_device_load();
-  m_renderer = anari_cpp::newObject<anari_cpp::Renderer>(m_device,"default");
-  m_frame = anari_cpp::newObject<anari_cpp::Frame>(m_device);
-
-  for (auto& light : m_lights)
-  {
-    anari_cpp::release(m_device, light);
-  }
-  m_lights.clear();
-
-  // create default m_lights
-  anari_cpp::Light sun = anari_cpp::newObject<anari_cpp::Light>(m_device, "directional");
-  anari_cpp::setParameter(m_device, sun, "direction", vtkm::Vec3f_32(0.0f, -1.0f, 0.0f));
-  anari_cpp::setParameter(m_device, sun, "irradiance", 2.f);
-  anari_cpp::setParameter(m_device, sun, "angularDiameter", 0.00925f);
-  anari_cpp::setParameter(m_device, sun, "radiance", 1.f);
-  anari_cpp::commitParameters(m_device, sun);
-  m_lights.push_back(sun);
   //old:
   typedef vtkm::rendering::MapperRayTracer TracerType;
   m_tracer = std::make_shared<TracerType>();
@@ -292,6 +279,27 @@ ANARIRenderer::Update()
 void
 ANARIRenderer::DoExecute()
 {
+  //Load Device
+  m_device = detail::anari_device_load();
+  m_renderer = anari_cpp::newObject<anari_cpp::Renderer>(m_device,"default");
+  m_frame = anari_cpp::newObject<anari_cpp::Frame>(m_device);
+
+  //clear lights
+  for (auto& light : m_lights)
+  {
+    anari_cpp::release(m_device, light);
+  }
+  m_lights.clear();
+
+  // create default m_lights
+  anari_cpp::Light sun = anari_cpp::newObject<anari_cpp::Light>(m_device, "directional");
+  anari_cpp::setParameter(m_device, sun, "direction", vtkm::Vec3f_32(0.0f, -1.0f, 0.0f));
+  anari_cpp::setParameter(m_device, sun, "irradiance", 2.f);
+  anari_cpp::setParameter(m_device, sun, "angularDiameter", 0.00925f);
+  anari_cpp::setParameter(m_device, sun, "radiance", 1.f);
+  anari_cpp::commitParameters(m_device, sun);
+  m_lights.push_back(sun);
+
   // Build Scene
   vtkm::interop::anari::ANARIScene scene(m_device);
   int num_renderers = m_anari_renderers.size();
@@ -300,22 +308,47 @@ ANARIRenderer::DoExecute()
   //loop through anari renderers
   //add them all to a scene 
   //with their respective mappers
+  //std::cerr << "num_renderers: " << num_renderers << std::endl;
   for(int i = 0; i < num_renderers; i++)
   {
     vtkm::Range field_range = m_input->GetGlobalRange(m_field_name).ReadPortal().Get(0);
     int num_domains = m_input->GetNumberOfDomains();
     auto a_renderer = m_anari_renderers[i];
+    //std::cerr << "for renderer i: " << i << std::endl;
     
     isVol = IsANARIVolume(a_renderer);
     isTri = IsANARITriangle(a_renderer);
     isPoint = IsANARIPoint(a_renderer);
     isGlyph = IsANARIGlyph(a_renderer);
+    //std::cerr << "IsVol: " << isVol << std::endl;
+    //std::cerr << "IsTri: " << isTri << std::endl;
+    //std::cerr << "IsPoint: " << isPoint << std::endl;
+    //std::cerr << "IsGlyph: " << isGlyph << std::endl;
     //loop through domains 
     //add them to ANARI scene
     for (int i = 0; i < num_domains; ++i)
     {
       if(isVol)
       {
+        //TODO: Unstructured does not work with helide
+        //      only works with barney and visionarray
+
+        //if unstructured, can we just cover it in triangles?
+        //if(m_input->IsUnstructured())
+        //{
+        //  std::cerr << "in unstructured" << std::endl;
+        //  auto& mIso = scene.AddMapper(vtkm::interop::anari::ANARIMapperTriangles(m_device));
+        //  mIso.SetName(("isosurface_" + std::to_string(i)).c_str());
+        //  mIso.SetActor({ 
+        //    m_input->GetDomain(i).GetCellSet(), 
+        //    m_input->GetDomain(i).GetCoordinateSystem(), 
+        //    m_input->GetDomain(i).GetField(m_field_name) 
+        //  });
+        //  mIso.SetCalculateNormals(true);
+        //  vtkh::detail::setColorMap(m_device, mIso, field_range, m_color_table);
+        //  //detail::set_tfn(mIso,m_device,m_color_table,m_range);
+        //}
+
         auto& mVol = scene.AddMapper(vtkm::interop::anari::ANARIMapperVolume(m_device));
         mVol.SetName(("volume_" + std::to_string(i)).c_str());
         mVol.SetActor({ 
