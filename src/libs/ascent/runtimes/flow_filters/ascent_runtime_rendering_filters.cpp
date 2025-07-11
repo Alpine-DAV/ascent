@@ -226,6 +226,30 @@ check_renders_surprises(const conduit::Node &renders_node)
   }
   return surprises;
 }
+
+void vtkm_bounds_to_conduit_node(const vtkm::Bounds &bounds,
+                                 conduit::Node &res)
+{
+    res["xmin"] = bounds.X.Min;
+    res["xmax"] = bounds.X.Max;
+    res["ymin"] = bounds.Y.Min;
+    res["ymax"] = bounds.Y.Max;
+    res["zmin"] = bounds.Z.Min;
+    res["zmax"] = bounds.Z.Max;
+}
+
+void conduit_node_to_vtkm_bounds(const conduit::Node &bounds,
+                                 vtkm::Bounds &res)
+{
+    res.X.Min = bounds["xmin"].to_float64();
+    res.X.Min = bounds["xmax"].to_float64();
+    res.Y.Min = bounds["ymin"].to_float64();
+    res.Y.Max = bounds["ymax"].to_float64();
+    res.Z.Min = bounds["zmin"].to_float64();
+    res.Z.Max = bounds["zmax"].to_float64();
+}
+
+
 // A simple container to create registry entries for
 // renderer and the data set it renders. Without this,
 // pipeline results (data sets) would be deleted before
@@ -1093,9 +1117,9 @@ void
 DefaultRender::execute()
 {
 
-    if(!input(0).check_type<vtkm::Bounds>())
+    if(!input(0).check_type<conduit::Node>())
     {
-      ASCENT_ERROR("'a' input must be a vktm::Bounds * instance");
+      ASCENT_ERROR("'a' input must be a conduit::Node * instance");
     }
 
     int mpi_comm_id = -1;
@@ -1106,7 +1130,10 @@ DefaultRender::execute()
     MPI_Comm_rank(mpi_comm, &rank);
 #endif
 
-    vtkm::Bounds *bounds = input<vtkm::Bounds>(0);
+    conduit::Node *n_bounds = input<conduit::Node>(0);
+
+    vtkm::Bounds bounds;
+    detail::conduit_node_to_vtkm_bounds(n_bounds->fetch("__all_bounds__"),bounds);
 
     std::vector<vtkh::Render> *renders = new std::vector<vtkh::Render>();
 
@@ -1158,7 +1185,7 @@ DefaultRender::execute()
       for(int i = 0; i < num_renders; ++i)
       {
         const conduit::Node &render_node = renders_node.child(i);
-        vtkm::Bounds scene_bounds = *bounds;
+        vtkm::Bounds scene_bounds(bounds);
         if(render_node.has_path("use_original_bounds"))
         {
           if(render_node["use_original_bounds"].as_string() == "true")
@@ -1212,7 +1239,7 @@ DefaultRender::execute()
           bool exists = detail::CinemaDatabases::db_exists(db_name);
           if(!exists)
           {
-            detail::CinemaDatabases::create_db(*bounds,render_node, db_name, output_path);
+            detail::CinemaDatabases::create_db(bounds,render_node, db_name, output_path);
           }
 
           detail::CinemaManager &manager = detail::CinemaDatabases::get_db(db_name);
@@ -1397,7 +1424,7 @@ DefaultRender::execute()
         }
       }
 
-      vtkm::Bounds scene_bounds = *bounds;
+      vtkm::Bounds scene_bounds(bounds);
       if(params().has_path("use_original_bounds"))
       {
         if(params()["use_original_bounds"].as_string() == "true")
@@ -1451,11 +1478,12 @@ VTKHBounds::declare_interface(Node &i)
     i["output_port"] = "true";
 }
 
+
 //-----------------------------------------------------------------------------
 void
 VTKHBounds::execute()
 {
-    vtkm::Bounds *bounds = new vtkm::Bounds;
+    conduit::Node *n_bounds = new conduit::Node();
 
     if(!input(0).check_type<DataObject>())
     {
@@ -1468,10 +1496,16 @@ VTKHBounds::execute()
     if(data_object->is_valid())
     {
       std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
-      bounds->Include(collection->global_bounds());
+
+      vtkm::Bounds bounds;
+      bounds.Include(collection->global_bounds());
+      conduit::Node &curr = n_bounds->fetch("__all_bounds__");
+      detail::vtkm_bounds_to_conduit_node(bounds,curr);
+
+      // get the bounds for each named topology
     }
 
-    set_output<vtkm::Bounds>(bounds);
+    set_output<conduit::Node>(n_bounds);
 }
 
 
@@ -1503,24 +1537,65 @@ VTKHUnionBounds::declare_interface(Node &i)
 void
 VTKHUnionBounds::execute()
 {
-    if(!input(0).check_type<vtkm::Bounds>())
+    if(!input(0).check_type<conduit::Node>())
     {
-        ASCENT_ERROR("'a' must be a vtkm::Bounds * instance");
+        ASCENT_ERROR("'a' must be a conduit::Node * instance");
     }
 
-    if(!input(1).check_type<vtkm::Bounds>())
+    if(!input(1).check_type<conduit::Node>())
     {
-        ASCENT_ERROR("'b' must be a vtkm::Bounds * instance");
+        ASCENT_ERROR("'b' must be a conduit::Node * instance");
     }
 
-    vtkm::Bounds *result = new vtkm::Bounds;
+    // vtkm::Bounds *result = new vtkm::Bounds;
+    //
+    // vtkm::Bounds *bounds_a = input<vtkm::Bounds>(0);
+    // vtkm::Bounds *bounds_b = input<vtkm::Bounds>(1);
+    //
+    // result->Include(*bounds_a);
+    // result->Include(*bounds_b);
+    // set_output<vtkm::Bounds>(result);
 
-    vtkm::Bounds *bounds_a = input<vtkm::Bounds>(0);
-    vtkm::Bounds *bounds_b = input<vtkm::Bounds>(1);
+    conduit::Node *result =  new conduit::Node();
+    conduit::Node *a_node =  input<conduit::Node>(0);
+    conduit::Node *b_node =  input<conduit::Node>(1);
 
-    result->Include(*bounds_a);
-    result->Include(*bounds_b);
-    set_output<vtkm::Bounds>(result);
+    // we want all unique child names between the two nodes
+    std::set<std::string> c_names;
+
+    for(auto c_name : a_node->child_names())
+    {
+        c_names.insert(c_name);
+    }
+
+    for(auto c_name : b_node->child_names())
+    {
+        c_names.insert(c_name);
+    }
+
+    // now we have unique names
+    for(auto c_name : c_names)
+    {
+        vtkm::Bounds bounds;
+        if(a_node->has_child(c_name))
+        {
+            vtkm::Bounds curr_bounds;
+            detail::conduit_node_to_vtkm_bounds(a_node->fetch(c_name),curr_bounds);
+            bounds.Include(curr_bounds);
+        }
+        
+        if(b_node->has_child(c_name))
+        {
+            vtkm::Bounds curr_bounds;
+            detail::conduit_node_to_vtkm_bounds(b_node->fetch(c_name),curr_bounds);
+            bounds.Include(curr_bounds);
+        }
+
+        conduit::Node &r = result->fetch(c_name);
+        detail::vtkm_bounds_to_conduit_node(bounds,r);
+    }
+
+    set_output<conduit::Node>(result);
 }
 
 //-----------------------------------------------------------------------------
