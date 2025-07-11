@@ -246,8 +246,14 @@ FUNCTION(PYTHON_ADD_PIP_SETUP)
     # like we were able to do with distutils, you have to use TMPDIR
     # TODO: we might want to  explore this in the future
     add_custom_command(OUTPUT ${stamp}
-            COMMAND ${PYTHON_EXECUTABLE} -m pip install . -V --upgrade
-            --disable-pip-version-check --no-warn-script-location
+            COMMAND ${PYTHON_EXECUTABLE} -m pip install . -V
+            --no-cache-dir
+            --disable-pip-version-check
+            --no-index
+            --no-deps
+            --no-build-isolation
+            --no-warn-script-location
+            --upgrade
             --target "${abs_dest_path}"
             COMMAND ${CMAKE_COMMAND} -E touch ${stamp}
             DEPENDS  ${args_PY_SETUP_FILE} ${args_PY_SOURCES}
