@@ -173,6 +173,7 @@ Rover::update_camera()
   }
 
   // The order in which these parameters are applied matters
+  // TODO: Match the ordering in #1547 once it's done
   const Node &camera_params = rover::settings["camera"];
 
   if (camera_params.has_child("azimuth"))

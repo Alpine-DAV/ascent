@@ -89,16 +89,16 @@ struct PartialImage
 #ifdef ROVER_OPENMP_ENABLED
     #pragma omp parallel for
 #endif
-    for(int index = 0; index < size; ++index)
+    for (int i = 0; i < size; i++)
     {
-      partials[index].m_pixel_id = static_cast<int>(id_portal.Get(index));
-      partials[index].m_depth = depth_portal.Get(index);
-      partials[index].m_bins.resize(num_bins);
+      partials[i].m_pixel_id = static_cast<int>(id_portal.Get(i));
+      partials[i].m_depth = depth_portal.Get(i);
+      partials[i].m_bins.resize(num_bins);
 
-      const int starting_index = index * num_bins;
-      for(int i = 0; i < num_bins; ++i)
+      const int starting_index = i * num_bins;
+      for (int j = 0; j < num_bins; j++)
       {
-        partials[index].m_bins[i] = transmission_portal.Get(starting_index + i);
+        partials[i].m_bins[j] = transmission_portal.Get(starting_index + j);
       }
     }
   }
@@ -117,20 +117,21 @@ struct PartialImage
 #ifdef ROVER_OPENMP_ENABLED
     #pragma omp parallel for
 #endif
-    for(int index = 0; index < size; ++index)
+    for (int i = 0; i < size; i++)
     {
-      partials[index].m_pixel_id = static_cast<int>(id_portal.Get(index));
-      partials[index].m_depth = depth_portal.Get(index);
-      partials[index].m_bins.resize(num_bins);
-      partials[index].m_emission_bins.resize(num_bins);
-      partials[index].m_optical_depth_bins.resize(num_bins);
+      partials[i].m_pixel_id = static_cast<int>(id_portal.Get(i));
+      partials[i].m_depth = depth_portal.Get(i);
+      partials[i].m_bins.resize(num_bins);
+      partials[i].m_emission_bins.resize(num_bins);
+      partials[i].m_optical_depth_bins.resize(num_bins);
 
-      const int starting_index = index * num_bins;
-      for(int i = 0; i < num_bins; ++i)
+      const int starting_index = i * num_bins;
+      for (int j = 0; j < num_bins; j++)
       {
-        partials[index].m_bins[i] = transmission_portal.Get(starting_index + i);
-        partials[index].m_emission_bins[i] = intensity_portal.Get(starting_index + i);
-        partials[index].m_optical_depth_bins[i] = optical_depth_portal.Get(starting_index + i);
+        const int offset_j = starting_index + j;
+        partials[i].m_bins[j] = transmission_portal.Get(offset_j);
+        partials[i].m_emission_bins[j] = intensity_portal.Get(offset_j);
+        partials[i].m_optical_depth_bins[j] = optical_depth_portal.Get(offset_j);
       }
     }
   }
@@ -192,7 +193,7 @@ struct PartialImage
   {
     const int size = static_cast<int>(partials.size());
     const int num_bins = static_cast<int>(partials.at(0).m_bins.size());
-    allocate(size,num_bins);
+    allocate(size, num_bins);
 
     auto id_portal = m_pixel_ids.WritePortal();
     auto transmission_portal = m_transmission.Buffer.WritePortal();
@@ -202,20 +203,21 @@ struct PartialImage
 #ifdef ROVER_OPENMP_ENABLED
     #pragma omp parallel for
 #endif
-    for(int i = 0; i < size; ++i)
+    for (int i = 0; i < size; i++)
     {
       id_portal.Set(i, partials[i].m_pixel_id);
       depth_portal.Set(i, partials[i].m_depth);
-      const int starting_index = i * num_bins;
 
-      for(int j = 0; j < num_bins; ++j)
+      const int starting_index = i * num_bins;
+      for (int j = 0; j < num_bins; j++)
       {
-        transmission_portal.Set(starting_index + j, partials[i].m_bins[j]);
-        intensity_portal.Set(starting_index + j, partials[i].m_bins[j] * background[j]);
+        const int offset_j = starting_index + j;
+        transmission_portal.Set(offset_j, partials[i].m_bins[j]);
+        intensity_portal.Set(offset_j, partials[i].m_bins[j] * background[j]);
       }
     }
 
-    for(int i = 0; i < num_bins; ++i)
+    for (int i = 0; i < num_bins; i++)
     {
       m_source_sig[i] = background[i];
     }
@@ -226,7 +228,7 @@ struct PartialImage
   {
     const int size = static_cast<int>(partials.size());
     const int num_bins = static_cast<int>(partials.at(0).m_bins.size());
-    allocate(size,num_bins);
+    allocate(size, num_bins);
 
     auto id_portal = m_pixel_ids.WritePortal();
     auto transmission_portal = m_transmission.Buffer.WritePortal();
@@ -237,23 +239,23 @@ struct PartialImage
 #ifdef ROVER_OPENMP_ENABLED
     #pragma omp parallel for
 #endif
-    for(int i = 0; i < size; ++i)
+    for (int i = 0; i < size; i++)
     {
       id_portal.Set(i, partials[i].m_pixel_id);
       depth_portal.Set(i, partials[i].m_depth);
-      const int starting_index = i * num_bins;
 
-      for(int j = 0; j < num_bins; ++j)
+      const int starting_index = i * num_bins;
+      for (int j = 0; j < num_bins; j++)
       {
-        const int starting_index_j = starting_index + j;
+        const int offset_j = starting_index + j;
         // TODO: Add comment explaining what's going on here
-        transmission_portal.Set(starting_index_j, partials[i].m_bins[j]);
-        intensity_portal.Set(starting_index_j, partials[i].m_emission_bins[j] + partials[i].m_bins[j] * background[j]);
-        optical_depth_portal.Set(starting_index_j, partials[i].m_optical_depth_bins[j]);
+        transmission_portal.Set(offset_j, partials[i].m_bins[j]);
+        intensity_portal.Set(offset_j, partials[i].m_emission_bins[j] + partials[i].m_bins[j] * background[j]);
+        optical_depth_portal.Set(offset_j, partials[i].m_optical_depth_bins[j]);
       }
     }
 
-    for(int i = 0; i < num_bins; ++i)
+    for (int i = 0; i < num_bins; i++)
     {
       m_source_sig[i] = background[i];
     }
@@ -267,7 +269,7 @@ struct PartialImage
     const int num_channels = m_transmission.GetNumChannels();
 
     bool has_emission = m_intensity.Buffer.GetNumberOfValues() != 0;
-    if(!has_emission)
+    if (!has_emission)
     {
       m_intensity.SetNumChannels(num_channels);
       m_intensity.Resize(size);
@@ -276,13 +278,13 @@ struct PartialImage
 #ifdef ROVER_OPENMP_ENABLED
     #pragma omp parallel for
 #endif
-    for(int i = 0; i < size; ++i)
+    for (int i = 0; i < size; i++)
     {
-      for(int b = 0; b < num_channels; ++b)
+      for (int b = 0; b < num_channels; ++b)
       {
         const int offset = i * num_channels;
         FloatType emis = 0;
-        if(has_emission)
+        if (has_emission)
         {
           emis = int_portal.Get(offset + b);
         }
