@@ -133,7 +133,7 @@ struct EmissionPartial
   {
     const int num_bins = static_cast<int>(m_bins.size());
     assert(num_bins == (int)other.m_bins.size());
-    for (int i = 0; i < num_bins; ++i)
+    for (int i = 0; i < num_bins; i++)
     {
       m_emission_bins[i] += other.m_emission_bins[i];
     }

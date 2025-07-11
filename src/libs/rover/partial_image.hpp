@@ -280,16 +280,18 @@ struct PartialImage
 #endif
     for (int i = 0; i < size; i++)
     {
-      for (int b = 0; b < num_channels; ++b)
+      const int offset = i * num_channels;
+      for (int j = 0; j < num_channels; j++)
       {
-        const int offset = i * num_channels;
+        const int offset_j = offset + j;
+
         FloatType emis = 0;
         if (has_emission)
         {
-          emis = int_portal.Get(offset + b);
+          emis = int_portal.Get(offset + j);
         }
 
-        int_portal.Set(offset + b, emis + buffer_portal.Get(offset + b) * m_source_sig[b]);
+        int_portal.Set(offset_j, emis + buffer_portal.Get(offset_j) * m_source_sig[j]);
       }
     }
   }
