@@ -203,6 +203,7 @@ TEST(ascent_rover, test_xray_blueprint_braid)
     extracts["e1/params/rover/emission"] = "radial";
     extracts["e1/params/rover/filename"] = query_path;
     extracts["e1/params/rover/output_type"] = "yaml";
+    extracts["e1/params/rover/precision"] = "double";
     extracts["e1/params/rover/enable_imaging_planes"] = "false"; // TODO: Remove this once issue #1559 is fixed
 
     Node actions;
@@ -237,7 +238,7 @@ TEST(ascent_rover, test_xray_blueprint_braid)
             divide_emis_by_absorb: "false"
             enable_imaging_planes: "false"
             height: 200
-            precision: "single"
+            precision: "double"
             width: 200
             unit_scalar: 1.0
             absorption: "radial"
@@ -248,7 +249,7 @@ TEST(ascent_rover, test_xray_blueprint_braid)
             detector_height: 4.00000016604152
             intensity_max: 173.205078125
             intensity_min: 0.0
-            optical_depth_max: 2699.02744396615
+            optical_depth_max: 2698.02783203125
             optical_depth_min: 0.0
             image_topo_order_of_domain_variables: "xyz"
           domain_id: 0
@@ -463,6 +464,7 @@ TEST(ascent_rover, test_xray_blueprint_curv3d)
     extracts["e1/params/rover/emission"] = "p";
     extracts["e1/params/rover/filename"] = query_path;
     extracts["e1/params/rover/output_type"] = "yaml";
+    extracts["e1/params/rover/precision"] = "double";
     extracts["e1/params/rover/enable_imaging_planes"] = "false"; // TODO: Remove this once issue #1559 is fixed
 
     conduit::Node actions;
@@ -497,7 +499,7 @@ TEST(ascent_rover, test_xray_blueprint_curv3d)
           divide_emis_by_absorb: "false"
           enable_imaging_planes: "false"
           height: 200
-          precision: "single"
+          precision: "double"
           width: 200
           unit_scalar: 1.0
           absorption: "d"
@@ -508,7 +510,7 @@ TEST(ascent_rover, test_xray_blueprint_curv3d)
           detector_height: 3.69684552235394
           intensity_max: 0.491446942090988
           intensity_min: 0.0
-          optical_depth_max: 126.497874413073
+          optical_depth_max: 125.497886657715
           optical_depth_min: 0.0
           image_topo_order_of_domain_variables: "xyz"
         domain_id: 0
@@ -712,6 +714,9 @@ TEST(ascent_rover, test_xray_blueprint_multi_curv3d)
     extracts["e1/params/rover/emission"] = "p";
     extracts["e1/params/rover/filename"] = query_path;
     extracts["e1/params/rover/output_type"] = "yaml";
+    // TODO: Investigate why using double precision with this
+    // dataset has an artifact in the intensity output
+    // extracts["e1/params/rover/precision"] = "double";
     extracts["e1/params/rover/divide_emis_by_absorb"] = "true";
     extracts["e1/params/rover/enable_imaging_planes"] = "false"; // TODO: Remove this once issue #1559 is fixed
 
@@ -726,6 +731,60 @@ TEST(ascent_rover, test_xray_blueprint_multi_curv3d)
     // Verify output mesh
     Node xray_blueprint_output, verify_info;
     load_and_verify_local_data(xray_blueprint_output, output_data_path);
+    Node &state_output = xray_blueprint_output["domain_000000/state"];
+
+    // Load and verify baseline data
+    const std::string yaml = R"(
+        time: 4.80000019073486
+        cycle: 48
+        xray_view:
+          position: [0.0, 2.49999904632568, 47.0156211853027]
+          zoom: 1.0
+          look_at: [0.0, 2.49999904632568, 15.0]
+          up: [0.0, 1.0, 0.0]
+          fov: 60.0
+          xpan: 0.0
+          ypan: 0.0
+          near_plane: 3.20156216621399
+          far_plane: 320.156219482422
+        xray_query:
+          background_intensity: 0.0
+          divide_emis_by_absorb: "true"
+          enable_imaging_planes: "false"
+          height: 200
+          precision: "single"
+          width: 200
+          unit_scalar: 1.0
+          absorption: "d"
+          emission: "p"
+          output_type: "yaml"
+        xray_data:
+          detector_width: 3.69684552235394
+          detector_height: 3.69684552235394
+          intensity_max: 0.241532012820244
+          intensity_min: 0.0
+          optical_depth_max: 125.49796295166
+          optical_depth_min: 0.0
+          image_topo_order_of_domain_variables: "xyz"
+        domain_id: 0
+        )";
+
+    Node baseline_data;
+    baseline_data.parse(yaml);
+    baseline_data["xray_query/filename"] = query_path;
+
+    // Diff the baseline data with our new output
+    Node diff_info;
+    const bool has_differences = baseline_data.diff(state_output,
+                                                    diff_info,
+                                                    0.01,
+                                                    true);
+    if (has_differences)
+    {
+        ASCENT_INFO("Found differences in the curv3d blueprint diff:\n");
+        diff_info.print();
+    }
+    EXPECT_FALSE(has_differences);
 
     // Render and verify each field
     render_all_fields(xray_blueprint_output, query_path, cycle);

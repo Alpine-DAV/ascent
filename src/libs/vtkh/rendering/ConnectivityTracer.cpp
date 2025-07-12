@@ -1494,30 +1494,19 @@ void ConnectivityTracer::PartialTrace(vtkm::rendering::raytracing::Ray<FloatType
     {
       partial.PathLengths = rays.GetBuffer("path_lengths").Copy().Buffer;
     }
+    partial.OpticalDepth = rays.GetBuffer("optical_depths").Copy();
     partials.push_back(partial);
 
     // reset buffers
-    if (this->Integrator == Volume)
+    rays.Buffers.at(0).InitConst(1.0f);
+    rays.GetBuffer("optical_depths").InitConst(0.0f);
+    if (HasEmission)
     {
-      vtkm::cont::ArrayHandle<FloatType> signature;
-      signature.Allocate(4);
-      signature.WritePortal().Set(0, 0.f);
-      signature.WritePortal().Set(1, 0.f);
-      signature.WritePortal().Set(2, 0.f);
-      signature.WritePortal().Set(3, 0.f);
-      rays.Buffers.at(0).InitChannels(signature);
+      rays.GetBuffer("emission").InitConst(0.0f);
     }
-    else
+    if (hasPathLengths)
     {
-      rays.Buffers.at(0).InitConst(1.f);
-      if (HasEmission)
-      {
-        rays.GetBuffer("emission").InitConst(0.f);
-      }
-      if (hasPathLengths)
-      {
-        rays.GetBuffer("path_lengths").InitConst(0.f);
-      }
+      rays.GetBuffer("path_lengths").InitConst(0.0f);
     }
 
     workRemaining = vtkm::rendering::raytracing::RayOperations::RaysProcessed(rays) != rays.NumRays;
