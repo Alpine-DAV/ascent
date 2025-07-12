@@ -1132,8 +1132,14 @@ DefaultRender::execute()
 
     conduit::Node *n_bounds = input<conduit::Node>(0);
 
+    // if you want to see all of the bounds info
+    // std::cout << n_bounds->to_yaml() << std::endl;
+
     vtkm::Bounds bounds;
-    detail::conduit_node_to_vtkm_bounds(n_bounds->fetch("__all_bounds__"),bounds);
+    if(n_bounds->has_child("__all_bounds__"))
+    {
+        detail::conduit_node_to_vtkm_bounds(n_bounds->fetch("__all_bounds__"),bounds);
+    }
 
     std::vector<vtkh::Render> *renders = new std::vector<vtkh::Render>();
 
@@ -1497,12 +1503,20 @@ VTKHBounds::execute()
     {
       std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
-      vtkm::Bounds bounds;
-      bounds.Include(collection->global_bounds());
-      conduit::Node &curr = n_bounds->fetch("__all_bounds__");
-      detail::vtkm_bounds_to_conduit_node(bounds,curr);
+      vtkm::Bounds global_bounds;
+      global_bounds.Include(collection->global_bounds());
+      conduit::Node &n_gb = n_bounds->fetch("__all_bounds__");
+      detail::vtkm_bounds_to_conduit_node(global_bounds,n_gb);
 
+      std::vector<std::string> topo_names = collection->topology_names();
       // get the bounds for each named topology
+      for(auto topo_name : topo_names)
+      {
+          vtkm::Bounds topo_bounds;
+          topo_bounds.Include(collection->global_topology_bounds(topo_name));
+          conduit::Node &curr = n_bounds->fetch(topo_name);
+          detail::vtkm_bounds_to_conduit_node(topo_bounds,curr);
+      }
     }
 
     set_output<conduit::Node>(n_bounds);
@@ -1546,15 +1560,6 @@ VTKHUnionBounds::execute()
     {
         ASCENT_ERROR("'b' must be a conduit::Node * instance");
     }
-
-    // vtkm::Bounds *result = new vtkm::Bounds;
-    //
-    // vtkm::Bounds *bounds_a = input<vtkm::Bounds>(0);
-    // vtkm::Bounds *bounds_b = input<vtkm::Bounds>(1);
-    //
-    // result->Include(*bounds_a);
-    // result->Include(*bounds_b);
-    // set_output<vtkm::Bounds>(result);
 
     conduit::Node *result =  new conduit::Node();
     conduit::Node *a_node =  input<conduit::Node>(0);
