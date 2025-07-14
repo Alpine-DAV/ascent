@@ -15,7 +15,7 @@ generate unique file paths.
 Supported Number Formats
 ------------------------
 
-The formatting uses c++ generic ``sprintf()`` formatting as a backend so it will work exactly like
+The formatting uses c++ generic ``fmt`` formatting as a backend so it will work exactly like
 regular string formatting. For reference, we specifically support the following formatting values.
 
 .. note::
