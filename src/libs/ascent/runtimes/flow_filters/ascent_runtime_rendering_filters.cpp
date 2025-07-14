@@ -272,9 +272,11 @@ protected:
   // be freed before we can render it
   DataObject m_data;
 public:
+  
   RendererContainer()
    : m_valid(false)
   {};
+  
   RendererContainer(std::string key,
                     flow::Registry *r,
                     vtkh::Renderer *renderer,
@@ -299,9 +301,14 @@ public:
   {
     return m_valid;
   }
+  
+  std::string topo_name()
+  {
+    return m_topo_name;
+  }
 
   vtkh::Renderer *
-  Fetch()
+  fetch_renderer()
   {
     return m_registry->fetch<vtkh::Renderer>(m_key);
   }
@@ -347,7 +354,7 @@ public:
     {
       ostringstream oss;
       oss << "key_" << i;
-      vtkh::Renderer * r = m_registry->fetch<RendererContainer>(oss.str())->Fetch();
+      vtkh::Renderer * r = m_registry->fetch<RendererContainer>(oss.str())->fetch_renderer();
       scene.AddRenderer(r);
     }
 
@@ -1792,6 +1799,8 @@ CreatePlot::execute()
       }
     }
 
+    // we now have the topo_name
+
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
 
     std::string type = params()["type"].as_string();
@@ -1896,8 +1905,6 @@ CreatePlot::execute()
     {
       renderer->SetField(field_name);
     }
-
-
 
 
     if(type == "mesh")
@@ -2141,7 +2148,7 @@ ExecScene::execute()
     }
 
     detail::AscentScene *scene = input<detail::AscentScene>(0);
-    std::vector<vtkh::Render> * renders = input<std::vector<vtkh::Render>>(1);
+    std::vector<vtkh::Render> *renders = input<std::vector<vtkh::Render>>(1);
     scene->Execute(*renders);
 
     // the images should exist now so add them to the image list

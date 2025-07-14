@@ -1798,6 +1798,7 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
       bounds_output = union_bounds_names[union_size-1];
     }
 
+    // pas bounds to default render filter
     m_workspace.graph().connect(bounds_output, // src
                                 renders_name,  // dest
                                 0);            // default port
@@ -1806,11 +1807,11 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
     // add_plot and to the renders
     m_workspace.graph().connect(prev_add_plot_name, // src
                                 exec_name,          // dest
-                                0);                 // default port
+                                0);                 // all plots
 
     m_workspace.graph().connect(renders_name,       // src
                                 exec_name,          // dest
-                                1);                 // default port
+                                1);                 // default renderer
   } // each scene
 }
 

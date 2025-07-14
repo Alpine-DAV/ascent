@@ -133,7 +133,7 @@ Scene::Render()
 
   //
   // We are going to render images in batches. With databases
-  // like Cinema, we could be rendering hundres of images. Keeping
+  // like Cinema, we could be rendering hundreds of images. Keeping
   // all the canvases around can hog memory so we will conserve it.
   // For example, if we rendered 360 images at 1024^2, all the canvases
   // would consume 7GB of space. Not good on the GPU, where resources
