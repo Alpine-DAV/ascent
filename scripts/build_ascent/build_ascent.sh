@@ -699,6 +699,7 @@ if [ ! -d ${vtkm_src_dir} ]; then
   # apply patches
   cd ${vtkm_src_dir}
   patch -p1 < ${script_dir}/2025_06_18_vtkm_z_extents_ray_culling_bugfix_viskores_mr109.patch
+  patch -p1 < ${script_dir}/2025_07_07_vtkm_anari_mapper_triangles_parameter_fix.patch
   cd ${root_dir}
 fi
 
