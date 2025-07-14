@@ -6,17 +6,17 @@
         p1:
           type: "pseudocolor"
           field: "braid"
-      image_prefix: "out_fmt_time_trigger-default_{time}"
+      image_prefix: "out_fmt_cycle-no_fmt"
     s2:
       plots:
         p1:
           type: "pseudocolor"
           field: "braid"
-      image_prefix: "out_fmt_time_trigger-float_{time:05.1f}"
+      image_prefix: "out_fmt_cycle-standard_%04d"
     s3:
       plots:
         p1:
           type: "pseudocolor"
           field: "braid"
-      image_prefix: "out_fmt_time_trigger-int_{time:04d}"
+      image_prefix: "out_fmt_cycle-ascent_fmt_{cycle:08d}"
       

@@ -177,7 +177,6 @@ keyword. This will force all family values to be greater than or equal to the se
     :caption: Example of setting the family_value_seed
 
     Node ascent_opts;
-    ascent_opts["runtime/type"] = "ascent";
     ascent_opts["family_value_seed"] = 200;
     ascent.open(ascent_opts);
 
