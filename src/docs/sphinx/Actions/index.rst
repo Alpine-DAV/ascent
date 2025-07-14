@@ -17,6 +17,7 @@ Ascent Actions
    Extracts
    Triggers
    Logging
+   PathStringFormatting
    Examples
    ExpressionsOverview
    expression_objects
