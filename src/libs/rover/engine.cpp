@@ -93,7 +93,7 @@ Engine::init_rays(Ray32 &rays)
   rays.Buffers.at(0).InitConst(1.0f);
   init_emission(rays, num_bins);
   rays.AddBuffer(num_bins, "optical_depths");
-  rays.GetBuffer("optical_depths").InitConst(1.0f);
+  rays.GetBuffer("optical_depths").InitConst(0.0f);
 }
 
 void
@@ -106,7 +106,7 @@ Engine::init_rays(Ray64 &rays)
   rays.Buffers.at(0).InitConst(1.0f);
   init_emission(rays, num_bins);
   rays.AddBuffer(num_bins, "optical_depths");
-  rays.GetBuffer("optical_depths").InitConst(1.0f);
+  rays.GetBuffer("optical_depths").InitConst(0.0f);
 }
 
 void

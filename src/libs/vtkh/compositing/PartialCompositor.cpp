@@ -93,6 +93,7 @@ void BlendPartials(const int &total_segments,
   //PartialType<FloatType>::composite_background(output_partials, background_values);
 
 }
+
 template<typename T>
 void
 BlendEmission(const int &total_segments,
@@ -102,6 +103,9 @@ BlendEmission(const int &total_segments,
               std::vector<EmissionPartial<T>> &output_partials,
               const int output_offset)
 {
+  // TODO: Compare how optical depth is computed here vs how
+  // it's computed in connectivity tracer
+
   //
   // Perform the compositing and output the result in the output
   // This code computes the optical depth (total absorption)
@@ -120,6 +124,7 @@ BlendEmission(const int &total_segments,
     while(result.m_pixel_id == next.m_pixel_id)
     {
       result.blend_absorption(next);
+      result.blend_optical_depth(next);
       if(current_index == total_partial_comps - 1)
       {
         break;
@@ -242,16 +247,16 @@ PartialCompositor<PartialType>::~PartialCompositor()
 template<typename PartialType>
 void
 PartialCompositor<PartialType>::merge(const std::vector<std::vector<PartialType>> &in_partials,
-                               std::vector<PartialType> &partials,
-                               int &global_min_pixel,
-                               int &global_max_pixel)
+                                      std::vector<PartialType> &partials,
+                                      int &global_min_pixel,
+                                      int &global_max_pixel)
 {
 
   int total_partial_comps = 0;
   const int num_partial_images = static_cast<int>(in_partials.size());
   int *offsets = new int[num_partial_images];
-  int *pixel_mins =  new int[num_partial_images];
-  int *pixel_maxs =  new int[num_partial_images];
+  int *pixel_mins = new int[num_partial_images];
+  int *pixel_maxs = new int[num_partial_images];
 
   for(int i = 0; i < num_partial_images; ++i)
   {
@@ -329,7 +334,7 @@ PartialCompositor<PartialType>::merge(const std::vector<std::vector<PartialType>
 template<typename PartialType>
 void
 PartialCompositor<PartialType>::composite_partials(std::vector<PartialType> &partials,
-                                            std::vector<PartialType> &output_partials)
+                                                   std::vector<PartialType> &output_partials)
 {
   const int total_partial_comps = partials.size();
   if(total_partial_comps == 0)
