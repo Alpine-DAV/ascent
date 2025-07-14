@@ -45,11 +45,11 @@ namespace filters
 
 
 //-----------------------------------------------------------------------------
-class ASCENT_API DefaultRender : public ::flow::Filter
+class ASCENT_API CreateRenders : public ::flow::Filter
 {
 public:
-    DefaultRender();
-    virtual ~DefaultRender();
+    CreateRenders();
+    virtual ~CreateRenders();
 
     virtual void   declare_interface(conduit::Node &i);
     virtual bool   verify_params(const conduit::Node &params,

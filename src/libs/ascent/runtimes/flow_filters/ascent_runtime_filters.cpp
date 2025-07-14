@@ -107,7 +107,7 @@ register_builtin()
     AscentRuntime::register_filter_type<PowerOfField>("transforms","power_of_field");
 
 #if defined(ASCENT_VTKM_ENABLED)
-    AscentRuntime::register_filter_type<DefaultRender>();
+    AscentRuntime::register_filter_type<CreateRenders>();
 
     AscentRuntime::register_filter_type<VTKHBounds>();
     AscentRuntime::register_filter_type<VTKHUnionBounds>();

@@ -302,7 +302,7 @@ public:
     return m_valid;
   }
   
-  std::string topo_name()
+  std::string topology_name()
   {
     return m_topo_name;
   }
@@ -327,6 +327,7 @@ class AscentScene
 protected:
   int m_renderer_count;
   flow::Registry *m_registry;
+  std::vector<std::string> m_active_topos;
   AscentScene() {};
 public:
 
@@ -338,8 +339,16 @@ public:
   ~AscentScene()
   {}
 
-  void AddRenderer(RendererContainer *container)
+  void add_renderer_container(RendererContainer *container)
   {
+    std::string topo = container->topology_name();
+
+    auto it = std::find(m_active_topos.begin(),m_active_topos.end(),topo);
+    if( it == m_active_topos.end())
+    {
+      m_active_topos.push_back(topo);
+    }
+
     ostringstream oss;
     oss << "key_" << m_renderer_count;
     m_registry->add<RendererContainer>(oss.str(),container,1);
@@ -347,8 +356,10 @@ public:
     m_renderer_count++;
   }
 
-  void Execute(std::vector<vtkh::Render> &renders)
+  void execute(std::vector<vtkh::Render> &renders)
   {
+    // we know the active topos now.
+
     vtkh::Scene scene;
     for(int i = 0; i < m_renderer_count; i++)
     {
@@ -373,6 +384,13 @@ public:
         m_registry->consume(oss.str());
     }
   }
+
+  const std::vector<std::string> &
+  active_topologies()
+  {
+      return m_active_topos;
+  }
+
 }; // Ascent Scene
 
 //-----------------------------------------------------------------------------
@@ -1062,30 +1080,31 @@ std::map<std::string, CinemaManager> CinemaDatabases::m_databases;
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-DefaultRender::DefaultRender()
+CreateRenders::CreateRenders()
 :Filter()
 {
 // empty
 }
 
 //-----------------------------------------------------------------------------
-DefaultRender::~DefaultRender()
+CreateRenders::~CreateRenders()
 {
 // empty
 }
 
 //-----------------------------------------------------------------------------
 void
-DefaultRender::declare_interface(Node &i)
+CreateRenders::declare_interface(Node &i)
 {
-    i["type_name"] = "default_render";
-    i["port_names"].append() = "a";
+    i["type_name"] = "create_renders";
+    i["port_names"].append() = "scene";
+    i["port_names"].append() = "bounds";
     i["output_port"] = "true";
 }
 
 //-----------------------------------------------------------------------------
 bool
-DefaultRender::verify_params(const conduit::Node &params,
+CreateRenders::verify_params(const conduit::Node &params,
                              conduit::Node &info)
 {
     info.reset();
@@ -1121,13 +1140,19 @@ DefaultRender::verify_params(const conduit::Node &params,
 //-----------------------------------------------------------------------------
 
 void
-DefaultRender::execute()
+CreateRenders::execute()
 {
 
-    if(!input(0).check_type<conduit::Node>())
+    if(!input(0).check_type<detail::AscentScene>())
     {
-      ASCENT_ERROR("'a' input must be a conduit::Node * instance");
+        ASCENT_ERROR("'scene' must be a AscentScene * instance");
     }
+
+    if(!input(1).check_type<conduit::Node>())
+    {
+      ASCENT_ERROR("'bounds' input must be a conduit::Node * instance");
+    }
+    
 
     int mpi_comm_id = -1;
     int rank = 0;
@@ -1137,15 +1162,33 @@ DefaultRender::execute()
     MPI_Comm_rank(mpi_comm, &rank);
 #endif
 
-    conduit::Node *n_bounds = input<conduit::Node>(0);
+    detail::AscentScene *scene = input<detail::AscentScene>(0);
+    conduit::Node *n_bounds = input<conduit::Node>(1);
 
     // if you want to see all of the bounds info
     // std::cout << n_bounds->to_yaml() << std::endl;
 
     vtkm::Bounds bounds;
-    if(n_bounds->has_child("__all_bounds__"))
+
+    //// if we want view based on all topologies
+    //// note: this can be different than the original bounds, it includes
+    //// all topologies after pipelines (if any)
+
+    // if(n_bounds->has_child("__all_topologies__"))
+    // {
+    //     detail::conduit_node_to_vtkm_bounds(n_bounds->fetch("__all_topologies__"),bounds);
+    // }
+
+    // get bounds for active topologies
+    const std::vector<std::string> active_topos = scene->active_topologies();
+    for(auto topo : active_topos)
     {
-        detail::conduit_node_to_vtkm_bounds(n_bounds->fetch("__all_bounds__"),bounds);
+        if(n_bounds->has_child(topo))
+        {
+           vtkm::Bounds topo_bounds;
+           detail::conduit_node_to_vtkm_bounds(n_bounds->fetch(topo),topo_bounds);
+           bounds.Include(topo_bounds);
+        }
     }
 
     std::vector<vtkh::Render> *renders = new std::vector<vtkh::Render>();
@@ -1409,8 +1452,8 @@ DefaultRender::execute()
           else
           {
             vtkh::Render render = detail::parse_render(render_node,
-                                                      scene_bounds,
-                                                      image_name);
+                                                       scene_bounds,
+                                                       image_name);
             renders->push_back(render);
           }
         }
@@ -1512,7 +1555,7 @@ VTKHBounds::execute()
 
       vtkm::Bounds global_bounds;
       global_bounds.Include(collection->global_bounds());
-      conduit::Node &n_gb = n_bounds->fetch("__all_bounds__");
+      conduit::Node &n_gb = n_bounds->fetch("__all_topologies__");
       detail::vtkm_bounds_to_conduit_node(global_bounds,n_gb);
 
       std::vector<std::string> topo_names = collection->topology_names();
@@ -1655,7 +1698,7 @@ AddPlot::execute()
     // it is
     if(cont->is_valid())
     {
-      scene->AddRenderer(cont);
+      scene->add_renderer_container(cont);
     }
     set_output<detail::AscentScene>(scene);
 }
@@ -2149,7 +2192,7 @@ ExecScene::execute()
 
     detail::AscentScene *scene = input<detail::AscentScene>(0);
     std::vector<vtkh::Render> *renders = input<std::vector<vtkh::Render>>(1);
-    scene->Execute(*renders);
+    scene->execute(*renders);
 
     // the images should exist now so add them to the image list
     // this can be used for the web server or jupyter

@@ -3540,9 +3540,7 @@ TEST(ascent_render_3d, test_render_3d_multi_topo_extents)
     // only run this test if ascent was built with vtkm support
     if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent support disabled, skipping 3D default"
-                      "Pipeline test");
-
+        ASCENT_INFO("Ascent support disabled, skipping test");
         return;
     }
 
@@ -3558,23 +3556,29 @@ TEST(ascent_render_3d, test_render_3d_multi_topo_extents)
             dims: 
               i: 3
               j: 3
+              k: 3
             origin: 
               x: -10.0
               y: -10.0
+              z: -10.0
             spacing: 
               dx: 10.0
               dy: 10.0
+              dz: 10.0
           coords_big: 
             type: "uniform"
             dims: 
               i: 3
               j: 3
+              k: 3
             origin: 
               x: -1000.0
               y: -1000.0
+              z: -1000.0
             spacing: 
               dx: 1000.0
               dy: 1000.0
+              dz: 1000.0
         topologies: 
           topo_small: 
             type: "uniform"
@@ -3586,11 +3590,11 @@ TEST(ascent_render_3d, test_render_3d_multi_topo_extents)
           field_small: 
             association: "element"
             topology: "topo_small"
-            values: [0.0, 1.0, 2.0, 3.0]
+            values: [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0]
           field_big: 
             association: "element"
             topology: "topo_big"
-            values: [0.0, -1.0, -2.0, -3.0]
+            values: [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0]
     )xyzxyz";
 
     Node data, verify_info;
@@ -3621,11 +3625,28 @@ TEST(ascent_render_3d, test_render_3d_multi_topo_extents)
     scenes["s2/plots/p1/field"] = "field_big";
     scenes["s2/image_prefix"] = output_fbig;
 
+    scenes["s2/plots/p2/type"]  = "pseudocolor";
+    scenes["s2/plots/p2/field"] = "field_big";
+    scenes["s2/image_prefix"] = output_fbig;
+
+
+    scenes["s2/plots/p3/type"]  = "pseudocolor";
+    scenes["s2/plots/p3/field"] = "field_big";
+    scenes["s2/image_prefix"] = output_fbig;
+
+
+    Node info;
     Ascent ascent;
     ascent.open();
     ascent.publish(data);
     ascent.execute(actions);
+    ascent.info(info);
     ascent.close();
+
+    ofstream ofs;
+    ofs.open(output_base + "_graph.html");
+    ofs <<info["flow_graph_dot_html"].as_string();
+    ofs.close();
 
     EXPECT_TRUE(check_test_image(output_fsmall));
     EXPECT_TRUE(check_test_image(output_fbig));
