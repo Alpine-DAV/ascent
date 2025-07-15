@@ -50,23 +50,9 @@ execute_ascent(const Node& data,
 void
 render_blueprint(const string &field_name,
                  const string &output_path,
-                 const Node &data,
-                 const double detector_width)
+                 const Node &data)
 {
     // Define Ascent actions
-
-    // TODO: Remove this once issue #1559 is fixed
-    Node pipelines;
-    Node &pl = pipelines["pl1"];
-    pl["f1/type"] = "clip";
-    pl["f1/params/topology"] = "image_topo";
-    pl["f1/params/invert"] = "true";
-    pl["f1/params/box/min/x"] = 0.0;
-    pl["f1/params/box/min/y"] = 0.0;
-    pl["f1/params/box/min/z"] = 0.0;
-    pl["f1/params/box/max/x"] = detector_width;
-    pl["f1/params/box/max/y"] = detector_width;
-    pl["f1/params/box/max/z"] = 0.0;
 
     Node scenes;
     scenes["s1/plots/p1/type"] = "pseudocolor";
@@ -77,15 +63,9 @@ render_blueprint(const string &field_name,
     if (field_name.find("spatial") != std::string::npos)
     {
         scenes["s1/renders/r1/camera/azimuth"] = 45.0;
-        scenes["s1/plots/p1/pipeline"] = "pl1"; // TODO: Remove this once issue #1559 is fixed
     }
 
     Node actions;
-
-    // TODO: Remove this once issue #1559 is fixed
-    Node &add_pipelines = actions.append();
-    add_pipelines["action"] = "add_pipelines";
-    add_pipelines["pipelines"] = pipelines;
 
     Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
@@ -102,20 +82,20 @@ render_all_fields(const Node &data,
 {
     // This is here to help identify which ascent execute is throwing an error
     ASCENT_INFO("Executing render_all_fields\n");
-
-    // TODO: Remove this once issue #1559 is fixed
-    const Node &xray_data = data["domain_000000/state/xray_data"];
-    const double detector_width = xray_data["detector_width"].to_double();
     
-    const std::vector<std::string> fields {"intensities", 
-                                           "optical_depth",
-                                           "intensities_spatial",
-                                           "optical_depth_spatial"
-                                          };
-    for (auto field : fields)
+    const std::vector<std::string> fields {
+        "intensities",
+        "optical_depth",
+        "intensities_spatial",
+        "optical_depth_spatial"
+    };
+
+    // TODO: Investigate whether we gain any performance by rendering all of these fields with
+    // a single set of actions
+    for (const auto& field : fields)
     {
         std::string full_output_path = output_path + "_" + field;
-        render_blueprint(field, full_output_path, data, detector_width);
+        render_blueprint(field, full_output_path, data);
         EXPECT_TRUE(check_test_image(full_output_path, 0.01f, cycle));
     }
 }
@@ -134,7 +114,8 @@ load_and_verify_ascent_data(Node &baseline_data,
                             const std::string filename)
 {
     Node verify_info;
-    const std::string baseline_path = conduit::utils::join_file_path(std::string(ASCENT_T_DATA_DIR), filename);
+    const std::string baseline_path = conduit::utils::join_file_path(std::string(ASCENT_T_DATA_DIR),
+                                                                     filename);
     conduit::relay::io::blueprint::load_mesh(baseline_path, baseline_data);
     EXPECT_TRUE(conduit::blueprint::mesh::verify(baseline_data, verify_info));
 }
@@ -204,7 +185,6 @@ TEST(ascent_rover, test_xray_blueprint_braid)
     extracts["e1/params/rover/filename"] = query_path;
     extracts["e1/params/rover/output_type"] = "yaml";
     extracts["e1/params/rover/precision"] = "double";
-    extracts["e1/params/rover/enable_imaging_planes"] = "false"; // TODO: Remove this once issue #1559 is fixed
 
     Node actions;
     Node &add_extracts = actions.append();
@@ -236,7 +216,7 @@ TEST(ascent_rover, test_xray_blueprint_braid)
           xray_query: 
             background_intensity: 0.0
             divide_emis_by_absorb: "false"
-            enable_imaging_planes: "false"
+            enable_rays_mesh: "false"
             height: 200
             precision: "double"
             width: 200
@@ -316,7 +296,6 @@ TEST(ascent_rover, test_xray_blueprint_braid_rotated)
     extracts["e1/params/rover/filename"] = query_path;
     extracts["e1/params/rover/output_type"] = "json";
     extracts["e1/params/rover/background_intensity"] = 100.0f;
-    extracts["e1/params/rover/enable_imaging_planes"] = "false"; // TODO: Remove this once issue #1559 is fixed
     extracts["e1/params/camera/azimuth"] = 45.0;
     extracts["e1/params/camera/elevation"] = 45.0;
 
@@ -465,7 +444,6 @@ TEST(ascent_rover, test_xray_blueprint_curv3d)
     extracts["e1/params/rover/filename"] = query_path;
     extracts["e1/params/rover/output_type"] = "yaml";
     extracts["e1/params/rover/precision"] = "double";
-    extracts["e1/params/rover/enable_imaging_planes"] = "false"; // TODO: Remove this once issue #1559 is fixed
 
     conduit::Node actions;
     conduit::Node &add_extracts = actions.append();
@@ -497,7 +475,7 @@ TEST(ascent_rover, test_xray_blueprint_curv3d)
         xray_query: 
           background_intensity: 0.0
           divide_emis_by_absorb: "false"
-          enable_imaging_planes: "false"
+          enable_rays_mesh: "false"
           height: 200
           precision: "double"
           width: 200
@@ -577,7 +555,6 @@ TEST(ascent_rover, test_xray_blueprint_curv3d_rotated)
     extracts["e1/params/rover/emission"] = "p";
     extracts["e1/params/rover/filename"] = query_path;
     extracts["e1/params/rover/output_type"] = "json";
-    extracts["e1/params/rover/enable_imaging_planes"] = "false"; // TODO: Remove this once issue #1559 is fixed
     extracts["e1/params/camera/azimuth"] = 45.0;
     extracts["e1/params/camera/elevation"] = 45.0;
 
@@ -637,7 +614,6 @@ TEST(ascent_rover, test_xray_blueprint_curv3d_camera_params)
     extracts["e1/params/rover/emission"] = "p";
     extracts["e1/params/rover/filename"] = query_path;
     extracts["e1/params/rover/output_type"] = "hdf5";
-    extracts["e1/params/rover/enable_imaging_planes"] = "false"; // TODO: Remove this once issue #1559 is fixed
 
     // These errors all originate from within rover
     // TODO: Setting anything for position (e.g. 0,0,0) throws a vector range error
@@ -676,7 +652,7 @@ TEST(ascent_rover, test_xray_blueprint_curv3d_camera_params)
     ASCENT_ACTIONS_DUMP(actions, query_path, msg);
 }
 
-// TODO: Add a test for imaging planes
+// TODO: Add a test for imaging planes and the rays mesh
 
 //-----------------------------------------------------------------------------
 TEST(ascent_rover, test_xray_blueprint_multi_curv3d)
@@ -718,7 +694,6 @@ TEST(ascent_rover, test_xray_blueprint_multi_curv3d)
     // dataset has an artifact in the intensity output
     // extracts["e1/params/rover/precision"] = "double";
     extracts["e1/params/rover/divide_emis_by_absorb"] = "true";
-    extracts["e1/params/rover/enable_imaging_planes"] = "false"; // TODO: Remove this once issue #1559 is fixed
 
     conduit::Node actions;
     conduit::Node &add_extracts = actions.append();
@@ -750,7 +725,7 @@ TEST(ascent_rover, test_xray_blueprint_multi_curv3d)
         xray_query:
           background_intensity: 0.0
           divide_emis_by_absorb: "true"
-          enable_imaging_planes: "false"
+          enable_rays_mesh: "false"
           height: 200
           precision: "single"
           width: 200
@@ -830,7 +805,6 @@ TEST(ascent_rover, test_xray_blueprint_multi_curv3d_rotated)
     extracts["e1/params/rover/emission"] = "p";
     extracts["e1/params/rover/filename"] = query_path;
     extracts["e1/params/rover/output_type"] = "json";
-    extracts["e1/params/rover/enable_imaging_planes"] = "false"; // TODO: Remove this once issue #1559 is fixed
     extracts["e1/params/camera/azimuth"] = 45.0;
     extracts["e1/params/camera/elevation"] = 45.0;
 
