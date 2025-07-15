@@ -45,6 +45,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ### Changed
 - Changed the replay utility's binary names such that `replay_ser` is now `ascent_replay` and `raplay_mpi` is now `ascent_replay_mpi`. This will help prevent potential name collisions with other tools that also have replay utilities.
 - Updated several preferred tpl versions
+- Changed bounding box used for default scene bounds to be the union of all topologies used in scene plots. Perviously, the union of all topologies in the dataset where used. 
 
 ### Fixed
 - Fixed WarpX filter that was not allowing for rendering of the output streamlines
