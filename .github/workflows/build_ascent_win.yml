@@ -41,6 +41,19 @@ jobs:
       run: |
         echo "**** Ascent Unit Tests"
         cmake -E env CTEST_OUTPUT_ON_FAILURE=1 cmake --build build --config Release --target RUN_TESTS
+    
+    - name: Run Ascent Unit Tests
+      run: |
+        echo "**** Ascent Unit Tests"
+        cmake -E env CTEST_OUTPUT_ON_FAILURE=1 cmake --build build --config Release --target RUN_TESTS
+
+    - name: Upload Ascent Unit Test Artifacts
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results
+        path: build/tests/_output/
+        retention-days: 7
     # NOT READY FOR THIS ON WINDOWS YET
     # - name: Create Unit Test Report
     #   if: always()
