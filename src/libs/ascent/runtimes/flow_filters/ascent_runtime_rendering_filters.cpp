@@ -153,17 +153,6 @@ check_renders_surprises(const conduit::Node &renders_node)
   r_valid_paths.push_back("image_width");
   r_valid_paths.push_back("image_height");
   r_valid_paths.push_back("scene_bounds");
-  r_valid_paths.push_back("camera/look_at");
-  r_valid_paths.push_back("camera/position");
-  r_valid_paths.push_back("camera/up");
-  r_valid_paths.push_back("camera/fov");
-  r_valid_paths.push_back("camera/xpan");
-  r_valid_paths.push_back("camera/ypan");
-  r_valid_paths.push_back("camera/zoom");
-  r_valid_paths.push_back("camera/near_plane");
-  r_valid_paths.push_back("camera/far_plane");
-  r_valid_paths.push_back("camera/azimuth");
-  r_valid_paths.push_back("camera/elevation");
   r_valid_paths.push_back("type");
   r_valid_paths.push_back("phi");
   r_valid_paths.push_back("phi_range");
@@ -200,6 +189,43 @@ check_renders_surprises(const conduit::Node &renders_node)
 
   std::vector<std::string> r_ignore_paths;
   r_ignore_paths.push_back("phi_theta_positions");
+  r_ignore_paths.push_back("camera");
+
+  // Valid Ascent input camera format
+  std::vector<std::string> c_ascent_valid_paths;
+  c_ascent_valid_paths.push_back("look_at");
+  c_ascent_valid_paths.push_back("position");
+  c_ascent_valid_paths.push_back("up");
+  c_ascent_valid_paths.push_back("fov");
+  c_ascent_valid_paths.push_back("xpan");
+  c_ascent_valid_paths.push_back("ypan");
+  c_ascent_valid_paths.push_back("zoom");
+  c_ascent_valid_paths.push_back("near_plane");
+  c_ascent_valid_paths.push_back("far_plane");
+  c_ascent_valid_paths.push_back("azimuth");
+  c_ascent_valid_paths.push_back("elevation");
+
+  // Valid Visit input camera format
+  std::vector<std::string> c_visit_valid_paths;
+  c_visit_valid_paths.push_back("viewNormal");
+  c_visit_valid_paths.push_back("focus");
+  c_visit_valid_paths.push_back("viewUp");
+  c_visit_valid_paths.push_back("viewAngle");
+  c_visit_valid_paths.push_back("parallelScale");
+  c_visit_valid_paths.push_back("nearPlane");
+  c_visit_valid_paths.push_back("farPlane");
+  c_visit_valid_paths.push_back("imagePan");
+  c_visit_valid_paths.push_back("imageZoom");
+  c_visit_valid_paths.push_back("perspective");
+  c_visit_valid_paths.push_back("eyeAngle");
+  c_visit_valid_paths.push_back("centerOfRotationSet");
+  c_visit_valid_paths.push_back("centerOfRotation");
+  c_visit_valid_paths.push_back("axis3DScaleFlag");
+  c_visit_valid_paths.push_back("axis3DScale");
+  c_visit_valid_paths.push_back("shear");
+  c_visit_valid_paths.push_back("windowValid");
+
+  std::vector<std::string> c_ignore_paths;
 
   for(int i = 0; i < num_renders; ++i)
   {
@@ -222,6 +248,22 @@ check_renders_surprises(const conduit::Node &renders_node)
           surprises += "'\n";
         }
       }
+    }
+
+    if(render_node.has_path("camera"))
+    {
+        const conduit::Node &camera_node = render_node["phi_theta_positions"];
+        std::string c_ascent_surprises = surprise_check(c_ascent_valid_paths, c_ignore_paths, camera_node);
+        std::string c_visit_surprises = surprise_check(c_visit_valid_paths, c_ignore_paths, camera_node);
+
+        if(!c_ascent_surprises.empty() && !c_ascent_surprises.empty())
+        {
+            surprises += "Cameras must follow either an ascent format or a visit format.\n";
+            surprises += "\nAscent camera surpises:\n";
+            surprises += c_ascent_surprises;
+            surprises += "\nVisit camera surprises:\n";
+            surprises += c_visit_surprises;
+        }
     }
   }
   return surprises;
