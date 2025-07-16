@@ -3652,7 +3652,139 @@ TEST(ascent_render_3d, test_render_3d_multi_topo_extents)
     EXPECT_TRUE(check_test_image(output_fbig));
 }
 
+//-----------------------------------------------------------------------------
 
+TEST(ascent_render_3d, test_render_ascent_camera)
+{
+    // the ascent runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping 3D default"
+                      "Pipeline test");
+
+        return;
+    }
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("uniform",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing 3D Rendering with an ascent camera");
+
+    string output_path = prepare_output_dir();
+    string image_prefix = "t_out_render_3d_ascent_camera";
+    string output_file = conduit::utils::join_file_path(output_path,image_prefix);
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+
+    //
+    // Create the actions.
+    //
+
+    conduit::Node scenes;
+    scenes["s1/plots/p1/type"]  = "volume";
+    scenes["s1/plots/p1/field"] = "braid";
+
+    scenes["s1/image_prefix"] = output_file;
+
+    scenes["s1/renders/r1/image_width"]  = 512;
+    scenes["s1/renders/r1/image_height"] = 512;
+    scenes["s1/renders/r1/image_prefix"]   = output_file;
+    double vec3[3];
+    vec3[0] = 1.; vec3[1] = 1.; vec3[2] = 1.;
+    scenes["s1/renders/r1/camera/look_at"].set_float64_ptr(vec3,3);
+    vec3[0] = 0.; vec3[1] = 25.; vec3[2] = 15.;
+    scenes["s1/renders/r1/camera/position"].set_float64_ptr(vec3,3);
+    vec3[0] = 0.; vec3[1] = -1.; vec3[2] = 0.;
+    scenes["s1/renders/r1/camera/up"].set_float64_ptr(vec3,3);
+    scenes["s1/renders/r1/camera/fov"] = 60.;
+    scenes["s1/renders/r1/camera/xpan"] = 0.;
+    scenes["s1/renders/r1/camera/ypan"] = 0.;
+    scenes["s1/renders/r1/camera/zoom"] = 1.0;
+    scenes["s1/renders/r1/camera/azimuth"] = 10.0;
+    scenes["s1/renders/r1/camera/elevation"] = -10.0;
+    scenes["s1/renders/r1/camera/near_plane"] = 0.1;
+    scenes["s1/renders/r1/camera/far_plane"] = 100.1;
+
+    conduit::Node actions;
+    conduit::Node &add_plots = actions.append();
+    add_plots["action"] = "add_scenes";
+    add_plots["scenes"] = scenes;
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example of creating a render, specifying all camera parameters.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+}
+
+// View3DAttributes 
+    // viewNormal = (0, 0, 1)        -> The direction the camera is looking (from camera to focus point)
+    // focus = (0, 0, 0)             -> The center point the camera is looking at
+    // viewUp = (0, 1, 0)            -> The up direction relative to the camera's orientation
+    // viewAngle = 30                -> Field of view (in degrees) from perspective projection
+    // // parallelScale = 1             -> Zoom for orthographic projection
+    // nearPlane = 0.001             -> Near clipping plane
+    // farPlane = 100                -> Far clipping plane
+    // // imagePan = (0, 0)             -> Pan offset applied in screen space
+    // imageZoom = 1                 -> Additional zoom applied to the view
+    // perspective = true            -> True for perspective and false for orthographic
+    // // eyeAngle = 2                  -> Eye seperation angle in degrees for stereo rendering
+    // // centerOfRotationSet = false   -> Indicates if an explicit center of rotation was set by the user
+    // // centerOfRotation = (0, 0, 0)  -> The point around which 3D rotations will pivot
+    // // axis3DScaleFlag = false       -> Boolean indicating if we should apply non-uniform scaling to the 3 axes
+    // // axis3DScale = (1, 1, 1)       -> Axis scaling factors for each axis
+    // // shear = (0, 0, 1)             -> For oblique projections or special visualization effects
+    // // windowValid = false           -> 
+// https://github.com/visit-dav/visit/blob/e54f4b532291b3e384ad2d7f27e810a41a6a3ca3/src/java/View3DAttributes.java#L23
+
+// Ascent Camera:
+    // look_at                       -> The target point that the camera is looking towards
+    // position                      -> Camera position in 3D
+    // up                            -> Up vector
+    // fov                           -> Field of view in degrees
+    // xpan                          -> Pan offset applied in screen space - x cooredinate
+    // ypan                          -> Pan offset applied in screen space - y cooredinate
+    // elevation                     -> 
+    // azimuth
+    // zoom                          -> Additional zoom applied to the view
+    // near_plane                    -> Near clipping plane
+    // far_plane                     -> Far clipping plane
+
+// View2DAttributes 
+    // windowCoords = (0, 0, 1, 1)
+    // viewportCoords = (0.1, 0.1, 0.9, 0.9)
+    // fullFrameActivationMode = Auto?
+    // fullFrameAutoThreshold = 100
+    // xScale = 0
+    // yScale = 0
+    // windowValid = false
+// https://github.com/visit-dav/visit/blob/e54f4b532291b3e384ad2d7f27e810a41a6a3ca3/src/common/state/View3DAttributes.C
 
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
