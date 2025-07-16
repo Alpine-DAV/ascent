@@ -84,15 +84,16 @@ public:
 protected:
   std::vector<Domain>                       m_domains;
   RayGenerator                             *m_ray_generator;
-  std::vector<vtkm::Float64>                m_background;
+  std::vector<FloatType>                    m_background;
   Image<FloatType>                          m_result;
   std::vector<PartialImage<FloatType>>      m_partial_images;
+  int                                       m_num_channels;
 
 #ifdef ROVER_PARALLEL
   MPI_Comm                                  m_comm_handle;
 #endif
 
-  void create_background(const int num_channels);
+  void create_background();
   int  get_global_channels();
   void set_global_range_and_bounds();
   void add_partial(const vtkhRayTracing::PartialComposite<FloatType> &partial);

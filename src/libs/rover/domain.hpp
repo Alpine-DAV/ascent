@@ -13,6 +13,7 @@
 
 #include <conduit.hpp>
 #include <engine.hpp>
+#include <vector>
 #include <vtkm_typedefs.hpp>
 #include <settings.hpp>
 
@@ -24,22 +25,27 @@ class Domain
 {
 public:
   Domain();
-  Domain(vtkmDataSet &dataset);
+  Domain(const vtkmDataSet &dataset);
   ~Domain();
 
-  void init();
+  void set_dataset(const vtkmDataSet &dataset);
+
+  void partial_trace(vtkm::rendering::raytracing::Ray<vtkm::Float32> &rays,
+                     std::vector<vtkh::rendering::raytracing::PartialComposite<vtkm::Float32>> &partials,
+                     const vtkm::cont::ArrayHandle<vtkm::Float32> &background);
+
+  void partial_trace(vtkm::rendering::raytracing::Ray<vtkm::Float64> &rays,
+                      std::vector<vtkh::rendering::raytracing::PartialComposite<vtkm::Float64>> &partials,
+                      const vtkm::cont::ArrayHandle<vtkm::Float64> &background);
+
   const vtkmDataSet& get_dataset();
-  void partial_trace(Ray32 &rays, PartialVector32 &partials);
-  void partial_trace(Ray64 &rays, PartialVector64 &partials);
-  void init_rays(Ray32 &rays);
-  void init_rays(Ray64 &rays);
-  void set_dataset(vtkmDataSet &dataset);
+  void set_num_channels(const int num_channels);
   void set_primary_range(const vtkmRange &range);
   void set_composite_background(bool on);
   vtkm::Bounds& get_domain_bounds();
   vtkmRange get_primary_range();
   void set_global_bounds(vtkm::Bounds bounds);
-  const int get_num_channels();
+
 protected:
   std::shared_ptr<Engine> m_engine;
   vtkmDataSet             m_dataset;

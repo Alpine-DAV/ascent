@@ -18,7 +18,7 @@ Domain::Domain()
   m_engine = std::make_shared<Engine>();
 }
 
-Domain::Domain(vtkmDataSet &dataset)
+Domain::Domain(const vtkmDataSet &dataset)
 {
   m_engine = std::make_shared<Engine>();
   set_dataset(dataset);
@@ -29,70 +29,8 @@ Domain::~Domain()
 
 }
 
-//
-// This should be called at the last possible moment by the
-// scheduler so that the settings data sets / setting can
-// be called in any order
-//
 void
-Domain::init()
-{
-  //
-  // Create the correct engine
-  //
-
-  ROVER_INFO("Executing Domain::init");
-
-#if 0 // removing volume renderer
-  if(m_render_settings.m_render_mode != volume &&
-     settings.m_render_mode == volume)
-  {
-    ROVER_INFO("Render mode = volume");
-    m_engine = std::make_shared<VolumeEngine>();
-  }
-  else if(m_render_settings.m_render_mode != energy &&
-          settings.m_render_mode == energy)
-  {
-#endif
-
-#if 0 // removing volume renderer
-  }
-  else if(m_render_settings.m_render_mode != surface &&
-          settings.m_render_mode == surface)
-  {
-    std::cout<<"ray tracing not implemented\n";
-  }
-  else
-  {
-    //ROVER_ERROR("Unable to create the appropriate engine");
-    //throw RoverException("Fatal Error: domain unable to create the apporpriate engine\n");
-  }
-#endif
-
-  m_engine->set_dataset(m_dataset);
-
-#if 0 // removing volume renderer
-  if(m_render_settings.m_render_mode == volume)
-  {
-    ROVER_INFO("outgoing render mode = volume");
-  }
-
-  if(m_render_settings.m_render_mode == energy)
-  {
-    ROVER_INFO("outgoing render mode = energy");
-  }
-#endif
-
-}
-
-const int
-Domain::get_num_channels()
-{
-  return m_engine->get_num_channels();
-}
-
-void
-Domain::set_dataset(vtkmDataSet &dataset)
+Domain::set_dataset(const vtkmDataSet &dataset)
 {
   ROVER_INFO("Setting dataset");
   m_engine->set_dataset(dataset);
@@ -100,34 +38,32 @@ Domain::set_dataset(vtkmDataSet &dataset)
   m_domain_bounds = m_dataset.GetCoordinateSystem().GetBounds();
 }
 
+void
+Domain::set_num_channels(const int num_channels)
+{
+  m_engine->set_num_channels(num_channels);
+}
+
+void
+Domain::partial_trace(vtkm::rendering::raytracing::Ray<vtkm::Float32> &rays,
+                      std::vector<vtkh::rendering::raytracing::PartialComposite<vtkm::Float32>> &partials,
+                      const vtkm::cont::ArrayHandle<vtkm::Float32> &background)
+{
+  m_engine->partial_trace(rays, partials, background);
+}
+
+void
+Domain::partial_trace(vtkm::rendering::raytracing::Ray<vtkm::Float64> &rays,
+                      std::vector<vtkh::rendering::raytracing::PartialComposite<vtkm::Float64>> &partials,
+                      const vtkm::cont::ArrayHandle<vtkm::Float64> &background)
+{
+  m_engine->partial_trace(rays, partials, background);
+}
+
 const vtkmDataSet&
 Domain::get_dataset()
 {
   return m_dataset;
-}
-
-void
-Domain::init_rays(Ray32 &rays)
-{
-  m_engine->init_rays(rays);
-}
-
-void
-Domain::init_rays(Ray64 &rays)
-{
-  m_engine->init_rays(rays);
-}
-
-void
-Domain::partial_trace(Ray32 &rays, PartialVector32 &partials)
-{
-  m_engine->partial_trace(rays, partials);
-}
-
-void
-Domain::partial_trace(Ray64 &rays, PartialVector64 &partials)
-{
-  m_engine->partial_trace(rays, partials);
 }
 
 void

@@ -132,14 +132,14 @@ struct Serialization<vtkh::AbsorptionPartial<double>>
 
   static void save(BinaryBuffer& bb, const vtkh::AbsorptionPartial<double> &partial)
   {
-    vtkhdiy::save(bb, partial.m_bins);
+    vtkhdiy::save(bb, partial.m_intensity_bins);
     vtkhdiy::save(bb, partial.m_pixel_id);
     vtkhdiy::save(bb, partial.m_depth);
   }
 
   static void load(BinaryBuffer& bb, vtkh::AbsorptionPartial<double> &partial)
   {
-    vtkhdiy::load(bb, partial.m_bins);
+    vtkhdiy::load(bb, partial.m_intensity_bins);
     vtkhdiy::load(bb, partial.m_pixel_id);
     vtkhdiy::load(bb, partial.m_depth);
   }
@@ -151,14 +151,14 @@ struct Serialization<vtkh::AbsorptionPartial<float>>
 
   static void save(BinaryBuffer& bb, const vtkh::AbsorptionPartial<float> &partial)
   {
-    vtkhdiy::save(bb, partial.m_bins);
+    vtkhdiy::save(bb, partial.m_intensity_bins);
     vtkhdiy::save(bb, partial.m_pixel_id);
     vtkhdiy::save(bb, partial.m_depth);
   }
 
   static void load(BinaryBuffer& bb, vtkh::AbsorptionPartial<float> &partial)
   {
-    vtkhdiy::load(bb, partial.m_bins);
+    vtkhdiy::load(bb, partial.m_intensity_bins);
     vtkhdiy::load(bb, partial.m_pixel_id);
     vtkhdiy::load(bb, partial.m_depth);
   }
@@ -170,16 +170,16 @@ struct Serialization<vtkh::EmissionPartial<double>>
 
   static void save(BinaryBuffer& bb, const vtkh::EmissionPartial<double> &partial)
   {
-    vtkhdiy::save(bb, partial.m_bins);
-    vtkhdiy::save(bb, partial.m_emission_bins);
+    vtkhdiy::save(bb, partial.m_intensity_bins);
+    vtkhdiy::save(bb, partial.m_optical_depth_bins);
     vtkhdiy::save(bb, partial.m_pixel_id);
     vtkhdiy::save(bb, partial.m_depth);
   }
 
   static void load(BinaryBuffer& bb, vtkh::EmissionPartial<double> &partial)
   {
-    vtkhdiy::load(bb, partial.m_bins);
-    vtkhdiy::load(bb, partial.m_emission_bins);
+    vtkhdiy::load(bb, partial.m_intensity_bins);
+    vtkhdiy::load(bb, partial.m_optical_depth_bins);
     vtkhdiy::load(bb, partial.m_pixel_id);
     vtkhdiy::load(bb, partial.m_depth);
   }
@@ -191,16 +191,16 @@ struct Serialization<vtkh::EmissionPartial<float>>
 
   static void save(BinaryBuffer& bb, const vtkh::EmissionPartial<float> &partial)
   {
-    vtkhdiy::save(bb, partial.m_bins);
-    vtkhdiy::save(bb, partial.m_emission_bins);
+    vtkhdiy::save(bb, partial.m_intensity_bins);
+    vtkhdiy::save(bb, partial.m_optical_depth_bins);
     vtkhdiy::save(bb, partial.m_pixel_id);
     vtkhdiy::save(bb, partial.m_depth);
   }
 
   static void load(BinaryBuffer& bb, vtkh::EmissionPartial<float> &partial)
   {
-    vtkhdiy::load(bb, partial.m_bins);
-    vtkhdiy::load(bb, partial.m_emission_bins);
+    vtkhdiy::load(bb, partial.m_intensity_bins);
+    vtkhdiy::load(bb, partial.m_optical_depth_bins);
     vtkhdiy::load(bb, partial.m_pixel_id);
     vtkhdiy::load(bb, partial.m_depth);
   }

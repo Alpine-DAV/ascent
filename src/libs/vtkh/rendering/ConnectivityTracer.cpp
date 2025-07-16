@@ -714,12 +714,11 @@ public:
                                 FieldInOut,      // current distance
                                 WholeArrayIn,    // cell absorption data array
                                 WholeArrayIn,    // cell emission data array
-                                WholeArrayInOut, // ray absorption data
-                                WholeArrayInOut, // ray emission data
+                                WholeArrayInOut, // ray intensity data
                                 WholeArrayInOut, // optical depth data
                                 FieldIn);        // current cell
 
-  using ExecutionSignature = void(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, WorkIndex);
+  using ExecutionSignature = void(_1, _2, _3, _4, _5, _6, _7, _8, _9, WorkIndex);
 
   template <typename FloatType,
             typename CellAbsPortalType,
@@ -731,8 +730,7 @@ public:
                                    FloatType& currentDistance,
                                    const CellAbsPortalType& absorptionData,
                                    const CellEmisPortalType& emissionData,
-                                   RayDataPortalType& absorptionBins,
-                                   RayDataPortalType& emissionBins,
+                                   RayDataPortalType& intensityBins,
                                    RayDataPortalType& opticalDepthBins,
                                    const vtkm::Id& currentCell,
                                    const vtkm::Id& rayIndex) const
@@ -777,16 +775,13 @@ public:
         FloatType tmp = vtkm::Exp(-absorb * segmentLength);
   
         const int rayOffsetI = rayOffset + i;
-        BOUNDS_CHECK(absorptionBins, rayOffsetI);
-        FloatType absorbIntensity = static_cast<FloatType>(absorptionBins.Get(rayOffsetI));
-        BOUNDS_CHECK(emissionBins, rayOffsetI);
-        FloatType emissionIntensity = static_cast<FloatType>(emissionBins.Get(rayOffsetI));
+        BOUNDS_CHECK(intensityBins, rayOffsetI);
+        FloatType intensity = static_cast<FloatType>(intensityBins.Get(rayOffsetI));
         BOUNDS_CHECK(opticalDepthBins, rayOffsetI);
         FloatType opticalDepth = static_cast<FloatType>(opticalDepthBins.Get(rayOffsetI));
   
-        absorptionBins.Set(rayOffsetI, absorbIntensity * tmp);
         // The only difference with this loop vs the other is that we do (emission / absorb) here.
-        emissionBins.Set(rayOffsetI, emissionIntensity * tmp + (emission / absorb) * (1.0f - tmp));
+        intensityBins.Set(rayOffsetI, intensity * tmp + (emission / absorb) * (1.0f - tmp));
         opticalDepthBins.Set(rayOffsetI, opticalDepth + absorb * segmentLength);
       }
     }
@@ -805,16 +800,13 @@ public:
         FloatType tmp = vtkm::Exp(-absorb * segmentLength);
   
         const int rayOffsetI = rayOffset + i;
-        BOUNDS_CHECK(absorptionBins, rayOffsetI);
-        FloatType absorbIntensity = static_cast<FloatType>(absorptionBins.Get(rayOffsetI));
-        BOUNDS_CHECK(emissionBins, rayOffsetI);
-        FloatType emissionIntensity = static_cast<FloatType>(emissionBins.Get(rayOffsetI));
+        BOUNDS_CHECK(intensityBins, rayOffsetI);
+        FloatType intensity = static_cast<FloatType>(intensityBins.Get(rayOffsetI));
         BOUNDS_CHECK(opticalDepthBins, rayOffsetI);
         FloatType opticalDepth = static_cast<FloatType>(opticalDepthBins.Get(rayOffsetI));
   
-        absorptionBins.Set(rayOffsetI, absorbIntensity * tmp);
         // Here we just use emission directly
-        emissionBins.Set(rayOffsetI, emissionIntensity * tmp + emission * (1.0f - tmp));
+        intensityBins.Set(rayOffsetI, intensity * tmp + emission * (1.0f - tmp));
         opticalDepthBins.Set(rayOffsetI, opticalDepth + absorb * segmentLength);
       }
     }
@@ -1287,32 +1279,30 @@ void ConnectivityTracer::IntegrateCells(vtkm::rendering::raytracing::Ray<FloatTy
   timer.Start();
   if (HasEmission)
   {
-    vtkm::cont::ArrayHandle<FloatType> absorp = rays.Buffers.at(0).Buffer;
-    vtkm::cont::ArrayHandle<FloatType> emission = rays.GetBuffer("emission").Buffer;
-    vtkm::cont::ArrayHandle<FloatType> optical_depth = rays.GetBuffer("optical_depths").Buffer;
+    vtkm::cont::ArrayHandle<FloatType> intensity = rays.GetBuffer("intensity").Buffer;
+    vtkm::cont::ArrayHandle<FloatType> optical_depth = rays.GetBuffer("optical_depth").Buffer;
     vtkm::worklet::DispatcherMapField<IntegrateEmission> dispatcher(
-      IntegrateEmission(rays.Buffers.at(0).GetNumChannels(), UnitScalar, DivideEmisByAbsorb));
+      IntegrateEmission(rays.GetBuffer("intensity").GetNumChannels(), UnitScalar, DivideEmisByAbsorb));
     dispatcher.Invoke(rays.Status,
                       *(tracker.EnterDist),
                       *(tracker.ExitDist),
                       rays.Distance,
                       vtkm::rendering::raytracing::GetScalarFieldArray(this->ScalarField),
                       vtkm::rendering::raytracing::GetScalarFieldArray(this->EmissionField),
-                      absorp,
-                      emission,
+                      intensity,
                       optical_depth,
                       rays.HitIdx);
   }
   else
   {
     vtkm::worklet::DispatcherMapField<Integrate> dispatcher(
-      Integrate(rays.Buffers.at(0).GetNumChannels(), UnitScalar));
+      Integrate(rays.GetBuffer("intensity").GetNumChannels(), UnitScalar));
     dispatcher.Invoke(rays.Status,
                       *(tracker.EnterDist),
                       *(tracker.ExitDist),
                       rays.Distance,
                       vtkm::rendering::raytracing::GetScalarFieldArray(this->ScalarField),
-                      rays.Buffers.at(0).Buffer,
+                      rays.GetBuffer("intensity").Buffer,
                       rays.HitIdx);
   }
 
@@ -1480,30 +1470,23 @@ void ConnectivityTracer::PartialTrace(vtkm::rendering::raytracing::Ray<FloatType
 
     IntegrateMeshSegment(rays);
 
+    // Get the results for a single pixel
     PartialComposite<FloatType> partial;
-    partial.Transmission = rays.Buffers.at(0).Copy();
-    partial.OpticalDepth = rays.GetBuffer("optical_depths").Copy();
+    partial.Intensity = rays.GetBuffer("intensity").Copy();
+    partial.OpticalDepth = rays.GetBuffer("optical_depth").Copy();
     vtkm::cont::Algorithm::Copy(rays.Distance, partial.Distances);
     vtkm::cont::Algorithm::Copy(rays.PixelIdx, partial.PixelIds);
 
-    if (HasEmission)
-    {
-      partial.Intensity = rays.GetBuffer("emission").Copy();
-    }
     if (hasPathLengths)
     {
       partial.PathLengths = rays.GetBuffer("path_lengths").Copy().Buffer;
     }
-    partial.OpticalDepth = rays.GetBuffer("optical_depths").Copy();
+
     partials.push_back(partial);
 
     // reset buffers
-    rays.Buffers.at(0).InitConst(1.0f);
-    rays.GetBuffer("optical_depths").InitConst(0.0f);
-    if (HasEmission)
-    {
-      rays.GetBuffer("emission").InitConst(0.0f);
-    }
+    rays.GetBuffer("intensity").InitConst(0.0f);
+    rays.GetBuffer("optical_depth").InitConst(0.0f);
     if (hasPathLengths)
     {
       rays.GetBuffer("path_lengths").InitConst(0.0f);

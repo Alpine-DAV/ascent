@@ -199,8 +199,8 @@ Image<FloatType>::init_from_partial(PartialImage<FloatType> &partial)
 
   const int64 width = rover::settings["width"].to_int64();
   const int64 height = rover::settings["height"].to_int64();
-  const int64 channel_size = width * height;
-  const int num_channels = partial.m_transmission.GetNumChannels();
+  const int64 num_pixels = width * height;
+  const int num_channels = partial.m_intensity.GetNumChannels();
 
   // Helper lambda to expand a channel and push its buffer to the output vector
   auto expand_and_push = [&](int channel_index,
@@ -209,7 +209,7 @@ Image<FloatType>::init_from_partial(PartialImage<FloatType> &partial)
                                        std::vector<HandleType>& output_vector)
   {
     vtkmRayTracing::ChannelBuffer<FloatType> channel = channel_group.GetChannel(channel_index);
-    vtkmRayTracing::ChannelBuffer<FloatType> expanded = channel.ExpandBuffer(partial.m_pixel_ids, channel_size, default_value);
+    vtkmRayTracing::ChannelBuffer<FloatType> expanded = channel.ExpandBuffer(partial.m_pixel_ids, num_pixels, default_value);
     output_vector.push_back(expanded.Buffer);
   };
 

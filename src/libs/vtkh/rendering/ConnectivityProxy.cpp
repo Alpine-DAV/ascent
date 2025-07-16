@@ -140,7 +140,7 @@ public:
     else
     {
       Tracer.SetEnergyData(this->Dataset.GetField(this->FieldName),
-                           rays.Buffers.at(0).GetNumChannels(),
+                           rays.GetBuffer("intensity").GetNumChannels(),
                            this->Dataset.GetCellSet(),
                            this->Dataset.GetCoordinateSystem(this->CoordinateName),
                            this->Dataset.GetField(this->EmissionFieldName));
@@ -163,7 +163,7 @@ public:
     else
     {
       Tracer.SetEnergyData(this->Dataset.GetField(this->FieldName),
-                           rays.Buffers.at(0).GetNumChannels(),
+                           rays.GetBuffer("intensity").GetNumChannels(),
                            this->Dataset.GetCellSet(),
                            this->Dataset.GetCoordinateSystem(this->CoordinateName),
                            this->Dataset.GetField(this->EmissionFieldName));
@@ -187,7 +187,7 @@ public:
     else
     {
       Tracer.SetEnergyData(this->Dataset.GetField(this->FieldName),
-                           rays.Buffers.at(0).GetNumChannels(),
+                           rays.GetBuffer("intensity").GetNumChannels(),
                            this->Dataset.GetCellSet(),
                            this->Dataset.GetCoordinateSystem(this->CoordinateName),
                            this->Dataset.GetField(this->EmissionFieldName));
@@ -211,7 +211,7 @@ public:
     else
     {
       Tracer.SetEnergyData(this->Dataset.GetField(this->FieldName),
-                           rays.Buffers.at(0).GetNumChannels(),
+                           rays.GetBuffer("intensity").GetNumChannels(),
                            this->Dataset.GetCellSet(),
                            this->Dataset.GetCoordinateSystem(this->CoordinateName),
                            this->Dataset.GetField(this->EmissionFieldName));

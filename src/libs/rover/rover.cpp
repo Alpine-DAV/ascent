@@ -30,7 +30,7 @@ Rover::Rover()
   rover::settings.reset();
 
   // Settings
-  rover::settings["background_intensity"] = 0.0f;
+  rover::settings["background_intensity"] = 0.0f; // TODO: This needs to become an array of intensities
   rover::settings["divide_emis_by_absorb"] = "false";
   rover::settings["enable_imaging_planes"] = "true"; // TODO: Remove this once issue #1559 is fixed
   rover::settings["height"] = 200;

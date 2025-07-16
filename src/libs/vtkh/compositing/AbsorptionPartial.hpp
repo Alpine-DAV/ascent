@@ -52,7 +52,7 @@ struct AbsorptionPartial
   typedef FloatType ValueType;
   int                    m_pixel_id;
   double                 m_depth;
-  std::vector<FloatType> m_bins;
+  std::vector<FloatType> m_intensity_bins;
 
   AbsorptionPartial()
     : m_pixel_id(0),
@@ -75,29 +75,13 @@ struct AbsorptionPartial
 
   inline void blend(const AbsorptionPartial<FloatType> &other)
   {
-    const int num_bins = static_cast<int>(m_bins.size());
-    assert(num_bins == (int)other.m_bins.size());
+    const int num_bins = static_cast<int>(m_intensity_bins.size());
+    assert(num_bins == (int)other.m_intensity_bins.size());
     for(int i = 0; i < num_bins; ++i)
     {
-      m_bins[i] *= other.m_bins[i];
+      m_intensity_bins[i] *= other.m_intensity_bins[i];
     }
   }
-
-  static void composite_background(std::vector<AbsorptionPartial> &partials,
-                                   const std::vector<FloatType> &background)
-  {
-    const int size = static_cast<int>(partials.size());
-    AbsorptionPartial<FloatType> bg;
-    bg.m_bins = background;
-#ifdef VTKH_OPENMP_ENABLED
-    #pragma omp parallel for
-#endif
-    for(int i = 0; i < size; ++i)
-    {
-      partials[i].blend(bg);
-    }
-  }
-
 };
 
 } // namespace rover

@@ -27,7 +27,6 @@ struct PartialImage
   // TODO: Improve naming to reflect what these things actually represent,
   // will require changes elsewhere (absorptionpartial and emissionpartial)
   IdHandle                                 m_pixel_ids;
-  vtkmRayTracing::ChannelBuffer<FloatType> m_transmission;  // holds the fraction of incoming intensity that survives absorption
   vtkmRayTracing::ChannelBuffer<FloatType> m_intensity;     // holds the intensity emerging from each ray
   vtkmRayTracing::ChannelBuffer<FloatType> m_optical_depth;
   vtkm::cont::ArrayHandle<FloatType>       m_distances;
@@ -37,8 +36,6 @@ struct PartialImage
   {
     m_pixel_ids.Allocate(size);
     m_distances.Allocate(size);
-    m_transmission.SetNumChannels(channels);
-    m_transmission.Resize(size);
     m_intensity.SetNumChannels(channels);
     m_intensity.Resize(size);
     m_optical_depth.SetNumChannels(channels);
@@ -79,9 +76,9 @@ struct PartialImage
 
   void extract_partials(std::vector<vtkh::AbsorptionPartial<FloatType>> &partials)
   {
-    const int num_bins = m_transmission.GetNumChannels();
+    const int num_bins = m_intensity.GetNumChannels();
     auto id_portal = m_pixel_ids.ReadPortal();
-    auto transmission_portal = m_transmission.Buffer.ReadPortal();
+    auto intensity_portal = m_intensity.Buffer.ReadPortal();
     auto depth_portal = m_distances.ReadPortal();
     const int size = static_cast<int>(m_pixel_ids.GetNumberOfValues());
     partials.resize(size);
@@ -93,21 +90,21 @@ struct PartialImage
     {
       partials[i].m_pixel_id = static_cast<int>(id_portal.Get(i));
       partials[i].m_depth = depth_portal.Get(i);
-      partials[i].m_bins.resize(num_bins);
+      partials[i].m_intensity_bins.resize(num_bins);
 
       const int starting_index = i * num_bins;
       for (int j = 0; j < num_bins; j++)
       {
-        partials[i].m_bins[j] = transmission_portal.Get(starting_index + j);
+        partials[i].m_intensity_bins[j] = intensity_portal.Get(starting_index + j);
+        // TODO: Optical depth needs to be added for the absorption-only case
       }
     }
   }
 
   void extract_partials(std::vector<vtkh::EmissionPartial<FloatType>> &partials)
   {
-    const int num_bins = m_transmission.GetNumChannels();
+    const int num_bins = m_intensity.GetNumChannels();
     auto id_portal = m_pixel_ids.ReadPortal();
-    auto transmission_portal = m_transmission.Buffer.ReadPortal();
     auto intensity_portal = m_intensity.Buffer.ReadPortal();
     auto optical_depth_portal = m_optical_depth.Buffer.ReadPortal();
     auto depth_portal = m_distances.ReadPortal();
@@ -121,16 +118,14 @@ struct PartialImage
     {
       partials[i].m_pixel_id = static_cast<int>(id_portal.Get(i));
       partials[i].m_depth = depth_portal.Get(i);
-      partials[i].m_bins.resize(num_bins);
-      partials[i].m_emission_bins.resize(num_bins);
+      partials[i].m_intensity_bins.resize(num_bins);
       partials[i].m_optical_depth_bins.resize(num_bins);
 
       const int starting_index = i * num_bins;
       for (int j = 0; j < num_bins; j++)
       {
         const int offset_j = starting_index + j;
-        partials[i].m_bins[j] = transmission_portal.Get(offset_j);
-        partials[i].m_emission_bins[j] = intensity_portal.Get(offset_j);
+        partials[i].m_intensity_bins[j] = intensity_portal.Get(offset_j);
         partials[i].m_optical_depth_bins[j] = optical_depth_portal.Get(offset_j);
       }
     }
@@ -189,14 +184,13 @@ struct PartialImage
 #endif
 
   void store(std::vector<vtkh::AbsorptionPartial<FloatType>> &partials,
-             const std::vector<double> &background)
+             const std::vector<FloatType> &background)
   {
     const int size = static_cast<int>(partials.size());
-    const int num_bins = static_cast<int>(partials.at(0).m_bins.size());
+    const int num_bins = static_cast<int>(partials.at(0).m_intensity_bins.size());
     allocate(size, num_bins);
 
     auto id_portal = m_pixel_ids.WritePortal();
-    auto transmission_portal = m_transmission.Buffer.WritePortal();
     auto depth_portal = m_distances.WritePortal();
     auto intensity_portal = m_intensity.Buffer.WritePortal();
 
@@ -212,8 +206,7 @@ struct PartialImage
       for (int j = 0; j < num_bins; j++)
       {
         const int offset_j = starting_index + j;
-        transmission_portal.Set(offset_j, partials[i].m_bins[j]);
-        intensity_portal.Set(offset_j, partials[i].m_bins[j] * background[j]);
+        intensity_portal.Set(offset_j, partials[i].m_intensity_bins[j]);
       }
     }
 
@@ -224,14 +217,13 @@ struct PartialImage
   }
 
   void store(std::vector<vtkh::EmissionPartial<FloatType>> &partials,
-             const std::vector<double> &background)
+             const std::vector<FloatType> &background)
   {
     const int size = static_cast<int>(partials.size());
-    const int num_bins = static_cast<int>(partials.at(0).m_bins.size());
+    const int num_bins = static_cast<int>(partials.at(0).m_intensity_bins.size());
     allocate(size, num_bins);
 
     auto id_portal = m_pixel_ids.WritePortal();
-    auto transmission_portal = m_transmission.Buffer.WritePortal();
     auto depth_portal = m_distances.WritePortal();
     auto intensity_portal = m_intensity.Buffer.WritePortal();
     auto optical_depth_portal = m_optical_depth.Buffer.WritePortal();
@@ -249,8 +241,7 @@ struct PartialImage
       {
         const int offset_j = starting_index + j;
         // TODO: Add comment explaining what's going on here
-        transmission_portal.Set(offset_j, partials[i].m_bins[j]);
-        intensity_portal.Set(offset_j, partials[i].m_emission_bins[j] + partials[i].m_bins[j] * background[j]);
+        intensity_portal.Set(offset_j, partials[i].m_intensity_bins[j]);
         optical_depth_portal.Set(offset_j, partials[i].m_optical_depth_bins[j]);
       }
     }
@@ -258,41 +249,6 @@ struct PartialImage
     for (int i = 0; i < num_bins; i++)
     {
       m_source_sig[i] = background[i];
-    }
-  }
-
-  void add_source_sig()
-  {
-    auto buffer_portal = m_transmission.Buffer.WritePortal();
-    auto int_portal = m_intensity.Buffer.WritePortal();
-    const int size = m_pixel_ids.GetNumberOfValues();
-    const int num_channels = m_transmission.GetNumChannels();
-
-    bool has_emission = m_intensity.Buffer.GetNumberOfValues() != 0;
-    if (!has_emission)
-    {
-      m_intensity.SetNumChannels(num_channels);
-      m_intensity.Resize(size);
-    }
-
-#ifdef ROVER_OPENMP_ENABLED
-    #pragma omp parallel for
-#endif
-    for (int i = 0; i < size; i++)
-    {
-      const int offset = i * num_channels;
-      for (int j = 0; j < num_channels; j++)
-      {
-        const int offset_j = offset + j;
-
-        FloatType emis = 0;
-        if (has_emission)
-        {
-          emis = int_portal.Get(offset + j);
-        }
-
-        int_portal.Set(offset_j, emis + buffer_portal.Get(offset_j) * m_source_sig[j]);
-      }
     }
   }
 };
