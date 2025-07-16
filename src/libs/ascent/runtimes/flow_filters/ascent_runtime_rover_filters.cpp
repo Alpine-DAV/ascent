@@ -221,20 +221,19 @@ RoverXRay::verify_params(const conduit::Node &params,
     }
   }
 
-  // TODO: Remove this once issue #1559 is fixed
-  if (n_rover.has_child("enable_imaging_planes"))
+  if (n_rover.has_child("enable_rays_mesh"))
   {
-    if (!n_rover["enable_imaging_planes"].dtype().is_string())
+    if (!n_rover["enable_rays_mesh"].dtype().is_string())
     {
-      info["errors"].append() = "Optional bool string parameter 'rover/enable_imaging_planes' is not a string";
+      info["errors"].append() = "Optional bool string parameter 'rover/enable_rays_mesh' is not a string";
       res = false;
     }
-    else // (n_rover["enable_imaging_planes"].dtype().is_string())
+    else // (n_rover["enable_rays_mesh"].dtype().is_string())
     {
-      const std::string enable_imaging_planes = n_rover["enable_imaging_planes"].as_string();
-      if ("true" != enable_imaging_planes && "false" != enable_imaging_planes)
+      const std::string enable_rays_mesh = n_rover["enable_rays_mesh"].as_string();
+      if ("true" != enable_rays_mesh && "false" != enable_rays_mesh)
       {
-        info["errors"].append() = "Optional bool string parameter 'rover/enable_imaging_planes' must be 'true' or 'false'";
+        info["errors"].append() = "Optional bool string parameter 'rover/enable_rays_mesh' must be 'true' or 'false'";
         res = false;
       }
     }
@@ -420,7 +419,7 @@ RoverXRay::verify_params(const conduit::Node &params,
     "rover/background_intensity",
     "rover/divide_emis_by_absorb",
     "rover/emission",
-    "rover/enable_imaging_planes", // TODO: Remove this once #1559 is fixed
+    "rover/enable_rays_mesh",
     "rover/filename",
     "rover/height",
     "rover/output_type",
