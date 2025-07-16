@@ -50,6 +50,12 @@ public:
   VTKM_CONT
   void SetUnitScalar(vtkm::Float32 unitScalar) { Tracer.SetUnitScalar(unitScalar); }
 
+  VTKM_CONT
+  void SetDivideEmisByAbsorb(const bool divide_emis_by_absorb)
+  {
+    Tracer.SetDivideEmisByAbsorb(divide_emis_by_absorb);
+  }
+
   void SetSampleDistance(const vtkm::Float32& distance)
   {
     if (this->Mode != RenderMode::Volume)
@@ -488,5 +494,12 @@ void ConnectivityProxy::SetUnitScalar(vtkm::Float32 unitScalar)
 {
   Internals->SetUnitScalar(unitScalar);
 }
+
+VTKM_CONT
+void ConnectivityProxy::SetDivideEmisByAbsorb(const bool divide_emis_by_absorb)
+{
+  Internals->SetDivideEmisByAbsorb(divide_emis_by_absorb);
+}
+
 }
 } // namespace vtkm::rendering

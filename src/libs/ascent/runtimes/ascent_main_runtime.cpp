@@ -1638,7 +1638,7 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
 
     std::string renders_name = names[i] + "_renders";
 
-    if(!flow::Workspace::supports_filter_type("default_render"))
+    if(!flow::Workspace::supports_filter_type("create_renders"))
     {
         Node n_about;
         ascent::about(n_about);
@@ -1652,7 +1652,7 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
                      << n_about["runtimes/ascent"].to_yaml());
     }
 
-    m_workspace.graph().add_filter("default_render",
+    m_workspace.graph().add_filter("create_renders",
                                    renders_name,
                                    render_params);
 
@@ -1798,19 +1798,24 @@ AscentRuntime::CreateScenes(const conduit::Node &scenes)
       bounds_output = union_bounds_names[union_size-1];
     }
 
+    // pass bounds and scene to default render filter
+    m_workspace.graph().connect(prev_add_plot_name, // src
+                                renders_name,  // dest
+                                0);            // scene port
+
     m_workspace.graph().connect(bounds_output, // src
                                 renders_name,  // dest
-                                0);            // default port
+                                1);            // bounds port
 
     // connect Exec Scene to the output of the last
     // add_plot and to the renders
     m_workspace.graph().connect(prev_add_plot_name, // src
                                 exec_name,          // dest
-                                0);                 // default port
+                                0);                 // all plots
 
     m_workspace.graph().connect(renders_name,       // src
                                 exec_name,          // dest
-                                1);                 // default port
+                                1);                 // default renderer
   } // each scene
 }
 

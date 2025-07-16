@@ -47,8 +47,8 @@ Image<FloatType>::normalize_handle(vtkm::cont::ArrayHandle<FloatType> &handle,
   FloatType inv_delta;
   inv_delta = min_scalar == max_scalar ? 1.f : 1.f / (max_scalar - min_scalar);
   auto portal = handle.WritePortal();
-  const int64 width = rover::settings["rover/width"].to_int64();
-  const int64 height = rover::settings["rover/height"].to_int64();
+  const int64 width = rover::settings["width"].to_int64();
+  const int64 height = rover::settings["height"].to_int64();
   const int64 size = width * height;
 
 #ifdef ROVER_OPENMP_ENABLED
@@ -83,8 +83,8 @@ Image<FloatType>::normalize_handle(vtkm::cont::ArrayHandle<FloatType> &handle, b
   FloatType inv_delta;
   inv_delta = min_scalar == max_scalar ? 1.f : 1.f / (max_scalar - min_scalar);
   auto portal = handle.WritePortal();
-  const int64 width = rover::settings["rover/width"].to_int64();
-  const int64 height = rover::settings["rover/height"].to_int64();
+  const int64 width = rover::settings["width"].to_int64();
+  const int64 height = rover::settings["height"].to_int64();
   const int64 size = width * height;
 
 #ifdef ROVER_OPENMP_ENABLED
@@ -139,26 +139,26 @@ void cast_array_handle(vtkm::cont::ArrayHandle<T> &cast_to,
 //
 template<typename T, typename O> void init_from_image(Image<T> &left, Image<O> &right)
 {
-  const size_t channels = right.m_intensities.size();
+  const size_t channels = right.m_intensity_values.size();
   for(size_t i = 0; i < channels; ++i)
   {
-    cast_array_handle(left.m_intensities[i], right.m_intensities[i]);
-    cast_array_handle(left.m_optical_depths[i], right.m_optical_depths[i]);
+    cast_array_handle(left.m_intensity_values[i], right.m_intensity_values[i]);
+    cast_array_handle(left.m_optical_depth_values[i], right.m_optical_depth_values[i]);
   }
 
 }
 template<> void init_from_image<vtkm::Float32, vtkm::Float32>(Image<vtkm::Float32> &left,
                                                               Image<vtkm::Float32> &right)
 {
-  left.m_intensities = right.m_intensities;
-  left.m_optical_depths = right.m_optical_depths;
+  left.m_intensity_values = right.m_intensity_values;
+  left.m_optical_depth_values = right.m_optical_depth_values;
 }
 
 template<> void init_from_image<vtkm::Float64, vtkm::Float64>(Image<vtkm::Float64> &left,
                                                               Image<vtkm::Float64> &right)
 {
-  left.m_intensities = right.m_intensities;
-  left.m_optical_depths = right.m_optical_depths;
+  left.m_intensity_values = right.m_intensity_values;
+  left.m_optical_depth_values = right.m_optical_depth_values;
 }
 
 template<typename FloatType>
@@ -173,64 +173,59 @@ template<typename FloatType>
 int
 Image<FloatType>::get_num_channels() const
 {
-  return static_cast<int>(m_intensities.size());
+  return static_cast<int>(m_intensity_values.size());
 }
 
 template<typename FloatType>
 bool
 Image<FloatType>::has_intensity(const int &channel_num) const
 {
-  if(channel_num < 0 || channel_num >= m_intensities.size())
-  {
-    return false;
-  }
-  return true;
+  return channel_num >= 0 && channel_num < m_intensity_values.size();
 }
 
 template<typename FloatType>
 bool
 Image<FloatType>::has_optical_depth(const int &channel_num) const
 {
-  if(channel_num < 0 || channel_num >= m_optical_depths.size())
-  {
-    return false;
-  }
-
-  return true;
+  return channel_num >= 0 && channel_num < m_optical_depth_values.size();
 }
 
 template<typename FloatType>
 void
 Image<FloatType>::init_from_partial(PartialImage<FloatType> &partial)
 {
-  m_intensities.clear();
-  m_optical_depths.clear();
+  m_intensity_values.clear();
+  m_optical_depth_values.clear();
 
-  const int64 width = rover::settings["rover/width"].to_int64();
-  const int64 height = rover::settings["rover/height"].to_int64();
+  const int64 width = rover::settings["width"].to_int64();
+  const int64 height = rover::settings["height"].to_int64();
   const int64 channel_size = width * height;
-  const int num_channels = partial.m_buffer.GetNumChannels();
+  const int num_channels = partial.m_transmission.GetNumChannels();
 
-  // TODO: This could be simplified with a helper function
+  // Helper lambda to expand a channel and push its buffer to the output vector
+  auto expand_and_push = [&](int channel_index,
+                                       vtkmRayTracing::ChannelBuffer<FloatType>& channel_group,
+                                       FloatType default_value,
+                                       std::vector<HandleType>& output_vector)
+  {
+    vtkmRayTracing::ChannelBuffer<FloatType> channel = channel_group.GetChannel(channel_index);
+    vtkmRayTracing::ChannelBuffer<FloatType> expanded = channel.ExpandBuffer(partial.m_pixel_ids, channel_size, default_value);
+    output_vector.push_back(expanded.Buffer);
+  };
+
   for (int i = 0; i < num_channels; i++)
   {
     // Intensities
-    vtkmRayTracing::ChannelBuffer<FloatType> intensity_channel = partial.m_intensities.GetChannel(i);
-    const FloatType intensity_default = partial.m_source_sig[i];
-    vtkmRayTracing::ChannelBuffer<FloatType> intensity_expanded;
-    intensity_expanded = intensity_channel.ExpandBuffer(partial.m_pixel_ids,
-                                                        channel_size,
-                                                        intensity_default);
-    m_intensities.push_back(intensity_expanded.Buffer);
+    expand_and_push(i,
+                    partial.m_intensity,
+                    partial.m_source_sig[i],
+                    m_intensity_values);
 
     // Optical depths
-    vtkmRayTracing::ChannelBuffer<FloatType> optical_depth_channel = partial.m_optical_depths.GetChannel(i);
-    const FloatType optical_depth_default = 0.0f;
-    vtkmRayTracing::ChannelBuffer<FloatType> optical_depth_expanded;
-    optical_depth_expanded = optical_depth_channel.ExpandBuffer(partial.m_pixel_ids,
-                                                                channel_size,
-                                                                optical_depth_default);
-    m_optical_depths.push_back(optical_depth_expanded.Buffer);
+    expand_and_push(i,
+                    partial.m_optical_depth,
+                    static_cast<FloatType>(0.0f),
+                    m_optical_depth_values);
   }
 }
 
@@ -238,39 +233,39 @@ template<typename FloatType>
 vtkm::cont::ArrayHandle<FloatType>
 Image<FloatType>::get_intensity(const int &channel_num)
 {
-  if(channel_num < 0 || channel_num >= m_intensities.size())
+  if(channel_num < 0 || channel_num >= m_intensity_values.size())
   {
     throw RoverException("Rover Image: invalid channel number");
   }
-  return m_intensities[channel_num];
+  return m_intensity_values[channel_num];
 }
 
 template<typename FloatType>
 vtkm::cont::ArrayHandle<FloatType>
 Image<FloatType>::get_optical_depth(const int &channel_num)
 {
-  if(channel_num < 0 || channel_num >= m_optical_depths.size())
+  if(channel_num < 0 || channel_num >= m_optical_depth_values.size())
   {
     throw RoverException("Rover Image: invalid channel number");
   }
-  return m_optical_depths[channel_num];
+  return m_optical_depth_values[channel_num];
 }
 
 template<typename FloatType>
 vtkm::cont::ArrayHandle<FloatType>
-Image<FloatType>::flatten_intensities()
+Image<FloatType>::flatten_intensity_values()
 {
   const int num_channels = this->get_num_channels();
 
   HandleType res;
-  const int64 width = rover::settings["rover/width"].to_int64();
-  const int64 height = rover::settings["rover/height"].to_int64();
+  const int64 width = rover::settings["width"].to_int64();
+  const int64 height = rover::settings["height"].to_int64();
   const int64 size = width * height;
   res.Allocate(num_channels * size);
   auto output = res.WritePortal();
   for(int c = 0; c < num_channels; ++c)
   {
-    auto channel = m_intensities[c].ReadPortal();
+    auto channel = m_intensity_values[c].ReadPortal();
 
 #ifdef ROVER_OPENMP_ENABLED
     #pragma omp parallel for
@@ -285,19 +280,19 @@ Image<FloatType>::flatten_intensities()
 
 template<typename FloatType>
 vtkm::cont::ArrayHandle<FloatType>
-Image<FloatType>::flatten_optical_depths()
+Image<FloatType>::flatten_optical_depth_values()
 {
   const int num_channels = this->get_num_channels();
 
   HandleType res;
-  const int64 width = rover::settings["rover/width"].to_int64();
-  const int64 height = rover::settings["rover/height"].to_int64();
+  const int64 width = rover::settings["width"].to_int64();
+  const int64 height = rover::settings["height"].to_int64();
   const int64 size = width * height;
   res.Allocate(num_channels * size);
   auto output = res.WritePortal();
   for(int c = 0; c < num_channels; ++c)
   {
-    auto channel = m_optical_depths[c].ReadPortal();
+    auto channel = m_optical_depth_values[c].ReadPortal();
 #ifdef ROVER_OPENMP_ENABLED
     #pragma omp parallel for
 #endif
@@ -313,12 +308,12 @@ template<typename FloatType>
 void
 Image<FloatType>::normalize_intensity(const int &channel_num)
 {
-  if(channel_num < 0 || channel_num >= m_intensities.size())
+  if(channel_num < 0 || channel_num >= m_intensity_values.size())
   {
     throw RoverException("Rover Image: invalid channel number");
   }
   bool invert = false;
-  normalize_handle(m_intensities[channel_num], invert);
+  normalize_handle(m_intensity_values[channel_num], invert);
 }
 
 template<typename FloatType>
@@ -328,24 +323,24 @@ Image<FloatType>::normalize_intensity(const int &channel_num,
                                       const float max_val,
                                       const bool log_scale)
 {
-  if(channel_num < 0 || channel_num >= m_intensities.size())
+  if(channel_num < 0 || channel_num >= m_intensity_values.size())
   {
     throw RoverException("Rover Image: invalid channel number");
   }
   bool invert = false;
-  normalize_handle(m_intensities[channel_num], invert, min_val, max_val, log_scale);
+  normalize_handle(m_intensity_values[channel_num], invert, min_val, max_val, log_scale);
 }
 
 template<typename FloatType>
 void
 Image<FloatType>::normalize_optical_depth(const int &channel_num)
 {
-  if(channel_num < 0 || channel_num >= m_optical_depths.size())
+  if(channel_num < 0 || channel_num >= m_optical_depth_values.size())
   {
     throw RoverException("Rover Image: invalid channel number");
   }
   bool invert = false;
-  normalize_handle(m_optical_depths[channel_num], invert);
+  normalize_handle(m_optical_depth_values[channel_num], invert);
 }
 //
 // Explicit instantiations

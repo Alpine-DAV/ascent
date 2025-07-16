@@ -1,0 +1,22 @@
+-
+  action: "add_scenes"
+  scenes:
+    s1:
+      plots:
+        p1:
+          type: "pseudocolor"
+          field: "braid"
+      image_prefix: "out_fmt_time-default_{time}"
+    s2:
+      plots:
+        p1:
+          type: "pseudocolor"
+          field: "braid"
+      image_prefix: "out_fmt_time-float_{time:05.1f}"
+    s3:
+      plots:
+        p1:
+          type: "pseudocolor"
+          field: "braid"
+      image_prefix: "out_fmt_time-int_{time:04d}"
+      

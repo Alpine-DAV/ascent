@@ -39,7 +39,8 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-#include <ray_generators/ray_generator.hpp>
+
+#include "ray_generator.hpp"
 
 namespace rover
 {
@@ -72,4 +73,4 @@ RayGenerator::reset()
   m_has_rays = true;
 }
 
-} // naspace rover
+} // namespace rover

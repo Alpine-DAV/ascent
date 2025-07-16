@@ -39,41 +39,37 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-#include <ray_generators/visit_generator.hpp>
-#include <utils/rover_logging.hpp>
-#include <vtkm/VectorAnalysis.h>
-#include <vtkm/Version.h>
-#include <vtkm/rendering/raytracing/RayOperations.h>
-#include <assert.h>
-#include <limits>
-namespace rover {
+#include "visit_ray_generator.hpp"
 
-VisitGenerator::VisitGenerator()
+namespace rover
+{
+
+VisitRayGenerator::VisitRayGenerator()
  : RayGenerator()
 {
 
 }
 
-VisitGenerator::VisitGenerator(const VisitParams &params)
+VisitRayGenerator::VisitRayGenerator(const VisitParams &params)
  : RayGenerator()
 {
   m_params = params;
 }
 
-VisitGenerator::~VisitGenerator()
+VisitRayGenerator::~VisitRayGenerator()
 {
 
 }
 
 template<typename T>
 void
-VisitGenerator::gen_rays(vtkmRayTracing::Ray<T> &rays)
+VisitRayGenerator::gen_rays(vtkmRayTracing::Ray<T> &rays)
 {
   vtkmTimer timer;
   double time = 0;
   ROVER_DATA_OPEN("visit_ray_gen");
-  const int64 width = rover::settings["rover/width"].to_int64();
-  const int64 height = rover::settings["rover/height"].to_int64();
+  const int64 width = rover::settings["width"].to_int64();
+  const int64 height = rover::settings["height"].to_int64();
   const int64 size = width * height;
 
   // TODO: Do we care about supporting old versions of vtkm? This
@@ -214,25 +210,25 @@ VisitGenerator::gen_rays(vtkmRayTracing::Ray<T> &rays)
 }
 
 void
-VisitGenerator::get_rays(Ray32 &rays)
+VisitRayGenerator::get_rays(Ray32 &rays)
 {
   gen_rays(rays);
 }
 
 void
-VisitGenerator::get_rays(Ray64 &rays)
+VisitRayGenerator::get_rays(Ray64 &rays)
 {
   gen_rays(rays);
 }
 
 void
-VisitGenerator::set_params(const VisitParams &params)
+VisitRayGenerator::set_params(const VisitParams &params)
 {
   m_params = params;
 }
 
 void
-VisitGenerator::print_params() const
+VisitRayGenerator::print_params() const
 {
   m_params.print();
 }

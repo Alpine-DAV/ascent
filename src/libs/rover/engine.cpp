@@ -41,13 +41,6 @@ Engine::validate_tracer()
 }
 
 void
-Engine::init()
-{
-  vtkmColorTable color_table(rover::settings["rover/color_table"].as_string());
-  set_color_map(color_table);
-}
-
-void
 Engine::set_dataset(vtkm::cont::DataSet &dataset)
 {
   ROVER_INFO("Executing Engine::set_data_set");
@@ -55,7 +48,7 @@ Engine::set_dataset(vtkm::cont::DataSet &dataset)
   // TODO: Investigate why we set an empty field name here,
   // do we delete and replace the tracer later on or do we
   // explicitly set the field names?
-  const std::string absorption = rover::settings["rover/absorption"].as_string();
+  const std::string absorption = rover::settings["absorption"].as_string();
   m_tracer = new vtkh::rendering::ConnectivityProxy(dataset, absorption);
   m_tracer->SetScalarField(absorption);
   m_dataset = dataset;
@@ -66,9 +59,9 @@ void
 Engine::init_emission(vtkmRayTracing::Ray<Precision> &rays,
                       const int num_bins)
 {
-  const std::string emission = rover::settings["rover/emission"].as_string();
+  const std::string emission = rover::settings["emission"].as_string();
   // Return early if emission was not specified
-  if ("" == emission)
+  if (emission.empty())
   {
     ROVER_INFO("Engine::init_emission: emission not specified");
     return;
@@ -83,8 +76,10 @@ Engine::partial_trace(Ray32 &rays, PartialVector32 &partials)
 {
   ROVER_INFO("Executing Engine::partial_trace");
   init_rays(rays);
-  m_tracer->SetUnitScalar(rover::settings["rover/unit_scalar"].value());
-  m_tracer->SetColorMap(m_color_map);
+  const bool divide_emis_by_absorb = rover::settings["divide_emis_by_absorb"].as_string() == "true";
+  m_tracer->SetDivideEmisByAbsorb(divide_emis_by_absorb);
+  const float64 unit_scalar = rover::settings["unit_scalar"].to_float64();
+  m_tracer->SetUnitScalar(unit_scalar);
   m_tracer->PartialTrace(rays, partials);
 }
 
@@ -98,7 +93,7 @@ Engine::init_rays(Ray32 &rays)
   rays.Buffers.at(0).InitConst(1.0f);
   init_emission(rays, num_bins);
   rays.AddBuffer(num_bins, "optical_depths");
-  rays.GetBuffer("optical_depths").InitConst(1.0f);
+  rays.GetBuffer("optical_depths").InitConst(0.0f);
 }
 
 void
@@ -111,7 +106,7 @@ Engine::init_rays(Ray64 &rays)
   rays.Buffers.at(0).InitConst(1.0f);
   init_emission(rays, num_bins);
   rays.AddBuffer(num_bins, "optical_depths");
-  rays.GetBuffer("optical_depths").InitConst(1.0f);
+  rays.GetBuffer("optical_depths").InitConst(0.0f);
 }
 
 void
@@ -119,8 +114,7 @@ Engine::partial_trace(Ray64 &rays, PartialVector64 &partials)
 {
   ROVER_INFO("Executing Engine::partial_trace");
   init_rays(rays);
-  m_tracer->SetUnitScalar(rover::settings["rover/unit_scalar"].value());
-  m_tracer->SetColorMap(m_color_map);
+  m_tracer->SetUnitScalar(rover::settings["unit_scalar"].value());
   m_tracer->PartialTrace(rays, partials);
 }
 
@@ -129,7 +123,7 @@ Engine::get_num_channels()
 {
   vtkm::Id absorption_size = 0;
   ArraySizeFunctor functor(&absorption_size);
-  const std::string absorption = rover::settings["rover/absorption"].as_string();
+  const std::string absorption = rover::settings["absorption"].as_string();
   m_dataset.GetField(absorption).
                       GetData().
                       CastAndCallForTypes<vtkm::TypeListAll, VTKM_DEFAULT_STORAGE_LIST>(functor);
@@ -183,31 +177,6 @@ Engine::set_composite_background(bool on)
   ROVER_INFO("Executing Engine::set_composite_background");
   validate_tracer();
   m_tracer->SetCompositeBackground(on);
-}
-
-void
-Engine::set_color_map(const vtkmColorTable &color_table, int samples)
-{
-  constexpr vtkm::Float32 conversionToFloatSpace = (1.0f / 255.0f);
-  vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::UInt8, 4>> temp;
-
-  // TODO: Is this where num_samples was intended to be used?
-  // If so, we should query the settings here.
-
-  color_table.Sample(samples, temp);
-  m_color_map.Allocate(samples);
-  auto portal = m_color_map.WritePortal();
-  auto colorPortal = temp.ReadPortal();
-
-  for (vtkm::Id i = 0; i < samples; ++i)
-  {
-    auto color = colorPortal.Get(i);
-    vtkm::Vec<vtkm::Float32, 4> t(color[0] * conversionToFloatSpace,
-                                  color[1] * conversionToFloatSpace,
-                                  color[2] * conversionToFloatSpace,
-                                  color[3] * conversionToFloatSpace);
-    portal.Set(i, t);
-  }
 }
 
 }; //namespace rover

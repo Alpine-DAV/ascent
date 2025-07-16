@@ -13,6 +13,7 @@ using namespace conduit;
 
 namespace rover
 {
+  extern Node metadata;
   extern Node settings;
 } // namespace rover
 

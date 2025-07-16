@@ -5,6 +5,7 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 // rover includes
+#include "ray_generators/vtkm_ray_generator.hpp"
 #include "settings.hpp"
 #include "vtkm_typedefs.hpp"
 #include <algorithm>
@@ -34,12 +35,15 @@ TypedScheduler<FloatType>::set_comm_handle(MPI_Comm comm_handle)
 
 template<typename FloatType>
 void
-TypedScheduler<FloatType>::add_dataset(vtkmDataSet &dataset)
+TypedScheduler<FloatType>::add_dataset(vtkh::DataSet &dataset)
 {
-  ROVER_INFO("TypedScheduler::add_dataset: adding domain " << m_domains.size());
-  Domain domain;
-  domain.set_dataset(dataset);
-  m_domains.push_back(domain);
+  const int num_domains = dataset.GetNumberOfDomains();
+  m_domains.reserve(num_domains);
+  for (int i = 0; i < num_domains; i++)
+  {
+    ROVER_INFO("TypedScheduler::add_dataset: adding domain " << m_domains.size());
+    m_domains.emplace_back(dataset.GetDomain(i));
+  }
 }
 
 template<typename FloatType>
@@ -51,43 +55,21 @@ TypedScheduler<FloatType>::set_ray_generator(RayGenerator *ray_generator)
 
 template<typename FloatType>
 void
-TypedScheduler<FloatType>::create_default_background(const int num_channels)
+TypedScheduler<FloatType>::create_background(const int num_channels)
 {
-  // Initialize background intensities to 0.0f
-  // TODO: Make it an option to set a background value
-  m_background.resize(num_channels, 0.0f);
-}
-
-template<typename FloatType>
-void
-TypedScheduler<FloatType>::set_background(const std::vector<vtkm::Float32> &background)
-{
-  // TODO: See if this is done better with std::transform
-  const size_t size = background.size();
-  m_background.resize(size);
-
-  for (size_t i = 0; i < size; ++i)
-  {
-    m_background[i] = static_cast<vtkm::Float64>(background[i]);
-  }
-}
-
-template<typename FloatType>
-void
-TypedScheduler<FloatType>::set_background(const std::vector<vtkm::Float64> &background)
-{
-  m_background = background;
+  // Initialize background intensities to 0.0f (by default)
+  const float64 background_intensity = rover::settings["background_intensity"].to_float64();
+  m_background.resize(num_channels, background_intensity);
 }
 
 template<typename FloatType>
 int
 TypedScheduler<FloatType>::get_global_channels()
 {
-  // TODO: See if this is done better with std::max_element
   int num_channels = 1;
-  for (size_t i = 0; i < m_domains.size(); ++i)
+  for (auto& domain : m_domains)
   {
-    num_channels = std::max(num_channels, m_domains[i].get_num_channels());
+    num_channels = std::max(num_channels, domain.get_num_channels());
   }
 
 #ifdef ROVER_PARALLEL
@@ -204,10 +186,10 @@ TypedScheduler<FloatType>::set_global_range_and_bounds()
   ROVER_INFO("Global range " << global_range);
   ROVER_INFO("Global bounds " << global_bounds);
 
-  for (int i = 0; i < num_domains; ++i)
+  for (auto& domain : m_domains)
   {
-    m_domains[i].set_primary_range(global_range);
-    m_domains[i].set_global_bounds(global_bounds);
+    domain.set_primary_range(global_range);
+    domain.set_global_bounds(global_bounds);
   }
 
   time = timer.GetElapsedTime();
@@ -216,15 +198,15 @@ TypedScheduler<FloatType>::set_global_range_and_bounds()
 
 template<typename FloatType>
 void
-TypedScheduler<FloatType>::add_partial(vtkhRayTracing::PartialComposite<FloatType> &partial)
+TypedScheduler<FloatType>::add_partial(const vtkhRayTracing::PartialComposite<FloatType> &partial)
 {
   // TODO: We might be able to simplify this by using emplace_back
   PartialImage<FloatType> partial_image;
   partial_image.m_pixel_ids = partial.PixelIds;
   partial_image.m_distances = partial.Distances;
-  partial_image.m_buffer = partial.Buffer;
-  partial_image.m_intensities = partial.Intensities;
-  partial_image.m_optical_depths = partial.OpticalDepths;
+  partial_image.m_transmission = partial.Transmission;
+  partial_image.m_intensity = partial.Intensity;
+  partial_image.m_optical_depth = partial.OpticalDepth;
   m_partial_images.push_back(partial_image);
 }
 
@@ -232,12 +214,53 @@ template<typename FloatType>
 void
 TypedScheduler<FloatType>::composite()
 {
-  // TODO: This function has a lot of duplication that can
-  // probably be improved
+  // TODO: Combine AbsorptionPartial and EmissionPartial
+  const std::string emission = rover::settings["emission"].as_string();
+  if (!emission.empty())
+  {
+    typed_composite<vtkh::EmissionPartial<FloatType>>();
+  }
+  else // (emission.empty())
+  {
+    typed_composite<vtkh::AbsorptionPartial<FloatType>>();
+  }
+  ROVER_INFO("Schedule: compositing complete");
+}
+
+template<typename FloatType>
+template<typename PartialType>
+void
+TypedScheduler<FloatType>::typed_composite()
+{
   int rank = 0;
 #ifdef ROVER_PARALLEL
   MPI_Comm_rank(m_comm_handle, &rank);
 #endif
+
+  vtkh::PartialCompositor<PartialType> compositor;
+  compositor.set_background(m_background);
+#ifdef ROVER_PARALLEL
+  compositor.set_comm_handle(MPI_Comm_c2f(m_comm_handle));
+#endif
+
+  const int num_partials = m_partial_images.size();
+  std::vector<std::vector<PartialType>> partials(num_partials);
+
+  for (int i = 0; i < num_partials; ++i)
+  {
+    m_partial_images[i].extract_partials(partials[i]);
+  }
+
+  std::vector<PartialType> result;
+  compositor.composite(partials, result);
+  PartialImage<FloatType> p_result;
+
+  if (0 == rank)
+  {
+    p_result.store(result, m_background);
+  }
+
+  m_result = p_result;
 
 #if 0 // removing volume renderer
   if (m_render_settings.m_render_mode == volume)
@@ -272,63 +295,8 @@ TypedScheduler<FloatType>::composite()
   else
   {
   }
-#endif
-
-  const std::string emission = rover::settings["rover/emission"].as_string();
-  if ("" != emission)
-  {
-    vtkh::PartialCompositor<vtkh::EmissionPartial<FloatType>> compositor;
-    compositor.set_background(m_background);
-#ifdef ROVER_PARALLEL
-    compositor.set_comm_handle(MPI_Comm_c2f(m_comm_handle));
-#endif
-    const int num_partials = m_partial_images.size();
-    std::vector<std::vector<vtkh::EmissionPartial<FloatType>>> partials(num_partials);
-
-    for (int i = 0; i < num_partials; ++i)
-    {
-      m_partial_images[i].extract_partials(partials[i]);
-    }
-    std::vector<vtkh::EmissionPartial<FloatType>> result;
-    compositor.composite(partials, result);
-    PartialImage<FloatType> p_result;
-
-    if (0 == rank)
-    {
-      // Data is only valid on rank = 0
-      p_result.store(result, m_background);
-    }
-
-    m_result = p_result;
   }
-  else // The case where only the absorption field is set
-  {
-    vtkh::PartialCompositor<vtkh::AbsorptionPartial<FloatType>> compositor;
-    compositor.set_background(m_background);
-#ifdef ROVER_PARALLEL
-    compositor.set_comm_handle(MPI_Comm_c2f(m_comm_handle));
 #endif
-    const int num_partials = m_partial_images.size();
-    std::vector<std::vector<vtkh::AbsorptionPartial<FloatType>>> partials;
-    partials.resize(num_partials);
-    for (int i = 0; i < num_partials; ++i)
-    {
-      m_partial_images[i].extract_partials(partials[i]);
-    }
-    std::vector<vtkh::AbsorptionPartial<FloatType>> result;
-    compositor.composite(partials, result);
-    PartialImage<FloatType> p_result;
-
-    if (0 == rank)
-    {
-      // data only valid on rank = 0
-      p_result.store(result, m_background);
-    }
-
-    m_result = p_result;
-  }
-  // } // removing volume renderer
-  ROVER_INFO("Schedule: compositing complete");
 }
 
 template<typename FloatType>
@@ -351,22 +319,20 @@ TypedScheduler<FloatType>::trace_rays()
   m_ray_generator->reset();
 
   const int num_domains = static_cast<int>(m_domains.size());
-  ROVER_INFO("TypedScheduler set render settings for " << num_domains << " domains");
-  for (int i = 0; i < num_domains; ++i)
-  {
-    m_domains[i].init();
-  }
-
-  ROVER_INFO("Done TypedScheduler set render settings for " << num_domains << " domains");
-  time = timer.GetElapsedTime();
-  ROVER_DATA_ADD("setup", time);
-
   set_global_range_and_bounds();
 
   vtkmTimer trace_timer;
   trace_timer.Start();
 
-  // TODO: See if we can make this loop more lightweight
+  // TODO: Don't love that we need dynamic_cast
+  // TODO: Actually support both cases, vtkm and visit. Add tests
+  auto *cast_ray_generator = dynamic_cast<VtkmRayGenerator*>(m_ray_generator);
+  if (!cast_ray_generator)
+  {
+    throw RoverException("Error: RayGenerator instance must be a CameraGenerator");
+  }
+  vtkmRayTracing::Ray<FloatType> rays;
+
   for (int i = 0; i < num_domains; ++i)
   {
     vtkmTimer domain_timer;
@@ -377,23 +343,13 @@ TypedScheduler<FloatType>::trace_rays()
 
     vtkmLogger::GetInstance()->Clear();
 
-    // TODO: Don't love that we need dynamic_cast
-    // TODO: Actually support both cases, vtkm and visit. Add tests
-    if (!dynamic_cast<CameraGenerator*>(m_ray_generator))
-    {
-      throw RoverException("Error: RayGenerator instance must be a CameraGenerator");
-    }
-
-    CameraGenerator *generator = dynamic_cast<CameraGenerator*>(m_ray_generator);
     // Setting the coordinate system miminizes the number of rays generated
-    generator->set_coordinates(m_domains[i].get_dataset().GetCoordinateSystem());
+    cast_ray_generator->set_coordinates(m_domains[i].get_dataset().GetCoordinateSystem());
     ROVER_INFO("Generating rays for domian " << i);
 
     timer.Start();
 
-    vtkmRayTracing::Ray<FloatType> rays;
-    m_ray_generator->get_rays(rays);
-
+    cast_ray_generator->get_rays(rays);
     ROVER_INFO("Generated " << rays.NumRays << " rays");
     m_domains[i].init_rays(rays);
 
@@ -413,10 +369,10 @@ TypedScheduler<FloatType>::trace_rays()
 
     ROVER_INFO("Schedule: creating partial image in domain "<<i);
 
-    // Create a partial images from the completed rays
-    for (size_t p = 0; p < partials.size(); ++p)
+    // Create a partial image from the completed rays
+    for (const auto& partial : partials)
     {
-      add_partial(partials[p]);
+      add_partial(partial);
     }
 
     timer.Start();
@@ -437,16 +393,16 @@ TypedScheduler<FloatType>::trace_rays()
   t1.Start();
 
   // Add a blank partial image if we had no domains
-  if (num_domains == 0 || m_partial_images.size() == 0)
+  if (num_domains == 0 || m_partial_images.empty())
   {
     PartialImage<FloatType> partial_image;
-    partial_image.m_buffer =
+    partial_image.m_transmission =
       vtkmRayTracing::ChannelBuffer<FloatType>(num_channels, 0);
 
-    const std::string emission = rover::settings["rover/emission"].as_string();
-    if ("" != emission)
+    const std::string emission = rover::settings["emission"].as_string();
+    if (!emission.empty())
     {
-      partial_image.m_intensities =
+      partial_image.m_intensity =
         vtkmRayTracing::ChannelBuffer<FloatType>(num_channels, 0);
     }
     m_partial_images.push_back(partial_image);
@@ -455,9 +411,9 @@ TypedScheduler<FloatType>::trace_rays()
   ROVER_DATA_ADD("blank_partial_image", t1.GetElapsedTime());
   t1.Start();
 
-  if (m_background.size() == 0)
+  if (m_background.empty())
   {
-    create_default_background(num_channels);
+    create_background(num_channels);
   }
 
   ROVER_DATA_ADD("default_bg", t1.GetElapsedTime());
@@ -487,8 +443,8 @@ TypedScheduler<FloatType>::trace_rays()
 template<typename FloatType>
 void TypedScheduler<FloatType>::save_png(std::string filename)
 {
-  const int64 width = rover::settings["rover/width"].to_int64();
-  const int64 height = rover::settings["rover/height"].to_int64();
+  const int64 width = rover::settings["width"].to_int64();
+  const int64 height = rover::settings["height"].to_int64();
 
   // Optional params that the user may have set
   bool has_image_params = false;
@@ -523,7 +479,7 @@ void TypedScheduler<FloatType>::save_png(std::string filename)
     {
       m_result.normalize_intensity(i, min_value, max_value, log_scale);
     }
-    else
+    else // (!has_image_params)
     {
       m_result.normalize_intensity(i);
     }
@@ -553,8 +509,8 @@ void TypedScheduler<FloatType>::save_png(std::string filename)
 template<typename FloatType>
 void TypedScheduler<FloatType>::save_bov(std::string file_name)
 {
-  const int64 width = rover::settings["rover/width"].to_int64();
-  const int64 height = rover::settings["rover/height"].to_int64();
+  const int64 width = rover::settings["width"].to_int64();
+  const int64 height = rover::settings["height"].to_int64();
   const int64 size = height * width;
 
   ROVER_INFO("Saving bov file with output size " << width << "x" << height);
@@ -582,37 +538,320 @@ void TypedScheduler<FloatType>::save_bov(std::string file_name)
 
 template<typename FloatType>
 void
+TypedScheduler<FloatType>::write_blueprint_imaging_plane(Node &data_out,
+                                                         const std::string plane_name,
+                                                         const double plane_width,
+                                                         const double plane_height,
+                                                         const vtkmVec3f &center,
+                                                         const vtkmVec3f &left,
+                                                         const vtkmVec3f &up,
+                                                         vtkmVec3f &llc,
+                                                         vtkmVec3f &lrc,
+                                                         vtkmVec3f &ulc,
+                                                         vtkmVec3f &urc)
+{
+  // Define imaging plane coordset
+  Node &plane_coords = data_out["coordsets"][plane_name + "_coords"];
+  plane_coords["type"] = "explicit";
+  plane_coords["values/x"].set(DataType::float64(4));
+  plane_coords["values/y"].set(DataType::float64(4));
+  plane_coords["values/z"].set(DataType::float64(4));
+  float64_array xvals = plane_coords["values/x"].value();
+  float64_array yvals = plane_coords["values/y"].value();
+  float64_array zvals = plane_coords["values/z"].value();
+
+  vtkmVec3f up_scaled = plane_height * up;
+  vtkmVec3f left_scaled = plane_width * left;
+
+  llc = center - up_scaled + left_scaled;
+  lrc = center - up_scaled - left_scaled;
+  ulc = center + up_scaled + left_scaled;
+  urc = center + up_scaled - left_scaled;
+
+  // Set x values
+  xvals[0] = llc[0];
+  xvals[1] = lrc[0];
+  xvals[2] = urc[0];
+  xvals[3] = ulc[0];
+
+  // Set y values
+  yvals[0] = llc[1];
+  yvals[1] = lrc[1];
+  yvals[2] = urc[1];
+  yvals[3] = ulc[1];
+
+  // Set z values
+  zvals[0] = llc[2];
+  zvals[1] = lrc[2];
+  zvals[2] = urc[2];
+  zvals[3] = ulc[2];
+
+  // Define imaging plane topology
+  Node &plane_topo = data_out["topologies"][plane_name + "_topo"];
+  plane_topo["type"] = "unstructured";
+  plane_topo["coordset"] = plane_name + "_coords";
+  plane_topo["elements/shape"] = "quad";
+  plane_topo["elements/connectivity"].set(DataType::int32(4));
+  int32_array connectivity = plane_topo["elements/connectivity"].value();
+
+  // Set connectivity values
+  for (int i = 0; i < 4; i ++)
+  {
+    connectivity[i] = i;
+  }
+
+  // Define imaging plane field
+  Node &plane_field = data_out["fields"][plane_name + "_field"];
+  plane_field["topology"] = plane_name + "_topo";
+  plane_field["association"] = "element";
+  plane_field["volume_dependent"] = "false";
+  plane_field["values"].set(DataType::float64(1));
+  float64_array field_vals = plane_field["values"].value();
+  field_vals[0] = 0;
+}
+
+template<typename FloatType>
+void
+TypedScheduler<FloatType>::write_blueprint_ray_corners_mesh(Node &data_out,
+                                                            const vtkmVec3f &llc_near,
+                                                            const vtkmVec3f &llc_far,
+                                                            const vtkmVec3f &lrc_near,
+                                                            const vtkmVec3f &lrc_far,
+                                                            const vtkmVec3f &urc_near,
+                                                            const vtkmVec3f &urc_far,
+                                                            const vtkmVec3f &ulc_near,
+                                                            const vtkmVec3f &ulc_far)
+{
+  const int num_corners = 4;
+  const int num_points = 8;
+
+  // Define ray corners coordset
+  Node &ray_corners_coords = data_out["coordsets"]["ray_corners_coords"];
+  ray_corners_coords["type"] = "explicit";
+  ray_corners_coords["values/x"].set(DataType::float64(num_points));
+  ray_corners_coords["values/y"].set(DataType::float64(num_points));
+  ray_corners_coords["values/z"].set(DataType::float64(num_points));
+  float64_array xvals_ray = ray_corners_coords["values/x"].value();
+  float64_array yvals_ray = ray_corners_coords["values/y"].value();
+  float64_array zvals_ray = ray_corners_coords["values/z"].value();
+
+  // Set x values
+  xvals_ray[0] = llc_near[0];
+  xvals_ray[1] = llc_far[0];
+  xvals_ray[2] = lrc_near[0];
+  xvals_ray[3] = lrc_far[0];
+  xvals_ray[4] = urc_near[0];
+  xvals_ray[5] = urc_far[0];
+  xvals_ray[6] = ulc_near[0];
+  xvals_ray[7] = ulc_far[0];
+
+  // Set y values
+  yvals_ray[0] = llc_near[1];
+  yvals_ray[1] = llc_far[1];
+  yvals_ray[2] = lrc_near[1];
+  yvals_ray[3] = lrc_far[1];
+  yvals_ray[4] = urc_near[1];
+  yvals_ray[5] = urc_far[1];
+  yvals_ray[6] = ulc_near[1];
+  yvals_ray[7] = ulc_far[1];
+
+  // Set z values
+  zvals_ray[0] = llc_near[2];
+  zvals_ray[1] = llc_far[2];
+  zvals_ray[2] = lrc_near[2];
+  zvals_ray[3] = lrc_far[2];
+  zvals_ray[4] = urc_near[2];
+  zvals_ray[5] = urc_far[2];
+  zvals_ray[6] = ulc_near[2];
+  zvals_ray[7] = ulc_far[2];
+
+  // Define ray corners topology
+  Node &ray_corners_topo = data_out["topologies"]["ray_corners_topo"];
+  ray_corners_topo["type"] = "unstructured";
+  ray_corners_topo["coordset"] = "ray_corners_coords";
+  ray_corners_topo["elements/shape"] = "line";
+  ray_corners_topo["elements/connectivity"].set(DataType::int32(num_points));
+  int32_array connectivity = ray_corners_topo["elements/connectivity"].value();
+
+  // Set connectivity values
+  for (int i = 0; i < num_points; i++)
+  {
+    connectivity[i] = i;
+  }
+
+  // Define ray corners field
+  Node &ray_corners_field = data_out["fields"]["ray_corners_field"];
+  ray_corners_field["topology"] = "ray_corners_topo";
+  ray_corners_field["association"] = "element";
+  ray_corners_field["volume_dependent"] = "false";
+  ray_corners_field["values"].set(DataType::float64(num_corners));
+  float64_array field_vals = ray_corners_field["values"].value();
+
+  for (int i = 0; i < num_corners; i++)
+  {
+    field_vals[i] = 0;
+  }
+}
+
+template<typename FloatType>
+void
+TypedScheduler<FloatType>::write_blueprint_rays_mesh(Node &data_out,
+                                                     const int64 image_width,
+                                                     const int64 image_height,
+                                                     const double detector_width,
+                                                     const double detector_height,
+                                                     const vtkmVec3f &lrc_near,
+                                                     const double far_detector_width,
+                                                     const double far_detector_height,
+                                                     const vtkmVec3f &lrc_far,
+                                                     const vtkmVec3f &left,
+                                                     const vtkmVec3f &up)
+{
+  const int64 num_lines = image_width * image_height;
+  const int64 num_points = num_lines * 2;
+
+  // Define rays coordset
+  Node &ray_coords = data_out["coordsets"]["ray_coords"];
+  ray_coords["type"] = "explicit";
+  ray_coords["values/x"].set(DataType::float64(num_points));
+  ray_coords["values/y"].set(DataType::float64(num_points));
+  ray_coords["values/z"].set(DataType::float64(num_points));
+  float64_array xvals_ray = ray_coords["values/x"].value();
+  float64_array yvals_ray = ray_coords["values/y"].value();
+  float64_array zvals_ray = ray_coords["values/z"].value();
+
+  vtkmVec3f scaled_unit_left;
+  vtkmVec3f scaled_unit_up;
+  vtkmVec3f lrc;
+
+  for (int i = 0; i < 2; i++)
+  {
+      double dx;
+      double dy;
+      if (0 == i) // 1st iteration is for the near plane
+      {
+          dx = detector_width / image_width;
+          dy = detector_height / image_height;
+          lrc = lrc_near;
+      }
+      else // 2nd iteration is for the far plane
+      {
+          dx = far_detector_width / image_width;
+          dy = far_detector_height / image_height;
+          lrc = lrc_far;
+      }
+
+      scaled_unit_left = dx * vtkm::Normal(left);
+      scaled_unit_up = dy * vtkm::Normal(up);
+
+      for (int j = 0; j < image_width; j++)
+      {
+          for (int k = 0; k < image_height; k++)
+          {
+              vtkmVec3f temp = lrc + (j + 0.5f) * scaled_unit_left + (k + 0.5f) * scaled_unit_up;
+              // 3d to 1d conversion
+              const int64 index = i * image_width * image_height + j * image_height + k;
+              xvals_ray[index] = temp[0];
+              yvals_ray[index] = temp[1];
+              zvals_ray[index] = temp[2];
+          }
+      }
+  }
+
+  // Define rays topology
+  Node &ray_topo = data_out["topologies"]["ray_topo"];
+  ray_topo["type"] = "unstructured";
+  ray_topo["coordset"] = "ray_coords";
+  ray_topo["elements/shape"] = "line";
+  ray_topo["elements/connectivity"].set(DataType::int32(num_points));
+  int32_array connectivity = ray_topo["elements/connectivity"].value();
+
+  // Set connectivity values
+  for (int i = 0; i < num_lines; i++)
+  {
+    // Connect each point in the near plane to a point in the far plane
+    connectivity[i * 2] = i;
+    connectivity[i * 2 + 1] = i + num_lines;
+  }
+
+  // Define rays field
+  Node &ray_field = data_out["fields"]["ray_field"];
+  ray_field["topology"] = "ray_topo";
+  ray_field["association"] = "element";
+  ray_field["volume_dependent"] = "false";
+  ray_field["values"].set(DataType::float64(num_lines));
+  float64_array field_vals = ray_field["values"].value();
+
+  for (int i = 0; i < num_lines; i++)
+  {
+    field_vals[i] = i;
+  }
+}
+
+template<typename FloatType>
+void
 TypedScheduler<FloatType>::to_blueprint(Node &data)
 {
-  const int64 width = rover::settings["rover/width"].to_int64();
-  const int64 height = rover::settings["rover/height"].to_int64();
+  const int64 image_width = rover::settings["width"].to_int64();
+  const int64 image_height = rover::settings["height"].to_int64();
+  const double aspect_ratio = static_cast<double>(image_width) / static_cast<double>(image_height);
+
   const int num_channels = m_result.get_num_channels();
 
   vtkmCamera camera = m_ray_generator->get_camera();
-  vtkmVec3f position = camera.GetPosition();
-  vtkmVec3f look_at = camera.GetLookAt();
-  vtkmVec3f up = camera.GetViewUp();
+  const vtkmVec3f position = camera.GetPosition();
+  const vtkmVec3f look_at = camera.GetLookAt();
+  const vtkmVec3f up = vtkm::Normal(camera.GetViewUp());
+  const vtkmVec3f forward = vtkm::Normal(look_at - position);
+  const vtkmVec3f left = vtkm::Normal(vtkm::Cross(up, forward));
+  const double view_distance = vtkm::Magnitude(look_at - position);
   const double zoom = camera.GetZoom();
-  const double view_angle = camera.GetFieldOfView();
+  const double view_angle_deg = camera.GetFieldOfView();
+  const double view_angle_rad = view_angle_deg * vtkm::Pi_180f();
+  const double frustum_scale = vtkm::Tan(view_angle_rad / 2.0f) / zoom;
   const double near_plane = camera.GetClippingRange().Min;
   const double far_plane = camera.GetClippingRange().Max;
   vtkmVec2f xy_pan = camera.GetPan();
 
-  // Non-perspective calculations pulled from VisIt
-  const double distance = vtkm::Magnitude(look_at - position);
-  // TODO: Make sure that this is a valid way to compute view_height
-  const double view_height = 2.0 * distance * tan((view_angle * vtkm::Pi_180()) / 2.0);
-  const double view_width = (static_cast<float>(width) / static_cast<float>(height)) * view_height;
-  const double near_height = view_height / zoom;
-  const double near_width = view_width / zoom;
-  const double far_height = near_height;
-  const double far_width = near_width;
-  const double detector_width = 2.0 * near_width;
-  const double detector_height = 2.0 * near_height;
-  const double far_detector_width = 2.0 * far_width;
-  const double far_detector_height = 2.0 * far_height;
-  const double near_dx = detector_width / width;
-  const double near_dy = detector_height / height;
+  // These calculations are based on VisIt's perspective calculations, but diverge
+  // due to differences in how near and far planes are represented. VisIt represents
+  // them as offsets from the view plane (e.g. -0.5, 0.5), while vtkm represents them
+  // as positive distances away from the camera position (e.g. 3, 300).
+
+  const double near_height = near_plane * frustum_scale;
+  const double near_width = near_height * aspect_ratio;
+  const double view_height = view_distance * frustum_scale;
+  const double view_width = view_height * aspect_ratio;
+  const double far_height = far_plane * frustum_scale;
+  const double far_width = far_height * aspect_ratio;
+
+  const vtkmVec3f center_near = position + near_plane * forward;
+  const vtkmVec3f center_view = look_at;
+  const vtkmVec3f center_far = position + far_plane * forward;
+
+  const double detector_height = near_height * 2.0f;
+  const double detector_width = detector_height * aspect_ratio;
+  const double far_detector_height = far_height * 2.0f;
+  const double far_detector_width = far_detector_height * aspect_ratio;
+
+  // The spatial meshes should have the same dimensions as the near plane
+  const double spatial_dx = near_width * 2.0f / image_width;
+  const double spatial_dy = near_height * 2.0f / image_height;
+
+  vtkmVec3f llc_near;
+  vtkmVec3f lrc_near;
+  vtkmVec3f ulc_near;
+  vtkmVec3f urc_near;
+
+  vtkmVec3f llc_view;
+  vtkmVec3f lrc_view;
+  vtkmVec3f ulc_view;
+  vtkmVec3f urc_view;
+
+  vtkmVec3f llc_far;
+  vtkmVec3f lrc_far;
+  vtkmVec3f ulc_far;
+  vtkmVec3f urc_far;
 
   ROVER_INFO("Saving blueprint file with output size " << width << "x" << height);
 
@@ -625,14 +864,14 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
   // State
   //
 
-  if (rover::settings.has_path("state/time"))
+  if (rover::metadata.has_child("time"))
   {
-    state["time"].set(rover::settings["state/time"]);
+    state["time"].set(rover::metadata["time"]);
   }
 
-  if (rover::settings.has_path("state/cycle"))
+  if (rover::metadata.has_path("cycle"))
   {
-    state["cycle"].set(rover::settings["state/cycle"]);
+    state["cycle"].set(rover::metadata["cycle"]);
   }
   
   Node &xray_view = state["xray_view"];
@@ -640,19 +879,20 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
   xray_view["zoom"] = zoom;
   xray_view["look_at"].set(&look_at[0], 3);
   xray_view["up"].set(&up[0], 3);
-  xray_view["fov"] = view_angle;
-  xray_view["parallel_scale"] = view_height / 2.0;
+  xray_view["fov"] = view_angle_deg;
+  // TODO: Bring this back once 2D camera support is added
+  // xray_view["parallel_scale"] = view_height / 2.0f; // TODO: Needs validation against VisIt
   xray_view["xpan"] = xy_pan[0];
   xray_view["ypan"] = xy_pan[1];
   xray_view["near_plane"] = near_plane;
   xray_view["far_plane"] = far_plane;
 
   Node &xray_query = state["xray_query"];
-  xray_query.set(rover::settings["rover"]);
+  xray_query.set(rover::settings);
 
   Node &xray_data = state["xray_data"];
-  xray_data["detector_width"] = detector_width;
-  xray_data["detector_height"] = detector_height;
+  xray_data["detector_width"] = detector_width; // TODO: Needs validation against VisIt
+  xray_data["detector_height"] = detector_height; // TODO: Needs validation against VisIt
   xray_data["intensity_max"];
   xray_data["intensity_min"];
   xray_data["optical_depth_max"];
@@ -669,20 +909,20 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
   Node &image_coords = coordsets["image_coords"];
   image_coords["type"] = "rectilinear";
 
-  image_coords["values/x"].set(DataType::float64(width + 1));
-  image_coords["values/y"].set(DataType::float64(height + 1));
+  image_coords["values/x"].set(DataType::float64(image_width + 1));
+  image_coords["values/y"].set(DataType::float64(image_height + 1));
   image_coords["values/z"].set(DataType::float64(num_channels + 1));
 
   float64_array image_coords_x = image_coords["values/x"].value();
   float64_array image_coords_y = image_coords["values/y"].value();
   float64_array image_coords_z = image_coords["values/z"].value();
 
-  for (int i = 0; i <= width; i++)
+  for (int i = 0; i <= image_width; i++)
   {
     image_coords_x[i] = i;
   }
 
-  for (int i = 0; i <= height; i++)
+  for (int i = 0; i <= image_height; i++)
   {
     image_coords_y[i] = i;
   }
@@ -718,7 +958,7 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
   intensities["topology"] = "image_topo";
   intensities["association"] = "element";
   intensities["units"] = "intensity units";
-  vtkm::cont::ArrayHandle<FloatType> intensity_values = m_result.flatten_intensities();
+  vtkm::cont::ArrayHandle<FloatType> intensity_values = m_result.flatten_intensity_values();
   FloatType *intensity_buffer = get_vtkm_ptr(intensity_values);
   const int num_intensity_values = intensity_values.GetNumberOfValues();
 
@@ -730,19 +970,17 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
   intensities["strides"].set(DataType::int64(3));
   int64_array strides = intensities["strides"].value();
   strides[0] = 1;
-  strides[1] = width;
-  strides[2] = width * height;
+  strides[1] = image_width;
+  strides[2] = image_width * image_height;
 
-  // TODO: This seems to be broken
   Node &optical_depth = fields["optical_depth"];
   optical_depth["topology"] = "image_topo";
   optical_depth["association"] = "element";
   optical_depth["units"] = "optical depth metadata";
-  vtkm::cont::ArrayHandle<FloatType> optical_values = m_result.flatten_optical_depths();
+  vtkm::cont::ArrayHandle<FloatType> optical_values = m_result.flatten_optical_depth_values();
   FloatType *optical_buffer = get_vtkm_ptr(optical_values);
   const int num_optical_values = optical_values.GetNumberOfValues();
 
-  // TODO: Uncomment this when optical_depth is fixed
   auto optical_min_max = std::minmax_element(optical_buffer, optical_buffer + num_optical_values);
   xray_data["optical_depth_max"].set(optical_min_max.second);
   xray_data["optical_depth_min"].set(optical_min_max.first);
@@ -757,22 +995,22 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
   // Coordset
   Node &spatial_coords = coordsets["spatial_coords"];
   spatial_coords["type"] = "rectilinear";
-  spatial_coords["values/x"].set(conduit::DataType::float64(width + 1));
-  spatial_coords["values/y"].set(conduit::DataType::float64(height + 1));
-  spatial_coords["values/z"].set(conduit::DataType::float64(num_channels + 1));        
+  spatial_coords["values/x"].set(DataType::float64(image_width + 1));
+  spatial_coords["values/y"].set(DataType::float64(image_height + 1));
+  spatial_coords["values/z"].set(DataType::float64(num_channels + 1));
 
   float64_array spatial_coords_x = spatial_coords["values/x"].value();
   float64_array spatial_coords_y = spatial_coords["values/y"].value();
   float64_array spatial_coords_z = spatial_coords["values/z"].value();
 
-  for (int i = 0; i <= width; i++)
+  for (int i = 0; i <= image_width; i++)
   {
-    spatial_coords_x[i] = i * near_dx;
+    spatial_coords_x[i] = i * spatial_dx;
   }
   
-  for (int i = 0; i <= height; i++)
+  for (int i = 0; i <= image_height; i++)
   {
-    spatial_coords_y[i] = i * near_dy;
+    spatial_coords_y[i] = i * spatial_dy;
   }
 
   for (int i = 0; i <= num_channels; i++)
@@ -798,10 +1036,89 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
   intensities_spatial.set(intensities);
   intensities_spatial["topology"] = "spatial_topo";
 
-  // TODO: This seems to be broken
   Node &optical_depth_spatial = fields["optical_depth_spatial"];
   optical_depth_spatial.set(optical_depth);
   optical_depth_spatial["topology"] = "spatial_topo";
+
+  //
+  // Near plane mesh
+  //
+
+  write_blueprint_imaging_plane(data,
+                                "near_plane",
+                                near_width,
+                                near_height,
+                                center_near,
+                                left,
+                                up,
+                                llc_near,
+                                lrc_near,
+                                ulc_near,
+                                urc_near);
+
+  //
+  // View plane mesh
+  //
+
+  write_blueprint_imaging_plane(data,
+                                "view_plane",
+                                view_width,
+                                view_height,
+                                center_view,
+                                left,
+                                up,
+                                llc_view,
+                                lrc_view,
+                                ulc_view,
+                                urc_view);
+
+  //
+  // Far plane mesh
+  //
+
+  write_blueprint_imaging_plane(data,
+                                "far_plane",
+                                far_width,
+                                far_height,
+                                center_far,
+                                left,
+                                up,
+                                llc_far,
+                                lrc_far,
+                                ulc_far,
+                                urc_far);
+
+  //
+  // Ray meshes
+  //
+
+  write_blueprint_ray_corners_mesh(data,
+                                   llc_near,
+                                   llc_far,
+                                   lrc_near,
+                                   lrc_far,
+                                   urc_near,
+                                   urc_far,
+                                   ulc_near,
+                                   ulc_far);
+
+  // This mesh can be very large depending on the image width and height, and it won't
+  // always be useful. We only include it in the output if the user explicitly asks for it.
+  const bool enable_rays_mesh = rover::settings["enable_rays_mesh"].as_string() == "true";
+  if (enable_rays_mesh)
+  {
+    write_blueprint_rays_mesh(data,
+                              image_width,
+                              image_height,
+                              detector_width,
+                              detector_height,
+                              lrc_near,
+                              far_detector_width,
+                              far_detector_height,
+                              lrc_far,
+                              left,
+                              up);
+  }
 
   // } // removing volume renderer
 
