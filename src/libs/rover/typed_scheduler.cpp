@@ -1040,72 +1040,73 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
   optical_depth_spatial.set(optical_depth);
   optical_depth_spatial["topology"] = "spatial_topo";
 
-  // TODO: Remove this once issue #1559 is fixed
-  const bool enable_imaging_planes = rover::settings["enable_imaging_planes"].as_string() == "true";
-  if (enable_imaging_planes)
+  //
+  // Near plane mesh
+  //
+
+  write_blueprint_imaging_plane(data,
+                                "near_plane",
+                                near_width,
+                                near_height,
+                                center_near,
+                                left,
+                                up,
+                                llc_near,
+                                lrc_near,
+                                ulc_near,
+                                urc_near);
+
+  //
+  // View plane mesh
+  //
+
+  write_blueprint_imaging_plane(data,
+                                "view_plane",
+                                view_width,
+                                view_height,
+                                center_view,
+                                left,
+                                up,
+                                llc_view,
+                                lrc_view,
+                                ulc_view,
+                                urc_view);
+
+  //
+  // Far plane mesh
+  //
+
+  write_blueprint_imaging_plane(data,
+                                "far_plane",
+                                far_width,
+                                far_height,
+                                center_far,
+                                left,
+                                up,
+                                llc_far,
+                                lrc_far,
+                                ulc_far,
+                                urc_far);
+
+  //
+  // Ray meshes
+  //
+
+  write_blueprint_ray_corners_mesh(data,
+                                   llc_near,
+                                   llc_far,
+                                   lrc_near,
+                                   lrc_far,
+                                   urc_near,
+                                   urc_far,
+                                   ulc_near,
+                                   ulc_far);
+
+  // This mesh can be very large depending on the image width and height, and it won't
+  // always be useful. We only include it in the output if the user explicitly asks for it.
+  const bool enable_rays_mesh = rover::settings["enable_rays_mesh"].as_string() == "true";
+  if (enable_rays_mesh)
   {
-    //
-    // Near plane mesh
-    //
-
-    write_blueprint_imaging_plane(data,
-                                  "near_plane",
-                                  near_width,
-                                  near_height,
-                                  center_near,
-                                  left,
-                                  up,
-                                  llc_near,
-                                  lrc_near,
-                                  ulc_near,
-                                  urc_near);
-
-    //
-    // View plane mesh
-    //
-
-    write_blueprint_imaging_plane(data,
-                                  "view_plane",
-                                  view_width,
-                                  view_height,
-                                  center_view,
-                                  left,
-                                  up,
-                                  llc_view,
-                                  lrc_view,
-                                  ulc_view,
-                                  urc_view);
-
-    //
-    // Far plane mesh
-    //
-
-    write_blueprint_imaging_plane(data,
-                                  "far_plane",
-                                  far_width,
-                                  far_height,
-                                  center_far,
-                                  left,
-                                  up,
-                                  llc_far,
-                                  lrc_far,
-                                  ulc_far,
-                                  urc_far);
-
-    //
-    // Ray meshes
-    //
-
-    write_blueprint_ray_corners_mesh(data,
-                                    llc_near,
-                                    llc_far,
-                                    lrc_near,
-                                    lrc_far,
-                                    urc_near,
-                                    urc_far,
-                                    ulc_near,
-                                    ulc_far);
-
     write_blueprint_rays_mesh(data,
                               image_width,
                               image_height,

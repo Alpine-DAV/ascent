@@ -32,7 +32,7 @@ Rover::Rover()
   // Settings
   rover::settings["background_intensity"] = 0.0f;
   rover::settings["divide_emis_by_absorb"] = "false";
-  rover::settings["enable_imaging_planes"] = "true"; // TODO: Remove this once issue #1559 is fixed
+  rover::settings["enable_rays_mesh"] = "false";
   rover::settings["height"] = 200;
   rover::settings["precision"] = "single";
   rover::settings["width"] = 200;
