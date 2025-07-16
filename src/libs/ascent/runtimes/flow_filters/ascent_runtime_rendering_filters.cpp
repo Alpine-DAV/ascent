@@ -252,13 +252,13 @@ check_renders_surprises(const conduit::Node &renders_node)
 
     if(render_node.has_path("camera"))
     {
-        const conduit::Node &camera_node = render_node["phi_theta_positions"];
+        const conduit::Node &camera_node = render_node["camera"];
         std::string c_ascent_surprises = surprise_check(c_ascent_valid_paths, c_ignore_paths, camera_node);
         std::string c_visit_surprises = surprise_check(c_visit_valid_paths, c_ignore_paths, camera_node);
 
-        if(!c_ascent_surprises.empty() && !c_ascent_surprises.empty())
+        if(!c_ascent_surprises.empty() && !c_visit_surprises.empty())
         {
-            surprises += "Cameras must follow either an ascent format or a visit format.\n";
+            surprises += "Cameras must follow either an ascent format or a visit format, not both.\n";
             surprises += "\nAscent camera surpises:\n";
             surprises += c_ascent_surprises;
             surprises += "\nVisit camera surprises:\n";

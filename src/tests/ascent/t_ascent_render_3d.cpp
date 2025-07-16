@@ -3680,7 +3680,7 @@ TEST(ascent_render_3d, test_render_ascent_camera)
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
 
-    ASCENT_INFO("Testing 3D Rendering with an ascent camera");
+    ASCENT_INFO("Testing 3D Rendering with an ascent camera\n");
 
     string output_path = prepare_output_dir();
     string image_prefix = "t_out_render_3d_ascent_camera";
@@ -3703,10 +3703,12 @@ TEST(ascent_render_3d, test_render_ascent_camera)
     scenes["s1/renders/r1/image_width"]  = 512;
     scenes["s1/renders/r1/image_height"] = 512;
     scenes["s1/renders/r1/image_prefix"]   = output_file;
+
+    // set the camera parameters
     double vec3[3];
     vec3[0] = 1.; vec3[1] = 1.; vec3[2] = 1.;
     scenes["s1/renders/r1/camera/look_at"].set_float64_ptr(vec3,3);
-    vec3[0] = 0.; vec3[1] = 25.; vec3[2] = 15.;
+    vec3[0] = 0.; vec3[1] = 25.; vec3[2] = 25.;
     scenes["s1/renders/r1/camera/position"].set_float64_ptr(vec3,3);
     vec3[0] = 0.; vec3[1] = -1.; vec3[2] = 0.;
     scenes["s1/renders/r1/camera/up"].set_float64_ptr(vec3,3);
@@ -3718,6 +3720,220 @@ TEST(ascent_render_3d, test_render_ascent_camera)
     scenes["s1/renders/r1/camera/elevation"] = -10.0;
     scenes["s1/renders/r1/camera/near_plane"] = 0.1;
     scenes["s1/renders/r1/camera/far_plane"] = 100.1;
+
+    conduit::Node actions;
+    conduit::Node &add_plots = actions.append();
+    add_plots["action"] = "add_scenes";
+    add_plots["scenes"] = scenes;
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example of creating a render, specifying all camera parameters.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+}
+
+//-----------------------------------------------------------------------------
+
+TEST(ascent_render_3d, test_render_visit_camera)
+{
+    // the ascent runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping 3D default"
+                      "Pipeline test");
+
+        return;
+    }
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("uniform",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing 3D Rendering with an ascent camera\n");
+
+    string output_path = prepare_output_dir();
+    string image_prefix = "t_out_render_3d_visit_camera";
+    string output_file = conduit::utils::join_file_path(output_path,image_prefix);
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+
+    //
+    // Create the actions.
+    //
+
+    conduit::Node scenes;
+    scenes["s1/plots/p1/type"]  = "volume";
+    scenes["s1/plots/p1/field"] = "braid";
+
+    scenes["s1/image_prefix"] = output_file;
+
+    scenes["s1/renders/r1/image_width"]  = 512;
+    scenes["s1/renders/r1/image_height"] = 512;
+    scenes["s1/renders/r1/image_prefix"]   = output_file;
+
+    // set the camera parameters
+    double vec3[3];
+    vec3[0] = 0.; vec3[1] = 0.; vec3[2] = 1.;
+    scenes["s1/renders/r1/camera/viewNormal"].set_float64_ptr(vec3,3);
+    vec3[0] = 0.; vec3[1] = 0.; vec3[2] = 0.;
+    scenes["s1/renders/r1/camera/focus"].set_float64_ptr(vec3,3);
+    vec3[0] = 0.; vec3[1] = 1.; vec3[2] = 0.;
+    scenes["s1/renders/r1/camera/viewUp"].set_float64_ptr(vec3,3);
+    scenes["s1/renders/r1/camera/viewAngle"] = 30.;
+    scenes["s1/renders/r1/camera/parallelScale"] = 1.;
+    scenes["s1/renders/r1/camera/nearPlane"] = 0.001;
+    scenes["s1/renders/r1/camera/farPlane"] = 100.;
+    double vec2[2];
+    vec2[0] = 0.; vec2[1] = 0.;
+    scenes["s1/renders/r1/camera/imagePan"].set_float64_ptr(vec2,2);
+    scenes["s1/renders/r1/camera/imageZoom"] = 1.0;
+    scenes["s1/renders/r1/camera/perspective"] = 1.; // true
+    scenes["s1/renders/r1/camera/eyeAngle"] = 2.;
+    scenes["s1/renders/r1/camera/centerOfRotationSet"] = 0.; // false
+    vec3[0] = 0.; vec3[1] = 0.; vec3[2] = 0.;
+    scenes["s1/renders/r1/camera/centerOfRotation"].set_float64_ptr(vec3,3);
+    scenes["s1/renders/r1/camera/axis3DScaleFlag"] = 0.; // false
+    vec3[0] = 1.; vec3[1] = 1.; vec3[2] = 1.;
+    scenes["s1/renders/r1/camera/axis3DScale"].set_float64_ptr(vec3,3);
+    vec3[0] = 0.; vec3[1] = 0.; vec3[2] = 1.;
+    scenes["s1/renders/r1/camera/shear"].set_float64_ptr(vec3,3);
+    scenes["s1/renders/r1/camera/windowValid"] = 0.; // false
+
+    conduit::Node actions;
+    conduit::Node &add_plots = actions.append();
+    add_plots["action"] = "add_scenes";
+    add_plots["scenes"] = scenes;
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example of creating a render, specifying all camera parameters.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+}
+
+//-----------------------------------------------------------------------------
+
+TEST(ascent_render_3d, test_render_invalid_camera)
+{
+    // the ascent runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping 3D default"
+                      "Pipeline test");
+
+        return;
+    }
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("uniform",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing 3D Rendering with an ascent camera\n");
+
+    string output_path = prepare_output_dir();
+    string image_prefix = "t_out_render_3d_mixed_camera";
+    string output_file = conduit::utils::join_file_path(output_path,image_prefix);
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+
+    //
+    // Create the actions.
+    //
+
+    conduit::Node scenes;
+    scenes["s1/plots/p1/type"]  = "volume";
+    scenes["s1/plots/p1/field"] = "braid";
+
+    scenes["s1/image_prefix"] = output_file;
+
+    scenes["s1/renders/r1/image_width"]  = 512;
+    scenes["s1/renders/r1/image_height"] = 512;
+    scenes["s1/renders/r1/image_prefix"]   = output_file;
+
+    // set the camera parameters (this is an INVALID set of variables mixing the two input formats)
+    double vec3[3];
+    vec3[0] = 1.; vec3[1] = 1.; vec3[2] = 1.;
+    scenes["s1/renders/r1/camera/look_at"].set_float64_ptr(vec3,3);
+    vec3[0] = 0.; vec3[1] = 25.; vec3[2] = 25.;
+    scenes["s1/renders/r1/camera/position"].set_float64_ptr(vec3,3);
+    vec3[0] = 0.; vec3[1] = -1.; vec3[2] = 0.;
+    scenes["s1/renders/r1/camera/xpan"] = 0.;
+    scenes["s1/renders/r1/camera/ypan"] = 0.;
+    scenes["s1/renders/r1/camera/azimuth"] = 10.0;
+    scenes["s1/renders/r1/camera/elevation"] = -10.0;
+    scenes["s1/renders/r1/camera/far_plane"] = 100.1;
+    vec3[0] = 0.; vec3[1] = 0.; vec3[2] = 1.;
+    scenes["s1/renders/r1/camera/viewNormal"].set_float64_ptr(vec3,3);
+    vec3[0] = 0.; vec3[1] = 0.; vec3[2] = 0.;
+    scenes["s1/renders/r1/camera/focus"].set_float64_ptr(vec3,3);
+    vec3[0] = 0.; vec3[1] = 1.; vec3[2] = 0.;
+    scenes["s1/renders/r1/camera/viewUp"].set_float64_ptr(vec3,3);
+    scenes["s1/renders/r1/camera/viewAngle"] = 30.;
+    scenes["s1/renders/r1/camera/parallelScale"] = 1.;
+    scenes["s1/renders/r1/camera/nearPlane"] = 0.001;
+    scenes["s1/renders/r1/camera/imageZoom"] = 1.0;
+    scenes["s1/renders/r1/camera/perspective"] = 1.; // true
+    scenes["s1/renders/r1/camera/eyeAngle"] = 2.;
+    scenes["s1/renders/r1/camera/centerOfRotationSet"] = 0.; // false
+    vec3[0] = 0.; vec3[1] = 0.; vec3[2] = 0.;
+    scenes["s1/renders/r1/camera/centerOfRotation"].set_float64_ptr(vec3,3);
+    scenes["s1/renders/r1/camera/axis3DScaleFlag"] = 0.; // false
+    vec3[0] = 1.; vec3[1] = 1.; vec3[2] = 1.;
+    scenes["s1/renders/r1/camera/axis3DScale"].set_float64_ptr(vec3,3);
+    vec3[0] = 0.; vec3[1] = 0.; vec3[2] = 1.;
+    scenes["s1/renders/r1/camera/shear"].set_float64_ptr(vec3,3);
+    scenes["s1/renders/r1/camera/windowValid"] = 0.; // false
 
     conduit::Node actions;
     conduit::Node &add_plots = actions.append();
