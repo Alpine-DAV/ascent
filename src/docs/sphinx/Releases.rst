@@ -18,11 +18,10 @@ its dependencies.
 Source distributions for Ascent are hosted on github:
 
 https://github.com/Alpine-DAV/ascent/releases
-
 v0.9.4
 ---------------------------------
 
-* Released 2025-07-11
+* Released 2025-07-18
 * `Source Tarball <https://github.com/Alpine-DAV/ascent/releases/download/v0.9.4/ascent-v0.9.4-src-with-blt.tar.gz>`__
 
 * Docker Containers
@@ -51,6 +50,7 @@ Added
 ~~~~~
 
  * Added ability to specify either fields (list of strings) or field (string) for uniform grid sample filter
+ * Added a ``sample`` filter that allows you to sample field values at a list of explicit points or along a line.
  * Added use case to vtkh data adaptor for blueprint meshes with explicit mesh coordinates with implicit topology (a blueprint structured mesh).
  * Added a compressed color table format.
  * Added action options relating to logging functionality including ``open_log``, ``flush_log``, and ``close_log`` to toggle logging as well as ``set_log_threshold`` and ``set_echo_threshold`` to control logging and standard output levels.
@@ -72,12 +72,15 @@ Added
  * Added support for ``include`` keyword to include children from yaml files in an input node trees
  * Added support for special keyword formatting for output paths. Current supported keywords include
  * Added support for formatting of output paths for extracts.
+ * Added support for parallel timestep mode to replay allowing for parallel in time processes in addition to pre-existing distributed-memory parallelism.
 
 Changed
 ~~~~~~~
 
+ * Extensive improvements to Rover X Ray Ray Tracing Diagnostic features (the ``xray`` extract).
  * Changed the replay utility's binary names such that ``replay_ser`` is now ``ascent_replay`` and ``raplay_mpi`` is now ``ascent_replay_mpi``. This will help prevent potential name collisions with other tools that also have replay utilities.
  * Updated several preferred tpl versions
+ * Changed bounding box used for default scene bounds to be the union of all topologies used in scene plots. Perviously, the union of all topologies in the dataset where used.
 
 Fixed
 ~~~~~
@@ -89,7 +92,6 @@ Fixed
  * Fixed a bug with Cinema resource output that could lead to corrupted html results.
  * Fixed a bug where controls for world and screen annotations where ignored in Cinema renders.
  * Fixed a bug in Uniform Grid Sampling and changed how ties for valid points are broken.
-
 
 
 v0.9.3
