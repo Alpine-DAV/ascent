@@ -98,7 +98,9 @@ parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera)
   // Get the optional camera parameters
   //
 
-  // check for 2d mode first
+  // -------------------- //
+  // 2D camera parameters //
+  // -------------------- //
   if(camera_node.has_child("2d"))
   {
     // camera:
@@ -114,6 +116,9 @@ parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera)
                           view_vals[3]);
   }
 
+  // ------------------------ //
+  // Ascent camera parameters //
+  // ------------------------ //
   if(camera_node.has_child("look_at"))
   {
       conduit::Node n;
@@ -191,6 +196,112 @@ parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera)
       vtkm::Float64 elevation = camera_node["elevation"].to_float64();
       camera.Elevation(elevation);
   }
+
+  // ----------------------- //
+  // Visit camera parameters //
+  // ----------------------- //
+  if(camera_node.has_child("focus"))
+  {
+      conduit::Node n;
+      camera_node["focus"].to_float64_array(n);
+      const float64 *coords = n.as_float64_ptr();
+      vtkmVec3f look_at(coords[0], coords[1], coords[2]);
+      camera.SetLookAt(look_at);
+  }
+
+  if(camera_node.has_child("viewNormal") && camera_node.has_child("focus"))
+  {
+      conduit::Node view, focus, viewUp;
+      camera_node["viewNormal"].to_float64_array(view);
+      camera_node["focus"].to_float64_array(focus);
+      camera_node["viewUp"].to_float64_array(viewUp);
+
+      const conduit::float64 *v = view.value();
+      const conduit::float64 *fc = focus.value();
+      const conduit::float64 *uo = viewUp.value();
+
+      conduit::float64 zoom = camera_node["imageZoom"].to_float64();
+      conduit::float64 view_angle = camera_node["viewAngle"].to_float64() * (M_PI / 180.0);
+      conduit::float64 parallel_scale = camera_node["parallelScale"].to_float64();
+
+      // Compute camera distance using perspective projection formula
+      double distance = (parallel_scale / zoom) / std::tan(view_angle / 2.0);
+
+      // Normalize viewNormal vector
+      conduit::float64 norm = std::sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
+      conduit::float64 v_norm[3] = { v[0]/norm, v[1]/norm, v[2]/norm };
+
+      conduit::float64 pos[3];
+      for(int i = 0; i < 3; ++i)
+      {
+        pos[i] = fc[i] + v_norm[i] * distance;
+      }
+
+      vtkmVec3f position(pos[0], pos[1], pos[2]);
+      camera.SetPosition(position);
+  }
+
+  if(camera_node.has_child("viewUp"))
+  {
+      conduit::Node n;
+      camera_node["viewUp"].to_float64_array(n);
+      const float64 *coords = n.as_float64_ptr();
+      vtkmVec3f up(coords[0], coords[1], coords[2]);
+      vtkm::Normalize(up);
+      camera.SetViewUp(up);
+  }
+
+//   if(camera_node.has_child("fov"))
+//   {
+//       camera.SetFieldOfView(camera_node["fov"].to_float64());
+//   }
+
+//   if(camera_node.has_child("imagePan"))
+//   {
+//       vtkm::Float64 xpan = 0.;
+//       vtkm::Float64 ypan = 0.;
+
+//       conduit::Node n;
+//       camera_node["imagePan"].to_float64_array(n);
+//       const float64 *pan_xy = n.as_float64_ptr();
+//       camera.Pan(pan_xy[0], pan_xy[1]);
+//   }
+
+//   if(camera_node.has_child("imageZoom"))
+//   {
+//       double zoom = camera_node["imageZoom"].to_float64();
+//       camera.Zoom(zoom_to_vtkm_zoom(zoom));
+//   }
+  //
+  // With a new potential camera position. We need to reset the
+  // clipping plane as not to cut out part of the data set
+  //
+
+//   if(camera_node.has_child("nearPlane"))
+//   {
+//       vtkm::Range clipping_range = camera.GetClippingRange();
+//       clipping_range.Min = camera_node["nearPlane"].to_float64();
+//       camera.SetClippingRange(clipping_range);
+//   }
+
+//   if(camera_node.has_child("farPlane"))
+//   {
+//       vtkm::Range clipping_range = camera.GetClippingRange();
+//       clipping_range.Max = camera_node["farPlane"].to_float64();
+//       camera.SetClippingRange(clipping_range);
+//   }
+
+//   // this is an offset from the current azimuth
+//   if(camera_node.has_child("azimuth"))
+//   {
+//       vtkm::Float64 azimuth = camera_node["azimuth"].to_float64();
+//       camera.Azimuth(azimuth);
+//   }
+//   if(camera_node.has_child("elevation"))
+//   {
+//       vtkm::Float64 elevation = camera_node["elevation"].to_float64();
+//       camera.Elevation(elevation);
+//   }
 }
 
 bool is_valid_name(const std::string &name)
