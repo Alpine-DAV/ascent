@@ -51,6 +51,7 @@ build_umpire="${build_umpire:=true}"
 build_mfem="${build_mfem:=true}"
 build_catalyst="${build_catalyst:=false}"
 build_anari="${build_anari:=false}"
+build_ptc="${build_ptc:=false}"
 build_zfp="${build_zfp:=true}"
 
 # ascent options
@@ -677,6 +678,52 @@ fi
 else
   echo "**** Skipping anari build, install found at: ${anari_install_dir}"
 fi # build_anari
+
+################
+# anari - ptc 
+################
+ptc_version=1.1.0
+ptc_src_dir=$(ospath ${source_dir}/ANARI-PTC-${ptc_version})
+ptc_build_dir=$(ospath ${build_dir}/ptc-v${ptc_version})
+ptc_install_dir=$(ospath ${install_dir}/ptc-v${ptc_version}/)
+ptc_tarball=$(ospath ${source_dir}/ptc-v${ptc_version}.tar.gz)
+
+# build only if install doesn't exist
+#CAVEAT/TODO: Installs in anari_install_dir
+if [ ! -d ${ptc_install_dir} ]; then
+if ${build_ptc}; then
+if [ ! -d ${ptc_src_dir} ]; then
+  echo "**** Downloading ${ptc_tarball}"
+  curl -L https://github.com/ingowald/ANARI-PTC/archive/refs/tags/v${ptc_version}.tar.gz -o ${ptc_tarball}
+  tar ${tar_extra_args} -xzf ${ptc_tarball} -C ${source_dir}
+fi
+
+ptc_extra_cmake_args=""
+if [[ "$enable_cuda" == "ON" ]]; then
+  ptc_extra_cmake_args="${ptc_extra_cmake_args} -DPTC_ENABLE_CUDA=ON"
+  ptc_extra_cmake_args="${ptc_extra_cmake_args} -DCMAKE_CUDA_HOST_COMPILER=${CXX}"
+  ptc_extra_cmake_args="${ptc_extra_cmake_args} -DCMAKE_CUDA_ARCHITECTURES=${CUDA_ARCH}"
+else
+  ptc_extra_cmake_args="${ptc_extra_cmake_args} -DPTC_DISABLE_CUDA=ON"
+fi
+
+echo "**** Configuring ptc ${ptc_version}"
+cmake -S ${ptc_src_dir} -B ${ptc_build_dir} ${cmake_compiler_settings} \
+  -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose}\
+  -DCMAKE_BUILD_TYPE=${build_config} \
+  -DANARI_SDK=${anari_install_dir} \
+  -DPTC_BUILD_TESTING=OFF ${ptc_extra_cmake_args}\
+  -DCMAKE_INSTALL_PREFIX=${anari_install_dir} \
+
+echo "**** Building ptc ${ptc_version}"
+cmake --build ${ptc_build_dir} --config ${build_config} -j${build_jobs}
+echo "**** Installing ptc ${ptc_version}"
+cmake --install ${ptc_build_dir} --config ${build_config}
+
+fi
+else
+  echo "**** Skipping ptc build, install found at: ${ptc_install_dir}"
+fi # build_ptc
 
 
 ################
