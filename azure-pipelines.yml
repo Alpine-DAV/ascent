@@ -653,6 +653,6 @@ stages:
            #################################
            # build main docker container
            #################################
-           cd src/examples/docker/ubuntu/
+           cd src/examples/docker/ubuntu-build-ascent/
            ./build.sh
         displayName: 'Docker Build'

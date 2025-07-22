@@ -25,7 +25,6 @@ v0.9.4
 * `Source Tarball <https://github.com/Alpine-DAV/ascent/releases/download/v0.9.4/ascent-v0.9.4-src-with-blt.tar.gz>`__
 
 * Docker Containers
-   * ``alpinedav/ascent:0.9.4``
    * ``alpinedav/ascent-jupyter:0.9.4``
 
 Highlights
