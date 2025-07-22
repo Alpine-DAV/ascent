@@ -8,8 +8,7 @@
 Tutorial Overview
 ==================
 
-`Latest Ascent Tutorial Intro Slides [pdf] <https://www.ascent-dav.org/tutorial/2024_08_20_ascent_tutorial.pdf>`_
-`Previous Ascent Tutorial Intro Slides [pdf] <https://www.ascent-dav.org/tutorial/2023_08_22_ascent_intro.pdf>`_
+`Latest Ascent Tutorial Intro Slides [pdf] <https://www.ascent-dav.org/tutorial/2025_07_22_ascent_tutorial.pdf>`_
 
 This tutorial introduces how to use Ascent, including basics about:
 
@@ -24,6 +23,8 @@ You can find the tutorial source code and notebooks in your Ascent install direc
 
 
 Tutorials:
+ * `Introduction to Ascent, a Flyweight In Situ Visualization and Analysis for HPC Simulations @ LLNL's HPCIC AWS Tutorial Series 2025 <https://hpcic.llnl.gov/tutorials/2025-hpc-tutorials>`_ - July 2025, Virtual
+ * `Introduction to Ascent, a Flyweight In Situ Visualization and Analysis for HPC Simulations @ LLNL's HPCIC AWS Tutorial Series 2024 <https://hpcic.llnl.gov/tutorials/2024-hpc-tutorials>`_ - August 2024, Virtual
  * In-Situ Analysis and Visualization with Ascent @ ATPESC24 - August 2024, St. Charles, IL, USA
  * `In-Situ Analysis and Visualization with Ascent and ParaView Catalyst <https://sc23.supercomputing.org/presentation/?id=tut133&sess=sess211>`_ - November 2023, Denver, CO, USA
  * `Introduction to Ascent, a Flyweight In Situ Visualization and Analysis for HPC Simulations @ LLNL's RADIUSS AWS Tutorial Series 2023 <https://software.llnl.gov/radiuss/event/2023/07/11/radiuss-on-aws/>`_ - August 2023, Virtual
