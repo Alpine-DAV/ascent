@@ -75,7 +75,6 @@ void
 Engine::partial_trace(Ray32 &rays, PartialVector32 &partials)
 {
   ROVER_INFO("Executing Engine::partial_trace");
-  init_rays(rays);
   const bool divide_emis_by_absorb = rover::settings["divide_emis_by_absorb"].as_string() == "true";
   m_tracer->SetDivideEmisByAbsorb(divide_emis_by_absorb);
   const float64 unit_scalar = rover::settings["unit_scalar"].to_float64();
@@ -113,8 +112,10 @@ void
 Engine::partial_trace(Ray64 &rays, PartialVector64 &partials)
 {
   ROVER_INFO("Executing Engine::partial_trace");
-  init_rays(rays);
-  m_tracer->SetUnitScalar(rover::settings["unit_scalar"].value());
+  const bool divide_emis_by_absorb = rover::settings["divide_emis_by_absorb"].as_string() == "true";
+  m_tracer->SetDivideEmisByAbsorb(divide_emis_by_absorb);
+  const float64 unit_scalar = rover::settings["unit_scalar"].to_float64();
+  m_tracer->SetUnitScalar(unit_scalar);
   m_tracer->PartialTrace(rays, partials);
 }
 

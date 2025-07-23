@@ -172,6 +172,7 @@ struct Serialization<vtkh::EmissionPartial<double>>
   {
     vtkhdiy::save(bb, partial.m_bins);
     vtkhdiy::save(bb, partial.m_emission_bins);
+    vtkhdiy::save(bb, partial.m_optical_depth_bins);
     vtkhdiy::save(bb, partial.m_pixel_id);
     vtkhdiy::save(bb, partial.m_depth);
   }
@@ -180,6 +181,7 @@ struct Serialization<vtkh::EmissionPartial<double>>
   {
     vtkhdiy::load(bb, partial.m_bins);
     vtkhdiy::load(bb, partial.m_emission_bins);
+    vtkhdiy::load(bb, partial.m_optical_depth_bins);
     vtkhdiy::load(bb, partial.m_pixel_id);
     vtkhdiy::load(bb, partial.m_depth);
   }
@@ -193,6 +195,7 @@ struct Serialization<vtkh::EmissionPartial<float>>
   {
     vtkhdiy::save(bb, partial.m_bins);
     vtkhdiy::save(bb, partial.m_emission_bins);
+    vtkhdiy::save(bb, partial.m_optical_depth_bins);
     vtkhdiy::save(bb, partial.m_pixel_id);
     vtkhdiy::save(bb, partial.m_depth);
   }
@@ -201,6 +204,7 @@ struct Serialization<vtkh::EmissionPartial<float>>
   {
     vtkhdiy::load(bb, partial.m_bins);
     vtkhdiy::load(bb, partial.m_emission_bins);
+    vtkhdiy::load(bb, partial.m_optical_depth_bins);
     vtkhdiy::load(bb, partial.m_pixel_id);
     vtkhdiy::load(bb, partial.m_depth);
   }

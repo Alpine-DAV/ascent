@@ -108,21 +108,21 @@ Image<FloatType>::Image()
 template<typename FloatType>
 Image<FloatType>::Image(PartialImage<FloatType> &partial)
 {
-  this->init_from_partial(partial);
+  init_from_partial(partial);
 }
 
 template<typename FloatType>
 void
 Image<FloatType>::operator=(PartialImage<FloatType> partial)
 {
-  this->init_from_partial(partial);
+  init_from_partial(partial);
 }
 //
 // template specialization to handle the magic
 
 template <typename T, typename O>
 void cast_array_handle(vtkm::cont::ArrayHandle<T> &cast_to,
-                        vtkm::cont::ArrayHandle<O> &cast_from)
+                       vtkm::cont::ArrayHandle<O> &cast_from)
 {
   const vtkm::Id size = cast_from.GetNumberOfValues();
   cast_to.Allocate(size);

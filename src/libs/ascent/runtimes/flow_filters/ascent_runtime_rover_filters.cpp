@@ -447,8 +447,8 @@ RoverXRay::execute()
   int mpi_rank = 0;
 #ifdef ASCENT_MPI_ENABLED
   mpi_comm_id = flow::Workspace::default_mpi_comm();
-  rover::Logger::get_instance()->set_mpi_comm_id(mpi_comm_id);
-  rover::DataLogger::GetInstance()->set_mpi_comm_id(mpi_comm_id);
+  // rover::Logger::get_instance()->set_mpi_comm_id(mpi_comm_id);
+  // rover::DataLogger::GetInstance()->set_mpi_comm_id(mpi_comm_id);
   MPI_Comm_rank(MPI_Comm_f2c(mpi_comm_id), &mpi_rank);
 #endif
 
@@ -523,7 +523,11 @@ RoverXRay::execute()
   {
     conduit::Node multi_domain;
     conduit::Node &data = multi_domain.append();
-    rover.to_blueprint(data);
+
+    if (0 == mpi_rank)
+    {
+      rover.to_blueprint(data);
+    }
 
     const std::string blueprint_filename = output_dir(expand_path_special_variables(
                                                       filename,

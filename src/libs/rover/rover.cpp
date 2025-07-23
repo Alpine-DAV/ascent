@@ -125,6 +125,7 @@ Rover::get_mpi_comm_handle()
 void
 Rover::create_scheduler()
 {
+  // Each MPI rank creates its own scheduler
   const std::string precision = rover::settings["precision"].as_string();
   if ("double" == precision)
   {
