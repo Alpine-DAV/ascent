@@ -19,9 +19,10 @@
 #include <mpi.h>
 
 #include <conduit_blueprint.hpp>
+#include <conduit_blueprint_mpi.hpp>
 #include <conduit_relay.hpp>
+#include <conduit_relay_mpi_io_blueprint.hpp>
 
-#include "t_config.hpp"
 #include "t_utils.hpp"
 
 using namespace std;
@@ -53,49 +54,23 @@ execute_ascent(const MPI_Comm &comm,
 }
 
 void
-load_and_verify_local_data(const int rank,
-                           Node &data,
+load_and_verify_local_data(Node &data,
                            const std::string &data_path)
 {
-    Node verify_info;
     conduit::relay::io::blueprint::load_mesh(data_path, data);
 
-    if (0 == rank)
-    {
-        EXPECT_TRUE(conduit::blueprint::mesh::verify(data, verify_info));
-    }
-}
-
-void
-load_and_verify_ascent_data(const int rank,
-                            Node &baseline_data,
-                            const std::string &filename)
-{
     Node verify_info;
-    const std::string baseline_path = conduit::utils::join_file_path(std::string(ASCENT_T_DATA_DIR),
-                                                                     filename);
-    conduit::relay::io::blueprint::load_mesh(baseline_path, baseline_data);
-
-    if (0 == rank)
-    {
-        EXPECT_TRUE(conduit::blueprint::mesh::verify(baseline_data, verify_info));
-    }
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data, verify_info));
 }
 
 void
-get_valid_test_data(const int rank,
+get_valid_test_data(const MPI_Comm &comm,
                     Node &data)
 {
+    blueprint::mpi::mesh::examples::braid_uniform_multi_domain(data, comm);
+
     Node verify_info;
-    conduit::blueprint::mesh::examples::braid("hexs",
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              data);
-    if (0 == rank)
-    {
-        EXPECT_TRUE(conduit::blueprint::mesh::verify(data, verify_info));
-    }
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data, verify_info));
 }
 
 const bool
@@ -137,7 +112,7 @@ TEST(ascent_rover, test_xray_mpi_blueprint_braid)
 
     // Test names
     const std::string query_name = "tout_rover_xray_blueprint_braid";
-    const std::string query_ext_name = "_000100.cycle_000100.root";
+    const std::string query_ext_name = "_000000.cycle_000000.root";
 
     // Setup paths
     const std::string output_path = prepare_output_dir();
@@ -145,17 +120,9 @@ TEST(ascent_rover, test_xray_mpi_blueprint_braid)
                                                                   query_name);
     const std::string output_data_path = query_path + query_ext_name;
     
-    const int cycle = 100;
-
-    // Remove old test image
-    if (0 == rank)
-    {
-        remove_test_image(query_path, cycle);
-    }
-
     // Generate and verify test data
     Node test_data;
-    get_valid_test_data(rank, test_data);
+    get_valid_test_data(comm, test_data);
 
     // Define Ascent actions
     Node extracts;
@@ -176,7 +143,7 @@ TEST(ascent_rover, test_xray_mpi_blueprint_braid)
     
     // Load and verify output mesh
     Node xray_blueprint_output, verify_info;
-    load_and_verify_local_data(rank, xray_blueprint_output, output_data_path);
+    load_and_verify_local_data(xray_blueprint_output, output_data_path);
 
     if (0 == rank)
     {
@@ -185,17 +152,17 @@ TEST(ascent_rover, test_xray_mpi_blueprint_braid)
         // Load and verify baseline data
         const std::string yaml = R"yaml(
             time: 3.1414999961853
-            cycle: 100
+            cycle: 0
             xray_view: 
-                position: [0.0, 0.0, 34.6410179138184]
+                position: [10.0, 0.0, 48.9897956848145]
                 zoom: 1.0
-                look_at: [0.0, 0.0, 0.0]
+                look_at: [10.0, 0.0, 0.0]
                 up: [0.0, 1.0, 0.0]
                 fov: 60.0
                 xpan: 0.0
                 ypan: 0.0
-                near_plane: 3.46410179138184
-                far_plane: 346.410186767578
+                near_plane: 4.89897966384888
+                far_plane: 489.89794921875
             xray_query: 
                 background_intensity: 0.0
                 divide_emis_by_absorb: "false"
@@ -206,13 +173,14 @@ TEST(ascent_rover, test_xray_mpi_blueprint_braid)
                 unit_scalar: 1.0
                 absorption: "radial"
                 emission: "radial"
+                filename: ""
                 output_type: "yaml"
             xray_data: 
-                detector_width: 4.00000016604152
-                detector_height: 4.00000016604152
-                intensity_max: 173.205078125
+                detector_width: 5.65685440236809
+                detector_height: 5.65685440236809
+                intensity_max: 173.205080756888
                 intensity_min: 0.0
-                optical_depth_max: 2698.02783203125
+                optical_depth_max: 2985.05778124437
                 optical_depth_min: 0.0
                 image_topo_order_of_domain_variables: "xyz"
             domain_id: 0
