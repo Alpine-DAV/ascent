@@ -31,19 +31,23 @@ using namespace ascent;
 
 constexpr index_t EXAMPLE_MESH_SIDE_DIM = 20;
 
+// MPI variables that get used everywhere
+const MPI_Comm COMM = MPI_COMM_WORLD;
+int par_rank = 0;
+int par_size = 1;
+
 //
 // Utilities
 //
 
 void
-execute_ascent(const MPI_Comm &comm,
-               const Node &data,
+execute_ascent(const Node &data,
                const Node &actions)
 {
     Ascent ascent;
     Node ascent_opts;
     ascent_opts["runtime"] = "ascent";
-    ascent_opts["mpi_comm"] = comm;
+    ascent_opts["mpi_comm"] = COMM;
     
     ascent.open(ascent_opts);
     ascent.publish(data);
@@ -54,8 +58,7 @@ execute_ascent(const MPI_Comm &comm,
 }
 
 void
-render_blueprint(const MPI_Comm &comm,
-                 const string &field_name,
+render_blueprint(const string &field_name,
                  const string &output_path,
                  const Node &data)
 {
@@ -79,18 +82,19 @@ render_blueprint(const MPI_Comm &comm,
     add_plots["scenes"] = scenes;
 
     // Execute Ascent actions
-    execute_ascent(comm, data, actions);
+    execute_ascent(data, actions);
 }
 
 void
-render_all_fields(const MPI_Comm &comm,
-                  const int rank,
-                  const Node &data,
-                  const std::string output_path,
-                  const int cycle)
+render_all_fields(const Node &data,
+                  const std::string &output_path,
+                  const int &cycle)
 {
     // This is here to help identify which ascent execute is throwing an error
-    ASCENT_INFO("Executing render_all_fields\n");
+    if (0 == par_rank)
+    {
+        ASCENT_INFO("Executing render_all_fields\n");
+    }
     
     const std::vector<std::string> fields {
         "intensities",
@@ -104,8 +108,8 @@ render_all_fields(const MPI_Comm &comm,
     for (const auto& field : fields)
     {
         std::string full_output_path = output_path + "_" + field;
-        render_blueprint(comm, field, full_output_path, data);
-        if (0 == rank)
+        render_blueprint(field, full_output_path, data);
+        if (0 == par_rank)
         {
             EXPECT_TRUE(check_test_image(full_output_path, 0.01f, cycle));
         }
@@ -116,29 +120,19 @@ void
 load_and_verify_local_data(Node &data,
                            const std::string &data_path)
 {
-    conduit::relay::io::blueprint::load_mesh(data_path, data);
+    conduit::relay::mpi::io::blueprint::load_mesh(data_path, data, COMM);
 
     Node verify_info;
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(data, verify_info));
-}
-
-void
-get_valid_test_data(const MPI_Comm &comm,
-                    Node &data)
-{
-    blueprint::mpi::mesh::examples::braid_uniform_multi_domain(data, comm);
-
-    Node verify_info;
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(data, verify_info));
+    EXPECT_TRUE(conduit::blueprint::mpi::mesh::verify(data, verify_info, COMM));
 }
 
 const bool
-is_vtkm_disabled(const int rank)
+is_vtkm_disabled()
 {
     Node n;
     ascent::about(n);
     const bool disabled = "disabled" == n["runtimes/ascent/vtkm/status"].as_string();
-    if (0 == rank && disabled)
+    if (0 == par_rank && disabled)
     {
         ASCENT_INFO("Ascent was built without vtkm, skipping test\n");
     }
@@ -150,27 +144,24 @@ is_vtkm_disabled(const int rank)
 //
 
 //-----------------------------------------------------------------------------
-TEST(ascent_rover, test_xray_mpi_blueprint_braid)
+TEST(ascent_rover, test_xray_mpi_blueprint_braid_uniform_multi_domain)
 {
     // Set up MPI
-    int rank;
-    int size;
-    MPI_Comm comm = MPI_COMM_WORLD;
-    MPI_Comm_rank(comm, &rank);
-    MPI_Comm_size(comm, &size);
+    MPI_Comm_rank(COMM, &par_rank);
+    MPI_Comm_size(COMM, &par_size);
 
-    if (0 == rank)
+    if (0 == par_rank)
     {
-        ASCENT_INFO("Testing xray extract on conduit braid example\n");
+        ASCENT_INFO("Testing x-ray extract using MPI on a conduit braid_uniform_multi_domain example mesh\n");
     }
 
-    if (is_vtkm_disabled(rank))
+    if (is_vtkm_disabled())
     {
         return; // Returning early is equivalent to passing the test
     }
 
     // Test names
-    const std::string query_name = "tout_rover_xray_blueprint_braid";
+    const std::string query_name = "tout_rover_xray_mpi_blueprint_braid_uniform_multi_domain";
     const std::string query_ext_name = "_000000.cycle_000000.root";
 
     // Setup paths
@@ -179,9 +170,13 @@ TEST(ascent_rover, test_xray_mpi_blueprint_braid)
                                                                   query_name);
     const std::string output_data_path = query_path + query_ext_name;
     
-    // Generate and verify test data
+    // Generate test data
     Node test_data;
-    get_valid_test_data(comm, test_data);
+    blueprint::mpi::mesh::examples::braid_uniform_multi_domain(test_data, COMM);
+
+    // Verify test data
+    Node verify_test_data;
+    EXPECT_TRUE(conduit::blueprint::mpi::mesh::verify(test_data, verify_test_data, COMM));
 
     // Define Ascent actions
     Node extracts;
@@ -198,16 +193,16 @@ TEST(ascent_rover, test_xray_mpi_blueprint_braid)
     add_extracts["extracts"] = extracts;
 
     // Execute Ascent actions
-    execute_ascent(comm, test_data, actions);
+    execute_ascent(test_data, actions);
     
     // Load and verify output mesh
-    Node xray_blueprint_output, verify_info;
+    Node xray_blueprint_output;
     load_and_verify_local_data(xray_blueprint_output, output_data_path);
 
-    if (0 == rank)
+    if (0 == par_rank)
     {
         Node &state_output = xray_blueprint_output["domain_000000/state"];
-        
+    
         // Load and verify baseline data
         const std::string yaml = R"yaml(
             time: 3.1414999961853
@@ -244,11 +239,11 @@ TEST(ascent_rover, test_xray_mpi_blueprint_braid)
                 image_topo_order_of_domain_variables: "xyz"
             domain_id: 0
             )yaml";
-
+    
         Node baseline_data;
         baseline_data.parse(yaml);
         baseline_data["xray_query/filename"] = query_path;
-
+    
         // Diff the baseline data with our new output
         Node diff_info;
         const bool has_differences = baseline_data.diff(state_output,
@@ -257,20 +252,20 @@ TEST(ascent_rover, test_xray_mpi_blueprint_braid)
                                                         true);
         if (has_differences)
         {
-            ASCENT_INFO("Found differences in the braid blueprint diff:\n");
+            ASCENT_INFO("Found differences in the braid_uniform_multi_domain blueprint diff:\n");
             diff_info.print();
         }
         EXPECT_FALSE(has_differences);
     }
 
     // Render and verify each field
-    int cycle = 0;
-    render_all_fields(comm, rank, xray_blueprint_output, query_path, cycle);
+    const int cycle = 0;
+    render_all_fields(xray_blueprint_output, query_path, cycle);
 
-    if (0 == rank)
+    if (0 == par_rank)
     {
         // Dump info
-        std::string msg = "Rendered XRay diagnostic images of an example braid mesh";
+        std::string msg = "Rendered x-ray diagnostic images using MPI on a conduit braid_uniform_multi_domain example mesh";
         ASCENT_ACTIONS_DUMP(actions, query_path, msg);
     }
 }
