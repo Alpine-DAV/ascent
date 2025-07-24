@@ -18,6 +18,80 @@ its dependencies.
 Source distributions for Ascent are hosted on github:
 
 https://github.com/Alpine-DAV/ascent/releases
+v0.9.4
+---------------------------------
+
+* Released 2025-07-18
+* `Source Tarball <https://github.com/Alpine-DAV/ascent/releases/download/v0.9.4/ascent-v0.9.4-src-with-blt.tar.gz>`__
+
+* Docker Containers
+   * ``alpinedav/ascent-jupyter:0.9.4``
+
+Highlights
+++++++++++++++++++++++++++++++++++++
+
+(Extracted from Ascent's :download:`Changelog <../../../CHANGELOG.md>`)
+
+
+Preferred dependency versions for ascent@develop
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+ * cmake@3.23 or newer
+ * conduit@0.9.4
+ * vtk-m@2.3.0
+ * raja@v2025.03.1
+ * umpire@v2025.03.0
+ * camp@v2025.03.0
+ * kokkos@4.4.01
+ * mfem@4.8
+
+Added
+~~~~~
+
+ * Added ability to specify either fields (list of strings) or field (string) for uniform grid sample filter
+ * Added a ``sample`` filter that allows you to sample field values at a list of explicit points or along a line.
+ * Added use case to vtkh data adaptor for blueprint meshes with explicit mesh coordinates with implicit topology (a blueprint structured mesh).
+ * Added a compressed color table format.
+ * Added action options relating to logging functionality including ``open_log``, ``flush_log``, and ``close_log`` to toggle logging as well as ``set_log_threshold`` and ``set_echo_threshold`` to control logging and standard output levels.
+ * Added a new unified logging infrastructure.
+ * Added support for unstructured topologies with mixed elements types (for example, hexs and tets).
+ * Added support for ``pyramid`` and ``wedge`` elements.
+ * Added ``sphere``, ``cylinder``, ``box``, and ``plane`` options to the slice filter.
+ * Added a ``topologies`` option to the relay extract. This allows you to select which topologies are saved. This option can be used with the existing ``fields`` option, the result is the union of the selected topologies and fields.
+ * Added ``near_plane`` and ``far_plane`` to the camera details provided in Ascent::info()
+ * Added ``add_mpi_ranks`` and ``add_domain_ids`` filters for adding rank and domain fields to a mesh
+ * Added ``transform`` filter, which allows you to rotate, scale, reflect, translate, mesh coordinates
+ * Added python script in src/utilities/visit_session_converters to convert VisIt color table to Ascent actions color table
+ * Added ``fields`` option to the project 2d to support scalar rendering of specific fields.
+ * Added ``dataset_bounds`` option to the project 2d, which can be used instead of a full 3D camera specification
+ * Added support for triggers to execute actions from multiple files via an ``actions_files`` option that takes a list of actions files.
+ * Added an ``external_surfaces`` transform filter, that can be used to reduce memory requirements in pipelines where you plan to only process the external faces of a data set.
+ * Added a ``declare_fields`` action, that allows users to explicitly list the fields to return for field filtering. This option avoids complex field parsing logic.
+ * Added a 2d camera mode (``camera/2d: [left, right, bottom, top]``) to scene render cameras and the ``project_2d`` (scalar rendering) filter cameras.
+ * Added support for ``include`` keyword to include children from yaml files in an input node trees
+ * Added support for special keyword formatting for output paths. Current supported keywords include
+ * Added support for formatting of output paths for extracts.
+ * Added support for parallel timestep mode to replay allowing for parallel in time processes in addition to pre-existing distributed-memory parallelism.
+
+Changed
+~~~~~~~
+
+ * Extensive improvements to Rover X Ray Ray Tracing Diagnostic features (the ``xray`` extract).
+ * Changed the replay utility's binary names such that ``replay_ser`` is now ``ascent_replay`` and ``raplay_mpi`` is now ``ascent_replay_mpi``. This will help prevent potential name collisions with other tools that also have replay utilities.
+ * Updated several preferred tpl versions
+ * Changed bounding box used for default scene bounds to be the union of all topologies used in scene plots. Perviously, the union of all topologies in the dataset where used.
+
+Fixed
+~~~~~
+
+ * Fixed WarpX filter that was not allowing for rendering of the output streamlines
+ * Fixed Uniform Grid bug only accepting 2D slices along the Z-axis.
+ * Resolved a few cases where MPI_COMM_WORLD was used instead instead of the selected MPI communicator.
+ * Resolved a bug where a sharing a coordset between multiple polytopal topologies would corrupt mesh processing.
+ * Fixed a bug with Cinema resource output that could lead to corrupted html results.
+ * Fixed a bug where controls for world and screen annotations where ignored in Cinema renders.
+ * Fixed a bug in Uniform Grid Sampling and changed how ties for valid points are broken.
+
 
 v0.9.3
 ---------------------------------

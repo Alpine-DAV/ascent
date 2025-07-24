@@ -10,7 +10,7 @@ cmake_minimum_required(VERSION 3.23)
 # Ascent
 ################################
 
-project(ascent VERSION "0.9.3")
+project(ascent VERSION "0.9.4")
 
 ################################
 # Build Options
