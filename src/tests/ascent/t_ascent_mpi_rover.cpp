@@ -54,6 +54,65 @@ execute_ascent(const MPI_Comm &comm,
 }
 
 void
+render_blueprint(const MPI_Comm &comm,
+                 const string &field_name,
+                 const string &output_path,
+                 const Node &data)
+{
+    // Define Ascent actions
+
+    Node scenes;
+    scenes["s1/plots/p1/type"] = "pseudocolor";
+    scenes["s1/plots/p1/field"] = field_name;
+    scenes["s1/renders/r1/image_prefix"] = output_path;
+
+    // Rotate spatial meshes for variety
+    if (field_name.find("spatial") != std::string::npos)
+    {
+        scenes["s1/renders/r1/camera/azimuth"] = 45.0;
+    }
+
+    Node actions;
+
+    Node &add_plots = actions.append();
+    add_plots["action"] = "add_scenes";
+    add_plots["scenes"] = scenes;
+
+    // Execute Ascent actions
+    execute_ascent(comm, data, actions);
+}
+
+void
+render_all_fields(const MPI_Comm &comm,
+                  const int rank,
+                  const Node &data,
+                  const std::string output_path,
+                  const int cycle)
+{
+    // This is here to help identify which ascent execute is throwing an error
+    ASCENT_INFO("Executing render_all_fields\n");
+    
+    const std::vector<std::string> fields {
+        "intensities",
+        "optical_depth",
+        "intensities_spatial",
+        "optical_depth_spatial"
+    };
+
+    // TODO: Investigate whether we gain any performance by rendering all of these fields with
+    // a single set of actions
+    for (const auto& field : fields)
+    {
+        std::string full_output_path = output_path + "_" + field;
+        render_blueprint(comm, field, full_output_path, data);
+        if (0 == rank)
+        {
+            EXPECT_TRUE(check_test_image(full_output_path, 0.01f, cycle));
+        }
+    }
+}
+
+void
 load_and_verify_local_data(Node &data,
                            const std::string &data_path)
 {
@@ -202,7 +261,14 @@ TEST(ascent_rover, test_xray_mpi_blueprint_braid)
             diff_info.print();
         }
         EXPECT_FALSE(has_differences);
+    }
 
+    // Render and verify each field
+    int cycle = 0;
+    render_all_fields(comm, rank, xray_blueprint_output, query_path, cycle);
+
+    if (0 == rank)
+    {
         // Dump info
         std::string msg = "Rendered XRay diagnostic images of an example braid mesh";
         ASCENT_ACTIONS_DUMP(actions, query_path, msg);
