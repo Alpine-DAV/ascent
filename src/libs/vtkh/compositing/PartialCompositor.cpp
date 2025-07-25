@@ -497,7 +497,7 @@ PartialCompositor<PartialType>::composite_partials(std::vector<PartialType> &par
 template<typename PartialType>
 void
 PartialCompositor<PartialType>::composite(std::vector<std::vector<PartialType>> &partial_images,
-                                   std::vector<PartialType> &output_partials)
+                                          std::vector<PartialType> &output_partials)
 {
   int global_partial_images = partial_images.size();
 #ifdef VTKH_PARALLEL

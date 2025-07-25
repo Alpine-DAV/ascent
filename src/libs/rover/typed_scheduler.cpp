@@ -38,7 +38,6 @@ template<typename FloatType>
 void
 TypedScheduler<FloatType>::add_dataset(vtkh::DataSet &dataset)
 {
-  // TODO: In cases where ascent is not given data with 1 domain per MPI rank, every rank gets every domain
   m_num_local_domains = dataset.GetNumberOfDomains();
   m_domains.reserve(m_num_local_domains);
   for (int i = 0; i < m_num_local_domains; i++)
