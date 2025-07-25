@@ -28,6 +28,7 @@ using namespace conduit;
 using namespace ascent;
 
 constexpr index_t EXAMPLE_MESH_SIDE_DIM = 20;
+constexpr index_t EXAMPLE_MULTI_DOMAIN_MESH_SIDE_DIM = 11;
 
 //
 // Utilities
@@ -138,9 +139,9 @@ void get_valid_multi_domain_test_data(Node &data, const int num_domains)
     {
         Node domain;
         conduit::blueprint::mesh::examples::braid("uniform",
-                                                  EXAMPLE_MESH_SIDE_DIM,
-                                                  EXAMPLE_MESH_SIDE_DIM,
-                                                  EXAMPLE_MESH_SIDE_DIM,
+                                                  EXAMPLE_MULTI_DOMAIN_MESH_SIDE_DIM,
+                                                  EXAMPLE_MULTI_DOMAIN_MESH_SIDE_DIM,
+                                                  EXAMPLE_MULTI_DOMAIN_MESH_SIDE_DIM,
                                                   domain);
 
         domain["coordsets/coords/origin/x"] = -10.0 + 20.0 * i;
@@ -404,9 +405,9 @@ TEST(ascent_rover, test_xray_blueprint_braid_uniform_multi_domain)
         time: 3.1414999961853
         cycle: 0
         xray_view: 
-            position: [10.0, 3.57627868652344e-07, 48.9897956848145]
+            position: [10.0, 0.0, 48.9897956848145]
             zoom: 1.0
-            look_at: [10.0, 3.57627868652344e-07, 3.57627868652344e-07]
+            look_at: [10.0, 0.0, 0.0]
             up: [0.0, 1.0, 0.0]
             fov: 60.0
             xpan: 0.0
@@ -430,7 +431,7 @@ TEST(ascent_rover, test_xray_blueprint_braid_uniform_multi_domain)
             detector_height: 5.65685440236809
             intensity_max: 213.735064037837
             intensity_min: 0.0
-            optical_depth_max: 3616.85577975963
+            optical_depth_max: 3683.56120526528
             optical_depth_min: 0.0
             image_topo_order_of_domain_variables: "xyz"
         domain_id: 0
@@ -521,7 +522,7 @@ TEST(ascent_rover, test_xray_blueprint_braid_uniform_multi_domain_rotated)
         xray_view: 
             position: [40.0, 34.6410140991211, 17.3205070495605]
             zoom: 1.0
-            look_at: [10.0, 3.57627868652344e-07, 3.57627868652344e-07]
+            look_at: [10.0, 0.0, 0.0]
             up: [0.0, 1.0, 0.0]
             fov: 60.0
             xpan: 0.0
@@ -548,7 +549,7 @@ TEST(ascent_rover, test_xray_blueprint_braid_uniform_multi_domain_rotated)
             detector_height: 5.65685440236809
             intensity_max: 173.205078125
             intensity_min: 12.3400001525879
-            optical_depth_max: 3152.70922851562
+            optical_depth_max: 3120.77880859375
             optical_depth_min: 0.0
             image_topo_order_of_domain_variables: "xyz"
         domain_id: 0
