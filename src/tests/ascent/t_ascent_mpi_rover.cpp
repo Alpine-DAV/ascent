@@ -152,7 +152,7 @@ TEST(ascent_rover, test_xray_mpi_blueprint_braid_uniform_multi_domain)
 
     if (0 == par_rank)
     {
-        ASCENT_INFO("Testing x-ray extract using MPI on a conduit braid_uniform_multi_domain example mesh\n");
+        ASCENT_INFO("Testing xray extract using MPI on a conduit braid_uniform_multi_domain example mesh\n");
     }
 
     if (is_vtkm_disabled())
@@ -239,7 +239,7 @@ TEST(ascent_rover, test_xray_mpi_blueprint_braid_uniform_multi_domain)
                 optical_depth_min: 0.0
                 image_topo_order_of_domain_variables: "xyz"
             domain_id: 0
-            )yaml";
+        )yaml";
     
         Node baseline_data;
         baseline_data.parse(yaml);
@@ -280,7 +280,7 @@ TEST(ascent_rover, test_xray_mpi_blueprint_braid_uniform_multi_domain_rotated)
 
     if (0 == par_rank)
     {
-        ASCENT_INFO("Testing x-ray extract using MPI on a conduit braid_uniform_multi_domain example mesh (rotated)\n");
+        ASCENT_INFO("Testing xray extract using MPI on a conduit braid_uniform_multi_domain example mesh (rotated)\n");
     }
 
     if (is_vtkm_disabled())
@@ -372,7 +372,7 @@ TEST(ascent_rover, test_xray_mpi_blueprint_braid_uniform_multi_domain_rotated)
                 optical_depth_min: 0.0
                 image_topo_order_of_domain_variables: "xyz"
             domain_id: 0
-            )yaml";
+        )yaml";
     
         Node baseline_data;
         baseline_data.parse(yaml);

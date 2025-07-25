@@ -132,6 +132,35 @@ get_valid_test_data(Node &data)
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data, verify_info));
 }
 
+void get_valid_multi_domain_test_data(Node &data, const int num_domains)
+{
+    for(int i = 0; i < num_domains; i++)
+    {
+        Node domain;
+        conduit::blueprint::mesh::examples::braid("uniform",
+                                                  EXAMPLE_MESH_SIDE_DIM,
+                                                  EXAMPLE_MESH_SIDE_DIM,
+                                                  EXAMPLE_MESH_SIDE_DIM,
+                                                  domain);
+
+        domain["coordsets/coords/origin/x"] = -10.0 + 20.0 * i;
+        domain["state/domain_id"] = i;
+        domain["state/cycle"] = 0;
+        domain["fields/rank"].set(domain["fields/radial"]);
+
+        float64_array rank_vals = domain["fields/rank/values"].value();
+        for(index_t j = 0; j < rank_vals.number_of_elements(); j++)
+        {
+            rank_vals[j] = static_cast<float64>(i);
+        }
+
+        data.append().set(domain);
+    }
+
+    Node verify_info;
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data, verify_info));
+}
+
 const bool
 is_vtkm_disabled()
 {
@@ -316,6 +345,237 @@ TEST(ascent_rover, test_xray_blueprint_braid_rotated)
 
     // Dump info
     std::string msg = "Rendered XRay diagnostic images of an example braid mesh (rotated)";
+    ASCENT_ACTIONS_DUMP(actions, query_path, msg);
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_rover, test_xray_blueprint_braid_uniform_multi_domain)
+{
+    ASCENT_INFO("Testing xray extract on a conduit braid_uniform_multi_domain example mesh\n");
+
+    if (is_vtkm_disabled())
+    {
+        return; // Returning early is equivalent to passing the test
+    }
+
+    // Test names
+    const std::string query_name = "tout_rover_xray_blueprint_braid_uniform_multi_domain";
+    const std::string query_ext_name = "_000000.cycle_000000.root";
+
+    // Setup paths
+    const std::string output_path = prepare_output_dir();
+    const std::string query_path = conduit::utils::join_file_path(output_path, 
+                                                                  query_name);
+    const std::string output_data_path = query_path + query_ext_name;
+
+    // Remove old test image
+    const int cycle = 0;
+    remove_test_image(query_path, cycle);
+
+    // Generate and verify test data
+    Node test_data;
+    get_valid_multi_domain_test_data(test_data, 2);
+
+    // Define Ascent actions
+    Node extracts;
+    extracts["e1/type"] = "xray";
+    extracts["e1/params/rover/absorption"] = "radial";
+    extracts["e1/params/rover/emission"] = "radial";
+    extracts["e1/params/rover/filename"] = query_path;
+    extracts["e1/params/rover/output_type"] = "json";
+    extracts["e1/params/rover/precision"] = "double";
+    extracts["e1/params/rover/unit_scalar"] = 1.234f;
+
+    Node actions;
+    Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    add_extracts["extracts"] = extracts;
+
+    // Execute Ascent actions
+    execute_ascent(test_data, actions);
+
+    // Load and verify output mesh
+    Node xray_blueprint_output, verify_info;
+    load_and_verify_local_data(xray_blueprint_output, output_data_path);
+    Node &state_output = xray_blueprint_output["domain_000000/state"];
+
+    // Load and verify baseline data
+    const std::string yaml = R"yaml(
+        time: 3.1414999961853
+        cycle: 0
+        xray_view: 
+            position: [10.0, 3.57627868652344e-07, 48.9897956848145]
+            zoom: 1.0
+            look_at: [10.0, 3.57627868652344e-07, 3.57627868652344e-07]
+            up: [0.0, 1.0, 0.0]
+            fov: 60.0
+            xpan: 0.0
+            ypan: 0.0
+            near_plane: 4.89897966384888
+            far_plane: 489.89794921875
+        xray_query: 
+            background_intensity: 0.0
+            divide_emis_by_absorb: "false"
+            enable_rays_mesh: "false"
+            height: 200
+            precision: "double"
+            width: 200
+            unit_scalar: 1.23399996757507
+            absorption: "radial"
+            emission: "radial"
+            filename: ""
+            output_type: "json"
+        xray_data: 
+            detector_width: 5.65685440236809
+            detector_height: 5.65685440236809
+            intensity_max: 213.735064037837
+            intensity_min: 0.0
+            optical_depth_max: 3616.85577975963
+            optical_depth_min: 0.0
+            image_topo_order_of_domain_variables: "xyz"
+        domain_id: 0
+    )yaml";
+
+    Node baseline_data;
+    baseline_data.parse(yaml);
+    baseline_data["xray_query/filename"] = query_path;
+
+    // Diff the baseline data with our new output
+    Node diff_info;
+    const bool has_differences = baseline_data.diff(state_output,
+                                                    diff_info,
+                                                    0.01,
+                                                    true);
+    if (has_differences)
+    {
+        ASCENT_INFO("Found differences in the braid_uniform_multi_domain blueprint diff:\n");
+        diff_info.print();
+    }
+    EXPECT_FALSE(has_differences);
+
+    // Render and verify each field
+    render_all_fields(xray_blueprint_output, query_path, cycle);
+
+    // Dump info
+    std::string msg = "Rendered xray diagnostic images of an example braid_uniform_multi_domain mesh";
+    ASCENT_ACTIONS_DUMP(actions, query_path, msg);
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_rover, test_xray_blueprint_braid_uniform_multi_domain_rotated)
+{
+    ASCENT_INFO("Testing xray extract on a conduit braid_uniform_multi_domain example mesh (rotated)\n");
+
+    if (is_vtkm_disabled())
+    {
+        return; // Returning early is equivalent to passing the test
+    }
+
+    // Test names
+    const std::string query_name = "tout_rover_xray_blueprint_braid_uniform_multi_domain_rotated";
+    const std::string query_ext_name = "_000000.cycle_000000.root";
+
+    // Setup paths
+    const std::string output_path = prepare_output_dir();
+    const std::string query_path = conduit::utils::join_file_path(output_path, 
+                                                                  query_name);
+    const std::string output_data_path = query_path + query_ext_name;
+
+    // Remove old test image
+    const int cycle = 0;
+    remove_test_image(query_path, cycle);
+
+    // Generate and verify test data
+    Node test_data;
+    get_valid_multi_domain_test_data(test_data, 2);
+
+    // Define Ascent actions
+    Node extracts;
+    extracts["e1/type"] = "xray";
+    extracts["e1/params/rover/absorption"] = "radial";
+    extracts["e1/params/rover/emission"] = "radial";
+    extracts["e1/params/rover/filename"] = query_path;
+    extracts["e1/params/rover/output_type"] = "yaml";
+    extracts["e1/params/rover/background_intensity"] = 12.34f;
+    extracts["e1/params/rover/enable_rays_mesh"] = "true";
+    extracts["e1/params/camera/azimuth"] = 60.0;
+    extracts["e1/params/camera/elevation"] = 45.0;
+
+    Node actions;
+    Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    add_extracts["extracts"] = extracts;
+
+    // Execute Ascent actions
+    execute_ascent(test_data, actions);
+
+    // Load and verify output mesh
+    Node xray_blueprint_output, verify_info;
+    load_and_verify_local_data(xray_blueprint_output, output_data_path);
+    Node &state_output = xray_blueprint_output["domain_000000/state"];
+
+    // Load and verify baseline data
+    const std::string yaml = R"yaml(
+        time: 3.1414999961853
+        cycle: 0
+        xray_view: 
+            position: [40.0, 34.6410140991211, 17.3205070495605]
+            zoom: 1.0
+            look_at: [10.0, 3.57627868652344e-07, 3.57627868652344e-07]
+            up: [0.0, 1.0, 0.0]
+            fov: 60.0
+            xpan: 0.0
+            ypan: 0.0
+            near_plane: 4.89897966384888
+            far_plane: 489.89794921875
+        xray_query: 
+            background_intensity: 12.3400001525879
+            divide_emis_by_absorb: "false"
+            enable_rays_mesh: "true"
+            height: 200
+            precision: "single"
+            width: 200
+            unit_scalar: 1.0
+            absorption: "radial"
+            emission: "radial"
+            filename: ""
+            output_type: "yaml"
+            camera: 
+                azimuth: 60.0
+                elevation: 45.0
+        xray_data: 
+            detector_width: 5.65685440236809
+            detector_height: 5.65685440236809
+            intensity_max: 173.205078125
+            intensity_min: 12.3400001525879
+            optical_depth_max: 3152.70922851562
+            optical_depth_min: 0.0
+            image_topo_order_of_domain_variables: "xyz"
+        domain_id: 0
+    )yaml";
+
+    Node baseline_data;
+    baseline_data.parse(yaml);
+    baseline_data["xray_query/filename"] = query_path;
+
+    // Diff the baseline data with our new output
+    Node diff_info;
+    const bool has_differences = baseline_data.diff(state_output,
+                                                    diff_info,
+                                                    0.01,
+                                                    true);
+    if (has_differences)
+    {
+        ASCENT_INFO("Found differences in the braid_uniform_multi_domain blueprint diff (rotated):\n");
+        diff_info.print();
+    }
+    EXPECT_FALSE(has_differences);
+
+    // Render and verify each field
+    render_all_fields(xray_blueprint_output, query_path, cycle);
+
+    // Dump info
+    std::string msg = "Rendered xray diagnostic images of an example braid_uniform_multi_domain mesh (rotated)";
     ASCENT_ACTIONS_DUMP(actions, query_path, msg);
 }
 
