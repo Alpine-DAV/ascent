@@ -71,7 +71,6 @@ def gen_sphinx_entry(release_id,src):
     txt += "* Released {0}\n".format(release_date(release_id,src))
     txt += "* `Source Tarball <https://github.com/Alpine-DAV/ascent/releases/download/v{0}/ascent-v{0}-src-with-blt.tar.gz>`__\n\n".format(release_id)
     txt += "* Docker Containers\n"
-    txt += "   * ``alpinedav/ascent:{0}``\n".format(release_id)
     txt += "   * ``alpinedav/ascent-jupyter:{0}``\n\n".format(release_id)
     txt += "Highlights\n"
     txt += "++++++++++++++++++++++++++++++++++++\n\n"
