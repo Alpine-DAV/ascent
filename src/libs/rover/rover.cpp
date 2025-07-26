@@ -125,6 +125,7 @@ Rover::get_mpi_comm_handle()
 void
 Rover::create_scheduler()
 {
+  // Each MPI rank creates its own scheduler
   const std::string precision = rover::settings["precision"].as_string();
   if ("double" == precision)
   {
@@ -174,6 +175,7 @@ Rover::update_camera()
 
   // The order in which these parameters are applied matters
   // TODO: Match the ordering in #1547 once it's done
+  // TODO: Position used to be a param, but now it's gone. Should add it back
   const Node &camera_params = rover::settings["camera"];
 
   if (camera_params.has_child("azimuth"))

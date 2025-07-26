@@ -82,6 +82,7 @@ public:
                                  const vtkmVec3f &up);
 
 protected:
+  int                                       m_num_local_domains;
   std::vector<Domain>                       m_domains;
   RayGenerator                             *m_ray_generator;
   std::vector<vtkm::Float64>                m_background;
