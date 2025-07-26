@@ -102,6 +102,13 @@ public:
                      const vtkm::cont::CoordinateSystem& coords,
                      const vtkm::cont::Field& ghostField);
 
+  // Absporption-only case
+  void SetEnergyData(const vtkm::cont::Field& absorption,
+                     const vtkm::Int32 numBins,
+                     const vtkm::cont::UnknownCellSet& cellSet,
+                     const vtkm::cont::CoordinateSystem& coords);
+
+  // Absorption + Emission case
   void SetEnergyData(const vtkm::cont::Field& absorption,
                      const vtkm::Int32 numBins,
                      const vtkm::cont::UnknownCellSet& cellSet,

@@ -216,13 +216,13 @@ TypedScheduler<FloatType>::composite()
 {
   // TODO: Combine AbsorptionPartial and EmissionPartial
   const std::string emission = rover::settings["emission"].as_string();
-  if (!emission.empty())
-  {
-    typed_composite<vtkh::EmissionPartial<FloatType>>();
-  }
-  else // (emission.empty())
+  if (emission.empty())
   {
     typed_composite<vtkh::AbsorptionPartial<FloatType>>();
+  }
+  else // (!emission.empty())
+  {
+    typed_composite<vtkh::EmissionPartial<FloatType>>();
   }
   ROVER_INFO("Schedule: compositing complete");
 }

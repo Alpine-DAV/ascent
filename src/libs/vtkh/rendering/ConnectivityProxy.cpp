@@ -43,8 +43,9 @@ public:
     CompositeBackground = true;
     if (!fieldName.empty())
     {
-      this->SetScalarField(fieldName);
+      SetScalarField(fieldName);
     }
+    EmissionFieldName = "";
   }
 
   VTKM_CONT
@@ -94,21 +95,22 @@ public:
   void SetDebugPrints(bool on) { Tracer.SetDebugOn(on); }
 
   VTKM_CONT
-  void SetEpsilon(vtkm::Float64 epsilon) { Tracer.SetEpsilon(epsilon); }
+  void SetEpsilon(vtkm::Float64 epsilon)
+  {
+    Tracer.SetEpsilon(epsilon);
+  }
 
   VTKM_CONT
   void SetEmissionField(const std::string& fieldName)
   {
-    if (this->Mode != RenderMode::Energy)
-    {
-      throw vtkm::cont::ErrorBadValue(
-        "Conn Proxy: energy mode must be set before setting emission field");
-    }
-    this->EmissionFieldName = fieldName;
+    EmissionFieldName = fieldName;
   }
 
   VTKM_CONT
-  vtkm::Bounds GetSpatialBounds() const { return SpatialBounds; }
+  vtkm::Bounds GetSpatialBounds() const
+  {
+    return SpatialBounds;
+  }
 
   VTKM_CONT
   vtkm::Range GetScalarFieldRange()
@@ -120,10 +122,16 @@ public:
   }
 
   VTKM_CONT
-  void SetScalarRange(const vtkm::Range& range) { this->ScalarRange = range; }
+  void SetScalarRange(const vtkm::Range& range)
+  {
+    ScalarRange = range;
+  }
 
   VTKM_CONT
-  vtkm::Range GetScalarRange() { return this->ScalarRange; }
+  vtkm::Range GetScalarRange()
+  {
+    return this->ScalarRange;
+  }
 
   VTKM_CONT
   void Trace(vtkm::rendering::raytracing::Ray<vtkm::Float64>& rays)
@@ -176,16 +184,17 @@ public:
   void PartialTrace(vtkm::rendering::raytracing::Ray<vtkm::Float64> &rays,
                     PartialVector64 &partials)
   {
-    if (this->Mode == RenderMode::Volume)
+    if (EmissionFieldName.empty())
     {
-      Tracer.SetVolumeData(this->Dataset.GetField(this->FieldName),
-                           this->ScalarRange,
+      // Absorption-only case
+      Tracer.SetEnergyData(this->Dataset.GetField(this->FieldName),
+                           rays.Buffers.at(0).GetNumChannels(),
                            this->Dataset.GetCellSet(),
-                           this->Dataset.GetCoordinateSystem(this->CoordinateName),
-                           this->Dataset.GetGhostCellField());
+                           this->Dataset.GetCoordinateSystem(this->CoordinateName));
     }
-    else
+    else // if (!EmissionFieldName.empty())
     {
+      // Absorption + Emission case
       Tracer.SetEnergyData(this->Dataset.GetField(this->FieldName),
                            rays.Buffers.at(0).GetNumChannels(),
                            this->Dataset.GetCellSet(),
@@ -200,16 +209,17 @@ public:
   void PartialTrace(vtkm::rendering::raytracing::Ray<vtkm::Float32>& rays,
                     PartialVector32 &partials)
   {
-    if (this->Mode == RenderMode::Volume)
+    if (EmissionFieldName.empty())
     {
-      Tracer.SetVolumeData(this->Dataset.GetField(this->FieldName),
-                           this->ScalarRange,
+      // Absorption-only case
+      Tracer.SetEnergyData(this->Dataset.GetField(this->FieldName),
+                           rays.Buffers.at(0).GetNumChannels(),
                            this->Dataset.GetCellSet(),
-                           this->Dataset.GetCoordinateSystem(this->CoordinateName),
-                           this->Dataset.GetGhostCellField());
+                           this->Dataset.GetCoordinateSystem(this->CoordinateName));
     }
-    else
+    else // if (!EmissionFieldName.empty())
     {
+      // Absorption + Emission case
       Tracer.SetEnergyData(this->Dataset.GetField(this->FieldName),
                            rays.Buffers.at(0).GetNumChannels(),
                            this->Dataset.GetCellSet(),
