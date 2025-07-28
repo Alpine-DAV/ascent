@@ -940,39 +940,12 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
   image_coords["units/y"] = "pixels";
   image_coords["units/z"] = "bins";
 
-  // if (m_render_settings.m_render_mode == energy) // removing volume renderer
-  // {
-
   // Topology
   Node &image_topo = topologies["image_topo"];
   image_topo["coordset"] = "image_coords";
   image_topo["type"] = "rectilinear";
 
-  if (!m_result.has_intensity(0) || !m_result.has_optical_depth(0))
-  {
-    ROVER_ERROR("intensity and optical depth must both be available")
-  }
-
-  // Fields
-  Node &intensities = fields["intensities"];
-  intensities["topology"] = "image_topo";
-  intensities["association"] = "element";
-  intensities["units"] = "intensity units";
-  vtkm::cont::ArrayHandle<FloatType> intensity_values = m_result.flatten_intensity_values();
-  FloatType *intensity_buffer = get_vtkm_ptr(intensity_values);
-  const int num_intensity_values = intensity_values.GetNumberOfValues();
-
-  auto intensity_min_max = std::minmax_element(intensity_buffer, intensity_buffer + num_intensity_values);
-  xray_data["intensity_max"].set(intensity_min_max.second);
-  xray_data["intensity_min"].set(intensity_min_max.first);
-  
-  intensities["values"].set(intensity_buffer, num_intensity_values);
-  intensities["strides"].set(DataType::int64(3));
-  int64_array strides = intensities["strides"].value();
-  strides[0] = 1;
-  strides[1] = image_width;
-  strides[2] = image_width * image_height;
-
+  // Image field
   Node &optical_depth = fields["optical_depth"];
   optical_depth["topology"] = "image_topo";
   optical_depth["association"] = "element";
@@ -986,7 +959,42 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
   xray_data["optical_depth_min"].set(optical_min_max.first);
 
   optical_depth["values"].set(optical_buffer, num_optical_values);
-  optical_depth["strides"].set(intensities["strides"]);
+  optical_depth["strides"].set(DataType::int64(3));
+  int64_array strides = optical_depth["strides"].value();
+  strides[0] = 1;
+  strides[1] = image_width;
+  strides[2] = image_width * image_height;
+
+  // Spatial field
+  Node &optical_depth_spatial = fields["optical_depth_spatial"];
+  optical_depth_spatial.set(optical_depth);
+  optical_depth_spatial["topology"] = "spatial_topo";
+
+  // Intensity is only available in the absorption + emission case
+  const std::string emission = rover::settings["emission"].as_string();
+  if (!emission.empty())
+  {
+    // Image field
+    Node &intensities = fields["intensities"];
+    intensities["topology"] = "image_topo";
+    intensities["association"] = "element";
+    intensities["units"] = "intensity units";
+    vtkm::cont::ArrayHandle<FloatType> intensity_values = m_result.flatten_intensity_values();
+    FloatType *intensity_buffer = get_vtkm_ptr(intensity_values);
+    const int num_intensity_values = intensity_values.GetNumberOfValues();
+  
+    auto intensity_min_max = std::minmax_element(intensity_buffer, intensity_buffer + num_intensity_values);
+    xray_data["intensity_max"].set(intensity_min_max.second);
+    xray_data["intensity_min"].set(intensity_min_max.first);
+    
+    intensities["values"].set(intensity_buffer, num_intensity_values);
+    intensities["strides"].set(strides);
+
+    // Spatial field
+    Node &intensities_spatial = fields["intensities_spatial"];
+    intensities_spatial.set(intensities);
+    intensities_spatial["topology"] = "spatial_topo";
+  }
 
   //
   // Spatial mesh
@@ -1030,15 +1038,6 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
   Node &spatial_topo = topologies["spatial_topo"];
   spatial_topo["coordset"] = "spatial_coords";
   spatial_topo["type"] = "rectilinear";
-
-  // Fields
-  Node &intensities_spatial = fields["intensities_spatial"];
-  intensities_spatial.set(intensities);
-  intensities_spatial["topology"] = "spatial_topo";
-
-  Node &optical_depth_spatial = fields["optical_depth_spatial"];
-  optical_depth_spatial.set(optical_depth);
-  optical_depth_spatial["topology"] = "spatial_topo";
 
   //
   // Near plane mesh
@@ -1119,8 +1118,6 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
                               left,
                               up);
   }
-
-  // } // removing volume renderer
 
   Node verify;
   if (!blueprint::verify("mesh", data, verify))

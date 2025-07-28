@@ -77,6 +77,26 @@ render_blueprint(const string &field_name,
 }
 
 void
+render_optical_depth_fields(const Node &data,
+                            const std::string output_path,
+                            const int cycle)
+{
+    const std::vector<std::string> fields {
+        "optical_depth",
+        "optical_depth_spatial"
+    };
+
+    // TODO: Investigate whether we gain any performance by rendering all of these fields with
+    // a single set of actions
+    for (const auto& field : fields)
+    {
+        std::string full_output_path = output_path + "_" + field;
+        render_blueprint(field, full_output_path, data);
+        EXPECT_TRUE(check_test_image(full_output_path, 0.01f, cycle));
+    }
+}
+
+void
 render_all_fields(const Node &data,
                   const std::string output_path,
                   const int cycle)
@@ -385,7 +405,6 @@ TEST(ascent_rover, test_xray_blueprint_braid_absorption_only)
     extracts["e1/params/rover/filename"] = query_path;
     extracts["e1/params/rover/output_type"] = "yaml";
     extracts["e1/params/rover/precision"] = "double";
-    extracts["e1/params/rover/unit_scalar"] = 0.000001f;
 
     Node actions;
     Node &add_extracts = actions.append();
@@ -421,16 +440,16 @@ TEST(ascent_rover, test_xray_blueprint_braid_absorption_only)
             height: 200
             precision: "double"
             width: 200
-            unit_scalar: 9.99999997475243e-07
+            unit_scalar: 1.0
             absorption: "radial"
-            emission: ""
+            emission:
             output_type: "yaml"
           xray_data: 
             detector_width: 4.00000016604152
             detector_height: 4.00000016604152
-            intensity_max: 0.0
-            intensity_min: 0.0
-            optical_depth_max: 0.00269802743715428
+            intensity_max:
+            intensity_min:
+            optical_depth_max: 2698.02744396615
             optical_depth_min: 0.0
             image_topo_order_of_domain_variables: "xyz"
           domain_id: 0
@@ -454,7 +473,7 @@ TEST(ascent_rover, test_xray_blueprint_braid_absorption_only)
     EXPECT_FALSE(has_differences);
 
     // Render and verify each field
-    render_all_fields(xray_blueprint_output, query_path, cycle);
+    render_optical_depth_fields(xray_blueprint_output, query_path, cycle);
 
     // Dump info
     std::string msg = "Rendered XRay diagnostic images of an example braid mesh (absorption only)";

@@ -63,12 +63,13 @@ Engine::init_emission(vtkmRayTracing::Ray<Precision> &rays,
   if (emission.empty())
   {
     ROVER_INFO("Engine::init_emission: emission not specified");
-    return; // Return early if emission was not specified
   }
-  
-  m_tracer->SetEmissionField(emission);
-  rays.AddBuffer(num_bins, "emission");
-  rays.GetBuffer("emission").InitConst(0.0f);
+  else
+  {
+    m_tracer->SetEmissionField(emission);
+    rays.AddBuffer(num_bins, "emission");
+    rays.GetBuffer("emission").InitConst(0.0f);
+  }
 }
 
 void
@@ -126,8 +127,8 @@ Engine::get_num_channels()
   ArraySizeFunctor functor(&absorption_size);
   const std::string absorption = rover::settings["absorption"].as_string();
   m_dataset.GetField(absorption).
-                      GetData().
-                      CastAndCallForTypes<vtkm::TypeListAll, VTKM_DEFAULT_STORAGE_LIST>(functor);
+                     GetData().
+                     CastAndCallForTypes<vtkm::TypeListAll, VTKM_DEFAULT_STORAGE_LIST>(functor);
   vtkm::Id num_cells = m_dataset.GetCellSet().GetNumberOfCells();
 
   // TODO: Seemingly redundant assert followed by a check that num_cells == 0

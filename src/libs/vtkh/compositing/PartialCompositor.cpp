@@ -76,7 +76,6 @@ void BlendPartials(const int &total_segments,
     // TODO: we could just count the amount of work and make this a for loop(vectorize??)
     while (result.m_pixel_id == next.m_pixel_id)
     {
-      result.blend(next);
       result.blend_optical_depth(next);
       if (current_index + 1 >= total_partial_comps)
       {

@@ -703,19 +703,17 @@ public:
                                 FieldIn,         // cell exit distance
                                 FieldInOut,      // current distance
                                 WholeArrayIn,    // cell absorption data array
-                                WholeArrayInOut, // ray absorption data
                                 WholeArrayInOut, // optical depth data
                                 FieldIn);        // current cell
 
-  using ExecutionSignature = void(_1, _2, _3, _4, _5, _6, _7, _8, WorkIndex);
+  using ExecutionSignature = void(_1, _2, _3, _4, _5, _6, _7, WorkIndex);
 
   template <typename FloatType, typename CellDataPortalType, typename RayDataPortalType>
   VTKM_EXEC inline void operator()(const vtkm::UInt8& rayStatus,
                                    const FloatType& enterDistance,
                                    const FloatType& exitDistance,
                                    FloatType& currentDistance,
-                                   const CellDataPortalType& absorbData,
-                                   RayDataPortalType& absorptionBins,
+                                   const CellDataPortalType& absorbtionData,
                                    RayDataPortalType& opticalDepthBins,
                                    const vtkm::Id& currentCell,
                                    const vtkm::Id& rayIndex) const
@@ -732,19 +730,13 @@ public:
     for (vtkm::Int32 i = 0; i < NumBins; i++)
     {
       const int cellOffsetI = cellOffset + i;
-      BOUNDS_CHECK(absorbData, cellOffsetI);
-      FloatType absorb = static_cast<FloatType>(absorbData.Get(cellOffsetI));
-
+      BOUNDS_CHECK(absorbtionData, cellOffsetI);
+      FloatType absorb = static_cast<FloatType>(absorbtionData.Get(cellOffsetI));
       absorb *= UnitScalar;
-      FloatType tmp = vtkm::Exp(-absorb * segmentLength);
 
       const int rayOffsetI = rayOffset + i;
-      BOUNDS_CHECK(absorptionBins, rayOffsetI);
-      FloatType absorbIntensity = static_cast<FloatType>(absorptionBins.Get(rayOffsetI));
       BOUNDS_CHECK(opticalDepthBins, rayOffsetI);
       FloatType opticalDepth = static_cast<FloatType>(opticalDepthBins.Get(rayOffsetI));
-
-      absorptionBins.Set(rayOffsetI, absorbIntensity * tmp);
       opticalDepthBins.Set(rayOffsetI, opticalDepth + absorb * segmentLength);
     }
     currentDistance = exitDistance;
@@ -1347,11 +1339,11 @@ void ConnectivityTracer::IntegrateCells(vtkm::rendering::raytracing::Ray<FloatTy
   vtkm::cont::Timer timer;
   timer.Start();
 
-  vtkm::cont::ArrayHandle<FloatType> absorption = rays.Buffers.at(0).Buffer;
   vtkm::cont::ArrayHandle<FloatType> optical_depth = rays.GetBuffer("optical_depths").Buffer;
 
   if (HasEmission)
   {
+    vtkm::cont::ArrayHandle<FloatType> absorption = rays.Buffers.at(0).Buffer;
     vtkm::cont::ArrayHandle<FloatType> emission = rays.GetBuffer("emission").Buffer;
     vtkm::worklet::DispatcherMapField<IntegrateEmission> dispatcher(IntegrateEmission(rays.Buffers.at(0).GetNumChannels(),
                                                                     UnitScalar,
@@ -1376,7 +1368,6 @@ void ConnectivityTracer::IntegrateCells(vtkm::rendering::raytracing::Ray<FloatTy
                       *(tracker.ExitDist),
                       rays.Distance,
                       vtkm::rendering::raytracing::GetScalarFieldArray(ScalarField),
-                      absorption,
                       optical_depth,
                       rays.HitIdx);
   }
@@ -1548,13 +1539,13 @@ void ConnectivityTracer::PartialTrace(vtkm::rendering::raytracing::Ray<FloatType
     IntegrateMeshSegment(rays);
 
     PartialComposite<FloatType> partial;
-    partial.Transmission = rays.Buffers.at(0).Copy();
     partial.OpticalDepth = rays.GetBuffer("optical_depths").Copy();
     vtkm::cont::Algorithm::Copy(rays.Distance, partial.Distances);
     vtkm::cont::Algorithm::Copy(rays.PixelIdx, partial.PixelIds);
 
     if (HasEmission)
     {
+      partial.Transmission = rays.Buffers.at(0).Copy();
       partial.Intensity = rays.GetBuffer("emission").Copy();
     }
 
@@ -1566,11 +1557,11 @@ void ConnectivityTracer::PartialTrace(vtkm::rendering::raytracing::Ray<FloatType
     partials.push_back(partial);
 
     // reset buffers
-    rays.Buffers.at(0).InitConst(1.0f);
     rays.GetBuffer("optical_depths").InitConst(0.0f);
 
     if (HasEmission)
     {
+      rays.Buffers.at(0).InitConst(1.0f);
       rays.GetBuffer("emission").InitConst(0.0f);
     }
 
