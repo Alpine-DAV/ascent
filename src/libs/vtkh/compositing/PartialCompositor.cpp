@@ -376,12 +376,12 @@ PartialCompositor<PartialType>::composite_partials(std::vector<PartialType> &par
 #endif
   for(int i = 1; i < n_minus_one; i++)
   {
-    bool is_begining = false;
+    bool is_beginning = false;
     bool has_compositing_work = false;
 
     if (partials[i].m_pixel_id != partials[i - 1].m_pixel_id)
     {
-      is_begining = true;
+      is_beginning = true;
     }
 
     if (partials[i].m_pixel_id == partials[i + 1].m_pixel_id)
@@ -389,7 +389,7 @@ PartialCompositor<PartialType>::composite_partials(std::vector<PartialType> &par
       has_compositing_work = true;
     }
 
-    if (is_begining)
+    if (is_beginning)
     {
       if (has_compositing_work)
       {
