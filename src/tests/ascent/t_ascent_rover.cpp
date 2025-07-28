@@ -350,6 +350,118 @@ TEST(ascent_rover, test_xray_blueprint_braid_rotated)
 }
 
 //-----------------------------------------------------------------------------
+TEST(ascent_rover, test_xray_blueprint_braid_absorption_only)
+{
+    ASCENT_INFO("Testing xray extract on conduit braid example (absorption only)\n");
+
+    if (is_vtkm_disabled())
+    {
+        return; // Returning early is equivalent to passing the test
+    }
+
+    // Test names
+    const std::string query_name = "tout_rover_xray_blueprint_braid_absorption_only";
+    const std::string query_ext_name = "_000100.cycle_000100.root";
+
+    // Setup paths
+    const std::string output_path = prepare_output_dir();
+    const std::string query_path = conduit::utils::join_file_path(output_path,
+                                                                  query_name);
+    const std::string output_data_path = query_path + query_ext_name;
+
+    // Remove old test image
+    const int cycle = 100;
+    remove_test_image(query_path, cycle);
+
+    // Generate and verify test data
+    Node test_data;
+    get_valid_test_data(test_data);
+
+    // Define Ascent actions
+    Node extracts;
+    extracts["e1/type"] = "xray";
+    extracts["e1/params/rover/absorption"] = "radial";
+    extracts["e1/params/rover/emission"] = "";
+    extracts["e1/params/rover/filename"] = query_path;
+    extracts["e1/params/rover/output_type"] = "yaml";
+    extracts["e1/params/rover/precision"] = "double";
+    extracts["e1/params/rover/unit_scalar"] = 0.000001f;
+
+    Node actions;
+    Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    add_extracts["extracts"] = extracts;
+
+    // Execute Ascent actions
+    execute_ascent(test_data, actions);
+
+    // Load and verify output mesh
+    Node xray_blueprint_output, verify_info;
+    load_and_verify_local_data(xray_blueprint_output, output_data_path);
+    Node &state_output = xray_blueprint_output["domain_000000/state"];
+
+    // Load and verify baseline data
+    const std::string yaml = R"yaml(
+          time: 3.1414999961853
+          cycle: 100
+          xray_view: 
+            position: [0.0, 0.0, 34.6410179138184]
+            zoom: 1.0
+            look_at: [0.0, 0.0, 0.0]
+            up: [0.0, 1.0, 0.0]
+            fov: 60.0
+            xpan: 0.0
+            ypan: 0.0
+            near_plane: 3.46410179138184
+            far_plane: 346.410186767578
+          xray_query: 
+            background_intensity: 0.0
+            divide_emis_by_absorb: "false"
+            enable_rays_mesh: "false"
+            height: 200
+            precision: "double"
+            width: 200
+            unit_scalar: 9.99999997475243e-07
+            absorption: "radial"
+            emission: ""
+            output_type: "yaml"
+          xray_data: 
+            detector_width: 4.00000016604152
+            detector_height: 4.00000016604152
+            intensity_max: 0.0
+            intensity_min: 0.0
+            optical_depth_max: 0.00269802743715428
+            optical_depth_min: 0.0
+            image_topo_order_of_domain_variables: "xyz"
+          domain_id: 0
+      )yaml";
+
+    Node baseline_data;
+    baseline_data.parse(yaml);
+    baseline_data["xray_query/filename"] = query_path;
+
+    // Diff the baseline data with our new output
+    Node diff_info;
+    const bool has_differences = baseline_data.diff(state_output,
+                                                    diff_info,
+                                                    0.01,
+                                                    true);
+    if (has_differences)
+    {
+        ASCENT_INFO("Found differences in the braid blueprint diff (absorption only):\n");
+        diff_info.print();
+    }
+    EXPECT_FALSE(has_differences);
+
+    // Render and verify each field
+    render_all_fields(xray_blueprint_output, query_path, cycle);
+
+    // Dump info
+    std::string msg = "Rendered XRay diagnostic images of an example braid mesh (absorption only)";
+    ASCENT_ACTIONS_DUMP(actions, query_path, msg);
+}
+
+//-----------------------------------------------------------------------------
 TEST(ascent_rover, test_xray_blueprint_braid_uniform_multi_domain)
 {
     ASCENT_INFO("Testing xray extract on a conduit braid_uniform_multi_domain example mesh\n");
