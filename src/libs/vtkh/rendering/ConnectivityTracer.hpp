@@ -7,6 +7,11 @@
 //  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
 //  PURPOSE.  See the above copyright notice for more information.
 //============================================================================
+
+//
+// This code was originally pulled in from Viskores.
+//
+
 #ifndef vtkh_rendering_raytracing_ConnectivityTracer_h
 #define vtkh_rendering_raytracing_ConnectivityTracer_h
 
