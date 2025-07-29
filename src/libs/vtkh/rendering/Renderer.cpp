@@ -5,6 +5,10 @@
 #include <vtkh/utils/vtkm_array_utils.hpp>
 #include <vtkh/utils/vtkm_dataset_info.hpp>
 #include <vtkm/rendering/raytracing/Logger.h>
+#include <vtkm/rendering/MapperCylinder.h>
+
+
+#include <png_utils/ascent_png_encoder.hpp>
 
 namespace vtkh {
 
@@ -211,8 +215,19 @@ Renderer::DoExecute()
     throw Error(msg);
   }
 
-  int total_renders = static_cast<int>(m_renders.size());
+  bool is_lines = m_input->IsLineMesh();
+  if(is_lines)
+  { 
+    typedef vtkm::rendering::MapperCylinder TracerType;
+    auto mapper = std::make_shared<TracerType>();
+    vtkm::Bounds bounds = m_input->GetBounds();
+    vtkm::FloatDefault diagonal = vtkm::Magnitude(bounds.MaxCorner() - bounds.MinCorner());
+    //TODO: user input radius
+    mapper->SetRadius(0.001 * diagonal);
+    this->m_mapper = mapper;
+  }
 
+  int total_renders = static_cast<int>(m_renders.size());
   int num_domains = static_cast<int>(m_input->GetNumberOfDomains());
   for(int dom = 0; dom < num_domains; ++dom)
   {
