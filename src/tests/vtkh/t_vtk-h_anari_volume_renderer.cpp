@@ -10,7 +10,7 @@
 #include <vtkh/DataSet.hpp>
 #include <vtkh/filters/IsoVolume.hpp>
 #include <vtkh/rendering/Scene.hpp>
-#include <vtkh/rendering/ANARIVolumeRenderer.hpp>
+#include <vtkh/rendering/ANARIRenderer.hpp>
 #include "t_vtkm_test_utils.hpp"
 
 #include <iostream>
@@ -65,7 +65,7 @@ TEST(vtkh_volume_renderer, vtkh_parallel_render_ustructured)
   color_map.AddPointAlpha(0.0, 0.01);
   color_map.AddPointAlpha(1.0, 0.6);
 
-  vtkh::ANARIVolumeRenderer tracer;
+  vtkh::ANARIRenderer tracer;
   tracer.SetColorTable(color_map);
   tracer.SetInput(iso_output);
   tracer.SetField("point_data_Float64");
@@ -113,7 +113,7 @@ TEST(vtkh_volume_renderer, vtkh_parallel_render)
   //std::cerr << "input data in UNIT TEST START " << std::endl;
   //data_set.PrintSummary(std::cerr);
   //std::cerr << "input data in UNIT TEST END " << std::endl;
-  vtkh::ANARIVolumeRenderer tracer;
+  vtkh::ANARIRenderer tracer;
   tracer.SetColorTable(color_map);
   tracer.SetInput(&data_set);
   tracer.SetField("point_data_Float64");
