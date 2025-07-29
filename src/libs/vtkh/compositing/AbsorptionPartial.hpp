@@ -53,6 +53,7 @@ struct AbsorptionPartial
   int                    m_pixel_id;
   double                 m_depth;
   std::vector<FloatType> m_bins;
+  std::vector<FloatType> m_optical_depth_bins;
 
   AbsorptionPartial()
     : m_pixel_id(0),
@@ -77,9 +78,19 @@ struct AbsorptionPartial
   {
     const int num_bins = static_cast<int>(m_bins.size());
     assert(num_bins == (int)other.m_bins.size());
-    for(int i = 0; i < num_bins; ++i)
+    for(int i = 0; i < num_bins; i++)
     {
       m_bins[i] *= other.m_bins[i];
+    }
+  }
+
+  inline void blend_optical_depth(const AbsorptionPartial<FloatType> &other)
+  {
+    const int num_bins = static_cast<int>(m_optical_depth_bins.size());
+    assert(num_bins == (int)other.m_optical_depth_bins.size());
+    for (int i = 0; i < num_bins; i++)
+    {
+      m_optical_depth_bins[i] += other.m_optical_depth_bins[i];
     }
   }
 

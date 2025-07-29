@@ -94,6 +94,11 @@ struct VolumePartial
     m_alpha = m_alpha > 1.f ? 1.f : m_alpha;
   }
 
+  inline void blend_optical_depth(const VolumePartial<FloatType> &other)
+  {
+
+  }
+
   static void composite_background(std::vector<VolumePartial> &partials,
                                    const std::vector<FloatType> &background)
   {

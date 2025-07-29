@@ -79,26 +79,26 @@ struct PartialImage
 
   void extract_partials(std::vector<vtkh::AbsorptionPartial<FloatType>> &partials)
   {
-    const int num_bins = m_transmission.GetNumChannels();
+    const int num_bins = m_optical_depth.GetNumChannels();
     auto id_portal = m_pixel_ids.ReadPortal();
-    auto transmission_portal = m_transmission.Buffer.ReadPortal();
+    auto optical_depth_portal = m_optical_depth.Buffer.ReadPortal();
     auto depth_portal = m_distances.ReadPortal();
-    const int size = static_cast<int>(m_pixel_ids.GetNumberOfValues());
-    partials.resize(size);
+    const int num_partials = static_cast<int>(m_pixel_ids.GetNumberOfValues());
+    partials.resize(num_partials);
 
 #ifdef ROVER_OPENMP_ENABLED
     #pragma omp parallel for
 #endif
-    for (int i = 0; i < size; i++)
+    for (int i = 0; i < num_partials; i++)
     {
       partials[i].m_pixel_id = static_cast<int>(id_portal.Get(i));
       partials[i].m_depth = depth_portal.Get(i);
-      partials[i].m_bins.resize(num_bins);
+      partials[i].m_optical_depth_bins.resize(num_bins);
 
       const int starting_index = i * num_bins;
       for (int j = 0; j < num_bins; j++)
       {
-        partials[i].m_bins[j] = transmission_portal.Get(starting_index + j);
+        partials[i].m_optical_depth_bins[j] = optical_depth_portal.Get(starting_index + j);
       }
     }
   }
@@ -191,19 +191,18 @@ struct PartialImage
   void store(std::vector<vtkh::AbsorptionPartial<FloatType>> &partials,
              const std::vector<double> &background)
   {
-    const int size = static_cast<int>(partials.size());
-    const int num_bins = static_cast<int>(partials.at(0).m_bins.size());
-    allocate(size, num_bins);
+    const int num_partials = static_cast<int>(partials.size());
+    const int num_bins = static_cast<int>(partials.at(0).m_optical_depth_bins.size());
+    allocate(num_partials, num_bins);
 
     auto id_portal = m_pixel_ids.WritePortal();
-    auto transmission_portal = m_transmission.Buffer.WritePortal();
     auto depth_portal = m_distances.WritePortal();
-    auto intensity_portal = m_intensity.Buffer.WritePortal();
+    auto optical_depth_portal = m_optical_depth.Buffer.WritePortal();
 
 #ifdef ROVER_OPENMP_ENABLED
     #pragma omp parallel for
 #endif
-    for (int i = 0; i < size; i++)
+    for (int i = 0; i < num_partials; i++)
     {
       id_portal.Set(i, partials[i].m_pixel_id);
       depth_portal.Set(i, partials[i].m_depth);
@@ -211,9 +210,7 @@ struct PartialImage
       const int starting_index = i * num_bins;
       for (int j = 0; j < num_bins; j++)
       {
-        const int offset_j = starting_index + j;
-        transmission_portal.Set(offset_j, partials[i].m_bins[j]);
-        intensity_portal.Set(offset_j, partials[i].m_bins[j] * background[j]);
+        optical_depth_portal.Set(starting_index + j, partials[i].m_optical_depth_bins[j]);
       }
     }
 
@@ -231,8 +228,8 @@ struct PartialImage
     allocate(size, num_bins);
 
     auto id_portal = m_pixel_ids.WritePortal();
-    auto transmission_portal = m_transmission.Buffer.WritePortal();
     auto depth_portal = m_distances.WritePortal();
+    auto transmission_portal = m_transmission.Buffer.WritePortal();
     auto intensity_portal = m_intensity.Buffer.WritePortal();
     auto optical_depth_portal = m_optical_depth.Buffer.WritePortal();
 

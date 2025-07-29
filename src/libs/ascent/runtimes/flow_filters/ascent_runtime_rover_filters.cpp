@@ -210,15 +210,9 @@ RoverXRay::verify_params(const conduit::Node &params,
       info["errors"].append() = "Optional string parameter 'rover/emission' is not a string";
       res = false;
     }
-    else // (n_rover["emission"].dtype().is_string())
-    {
-      const std::string emission = n_rover["emission"].as_string();
-      if (emission.empty())
-      {
-        info["errors"].append() = "Optional string parameter 'rover/emission' cannot be an empty string";
-        res = false;
-      }
-    }
+    // Rover already checks if emission.empty() in the relevant places, so there's no
+    // harm in letting the user explicitly set emission to "". It is equivalent to asking
+    // for the absorption-only case, which only outputs optical depth.
   }
 
   if (n_rover.has_child("enable_rays_mesh"))
@@ -500,7 +494,7 @@ RoverXRay::execute()
   
   // Adding a dataset to rover resets the camera bounds to the dataset bounds,
   // but any camera params passed via the input params will take precedence.
-  // It also instantiates a scheduler if one doesn't already exist.
+  // It also instantiates one scheduler per MPI rank if they don't already exist.
   rover.add_dataset(dataset);
 
   // Calling execute initializes everything that rover needs based on the input params
