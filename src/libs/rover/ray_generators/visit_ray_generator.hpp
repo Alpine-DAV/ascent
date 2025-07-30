@@ -54,6 +54,7 @@
 namespace rover
 {
 
+// TODO: We need a visit ray generator test
 class ROVER_API VisitRayGenerator : public RayGenerator
 {
 public:

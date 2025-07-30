@@ -39,10 +39,8 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-#ifndef rover_camera_generator_h
-#define rover_camera_generator_h
-
-#include "ray_generator.hpp"
+#ifndef rover_ray_generator_h
+#define rover_ray_generator_h
 
 #include <rover_exports.h>
 #include <settings.hpp>
