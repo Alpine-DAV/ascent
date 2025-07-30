@@ -39,33 +39,36 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-#ifndef rover_ray_generator_h
-#define rover_ray_generator_h
+#ifndef rover_camera_generator_h
+#define rover_camera_generator_h
 
-#include <vtkm_typedefs.hpp>
+#include "ray_generator.hpp"
+
+#include <rover_exports.h>
 #include <settings.hpp>
+#include <utils/rover_logging.hpp>
+#include <vtkm_typedefs.hpp>
 
 namespace rover
 {
 
-// TODO: Since the visit ray generator ultimately modifies a vtkm camera anyways, better
-// organization could be to make the base RayGenerator become the vtkm ray generator. Then the visit ray
-// generator would inherit from it, and would only have one job of applying visit params to the inhereted vtkm camera.
-class RayGenerator
+class ROVER_API RayGenerator
 {
 public:
-  RayGenerator();
-  virtual ~RayGenerator() = 0;
-  virtual void get_rays(Ray32 &rays) = 0;
-  virtual void get_rays(Ray64 &rays) = 0;
+  RayGenerator() = default;
+  ~RayGenerator() = default;
 
+  bool get_rays(Ray32 &rays);
+  bool get_rays(Ray64 &rays);
   vtkmCamera& get_camera();
-  bool get_has_rays() const;
-  void reset();
+  void set_camera(vtkmCamera &camera);
+  vtkmCoordinates get_coordinates();
+  void set_coordinates(vtkmCoordinates coordinates);
+
 protected:
   vtkmCamera m_camera;
-  bool m_has_rays;
+  vtkmCoordinates m_coordinates;
 };
 
-}; //namespace rover
+} // namespace rover
 #endif

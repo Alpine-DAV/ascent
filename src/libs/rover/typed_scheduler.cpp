@@ -5,7 +5,7 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 // rover includes
-#include "ray_generators/vtkm_ray_generator.hpp"
+#include "ray_generators/ray_generator.hpp"
 #include "settings.hpp"
 #include "vtkm_typedefs.hpp"
 #include <algorithm>
@@ -316,8 +316,6 @@ TypedScheduler<FloatType>::trace_rays()
     throw RoverException("Error: ray generator must be set before execute is called");
   }
 
-  m_ray_generator->reset();
-
   set_global_range_and_bounds();
 
   vtkmTimer trace_timer;
@@ -325,11 +323,6 @@ TypedScheduler<FloatType>::trace_rays()
 
   // TODO: Don't love that we need dynamic_cast
   // TODO: Actually support both cases, vtkm and visit. Add tests
-  auto *cast_ray_generator = dynamic_cast<VtkmRayGenerator*>(m_ray_generator);
-  if (!cast_ray_generator)
-  {
-    throw RoverException("Error: RayGenerator instance must be a CameraGenerator");
-  }
   vtkmRayTracing::Ray<FloatType> rays;
 
   for (int i = 0; i < m_num_local_domains; i++)
@@ -343,12 +336,17 @@ TypedScheduler<FloatType>::trace_rays()
     vtkmLogger::GetInstance()->Clear();
 
     // Setting the coordinate system miminizes the number of rays generated
-    cast_ray_generator->set_coordinates(m_domains[i].get_dataset().GetCoordinateSystem());
+    m_ray_generator->set_coordinates(m_domains[i].get_dataset().GetCoordinateSystem());
     ROVER_INFO("Generating rays for domian " << i);
 
     timer.Start();
 
-    cast_ray_generator->get_rays(rays);
+    // TODO: I'm curious about which conditions can cause rays to fail to be created
+    if (!m_ray_generator->get_rays(rays))
+    {
+      ROVER_ERROR("Failed to create new rays");
+    }
+
     ROVER_INFO("Generated " << rays.NumRays << " rays");
     m_domains[i].init_rays(rays);
 

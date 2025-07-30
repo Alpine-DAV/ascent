@@ -112,7 +112,9 @@ public:
 protected:
   VisitRayGenerator();
   VisitParams m_params;
-  template<typename T> void gen_rays(vtkmRayTracing::Ray<T> &rays);
+  
+  template<typename T>
+  void gen_rays(vtkmRayTracing::Ray<T> &rays);
 };
 
 } // namespace rover
