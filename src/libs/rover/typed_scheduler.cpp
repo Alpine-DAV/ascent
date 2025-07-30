@@ -321,8 +321,6 @@ TypedScheduler<FloatType>::trace_rays()
   vtkmTimer trace_timer;
   trace_timer.Start();
 
-  // TODO: Don't love that we need dynamic_cast
-  // TODO: Actually support both cases, vtkm and visit. Add tests
   vtkmRayTracing::Ray<FloatType> rays;
 
   for (int i = 0; i < m_num_local_domains; i++)
