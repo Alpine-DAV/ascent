@@ -39,8 +39,8 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-#ifndef rover_visit_generator_h
-#define rover_visit_generator_h
+#ifndef rover_visit_ray_generator_h
+#define rover_visit_ray_generator_h
 
 #include "ray_generator.hpp"
 
@@ -112,7 +112,7 @@ public:
 protected:
   VisitRayGenerator();
   VisitParams m_params;
-  
+
   template<typename T>
   void gen_rays(vtkmRayTracing::Ray<T> &rays);
 };
