@@ -44,12 +44,6 @@
 namespace rover
 {
 
-VisitRayGenerator::VisitRayGenerator()
- : RayGenerator()
-{
-
-}
-
 VisitRayGenerator::VisitRayGenerator(const VisitParams &params)
  : RayGenerator()
 {
