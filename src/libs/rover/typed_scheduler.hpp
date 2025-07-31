@@ -21,7 +21,7 @@
 #include <domain.hpp>
 #include <image.hpp>
 #include <png_utils/ascent_png_encoder.hpp>
-#include <ray_generators/vtkm_ray_generator.hpp>
+#include <ray_generators/ray_generator.hpp>
 #include <rover_exceptions.hpp>
 #include <scheduler.hpp>
 
@@ -82,6 +82,7 @@ public:
                                  const vtkmVec3f &up);
 
 protected:
+  int                                       m_num_local_domains;
   std::vector<Domain>                       m_domains;
   RayGenerator                             *m_ray_generator;
   std::vector<vtkm::Float64>                m_background;

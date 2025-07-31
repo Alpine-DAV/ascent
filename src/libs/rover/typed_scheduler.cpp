@@ -5,7 +5,7 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 // rover includes
-#include "ray_generators/vtkm_ray_generator.hpp"
+#include "ray_generators/ray_generator.hpp"
 #include "settings.hpp"
 #include "vtkm_typedefs.hpp"
 #include <algorithm>
@@ -22,6 +22,7 @@ TypedScheduler<FloatType>::TypedScheduler()
   // TODO: Maybe we can just pass a RayGenerator when constructing
   // a new scheduler, since we already instantiate it beforehand
   m_ray_generator = nullptr;
+  m_num_local_domains = 0;
 }
 
 #ifdef ROVER_PARALLEL
@@ -37,11 +38,11 @@ template<typename FloatType>
 void
 TypedScheduler<FloatType>::add_dataset(vtkh::DataSet &dataset)
 {
-  const int num_domains = dataset.GetNumberOfDomains();
-  m_domains.reserve(num_domains);
-  for (int i = 0; i < num_domains; i++)
+  m_num_local_domains = dataset.GetNumberOfDomains();
+  m_domains.reserve(m_num_local_domains);
+  for (int i = 0; i < m_num_local_domains; i++)
   {
-    ROVER_INFO("TypedScheduler::add_dataset: adding domain " << m_domains.size());
+    ROVER_INFO("TypedScheduler::add_dataset: adding domain " << i);
     m_domains.emplace_back(dataset.GetDomain(i));
   }
 }
@@ -92,14 +93,13 @@ template<typename FloatType>
 void
 TypedScheduler<FloatType>::set_global_range_and_bounds()
 {
-  const int num_domains = m_domains.size();
   vtkmRange global_range;
   vtkm::Bounds global_bounds;
   vtkmTimer timer;
   timer.Start();
   double time = 0.0;
 
-  for (int i = 0; i < num_domains; ++i)
+  for (int i = 0; i < m_num_local_domains; ++i)
   {
     vtkmRange local_range = m_domains[i].get_primary_range();
     global_range.Include(local_range);
@@ -216,13 +216,13 @@ TypedScheduler<FloatType>::composite()
 {
   // TODO: Combine AbsorptionPartial and EmissionPartial
   const std::string emission = rover::settings["emission"].as_string();
-  if (!emission.empty())
-  {
-    typed_composite<vtkh::EmissionPartial<FloatType>>();
-  }
-  else // (emission.empty())
+  if (emission.empty())
   {
     typed_composite<vtkh::AbsorptionPartial<FloatType>>();
+  }
+  else // (!emission.empty())
+  {
+    typed_composite<vtkh::EmissionPartial<FloatType>>();
   }
   ROVER_INFO("Schedule: compositing complete");
 }
@@ -238,10 +238,10 @@ TypedScheduler<FloatType>::typed_composite()
 #endif
 
   vtkh::PartialCompositor<PartialType> compositor;
-  compositor.set_background(m_background);
 #ifdef ROVER_PARALLEL
   compositor.set_comm_handle(MPI_Comm_c2f(m_comm_handle));
 #endif
+  compositor.set_background(m_background);
 
   const int num_partials = m_partial_images.size();
   std::vector<std::vector<PartialType>> partials(num_partials);
@@ -253,14 +253,14 @@ TypedScheduler<FloatType>::typed_composite()
 
   std::vector<PartialType> result;
   compositor.composite(partials, result);
-  PartialImage<FloatType> p_result;
 
+  // The compositor output is only on rank 0
   if (0 == rank)
   {
+    PartialImage<FloatType> p_result;
     p_result.store(result, m_background);
+    m_result = p_result;
   }
-
-  m_result = p_result;
 
 #if 0 // removing volume renderer
   if (m_render_settings.m_render_mode == volume)
@@ -316,24 +316,14 @@ TypedScheduler<FloatType>::trace_rays()
     throw RoverException("Error: ray generator must be set before execute is called");
   }
 
-  m_ray_generator->reset();
-
-  const int num_domains = static_cast<int>(m_domains.size());
   set_global_range_and_bounds();
 
   vtkmTimer trace_timer;
   trace_timer.Start();
 
-  // TODO: Don't love that we need dynamic_cast
-  // TODO: Actually support both cases, vtkm and visit. Add tests
-  auto *cast_ray_generator = dynamic_cast<VtkmRayGenerator*>(m_ray_generator);
-  if (!cast_ray_generator)
-  {
-    throw RoverException("Error: RayGenerator instance must be a CameraGenerator");
-  }
   vtkmRayTracing::Ray<FloatType> rays;
 
-  for (int i = 0; i < num_domains; ++i)
+  for (int i = 0; i < m_num_local_domains; i++)
   {
     vtkmTimer domain_timer;
     domain_timer.Start();
@@ -344,12 +334,17 @@ TypedScheduler<FloatType>::trace_rays()
     vtkmLogger::GetInstance()->Clear();
 
     // Setting the coordinate system miminizes the number of rays generated
-    cast_ray_generator->set_coordinates(m_domains[i].get_dataset().GetCoordinateSystem());
+    m_ray_generator->set_coordinates(m_domains[i].get_dataset().GetCoordinateSystem());
     ROVER_INFO("Generating rays for domian " << i);
 
     timer.Start();
 
-    cast_ray_generator->get_rays(rays);
+    // TODO: I'm curious about which conditions can cause rays to fail to be created
+    if (!m_ray_generator->get_rays(rays))
+    {
+      ROVER_ERROR("Failed to create new rays");
+    }
+
     ROVER_INFO("Generated " << rays.NumRays << " rays");
     m_domains[i].init_rays(rays);
 
@@ -387,13 +382,13 @@ TypedScheduler<FloatType>::trace_rays()
   timer.Start();
   time = trace_timer.GetElapsedTime();
   ROVER_DATA_ADD("total_trace", time);
-  int num_channels = this->get_global_channels();
+  int num_channels = get_global_channels();
 
   vtkmTimer t1;
   t1.Start();
 
   // Add a blank partial image if we had no domains
-  if (num_domains == 0 || m_partial_images.empty())
+  if (m_num_local_domains == 0 || m_partial_images.empty())
   {
     PartialImage<FloatType> partial_image;
     partial_image.m_transmission =
@@ -879,9 +874,10 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
   xray_view["zoom"] = zoom;
   xray_view["look_at"].set(&look_at[0], 3);
   xray_view["up"].set(&up[0], 3);
+  // xray_view["normal"].set(&forward[0], 3);
   xray_view["fov"] = view_angle_deg;
   // TODO: Bring this back once 2D camera support is added
-  // xray_view["parallel_scale"] = view_height / 2.0f; // TODO: Needs validation against VisIt
+  // xray_view["parallel_scale"] = view_height; // TODO: Needs validation against VisIt
   xray_view["xpan"] = xy_pan[0];
   xray_view["ypan"] = xy_pan[1];
   xray_view["near_plane"] = near_plane;
@@ -940,39 +936,12 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
   image_coords["units/y"] = "pixels";
   image_coords["units/z"] = "bins";
 
-  // if (m_render_settings.m_render_mode == energy) // removing volume renderer
-  // {
-
   // Topology
   Node &image_topo = topologies["image_topo"];
   image_topo["coordset"] = "image_coords";
   image_topo["type"] = "rectilinear";
 
-  if (!m_result.has_intensity(0) || !m_result.has_optical_depth(0))
-  {
-    ROVER_ERROR("intensity and optical depth must both be available")
-  }
-
-  // Fields
-  Node &intensities = fields["intensities"];
-  intensities["topology"] = "image_topo";
-  intensities["association"] = "element";
-  intensities["units"] = "intensity units";
-  vtkm::cont::ArrayHandle<FloatType> intensity_values = m_result.flatten_intensity_values();
-  FloatType *intensity_buffer = get_vtkm_ptr(intensity_values);
-  const int num_intensity_values = intensity_values.GetNumberOfValues();
-
-  auto intensity_min_max = std::minmax_element(intensity_buffer, intensity_buffer + num_intensity_values);
-  xray_data["intensity_max"].set(intensity_min_max.second);
-  xray_data["intensity_min"].set(intensity_min_max.first);
-  
-  intensities["values"].set(intensity_buffer, num_intensity_values);
-  intensities["strides"].set(DataType::int64(3));
-  int64_array strides = intensities["strides"].value();
-  strides[0] = 1;
-  strides[1] = image_width;
-  strides[2] = image_width * image_height;
-
+  // Image field
   Node &optical_depth = fields["optical_depth"];
   optical_depth["topology"] = "image_topo";
   optical_depth["association"] = "element";
@@ -986,7 +955,42 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
   xray_data["optical_depth_min"].set(optical_min_max.first);
 
   optical_depth["values"].set(optical_buffer, num_optical_values);
-  optical_depth["strides"].set(intensities["strides"]);
+  optical_depth["strides"].set(DataType::int64(3));
+  int64_array strides = optical_depth["strides"].value();
+  strides[0] = 1;
+  strides[1] = image_width;
+  strides[2] = image_width * image_height;
+
+  // Spatial field
+  Node &optical_depth_spatial = fields["optical_depth_spatial"];
+  optical_depth_spatial.set(optical_depth);
+  optical_depth_spatial["topology"] = "spatial_topo";
+
+  // Intensity is only available in the absorption + emission case
+  const std::string emission = rover::settings["emission"].as_string();
+  if (!emission.empty())
+  {
+    // Image field
+    Node &intensities = fields["intensities"];
+    intensities["topology"] = "image_topo";
+    intensities["association"] = "element";
+    intensities["units"] = "intensity units";
+    vtkm::cont::ArrayHandle<FloatType> intensity_values = m_result.flatten_intensity_values();
+    FloatType *intensity_buffer = get_vtkm_ptr(intensity_values);
+    const int num_intensity_values = intensity_values.GetNumberOfValues();
+  
+    auto intensity_min_max = std::minmax_element(intensity_buffer, intensity_buffer + num_intensity_values);
+    xray_data["intensity_max"].set(intensity_min_max.second);
+    xray_data["intensity_min"].set(intensity_min_max.first);
+    
+    intensities["values"].set(intensity_buffer, num_intensity_values);
+    intensities["strides"].set(strides);
+
+    // Spatial field
+    Node &intensities_spatial = fields["intensities_spatial"];
+    intensities_spatial.set(intensities);
+    intensities_spatial["topology"] = "spatial_topo";
+  }
 
   //
   // Spatial mesh
@@ -1030,15 +1034,6 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
   Node &spatial_topo = topologies["spatial_topo"];
   spatial_topo["coordset"] = "spatial_coords";
   spatial_topo["type"] = "rectilinear";
-
-  // Fields
-  Node &intensities_spatial = fields["intensities_spatial"];
-  intensities_spatial.set(intensities);
-  intensities_spatial["topology"] = "spatial_topo";
-
-  Node &optical_depth_spatial = fields["optical_depth_spatial"];
-  optical_depth_spatial.set(optical_depth);
-  optical_depth_spatial["topology"] = "spatial_topo";
 
   //
   // Near plane mesh
@@ -1119,8 +1114,6 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
                               left,
                               up);
   }
-
-  // } // removing volume renderer
 
   Node verify;
   if (!blueprint::verify("mesh", data, verify))

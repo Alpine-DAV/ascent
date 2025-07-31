@@ -483,7 +483,13 @@ In ``src/examples/synthetic/noise`` you can find an example integration using ou
 Building Ascent in a Docker Container
 ---------------------------------------
 
-Under ``src/examples/docker/master/ubuntu`` there is an example ``Dockerfile`` which can be used to create an ubuntu-based docker image with a build of the Ascent github master branch. There is also a script that demonstrates how to build a Docker image from the Dockerfile (``example_build.sh``) and a script that runs this image in a Docker container (``example_run.sh``). The Ascent repo is cloned into the image's file system at ``/ascent``, the build directory is ``/ascent/build-debug``, and the install directory is ``/ascent/install-debug``.
+Under ``src/examples/docker/ubuntu-build-ascent`` there is an example ``Dockerfile`` which can be used to create an ubuntu-based docker image with a build of the Ascent github develop branch. There is also a script that helps build a Docker image from the Dockerfile (``build.sh``). The Ascent repo is cloned into the image's file system at ``/ascent``, the build directory is ``/build/ascent-checkout/``, and the install directory is ``/ascent/install``. This container includes the JupyterLab install we use for Ascent tutorials.
+
+To start the Jupyter server and run the tutorial notebooks, run:
+
+.. code::
+
+    docker run -p 8888:8888 -t -i {container name} # such as alpinedav/ascentascent-ubuntu-24.04-develop-arm64_2025-07-19-sha02e7f7
 
 
 .. _building_extras:

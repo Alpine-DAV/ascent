@@ -8,6 +8,10 @@
 //  PURPOSE.  See the above copyright notice for more information.
 //============================================================================
 
+//
+// This code was originally pulled in from Viskores.
+//
+
 #include "MeshConnectivityContainers.hpp"
 
 namespace vtkh

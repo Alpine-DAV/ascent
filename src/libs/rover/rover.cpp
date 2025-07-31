@@ -125,6 +125,7 @@ Rover::get_mpi_comm_handle()
 void
 Rover::create_scheduler()
 {
+  // Each MPI rank creates its own scheduler
   const std::string precision = rover::settings["precision"].as_string();
   if ("double" == precision)
   {
@@ -166,15 +167,21 @@ Rover::add_dataset(vtkh::DataSet &dataset)
 void
 Rover::update_camera()
 {
-  // Early return if the default params weren't changed
   if (!rover::settings.has_child("camera"))
   {
-    return;
+    return; // Early return if the default params weren't changed
   }
 
   // The order in which these parameters are applied matters
   // TODO: Match the ordering in #1547 once it's done
   const Node &camera_params = rover::settings["camera"];
+
+  if (camera_params.has_child("position"))
+  {
+    const float64_accessor vec3 = camera_params["position"].value();
+    const vtkmVec3f position(vec3[0], vec3[1], vec3[2]);
+    m_camera.SetPosition(position);
+  }
 
   if (camera_params.has_child("azimuth"))
   {
@@ -267,13 +274,16 @@ Rover::update_ray_generator()
 void
 Rover::execute()
 {
-  // TODO: Not sure if this needs to be a full error. We're not in
-  // an unrecoverable state, we just simply have nothing to x-ray
+  // This doesn't technically need to be a full error. We're not in
+  // an unrecoverable state, we could simply instantiate a new scheduler
+  // and have nothing to x-ray. In practice, a user should never encounter this,
+  // but a developer would prefer to be made aware.
   if (!m_scheduler)
   {
     ROVER_ERROR("Error - Rover::execute: Execute called before adding a dataset");
   }
 
+  // Applies the user-supplied parameters and then begins the ray trace
   update_camera();
   update_ray_generator();
   m_scheduler->trace_rays();

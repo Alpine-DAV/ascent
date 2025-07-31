@@ -7,6 +7,11 @@
 //  the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
 //  PURPOSE.  See the above copyright notice for more information.
 //============================================================================
+
+//
+// This code was originally pulled in from Viskores.
+//
+
 #include "ConnectivityTracer.hpp"
 #include "MeshConnectivityBuilder.hpp"
 
@@ -227,6 +232,56 @@ void ConnectivityTracer::SetVolumeData(const vtkm::cont::Field& scalarField,
   Locator.Update();
 }
 
+// Absorption-only case
+void ConnectivityTracer::SetEnergyData(const vtkm::cont::Field& absorption,
+                                       const vtkm::Int32 numBins,
+                                       const vtkm::cont::UnknownCellSet& cellSet,
+                                       const vtkm::cont::CoordinateSystem& coords)
+{
+  bool isSupportedField = absorption.GetAssociation() == vtkm::cont::Field::Association::Cells;
+  if (!isSupportedField)
+  {
+    throw vtkm::cont::ErrorBadValue("Absorption Field '" + absorption.GetName() +
+                                    "' not associated with cells");
+  }
+
+  ScalarField = absorption;
+  CellSet = cellSet;
+  Coords = coords;
+  MeshConnIsConstructed = false;
+  HasEmission = false;
+
+  // Do some basic range checking
+  if (numBins < 1)
+    throw vtkm::cont::ErrorBadValue("Number of energy bins is less than 1");
+  vtkm::Id binCount = ScalarField.GetNumberOfValues();
+  vtkm::Id cellCount = this->GetNumberOfMeshCells();
+  if (cellCount != (binCount / vtkm::Id(numBins)))
+  {
+    std::stringstream message;
+    message << "Invalid number of absorption bins\n";
+    message << "Number of cells: " << cellCount << "\n";
+    message << "Number of field values: " << binCount << "\n";
+    message << "Number of bins: " << numBins << "\n";
+    throw vtkm::cont::ErrorBadValue(message.str());
+  }
+
+  //TODO: Need a way to tell if we have been updated
+  this->Integrator = Energy;
+
+  if (MeshContainer == nullptr)
+  {
+    delete MeshContainer;
+  }
+
+  MeshConnectivityBuilder builder;
+  MeshContainer = builder.BuildConnectivity(cellSet, coords);
+  Locator.SetCellSet(this->CellSet);
+  Locator.SetCoordinates(this->Coords);
+  Locator.Update();
+}
+
+// Absorption + Emission case
 void ConnectivityTracer::SetEnergyData(const vtkm::cont::Field& absorption,
                                        const vtkm::Int32 numBins,
                                        const vtkm::cont::UnknownCellSet& cellSet,
@@ -248,7 +303,7 @@ void ConnectivityTracer::SetEnergyData(const vtkm::cont::Field& absorption,
   {
     if (emission.GetAssociation() != vtkm::cont::Field::Association::Cells)
       throw vtkm::cont::ErrorBadValue("Emission Field '" + emission.GetName() +
-                                      "' not accociated with cells");
+                                      "' not associated with cells");
     HasEmission = true;
     EmissionField = emission;
   }
@@ -648,7 +703,7 @@ public:
                                 FieldIn,         // cell exit distance
                                 FieldInOut,      // current distance
                                 WholeArrayIn,    // cell absorption data array
-                                WholeArrayInOut, // ray absorption data
+                                WholeArrayInOut, // optical depth data
                                 FieldIn);        // current cell
 
   using ExecutionSignature = void(_1, _2, _3, _4, _5, _6, _7, WorkIndex);
@@ -658,33 +713,31 @@ public:
                                    const FloatType& enterDistance,
                                    const FloatType& exitDistance,
                                    FloatType& currentDistance,
-                                   const CellDataPortalType& cellData,
-                                   RayDataPortalType& energyBins,
+                                   const CellDataPortalType& absorbtionData,
+                                   RayDataPortalType& opticalDepthBins,
                                    const vtkm::Id& currentCell,
                                    const vtkm::Id& rayIndex) const
   {
-    if (rayStatus != RAY_ACTIVE)
-    {
-      return;
-    }
-    if (exitDistance <= enterDistance)
+    if (rayStatus != RAY_ACTIVE || exitDistance <= enterDistance)
     {
       return;
     }
 
     FloatType segmentLength = exitDistance - enterDistance;
-
     vtkm::Id rayOffset = NumBins * rayIndex;
     vtkm::Id cellOffset = NumBins * currentCell;
-    for (vtkm::Int32 i = 0; i < NumBins; ++i)
+
+    for (vtkm::Int32 i = 0; i < NumBins; i++)
     {
-      BOUNDS_CHECK(cellData, cellOffset + i);
-      FloatType absorb = static_cast<FloatType>(cellData.Get(cellOffset + i));
+      const int cellOffsetI = cellOffset + i;
+      BOUNDS_CHECK(absorbtionData, cellOffsetI);
+      FloatType absorb = static_cast<FloatType>(absorbtionData.Get(cellOffsetI));
       absorb *= UnitScalar;
-      absorb = vtkm::Exp(-absorb * segmentLength);
-      BOUNDS_CHECK(energyBins, rayOffset + i);
-      FloatType intensity = static_cast<FloatType>(energyBins.Get(rayOffset + i));
-      energyBins.Set(rayOffset + i, intensity * absorb);
+
+      const int rayOffsetI = rayOffset + i;
+      BOUNDS_CHECK(opticalDepthBins, rayOffsetI);
+      FloatType opticalDepth = static_cast<FloatType>(opticalDepthBins.Get(rayOffsetI));
+      opticalDepthBins.Set(rayOffsetI, opticalDepth + absorb * segmentLength);
     }
     currentDistance = exitDistance;
   }
@@ -1285,34 +1338,37 @@ void ConnectivityTracer::IntegrateCells(vtkm::rendering::raytracing::Ray<FloatTy
 {
   vtkm::cont::Timer timer;
   timer.Start();
+
+  vtkm::cont::ArrayHandle<FloatType> optical_depth = rays.GetBuffer("optical_depths").Buffer;
+
   if (HasEmission)
   {
-    vtkm::cont::ArrayHandle<FloatType> absorp = rays.Buffers.at(0).Buffer;
+    vtkm::cont::ArrayHandle<FloatType> absorption = rays.Buffers.at(0).Buffer;
     vtkm::cont::ArrayHandle<FloatType> emission = rays.GetBuffer("emission").Buffer;
-    vtkm::cont::ArrayHandle<FloatType> optical_depth = rays.GetBuffer("optical_depths").Buffer;
-    vtkm::worklet::DispatcherMapField<IntegrateEmission> dispatcher(
-      IntegrateEmission(rays.Buffers.at(0).GetNumChannels(), UnitScalar, DivideEmisByAbsorb));
+    vtkm::worklet::DispatcherMapField<IntegrateEmission> dispatcher(IntegrateEmission(rays.Buffers.at(0).GetNumChannels(),
+                                                                    UnitScalar,
+                                                                    DivideEmisByAbsorb));
     dispatcher.Invoke(rays.Status,
                       *(tracker.EnterDist),
                       *(tracker.ExitDist),
                       rays.Distance,
-                      vtkm::rendering::raytracing::GetScalarFieldArray(this->ScalarField),
-                      vtkm::rendering::raytracing::GetScalarFieldArray(this->EmissionField),
-                      absorp,
+                      vtkm::rendering::raytracing::GetScalarFieldArray(ScalarField),
+                      vtkm::rendering::raytracing::GetScalarFieldArray(EmissionField),
+                      absorption,
                       emission,
                       optical_depth,
                       rays.HitIdx);
   }
   else
   {
-    vtkm::worklet::DispatcherMapField<Integrate> dispatcher(
-      Integrate(rays.Buffers.at(0).GetNumChannels(), UnitScalar));
+    vtkm::worklet::DispatcherMapField<Integrate> dispatcher(Integrate(rays.Buffers.at(0).GetNumChannels(),
+                                                                      UnitScalar));
     dispatcher.Invoke(rays.Status,
                       *(tracker.EnterDist),
                       *(tracker.ExitDist),
                       rays.Distance,
-                      vtkm::rendering::raytracing::GetScalarFieldArray(this->ScalarField),
-                      rays.Buffers.at(0).Buffer,
+                      vtkm::rendering::raytracing::GetScalarFieldArray(ScalarField),
+                      optical_depth,
                       rays.HitIdx);
   }
 
@@ -1458,12 +1514,12 @@ void ConnectivityTracer::PartialTrace(vtkm::rendering::raytracing::Ray<FloatType
 
   //this->CountRayStatus = true;
   bool hasPathLengths = rays.HasBuffer("path_lengths");
-  this->RaysLost = 0;
+  RaysLost = 0;
   vtkm::rendering::raytracing::RayOperations::ResetStatus(rays, RAY_EXITED_MESH);
 
-  if (this->CountRayStatus)
+  if (CountRayStatus)
   {
-    this->PrintRayStatus(rays);
+    PrintRayStatus(rays);
   }
 
   bool workRemaining = true;
@@ -1475,35 +1531,40 @@ void ConnectivityTracer::PartialTrace(vtkm::rendering::raytracing::Ray<FloatType
     vtkm::cont::ArrayHandle<vtkm::UInt8> activeRays;
     activeRays = vtkm::rendering::raytracing::RayOperations::CompactActiveRays(rays);
 
-    if (rays.NumRays == 0)
+    if (0 == rays.NumRays)
+    {
       break;
+    }
 
     IntegrateMeshSegment(rays);
 
     PartialComposite<FloatType> partial;
-    partial.Transmission = rays.Buffers.at(0).Copy();
     partial.OpticalDepth = rays.GetBuffer("optical_depths").Copy();
     vtkm::cont::Algorithm::Copy(rays.Distance, partial.Distances);
     vtkm::cont::Algorithm::Copy(rays.PixelIdx, partial.PixelIds);
 
     if (HasEmission)
     {
+      partial.Transmission = rays.Buffers.at(0).Copy();
       partial.Intensity = rays.GetBuffer("emission").Copy();
     }
+
     if (hasPathLengths)
     {
       partial.PathLengths = rays.GetBuffer("path_lengths").Copy().Buffer;
     }
-    partial.OpticalDepth = rays.GetBuffer("optical_depths").Copy();
+
     partials.push_back(partial);
 
     // reset buffers
-    rays.Buffers.at(0).InitConst(1.0f);
     rays.GetBuffer("optical_depths").InitConst(0.0f);
+
     if (HasEmission)
     {
+      rays.Buffers.at(0).InitConst(1.0f);
       rays.GetBuffer("emission").InitConst(0.0f);
     }
+
     if (hasPathLengths)
     {
       rays.GetBuffer("path_lengths").InitConst(0.0f);
@@ -1517,7 +1578,7 @@ void ConnectivityTracer::PartialTrace(vtkm::rendering::raytracing::Ray<FloatType
     if (workRemaining)
     {
       vtkm::rendering::raytracing::RayOperations::CopyDistancesToMin(rays);
-      this->OffsetMinDistances(rays);
+      OffsetMinDistances(rays);
     }
   } while (workRemaining);
 }

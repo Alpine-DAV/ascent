@@ -67,7 +67,6 @@ set(rover_headers
       # ray generators headers
       ray_generators/ray_generator.hpp
       ray_generators/visit_ray_generator.hpp
-      ray_generators/vtkm_ray_generator.hpp
       rover_exports.h
       vtkm_typedefs.hpp
       # utils headers
@@ -86,7 +85,6 @@ set(rover_sources
       # ray generators
       ray_generators/ray_generator.cpp
       ray_generators/visit_ray_generator.cpp
-      ray_generators/vtkm_ray_generator.cpp
       # utils sources
       utils/rover_logging.cpp
       utils/vtk_dataset_reader.cpp
