@@ -3695,7 +3695,7 @@ TEST(ascent_render_3d, test_render_ascent_camera)
     //
 
     conduit::Node scenes;
-    scenes["s1/plots/p1/type"]  = "volume";
+    scenes["s1/plots/p1/type"]  = "pseudocolor";
     scenes["s1/plots/p1/field"] = "braid";
 
     scenes["s1/image_prefix"] = output_file;
@@ -3720,13 +3720,15 @@ TEST(ascent_render_3d, test_render_ascent_camera)
     // scenes["s1/renders/r1/camera/zoom"] = 1.0;
     // scenes["s1/renders/r1/camera/azimuth"] = 10.0;
     // scenes["s1/renders/r1/camera/elevation"] = -10.0;
-    // scenes["s1/renders/r1/camera/near_plane"] = 0.1;
+    scenes["s1/renders/r1/camera/near_plane"] = 26.;
     // scenes["s1/renders/r1/camera/far_plane"] = 100.1;
 
     conduit::Node actions;
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
+
+    actions.print();
 
     //
     // Run Ascent
@@ -3801,20 +3803,20 @@ TEST(ascent_render_3d, test_render_visit_camera)
 
     // set the camera parameters
     double vec3[3];
-    vec3[0] = 0.; vec3[1] = .5; vec3[2] = .5;
+    vec3[0] = 0.8; vec3[1] = .5; vec3[2] = .5;
     scenes["s1/renders/r1/camera/viewNormal"].set_float64_ptr(vec3,3);
     vec3[0] = 0.; vec3[1] = 0.; vec3[2] = 0.;
     scenes["s1/renders/r1/camera/focus"].set_float64_ptr(vec3,3);
-    vec3[0] = 0.; vec3[1] = 1.; vec3[2] = 0.;
+    vec3[0] = .5; vec3[1] = 0.; vec3[2] = .5;
     scenes["s1/renders/r1/camera/viewUp"].set_float64_ptr(vec3,3);
-    scenes["s1/renders/r1/camera/viewAngle"] = 45.;
-    scenes["s1/renders/r1/camera/parallelScale"] = 18.;
-    // scenes["s1/renders/r1/camera/nearPlane"] = 0.001;
-    // scenes["s1/renders/r1/camera/farPlane"] = 100.;
-    // double vec2[2];
-    // vec2[0] = 0.; vec2[1] = 0.;
-    // scenes["s1/renders/r1/camera/imagePan"].set_float64_ptr(vec2,2);
-    scenes["s1/renders/r1/camera/imageZoom"] = 1.0;
+    scenes["s1/renders/r1/camera/viewAngle"] = 30.;
+    scenes["s1/renders/r1/camera/parallelScale"] = 30.;
+    scenes["s1/renders/r1/camera/nearPlane"] = 10.;
+    scenes["s1/renders/r1/camera/farPlane"] = 11.;
+    double vec2[2];
+    vec2[0] = 0.; vec2[1] = 0.;
+    scenes["s1/renders/r1/camera/imagePan"].set_float64_ptr(vec2,2);
+    scenes["s1/renders/r1/camera/imageZoom"] = 1;
     // scenes["s1/renders/r1/camera/perspective"] = 1.; // true
     // scenes["s1/renders/r1/camera/eyeAngle"] = 2.;
     // scenes["s1/renders/r1/camera/centerOfRotationSet"] = 0.; // false

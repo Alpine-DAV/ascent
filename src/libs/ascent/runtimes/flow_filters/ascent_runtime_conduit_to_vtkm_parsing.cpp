@@ -69,6 +69,10 @@ double zoom_to_vtkm_zoom(double in_zoom)
   return vtkm_zoom;
 }
 
+double plane_to_vtkm_plane(double in_plane) {
+
+}
+
 void
 parse_image_dims(const conduit::Node &node, int &width, int &height)
 {
@@ -209,23 +213,21 @@ parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera)
       camera.SetLookAt(look_at);
   }
 
-  if(camera_node.has_child("viewNormal") && camera_node.has_child("focus"))
+  if(camera_node.has_child("viewNormal") && camera_node.has_child("focus") && camera_node.has_child("imageZoom") && camera_node.has_child("viewAngle") && camera_node.has_child("parallelScale"))
   {
-      conduit::Node view, focus, viewUp;
+      conduit::Node view, focus;
       camera_node["viewNormal"].to_float64_array(view);
       camera_node["focus"].to_float64_array(focus);
-      camera_node["viewUp"].to_float64_array(viewUp);
 
       const conduit::float64 *v = view.value();
       const conduit::float64 *fc = focus.value();
-      const conduit::float64 *uo = viewUp.value();
 
       conduit::float64 zoom = camera_node["imageZoom"].to_float64();
-      conduit::float64 view_angle = camera_node["viewAngle"].to_float64() * (M_PI / 180.0);
+      conduit::float64 view_angle = camera_node["viewAngle"].to_float64() * (M_PI / 360.0);
       conduit::float64 parallel_scale = camera_node["parallelScale"].to_float64();
 
       // Compute camera distance using perspective projection formula
-      double distance = (parallel_scale / zoom) / std::tan(view_angle / 2.0);
+      double distance = (parallel_scale) / std::tan(view_angle);
 
       // Normalize viewNormal vector
       conduit::float64 norm = std::sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
@@ -239,6 +241,23 @@ parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera)
 
       vtkmVec3f position(pos[0], pos[1], pos[2]);
       camera.SetPosition(position);
+
+      if(camera_node.has_child("nearPlane"))
+        {
+            vtkm::Range clipping_range = camera.GetClippingRange();
+            std::cout << clipping_range.Min << ", " << clipping_range.Max << "\n";
+            clipping_range.Min =std::max(0.001, distance + camera_node["nearPlane"].to_float64());
+            std::cout << distance << ", " << camera_node["nearPlane"].to_float64() << ", " << clipping_range.Min << "\n";
+            camera.SetClippingRange(clipping_range);
+        }
+        if(camera_node.has_child("farPlane"))
+        {
+            vtkm::Range clipping_range = camera.GetClippingRange();
+            std::cout << clipping_range.Min << ", " << clipping_range.Max << "\n";
+            clipping_range.Max = distance + camera_node["farPlane"].to_float64();
+            std::cout << distance << ", " << camera_node["farPlane"].to_float64() << ", " << clipping_range.Max << "\n";
+            camera.SetClippingRange(clipping_range);
+        }
   }
 
   if(camera_node.has_child("viewUp"))
@@ -256,26 +275,30 @@ parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera)
 //       camera.SetFieldOfView(camera_node["fov"].to_float64());
 //   }
 
-//   if(camera_node.has_child("imagePan"))
-//   {
-//       vtkm::Float64 xpan = 0.;
-//       vtkm::Float64 ypan = 0.;
+  if(camera_node.has_child("imagePan"))
+  {
+      vtkm::Float64 xpan = 0.;
+      vtkm::Float64 ypan = 0.;
 
-//       conduit::Node n;
-//       camera_node["imagePan"].to_float64_array(n);
-//       const float64 *pan_xy = n.as_float64_ptr();
-//       camera.Pan(pan_xy[0], pan_xy[1]);
-//   }
+      conduit::Node n;
+      camera_node["imagePan"].to_float64_array(n);
+      const float64 *pan_xy = n.as_float64_ptr();
+      camera.Pan(pan_xy[0], pan_xy[1]);
+  }
 
-//   if(camera_node.has_child("imageZoom"))
-//   {
-//       double zoom = camera_node["imageZoom"].to_float64();
-//       camera.Zoom(zoom_to_vtkm_zoom(zoom));
-//   }
+  if(camera_node.has_child("imageZoom"))
+  {
+      double zoom = camera_node["imageZoom"].to_float64();
+      camera.Zoom(zoom_to_vtkm_zoom(zoom));
+  }
   //
   // With a new potential camera position. We need to reset the
   // clipping plane as not to cut out part of the data set
   //
+
+  // In Ascent, the clipping range is relative to the camera along the view direction
+  // In Visit, the clipping range is relative to the focus point. 
+  // Need to convert between the two of these.
 
 //   if(camera_node.has_child("nearPlane"))
 //   {
