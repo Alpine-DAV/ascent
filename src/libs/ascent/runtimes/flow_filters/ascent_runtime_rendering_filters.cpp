@@ -193,6 +193,7 @@ check_renders_surprises(const conduit::Node &renders_node)
 
   // Valid Ascent input camera format
   std::vector<std::string> c_ascent_valid_paths;
+  c_ascent_valid_paths.push_back("2d");
   c_ascent_valid_paths.push_back("look_at");
   c_ascent_valid_paths.push_back("position");
   c_ascent_valid_paths.push_back("up");
