@@ -242,22 +242,20 @@ parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera)
       vtkmVec3f position(pos[0], pos[1], pos[2]);
       camera.SetPosition(position);
 
+      // Clipping planes require positional information to be computed
       if(camera_node.has_child("nearPlane"))
-        {
-            vtkm::Range clipping_range = camera.GetClippingRange();
-            std::cout << clipping_range.Min << ", " << clipping_range.Max << "\n";
-            clipping_range.Min =std::max(0.001, distance + camera_node["nearPlane"].to_float64());
-            std::cout << distance << ", " << camera_node["nearPlane"].to_float64() << ", " << clipping_range.Min << "\n";
-            camera.SetClippingRange(clipping_range);
-        }
-        if(camera_node.has_child("farPlane"))
-        {
-            vtkm::Range clipping_range = camera.GetClippingRange();
-            std::cout << clipping_range.Min << ", " << clipping_range.Max << "\n";
-            clipping_range.Max = distance + camera_node["farPlane"].to_float64();
-            std::cout << distance << ", " << camera_node["farPlane"].to_float64() << ", " << clipping_range.Max << "\n";
-            camera.SetClippingRange(clipping_range);
-        }
+      {
+        vtkm::Range clipping_range = camera.GetClippingRange();
+        clipping_range.Min =std::max(0.001, distance + camera_node["nearPlane"].to_float64());
+        camera.SetClippingRange(clipping_range);
+      }
+      
+      if(camera_node.has_child("farPlane"))
+      {
+        vtkm::Range clipping_range = camera.GetClippingRange();
+        clipping_range.Max = distance + camera_node["farPlane"].to_float64();
+        camera.SetClippingRange(clipping_range);
+      }
   }
 
   if(camera_node.has_child("viewUp"))
@@ -291,40 +289,6 @@ parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera)
       double zoom = camera_node["imageZoom"].to_float64();
       camera.Zoom(zoom_to_vtkm_zoom(zoom));
   }
-  //
-  // With a new potential camera position. We need to reset the
-  // clipping plane as not to cut out part of the data set
-  //
-
-  // In Ascent, the clipping range is relative to the camera along the view direction
-  // In Visit, the clipping range is relative to the focus point. 
-  // Need to convert between the two of these.
-
-//   if(camera_node.has_child("nearPlane"))
-//   {
-//       vtkm::Range clipping_range = camera.GetClippingRange();
-//       clipping_range.Min = camera_node["nearPlane"].to_float64();
-//       camera.SetClippingRange(clipping_range);
-//   }
-
-//   if(camera_node.has_child("farPlane"))
-//   {
-//       vtkm::Range clipping_range = camera.GetClippingRange();
-//       clipping_range.Max = camera_node["farPlane"].to_float64();
-//       camera.SetClippingRange(clipping_range);
-//   }
-
-//   // this is an offset from the current azimuth
-//   if(camera_node.has_child("azimuth"))
-//   {
-//       vtkm::Float64 azimuth = camera_node["azimuth"].to_float64();
-//       camera.Azimuth(azimuth);
-//   }
-//   if(camera_node.has_child("elevation"))
-//   {
-//       vtkm::Float64 elevation = camera_node["elevation"].to_float64();
-//       camera.Elevation(elevation);
-//   }
 }
 
 bool is_valid_name(const std::string &name)

@@ -3720,15 +3720,13 @@ TEST(ascent_render_3d, test_render_ascent_camera)
     // scenes["s1/renders/r1/camera/zoom"] = 1.0;
     // scenes["s1/renders/r1/camera/azimuth"] = 10.0;
     // scenes["s1/renders/r1/camera/elevation"] = -10.0;
-    scenes["s1/renders/r1/camera/near_plane"] = 26.;
-    // scenes["s1/renders/r1/camera/far_plane"] = 100.1;
+    scenes["s1/renders/r1/camera/near_plane"] = 30.;
+    scenes["s1/renders/r1/camera/far_plane"] = 40;
 
     conduit::Node actions;
     conduit::Node &add_plots = actions.append();
     add_plots["action"] = "add_scenes";
     add_plots["scenes"] = scenes;
-
-    actions.print();
 
     //
     // Run Ascent
@@ -3736,17 +3734,63 @@ TEST(ascent_render_3d, test_render_ascent_camera)
 
     Ascent ascent;
 
-    Node ascent_opts;
+    Node ascent_opts, ascent_info;
     ascent_opts["runtime/type"] = "ascent";
     ascent.open(ascent_opts);
     ascent.publish(data);
     ascent.execute(actions);
+    ascent.info(ascent_info);
     ascent.close();
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
     std::string msg = "An example of creating a render, specifying all camera parameters.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+
+    //
+    // For each image that was generated, run ascent to visualize the camera frustum
+    //
+    conduit::Node &image_node = ascent_info["images"][0];
+    conduit::Node camera_data = image_node["camera/camera_frustum_mesh"];
+
+    string image_name_root = output_file + "_frustum";
+
+    Ascent ascent_2;
+    ascent_2.open();
+    ascent_2.publish(camera_data);
+
+    conduit::Node frustum_actions;
+    conduit::Node &add_frustum_plots = frustum_actions.append();
+    add_frustum_plots["action"] = "add_scenes";
+    add_frustum_plots["scenes/s1/plots/p1/type"] = "mesh";
+    add_frustum_plots["scenes/s1/plots/p1/topology"] = "camera_frustum_topo";
+    add_frustum_plots["scenes/s1/plots/p2/type"] = "mesh";
+    add_frustum_plots["scenes/s1/plots/p2/topology"] = "clipping_planes_topo";
+    add_frustum_plots["scenes/s1/plots/p3/type"] = "mesh";
+    add_frustum_plots["scenes/s1/plots/p3/topology"] = "scene_bounds_topo";
+
+    // Render a plot of the camera frustum to verify it's relation to the scene
+    std::string frust_plot_file_1 = image_name_root + "_frustum_front_image_";
+    remove_test_image(frust_plot_file_1);
+    add_frustum_plots["scenes/s1/renders/r1/image_prefix"] = frust_plot_file_1;
+    add_frustum_plots["scenes/s1/renders/r1/camera/azimuth"] = 0.0;
+    add_frustum_plots["scenes/s1/renders/r1/camera/elevation"] = 0.0;
+    add_frustum_plots["scenes/s1/renders/r1/annotations"] = "false";
+
+    // Render a plot of the camera frustum at a 90 degree angle to see the frustum better
+    std::string frust_plot_file_2 = image_name_root + "_frustum_side_image_";
+    remove_test_image(frust_plot_file_2);
+    add_frustum_plots["scenes/s1/renders/r2/image_prefix"] = frust_plot_file_2;
+    add_frustum_plots["scenes/s1/renders/r2/camera/azimuth"] = 90.0;
+    add_frustum_plots["scenes/s1/renders/r2/camera/elevation"] = 0.0;
+    add_frustum_plots["scenes/s1/renders/r2/annotations"] = "false";
+
+    ascent_2.execute(frustum_actions);
+    ascent_2.close();
+
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(frust_plot_file_1));
+    EXPECT_TRUE(check_test_image(frust_plot_file_2));
 }
 
 //-----------------------------------------------------------------------------
@@ -3792,7 +3836,7 @@ TEST(ascent_render_3d, test_render_visit_camera)
     //
 
     conduit::Node scenes;
-    scenes["s1/plots/p1/type"]  = "volume";
+    scenes["s1/plots/p1/type"]  = "pseudocolor";
     scenes["s1/plots/p1/field"] = "braid";
 
     scenes["s1/image_prefix"] = output_file;
@@ -3803,16 +3847,16 @@ TEST(ascent_render_3d, test_render_visit_camera)
 
     // set the camera parameters
     double vec3[3];
-    vec3[0] = 0.8; vec3[1] = .5; vec3[2] = .5;
+    vec3[0] = 0.; vec3[1] = .5; vec3[2] = .5;
     scenes["s1/renders/r1/camera/viewNormal"].set_float64_ptr(vec3,3);
     vec3[0] = 0.; vec3[1] = 0.; vec3[2] = 0.;
     scenes["s1/renders/r1/camera/focus"].set_float64_ptr(vec3,3);
-    vec3[0] = .5; vec3[1] = 0.; vec3[2] = .5;
+    vec3[0] = 0.; vec3[1] = 1.; vec3[2] = 0.;
     scenes["s1/renders/r1/camera/viewUp"].set_float64_ptr(vec3,3);
     scenes["s1/renders/r1/camera/viewAngle"] = 30.;
-    scenes["s1/renders/r1/camera/parallelScale"] = 30.;
-    scenes["s1/renders/r1/camera/nearPlane"] = 10.;
-    scenes["s1/renders/r1/camera/farPlane"] = 11.;
+    scenes["s1/renders/r1/camera/parallelScale"] = 10.;
+    scenes["s1/renders/r1/camera/nearPlane"] = -5.;
+    scenes["s1/renders/r1/camera/farPlane"] = 5.;
     double vec2[2];
     vec2[0] = 0.; vec2[1] = 0.;
     scenes["s1/renders/r1/camera/imagePan"].set_float64_ptr(vec2,2);
@@ -3846,17 +3890,63 @@ TEST(ascent_render_3d, test_render_visit_camera)
 
     Ascent ascent;
 
-    Node ascent_opts;
+    Node ascent_opts,ascent_info;
     ascent_opts["runtime/type"] = "ascent";
     ascent.open(ascent_opts);
     ascent.publish(data);
     ascent.execute(actions);
+    ascent.info(ascent_info);
     ascent.close();
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
     std::string msg = "An example of creating a render, specifying all camera parameters.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+
+    //
+    // For each image that was generated, run ascent to visualize the camera frustum
+    //
+    conduit::Node &image_node = ascent_info["images"][0];
+    conduit::Node camera_data = image_node["camera/camera_frustum_mesh"];
+
+    string image_name_root = output_file + "_frustum";
+
+    Ascent ascent_2;
+    ascent_2.open();
+    ascent_2.publish(camera_data);
+
+    conduit::Node frustum_actions;
+    conduit::Node &add_frustum_plots = frustum_actions.append();
+    add_frustum_plots["action"] = "add_scenes";
+    add_frustum_plots["scenes/s1/plots/p1/type"] = "mesh";
+    add_frustum_plots["scenes/s1/plots/p1/topology"] = "camera_frustum_topo";
+    add_frustum_plots["scenes/s1/plots/p2/type"] = "mesh";
+    add_frustum_plots["scenes/s1/plots/p2/topology"] = "clipping_planes_topo";
+    add_frustum_plots["scenes/s1/plots/p3/type"] = "mesh";
+    add_frustum_plots["scenes/s1/plots/p3/topology"] = "scene_bounds_topo";
+
+    // Render a plot of the camera frustum to verify it's relation to the scene
+    std::string frust_plot_file_1 = image_name_root + "_frustum_front_image_";
+    remove_test_image(frust_plot_file_1);
+    add_frustum_plots["scenes/s1/renders/r1/image_prefix"] = frust_plot_file_1;
+    add_frustum_plots["scenes/s1/renders/r1/camera/azimuth"] = 0.0;
+    add_frustum_plots["scenes/s1/renders/r1/camera/elevation"] = 0.0;
+    add_frustum_plots["scenes/s1/renders/r1/annotations"] = "false";
+
+    // Render a plot of the camera frustum at a 90 degree angle to see the frustum better
+    std::string frust_plot_file_2 = image_name_root + "_frustum_side_image_";
+    remove_test_image(frust_plot_file_2);
+    add_frustum_plots["scenes/s1/renders/r2/image_prefix"] = frust_plot_file_2;
+    add_frustum_plots["scenes/s1/renders/r2/camera/azimuth"] = 90.0;
+    add_frustum_plots["scenes/s1/renders/r2/camera/elevation"] = 0.0;
+    add_frustum_plots["scenes/s1/renders/r2/annotations"] = "false";
+
+    ascent_2.execute(frustum_actions);
+    ascent_2.close();
+
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(frust_plot_file_1));
+    EXPECT_TRUE(check_test_image(frust_plot_file_2));
 }
 
 //-----------------------------------------------------------------------------
@@ -3887,7 +3977,7 @@ TEST(ascent_render_3d, test_render_invalid_camera)
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
 
-    ASCENT_INFO("Testing 3D Rendering with an ascent camera\n");
+    ASCENT_INFO("Testing 3D Rendering with an invalid set of camera parameters\n");
 
     string output_path = prepare_output_dir();
     string image_prefix = "t_out_render_3d_mixed_camera";
@@ -3958,59 +4048,34 @@ TEST(ascent_render_3d, test_render_invalid_camera)
 
     Node ascent_opts;
     ascent_opts["runtime/type"] = "ascent";
+    ascent_opts["exceptions"] = "forward";
     ascent.open(ascent_opts);
     ascent.publish(data);
-    ascent.execute(actions);
+
+    bool error_occured = false;
+    try
+    {
+        ascent.execute(actions);
+    }
+    catch(conduit::Error &err)
+    {
+        if (err.message().find("Cameras must follow either an ascent format or a visit format, not both.") != std::string::npos)
+        {
+            error_occured = true;
+        }
+        else
+        {
+            std::cout << "The error that was thrown did not match the expected "
+                      << "'Cameras must follow either an ascent format or a visit format, not both.' error" << std::endl;
+
+            std::cout << err.message() << std::endl;
+        }
+    }
+
     ascent.close();
 
-    // check that we created an image
-    EXPECT_TRUE(check_test_image(output_file));
-    std::string msg = "An example of creating a render, specifying all camera parameters.";
-    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+    EXPECT_TRUE(error_occured);
 }
-
-// View3DAttributes 
-    // viewNormal = (0, 0, 1)        -> The direction the camera is looking (from camera to focus point)
-    // focus = (0, 0, 0)             -> The center point the camera is looking at
-    // viewUp = (0, 1, 0)            -> The up direction relative to the camera's orientation
-    // viewAngle = 30                -> Field of view (in degrees) from perspective projection
-    // // parallelScale = 1             -> Zoom for orthographic projection
-    // nearPlane = 0.001             -> Near clipping plane
-    // farPlane = 100                -> Far clipping plane
-    // // imagePan = (0, 0)             -> Pan offset applied in screen space
-    // imageZoom = 1                 -> Additional zoom applied to the view
-    // perspective = true            -> True for perspective and false for orthographic
-    // // eyeAngle = 2                  -> Eye seperation angle in degrees for stereo rendering
-    // // centerOfRotationSet = false   -> Indicates if an explicit center of rotation was set by the user
-    // // centerOfRotation = (0, 0, 0)  -> The point around which 3D rotations will pivot
-    // // axis3DScaleFlag = false       -> Boolean indicating if we should apply non-uniform scaling to the 3 axes
-    // // axis3DScale = (1, 1, 1)       -> Axis scaling factors for each axis
-    // // shear = (0, 0, 1)             -> For oblique projections or special visualization effects
-    // // windowValid = false           -> 
-// https://github.com/visit-dav/visit/blob/e54f4b532291b3e384ad2d7f27e810a41a6a3ca3/src/java/View3DAttributes.java#L23
-
-// Ascent Camera:
-    // look_at                       -> The target point that the camera is looking towards
-    // position                      -> Camera position in 3D
-    // up                            -> Up vector
-    // fov                           -> Field of view in degrees
-    // xpan                          -> Pan offset applied in screen space - x cooredinate
-    // ypan                          -> Pan offset applied in screen space - y cooredinate
-    // elevation                     -> 
-    // azimuth
-    // zoom                          -> Additional zoom applied to the view
-    // near_plane                    -> Near clipping plane
-    // far_plane                     -> Far clipping plane
-
-// View2DAttributes 
-    // windowCoords = (0, 0, 1, 1)
-    // viewportCoords = (0.1, 0.1, 0.9, 0.9)
-    // fullFrameActivationMode = Auto?
-    // fullFrameAutoThreshold = 100
-    // xScale = 0
-    // yScale = 0
-    // windowValid = false
-// https://github.com/visit-dav/visit/blob/e54f4b532291b3e384ad2d7f27e810a41a6a3ca3/src/common/state/View3DAttributes.C
 
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
