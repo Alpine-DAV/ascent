@@ -6,6 +6,7 @@
 #include <vtkh/utils/vtkm_dataset_info.hpp>
 #include <vtkm/rendering/raytracing/Logger.h>
 #include <vtkm/rendering/MapperCylinder.h>
+#include <vtkm/rendering/MapperPoint.h>
 
 
 #include <png_utils/ascent_png_encoder.hpp>
@@ -216,9 +217,12 @@ Renderer::DoExecute()
   }
 
   bool is_lines = m_input->IsLineMesh();
+  m_input->PrintSummary(std::cerr);
   if(is_lines)
   { 
+    std::cerr << "lines affirmative" << std::endl;
     typedef vtkm::rendering::MapperCylinder TracerType;
+    //typedef vtkm::rendering::MapperPoint TracerType;
     auto mapper = std::make_shared<TracerType>();
     vtkm::Bounds bounds = m_input->GetBounds();
     vtkm::FloatDefault diagonal = vtkm::Magnitude(bounds.MaxCorner() - bounds.MinCorner());
