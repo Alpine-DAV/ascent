@@ -142,9 +142,7 @@ if(GENTEN_FOUND)
 endif()
 
 # Make t_rover_test_utils.hpp visible to the rover tests
-if(TARGET t_ascent_mpi_rover)
-    include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-endif()
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 ################################
 # Add main tests
@@ -189,6 +187,9 @@ if(MPI_FOUND AND ENABLE_MPI)
     foreach(TEST ${MPI_TESTS})
         # this uses 2 procs
         add_cpp_mpi_test(TEST ${TEST} NUM_MPI_TASKS 2 DEPENDS_ON ascent_mpi)
+        if ("${TEST}" STREQUAL "t_ascent_mpi_rover")
+            target_compile_definitions(${TEST} PRIVATE ASCENT_MPI_ENABLED)
+        endif()
     endforeach()
 
     # add the hola mpi test which uses 8 ranks
@@ -203,8 +204,6 @@ if(MPI_FOUND AND ENABLE_MPI)
       add_cpp_mpi_test(TEST t_ascent_babelflow_comp_mpi NUM_MPI_TASKS 8 DEPENDS_ON ascent_mpi)
     endif()
   endif()
-
-  target_compile_definitions(t_ascent_mpi_rover PRIVATE ASCENT_MPI_ENABLED)
 else()
     message(STATUS "MPI disabled: Skipping related tests")
 endif()
