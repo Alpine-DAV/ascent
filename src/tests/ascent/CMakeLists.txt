@@ -141,7 +141,8 @@ if(GENTEN_FOUND)
     list(APPEND BASIC_TESTS t_ascent_genten_cokurt)
 endif()
 
-
+# Make t_rover_test_utils.hpp visible to the rover tests
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 ################################
 # Add main tests
@@ -200,6 +201,8 @@ if(MPI_FOUND AND ENABLE_MPI)
       add_cpp_mpi_test(TEST t_ascent_babelflow_comp_mpi NUM_MPI_TASKS 8 DEPENDS_ON ascent_mpi)
     endif()
   endif()
+
+  target_compile_definitions(t_ascent_mpi_rover PRIVATE ASCENT_MPI_ENABLED)
 else()
     message(STATUS "MPI disabled: Skipping related tests")
 endif()

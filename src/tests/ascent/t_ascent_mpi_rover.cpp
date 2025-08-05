@@ -18,124 +18,17 @@
 #include <math.h>
 #include <mpi.h>
 
-#include <conduit_blueprint.hpp>
 #include <conduit_blueprint_mpi.hpp>
-#include <conduit_relay.hpp>
-#include <conduit_relay_mpi_io_blueprint.hpp>
 
-#include "t_utils.hpp"
+#include "t_rover_test_utils.hpp"
 
 using namespace std;
 using namespace conduit;
 using namespace ascent;
 
 // MPI variables that get used everywhere
-const MPI_Comm COMM = MPI_COMM_WORLD;
 int par_rank = 0;
 int par_size = 1;
-
-//
-// Utilities
-//
-
-void
-execute_ascent(const Node &data,
-               const Node &actions)
-{
-    Ascent ascent;
-    Node ascent_opts;
-    ascent_opts["runtime"] = "ascent";
-    ascent_opts["mpi_comm"] = COMM;
-    
-    ascent.open(ascent_opts);
-    ascent.publish(data);
-    ascent.execute(actions);
-    // TODO can we ask Ascent for the name of the file it wrote?
-    // std::cout << ascent.info().to_yaml() << std::endl;
-    ascent.close();
-}
-
-void
-render_blueprint(const string &field_name,
-                 const string &output_path,
-                 const Node &data)
-{
-    // Define Ascent actions
-
-    Node scenes;
-    scenes["s1/plots/p1/type"] = "pseudocolor";
-    scenes["s1/plots/p1/field"] = field_name;
-    scenes["s1/renders/r1/image_prefix"] = output_path;
-
-    // Rotate spatial meshes for variety
-    if (field_name.find("spatial") != std::string::npos)
-    {
-        scenes["s1/renders/r1/camera/azimuth"] = 45.0;
-    }
-
-    Node actions;
-
-    Node &add_plots = actions.append();
-    add_plots["action"] = "add_scenes";
-    add_plots["scenes"] = scenes;
-
-    // Execute Ascent actions
-    execute_ascent(data, actions);
-}
-
-void
-render_all_fields(const Node &data,
-                  const std::string &output_path,
-                  const int &cycle)
-{
-    // This is here to help identify which ascent execute is throwing an error
-    if (0 == par_rank)
-    {
-        ASCENT_INFO("Executing render_all_fields\n");
-    }
-    
-    const std::vector<std::string> fields {
-        "intensities",
-        "optical_depth",
-        "intensities_spatial",
-        "optical_depth_spatial"
-    };
-
-    // TODO: Investigate whether we gain any performance by rendering all of these fields with
-    // a single set of actions
-    for (const auto& field : fields)
-    {
-        std::string full_output_path = output_path + "_" + field;
-        render_blueprint(field, full_output_path, data);
-        if (0 == par_rank)
-        {
-            EXPECT_TRUE(check_test_image(full_output_path, 0.01f, cycle));
-        }
-    }
-}
-
-void
-load_and_verify_local_data(Node &data,
-                           const std::string &data_path)
-{
-    conduit::relay::mpi::io::blueprint::load_mesh(data_path, data, COMM);
-
-    Node verify_info;
-    EXPECT_TRUE(conduit::blueprint::mpi::mesh::verify(data, verify_info, COMM));
-}
-
-const bool
-is_vtkm_disabled()
-{
-    Node n;
-    ascent::about(n);
-    const bool disabled = "disabled" == n["runtimes/ascent/vtkm/status"].as_string();
-    if (0 == par_rank && disabled)
-    {
-        ASCENT_INFO("Ascent was built without vtkm, skipping test\n");
-    }
-    return disabled;
-}
 
 //
 // MPI Rover X-Ray tests
@@ -259,7 +152,7 @@ TEST(ascent_rover, test_xray_mpi_blueprint_braid_uniform_multi_domain)
 
     // Render and verify each field
     const int cycle = 0;
-    render_all_fields(xray_blueprint_output, query_path, cycle);
+    render_fields(xray_blueprint_output, query_path, cycle);
 
     if (0 == par_rank)
     {
@@ -392,7 +285,7 @@ TEST(ascent_rover, test_xray_mpi_blueprint_braid_uniform_multi_domain_rotated)
 
     // Render and verify each field
     const int cycle = 0;
-    render_all_fields(xray_blueprint_output, query_path, cycle);
+    render_fields(xray_blueprint_output, query_path, cycle);
 
     if (0 == par_rank)
     {
@@ -525,7 +418,7 @@ TEST(ascent_rover, test_xray_mpi_blueprint_braid_uniform_single_domain_multiple_
 
     // Render and verify each field
     const int cycle = 0;
-    render_all_fields(xray_blueprint_output, query_path, cycle);
+    render_fields(xray_blueprint_output, query_path, cycle);
 
     if (0 == par_rank)
     {
@@ -538,12 +431,9 @@ TEST(ascent_rover, test_xray_mpi_blueprint_braid_uniform_single_domain_multiple_
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {
-    int result = 0;
-
     ::testing::InitGoogleTest(&argc, argv);
     MPI_Init(&argc, &argv);
-
-    result = RUN_ALL_TESTS();
+    int result = RUN_ALL_TESTS();
     MPI_Finalize();
     return result;
 }

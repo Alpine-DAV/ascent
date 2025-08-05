@@ -21,179 +21,11 @@
 #include <conduit_relay.hpp>
 
 #include "t_config.hpp"
-#include "t_utils.hpp"
+#include "t_rover_test_utils.hpp"
 
 using namespace std;
 using namespace conduit;
 using namespace ascent;
-
-constexpr index_t EXAMPLE_MESH_SIDE_DIM = 20;
-constexpr index_t EXAMPLE_MULTI_DOMAIN_MESH_SIDE_DIM = 11;
-
-//
-// Utilities
-//
-
-void
-execute_ascent(const Node& data,
-               const Node& actions)
-{
-    Ascent ascent;
-    Node ascent_opts;
-    ascent.open(ascent_opts);
-    ascent.publish(data);
-    ascent.execute(actions);
-    // TODO can we ask Ascent for the name of the file it wrote?
-    // std::cout << ascent.info().to_yaml() << std::endl;
-    ascent.close();
-}
-
-void
-render_blueprint(const string &field_name,
-                 const string &output_path,
-                 const Node &data)
-{
-    // Define Ascent actions
-
-    Node scenes;
-    scenes["s1/plots/p1/type"] = "pseudocolor";
-    scenes["s1/plots/p1/field"] = field_name;
-    scenes["s1/renders/r1/image_prefix"] = output_path;
-
-    // Rotate spatial meshes for variety
-    if (field_name.find("spatial") != std::string::npos)
-    {
-        scenes["s1/renders/r1/camera/azimuth"] = 45.0;
-    }
-
-    Node actions;
-
-    Node &add_plots = actions.append();
-    add_plots["action"] = "add_scenes";
-    add_plots["scenes"] = scenes;
-
-    // Execute Ascent actions
-    execute_ascent(data, actions);
-}
-
-void
-render_optical_depth_fields(const Node &data,
-                            const std::string output_path,
-                            const int cycle)
-{
-    const std::vector<std::string> fields {
-        "optical_depth",
-        "optical_depth_spatial"
-    };
-
-    // TODO: Investigate whether we gain any performance by rendering all of these fields with
-    // a single set of actions
-    for (const auto& field : fields)
-    {
-        std::string full_output_path = output_path + "_" + field;
-        render_blueprint(field, full_output_path, data);
-        EXPECT_TRUE(check_test_image(full_output_path, 0.01f, cycle));
-    }
-}
-
-void
-render_all_fields(const Node &data,
-                  const std::string output_path,
-                  const int cycle)
-{
-    // This is here to help identify which ascent execute is throwing an error
-    ASCENT_INFO("Executing render_all_fields\n");
-    
-    const std::vector<std::string> fields {
-        "intensities",
-        "optical_depth",
-        "intensities_spatial",
-        "optical_depth_spatial"
-    };
-
-    // TODO: Investigate whether we gain any performance by rendering all of these fields with
-    // a single set of actions
-    for (const auto& field : fields)
-    {
-        std::string full_output_path = output_path + "_" + field;
-        render_blueprint(field, full_output_path, data);
-        EXPECT_TRUE(check_test_image(full_output_path, 0.01f, cycle));
-    }
-}
-
-void
-load_and_verify_local_data(Node &data,
-                           const std::string data_path)
-{
-    Node verify_info;
-    conduit::relay::io::blueprint::load_mesh(data_path, data);
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(data, verify_info));
-}
-
-void
-load_and_verify_ascent_data(Node &baseline_data,
-                            const std::string filename)
-{
-    Node verify_info;
-    const std::string baseline_path = conduit::utils::join_file_path(std::string(ASCENT_T_DATA_DIR),
-                                                                     filename);
-    conduit::relay::io::blueprint::load_mesh(baseline_path, baseline_data);
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(baseline_data, verify_info));
-}
-
-void
-get_valid_test_data(Node &data)
-{
-    Node verify_info;
-    conduit::blueprint::mesh::examples::braid("hexs",
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              data);
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(data, verify_info));
-}
-
-void get_valid_multi_domain_test_data(Node &data, const int num_domains)
-{
-    for(int i = 0; i < num_domains; i++)
-    {
-        Node domain;
-        conduit::blueprint::mesh::examples::braid("uniform",
-                                                  EXAMPLE_MULTI_DOMAIN_MESH_SIDE_DIM,
-                                                  EXAMPLE_MULTI_DOMAIN_MESH_SIDE_DIM,
-                                                  EXAMPLE_MULTI_DOMAIN_MESH_SIDE_DIM,
-                                                  domain);
-
-        domain["coordsets/coords/origin/x"] = -10.0 + 20.0 * i;
-        domain["state/domain_id"] = i;
-        domain["state/cycle"] = 0;
-        domain["fields/rank"].set(domain["fields/radial"]);
-
-        float64_array rank_vals = domain["fields/rank/values"].value();
-        for(index_t j = 0; j < rank_vals.number_of_elements(); j++)
-        {
-            rank_vals[j] = static_cast<float64>(i);
-        }
-
-        data.append().set(domain);
-    }
-
-    Node verify_info;
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(data, verify_info));
-}
-
-const bool
-is_vtkm_disabled()
-{
-    Node n;
-    ascent::about(n);
-    const bool disabled = "disabled" == n["runtimes/ascent/vtkm/status"].as_string();
-    if (disabled)
-    {
-        ASCENT_INFO("Ascent was built without vtkm, skipping test\n");
-    }
-    return disabled;
-}
 
 //
 // Rover X-Ray tests
@@ -303,7 +135,7 @@ TEST(ascent_rover, test_xray_blueprint_braid)
     EXPECT_FALSE(has_differences);
 
     // Render and verify each field
-    render_all_fields(xray_blueprint_output, query_path, cycle);
+    render_fields(xray_blueprint_output, query_path, cycle);
 
     // Dump info
     std::string msg = "Rendered XRay diagnostic images of an example braid mesh";
@@ -362,7 +194,7 @@ TEST(ascent_rover, test_xray_blueprint_braid_rotated)
     load_and_verify_local_data(xray_blueprint_output, output_data_path);
 
     // Render and verify each field
-    render_all_fields(xray_blueprint_output, query_path, cycle);
+    render_fields(xray_blueprint_output, query_path, cycle);
 
     // Dump info
     std::string msg = "Rendered XRay diagnostic images of an example braid mesh (rotated)";
@@ -473,7 +305,7 @@ TEST(ascent_rover, test_xray_blueprint_braid_absorption_only)
     EXPECT_FALSE(has_differences);
 
     // Render and verify each field
-    render_optical_depth_fields(xray_blueprint_output, query_path, cycle);
+    render_fields(xray_blueprint_output, query_path, cycle, false);
 
     // Dump info
     std::string msg = "Rendered XRay diagnostic images of an example braid mesh (absorption only)";
@@ -586,7 +418,7 @@ TEST(ascent_rover, test_xray_blueprint_braid_uniform_multi_domain)
     EXPECT_FALSE(has_differences);
 
     // Render and verify each field
-    render_all_fields(xray_blueprint_output, query_path, cycle);
+    render_fields(xray_blueprint_output, query_path, cycle);
 
     // Dump info
     std::string msg = "Rendered xray diagnostic images of an example braid_uniform_multi_domain mesh";
@@ -704,7 +536,7 @@ TEST(ascent_rover, test_xray_blueprint_braid_uniform_multi_domain_rotated)
     EXPECT_FALSE(has_differences);
 
     // Render and verify each field
-    render_all_fields(xray_blueprint_output, query_path, cycle);
+    render_fields(xray_blueprint_output, query_path, cycle);
 
     // Dump info
     std::string msg = "Rendered xray diagnostic images of an example braid_uniform_multi_domain mesh (rotated)";
@@ -904,7 +736,7 @@ TEST(ascent_rover, test_xray_blueprint_curv3d)
     EXPECT_FALSE(has_differences);
 
     // Render and verify each field
-    render_all_fields(xray_blueprint_output, query_path, cycle);
+    render_fields(xray_blueprint_output, query_path, cycle);
 
     // Dump info
     std::string msg = "Rendered XRay diagnostic images of the curv3d dataset";
@@ -963,7 +795,7 @@ TEST(ascent_rover, test_xray_blueprint_curv3d_rotated)
     load_and_verify_local_data(xray_blueprint_output, output_data_path);
 
     // Render and verify each field
-    render_all_fields(xray_blueprint_output, query_path, cycle);
+    render_fields(xray_blueprint_output, query_path, cycle);
 
     // Dump info
     std::string msg = "Rendered XRay diagnostic images of the curv3d dataset (rotated)";
@@ -1037,7 +869,7 @@ TEST(ascent_rover, test_xray_blueprint_curv3d_camera_params)
     load_and_verify_local_data(xray_blueprint_output, output_data_path);
 
     // Render and verify each field
-    render_all_fields(xray_blueprint_output, query_path, cycle);
+    render_fields(xray_blueprint_output, query_path, cycle);
 
     // Dump info
     std::string msg = "Rendered XRay diagnostic images of the curv3d dataset (all camera params)";
@@ -1154,7 +986,7 @@ TEST(ascent_rover, test_xray_blueprint_multi_curv3d)
     EXPECT_FALSE(has_differences);
 
     // Render and verify each field
-    render_all_fields(xray_blueprint_output, query_path, cycle);
+    render_fields(xray_blueprint_output, query_path, cycle);
 
     // Dump info
     std::string msg = "Rendered XRay diagnostic images of the multi_curv3d dataset";
@@ -1213,7 +1045,7 @@ TEST(ascent_rover, test_xray_blueprint_multi_curv3d_rotated)
     load_and_verify_local_data(xray_blueprint_output, output_data_path);
 
     // Render and verify each field
-    render_all_fields(xray_blueprint_output, query_path, cycle);
+    render_fields(xray_blueprint_output, query_path, cycle);
 
     // Dump info
     std::string msg = "Rendered XRay diagnostic images of the multi_curv3d dataset (rotated)";
