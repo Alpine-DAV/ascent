@@ -64,7 +64,7 @@ Engine::init_emission(vtkmRayTracing::Ray<Precision> &rays,
   {
     ROVER_INFO("Engine::init_emission: emission not specified");
   }
-  else
+  else // (!emission.empty())
   {
     m_tracer->SetEmissionField(emission);
     rays.AddBuffer(num_bins, "emission");

@@ -186,7 +186,7 @@ get_default_baseline(Node &baseline_data,
             width: 200
             unit_scalar: 1.0
             absorption: ""
-            emission: ""
+            emission:
             output_type: ""
         xray_data: 
             detector_width: 0.0
@@ -202,7 +202,13 @@ get_default_baseline(Node &baseline_data,
     // Parse the YAML and then overwrite the test parameters
     baseline_data.parse(yaml);
     baseline_data["cycle"] = cycle;
-    baseline_data["xray_query"].update(params);
+    baseline_data["xray_query"].update(params["rover"]);
+
+    if (params.has_child("camera"))
+    {
+        // Camera params are optional, so we only set them if they exist
+        baseline_data["xray_query/camera"].set(params["camera"]);
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -210,16 +216,6 @@ inline void
 check_blueprint_diff(const Node &baseline_data,
                      const Node &state_output)
 {
-    int par_rank = 0;
-#ifdef ASCENT_MPI_ENABLED
-    MPI_Comm_rank(COMM, &par_rank);
-#endif
-
-    if (0 != par_rank)
-    {
-        return; // Return early if we're not rank 0
-    }
-
     Node diff_info;
     const bool has_differences = baseline_data.diff(state_output,
                                                     diff_info,
@@ -230,7 +226,7 @@ check_blueprint_diff(const Node &baseline_data,
     {
         // Printing the diff is useful for debugging
         ASCENT_INFO("Found differences in the blueprint diff:\n");
-        diff_info.print();
+        std::cout << diff_info.to_yaml() << std::endl;
     }
 
     EXPECT_FALSE(has_differences);

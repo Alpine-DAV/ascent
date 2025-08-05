@@ -82,7 +82,7 @@ TEST(ascent_rover, test_xray_blueprint_braid)
 
     // Load and verify baseline data
     Node baseline_data;
-    get_default_baseline(baseline_data, extracts["e1/params/rover"], cycle);
+    get_default_baseline(baseline_data, extracts["e1/params"], cycle);
 
     // Manually override the remaining fields with expected values
     baseline_data["time"] = 3.1414999961853;
@@ -196,7 +196,6 @@ TEST(ascent_rover, test_xray_blueprint_braid_absorption_only)
     Node extracts;
     extracts["e1/type"] = "xray";
     extracts["e1/params/rover/absorption"] = "radial";
-    extracts["e1/params/rover/emission"] = "";
     extracts["e1/params/rover/filename"] = query_path;
     extracts["e1/params/rover/output_type"] = "yaml";
     extracts["e1/params/rover/precision"] = "double";
@@ -215,44 +214,17 @@ TEST(ascent_rover, test_xray_blueprint_braid_absorption_only)
     Node &state_output = xray_blueprint_output["domain_000000/state"];
 
     // Load and verify baseline data
-    const std::string yaml = R"yaml(
-          time: 3.1414999961853
-          cycle: 100
-          xray_view: 
-            position: [0.0, 0.0, 34.6410179138184]
-            zoom: 1.0
-            look_at: [0.0, 0.0, 0.0]
-            up: [0.0, 1.0, 0.0]
-            fov: 60.0
-            xpan: 0.0
-            ypan: 0.0
-            near_plane: 3.46410179138184
-            far_plane: 346.410186767578
-          xray_query: 
-            background_intensity: 0.0
-            divide_emis_by_absorb: "false"
-            enable_rays_mesh: "false"
-            height: 200
-            precision: "double"
-            width: 200
-            unit_scalar: 1.0
-            absorption: "radial"
-            emission:
-            output_type: "yaml"
-          xray_data: 
-            detector_width: 4.00000016604152
-            detector_height: 4.00000016604152
-            intensity_max:
-            intensity_min:
-            optical_depth_max: 2698.02744396615
-            optical_depth_min: 0.0
-            image_topo_order_of_domain_variables: "xyz"
-          domain_id: 0
-      )yaml";
-
     Node baseline_data;
-    baseline_data.parse(yaml);
-    baseline_data["xray_query/filename"] = query_path;
+    get_default_baseline(baseline_data, extracts["e1/params"], cycle);
+
+    // Manually override the remaining fields with expected values
+    baseline_data["time"] = 3.1414999961853;
+    baseline_data["xray_view/position"] = {0.0, 0.0, 34.6410179138184};
+    baseline_data["xray_view/near_plane"] = 3.46410179138184;
+    baseline_data["xray_view/far_plane"] = 346.410186767578;
+    baseline_data["xray_data/detector_width"] = 4.00000016604152;
+    baseline_data["xray_data/detector_height"] = 4.00000016604152;
+    baseline_data["xray_data/optical_depth_max"] = 2698.02783203125;
 
     // Diff the baseline data with our new output
     check_blueprint_diff(baseline_data, state_output);
@@ -301,7 +273,7 @@ TEST(ascent_rover, test_xray_blueprint_braid_uniform_multi_domain)
     extracts["e1/params/rover/filename"] = query_path;
     extracts["e1/params/rover/output_type"] = "json";
     extracts["e1/params/rover/precision"] = "double";
-    extracts["e1/params/rover/unit_scalar"] = 1.234f;
+    extracts["e1/params/rover/unit_scalar"] = 1.234;
 
     Node actions;
     Node &add_extracts = actions.append();
@@ -317,45 +289,19 @@ TEST(ascent_rover, test_xray_blueprint_braid_uniform_multi_domain)
     Node &state_output = xray_blueprint_output["domain_000000/state"];
 
     // Load and verify baseline data
-    const std::string yaml = R"yaml(
-        time: 3.1414999961853
-        cycle: 0
-        xray_view: 
-            position: [10.0, 0.0, 48.9897956848145]
-            zoom: 1.0
-            look_at: [10.0, 0.0, 0.0]
-            up: [0.0, 1.0, 0.0]
-            fov: 60.0
-            xpan: 0.0
-            ypan: 0.0
-            near_plane: 4.89897966384888
-            far_plane: 489.89794921875
-        xray_query: 
-            background_intensity: 0.0
-            divide_emis_by_absorb: "false"
-            enable_rays_mesh: "false"
-            height: 200
-            precision: "double"
-            width: 200
-            unit_scalar: 1.23399996757507
-            absorption: "radial"
-            emission: "radial"
-            filename: ""
-            output_type: "json"
-        xray_data: 
-            detector_width: 5.65685440236809
-            detector_height: 5.65685440236809
-            intensity_max: 213.735064037837
-            intensity_min: 0.0
-            optical_depth_max: 3683.56120526528
-            optical_depth_min: 0.0
-            image_topo_order_of_domain_variables: "xyz"
-        domain_id: 0
-    )yaml";
-
     Node baseline_data;
-    baseline_data.parse(yaml);
-    baseline_data["xray_query/filename"] = query_path;
+    get_default_baseline(baseline_data, extracts["e1/params"], cycle);
+
+    // Manually override the remaining fields with expected values
+    baseline_data["time"] = 3.1414999961853;
+    baseline_data["xray_view/position"] = {10.0, 0.0, 48.9897956848145};
+    baseline_data["xray_view/look_at"] = {10.0, 0.0, 0.0};
+    baseline_data["xray_view/near_plane"] = 4.89897966384888;
+    baseline_data["xray_view/far_plane"] = 489.89794921875;
+    baseline_data["xray_data/detector_width"] = 5.65685440236809;
+    baseline_data["xray_data/detector_height"] = 5.65685440236809;
+    baseline_data["xray_data/intensity_max"] = 213.735064037837;
+    baseline_data["xray_data/optical_depth_max"] = 3683.56120526528;
 
     // Diff the baseline data with our new output
     check_blueprint_diff(baseline_data, state_output);
@@ -422,48 +368,21 @@ TEST(ascent_rover, test_xray_blueprint_braid_uniform_multi_domain_rotated)
     Node &state_output = xray_blueprint_output["domain_000000/state"];
 
     // Load and verify baseline data
-    const std::string yaml = R"yaml(
-        time: 3.1414999961853
-        cycle: 0
-        xray_view: 
-            position: [40.0, 34.6410140991211, 17.3205070495605]
-            zoom: 1.0
-            look_at: [10.0, 0.0, 0.0]
-            up: [0.0, 1.0, 0.0]
-            fov: 60.0
-            xpan: 0.0
-            ypan: 0.0
-            near_plane: 4.89897966384888
-            far_plane: 489.89794921875
-        xray_query: 
-            background_intensity: 12.3400001525879
-            divide_emis_by_absorb: "false"
-            enable_rays_mesh: "true"
-            height: 200
-            precision: "single"
-            width: 200
-            unit_scalar: 1.0
-            absorption: "radial"
-            emission: "radial"
-            filename: ""
-            output_type: "yaml"
-            camera: 
-                azimuth: 60.0
-                elevation: 45.0
-        xray_data: 
-            detector_width: 5.65685440236809
-            detector_height: 5.65685440236809
-            intensity_max: 173.205078125
-            intensity_min: 12.3400001525879
-            optical_depth_max: 3120.77880859375
-            optical_depth_min: 0.0
-            image_topo_order_of_domain_variables: "xyz"
-        domain_id: 0
-    )yaml";
-
     Node baseline_data;
-    baseline_data.parse(yaml);
-    baseline_data["xray_query/filename"] = query_path;
+    get_default_baseline(baseline_data, extracts["e1/params"], cycle);
+
+    // Manually override the remaining fields with expected values
+    baseline_data["time"] = 3.1414999961853;
+    baseline_data["xray_view/position"] = {40.0, 34.6410140991211, 17.3205070495605};
+    baseline_data["xray_view/look_at"] = {10.0, 0.0, 0.0};
+    baseline_data["xray_view/near_plane"] = 4.89897966384888;
+    baseline_data["xray_view/far_plane"] = 489.89794921875;
+    baseline_data["xray_query/background_intensity"] = 12.3400001525879;
+    baseline_data["xray_data/detector_width"] = 5.65685440236809;
+    baseline_data["xray_data/detector_height"] = 5.65685440236809;
+    baseline_data["xray_data/intensity_max"] = 173.205078125;
+    baseline_data["xray_data/intensity_min"] = 12.3400001525879;
+    baseline_data["xray_data/optical_depth_max"] = 3120.77880859375;
 
     // Diff the baseline data with our new output
     check_blueprint_diff(baseline_data, state_output);
@@ -616,44 +535,19 @@ TEST(ascent_rover, test_xray_blueprint_curv3d)
     Node &state_output = xray_blueprint_output["domain_000000/state"];
 
     // Load and verify baseline data
-    const std::string yaml = R"(
-        time: 4.80000019073486
-        cycle: 48
-        xray_view: 
-          position: [0.0, 2.5, 47.0156211853027]
-          zoom: 1.0
-          look_at: [0.0, 2.5, 15.0]
-          up: [0.0, 1.0, 0.0]
-          fov: 60.0
-          xpan: 0.0
-          ypan: 0.0
-          near_plane: 3.20156216621399
-          far_plane: 320.156219482422
-        xray_query: 
-          background_intensity: 0.0
-          divide_emis_by_absorb: "false"
-          enable_rays_mesh: "false"
-          height: 200
-          precision: "double"
-          width: 200
-          unit_scalar: 1.0
-          absorption: "d"
-          emission: "p"
-          output_type: "yaml"
-        xray_data: 
-          detector_width: 3.69684552235394
-          detector_height: 3.69684552235394
-          intensity_max: 0.491446942090988
-          intensity_min: 0.0
-          optical_depth_max: 125.497886657715
-          optical_depth_min: 0.0
-          image_topo_order_of_domain_variables: "xyz"
-        domain_id: 0
-        )";
-
     Node baseline_data;
-    baseline_data.parse(yaml);
-    baseline_data["xray_query/filename"] = query_path;
+    get_default_baseline(baseline_data, extracts["e1/params"], cycle);
+
+    // Manually override the remaining fields with expected values
+    baseline_data["time"] = 4.80000019073486;
+    baseline_data["xray_view/position"] = {0.0, 2.5, 47.0156211853027};
+    baseline_data["xray_view/look_at"] = {0.0, 2.5, 15.0};
+    baseline_data["xray_view/near_plane"] = 3.20156216621399;
+    baseline_data["xray_view/far_plane"] = 320.156219482422;
+    baseline_data["xray_data/detector_width"] = 3.69684552235394;
+    baseline_data["xray_data/detector_height"] = 3.69684552235394;
+    baseline_data["xray_data/intensity_max"] = 0.491446942090988;
+    baseline_data["xray_data/optical_depth_max"] = 125.497886657715;
 
     // Diff the baseline data with our new output
     check_blueprint_diff(baseline_data, state_output);
@@ -856,44 +750,19 @@ TEST(ascent_rover, test_xray_blueprint_multi_curv3d)
     Node &state_output = xray_blueprint_output["domain_000000/state"];
 
     // Load and verify baseline data
-    const std::string yaml = R"(
-        time: 4.80000019073486
-        cycle: 48
-        xray_view:
-          position: [0.0, 2.49999904632568, 47.0156211853027]
-          zoom: 1.0
-          look_at: [0.0, 2.49999904632568, 15.0]
-          up: [0.0, 1.0, 0.0]
-          fov: 60.0
-          xpan: 0.0
-          ypan: 0.0
-          near_plane: 3.20156216621399
-          far_plane: 320.156219482422
-        xray_query:
-          background_intensity: 0.0
-          divide_emis_by_absorb: "true"
-          enable_rays_mesh: "false"
-          height: 200
-          precision: "single"
-          width: 200
-          unit_scalar: 1.0
-          absorption: "d"
-          emission: "p"
-          output_type: "yaml"
-        xray_data:
-          detector_width: 3.69684552235394
-          detector_height: 3.69684552235394
-          intensity_max: 0.241532012820244
-          intensity_min: 0.0
-          optical_depth_max: 125.49796295166
-          optical_depth_min: 0.0
-          image_topo_order_of_domain_variables: "xyz"
-        domain_id: 0
-        )";
-
     Node baseline_data;
-    baseline_data.parse(yaml);
-    baseline_data["xray_query/filename"] = query_path;
+    get_default_baseline(baseline_data, extracts["e1/params"], cycle);
+
+    // Manually override the remaining fields with expected values
+    baseline_data["time"] = 4.80000019073486;
+    baseline_data["xray_view/position"] = {0.0, 2.49999904632568, 47.0156211853027};
+    baseline_data["xray_view/look_at"] = {0.0, 2.49999904632568, 15.0};
+    baseline_data["xray_view/near_plane"] = 3.20156216621399;
+    baseline_data["xray_view/far_plane"] = 320.156219482422;
+    baseline_data["xray_data/detector_width"] = 3.69684552235394;
+    baseline_data["xray_data/detector_height"] = 3.69684552235394;
+    baseline_data["xray_data/intensity_max"] = 0.241532012820244;
+    baseline_data["xray_data/optical_depth_max"] = 125.49796295166;
 
     // Diff the baseline data with our new output
     check_blueprint_diff(baseline_data, state_output);

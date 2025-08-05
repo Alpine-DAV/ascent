@@ -991,6 +991,11 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
     intensities_spatial.set(intensities);
     intensities_spatial["topology"] = "spatial_topo";
   }
+  else // (emission.empty())
+  {
+    xray_data["intensity_max"] = 0.0;
+    xray_data["intensity_min"] = 0.0;
+  }
 
   //
   // Spatial mesh
