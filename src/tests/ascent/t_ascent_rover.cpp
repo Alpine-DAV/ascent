@@ -20,7 +20,6 @@
 #include <conduit_blueprint.hpp>
 #include <conduit_relay.hpp>
 
-#include "t_config.hpp"
 #include "t_rover_test_utils.hpp"
 
 using namespace std;
@@ -82,57 +81,21 @@ TEST(ascent_rover, test_xray_blueprint_braid)
     Node &state_output = xray_blueprint_output["domain_000000/state"];
 
     // Load and verify baseline data
-    const std::string yaml = R"yaml(
-          time: 3.1414999961853
-          cycle: 100
-          xray_view: 
-            position: [0.0, 0.0, 34.6410179138184]
-            zoom: 1.0
-            look_at: [0.0, 0.0, 0.0]
-            up: [0.0, 1.0, 0.0]
-            fov: 60.0
-            xpan: 0.0
-            ypan: 0.0
-            near_plane: 3.46410179138184
-            far_plane: 346.410186767578
-          xray_query: 
-            background_intensity: 0.0
-            divide_emis_by_absorb: "false"
-            enable_rays_mesh: "false"
-            height: 200
-            precision: "double"
-            width: 200
-            unit_scalar: 1.0
-            absorption: "radial"
-            emission: "radial"
-            output_type: "yaml"
-          xray_data: 
-            detector_width: 4.00000016604152
-            detector_height: 4.00000016604152
-            intensity_max: 173.205078125
-            intensity_min: 0.0
-            optical_depth_max: 2698.02783203125
-            optical_depth_min: 0.0
-            image_topo_order_of_domain_variables: "xyz"
-          domain_id: 0
-      )yaml";
-
     Node baseline_data;
-    baseline_data.parse(yaml);
-    baseline_data["xray_query/filename"] = query_path;
+    get_default_baseline(baseline_data, extracts["e1/params/rover"], cycle);
+
+    // Manually override the remaining fields with expected values
+    baseline_data["time"] = 3.1414999961853;
+    baseline_data["xray_view/position"] = {0.0, 0.0, 34.6410179138184};
+    baseline_data["xray_view/near_plane"] = 3.46410179138184;
+    baseline_data["xray_view/far_plane"] = 346.410186767578;
+    baseline_data["xray_data/detector_width"] = 4.00000016604152;
+    baseline_data["xray_data/detector_height"] = 4.00000016604152;
+    baseline_data["xray_data/intensity_max"] = 173.205078125;
+    baseline_data["xray_data/optical_depth_max"] = 2698.02783203125;
 
     // Diff the baseline data with our new output
-    Node diff_info;
-    const bool has_differences = baseline_data.diff(state_output,
-                                                    diff_info,
-                                                    0.01,
-                                                    true);
-    if (has_differences)
-    {
-        ASCENT_INFO("Found differences in the braid blueprint diff:\n");
-        diff_info.print();
-    }
-    EXPECT_FALSE(has_differences);
+    check_blueprint_diff(baseline_data, state_output);
 
     // Render and verify each field
     render_fields(xray_blueprint_output, query_path, cycle);
@@ -292,17 +255,7 @@ TEST(ascent_rover, test_xray_blueprint_braid_absorption_only)
     baseline_data["xray_query/filename"] = query_path;
 
     // Diff the baseline data with our new output
-    Node diff_info;
-    const bool has_differences = baseline_data.diff(state_output,
-                                                    diff_info,
-                                                    0.01,
-                                                    true);
-    if (has_differences)
-    {
-        ASCENT_INFO("Found differences in the braid blueprint diff (absorption only):\n");
-        diff_info.print();
-    }
-    EXPECT_FALSE(has_differences);
+    check_blueprint_diff(baseline_data, state_output);
 
     // Render and verify each field
     render_fields(xray_blueprint_output, query_path, cycle, false);
@@ -405,17 +358,7 @@ TEST(ascent_rover, test_xray_blueprint_braid_uniform_multi_domain)
     baseline_data["xray_query/filename"] = query_path;
 
     // Diff the baseline data with our new output
-    Node diff_info;
-    const bool has_differences = baseline_data.diff(state_output,
-                                                    diff_info,
-                                                    0.01,
-                                                    true);
-    if (has_differences)
-    {
-        ASCENT_INFO("Found differences in the braid_uniform_multi_domain blueprint diff:\n");
-        diff_info.print();
-    }
-    EXPECT_FALSE(has_differences);
+    check_blueprint_diff(baseline_data, state_output);
 
     // Render and verify each field
     render_fields(xray_blueprint_output, query_path, cycle);
@@ -523,17 +466,7 @@ TEST(ascent_rover, test_xray_blueprint_braid_uniform_multi_domain_rotated)
     baseline_data["xray_query/filename"] = query_path;
 
     // Diff the baseline data with our new output
-    Node diff_info;
-    const bool has_differences = baseline_data.diff(state_output,
-                                                    diff_info,
-                                                    0.01,
-                                                    true);
-    if (has_differences)
-    {
-        ASCENT_INFO("Found differences in the braid_uniform_multi_domain blueprint diff (rotated):\n");
-        diff_info.print();
-    }
-    EXPECT_FALSE(has_differences);
+    check_blueprint_diff(baseline_data, state_output);
 
     // Render and verify each field
     render_fields(xray_blueprint_output, query_path, cycle);
@@ -723,17 +656,7 @@ TEST(ascent_rover, test_xray_blueprint_curv3d)
     baseline_data["xray_query/filename"] = query_path;
 
     // Diff the baseline data with our new output
-    Node diff_info;
-    const bool has_differences = baseline_data.diff(state_output,
-                                                    diff_info,
-                                                    0.01,
-                                                    true);
-    if (has_differences)
-    {
-        ASCENT_INFO("Found differences in the curv3d blueprint diff:\n");
-        diff_info.print();
-    }
-    EXPECT_FALSE(has_differences);
+    check_blueprint_diff(baseline_data, state_output);
 
     // Render and verify each field
     render_fields(xray_blueprint_output, query_path, cycle);
@@ -973,17 +896,7 @@ TEST(ascent_rover, test_xray_blueprint_multi_curv3d)
     baseline_data["xray_query/filename"] = query_path;
 
     // Diff the baseline data with our new output
-    Node diff_info;
-    const bool has_differences = baseline_data.diff(state_output,
-                                                    diff_info,
-                                                    0.01,
-                                                    true);
-    if (has_differences)
-    {
-        ASCENT_INFO("Found differences in the curv3d blueprint diff:\n");
-        diff_info.print();
-    }
-    EXPECT_FALSE(has_differences);
+    check_blueprint_diff(baseline_data, state_output);
 
     // Render and verify each field
     render_fields(xray_blueprint_output, query_path, cycle);

@@ -137,17 +137,7 @@ TEST(ascent_rover, test_xray_mpi_blueprint_braid_uniform_multi_domain)
         baseline_data["xray_query/filename"] = query_path;
     
         // Diff the baseline data with our new output
-        Node diff_info;
-        const bool has_differences = baseline_data.diff(state_output,
-                                                        diff_info,
-                                                        0.01,
-                                                        true);
-        if (has_differences)
-        {
-            ASCENT_INFO("Found differences in the braid_uniform_multi_domain blueprint diff:\n");
-            diff_info.print();
-        }
-        EXPECT_FALSE(has_differences);
+        check_blueprint_diff(baseline_data, state_output);
     }
 
     // Render and verify each field
@@ -270,17 +260,7 @@ TEST(ascent_rover, test_xray_mpi_blueprint_braid_uniform_multi_domain_rotated)
         baseline_data["xray_query/filename"] = query_path;
     
         // Diff the baseline data with our new output
-        Node diff_info;
-        const bool has_differences = baseline_data.diff(state_output,
-                                                        diff_info,
-                                                        0.01,
-                                                        true);
-        if (has_differences)
-        {
-            ASCENT_INFO("Found differences in the braid_uniform_multi_domain blueprint diff (rotated):\n");
-            diff_info.print();
-        }
-        EXPECT_FALSE(has_differences);
+        check_blueprint_diff(baseline_data, state_output);
     }
 
     // Render and verify each field
@@ -403,17 +383,7 @@ TEST(ascent_rover, test_xray_mpi_blueprint_braid_uniform_single_domain_multiple_
         baseline_data["xray_query/filename"] = query_path;
     
         // Diff the baseline data with our new output
-        Node diff_info;
-        const bool has_differences = baseline_data.diff(state_output,
-                                                        diff_info,
-                                                        0.01,
-                                                        true);
-        if (has_differences)
-        {
-            ASCENT_INFO("Found differences in the braid_uniform_multi_domain blueprint diff:\n");
-            diff_info.print();
-        }
-        EXPECT_FALSE(has_differences);
+        check_blueprint_diff(baseline_data, state_output);
     }
 
     // Render and verify each field

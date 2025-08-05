@@ -144,7 +144,7 @@ load_and_verify_local_data(Node &data,
 //-----------------------------------------------------------------------------
 inline void
 load_and_verify_ascent_data(Node &baseline_data,
-                            const std::string filename)
+                            const std::string &filename)
 {
     Node verify_info;
     const std::string baseline_path = conduit::utils::join_file_path(std::string(ASCENT_T_DATA_DIR),
@@ -156,6 +156,84 @@ load_and_verify_ascent_data(Node &baseline_data,
     conduit::relay::io::blueprint::load_mesh(baseline_path, baseline_data);
     EXPECT_TRUE(conduit::blueprint::mesh::verify(baseline_data, verify_info));
 #endif
+}
+
+inline void
+get_default_baseline(Node &baseline_data,
+                     const Node &params,
+                     const int &cycle)
+{
+    // Baseline data with default values
+    const std::string yaml = R"yaml(
+        time: 0.0
+        cycle: 0
+        xray_view: 
+            position: [0.0, 0.0, 0.0]
+            zoom: 1.0
+            look_at: [0.0, 0.0, 0.0]
+            up: [0.0, 1.0, 0.0]
+            fov: 60.0
+            xpan: 0.0
+            ypan: 0.0
+            near_plane: 0.0
+            far_plane: 0.0
+        xray_query: 
+            background_intensity: 0.0
+            divide_emis_by_absorb: "false"
+            enable_rays_mesh: "false"
+            height: 200
+            precision: "single"
+            width: 200
+            unit_scalar: 1.0
+            absorption: ""
+            emission: ""
+            output_type: ""
+        xray_data: 
+            detector_width: 0.0
+            detector_height: 0.0
+            intensity_max: 0.0
+            intensity_min: 0.0
+            optical_depth_max: 0.0
+            optical_depth_min: 0.0
+            image_topo_order_of_domain_variables: "xyz"
+        domain_id: 0
+    )yaml";
+
+    // Parse the YAML and then overwrite the test parameters
+    baseline_data.parse(yaml);
+    baseline_data["cycle"] = cycle;
+    baseline_data["xray_query"].update(params);
+}
+
+//-----------------------------------------------------------------------------
+inline void
+check_blueprint_diff(const Node &baseline_data,
+                     const Node &state_output)
+{
+    int par_rank = 0;
+#ifdef ASCENT_MPI_ENABLED
+    MPI_Comm_rank(COMM, &par_rank);
+#endif
+
+    if (0 != par_rank)
+    {
+        return; // Return early if we're not rank 0
+    }
+
+    Node diff_info;
+    const bool has_differences = baseline_data.diff(state_output,
+                                                    diff_info,
+                                                    0.01,
+                                                    true);
+
+    if (has_differences)
+    {
+        // Printing the diff is useful for debugging
+        ASCENT_INFO("Found differences in the blueprint diff:\n");
+        diff_info.print();
+    }
+
+    EXPECT_FALSE(has_differences);
 }
 
 //-----------------------------------------------------------------------------
