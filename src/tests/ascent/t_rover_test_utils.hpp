@@ -204,9 +204,9 @@ get_default_baseline(Node &baseline_data,
     baseline_data["cycle"] = cycle;
     baseline_data["xray_query"].update(params["rover"]);
 
+    // Camera params are optional, so we only set them if they exist
     if (params.has_child("camera"))
     {
-        // Camera params are optional, so we only set them if they exist
         baseline_data["xray_query/camera"].set(params["camera"]);
     }
 }

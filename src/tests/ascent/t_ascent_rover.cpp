@@ -78,7 +78,6 @@ TEST(ascent_rover, test_xray_blueprint_braid)
     // Load and verify output mesh
     Node xray_blueprint_output, verify_info;
     load_and_verify_local_data(xray_blueprint_output, output_data_path);
-    Node &state_output = xray_blueprint_output["domain_000000/state"];
 
     // Load and verify baseline data
     Node baseline_data;
@@ -95,6 +94,7 @@ TEST(ascent_rover, test_xray_blueprint_braid)
     baseline_data["xray_data/optical_depth_max"] = 2698.02783203125;
 
     // Diff the baseline data with our new output
+    Node &state_output = xray_blueprint_output["domain_000000/state"];
     check_blueprint_diff(baseline_data, state_output);
 
     // Render and verify each field
@@ -140,7 +140,7 @@ TEST(ascent_rover, test_xray_blueprint_braid_rotated)
     extracts["e1/params/rover/emission"] = "radial";
     extracts["e1/params/rover/filename"] = query_path;
     extracts["e1/params/rover/output_type"] = "json";
-    extracts["e1/params/rover/background_intensity"] = 100.0f;
+    extracts["e1/params/rover/background_intensity"] = 100.0;
     extracts["e1/params/camera/azimuth"] = 45.0;
     extracts["e1/params/camera/elevation"] = 45.0;
 
@@ -155,6 +155,25 @@ TEST(ascent_rover, test_xray_blueprint_braid_rotated)
     // Load and verify output mesh
     Node xray_blueprint_output, verify_info;
     load_and_verify_local_data(xray_blueprint_output, output_data_path);
+
+    // Load and verify baseline data
+    Node baseline_data;
+    get_default_baseline(baseline_data, extracts["e1/params"], cycle);
+
+    // Manually override the remaining fields with expected values
+    baseline_data["time"] = 3.1414999961853;
+    baseline_data["xray_view/position"] = {17.3205070495605, 24.49489402771, 17.3205070495605};
+    baseline_data["xray_view/near_plane"] = 3.46410179138184;
+    baseline_data["xray_view/far_plane"] = 346.410186767578;
+    baseline_data["xray_data/detector_width"] = 4.00000016604152;
+    baseline_data["xray_data/detector_height"] = 4.00000016604152;
+    baseline_data["xray_data/intensity_max"] = 173.205078125;
+    baseline_data["xray_data/intensity_min"] = 100.0;
+    baseline_data["xray_data/optical_depth_max"] = 2475.25146484375;
+
+    // Diff the baseline data with our new output
+    Node &state_output = xray_blueprint_output["domain_000000/state"];
+    check_blueprint_diff(baseline_data, state_output);
 
     // Render and verify each field
     render_fields(xray_blueprint_output, query_path, cycle);
@@ -211,7 +230,6 @@ TEST(ascent_rover, test_xray_blueprint_braid_absorption_only)
     // Load and verify output mesh
     Node xray_blueprint_output, verify_info;
     load_and_verify_local_data(xray_blueprint_output, output_data_path);
-    Node &state_output = xray_blueprint_output["domain_000000/state"];
 
     // Load and verify baseline data
     Node baseline_data;
@@ -227,6 +245,7 @@ TEST(ascent_rover, test_xray_blueprint_braid_absorption_only)
     baseline_data["xray_data/optical_depth_max"] = 2698.02783203125;
 
     // Diff the baseline data with our new output
+    Node &state_output = xray_blueprint_output["domain_000000/state"];
     check_blueprint_diff(baseline_data, state_output);
 
     // Render and verify each field
@@ -286,7 +305,6 @@ TEST(ascent_rover, test_xray_blueprint_braid_uniform_multi_domain)
     // Load and verify output mesh
     Node xray_blueprint_output, verify_info;
     load_and_verify_local_data(xray_blueprint_output, output_data_path);
-    Node &state_output = xray_blueprint_output["domain_000000/state"];
 
     // Load and verify baseline data
     Node baseline_data;
@@ -304,6 +322,7 @@ TEST(ascent_rover, test_xray_blueprint_braid_uniform_multi_domain)
     baseline_data["xray_data/optical_depth_max"] = 3683.56120526528;
 
     // Diff the baseline data with our new output
+    Node &state_output = xray_blueprint_output["domain_000000/state"];
     check_blueprint_diff(baseline_data, state_output);
 
     // Render and verify each field
@@ -365,7 +384,6 @@ TEST(ascent_rover, test_xray_blueprint_braid_uniform_multi_domain_rotated)
     // Load and verify output mesh
     Node xray_blueprint_output, verify_info;
     load_and_verify_local_data(xray_blueprint_output, output_data_path);
-    Node &state_output = xray_blueprint_output["domain_000000/state"];
 
     // Load and verify baseline data
     Node baseline_data;
@@ -385,6 +403,7 @@ TEST(ascent_rover, test_xray_blueprint_braid_uniform_multi_domain_rotated)
     baseline_data["xray_data/optical_depth_max"] = 3120.77880859375;
 
     // Diff the baseline data with our new output
+    Node &state_output = xray_blueprint_output["domain_000000/state"];
     check_blueprint_diff(baseline_data, state_output);
 
     // Render and verify each field
@@ -532,7 +551,6 @@ TEST(ascent_rover, test_xray_blueprint_curv3d)
     // Load and verify output mesh
     Node xray_blueprint_output, verify_info;
     load_and_verify_local_data(xray_blueprint_output, output_data_path);
-    Node &state_output = xray_blueprint_output["domain_000000/state"];
 
     // Load and verify baseline data
     Node baseline_data;
@@ -550,6 +568,7 @@ TEST(ascent_rover, test_xray_blueprint_curv3d)
     baseline_data["xray_data/optical_depth_max"] = 125.497886657715;
 
     // Diff the baseline data with our new output
+    Node &state_output = xray_blueprint_output["domain_000000/state"];
     check_blueprint_diff(baseline_data, state_output);
 
     // Render and verify each field
@@ -611,6 +630,25 @@ TEST(ascent_rover, test_xray_blueprint_curv3d_rotated)
     Node xray_blueprint_output, verify_info;
     load_and_verify_local_data(xray_blueprint_output, output_data_path);
 
+    // Load and verify baseline data
+    Node baseline_data;
+    get_default_baseline(baseline_data, extracts["e1/params"], cycle);
+
+    // Manually override the remaining fields with expected values
+    baseline_data["time"] = 4.80000019073486;
+    baseline_data["xray_view/position"] = {16.0078086853027, 25.1384601593018, 31.0078086853027};
+    baseline_data["xray_view/look_at"] = {0.0, 2.5, 15.0};
+    baseline_data["xray_view/near_plane"] = 3.20156216621399;
+    baseline_data["xray_view/far_plane"] = 320.156219482422;
+    baseline_data["xray_data/detector_width"] = 3.69684552235394;
+    baseline_data["xray_data/detector_height"] = 3.69684552235394;
+    baseline_data["xray_data/intensity_max"] = 0.478813946247101;
+    baseline_data["xray_data/optical_depth_max"] = 37.0659294128418;
+
+    // Diff the baseline data with our new output
+    Node &state_output = xray_blueprint_output["domain_000000/state"];
+    check_blueprint_diff(baseline_data, state_output);
+
     // Render and verify each field
     render_fields(xray_blueprint_output, query_path, cycle);
 
@@ -654,7 +692,8 @@ TEST(ascent_rover, test_xray_blueprint_curv3d_camera_params)
     extracts["e1/params/rover/absorption"] = "d";
     extracts["e1/params/rover/emission"] = "p";
     extracts["e1/params/rover/filename"] = query_path;
-    extracts["e1/params/rover/output_type"] = "hdf5";
+    // TODO: Investigate why using "hdf5" here fails the diff test. Seems to be a Conduit issue.
+    extracts["e1/params/rover/output_type"] = "yaml";
 
     // These errors all originate from within rover
     // TODO: Setting anything for position (e.g. 0,0,0) throws a vector range error
@@ -684,6 +723,27 @@ TEST(ascent_rover, test_xray_blueprint_curv3d_camera_params)
     // Load and verify output mesh
     Node xray_blueprint_output, verify_info;
     load_and_verify_local_data(xray_blueprint_output, output_data_path);
+
+    // Load and verify baseline data
+    Node baseline_data;
+    get_default_baseline(baseline_data, extracts["e1/params"], cycle);
+
+    // Manually override the remaining fields with expected values
+    baseline_data["time"] = 4.80000019073486;
+    baseline_data["xray_view/position"] = {0.0, 2.5, 47.0156211853027};
+    baseline_data["xray_view/zoom"] = 1.5;
+    baseline_data["xray_view/look_at"] = {1.0, 1.0, 1.0};
+    baseline_data["xray_view/up"] = {0.577350258827209, 0.577350258827209, 0.577350258827209};
+    baseline_data["xray_view/near_plane"] = 2.0;
+    baseline_data["xray_view/far_plane"] = 50.0;
+    baseline_data["xray_data/detector_width"] = 1.53960070341771;
+    baseline_data["xray_data/detector_height"] = 1.53960070341771;
+    baseline_data["xray_data/intensity_max"] = 0.491446971893311;
+    baseline_data["xray_data/optical_depth_max"] = 126.027252197266;
+
+    // Diff the baseline data with our new output
+    Node &state_output = xray_blueprint_output["domain_000000/state"];
+    check_blueprint_diff(baseline_data, state_output);
 
     // Render and verify each field
     render_fields(xray_blueprint_output, query_path, cycle);
@@ -747,7 +807,6 @@ TEST(ascent_rover, test_xray_blueprint_multi_curv3d)
     // Verify output mesh
     Node xray_blueprint_output, verify_info;
     load_and_verify_local_data(xray_blueprint_output, output_data_path);
-    Node &state_output = xray_blueprint_output["domain_000000/state"];
 
     // Load and verify baseline data
     Node baseline_data;
@@ -765,6 +824,7 @@ TEST(ascent_rover, test_xray_blueprint_multi_curv3d)
     baseline_data["xray_data/optical_depth_max"] = 125.49796295166;
 
     // Diff the baseline data with our new output
+    Node &state_output = xray_blueprint_output["domain_000000/state"];
     check_blueprint_diff(baseline_data, state_output);
 
     // Render and verify each field
@@ -826,6 +886,25 @@ TEST(ascent_rover, test_xray_blueprint_multi_curv3d_rotated)
     Node xray_blueprint_output, verify_info;
     load_and_verify_local_data(xray_blueprint_output, output_data_path);
 
+    // Load and verify baseline data
+    Node baseline_data;
+    get_default_baseline(baseline_data, extracts["e1/params"], cycle);
+
+    // Manually override the remaining fields with expected values
+    baseline_data["time"] = 4.80000019073486;
+    baseline_data["xray_view/position"] = {16.0078086853027, 25.1384582519531, 31.0078086853027};
+    baseline_data["xray_view/look_at"] = {0.0, 2.49999904632568, 15.0};
+    baseline_data["xray_view/near_plane"] = 3.20156216621399;
+    baseline_data["xray_view/far_plane"] = 320.156219482422;
+    baseline_data["xray_data/detector_width"] = 3.69684552235394;
+    baseline_data["xray_data/detector_height"] = 3.69684552235394;
+    baseline_data["xray_data/intensity_max"] = 0.478814035654068;
+    baseline_data["xray_data/optical_depth_max"] = 37.0657119750977;
+
+    // Diff the baseline data with our new output
+    Node &state_output = xray_blueprint_output["domain_000000/state"];
+    check_blueprint_diff(baseline_data, state_output);
+    
     // Render and verify each field
     render_fields(xray_blueprint_output, query_path, cycle);
 
