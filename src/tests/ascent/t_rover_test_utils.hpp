@@ -59,33 +59,6 @@ execute_ascent(const Node& data,
 
 //-----------------------------------------------------------------------------
 inline void
-render_blueprint(const string &field_name,
-                 const string &output_path,
-                 const Node &data)
-{
-    // Define Ascent actions
-    Node scenes;
-    scenes["s1/plots/p1/type"] = "pseudocolor";
-    scenes["s1/plots/p1/field"] = field_name;
-    scenes["s1/renders/r1/image_prefix"] = output_path;
-
-    // Rotate spatial meshes for test image variety
-    if (field_name.find("spatial") != std::string::npos)
-    {
-        scenes["s1/renders/r1/camera/azimuth"] = 45.0;
-    }
-
-    Node actions;
-    Node &add_plots = actions.append();
-    add_plots["action"] = "add_scenes";
-    add_plots["scenes"] = scenes;
-
-    // Execute Ascent actions
-    execute_ascent(data, actions);
-}
-
-//-----------------------------------------------------------------------------
-inline void
 render_fields(const Node &data,
               const std::string output_path,
               const int cycle,
@@ -107,18 +80,48 @@ render_fields(const Node &data,
         "optical_depth_spatial"
     };
 
+    // We won't have intensities in the absorption-only case
     if (render_intensities)
     {
         fields.push_back("intensities");
         fields.push_back("intensities_spatial");
     }
 
-    // TODO: Investigate whether we gain any performance by rendering all of these fields with
-    // a single set of actions
+    // Render all fields with a single set of actions
+    Node scenes;
+    Node actions;
+    Node &add_plots = actions.append();
+    add_plots["action"] = "add_scenes";
+
+    // Create scenes for all fields
+    for (size_t i = 0; i < fields.size(); i++)
+    {
+        std::string field = fields[i];
+        std::string scene_name = "s" + std::to_string(i + 1);
+        std::string plot_name = "p" + std::to_string(i + 1);
+        std::string render_name = "r" + std::to_string(i + 1);
+        std::string full_output_path = output_path + "_" + field;
+
+        scenes[scene_name]["plots"][plot_name]["type"] = "pseudocolor";
+        scenes[scene_name]["plots"][plot_name]["field"] = field;
+        scenes[scene_name]["renders"][render_name]["image_prefix"] = full_output_path;
+
+        // Rotate spatial meshes for test image variety
+        if (field.find("spatial") != std::string::npos)
+        {
+            scenes[scene_name]["renders"][render_name]["camera/azimuth"] = 45.0;
+        }
+    }
+
+    add_plots["scenes"] = scenes;
+
+    // Execute all renders in a single Ascent call
+    execute_ascent(data, actions);
+
+    // Check all generated images
     for (const auto& field : fields)
     {
         std::string full_output_path = output_path + "_" + field;
-        render_blueprint(field, full_output_path, data);
         if (0 == par_rank)
         {
             EXPECT_TRUE(check_test_image(full_output_path, 0.01f, cycle));
