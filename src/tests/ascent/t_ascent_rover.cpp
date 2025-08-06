@@ -15,8 +15,6 @@
 
 #include <ascent.hpp>
 
-#include <math.h>
-
 #include <conduit_blueprint.hpp>
 #include <conduit_relay.hpp>
 
@@ -33,7 +31,7 @@ using namespace ascent;
 //-----------------------------------------------------------------------------
 TEST(ascent_rover, test_xray_blueprint_braid)
 {
-    ASCENT_INFO("Testing xray extract on conduit braid example\n");
+    ASCENT_INFO("Testing xray extract on conduit braid example mesh\n");
 
     if (is_vtkm_disabled())
     {
@@ -44,15 +42,15 @@ TEST(ascent_rover, test_xray_blueprint_braid)
     const std::string query_name = "tout_rover_xray_blueprint_braid";
     const std::string query_ext_name = "_000100.cycle_000100.root";
 
-    // Setup paths
+    // Set up paths
     const std::string output_path = prepare_output_dir();
     const std::string query_path = conduit::utils::join_file_path(output_path, 
                                                                   query_name);
     const std::string output_data_path = query_path + query_ext_name;
 
-    // Remove old test image
+    // Remove old test data
     const int cycle = 100;
-    remove_test_image(query_path, cycle);
+    remove_rover_test_data(query_path, query_ext_name, cycle);
 
     // Generate and verify test data
     Node test_data;
@@ -108,7 +106,7 @@ TEST(ascent_rover, test_xray_blueprint_braid)
 //-----------------------------------------------------------------------------
 TEST(ascent_rover, test_xray_blueprint_braid_rotated)
 {
-    ASCENT_INFO("Testing xray extract on conduit braid example (rotated)\n");
+    ASCENT_INFO("Testing xray extract on conduit braid example mesh (rotated)\n");
 
     if (is_vtkm_disabled())
     {
@@ -119,15 +117,15 @@ TEST(ascent_rover, test_xray_blueprint_braid_rotated)
     const std::string query_name = "tout_rover_xray_blueprint_braid_rotated";
     const std::string query_ext_name = "_000100.cycle_000100.root";
 
-    // Setup paths
+    // Set up paths
     const std::string output_path = prepare_output_dir();
     const std::string query_path = conduit::utils::join_file_path(output_path, 
                                                                   query_name);
     const std::string output_data_path = query_path + query_ext_name;
 
-    // Remove old test image
+    // Remove old test data
     const int cycle = 100;
-    remove_test_image(query_path, cycle);
+    remove_rover_test_data(query_path, query_ext_name, cycle);
 
     // Generate and verify test data
     Node test_data;
@@ -186,7 +184,7 @@ TEST(ascent_rover, test_xray_blueprint_braid_rotated)
 //-----------------------------------------------------------------------------
 TEST(ascent_rover, test_xray_blueprint_braid_absorption_only)
 {
-    ASCENT_INFO("Testing xray extract on conduit braid example (absorption only)\n");
+    ASCENT_INFO("Testing xray extract on conduit braid example mesh (absorption only)\n");
 
     if (is_vtkm_disabled())
     {
@@ -197,15 +195,15 @@ TEST(ascent_rover, test_xray_blueprint_braid_absorption_only)
     const std::string query_name = "tout_rover_xray_blueprint_braid_absorption_only";
     const std::string query_ext_name = "_000100.cycle_000100.root";
 
-    // Setup paths
+    // Set up paths
     const std::string output_path = prepare_output_dir();
     const std::string query_path = conduit::utils::join_file_path(output_path,
                                                                   query_name);
     const std::string output_data_path = query_path + query_ext_name;
 
-    // Remove old test image
+    // Remove old test data
     const int cycle = 100;
-    remove_test_image(query_path, cycle);
+    remove_rover_test_data(query_path, query_ext_name, cycle);
 
     // Generate and verify test data
     Node test_data;
@@ -270,15 +268,15 @@ TEST(ascent_rover, test_xray_blueprint_braid_uniform_multi_domain)
     const std::string query_name = "tout_rover_xray_blueprint_braid_uniform_multi_domain";
     const std::string query_ext_name = "_000000.cycle_000000.root";
 
-    // Setup paths
+    // Set up paths
     const std::string output_path = prepare_output_dir();
     const std::string query_path = conduit::utils::join_file_path(output_path, 
                                                                   query_name);
     const std::string output_data_path = query_path + query_ext_name;
 
-    // Remove old test image
+    // Remove old test data
     const int cycle = 0;
-    remove_test_image(query_path, cycle);
+    remove_rover_test_data(query_path, query_ext_name, cycle);
 
     // Generate and verify test data
     Node test_data;
@@ -347,15 +345,15 @@ TEST(ascent_rover, test_xray_blueprint_braid_uniform_multi_domain_rotated)
     const std::string query_name = "tout_rover_xray_blueprint_braid_uniform_multi_domain_rotated";
     const std::string query_ext_name = "_000000.cycle_000000.root";
 
-    // Setup paths
+    // Set up paths
     const std::string output_path = prepare_output_dir();
     const std::string query_path = conduit::utils::join_file_path(output_path, 
                                                                   query_name);
     const std::string output_data_path = query_path + query_ext_name;
 
-    // Remove old test image
+    // Remove old test data
     const int cycle = 0;
-    remove_test_image(query_path, cycle);
+    remove_rover_test_data(query_path, query_ext_name, cycle);
 
     // Generate and verify test data
     Node test_data;
@@ -516,15 +514,15 @@ TEST(ascent_rover, test_xray_blueprint_curv3d)
     const std::string query_name = "tout_rover_xray_blueprint_curv3d";
     const std::string query_ext_name = "_000048.cycle_000048.root";
     
-    // Setup paths
+    // Set up paths
     const std::string output_path = prepare_output_dir();
     const std::string query_path = conduit::utils::join_file_path(output_path, 
                                                                   query_name);
     const std::string output_data_path = query_path + query_ext_name;
 
-    // Remove old test image
+    // Remove old test data
     const int cycle = 48;
-    remove_test_image(query_path, cycle);
+    remove_rover_test_data(query_path, query_ext_name, cycle);
 
     // Load and verify test data
     Node test_data;
@@ -593,15 +591,15 @@ TEST(ascent_rover, test_xray_blueprint_curv3d_rotated)
     const std::string query_name = "tout_rover_xray_blueprint_curv3d_rotated";
     const std::string query_ext_name = "_000048.cycle_000048.root";
     
-    // Setup paths
+    // Set up paths
     const std::string output_path = prepare_output_dir();
     const std::string query_path = conduit::utils::join_file_path(output_path, 
                                                                   query_name);
     const std::string output_data_path = query_path + query_ext_name;
 
-    // Remove old test image
+    // Remove old test data
     const int cycle = 48;
-    remove_test_image(query_path, cycle);
+    remove_rover_test_data(query_path, query_ext_name, cycle);
 
     // Load and verify test data
     Node test_data;
@@ -671,15 +669,15 @@ TEST(ascent_rover, test_xray_blueprint_curv3d_camera_params)
     const std::string query_name = "tout_rover_xray_blueprint_curv3d_camera_params";
     const std::string query_ext_name = "_000048.cycle_000048.root";
 
-    // Setup paths
+    // Set up paths
     const std::string output_path = prepare_output_dir();
     const std::string query_path = conduit::utils::join_file_path(output_path, 
                                                                   query_name);
     const std::string output_data_path = query_path + query_ext_name;
 
-    // Remove old test image
+    // Remove old test data
     const int cycle = 48;
-    remove_test_image(query_path, cycle);
+    remove_rover_test_data(query_path, query_ext_name, cycle);
 
     // Load and verify test data
     Node test_data;
@@ -769,15 +767,15 @@ TEST(ascent_rover, test_xray_blueprint_multi_curv3d)
     const std::string query_name = "tout_rover_xray_blueprint_multi_curv3d";
     const std::string query_ext_name = "_000048.cycle_000048.root";
     
-    // Setup paths
+    // Set up paths
     const std::string output_path = prepare_output_dir();
     const std::string query_path = conduit::utils::join_file_path(output_path, 
                                                                   query_name);
     const std::string output_data_path = query_path + query_ext_name;
 
-    // Remove old test image
+    // Remove old test data
     const int cycle = 48;
-    remove_test_image(query_path, cycle);
+    remove_rover_test_data(query_path, query_ext_name, cycle);
 
     // Load and verify test data
     Node test_data;
@@ -849,15 +847,15 @@ TEST(ascent_rover, test_xray_blueprint_multi_curv3d_rotated)
     const std::string query_name = "tout_rover_xray_blueprint_multi_curv3d_rotated";
     const std::string query_ext_name = "_000048.cycle_000048.root";
     
-    // Setup paths
+    // Set up paths
     const std::string output_path = prepare_output_dir();
     const std::string query_path = conduit::utils::join_file_path(output_path, 
                                                                   query_name);
     const std::string output_data_path = query_path + query_ext_name;
 
-    // Remove old test image
+    // Remove old test data
     const int cycle = 48;
-    remove_test_image(query_path, cycle);
+    remove_rover_test_data(query_path, query_ext_name, cycle);
 
     // Load and verify test data
     Node test_data;

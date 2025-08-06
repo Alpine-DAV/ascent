@@ -55,13 +55,15 @@ TEST(ascent_rover, test_xray_mpi_blueprint_braid_uniform_multi_domain)
     const std::string query_name = "tout_rover_xray_mpi_blueprint_braid_uniform_multi_domain";
     const std::string query_ext_name = "_000000.cycle_000000.root";
 
-    // Setup paths
+    // Set up paths
     const std::string output_path = prepare_output_dir();
     const std::string query_path = conduit::utils::join_file_path(output_path, 
                                                                   query_name);
     const std::string output_data_path = query_path + query_ext_name;
 
+    // Remove old test data
     const int cycle = 0;
+    remove_rover_test_data(query_path, query_ext_name, cycle);
 
     // Generate test data
     Node test_data;
@@ -93,6 +95,7 @@ TEST(ascent_rover, test_xray_mpi_blueprint_braid_uniform_multi_domain)
     Node xray_blueprint_output;
     load_and_verify_local_data(xray_blueprint_output, output_data_path);
 
+    // Rover's output is only single-domain, so we only use rank 0 to verify the output
     if (0 == par_rank)
     {
         // Load and verify baseline data
@@ -147,13 +150,15 @@ TEST(ascent_rover, test_xray_mpi_blueprint_braid_uniform_multi_domain_rotated)
     const std::string query_name = "tout_rover_xray_mpi_blueprint_braid_uniform_multi_domain_rotated";
     const std::string query_ext_name = "_000000.cycle_000000.root";
 
-    // Setup paths
+    // Set up paths
     const std::string output_path = prepare_output_dir();
     const std::string query_path = conduit::utils::join_file_path(output_path, 
                                                                   query_name);
     const std::string output_data_path = query_path + query_ext_name;
     
+    // Remove old test data
     const int cycle = 0;
+    remove_rover_test_data(query_path, query_ext_name, cycle);
 
     // Generate test data
     Node test_data;
@@ -187,6 +192,7 @@ TEST(ascent_rover, test_xray_mpi_blueprint_braid_uniform_multi_domain_rotated)
     Node xray_blueprint_output;
     load_and_verify_local_data(xray_blueprint_output, output_data_path);
 
+    // Rover's output is only single-domain, so we only use rank 0 to verify the output
     if (0 == par_rank)
     {
         // Load and verify baseline data
@@ -242,13 +248,15 @@ TEST(ascent_rover, test_xray_mpi_blueprint_braid_uniform_single_domain_multiple_
     const std::string query_name = "tout_rover_xray_mpi_blueprint_braid_uniform_single_domain";
     const std::string query_ext_name = "_000000.cycle_000000.root";
 
-    // Setup paths
+    // Set up paths
     const std::string output_path = prepare_output_dir();
     const std::string query_path = conduit::utils::join_file_path(output_path, 
                                                                   query_name);
     const std::string output_data_path = query_path + query_ext_name;
     
+    // Remove old test data
     const int cycle = 0;
+    remove_rover_test_data(query_path, query_ext_name, cycle);
 
     // Generate test data
     Node test_data;
@@ -285,6 +293,7 @@ TEST(ascent_rover, test_xray_mpi_blueprint_braid_uniform_single_domain_multiple_
     Node xray_blueprint_output;
     load_and_verify_local_data(xray_blueprint_output, output_data_path);
 
+    // Rover's output is only single-domain, so we only use rank 0 to verify the output
     if (0 == par_rank)
     {
         // Load and verify baseline data

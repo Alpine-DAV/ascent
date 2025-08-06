@@ -277,6 +277,31 @@ get_valid_multi_domain_test_data(Node &data, const int num_domains)
 }
 
 //-----------------------------------------------------------------------------
+inline void
+remove_rover_test_data(const std::string &path,
+                         const std::string &ext,
+                         const int cycle)
+{
+    const std::vector<std::string> fields {
+        "optical_depth",
+        "optical_depth_spatial",
+        "intensities",
+        "intensities_spatial"
+    };
+
+    // Remove old test images
+    for (const auto& field : fields)
+    {
+        std::string image_path = path + "_" + field;
+        remove_test_image(image_path, cycle);
+    }
+
+    // Also remove the main output file
+    std::string output_file = path + ext;
+    remove_test_file(output_file);
+}
+
+//-----------------------------------------------------------------------------
 inline const bool
 is_vtkm_disabled()
 {
