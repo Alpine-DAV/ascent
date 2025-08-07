@@ -3706,11 +3706,9 @@ TEST(ascent_render_3d, test_render_ascent_camera)
 
     // set the camera parameters
     double vec3[3];
-    // vec3[0] = 1.; vec3[1] = 1.; vec3[2] = 1.;
     vec3[0] = 0.; vec3[1] = 0.; vec3[2] = 0.;
     scenes["s1/renders/r1/camera/look_at"].set_float64_ptr(vec3,3);
     vec3[0] = 0.; vec3[1] = 25.; vec3[2] = 25.;
-    // vec3[0] = 0.; vec3[1] = 0.; vec3[2] = 0.;
     scenes["s1/renders/r1/camera/position"].set_float64_ptr(vec3,3);
     // vec3[0] = 0.; vec3[1] = -1.; vec3[2] = 0.;
     // scenes["s1/renders/r1/camera/up"].set_float64_ptr(vec3,3);
@@ -3821,7 +3819,7 @@ TEST(ascent_render_3d, test_render_visit_camera)
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
 
-    ASCENT_INFO("Testing 3D Rendering with an ascent camera\n");
+    ASCENT_INFO("Testing 3D Rendering with visit camera parameters\n");
 
     string output_path = prepare_output_dir();
     string image_prefix = "t_out_render_3d_visit_camera";
