@@ -69,10 +69,6 @@ double zoom_to_vtkm_zoom(double in_zoom)
   return vtkm_zoom;
 }
 
-double plane_to_vtkm_plane(double in_plane) {
-
-}
-
 void
 parse_image_dims(const conduit::Node &node, int &width, int &height)
 {
@@ -213,7 +209,10 @@ parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera)
       camera.SetLookAt(look_at);
   }
 
-  if(camera_node.has_child("viewNormal") && camera_node.has_child("focus") && camera_node.has_child("imageZoom") && camera_node.has_child("viewAngle") && camera_node.has_child("parallelScale"))
+  if(camera_node.has_child("viewNormal") && 
+     camera_node.has_child("focus") && 
+     camera_node.has_child("viewAngle") && 
+     camera_node.has_child("parallelScale"))
   {
       conduit::Node view, focus;
       camera_node["viewNormal"].to_float64_array(view);
@@ -222,7 +221,6 @@ parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera)
       const conduit::float64 *v = view.value();
       const conduit::float64 *fc = focus.value();
 
-      conduit::float64 zoom = camera_node["imageZoom"].to_float64();
       conduit::float64 view_angle = camera_node["viewAngle"].to_float64() * (M_PI / 360.0);
       conduit::float64 parallel_scale = camera_node["parallelScale"].to_float64();
 
@@ -268,11 +266,6 @@ parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera)
       camera.SetViewUp(up);
   }
 
-//   if(camera_node.has_child("fov"))
-//   {
-//       camera.SetFieldOfView(camera_node["fov"].to_float64());
-//   }
-
   if(camera_node.has_child("imagePan"))
   {
       vtkm::Float64 xpan = 0.;
@@ -288,6 +281,38 @@ parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera)
   {
       double zoom = camera_node["imageZoom"].to_float64();
       camera.Zoom(zoom_to_vtkm_zoom(zoom));
+  }
+
+  if(camera_node.has_child("perspective"))
+  {
+    ASCENT_INFO("Visit camera parameter \"perspective\" is recognized but currently has no effect");
+  }
+
+  if(camera_node.has_child("eyeAngle"))
+  {
+    ASCENT_INFO("Visit camera parameter \"eyeAngle\" is recognized but currently has no effect");
+  }
+
+  if(camera_node.has_child("centerOfRotationSet") ||
+     camera_node.has_child("centerOfRotation"))
+  {
+    ASCENT_INFO("Visit camera parameter \"centerOfRotation\" and \"centerOfRotationSet\" are recognized but currently have no effect");
+  }
+
+  if(camera_node.has_child("axis3DScaleFlag") ||
+     camera_node.has_child("axis3DScale"))
+  {
+    ASCENT_INFO("Visit camera parameter \"axis3DScale\" and \"axis3DScaleFlag\" are recognized but currently have no effect");
+  }
+
+  if(camera_node.has_child("shear"))
+  {
+    ASCENT_INFO("Visit camera parameter \"shear\" is recognized but currently has no effect");
+  }
+
+  if(camera_node.has_child("windowValid"))
+  {
+    ASCENT_INFO("Visit camera parameter \"windowValid\" is recognized but currently has no effect");
   }
 }
 
