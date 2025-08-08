@@ -157,6 +157,7 @@ Render::SetBackgroundColor(float bg_color[4])
   m_bg_color.Components[1] = bg_color[1];
   m_bg_color.Components[2] = bg_color[2];
   m_bg_color.Components[3] = bg_color[3];
+  m_canvas.SetBackgroundColor(m_bg_color);
 }
 
 void
@@ -166,6 +167,7 @@ Render::SetForegroundColor(float fg_color[4])
   m_fg_color.Components[1] = fg_color[1];
   m_fg_color.Components[2] = fg_color[2];
   m_fg_color.Components[3] = fg_color[3];
+  m_canvas.SetForegroundColor(m_fg_color);
 }
 
 std::string
@@ -184,6 +186,12 @@ vtkm::rendering::Color
 Render::GetBackgroundColor() const
 {
   return m_bg_color;
+}
+
+vtkm::rendering::Color
+Render::GetForegroundColor() const
+{
+  return m_fg_color;
 }
 
 void
