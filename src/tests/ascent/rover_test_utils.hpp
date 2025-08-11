@@ -364,19 +364,22 @@ is_vtkm_disabled()
 {
     Node about_info;
     ascent::about(about_info);
-    const bool disabled = "disabled" == about_info["runtimes/ascent/vtkm/status"].as_string();
+    if ("disabled" != about_info["runtimes/ascent/vtkm/status"].as_string())
+    {
+        return false;
+    }
 
     int par_rank = 0;
 #ifdef ASCENT_MPI_ENABLED
     MPI_Comm_rank(COMM, &par_rank);
 #endif
 
-    if (0 == par_rank && disabled)
+    if (0 == par_rank)
     {
         ASCENT_INFO("Skipping test: Ascent was built without vtkm\n");
     }
 
-    return disabled;
+    return true;
 }
 
 //-----------------------------------------------------------------------------
