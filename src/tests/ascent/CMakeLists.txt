@@ -142,7 +142,7 @@ if(GENTEN_FOUND)
 endif()
 
 # Make t_rover_test_utils.hpp visible to the rover tests
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+# include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 ################################
 # Add main tests

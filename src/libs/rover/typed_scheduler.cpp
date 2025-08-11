@@ -215,14 +215,21 @@ void
 TypedScheduler<FloatType>::composite()
 {
   // TODO: Combine AbsorptionPartial and EmissionPartial
-  const std::string emission = rover::settings["emission"].as_string();
-  if (emission.empty())
+  if (!rover::settings.has_child("emission"))
   {
     typed_composite<vtkh::AbsorptionPartial<FloatType>>();
   }
-  else // (!emission.empty())
+  else // (rover::settings.has_child("emission"))
   {
-    typed_composite<vtkh::EmissionPartial<FloatType>>();
+    const std::string emission = rover::settings["emission"].as_string();
+    if (emission.empty())
+    {
+      typed_composite<vtkh::AbsorptionPartial<FloatType>>();
+    }
+    else // (!emission.empty())
+    {
+      typed_composite<vtkh::EmissionPartial<FloatType>>();
+    }
   }
   ROVER_INFO("Schedule: compositing complete");
 }
@@ -391,15 +398,19 @@ TypedScheduler<FloatType>::trace_rays()
   if (m_num_local_domains == 0 || m_partial_images.empty())
   {
     PartialImage<FloatType> partial_image;
-    partial_image.m_transmission =
-      vtkmRayTracing::ChannelBuffer<FloatType>(num_channels, 0);
+    partial_image.m_transmission = vtkmRayTracing::ChannelBuffer<FloatType>(num_channels, 0);
 
-    const std::string emission = rover::settings["emission"].as_string();
-    if (!emission.empty())
+    // Check if the emission field is set
+    if (rover::settings.has_child("emission"))
     {
-      partial_image.m_intensity =
-        vtkmRayTracing::ChannelBuffer<FloatType>(num_channels, 0);
+      const std::string emission = rover::settings["emission"].as_string();
+      // If the emission field is set and not "", we create an empty intensity buffer
+      if (!emission.empty())
+      {
+        partial_image.m_intensity = vtkmRayTracing::ChannelBuffer<FloatType>(num_channels, 0);
+      }
     }
+
     m_partial_images.push_back(partial_image);
   }
 
@@ -884,13 +895,12 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
   xray_view["far_plane"] = far_plane;
 
   Node &xray_query = state["xray_query"];
-  xray_query.set(rover::settings);
+  xray_query.update(rover::settings);
 
   Node &xray_data = state["xray_data"];
   xray_data["detector_width"] = detector_width; // TODO: Needs validation against VisIt
   xray_data["detector_height"] = detector_height; // TODO: Needs validation against VisIt
-  xray_data["intensity_max"];
-  xray_data["intensity_min"];
+  
   xray_data["optical_depth_max"];
   xray_data["optical_depth_min"];
   xray_data["image_topo_order_of_domain_variables"] = "xyz";
@@ -967,34 +977,36 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
   optical_depth_spatial["topology"] = "spatial_topo";
 
   // Intensity is only available in the absorption + emission case
-  const std::string emission = rover::settings["emission"].as_string();
-  if (!emission.empty())
+  if (rover::settings.has_child("emission"))
   {
-    // Image field
-    Node &intensities = fields["intensities"];
-    intensities["topology"] = "image_topo";
-    intensities["association"] = "element";
-    intensities["units"] = "intensity units";
-    vtkm::cont::ArrayHandle<FloatType> intensity_values = m_result.flatten_intensity_values();
-    FloatType *intensity_buffer = get_vtkm_ptr(intensity_values);
-    const int num_intensity_values = intensity_values.GetNumberOfValues();
-  
-    auto intensity_min_max = std::minmax_element(intensity_buffer, intensity_buffer + num_intensity_values);
-    xray_data["intensity_max"].set(intensity_min_max.second);
-    xray_data["intensity_min"].set(intensity_min_max.first);
-    
-    intensities["values"].set(intensity_buffer, num_intensity_values);
-    intensities["strides"].set(strides);
+    const std::string emission = rover::settings["emission"].as_string();
+    // If the emission field is set and not "", we populate the intensities fields
+    if (!emission.empty())
+    {
+      xray_data["intensity_max"];
+      xray_data["intensity_min"];
 
-    // Spatial field
-    Node &intensities_spatial = fields["intensities_spatial"];
-    intensities_spatial.set(intensities);
-    intensities_spatial["topology"] = "spatial_topo";
-  }
-  else // (emission.empty())
-  {
-    xray_data["intensity_max"] = 0.0;
-    xray_data["intensity_min"] = 0.0;
+      // Image field
+      Node &intensities = fields["intensities"];
+      intensities["topology"] = "image_topo";
+      intensities["association"] = "element";
+      intensities["units"] = "intensity units";
+      vtkm::cont::ArrayHandle<FloatType> intensity_values = m_result.flatten_intensity_values();
+      FloatType *intensity_buffer = get_vtkm_ptr(intensity_values);
+      const int num_intensity_values = intensity_values.GetNumberOfValues();
+    
+      auto intensity_min_max = std::minmax_element(intensity_buffer, intensity_buffer + num_intensity_values);
+      xray_data["intensity_max"].set(intensity_min_max.second);
+      xray_data["intensity_min"].set(intensity_min_max.first);
+      
+      intensities["values"].set(intensity_buffer, num_intensity_values);
+      intensities["strides"].set(strides);
+
+      // Spatial field
+      Node &intensities_spatial = fields["intensities_spatial"];
+      intensities_spatial.set(intensities);
+      intensities_spatial["topology"] = "spatial_topo";
+    }
   }
 
   //

@@ -18,7 +18,7 @@
 #include <conduit_blueprint.hpp>
 #include <conduit_relay.hpp>
 
-#include "t_rover_test_utils.hpp"
+#include "rover_test_utils.hpp"
 
 using namespace std;
 using namespace conduit;
@@ -54,15 +54,12 @@ TEST(ascent_rover, test_xray_blueprint_braid)
 
     // Generate and verify test data
     Node test_data;
-    get_valid_test_data(test_data);
+    get_braid_test_data(test_data);
 
     // Define Ascent actions
     Node extracts;
-    extracts["e1/type"] = "xray";
-    extracts["e1/params/rover/absorption"] = "radial";
+    get_default_extract_params(extracts, "radial", query_path);
     extracts["e1/params/rover/emission"] = "radial";
-    extracts["e1/params/rover/filename"] = query_path;
-    extracts["e1/params/rover/output_type"] = "yaml";
     extracts["e1/params/rover/precision"] = "double";
 
     Node actions;
@@ -129,18 +126,15 @@ TEST(ascent_rover, test_xray_blueprint_braid_rotated)
 
     // Generate and verify test data
     Node test_data;
-    get_valid_test_data(test_data);
+    get_braid_test_data(test_data);
 
     // Define Ascent actions
     Node extracts;
-    extracts["e1/type"] = "xray";
-    extracts["e1/params/rover/absorption"] = "radial";
+    get_default_extract_params(extracts, "radial", query_path);
     extracts["e1/params/rover/emission"] = "radial";
-    extracts["e1/params/rover/filename"] = query_path;
     extracts["e1/params/rover/output_type"] = "json";
     extracts["e1/params/rover/background_intensity"] = 100.0;
-    extracts["e1/params/camera/azimuth"] = 45.0;
-    extracts["e1/params/camera/elevation"] = 45.0;
+    add_camera_rotation(extracts);
 
     Node actions;
     Node &add_extracts = actions.append();
@@ -207,14 +201,12 @@ TEST(ascent_rover, test_xray_blueprint_braid_absorption_only)
 
     // Generate and verify test data
     Node test_data;
-    get_valid_test_data(test_data);
+    get_braid_test_data(test_data);
 
     // Define Ascent actions
     Node extracts;
-    extracts["e1/type"] = "xray";
-    extracts["e1/params/rover/absorption"] = "radial";
-    extracts["e1/params/rover/filename"] = query_path;
-    extracts["e1/params/rover/output_type"] = "yaml";
+    get_default_extract_params(extracts, "radial", query_path);
+    // Emission is intentionally omitted in this test as the 1st valid way to ask for absorption-only
     extracts["e1/params/rover/precision"] = "double";
 
     Node actions;
@@ -250,7 +242,80 @@ TEST(ascent_rover, test_xray_blueprint_braid_absorption_only)
     render_fields(xray_blueprint_output, query_path, cycle, false);
 
     // Dump info
-    std::string msg = "Rendered XRay diagnostic images of an example braid mesh (absorption only)";
+    std::string msg = "Rendered XRay diagnostic images of an example braid mesh (absorption only, rotated)";
+    ASCENT_ACTIONS_DUMP(actions, query_path, msg);
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_rover, test_xray_blueprint_braid_absorption_only_rotated)
+{
+    ASCENT_INFO("Testing xray extract on conduit braid example mesh (absorption only, rotated)\n");
+
+    if (is_vtkm_disabled())
+    {
+        return; // Returning early is equivalent to passing the test
+    }
+
+    // Test names
+    const std::string query_name = "tout_rover_xray_blueprint_braid_absorption_only_rotated";
+    const std::string query_ext_name = "_000100.cycle_000100.root";
+
+    // Set up paths
+    const std::string output_path = prepare_output_dir();
+    const std::string query_path = conduit::utils::join_file_path(output_path,
+                                                                  query_name);
+    const std::string output_data_path = query_path + query_ext_name;
+
+    // Remove old test data
+    const int cycle = 100;
+    remove_rover_test_data(query_path, query_ext_name, cycle);
+
+    // Generate and verify test data
+    Node test_data;
+    get_braid_test_data(test_data);
+
+    // Define Ascent actions
+    Node extracts;
+    get_default_extract_params(extracts, "radial", query_path);
+    // Emission is intentionally set to "" in this test as the 2nd valid way to ask for absorption-only
+    extracts["e1/params/rover/emission"] = "";
+    extracts["e1/params/rover/precision"] = "double";
+    add_camera_rotation(extracts);
+
+    Node actions;
+    Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    add_extracts["extracts"] = extracts;
+
+    // Execute Ascent actions
+    execute_ascent(test_data, actions);
+
+    // Load and verify output mesh
+    Node xray_blueprint_output, verify_info;
+    load_and_verify_local_data(xray_blueprint_output, output_data_path);
+
+    // Load and verify baseline data
+    Node baseline_data;
+    get_default_baseline(baseline_data, extracts["e1/params"], cycle);
+
+    // Manually override the remaining fields with expected values
+    baseline_data["time"] = 3.1414999961853;
+    baseline_data["xray_view/position"] = {17.3205070495605, 24.49489402771, 17.3205070495605};
+    baseline_data["xray_view/near_plane"] = 3.46410179138184;
+    baseline_data["xray_view/far_plane"] = 346.410186767578;
+    baseline_data["xray_data/detector_width"] = 4.00000016604152;
+    baseline_data["xray_data/detector_height"] = 4.00000016604152;
+    baseline_data["xray_data/optical_depth_max"] = 2475.25178205037;
+
+    // Diff the baseline data with our new output
+    Node &state_output = xray_blueprint_output["domain_000000/state"];
+    check_blueprint_diff(baseline_data, state_output);
+
+    // Render and verify each field
+    render_fields(xray_blueprint_output, query_path, cycle, false);
+
+    // Dump info
+    std::string msg = "Rendered XRay diagnostic images of an example braid mesh (absorption only, rotated)";
     ASCENT_ACTIONS_DUMP(actions, query_path, msg);
 }
 
@@ -280,14 +345,12 @@ TEST(ascent_rover, test_xray_blueprint_braid_uniform_multi_domain)
 
     // Generate and verify test data
     Node test_data;
-    get_valid_multi_domain_test_data(test_data, 2);
+    get_braid_multi_domain_test_data(test_data, 2);
 
     // Define Ascent actions
     Node extracts;
-    extracts["e1/type"] = "xray";
-    extracts["e1/params/rover/absorption"] = "radial";
+    get_default_extract_params(extracts, "radial", query_path);
     extracts["e1/params/rover/emission"] = "radial";
-    extracts["e1/params/rover/filename"] = query_path;
     extracts["e1/params/rover/output_type"] = "json";
     extracts["e1/params/rover/precision"] = "double";
     extracts["e1/params/rover/unit_scalar"] = 1.234;
@@ -357,19 +420,15 @@ TEST(ascent_rover, test_xray_blueprint_braid_uniform_multi_domain_rotated)
 
     // Generate and verify test data
     Node test_data;
-    get_valid_multi_domain_test_data(test_data, 2);
+    get_braid_multi_domain_test_data(test_data, 2);
 
     // Define Ascent actions
     Node extracts;
-    extracts["e1/type"] = "xray";
-    extracts["e1/params/rover/absorption"] = "radial";
+    get_default_extract_params(extracts, "radial", query_path);
     extracts["e1/params/rover/emission"] = "radial";
-    extracts["e1/params/rover/filename"] = query_path;
-    extracts["e1/params/rover/output_type"] = "yaml";
     extracts["e1/params/rover/background_intensity"] = 12.34f;
     extracts["e1/params/rover/enable_rays_mesh"] = "true";
-    extracts["e1/params/camera/azimuth"] = 60.0;
-    extracts["e1/params/camera/elevation"] = 45.0;
+    add_camera_rotation(extracts, 60.0, 45.0);
 
     Node actions;
     Node &add_extracts = actions.append();
@@ -531,11 +590,8 @@ TEST(ascent_rover, test_xray_blueprint_curv3d)
 
     // Define Ascent actions
     conduit::Node extracts;
-    extracts["e1/type"] = "xray";
-    extracts["e1/params/rover/absorption"] = "d";
+    get_default_extract_params(extracts, "d", query_path);
     extracts["e1/params/rover/emission"] = "p";
-    extracts["e1/params/rover/filename"] = query_path;
-    extracts["e1/params/rover/output_type"] = "yaml";
     extracts["e1/params/rover/precision"] = "double";
 
     conduit::Node actions;
@@ -608,13 +664,10 @@ TEST(ascent_rover, test_xray_blueprint_curv3d_rotated)
 
     // Define Ascent actions
     conduit::Node extracts;
-    extracts["e1/type"] = "xray";
-    extracts["e1/params/rover/absorption"] = "d";
+    get_default_extract_params(extracts, "d", query_path);
     extracts["e1/params/rover/emission"] = "p";
-    extracts["e1/params/rover/filename"] = query_path;
     extracts["e1/params/rover/output_type"] = "json";
-    extracts["e1/params/camera/azimuth"] = 45.0;
-    extracts["e1/params/camera/elevation"] = 45.0;
+    add_camera_rotation(extracts);
 
     conduit::Node actions;
     conduit::Node &add_extracts = actions.append();
@@ -686,10 +739,8 @@ TEST(ascent_rover, test_xray_blueprint_curv3d_camera_params)
 
     // Define Ascent actions
     conduit::Node extracts;
-    extracts["e1/type"] = "xray";
-    extracts["e1/params/rover/absorption"] = "d";
+    get_default_extract_params(extracts, "d", query_path);
     extracts["e1/params/rover/emission"] = "p";
-    extracts["e1/params/rover/filename"] = query_path;
     // TODO: Investigate why using "hdf5" here fails the diff test. Seems to be a Conduit issue.
     extracts["e1/params/rover/output_type"] = "yaml";
 
@@ -784,11 +835,8 @@ TEST(ascent_rover, test_xray_blueprint_multi_curv3d)
 
     // Define Ascent actions
     conduit::Node extracts;
-    extracts["e1/type"] = "xray";
-    extracts["e1/params/rover/absorption"] = "d";
+    get_default_extract_params(extracts, "d", query_path);
     extracts["e1/params/rover/emission"] = "p";
-    extracts["e1/params/rover/filename"] = query_path;
-    extracts["e1/params/rover/output_type"] = "yaml";
     // TODO: Investigate why using double precision with this
     // dataset has an artifact in the intensity output
     // extracts["e1/params/rover/precision"] = "double";
@@ -864,13 +912,10 @@ TEST(ascent_rover, test_xray_blueprint_multi_curv3d_rotated)
 
     // Define Ascent actions
     conduit::Node extracts;
-    extracts["e1/type"] = "xray";
-    extracts["e1/params/rover/absorption"] = "d";
+    get_default_extract_params(extracts, "d", query_path);
     extracts["e1/params/rover/emission"] = "p";
-    extracts["e1/params/rover/filename"] = query_path;
     extracts["e1/params/rover/output_type"] = "json";
-    extracts["e1/params/camera/azimuth"] = 45.0;
-    extracts["e1/params/camera/elevation"] = 45.0;
+    add_camera_rotation(extracts);
 
     conduit::Node actions;
     conduit::Node &add_extracts = actions.append();

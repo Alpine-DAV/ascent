@@ -4,6 +4,7 @@
 // other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+#include "settings.hpp"
 #include "vtkm_typedefs.hpp"
 #include <engine.hpp>
 #include <rover_exceptions.hpp>
@@ -59,16 +60,17 @@ void
 Engine::init_emission(vtkmRayTracing::Ray<Precision> &rays,
                       const int num_bins)
 {
-  const std::string emission = rover::settings["emission"].as_string();
-  if (emission.empty())
+  if (rover::settings.has_child("emission"))
   {
-    ROVER_INFO("Engine::init_emission: emission not specified");
-  }
-  else // (!emission.empty())
-  {
-    m_tracer->SetEmissionField(emission);
-    rays.AddBuffer(num_bins, "emission");
-    rays.GetBuffer("emission").InitConst(0.0f);
+    const std::string emission = rover::settings["emission"].as_string();
+    // If the emission field is set and not "", we add an emission buffer
+    // to our rays
+    if (!emission.empty())
+    {
+      m_tracer->SetEmissionField(emission);
+      rays.AddBuffer(num_bins, "emission");
+      rays.GetBuffer("emission").InitConst(0.0f);
+    }
   }
 }
 

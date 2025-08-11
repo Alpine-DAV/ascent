@@ -166,6 +166,9 @@ get_default_baseline(Node &baseline_data,
                      const Node &params,
                      const int &cycle)
 {
+    // The test params that we just used to generate the output
+    const Node &xray_query = params["rover"];
+
     // Baseline data with default values
     const std::string yaml = R"yaml(
         time: 0.0
@@ -189,13 +192,10 @@ get_default_baseline(Node &baseline_data,
             width: 200
             unit_scalar: 1.0
             absorption: ""
-            emission:
             output_type: ""
         xray_data: 
             detector_width: 0.0
             detector_height: 0.0
-            intensity_max: 0.0
-            intensity_min: 0.0
             optical_depth_max: 0.0
             optical_depth_min: 0.0
             image_topo_order_of_domain_variables: "xyz"
@@ -205,12 +205,38 @@ get_default_baseline(Node &baseline_data,
     // Parse the YAML and then overwrite the test parameters
     baseline_data.parse(yaml);
     baseline_data["cycle"] = cycle;
-    baseline_data["xray_query"].update(params["rover"]);
+    baseline_data["xray_query"].update(xray_query);
 
     // Camera params are optional, so we only set them if they exist
     if (params.has_child("camera"))
     {
         baseline_data["xray_query/camera"].set(params["camera"]);
+    }
+
+    // There are 3 cases to support with respect to emission:
+    // 1. Emission is not set in the params: the absorption-only case
+    // 2. Emission is set to an empty string: the absorption-only case
+    // 3. Emission is set to a non-empty string: the absorption + emission case
+    if (xray_query.has_child("emission"))
+    {
+        const std::string emission = xray_query["emission"].as_string();
+        if (emission.empty())
+        {
+            // In the case that emission is explicitly set to an empty string,
+            // it will be present in the baseline data due to the above call to
+            // .update(params["rover"])
+            baseline_data["xray_query"].remove_child("emission");
+            // However, rover outputs the emission field as empty in this case,
+            // not as an empty string, which will cause a diff failure unless
+            // we manually make sure that it exists
+            baseline_data["xray_query/emission"];
+        }
+        else // (!emission.empty())
+        {
+            // These fields are only set in the absorption + emission case
+            baseline_data["xray_data/intensity_max"] = 0.0;
+            baseline_data["xray_data/intensity_min"] = 0.0;
+        }
     }
 }
 
@@ -235,9 +261,25 @@ check_blueprint_diff(const Node &baseline_data,
     EXPECT_FALSE(has_differences);
 }
 
+inline void
+add_camera_rotation(Node &extracts)
+{
+    extracts["e1/params/camera/azimuth"] = 45.0;
+    extracts["e1/params/camera/elevation"] = 45.0;
+}
+
+inline void
+add_camera_rotation(Node &extracts,
+                    const double azimuth,
+                    const double elevation)
+{
+    extracts["e1/params/camera/azimuth"] = azimuth;
+    extracts["e1/params/camera/elevation"] = elevation;
+}
+
 //-----------------------------------------------------------------------------
 inline void
-get_valid_test_data(Node &data)
+get_braid_test_data(Node &data)
 {
     Node verify_info;
     conduit::blueprint::mesh::examples::braid("hexs",
@@ -250,7 +292,7 @@ get_valid_test_data(Node &data)
 
 //-----------------------------------------------------------------------------
 inline void
-get_valid_multi_domain_test_data(Node &data, const int num_domains)
+get_braid_multi_domain_test_data(Node &data, const int num_domains)
 {
     for (int i = 0; i < num_domains; i++)
     {
@@ -305,6 +347,18 @@ remove_rover_test_data(const std::string &path,
 }
 
 //-----------------------------------------------------------------------------
+inline void
+get_default_extract_params(Node &extracts,
+                           const std::string &absorption,
+                           const std::string &query_path)
+{
+    extracts["e1/type"] = "xray";
+    extracts["e1/params/rover/absorption"] = absorption;
+    extracts["e1/params/rover/filename"] = query_path;
+    extracts["e1/params/rover/output_type"] = "yaml";
+}
+
+//-----------------------------------------------------------------------------
 inline const bool
 is_vtkm_disabled()
 {
@@ -319,10 +373,30 @@ is_vtkm_disabled()
 
     if (0 == par_rank && disabled)
     {
-        ASCENT_INFO("Ascent was built without vtkm, skipping test\n");
+        ASCENT_INFO("Skipping test: Ascent was built without vtkm\n");
     }
 
     return disabled;
 }
+
+//-----------------------------------------------------------------------------
+#ifdef ASCENT_MPI_ENABLED
+inline const bool
+has_two_mpi_ranks(int par_rank, int par_size)
+{
+    // The rover + MPI tests will fail if there are not exactly 2 ranks
+    // due to the baselines being generated with 2 ranks
+    if (2 == par_size)
+    {
+        return true;
+    }
+
+    if (0 == par_rank)
+    {
+        ASCENT_INFO("Skipping test: requires exactly 2 MPI ranks\n");
+    }
+    return false;
+}
+#endif
 
 #endif // T_ROVER_TEST_UTILS_HPP
