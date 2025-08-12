@@ -4,7 +4,6 @@
 // other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-#include "settings.hpp"
 #include "vtkm_typedefs.hpp"
 #include <engine.hpp>
 #include <rover_exceptions.hpp>

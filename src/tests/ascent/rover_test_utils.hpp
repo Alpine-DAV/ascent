@@ -19,7 +19,6 @@
 #include <conduit_blueprint.hpp>
 #include <conduit_relay.hpp>
 
-#include "ascent_logging_old.hpp"
 #include "t_utils.hpp"
 
 #ifdef ROVER_TEST_MPI_ENABLED
@@ -317,7 +316,6 @@ get_braid_multi_domain_test_data(Node &data,
                                          EXAMPLE_MULTI_DOMAIN_MESH_SIDE_DIM,
                                          domain);
 
-        // Override the domain ID and cycle for each domain
         if (0 == override)
         {
             // Normal case, where one rank wants valid multi-domain data
@@ -360,8 +358,8 @@ get_mpi_braid_multi_domain_test_data(Node &data,
     // All of rover's baseline images are generated with 2 MPI ranks
     // (i.e. only 2 domains in the input), so we need to ensure that the test
     // data always matches that case regardless of the number of MPI ranks that
-    // are used to execute the test. Separating the cases like this allows us
-    // to make some optimizations
+    // are used to execute the test. Furthermore, separating the cases like this
+    // allows us to make some per-case optimizations
     if (2 == par_size)
     {
         // This is the default case that we'll have in CI, 2 MPI ranks, so

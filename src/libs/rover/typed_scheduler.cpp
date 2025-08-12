@@ -900,7 +900,6 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
   Node &xray_data = state["xray_data"];
   xray_data["detector_width"] = detector_width; // TODO: Needs validation against VisIt
   xray_data["detector_height"] = detector_height; // TODO: Needs validation against VisIt
-  
   xray_data["optical_depth_max"];
   xray_data["optical_depth_min"];
   xray_data["image_topo_order_of_domain_variables"] = "xyz";
