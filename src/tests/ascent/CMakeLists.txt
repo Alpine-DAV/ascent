@@ -141,9 +141,6 @@ if(GENTEN_FOUND)
     list(APPEND BASIC_TESTS t_ascent_genten_cokurt)
 endif()
 
-# Make t_rover_test_utils.hpp visible to the rover tests
-# include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-
 ################################
 # Add main tests
 ################################
@@ -188,7 +185,7 @@ if(MPI_FOUND AND ENABLE_MPI)
         # this uses 2 procs
         add_cpp_mpi_test(TEST ${TEST} NUM_MPI_TASKS 2 DEPENDS_ON ascent_mpi)
         if ("${TEST}" STREQUAL "t_ascent_mpi_rover")
-            target_compile_definitions(${TEST} PRIVATE ASCENT_MPI_ENABLED)
+            target_compile_definitions(${TEST} PRIVATE ROVER_TEST_MPI_ENABLED)
         endif()
     endforeach()
 
