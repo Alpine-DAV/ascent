@@ -727,41 +727,58 @@ Ascent::execute(const conduit::Node &actions)
     {
         if(m_runtime != NULL)
         {
-            int mpi_comm_id = m_options["mpi_comm"].to_int();
+            conduit::Node processed_actions;
 
-            Node processed_actions(actions);
-            detail::load_included_files_in_node_tree(processed_actions, mpi_comm_id);
+            bool cache_actions = m_options.has_path("cache_actions") && 
+                                  m_options["cache_actions"].as_string() == "true";
 
-            if(m_actions_file == "<<UNSET>>")
+            if (cache_actions && !m_cached_actions.dtype().is_empty())
             {
-                m_actions_file = "ascent_actions.json";
+                processed_actions.set_external(m_cached_actions);
+            }
+            else
+            {
+                processed_actions.set(actions);
 
-                if(!detail::check_for_file(m_actions_file, mpi_comm_id))
+                int mpi_comm_id = m_options["mpi_comm"].to_int();
+                detail::load_included_files_in_node_tree(processed_actions, mpi_comm_id);
+
+                if(m_actions_file == "<<UNSET>>")
                 {
-                    m_actions_file = "ascent_actions.yaml";
+                    m_actions_file = "ascent_actions.json";
+
+                    if(!detail::check_for_file(m_actions_file, mpi_comm_id))
+                    {
+                        m_actions_file = "ascent_actions.yaml";
+                    }
+                }
+                else if(m_actions_file != "ascent_actions.json" &&
+                        m_actions_file != "ascent_actions.yaml" &&
+                        m_actions_file != "")
+                {
+                    // an actions file has been set by the user
+                    // so we better let them know if we don't find
+                    // it
+                    if(!detail::check_for_file(m_actions_file, mpi_comm_id))
+                    {
+                        ASCENT_ERROR("An actions file '"
+                                    <<m_actions_file<<"' was specified "
+                                    " but could not be found. Please "
+                                    "check if the file is in the current "
+                                    "directory or provide an absolute path.")
+                    }
+                }
+
+                CheckForSettingsFile(m_actions_file,
+                                    processed_actions,
+                                    false,
+                                    mpi_comm_id);
+                
+                if (cache_actions)
+                {
+                    m_cached_actions.set(processed_actions);
                 }
             }
-            else if(m_actions_file != "ascent_actions.json" &&
-                    m_actions_file != "ascent_actions.yaml" &&
-                    m_actions_file != "")
-            {
-                // an actions file has been set by the user
-                // so we better let them know if we don't find
-                // it
-                if(!detail::check_for_file(m_actions_file, mpi_comm_id))
-                {
-                    ASCENT_ERROR("An actions file '"
-                                 <<m_actions_file<<"' was specified "
-                                 " but could not be found. Please "
-                                 "check if the file is in the current "
-                                 "directory or provide an absolute path.")
-                }
-            }
-
-            CheckForSettingsFile(m_actions_file,
-                                 processed_actions,
-                                 false,
-                                 mpi_comm_id);
 
             m_runtime->Execute(processed_actions);
 
