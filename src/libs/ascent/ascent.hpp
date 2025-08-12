@@ -62,6 +62,7 @@ private:
     bool           m_verbose_msgs;
     bool           m_forward_exceptions;
     std::string    m_actions_file;
+    conduit::Node  m_cached_actions;
     conduit::Node  m_options;
     conduit::Node  m_status;
     conduit::Node  m_info;
