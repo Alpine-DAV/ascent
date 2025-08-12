@@ -3710,14 +3710,6 @@ TEST(ascent_render_3d, test_render_ascent_camera)
     scenes["s1/renders/r1/camera/look_at"].set_float64_ptr(vec3,3);
     vec3[0] = 0.; vec3[1] = 25.; vec3[2] = 25.;
     scenes["s1/renders/r1/camera/position"].set_float64_ptr(vec3,3);
-    // vec3[0] = 0.; vec3[1] = -1.; vec3[2] = 0.;
-    // scenes["s1/renders/r1/camera/up"].set_float64_ptr(vec3,3);
-    // scenes["s1/renders/r1/camera/fov"] = 60.;
-    // scenes["s1/renders/r1/camera/xpan"] = 0.;
-    // scenes["s1/renders/r1/camera/ypan"] = 0.;
-    // scenes["s1/renders/r1/camera/zoom"] = 1.0;
-    // scenes["s1/renders/r1/camera/azimuth"] = 10.0;
-    // scenes["s1/renders/r1/camera/elevation"] = -10.0;
     scenes["s1/renders/r1/camera/near_plane"] = 30.;
     scenes["s1/renders/r1/camera/far_plane"] = 40;
 
@@ -3846,30 +3838,19 @@ TEST(ascent_render_3d, test_render_visit_camera)
     // set the camera parameters
     double vec3[3];
     vec3[0] = 0.; vec3[1] = .5; vec3[2] = .5;
-    scenes["s1/renders/r1/camera/viewNormal"].set_float64_ptr(vec3,3);
+    scenes["s1/renders/r1/camera/view_normal"].set_float64_ptr(vec3,3);
     vec3[0] = 0.; vec3[1] = 0.; vec3[2] = 0.;
     scenes["s1/renders/r1/camera/focus"].set_float64_ptr(vec3,3);
     vec3[0] = 0.; vec3[1] = 1.; vec3[2] = 0.;
-    scenes["s1/renders/r1/camera/viewUp"].set_float64_ptr(vec3,3);
-    scenes["s1/renders/r1/camera/viewAngle"] = 30.;
-    scenes["s1/renders/r1/camera/parallelScale"] = 10.;
-    scenes["s1/renders/r1/camera/nearPlane"] = -5.;
-    scenes["s1/renders/r1/camera/farPlane"] = 5.;
+    scenes["s1/renders/r1/camera/view_up"].set_float64_ptr(vec3,3);
+    scenes["s1/renders/r1/camera/view_angle"] = 30.;
+    scenes["s1/renders/r1/camera/parallel_scale"] = 10.;
+    scenes["s1/renders/r1/camera/near_plane"] = -5.;
+    scenes["s1/renders/r1/camera/far_plane"] = 5.;
     double vec2[2];
     vec2[0] = 0.; vec2[1] = 0.;
-    scenes["s1/renders/r1/camera/imagePan"].set_float64_ptr(vec2,2);
-    scenes["s1/renders/r1/camera/imageZoom"] = 1;
-    // scenes["s1/renders/r1/camera/perspective"] = 1.; // true
-    // scenes["s1/renders/r1/camera/eyeAngle"] = 2.;
-    // scenes["s1/renders/r1/camera/centerOfRotationSet"] = 0.; // false
-    // vec3[0] = 0.; vec3[1] = 0.; vec3[2] = 0.;
-    // scenes["s1/renders/r1/camera/centerOfRotation"].set_float64_ptr(vec3,3);
-    // scenes["s1/renders/r1/camera/axis3DScaleFlag"] = 0.; // false
-    // vec3[0] = 1.; vec3[1] = 1.; vec3[2] = 1.;
-    // scenes["s1/renders/r1/camera/axis3DScale"].set_float64_ptr(vec3,3);
-    // vec3[0] = 0.; vec3[1] = 0.; vec3[2] = 1.;
-    // scenes["s1/renders/r1/camera/shear"].set_float64_ptr(vec3,3);
-    // scenes["s1/renders/r1/camera/windowValid"] = 0.; // false
+    scenes["s1/renders/r1/camera/image_pan"].set_float64_ptr(vec2,2);
+    scenes["s1/renders/r1/camera/image_zoom"] = 1;
 
     conduit::Node actions;
     conduit::Node &add_plots = actions.append();
@@ -4016,22 +3997,22 @@ TEST(ascent_render_3d, test_render_invalid_camera)
     vec3[0] = 0.; vec3[1] = 0.; vec3[2] = 0.;
     scenes["s1/renders/r1/camera/focus"].set_float64_ptr(vec3,3);
     vec3[0] = 0.; vec3[1] = 1.; vec3[2] = 0.;
-    scenes["s1/renders/r1/camera/viewUp"].set_float64_ptr(vec3,3);
-    scenes["s1/renders/r1/camera/viewAngle"] = 30.;
-    scenes["s1/renders/r1/camera/parallelScale"] = 1.;
-    scenes["s1/renders/r1/camera/nearPlane"] = 0.001;
-    scenes["s1/renders/r1/camera/imageZoom"] = 1.0;
+    scenes["s1/renders/r1/camera/view_up"].set_float64_ptr(vec3,3);
+    scenes["s1/renders/r1/camera/view_angle"] = 30.;
+    scenes["s1/renders/r1/camera/parallel_scale"] = 1.;
+    scenes["s1/renders/r1/camera/near_plane"] = 0.001;
+    scenes["s1/renders/r1/camera/image_zoom"] = 1.0;
     scenes["s1/renders/r1/camera/perspective"] = 1.; // true
-    scenes["s1/renders/r1/camera/eyeAngle"] = 2.;
-    scenes["s1/renders/r1/camera/centerOfRotationSet"] = 0.; // false
+    scenes["s1/renders/r1/camera/eye_angle"] = 2.;
+    scenes["s1/renders/r1/camera/center_of_rotation_set"] = 0.; // false
     vec3[0] = 0.; vec3[1] = 0.; vec3[2] = 0.;
-    scenes["s1/renders/r1/camera/centerOfRotation"].set_float64_ptr(vec3,3);
-    scenes["s1/renders/r1/camera/axis3DScaleFlag"] = 0.; // false
+    scenes["s1/renders/r1/camera/center_of_rotation"].set_float64_ptr(vec3,3);
+    scenes["s1/renders/r1/camera/axis_3d_scale_flag"] = 0.; // false
     vec3[0] = 1.; vec3[1] = 1.; vec3[2] = 1.;
-    scenes["s1/renders/r1/camera/axis3DScale"].set_float64_ptr(vec3,3);
+    scenes["s1/renders/r1/camera/axis_3d_scale"].set_float64_ptr(vec3,3);
     vec3[0] = 0.; vec3[1] = 0.; vec3[2] = 1.;
     scenes["s1/renders/r1/camera/shear"].set_float64_ptr(vec3,3);
-    scenes["s1/renders/r1/camera/windowValid"] = 0.; // false
+    scenes["s1/renders/r1/camera/window_valid"] = 0.; // false
 
     conduit::Node actions;
     conduit::Node &add_plots = actions.append();

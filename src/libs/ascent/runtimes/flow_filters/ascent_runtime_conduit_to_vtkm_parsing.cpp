@@ -209,20 +209,20 @@ parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera)
       camera.SetLookAt(look_at);
   }
 
-  if(camera_node.has_child("viewNormal") && 
+  if(camera_node.has_child("view_normal") && 
      camera_node.has_child("focus") && 
-     camera_node.has_child("viewAngle") && 
-     camera_node.has_child("parallelScale"))
+     camera_node.has_child("view_angle") && 
+     camera_node.has_child("parallel_scale"))
   {
       conduit::Node view, focus;
-      camera_node["viewNormal"].to_float64_array(view);
+      camera_node["view_normal"].to_float64_array(view);
       camera_node["focus"].to_float64_array(focus);
 
       const conduit::float64 *v = view.value();
       const conduit::float64 *fc = focus.value();
 
-      conduit::float64 view_angle = camera_node["viewAngle"].to_float64() * (M_PI / 360.0);
-      conduit::float64 parallel_scale = camera_node["parallelScale"].to_float64();
+      conduit::float64 view_angle = camera_node["view_angle"].to_float64() * (M_PI / 360.0);
+      conduit::float64 parallel_scale = camera_node["parallel_scale"].to_float64();
 
       // Compute camera distance using perspective projection formula
       double distance = (parallel_scale) / std::tan(view_angle);
@@ -241,45 +241,45 @@ parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera)
       camera.SetPosition(position);
 
       // Clipping planes require positional information to be computed
-      if(camera_node.has_child("nearPlane"))
+      if(camera_node.has_child("near_plane"))
       {
         vtkm::Range clipping_range = camera.GetClippingRange();
-        clipping_range.Min =std::max(0.001, distance + camera_node["nearPlane"].to_float64());
+        clipping_range.Min =std::max(0.001, distance + camera_node["near_plane"].to_float64());
         camera.SetClippingRange(clipping_range);
       }
       
-      if(camera_node.has_child("farPlane"))
+      if(camera_node.has_child("far_plane"))
       {
         vtkm::Range clipping_range = camera.GetClippingRange();
-        clipping_range.Max = distance + camera_node["farPlane"].to_float64();
+        clipping_range.Max = distance + camera_node["far_plane"].to_float64();
         camera.SetClippingRange(clipping_range);
       }
   }
 
-  if(camera_node.has_child("viewUp"))
+  if(camera_node.has_child("view_up"))
   {
       conduit::Node n;
-      camera_node["viewUp"].to_float64_array(n);
+      camera_node["view_up"].to_float64_array(n);
       const float64 *coords = n.as_float64_ptr();
       vtkmVec3f up(coords[0], coords[1], coords[2]);
       vtkm::Normalize(up);
       camera.SetViewUp(up);
   }
 
-  if(camera_node.has_child("imagePan"))
+  if(camera_node.has_child("image_pan"))
   {
       vtkm::Float64 xpan = 0.;
       vtkm::Float64 ypan = 0.;
 
       conduit::Node n;
-      camera_node["imagePan"].to_float64_array(n);
+      camera_node["image_pan"].to_float64_array(n);
       const float64 *pan_xy = n.as_float64_ptr();
       camera.Pan(pan_xy[0], pan_xy[1]);
   }
 
-  if(camera_node.has_child("imageZoom"))
+  if(camera_node.has_child("image_zoom"))
   {
-      double zoom = camera_node["imageZoom"].to_float64();
+      double zoom = camera_node["image_zoom"].to_float64();
       camera.Zoom(zoom_to_vtkm_zoom(zoom));
   }
 
@@ -288,21 +288,21 @@ parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera)
     ASCENT_INFO("Visit camera parameter \"perspective\" is recognized but currently has no effect");
   }
 
-  if(camera_node.has_child("eyeAngle"))
+  if(camera_node.has_child("eye_angle"))
   {
-    ASCENT_INFO("Visit camera parameter \"eyeAngle\" is recognized but currently has no effect");
+    ASCENT_INFO("Visit camera parameter \"eye_angle\" is recognized but currently has no effect");
   }
 
-  if(camera_node.has_child("centerOfRotationSet") ||
-     camera_node.has_child("centerOfRotation"))
+  if(camera_node.has_child("center_of_rotation_set") ||
+     camera_node.has_child("center_of_rotation"))
   {
-    ASCENT_INFO("Visit camera parameter \"centerOfRotation\" and \"centerOfRotationSet\" are recognized but currently have no effect");
+    ASCENT_INFO("Visit camera parameter \"center_of_rotation\" and \"center_of_rotation_set\" are recognized but currently have no effect");
   }
 
-  if(camera_node.has_child("axis3DScaleFlag") ||
-     camera_node.has_child("axis3DScale"))
+  if(camera_node.has_child("axis_3d_scale_flag") ||
+     camera_node.has_child("axis_3d_scale"))
   {
-    ASCENT_INFO("Visit camera parameter \"axis3DScale\" and \"axis3DScaleFlag\" are recognized but currently have no effect");
+    ASCENT_INFO("Visit camera parameter \"axis_3d_scale\" and \"axis_3d_scale_flag\" are recognized but currently have no effect");
   }
 
   if(camera_node.has_child("shear"))
@@ -310,9 +310,9 @@ parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera)
     ASCENT_INFO("Visit camera parameter \"shear\" is recognized but currently has no effect");
   }
 
-  if(camera_node.has_child("windowValid"))
+  if(camera_node.has_child("window_valid"))
   {
-    ASCENT_INFO("Visit camera parameter \"windowValid\" is recognized but currently has no effect");
+    ASCENT_INFO("Visit camera parameter \"window_valid\" is recognized but currently has no effect");
   }
 }
 

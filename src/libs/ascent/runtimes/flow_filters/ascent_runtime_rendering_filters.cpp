@@ -208,23 +208,23 @@ check_renders_surprises(const conduit::Node &renders_node)
 
   // Valid Visit input camera format
   std::vector<std::string> c_visit_valid_paths;
-  c_visit_valid_paths.push_back("viewNormal");
+  c_visit_valid_paths.push_back("view_normal");
   c_visit_valid_paths.push_back("focus");
-  c_visit_valid_paths.push_back("viewUp");
-  c_visit_valid_paths.push_back("viewAngle");
-  c_visit_valid_paths.push_back("parallelScale");
-  c_visit_valid_paths.push_back("nearPlane");
-  c_visit_valid_paths.push_back("farPlane");
-  c_visit_valid_paths.push_back("imagePan");
-  c_visit_valid_paths.push_back("imageZoom");
+  c_visit_valid_paths.push_back("view_up");
+  c_visit_valid_paths.push_back("view_angle");
+  c_visit_valid_paths.push_back("parallel_scale");
+  c_visit_valid_paths.push_back("near_plane");
+  c_visit_valid_paths.push_back("far_plane");
+  c_visit_valid_paths.push_back("image_pan");
+  c_visit_valid_paths.push_back("image_zoom");
   c_visit_valid_paths.push_back("perspective");
-  c_visit_valid_paths.push_back("eyeAngle");
-  c_visit_valid_paths.push_back("centerOfRotationSet");
-  c_visit_valid_paths.push_back("centerOfRotation");
-  c_visit_valid_paths.push_back("axis3DScaleFlag");
-  c_visit_valid_paths.push_back("axis3DScale");
+  c_visit_valid_paths.push_back("eye_angle");
+  c_visit_valid_paths.push_back("center_of_rotation_set");
+  c_visit_valid_paths.push_back("center_of_rotation");
+  c_visit_valid_paths.push_back("axis_3d_scale_flag");
+  c_visit_valid_paths.push_back("axis_3d_scale");
   c_visit_valid_paths.push_back("shear");
-  c_visit_valid_paths.push_back("windowValid");
+  c_visit_valid_paths.push_back("window_valid");
 
   std::vector<std::string> c_ignore_paths;
 
