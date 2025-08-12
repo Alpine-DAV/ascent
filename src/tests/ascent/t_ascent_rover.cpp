@@ -196,8 +196,6 @@ TEST(ascent_rover, test_xray_blueprint_braid_absorption_only)
     // Define Ascent actions
     Node extracts;
     get_common_extract_params(extracts, query_path, "radial", "");
-    // Emission is intentionally omitted in this test as the 1st valid way to ask for absorption-only
-    extracts["e1/params/rover"].remove_child("emission");
     extracts["e1/params/rover/precision"] = "double";
 
     Node actions;
@@ -266,7 +264,6 @@ TEST(ascent_rover, test_xray_blueprint_braid_absorption_only_rotated)
     // Define Ascent actions
     Node extracts;
     get_common_extract_params(extracts, query_path, "radial", "");
-    // Emission is intentionally set to "" in this test as the 2nd valid way to ask for absorption-only
     extracts["e1/params/rover/precision"] = "double";
     add_camera_rotation(extracts);
 

@@ -215,36 +215,13 @@ get_default_baseline(Node &baseline_data,
         baseline_data["xray_query/camera"].set(params["camera"]);
     }
 
-    // There are 3 cases to support with respect to emission:
+    // There are 2 cases to support with respect to the emission field:
     // 1. Emission is not set in the params: the absorption-only case
-    // 2. Emission is set to an empty string: the absorption-only case
-    // 3. Emission is set to a non-empty string: the absorption + emission case
+    // 2. Emission is set to a non-empty string: the absorption + emission case
     if (xray_query.has_child("emission"))
     {
-        const std::string emission = xray_query["emission"].as_string();
-        if (emission.empty())
-        {
-            // TODO: Investigate if file format differences like this
-            // are expected behavior. Seems that we would want output data to be
-            // equivalent when we parse it regardless of the file format used
-
-            // If our output type is JSON, the emission field is present in the output as "",
-            // whereas YAML treats it as empty. We only have to do the following in the YAML case 
-            if ("yaml" == baseline_data["xray_query/output_type"].as_string())
-            {
-                // We don't want the emission field to report as a string type,
-                // so we remove it and then add it back as an empty field for the
-                // purpose of passing the diff check
-                baseline_data["xray_query"].remove_child("emission");
-                baseline_data["xray_query/emission"];
-            }
-        }
-        else // (!emission.empty())
-        {
-            // These fields are only set in the absorption + emission case
-            baseline_data["xray_data/intensity_max"] = 0.0;
-            baseline_data["xray_data/intensity_min"] = 0.0;
-        }
+        baseline_data["xray_data/intensity_max"] = 0.0;
+        baseline_data["xray_data/intensity_min"] = 0.0;
     }
 }
 
@@ -436,7 +413,12 @@ get_common_extract_params(Node &extracts,
     extracts["e1/type"] = "xray";
     extracts["e1/params/rover/filename"] = query_path;
     extracts["e1/params/rover/absorption"] = absorption;
-    extracts["e1/params/rover/emission"] = emission;
+    if (!emission.empty())
+    {
+        // We don't support the case where emission is set to an empty string,
+        // so we only set it if it's non-empty
+        extracts["e1/params/rover/emission"] = emission;
+    }
     extracts["e1/params/rover/output_type"] = output_type;
 }
 
