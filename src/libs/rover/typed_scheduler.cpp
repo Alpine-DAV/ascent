@@ -23,6 +23,7 @@ TypedScheduler<FloatType>::TypedScheduler()
   // a new scheduler, since we already instantiate it beforehand
   m_ray_generator = nullptr;
   m_num_local_domains = 0;
+  m_has_emission = rover::settings.has_child("emission");
 }
 
 #ifdef ROVER_PARALLEL
@@ -215,14 +216,13 @@ void
 TypedScheduler<FloatType>::composite()
 {
   // TODO: Combine AbsorptionPartial and EmissionPartial
-  const std::string emission = rover::settings["emission"].as_string();
-  if (emission.empty())
-  {
-    typed_composite<vtkh::AbsorptionPartial<FloatType>>();
-  }
-  else // (!emission.empty())
+  if (m_has_emission)
   {
     typed_composite<vtkh::EmissionPartial<FloatType>>();
+  }
+  else // (!m_has_emission)
+  {
+    typed_composite<vtkh::AbsorptionPartial<FloatType>>();
   }
   ROVER_INFO("Schedule: compositing complete");
 }
@@ -391,15 +391,14 @@ TypedScheduler<FloatType>::trace_rays()
   if (m_num_local_domains == 0 || m_partial_images.empty())
   {
     PartialImage<FloatType> partial_image;
-    partial_image.m_transmission =
-      vtkmRayTracing::ChannelBuffer<FloatType>(num_channels, 0);
+    partial_image.m_transmission = vtkmRayTracing::ChannelBuffer<FloatType>(num_channels, 0);
 
-    const std::string emission = rover::settings["emission"].as_string();
-    if (!emission.empty())
+    // Add an intensity buffer if the emission field is set
+    if (m_has_emission)
     {
-      partial_image.m_intensity =
-        vtkmRayTracing::ChannelBuffer<FloatType>(num_channels, 0);
+      partial_image.m_intensity = vtkmRayTracing::ChannelBuffer<FloatType>(num_channels, 0);
     }
+
     m_partial_images.push_back(partial_image);
   }
 
@@ -884,13 +883,11 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
   xray_view["far_plane"] = far_plane;
 
   Node &xray_query = state["xray_query"];
-  xray_query.set(rover::settings);
+  xray_query.update(rover::settings);
 
   Node &xray_data = state["xray_data"];
   xray_data["detector_width"] = detector_width; // TODO: Needs validation against VisIt
   xray_data["detector_height"] = detector_height; // TODO: Needs validation against VisIt
-  xray_data["intensity_max"];
-  xray_data["intensity_min"];
   xray_data["optical_depth_max"];
   xray_data["optical_depth_min"];
   xray_data["image_topo_order_of_domain_variables"] = "xyz";
@@ -966,10 +963,12 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
   optical_depth_spatial.set(optical_depth);
   optical_depth_spatial["topology"] = "spatial_topo";
 
-  // Intensity is only available in the absorption + emission case
-  const std::string emission = rover::settings["emission"].as_string();
-  if (!emission.empty())
+  // We only populate the intensities fields if the emission field was set
+  if (m_has_emission)
   {
+    xray_data["intensity_max"];
+    xray_data["intensity_min"];
+
     // Image field
     Node &intensities = fields["intensities"];
     intensities["topology"] = "image_topo";

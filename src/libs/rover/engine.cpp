@@ -59,13 +59,9 @@ void
 Engine::init_emission(vtkmRayTracing::Ray<Precision> &rays,
                       const int num_bins)
 {
-  const std::string emission = rover::settings["emission"].as_string();
-  if (emission.empty())
+  if (rover::settings.has_child("emission"))
   {
-    ROVER_INFO("Engine::init_emission: emission not specified");
-  }
-  else
-  {
+    const std::string emission = rover::settings["emission"].as_string();
     m_tracer->SetEmissionField(emission);
     rays.AddBuffer(num_bins, "emission");
     rays.GetBuffer("emission").InitConst(0.0f);
