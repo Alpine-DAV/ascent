@@ -83,6 +83,7 @@ public:
 
 protected:
   int                                       m_num_local_domains;
+  bool                                      m_has_emission;
   std::vector<Domain>                       m_domains;
   RayGenerator                             *m_ray_generator;
   std::vector<vtkm::Float64>                m_background;

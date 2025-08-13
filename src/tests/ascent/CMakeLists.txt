@@ -186,6 +186,9 @@ if(MPI_FOUND AND ENABLE_MPI)
     foreach(TEST ${MPI_TESTS})
         # this uses 2 procs
         add_cpp_mpi_test(TEST ${TEST} NUM_MPI_TASKS 2 DEPENDS_ON ascent_mpi)
+        if ("${TEST}" STREQUAL "t_ascent_mpi_rover")
+            target_compile_definitions(${TEST} PRIVATE ROVER_TEST_MPI_ENABLED)
+        endif()
     endforeach()
 
     # add the hola mpi test which uses 8 ranks
