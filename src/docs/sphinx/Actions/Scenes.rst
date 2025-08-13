@@ -402,8 +402,8 @@ Now we add a second render to the same example using every available parameter:
         near_plane: 0.1
         far_plane: 100.1
 
-Rendering Camera Parameters
----------------------------
+Rendering Camera Configuration
+------------------------------
 Ascent supports two primary methods for defining the rendering camera:
 the Ascent native (VTKm style) camera, which is camera-centric, and the VisIt style camera, which is view-centric.
 Both formats provide control over how scenes are rendered, but they differ in terminology, orientation, and internal computation of the view matrix.
@@ -443,7 +443,13 @@ The following parameters are supported:
 - ``image_pan`` : A 2-element array [x, y] specifying image-space panning.
 - ``image_zoom`` : Zoom factor for the image.
 
+
+Unsupported VisIt Camera Parameters
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In addition to the above supported VisIt camera parameters, there are a number of VisIt camera parameters that are not completely translatable to the VTKm style camera and are therefore currently ignored
+
+.. Note::
+   These parameters are safely ignored if provided. They will not influence the rendered image but also will not produce errors.
 
 - ``perspective`` : Boolean flag (true/false) indicating whether to use perspective (true) or parallel (false) projection. In Ascent, only perspective projection is currently used so this flag is ignored.
 - ``eye_angle`` : Used in stereo rendering to control the eye separation angle. Ascent does not currently support stereo rendering, so this has no effect.
@@ -453,9 +459,6 @@ In addition to the above supported VisIt camera parameters, there are a number o
 - ``axis_3d_scale`` : A 3D vector specifying per-axis scaling for non-uniform visualizations. No effect in Ascent.
 - ``shear`` : A 3-element array used to apply a shear transformation to the view. Not currently implemented.
 - ``window_valid`` : Internal VisIt flag to indicate whether the current window setup is valid. Irrelevant in Ascent and ignored.
-
-.. Note::
-   These parameters are safely ignored if provided. They will not influence the rendered image but also will not produce errors.
 
 Additional Render Options
 -------------------------
