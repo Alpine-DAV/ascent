@@ -4,6 +4,24 @@ Notable changes to Ascent are documented in this file. This changelog started on
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project aspires to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.5]
+### Preferred dependency versions for ascent@develop
+- cmake@3.23 or newer
+- conduit@0.9.4
+- vtk-m@2.3.0
+- raja@v2025.03.1
+- umpire@v2025.03.0
+- camp@v2025.03.0
+- kokkos@4.4.01
+- mfem@4.8
+
+### Added
+- Added ability to define cameras for rendering using visit camera view parameters
+
+### Changed
+
+### Fixed
+
 ## [0.9.4] - Released 2025-07-18
 ### Preferred dependency versions for ascent@develop
 - cmake@3.23 or newer
