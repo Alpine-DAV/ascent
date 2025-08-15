@@ -530,6 +530,8 @@ RoverXRay::execute()
       rover.to_blueprint(data);
     }
 
+    ASCENT_ANNOTATE_MARK_BEGIN("rover filter save blueprint");
+
     const std::string blueprint_filename = output_dir(expand_path_special_variables(
                                                       filename,
                                                       ".root",
@@ -543,6 +545,7 @@ RoverXRay::execute()
                         num_files,
                         extra_opts,
                         result_path);
+    ASCENT_ANNOTATE_MARK_END("rover filter save blueprint");
   }  
   else if ("bov" == output_type)
   {

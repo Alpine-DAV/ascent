@@ -150,18 +150,19 @@ std::vector<std::string> split(const std::string &s, char delim)
     return res;
   }
 
-bool contains(const std::string haystack, std::string needle)
+bool contains(const std::string &haystack, const std::string &needle)
 {
   std::size_t found = haystack.find(needle);
   return (found != std::string::npos);
 }
 
-  void bad_arg(std::string bad_arg)
-  {
+void bad_arg(std::string bad_arg)
+{
     std::cerr<<"Invalid argument \""<<bad_arg<<"\"\n";
     usage();
     exit(0);
-  }
+}
+
 };
 
 void trim(std::string &s)
@@ -262,10 +263,12 @@ void load_actions(const std::string &file_name, int mpi_comm_id, conduit::Node &
 #endif
 }
 
+
 //---------------------------------------------------------------------------//
 int
 main(int argc, char *argv[])
 {
+  ASCENT_ANNOTATE_MARK_SCOPE("ascent replay main");
   //
   // Load Replay Options
   //
@@ -330,6 +333,7 @@ main(int argc, char *argv[])
   //replay_data.print();
   conduit::Node ascent_opts;
   ascent_opts["ascent_info"] = "verbose";
+
 #if defined(ASCENT_REPLAY_MPI)
   ascent_opts["mpi_comm"] = MPI_Comm_c2f(options.use_parallel_in_time ? sub_comm_world : MPI_COMM_WORLD);
   if (options.use_parallel_in_time) {
@@ -353,11 +357,19 @@ main(int argc, char *argv[])
   {
     if(sub_rank == 0)
     {
-      if (options.use_parallel_in_time) {
+      if (options.use_parallel_in_time)
+      {
         std::cout << "[group: " << rank << "]";
       }
       std::cout << "[" << i << "]: Root file " << time_steps[i] << std::endl;
     }
+
+    if(sub_rank == 0)
+    {
+        std::cout << "[" << i << "]: Load  " << std::endl;
+    }
+
+    ASCENT_ANNOTATE_MARK_BEGIN("ascent replay read blueprint mesh");
     flow::Timer load;
 
 #if defined(ASCENT_REPLAY_MPI)
@@ -371,6 +383,12 @@ main(int argc, char *argv[])
     MPI_Barrier(sub_comm_world);
 #endif
     float load_time = load.elapsed();
+    ASCENT_ANNOTATE_MARK_END("ascent replay read blueprint mesh");
+
+    if(sub_rank == 0)
+    {
+        std::cout << "[" << i << "]: Publish  " << std::endl;
+    }
 
     flow::Timer publish;
     ascent.publish(replay_data);
@@ -378,6 +396,11 @@ main(int argc, char *argv[])
     MPI_Barrier(sub_comm_world);
 #endif
     float publish_time = publish.elapsed();
+
+    if(sub_rank == 0)
+    {
+        std::cout << "[" << i << "]: Execute  " << std::endl;
+    }
 
     flow::Timer execute;
     ascent.execute(actions);

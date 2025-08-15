@@ -221,7 +221,8 @@ Workspace::Workspace()
 :m_graph(this),
  m_registry(),
  m_timing_info(),
- m_enable_timings(false)
+ m_enable_timings(false),
+ m_detailed_annotations(false)
 {
 
 }
@@ -296,7 +297,14 @@ Workspace::execute()
             int          uref   = t.to_int32();
             Filter      *f      = graph().filters()[f_name];
 
-            ASCENT_ANNOTATE_MARK_BEGIN("filter execute: " << f->type_name());
+            if(m_detailed_annotations)
+            {
+                ASCENT_ANNOTATE_MARK_BEGIN("filter execute: " << f_name);
+            }
+            else
+            {
+                ASCENT_ANNOTATE_MARK_BEGIN("filter execute: " << f->type_name());
+            }
 
             f->reset_inputs_and_output();
 
@@ -345,7 +353,15 @@ Workspace::execute()
                 registry().consume(f_input_name);
             }
 
-            ASCENT_ANNOTATE_MARK_END("filter execute: " << f->type_name());
+            if(m_detailed_annotations)
+            {
+                ASCENT_ANNOTATE_MARK_END("filter execute: " << f_name);
+            }
+            else
+            {
+                ASCENT_ANNOTATE_MARK_END("filter execute: " << f->type_name());
+            }
+
         }
     }
 
@@ -425,6 +441,22 @@ Workspace::reset_timing_info()
     g_timing_exec_count = 0;
     m_timing_info.str("");
 }
+
+//-----------------------------------------------------------------------------
+bool
+Workspace::detailed_annotations() const
+{
+    return m_detailed_annotations;
+}
+
+
+//-----------------------------------------------------------------------------
+void
+Workspace::set_detailed_annotations(bool detailed)
+{
+    m_detailed_annotations = detailed;
+}
+
 //-----------------------------------------------------------------------------
 string
 Workspace::timing_info() const
