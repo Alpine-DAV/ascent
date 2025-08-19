@@ -5,11 +5,13 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 // rover includes
+#include <logging/ascent_annotations.hpp>
 #include "ray_generators/ray_generator.hpp"
 #include "settings.hpp"
 #include "vtkm_typedefs.hpp"
 #include <algorithm>
 #include <typed_scheduler.hpp>
+
 
 using namespace conduit;
 
@@ -303,12 +305,15 @@ template<typename FloatType>
 void
 TypedScheduler<FloatType>::trace_rays()
 {
+  ASCENT_ANNOTATE_MARK_SCOPE("rover trace rays");
+
   ROVER_INFO("Executing TypedScheduler::trace_rays");
   vtkmTimer tot_timer;
   vtkmTimer timer;
   tot_timer.Start();
   timer.Start();
   double time = 0.0;
+
   ROVER_DATA_OPEN("schedule_trace");
 
   if (!m_ray_generator)
@@ -339,6 +344,7 @@ TypedScheduler<FloatType>::trace_rays()
 
     timer.Start();
 
+    ASCENT_ANNOTATE_MARK_BEGIN("rover setup rays for domain");
     // TODO: I'm curious about which conditions can cause rays to fail to be created
     if (!m_ray_generator->get_rays(rays))
     {
@@ -350,6 +356,10 @@ TypedScheduler<FloatType>::trace_rays()
 
     time = timer.GetElapsedTime();
     ROVER_DATA_ADD("m_domains_init_rays", time);
+
+    ASCENT_ANNOTATE_MARK_END("rover setup rays for domain");
+
+    ASCENT_ANNOTATE_MARK_BEGIN("rover trace rays for domain");
     ROVER_INFO("Tracing domain " << i);
 
     timer.Start();
@@ -357,6 +367,8 @@ TypedScheduler<FloatType>::trace_rays()
     m_domains[i].partial_trace(rays, partials);
     time = timer.GetElapsedTime();
     ROVER_DATA_ADD("domain_trace", time);
+
+    ASCENT_ANNOTATE_MARK_END("rover trace rays for domain");
 
 #ifdef ROVER_ENABLE_LOGGING
     DataLogger::GetInstance()->GetStream()<<vtkmLogger::GetInstance()->GetStream().str();
@@ -418,9 +430,11 @@ TypedScheduler<FloatType>::trace_rays()
   timer.Start();
 
   // Composite the results
+  ASCENT_ANNOTATE_MARK_BEGIN("rover composite");
   timer.Start();
   composite();
   time = timer.GetElapsedTime();
+  ASCENT_ANNOTATE_MARK_END("rover composite");
   ROVER_DATA_ADD("compositing", time);
   timer.Start();
 
@@ -786,6 +800,8 @@ template<typename FloatType>
 void
 TypedScheduler<FloatType>::to_blueprint(Node &data)
 {
+  ASCENT_ANNOTATE_MARK_SCOPE("rover ray trace results to blueprint");
+
   const int64 image_width = rover::settings["width"].to_int64();
   const int64 image_height = rover::settings["height"].to_int64();
   const double aspect_ratio = static_cast<double>(image_width) / static_cast<double>(image_height);
