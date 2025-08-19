@@ -4,6 +4,7 @@
 // other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+#include <logging/ascent_annotations.hpp>
 #include <typed_scheduler.hpp>
 #include <rover.hpp>
 #include <rover_exceptions.hpp>
@@ -167,6 +168,8 @@ Rover::add_dataset(vtkh::DataSet &dataset)
 void
 Rover::update_camera()
 {
+  ASCENT_ANNOTATE_MARK_SCOPE("rover update camera");
+
   if (!rover::settings.has_child("camera"))
   {
     return; // Early return if the default params weren't changed
@@ -267,6 +270,7 @@ Rover::update_camera()
 void
 Rover::update_ray_generator()
 {
+  ASCENT_ANNOTATE_MARK_SCOPE("rover update ray generator");
   m_ray_generator.set_camera(m_camera);
   m_scheduler->set_ray_generator(&m_ray_generator);
 }
@@ -274,6 +278,7 @@ Rover::update_ray_generator()
 void
 Rover::execute()
 {
+  ASCENT_ANNOTATE_MARK_SCOPE("rover execute");
   // This doesn't technically need to be a full error. We're not in
   // an unrecoverable state, we could simply instantiate a new scheduler
   // and have nothing to x-ray. In practice, a user should never encounter this,

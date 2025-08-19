@@ -350,6 +350,7 @@ CheckForSettingsFile(std::string file_name,
 void
 Ascent::open(const conduit::Node &options)
 {
+    ASCENT_ANNOTATE_MARK_SCOPE("ascent open");
     try
     {
         if(m_runtime != NULL)
@@ -679,6 +680,7 @@ Ascent::open(const conduit::Node &options)
 void
 Ascent::publish(const conduit::Node &data)
 {
+    ASCENT_ANNOTATE_MARK_SCOPE("ascent publish");
     try
     {
         if(m_runtime != NULL)
@@ -723,6 +725,7 @@ Ascent::publish(const conduit::Node &data)
 void
 Ascent::execute(const conduit::Node &actions)
 {
+    ASCENT_ANNOTATE_MARK_SCOPE("ascent execute");
     try
     {
         if(m_runtime != NULL)
@@ -821,6 +824,7 @@ Ascent::execute(const conduit::Node &actions)
 void
 Ascent::info(conduit::Node &info_out)
 {
+    ASCENT_ANNOTATE_MARK_SCOPE("ascent info");
     try
     {
         if(m_runtime != NULL)
@@ -865,6 +869,7 @@ Ascent::info(conduit::Node &info_out)
 conduit::Node &
 Ascent::info()
 {
+    ASCENT_ANNOTATE_MARK_SCOPE("ascent info");
     try
     {
         if(m_runtime == NULL)
@@ -913,6 +918,7 @@ Ascent::info()
 void
 Ascent::close()
 {
+    ASCENT_ANNOTATE_MARK_SCOPE("ascent close");
     try
     {
         if(m_runtime != NULL)
