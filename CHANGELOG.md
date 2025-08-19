@@ -49,6 +49,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Changed bounding box used for default scene bounds to be the union of all topologies used in scene plots. Perviously, the union of all topologies in the dataset where used. 
 
 ### Fixed
+- Fix parse_camera where order you apply camera operations matters.
 - Fixed WarpX filter that was not allowing for rendering of the output streamlines
 - Fixed Uniform Grid bug only accepting 2D slices along the Z-axis.
 - Resolved a few cases where MPI_COMM_WORLD was used instead instead of the selected MPI communicator.
