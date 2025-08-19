@@ -221,7 +221,7 @@ parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera)
       const conduit::float64 *v = view.value();
       const conduit::float64 *fc = focus.value();
 
-      conduit::float64 view_angle = camera_node["view_angle"].to_float64() * (M_PI / 360.0);
+      conduit::float64 view_angle = camera_node["view_angle"].to_float64() * (vtkm::Pi() / 360.0);
       conduit::float64 parallel_scale = camera_node["parallel_scale"].to_float64();
 
       // Compute camera distance using perspective projection formula
