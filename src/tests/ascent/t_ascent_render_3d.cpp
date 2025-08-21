@@ -3710,8 +3710,8 @@ TEST(ascent_render_3d, test_render_ascent_camera)
     // set the camera parameters
     add_plots["scenes/s1/renders/r1/camera/look_at"] = {0.0, 0.0, 0.0};
     add_plots["scenes/s1/renders/r1/camera/position"] = {0.0, 25.0, 25.0};
-    add_plots["scenes/s1/renders/r1/camera/near_plane"] = 30.;
-    add_plots["scenes/s1/renders/r1/camera/far_plane"] = 40;
+    add_plots["scenes/s1/renders/r1/camera/near_plane"] = 5.;
+    add_plots["scenes/s1/renders/r1/camera/far_plane"] = 65;
 
     //
     // Run Ascent
@@ -3839,10 +3839,10 @@ TEST(ascent_render_3d, test_render_visit_camera)
     add_plots["scenes/s1/renders/r1/camera/view_up"] = {0.0, 1.0, 0.0};
     add_plots["scenes/s1/renders/r1/camera/view_angle"] = 30.;
     add_plots["scenes/s1/renders/r1/camera/parallel_scale"] = 10.;
-    add_plots["scenes/s1/renders/r1/camera/near_plane"] = -5.;
-    add_plots["scenes/s1/renders/r1/camera/far_plane"] = 5.;
     add_plots["scenes/s1/renders/r1/camera/image_pan"] = {0.0, 0.0};
     add_plots["scenes/s1/renders/r1/camera/image_zoom"] = 1;
+    add_plots["scenes/s1/renders/r1/camera/near_plane"] = -30.;
+    add_plots["scenes/s1/renders/r1/camera/far_plane"] = 30.;
 
     //
     // Run Ascent
