@@ -5,11 +5,13 @@
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
 // rover includes
-#include "ray_generators/vtkm_ray_generator.hpp"
+#include <logging/ascent_annotations.hpp>
+#include "ray_generators/ray_generator.hpp"
 #include "settings.hpp"
 #include "vtkm_typedefs.hpp"
 #include <algorithm>
 #include <typed_scheduler.hpp>
+
 
 using namespace conduit;
 
@@ -23,6 +25,7 @@ TypedScheduler<FloatType>::TypedScheduler()
   // a new scheduler, since we already instantiate it beforehand
   m_ray_generator = nullptr;
   m_num_local_domains = 0;
+  m_has_emission = rover::settings.has_child("emission");
 }
 
 #ifdef ROVER_PARALLEL
@@ -215,14 +218,13 @@ void
 TypedScheduler<FloatType>::composite()
 {
   // TODO: Combine AbsorptionPartial and EmissionPartial
-  const std::string emission = rover::settings["emission"].as_string();
-  if (emission.empty())
-  {
-    typed_composite<vtkh::AbsorptionPartial<FloatType>>();
-  }
-  else // (!emission.empty())
+  if (m_has_emission)
   {
     typed_composite<vtkh::EmissionPartial<FloatType>>();
+  }
+  else // (!m_has_emission)
+  {
+    typed_composite<vtkh::AbsorptionPartial<FloatType>>();
   }
   ROVER_INFO("Schedule: compositing complete");
 }
@@ -303,12 +305,15 @@ template<typename FloatType>
 void
 TypedScheduler<FloatType>::trace_rays()
 {
+  ASCENT_ANNOTATE_MARK_SCOPE("rover trace rays");
+
   ROVER_INFO("Executing TypedScheduler::trace_rays");
   vtkmTimer tot_timer;
   vtkmTimer timer;
   tot_timer.Start();
   timer.Start();
   double time = 0.0;
+
   ROVER_DATA_OPEN("schedule_trace");
 
   if (!m_ray_generator)
@@ -316,20 +321,11 @@ TypedScheduler<FloatType>::trace_rays()
     throw RoverException("Error: ray generator must be set before execute is called");
   }
 
-  m_ray_generator->reset();
-
   set_global_range_and_bounds();
 
   vtkmTimer trace_timer;
   trace_timer.Start();
 
-  // TODO: Don't love that we need dynamic_cast
-  // TODO: Actually support both cases, vtkm and visit. Add tests
-  auto *cast_ray_generator = dynamic_cast<VtkmRayGenerator*>(m_ray_generator);
-  if (!cast_ray_generator)
-  {
-    throw RoverException("Error: RayGenerator instance must be a CameraGenerator");
-  }
   vtkmRayTracing::Ray<FloatType> rays;
 
   for (int i = 0; i < m_num_local_domains; i++)
@@ -343,17 +339,27 @@ TypedScheduler<FloatType>::trace_rays()
     vtkmLogger::GetInstance()->Clear();
 
     // Setting the coordinate system miminizes the number of rays generated
-    cast_ray_generator->set_coordinates(m_domains[i].get_dataset().GetCoordinateSystem());
+    m_ray_generator->set_coordinates(m_domains[i].get_dataset().GetCoordinateSystem());
     ROVER_INFO("Generating rays for domian " << i);
 
     timer.Start();
 
-    cast_ray_generator->get_rays(rays);
+    ASCENT_ANNOTATE_MARK_BEGIN("rover setup rays for domain");
+    // TODO: I'm curious about which conditions can cause rays to fail to be created
+    if (!m_ray_generator->get_rays(rays))
+    {
+      ROVER_ERROR("Failed to create new rays");
+    }
+
     ROVER_INFO("Generated " << rays.NumRays << " rays");
     m_domains[i].init_rays(rays);
 
     time = timer.GetElapsedTime();
     ROVER_DATA_ADD("m_domains_init_rays", time);
+
+    ASCENT_ANNOTATE_MARK_END("rover setup rays for domain");
+
+    ASCENT_ANNOTATE_MARK_BEGIN("rover trace rays for domain");
     ROVER_INFO("Tracing domain " << i);
 
     timer.Start();
@@ -361,6 +367,8 @@ TypedScheduler<FloatType>::trace_rays()
     m_domains[i].partial_trace(rays, partials);
     time = timer.GetElapsedTime();
     ROVER_DATA_ADD("domain_trace", time);
+
+    ASCENT_ANNOTATE_MARK_END("rover trace rays for domain");
 
 #ifdef ROVER_ENABLE_LOGGING
     DataLogger::GetInstance()->GetStream()<<vtkmLogger::GetInstance()->GetStream().str();
@@ -395,15 +403,14 @@ TypedScheduler<FloatType>::trace_rays()
   if (m_num_local_domains == 0 || m_partial_images.empty())
   {
     PartialImage<FloatType> partial_image;
-    partial_image.m_transmission =
-      vtkmRayTracing::ChannelBuffer<FloatType>(num_channels, 0);
+    partial_image.m_transmission = vtkmRayTracing::ChannelBuffer<FloatType>(num_channels, 0);
 
-    const std::string emission = rover::settings["emission"].as_string();
-    if (!emission.empty())
+    // Add an intensity buffer if the emission field is set
+    if (m_has_emission)
     {
-      partial_image.m_intensity =
-        vtkmRayTracing::ChannelBuffer<FloatType>(num_channels, 0);
+      partial_image.m_intensity = vtkmRayTracing::ChannelBuffer<FloatType>(num_channels, 0);
     }
+
     m_partial_images.push_back(partial_image);
   }
 
@@ -423,9 +430,11 @@ TypedScheduler<FloatType>::trace_rays()
   timer.Start();
 
   // Composite the results
+  ASCENT_ANNOTATE_MARK_BEGIN("rover composite");
   timer.Start();
   composite();
   time = timer.GetElapsedTime();
+  ASCENT_ANNOTATE_MARK_END("rover composite");
   ROVER_DATA_ADD("compositing", time);
   timer.Start();
 
@@ -791,6 +800,8 @@ template<typename FloatType>
 void
 TypedScheduler<FloatType>::to_blueprint(Node &data)
 {
+  ASCENT_ANNOTATE_MARK_SCOPE("rover ray trace results to blueprint");
+
   const int64 image_width = rover::settings["width"].to_int64();
   const int64 image_height = rover::settings["height"].to_int64();
   const double aspect_ratio = static_cast<double>(image_width) / static_cast<double>(image_height);
@@ -888,13 +899,11 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
   xray_view["far_plane"] = far_plane;
 
   Node &xray_query = state["xray_query"];
-  xray_query.set(rover::settings);
+  xray_query.update(rover::settings);
 
   Node &xray_data = state["xray_data"];
   xray_data["detector_width"] = detector_width; // TODO: Needs validation against VisIt
   xray_data["detector_height"] = detector_height; // TODO: Needs validation against VisIt
-  xray_data["intensity_max"];
-  xray_data["intensity_min"];
   xray_data["optical_depth_max"];
   xray_data["optical_depth_min"];
   xray_data["image_topo_order_of_domain_variables"] = "xyz";
@@ -970,10 +979,12 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
   optical_depth_spatial.set(optical_depth);
   optical_depth_spatial["topology"] = "spatial_topo";
 
-  // Intensity is only available in the absorption + emission case
-  const std::string emission = rover::settings["emission"].as_string();
-  if (!emission.empty())
+  // We only populate the intensities fields if the emission field was set
+  if (m_has_emission)
   {
+    xray_data["intensity_max"];
+    xray_data["intensity_min"];
+
     // Image field
     Node &intensities = fields["intensities"];
     intensities["topology"] = "image_topo";

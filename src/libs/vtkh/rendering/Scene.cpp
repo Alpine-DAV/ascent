@@ -256,6 +256,7 @@ Scene::Render()
 
     batch_start = batch_end;
   } // while
+   ASCENT_ANNOTATE_MARK_END("scene render batches");
 }
 
 void Scene::SynchDepths(std::vector<vtkh::Render> &renders)

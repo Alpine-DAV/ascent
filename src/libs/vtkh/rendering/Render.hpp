@@ -36,6 +36,7 @@ public:
   vtkm::Int32                     GetHeight() const;
   vtkm::Int32                     GetWidth() const;
   vtkm::rendering::Color          GetBackgroundColor() const;
+  vtkm::rendering::Color          GetForegroundColor() const;
   bool                            GetShadingOn() const;
   void                            Print() const;
 

@@ -210,9 +210,15 @@ RoverXRay::verify_params(const conduit::Node &params,
       info["errors"].append() = "Optional string parameter 'rover/emission' is not a string";
       res = false;
     }
-    // Rover already checks if emission.empty() in the relevant places, so there's no
-    // harm in letting the user explicitly set emission to "". It is equivalent to asking
-    // for the absorption-only case, which only outputs optical depth.
+    else // (n_rover["emission"].dtype().is_string())
+    {
+      const std::string emission = n_rover["emission"].as_string();
+      if (emission.empty())
+      {
+        info["errors"].append() = "Optional string parameter 'rover/emission' cannot be an empty string";
+        res = false;
+      }
+    }
   }
 
   if (n_rover.has_child("enable_rays_mesh"))
@@ -402,6 +408,7 @@ RoverXRay::verify_params(const conduit::Node &params,
     "camera/fov",
     "camera/look_at",
     "camera/near_plane",
+    "camera/position",
     "camera/up",
     "camera/xpan",
     "camera/ypan",
@@ -523,6 +530,8 @@ RoverXRay::execute()
       rover.to_blueprint(data);
     }
 
+    ASCENT_ANNOTATE_MARK_BEGIN("rover filter save blueprint");
+
     const std::string blueprint_filename = output_dir(expand_path_special_variables(
                                                       filename,
                                                       ".root",
@@ -536,6 +545,7 @@ RoverXRay::execute()
                         num_files,
                         extra_opts,
                         result_path);
+    ASCENT_ANNOTATE_MARK_END("rover filter save blueprint");
   }  
   else if ("bov" == output_type)
   {

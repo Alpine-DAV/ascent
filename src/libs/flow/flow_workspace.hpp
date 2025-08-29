@@ -84,6 +84,12 @@ public:
     /// return a string of recorded timing events
     std::string    timing_info() const;
 
+    // control over level of detail in caliper annotations
+    // detailed == true will annotate using filter names
+    // detailed == false will annotate using filter type
+    bool           detailed_annotations() const;
+    void           set_detailed_annotations(bool detailed);
+
     // ------------------------------------------------------------------------
     /// Interface to set and obtain the MPI communicator.
     ///
@@ -158,6 +164,7 @@ private:
     Registry          m_registry;
     std::stringstream m_timing_info;
     bool              m_enable_timings;
+    bool              m_detailed_annotations;
 
 };
 

@@ -1231,3 +1231,89 @@ TEST(ascent_runtime_options, test_field_filtering_new)
     ascent.close();
 
 }
+
+//-----------------------------------------------------------------------------
+TEST(ascent_runtime_options, test_caching_past_actions)
+{
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        return;
+    }
+
+    //
+    // Create an example mesh.
+    //
+
+    Node data, verify_info;
+
+    conduit::blueprint::mesh::examples::spiral(2,data);
+
+    conduit::blueprint::mesh::examples::braid("quads",
+                                              10,
+                                              10,
+                                              0,
+                                              data["extra_domain"]);
+
+    data["extra_domain/state/domain_id"] = 3;
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing action caching mechanism\n");
+
+    string output_path = prepare_output_dir();
+    string output_file_base = conduit::utils::join_file_path(output_path,
+                                            "tout_caching_past_actions_");
+
+    int num_repetitions = 3;
+
+    // remove old images before rendering
+    for (int i = 0; i < num_repetitions ; i++)
+    {
+        remove_test_image(output_file_base, i, "%06d");
+    }
+
+    //
+    // Create the actions.
+    //
+
+    conduit::Node scenes;
+    scenes["s1/plots/p1/type"] = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "braid";
+    scenes["s1/image_prefix"] = output_file_base + "{family}";
+
+    conduit::Node actions;
+    // add the scenes
+    conduit::Node &add_scenes= actions.append();
+    add_scenes["action"] = "add_scenes";
+    add_scenes["scenes"] = scenes;
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent_opts["cache_actions"] = "true";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+
+    conduit::Node blank_actions;
+    for (int i = 0; i < num_repetitions - 1 ; i++){
+        ascent.execute(blank_actions);
+    }
+
+    ascent.close();
+
+    // check that we created an image
+    for (int i = 0; i < num_repetitions ; i++) 
+    {
+        EXPECT_TRUE(check_test_image(output_file_base, 0.001f, i, "%06d"));
+    }
+}
