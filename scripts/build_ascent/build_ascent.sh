@@ -694,9 +694,9 @@ cmake -S ${vtkm_src_dir} -B ${vtkm_build_dir} ${cmake_compiler_settings} \
   -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose}\
   -DCMAKE_BUILD_TYPE=${build_config} \
   -DBUILD_SHARED_LIBS=${build_shared_libs} \
-  -DVTKm_USE_64BIT_IDS=OFF \
+  -DVTKm_USE_64BIT_IDS=ON \
   -DVTKm_USE_DOUBLE_PRECISION=ON \
-  -DVTKm_USE_DEFAULT_TYPES_FOR_ASCENT=ON \
+  -DVTKm_USE_DEFAULT_TYPES_FOR_ASCENT=OFF \
   -DVTKm_ENABLE_MPI=${enable_mpi} \
   -DVTKm_ENABLE_OPENMP=${enable_openmp}\
   -DVTKm_ENABLE_RENDERING=ON \
