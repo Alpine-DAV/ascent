@@ -7,6 +7,7 @@
 #include <vtkm/rendering/raytracing/Logger.h>
 #include <vtkm/rendering/MapperCylinder.h>
 #include <vtkm/rendering/MapperPoint.h>
+#include <vtkm/rendering/MapperWireframer.h>
 
 
 #include <png_utils/ascent_png_encoder.hpp>
@@ -70,6 +71,18 @@ bool
 Renderer::IsDiscrete() const
 {
   return m_is_discrete;
+}
+
+bool
+Renderer::IsMeshRenderer() const
+{
+  bool is_mesh = false;
+
+  if(std::dynamic_pointer_cast<vtkm::rendering::MapperWireframer>(m_mapper) != nullptr)
+  {
+    is_mesh = true;
+  }
+  return is_mesh;
 }
 
 void
@@ -217,16 +230,15 @@ Renderer::DoExecute()
   }
 
   bool is_lines = m_input->IsLineMesh();
-  m_input->PrintSummary(std::cerr);
-  if(is_lines)
+  //TODO: 
+  //deal with 1D lines when viskores updated: https://github.com/Viskores/viskores/issues/164
+  if(is_lines && !IsMeshRenderer())
   { 
-    std::cerr << "lines affirmative" << std::endl;
     typedef vtkm::rendering::MapperCylinder TracerType;
-    //typedef vtkm::rendering::MapperPoint TracerType;
     auto mapper = std::make_shared<TracerType>();
     vtkm::Bounds bounds = m_input->GetBounds();
     vtkm::FloatDefault diagonal = vtkm::Magnitude(bounds.MaxCorner() - bounds.MinCorner());
-    //TODO: user input radius
+    //TODO: user input radius?
     mapper->SetRadius(0.001 * diagonal);
     this->m_mapper = mapper;
   }
