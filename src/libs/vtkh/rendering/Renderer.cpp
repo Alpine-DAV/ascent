@@ -238,6 +238,8 @@ Renderer::DoExecute()
     auto mapper = std::make_shared<TracerType>();
     vtkm::Bounds bounds = m_input->GetBounds();
     vtkm::FloatDefault diagonal = vtkm::Magnitude(bounds.MaxCorner() - bounds.MinCorner());
+    std::cerr << "diagonal: " << diagnoal << std::endl;
+    std::cerr << "radius: " << 0.001 * diagnoal << std::endl;
     //TODO: user input radius?
     mapper->SetRadius(0.001 * diagonal);
     this->m_mapper = mapper;
