@@ -421,7 +421,7 @@ MakeRender(int width,
   //
   bool is_2d = bounds.Z.Min == 0. && bounds.Z.Max == 0.;
   std::cerr << "MakeRender3 is_2d: " << is_2d << std::endl;
-  std::cerr << "scene Z bounds min max: " << scene_bounds.Z.Min << " " << scene_bounds.Z.Max << std::endl;
+  std::cerr << "scene Z bounds min max: " << bounds.Z.Min << " " << bounds.Z.Max << std::endl;
 
   if(is_2d)
   {
