@@ -1190,6 +1190,7 @@ CreateRenders::execute()
            bounds.Include(topo_bounds);
         }
     }
+    std::cerr << "bounds: " << bounds.X.Min << " " << bounds.X.Max << " "<< bounds.Y.Min << " " << bounds.Y.Max << " " << bounds.Z.Min << " " << bounds.Z.Max << std::endl;
 
     std::vector<vtkh::Render> *renders = new std::vector<vtkh::Render>();
 
