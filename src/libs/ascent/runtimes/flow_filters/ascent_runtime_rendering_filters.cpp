@@ -1489,6 +1489,8 @@ CreateRenders::execute()
         }
       }
 
+      std::cerr << "before this makeRender??======" << std::endl;
+      std::cerr << "scene_bounhds: " << scene_bounds.X.Min << " " << scene_bounds.X.Max << " " << scene_bounds.Y.Min << " " << scene_bounds.Y.Max << " " << scene_bounds.Z.Min << " " << scene_bounds.Z.Max << std::endl;
       vtkh::Render render = vtkh::MakeRender(1024,
                             1024,
                             scene_bounds,
