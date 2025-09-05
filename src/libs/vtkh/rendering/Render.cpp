@@ -347,6 +347,8 @@ MakeRender(int width,
   camera.SetModeTo3D();
 
   bool is_2d = scene_bounds.Z.Min == 0. && scene_bounds.Z.Max == 0.;
+  std::cerr << "MakeRender1 is_2d: " << is_2d << std::endl;
+  std::cerr << "scene Z bounds min max: " << scene_bounds.Z.Min << " " << scene_bounds.Z.Max << std::endl;
 
   if(is_2d)
   {
@@ -381,6 +383,8 @@ MakeRender(int width,
   camera.SetModeTo3D();
 
   bool is_2d = scene_bounds.Z.Min == 0. && scene_bounds.Z.Max == 0.;
+  std::cerr << "MakeRender2 is_2d: " << is_2d << std::endl;
+  std::cerr << "scene Z bounds min max: " << scene_bounds.Z.Min << " " << scene_bounds.Z.Max << std::endl;
 
   if(is_2d)
   {
@@ -416,6 +420,8 @@ MakeRender(int width,
   // detect a 2d data set
   //
   bool is_2d = bounds.Z.Min == 0. && bounds.Z.Max == 0.;
+  std::cerr << "MakeRender3 is_2d: " << is_2d << std::endl;
+  std::cerr << "scene Z bounds min max: " << scene_bounds.Z.Min << " " << scene_bounds.Z.Max << std::endl;
 
   if(is_2d)
   {
