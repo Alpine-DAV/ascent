@@ -282,7 +282,7 @@ Renderer::DoExecute()
       Render::vtkmCanvas &canvas = m_renders[i].GetCanvas();
       const vtkmCamera &camera = m_renders[i].GetCamera();
       std::cerr <<"camera: " << std::endl;
-      camera.PrintSummary(std::cerr);
+      camera.Print();
       m_mapper->SetCanvas(&canvas);
       m_mapper->RenderCells(cellset,
                             coords,
