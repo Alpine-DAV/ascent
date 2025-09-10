@@ -238,8 +238,6 @@ Renderer::DoExecute()
     auto mapper = std::make_shared<TracerType>();
     vtkm::Bounds bounds = m_input->GetBounds();
     vtkm::FloatDefault diagonal = vtkm::Magnitude(bounds.MaxCorner() - bounds.MinCorner());
-    std::cerr << "diagonal: " << diagonal << std::endl;
-    std::cerr << "radius: " << 0.001 * diagonal << std::endl;
     //TODO: user input radius?
     mapper->SetRadius(0.001 * diagonal);
     this->m_mapper = mapper;
@@ -281,8 +279,6 @@ Renderer::DoExecute()
 
       Render::vtkmCanvas &canvas = m_renders[i].GetCanvas();
       const vtkmCamera &camera = m_renders[i].GetCamera();
-      std::cerr <<"camera: " << std::endl;
-      camera.Print();
       m_mapper->SetCanvas(&canvas);
       m_mapper->RenderCells(cellset,
                             coords,

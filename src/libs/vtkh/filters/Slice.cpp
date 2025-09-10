@@ -928,8 +928,6 @@ void SliceImplicit::DoExecute()
   cleaner.SetInput(&data_set);
   cleaner.Update();
   this->m_output = cleaner.GetOutput();
-  std::cerr << "slice output::: " << std::endl;
-  this->m_output->PrintSummary(std::cerr);
 }
 
 std::string

@@ -14,7 +14,6 @@ MeshRenderer::MeshRenderer()
   typedef vtkm::rendering::MapperWireframer MapperType;
   auto mapper = std::make_shared<MapperType>();
   this->m_mapper = mapper;
-  std::cerr <<" In MeshRenderer!!-----------------" << std::endl;
 }
 
 MeshRenderer::~MeshRenderer()
