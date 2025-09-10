@@ -35,7 +35,6 @@ index_t EXAMPLE_MESH_SIDE_DIM = 20;
 
 
 //-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 TEST(ascent_contour, test_single_contour_3d)
 {
     // the vtkm runtime is currently our only rendering runtime
