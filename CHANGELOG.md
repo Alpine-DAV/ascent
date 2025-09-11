@@ -16,12 +16,12 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - mfem@4.8
 
 ### Added
+- Added 1D & 2D contour capabilities, but 1D is limited to extracts until a viskroes fix
 - Added support for Absorption-only Rover (XRay Raytracing).
 - Added optical depth compositing for Rover (XRay Raytracing).
 - Added Caliper annotations for outer Ascent interface, Ascent Relay, and Rover (XRay Raytracing).
 - Added caching functionality for the actions, when `cache_actions` option is `true`. When used, actions are only read once.
 - Added El Capitan build script. 
-
 
 ### Changed
 - Fixed issues with MPI use of XRay Raytracing
@@ -44,7 +44,6 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - mfem@4.8
 
 ### Added
-- Added 1D & 2D contour capabilities, but 1D is limited to extracts until a viskroes fix
 - Added ability to specify either fields (list of strings) or field (string) for uniform grid sample filter
 - Added a `sample` filter that allows you to sample field values at a list of explicit points or along a line.
 - Added use case to vtkh data adaptor for blueprint meshes with explicit mesh coordinates with implicit topology (a blueprint structured mesh).
