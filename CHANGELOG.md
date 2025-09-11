@@ -44,6 +44,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - mfem@4.8
 
 ### Added
+- Added 1D & 2D contour capabilities, but 1D is limited to extracts until a viskroes fix
 - Added ability to specify either fields (list of strings) or field (string) for uniform grid sample filter
 - Added a `sample` filter that allows you to sample field values at a list of explicit points or along a line.
 - Added use case to vtkh data adaptor for blueprint meshes with explicit mesh coordinates with implicit topology (a blueprint structured mesh).
