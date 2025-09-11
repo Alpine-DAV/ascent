@@ -47,6 +47,7 @@ public:
   vtkm::Range                 GetRange() const;
   bool                        GetHasColorTable() const;
   bool                        IsDiscrete() const;
+  bool                        IsMeshRenderer() const;
 protected:
 
   // image related data with cinema support

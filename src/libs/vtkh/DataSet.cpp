@@ -561,6 +561,32 @@ DataSet::IsPointMesh() const
 }
 
 bool
+DataSet::IsLineMesh() const
+{
+  const bool is_empty = GlobalIsEmpty();
+  if(is_empty) return false;
+
+  // since we are not empty, start with the affirmative is_lines.
+  // if someone is not lines, the we will figure it out here
+  bool is_lines = true;
+  const size_t num_domains = m_domains.size();
+  for(size_t i = 0; i < num_domains; ++i)
+  {
+    const vtkm::cont::DataSet &dom = m_domains[i];
+    vtkm::UInt8 shape_type;
+    bool single_type = VTKMDataSetInfo::IsSingleCellShape(dom.GetCellSet(), shape_type);
+
+    if(dom.GetCellSet().GetNumberOfCells() > 0)
+    {
+      is_lines = (single_type && (shape_type == 3)) && is_lines;
+    }
+  }
+
+  is_lines = detail::GlobalAgreement(is_lines);
+  return is_lines;
+}
+
+bool
 DataSet::IsUnstructured() const
 {
   bool is_unstructured = true;

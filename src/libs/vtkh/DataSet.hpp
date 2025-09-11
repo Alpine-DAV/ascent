@@ -117,6 +117,8 @@ public:
 
   bool IsPointMesh() const;
 
+  bool IsLineMesh() const;
+
   void PrintSummary(std::ostream &stream) const;
 };
 
