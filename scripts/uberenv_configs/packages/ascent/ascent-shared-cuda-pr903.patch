@@ -45,15 +45,15 @@ index fe9ce937..7f94a82b 100644
 +      runtimes/expressions/ascent_derived_jit.cpp)
  endif()
  
- if(VTKM_FOUND)
-@@ -213,6 +217,11 @@ if(VTKM_FOUND)
-         runtimes/flow_filters/ascent_runtime_conduit_to_vtkm_parsing.cpp
+ if(VISKORES_FOUND)
+@@ -213,6 +217,11 @@ if(VISKORES_FOUND)
+         runtimes/flow_filters/ascent_runtime_conduit_to_viskores_parsing.cpp
          runtimes/ascent_main_runtime.cpp)
  
-+    set(ascent_vtkm_device_sources
++    set(ascent_viskores_device_sources
 +        ${ascent_vtkh_dep_sources}
 +        runtimes/flow_filters/ascent_runtime_blueprint_filters.cpp)
-+    list(APPEND ascent_device_sources ${ascent_vtkm_device_sources})
++    list(APPEND ascent_device_sources ${ascent_viskores_device_sources})
 +
      foreach( _itm ${ascent_vtkh_dep_headers} )
          list(APPEND ascent_headers ${_itm})
@@ -69,11 +69,11 @@ index fe9ce937..7f94a82b 100644
 @@ -351,24 +361,7 @@ if (ENABLE_SERIAL)
      endif()
  
-     if(VTKM_FOUND)
+     if(VISKORES_FOUND)
 -        set(ascent_device_sources ${ascent_vtkh_dep_sources})
 -        list(APPEND ascent_device_sources runtimes/flow_filters/ascent_runtime_blueprint_filters.cpp)
 -
--        vtkm_add_target_information(ascent DEVICE_SOURCES ${ascent_device_sources})
+-        viskores_add_target_information(ascent DEVICE_SOURCES ${ascent_device_sources})
 -    endif()
 -
 -    if(ASCENT_JIT_ENABLED)
@@ -88,7 +88,7 @@ index fe9ce937..7f94a82b 100644
 -        if(CUDA_FOUND)
 -            list(APPEND ascent_device_sources runtimes/flow_filters/ascent_runtime_genten_filters.cpp)
 -        endif()
-+        vtkm_add_target_information(ascent DEVICE_SOURCES ${ascent_vtkm_device_sources})
++        viskores_add_target_information(ascent DEVICE_SOURCES ${ascent_viskores_device_sources})
      endif()
  
      # install target for serial ascent lib
@@ -96,9 +96,9 @@ index fe9ce937..7f94a82b 100644
      )
  
  
--    if(VTKM_FOUND AND CUDA_FOUND)
+-    if(VISKORES_FOUND AND CUDA_FOUND)
 +    # Static linking CUDA
-+    if(VTKM_FOUND AND CUDA_FOUND AND NOT BUILD_SHARED_LIBS)
++    if(VISKORES_FOUND AND CUDA_FOUND AND NOT BUILD_SHARED_LIBS)
        set(locations_on_disk "")
  
        set(binary_dir "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/ascent.dir")
@@ -110,18 +110,18 @@ index fe9ce937..7f94a82b 100644
 -                          vtkh_core
 -                          vtkh_lodepng
 -                          vtkh_utils
--                          vtkm_io
--                          vtkm_rendering
--                          vtkm_filter_common
--                          vtkm_filter_contour
--                          vtkm_filter_gradient
--                          vtkm_filter_extra
--                          vtkm_worklet
--                          vtkm_source
--                          vtkm_cont
--                          vtkm_cont_testing
--                          vtkm_lodepng
--                          vtkmdiympi_nompi
+-                          viskores_io
+-                          viskores_rendering
+-                          viskores_filter_common
+-                          viskores_filter_contour
+-                          viskores_filter_gradient
+-                          viskores_filter_extra
+-                          viskores_worklet
+-                          viskores_source
+-                          viskores_cont
+-                          viskores_cont_testing
+-                          viskores_lodepng
+-                          viskoresdiympi_nompi
 -                          )
 +        vtkh_rendering
 +        vtkh_compositing
@@ -129,25 +129,25 @@ index fe9ce937..7f94a82b 100644
 +        vtkh_core
 +        vtkh_lodepng
 +        vtkh_utils
-+        vtkmdiympi_nompi
-+        vtkm_io
-+        vtkm_rendering
-+        vtkm_filter_common
-+        vtkm_filter_contour
-+        vtkm_filter_gradient
-+        vtkm_filter_extra
-+        vtkm_worklet
-+        vtkm_source
-+        vtkm_cont
-+        vtkm_lodepng
++        viskoresdiympi_nompi
++        viskores_io
++        viskores_rendering
++        viskores_filter_common
++        viskores_filter_contour
++        viskores_filter_gradient
++        viskores_filter_extra
++        viskores_worklet
++        viskores_source
++        viskores_cont
++        viskores_lodepng
 +      )
 +
 +      if(ENABLE_TESTS)
-+        if (NOT TARGET vtkm_cont_testing)
-+          message(FATAL_ERROR "ENABLE_TESTS requires a VTKm that provides vtkm_cont_testing")
++        if (NOT TARGET viskores_cont_testing)
++          message(FATAL_ERROR "ENABLE_TESTS requires a Viskores that provides viskores_cont_testing")
 +        endif ()
 +        list(APPEND targets_to_link
-+          vtkm_cont_testing)
++          viskores_cont_testing)
 +      endif()
  
        source_objects(${binary_dir}
@@ -160,9 +160,9 @@ index fe9ce937..7f94a82b 100644
 @@ -502,7 +503,7 @@ if(MPI_FOUND)
      endif()
  
-     if(VTKM_FOUND)
--        vtkm_add_target_information(ascent_mpi DEVICE_SOURCES ${ascent_device_sources})
-+        vtkm_add_target_information(ascent_mpi DEVICE_SOURCES ${ascent_vtkm_device_sources})
+     if(VISKORES_FOUND)
+-        viskores_add_target_information(ascent_mpi DEVICE_SOURCES ${ascent_device_sources})
++        viskores_add_target_information(ascent_mpi DEVICE_SOURCES ${ascent_viskores_device_sources})
      endif()
      blt_add_target_compile_flags(TO ascent_mpi FLAGS "-DASCENT_MPI_ENABLED")
  
@@ -170,9 +170,9 @@ index fe9ce937..7f94a82b 100644
              RUNTIME DESTINATION lib
      )
  
--    if(VTKM_FOUND AND CUDA_FOUND)
+-    if(VISKORES_FOUND AND CUDA_FOUND)
 +    # Static linking CUDA
-+    if(VTKM_FOUND AND CUDA_FOUND AND NOT BUILD_SHARED_LIBS)
++    if(VISKORES_FOUND AND CUDA_FOUND AND NOT BUILD_SHARED_LIBS)
        set(locations_on_disk "")
 -
        set(binary_dir "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/ascent_mpi.dir")
@@ -184,18 +184,18 @@ index fe9ce937..7f94a82b 100644
 -                          vtkh_core_mpi
 -                          vtkh_lodepng
 -                          vtkh_utils_mpi
--                          vtkm_io
--                          vtkm_rendering
--                          vtkm_filter_common
--                          vtkm_filter_contour
--                          vtkm_filter_gradient
--                          vtkm_filter_extra
--                          vtkm_worklet
--                          vtkm_source
--                          vtkm_cont
--                          vtkm_cont_testing
--                          vtkm_lodepng
--                          vtkmdiympi_nompi
+-                          viskores_io
+-                          viskores_rendering
+-                          viskores_filter_common
+-                          viskores_filter_contour
+-                          viskores_filter_gradient
+-                          viskores_filter_extra
+-                          viskores_worklet
+-                          viskores_source
+-                          viskores_cont
+-                          viskores_cont_testing
+-                          viskores_lodepng
+-                          viskoresdiympi_nompi
 -                          )
 +      set(targets_to_link
 +        rover
@@ -204,31 +204,31 @@ index fe9ce937..7f94a82b 100644
 +        vtkh_filters_mpi
 +        vtkh_core_mpi
 +        vtkh_utils_mpi
-+        vtkm_io
-+        vtkm_rendering
-+        vtkm_filter_common
-+        vtkm_filter_contour
-+        vtkm_filter_gradient
-+        vtkm_filter_extra
-+        vtkm_worklet
-+        vtkm_source
-+        vtkm_cont
-+        vtkm_lodepng
++        viskores_io
++        viskores_rendering
++        viskores_filter_common
++        viskores_filter_contour
++        viskores_filter_gradient
++        viskores_filter_extra
++        viskores_worklet
++        viskores_source
++        viskores_cont
++        viskores_lodepng
 +      )
 +
-+      if(TARGET vtkmdiympi_nompi)
-+        list(APPEND targets_to_link vtkmdiympi_nompi)
++      if(TARGET viskoresdiympi_nompi)
++        list(APPEND targets_to_link viskoresdiympi_nompi)
 +      endif()
-+      if(TARGET vtkmdiympi)
-+        list(APPEND targets_to_link vtkmdiympi)
++      if(TARGET viskoresdiympi)
++        list(APPEND targets_to_link viskoresdiympi)
 +      endif()
 +
 +      if(ENABLE_TESTS)
-+        if (NOT TARGET vtkm_cont_testing)
-+          message(FATAL_ERROR "ENABLE_TESTS requires a VTKm that provides vtkm_cont_testing")
++        if (NOT TARGET viskores_cont_testing)
++          message(FATAL_ERROR "ENABLE_TESTS requires a Viskores that provides viskores_cont_testing")
 +        endif ()
 +        list(APPEND targets_to_link
-+          vtkm_cont_testing)
++          viskores_cont_testing)
 +      endif()
  
        source_objects(${binary_dir}
@@ -238,19 +238,19 @@ index fe9ce937..7f94a82b 100644
                       "${targets_to_link}"
                       locations_on_disk)
  
-diff --git a/src/cmake/thirdparty/SetupVTKm.cmake b/src/cmake/thirdparty/SetupVTKm.cmake
+diff --git a/src/cmake/thirdparty/SetupViskores.cmake b/src/cmake/thirdparty/SetupViskores.cmake
 index 5dbd9aa3..b0dbde2c 100644
---- a/src/cmake/thirdparty/SetupVTKm.cmake
-+++ b/src/cmake/thirdparty/SetupVTKm.cmake
-@@ -26,6 +26,11 @@ if(ENABLE_CUDA AND NOT VTKm_ENABLE_CUDA)
-    message(FATAL_ERROR "Ascent CUDA support requires VTK-m with CUDA support (ENABLE_CUDA == TRUE, however VTKm_ENABLE_CUDA == FALSE")
+--- a/src/cmake/thirdparty/SetupViskores.cmake
++++ b/src/cmake/thirdparty/SetupViskores.cmake
+@@ -26,6 +26,11 @@ if(ENABLE_CUDA AND NOT Viskores_ENABLE_CUDA)
+    message(FATAL_ERROR "Ascent CUDA support requires Viskores with CUDA support (ENABLE_CUDA == TRUE, however Viskores_ENABLE_CUDA == FALSE")
  endif()
  
 +if(ENABLE_CUDA AND BUILD_SHARED_LIBS)
-+  if(VTKm_VERSION VERSION_LESS "1.7.0")
-+    message(FATAL_ERROR "Cannot build shared libs with CUDA when VTKm is < v1.7.0")
++  if(Viskores_VERSION VERSION_LESS "1.7.0")
++    message(FATAL_ERROR "Cannot build shared libs with CUDA when Viskores is < v1.7.0")
 +  endif()
 +endif()
  
- set(VTKM_FOUND TRUE)
+ set(VISKORES_FOUND TRUE)
  

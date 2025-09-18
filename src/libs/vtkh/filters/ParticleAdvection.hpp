@@ -6,7 +6,7 @@
 #include <vtkh/filters/Filter.hpp>
 #include <vtkh/DataSet.hpp>
 
-#include <vtkm/Particle.h>
+#include <viskores/Particle.h>
 
 namespace vtkh
 {
@@ -19,7 +19,7 @@ public:
   std::string GetName() const override { return "vtkh::ParticleAdvection";}
   void SetField(const std::string &field_name) {  m_field_name = field_name; }
   void SetStepSize(const double &step_size) {   m_step_size = step_size; }
-  void SetSeeds(const std::vector<vtkm::Particle>& seeds) { m_seeds = seeds; }
+  void SetSeeds(const std::vector<viskores::Particle>& seeds) { m_seeds = seeds; }
   void SetNumberOfSteps(int numSteps) { m_num_steps = numSteps; }
 
 protected:
@@ -30,7 +30,7 @@ protected:
   std::string m_field_name;
   double m_step_size;
   int m_num_steps;
-  std::vector<vtkm::Particle> m_seeds;
+  std::vector<viskores::Particle> m_seeds;
 };
 
 } //namespace vtkh

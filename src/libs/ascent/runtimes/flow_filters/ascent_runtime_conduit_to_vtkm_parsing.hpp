@@ -7,17 +7,17 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: ascent_runtime_conduit_to_vtkm_parsing.hpp
+/// file: ascent_runtime_conduit_to_viskores_parsing.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef ASCENT_RUNTIME_CONDUIT_TO_VTKM_PARSING
-#define ASCENT_RUNTIME_CONDUIT_TO_VTKM_PARSING
+#ifndef ASCENT_RUNTIME_CONDUIT_TO_VISKORES_PARSING
+#define ASCENT_RUNTIME_CONDUIT_TO_VISKORES_PARSING
 
 #include<conduit.hpp>
 
-#include<vtkm/rendering/Camera.h>
-#include<vtkm/cont/ColorTable.h>
+#include<viskores/rendering/Camera.h>
+#include<viskores/cont/ColorTable.h>
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
 //-----------------------------------------------------------------------------
@@ -41,14 +41,14 @@ parse_image_dims(const conduit::Node &node, int &width, int &height);
 
 //-----------------------------------------------------------------------------
 void
-parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera);
+parse_camera(const conduit::Node camera_node, viskores::rendering::Camera &camera);
 
 //-----------------------------------------------------------------------------
-vtkm::cont::ColorTable
+viskores::cont::ColorTable
 parse_color_table(const conduit::Node &color_table_node);
 
 //-----------------------------------------------------------------------------
-double zoom_to_vtkm_zoom(double in_zoom);
+double zoom_to_viskores_zoom(double in_zoom);
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------

@@ -22,14 +22,14 @@ Open provides the initial setup of Ascent from a Conduit Node.
 Options include runtime type (e.g., ascent, flow, or empty) and associated backend if available.
 If running in parallel (i.e., MPI), then a MPI comm handle must be supplied.
 Ascent will always check the file system for a file called ``ascent_options.yaml`` that will override compiled in options, and for obvious reasons, a MPI communicator cannot be specified in the file.
-Here is a file that would set the runtime to the main ascent runtime using a OpenMP backend (inside VTK-m):
+Here is a file that would set the runtime to the main ascent runtime using a OpenMP backend (inside Viskores):
 
 
 .. code-block:: yaml
 
   runtime:
     type: "ascent"
-    vtkm:
+    viskores:
       backend: "openmp"
 
 Example Options
@@ -45,7 +45,7 @@ A typical integration will include the following code:
   ascent_options["mpi_comm"] = MPI_Comm_c2f(MPI_COMM_WORLD);
   #endif
   ascent_options["runtime/type"] = "ascent";
-  ascent_options["runtime/vtkm/backend"] = "openmp";
+  ascent_options["runtime/viskores/backend"] = "openmp";
 
   ascent.Open(ascent_options);
 

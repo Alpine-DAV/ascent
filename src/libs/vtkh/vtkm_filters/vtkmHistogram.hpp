@@ -1,17 +1,17 @@
-#ifndef VTK_H_VTKM_HISTOGRAM_HPP
-#define VTK_H_VTKM_HISTOGRAM_HPP
+#ifndef VTK_H_VISKORES_HISTOGRAM_HPP
+#define VTK_H_VISKORES_HISTOGRAM_HPP
 
-#include <vtkm/cont/PartitionedDataSet.h>
+#include <viskores/cont/PartitionedDataSet.h>
 
 namespace vtkh
 {
 
-class vtkmHistogram
+class viskoresHistogram
 {
 public:
-  vtkm::cont::PartitionedDataSet Run(vtkm::cont::PartitionedDataSet &p_input,
-                          vtkm::Id num_bins,
-			  vtkm::Range range);
+  viskores::cont::PartitionedDataSet Run(viskores::cont::PartitionedDataSet &p_input,
+                          viskores::Id num_bins,
+			  viskores::Range range);
 };
 }
 #endif

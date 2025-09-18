@@ -24,21 +24,21 @@ index 3d60ee9a5..97d518391 100644
  
      variant("shared", default=True, description="Build vtk-h as shared libs")
 @@ -70,7 +70,7 @@ class Vtkh(Package):
-     depends_on("vtkm@master+cuda~tbb+openmp~shared", when="@develop+cuda+openmp~shared")
-     depends_on("vtkm@master+cuda~tbb~openmp~shared", when="@develop+cuda~openmp~shared")
+     depends_on("viskores@master+cuda~tbb+openmp~shared", when="@develop+cuda+openmp~shared")
+     depends_on("viskores@master+cuda~tbb~openmp~shared", when="@develop+cuda~openmp~shared")
  
--    patch('vtkm_lagrange_cuda_fix.patch')
+-    patch('viskores_lagrange_cuda_fix.patch')
 +
  
      def install(self, spec, prefix):
          with working_dir('spack-build', create=True):
-diff --git a/var/spack/repos/builtin/packages/vtkm/package.py b/var/spack/repos/builtin/packages/vtkm/package.py
+diff --git a/var/spack/repos/builtin/packages/viskores/package.py b/var/spack/repos/builtin/packages/viskores/package.py
 index b899ef547..3317766a6 100644
---- a/var/spack/repos/builtin/packages/vtkm/package.py
-+++ b/var/spack/repos/builtin/packages/vtkm/package.py
+--- a/var/spack/repos/builtin/packages/viskores/package.py
++++ b/var/spack/repos/builtin/packages/viskores/package.py
 @@ -20,7 +20,7 @@ class Vtkm(CMakePackage, CudaPackage):
-     url      = "https://gitlab.kitware.com/api/v4/projects/vtk%2Fvtk-m/repository/archive.tar.gz?sha=v1.3.0"
-     git      = "https://gitlab.kitware.com/vtk/vtk-m.git"
+     url      = "https://gitlab.kitware.com/api/v4/projects/vtk%2Fviskores/repository/archive.tar.gz?sha=v1.3.0"
+     git      = "https://gitlab.kitware.com/vtk/viskores.git"
  
 -    version('master', branch='master')
 +    version('master', commit='77f17450ba8bfbe09a9570ef9c5cdc275061f34f')

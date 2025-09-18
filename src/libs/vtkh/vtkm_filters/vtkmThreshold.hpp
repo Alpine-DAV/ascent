@@ -1,20 +1,20 @@
-#ifndef VTK_H_VTKM_THRESHOLD_HPP
-#define VTK_H_VTKM_THRESHOLD_HPP
+#ifndef VTK_H_VISKORES_THRESHOLD_HPP
+#define VTK_H_VISKORES_THRESHOLD_HPP
 
-#include <vtkm/cont/DataSet.h>
-#include <vtkm/filter/FieldSelection.h>
+#include <viskores/cont/DataSet.h>
+#include <viskores/filter/FieldSelection.h>
 
 namespace vtkh
 {
 
-class vtkmThreshold
+class viskoresThreshold
 {
 public:
-  vtkm::cont::DataSet Run(vtkm::cont::DataSet &input,
+  viskores::cont::DataSet Run(viskores::cont::DataSet &input,
                           std::string field_name,
                           double min_value,
                           double max_value,
-                          vtkm::filter::FieldSelection map_fields,
+                          viskores::filter::FieldSelection map_fields,
                           bool return_all_in_range = false);
 };
 }

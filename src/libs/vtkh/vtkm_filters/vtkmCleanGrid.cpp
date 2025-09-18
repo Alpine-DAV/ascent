@@ -1,20 +1,20 @@
-#include "vtkmCleanGrid.hpp"
-#include <vtkm/filter/clean_grid/CleanGrid.h>
+#include "viskoresCleanGrid.hpp"
+#include <viskores/filter/clean_grid/CleanGrid.h>
 
 namespace vtkh
 {
 
 void
-vtkmCleanGrid::tolerance(const vtkm::Float64 tol)
+viskoresCleanGrid::tolerance(const viskores::Float64 tol)
 {
   m_tolerance = tol;
 }
 
-vtkm::cont::DataSet
-vtkmCleanGrid::Run(vtkm::cont::DataSet &input,
-                   vtkm::filter::FieldSelection map_fields)
+viskores::cont::DataSet
+viskoresCleanGrid::Run(viskores::cont::DataSet &input,
+                   viskores::filter::FieldSelection map_fields)
 {
-  vtkm::filter::clean_grid::CleanGrid cleaner;
+  viskores::filter::clean_grid::CleanGrid cleaner;
 
   if(m_tolerance != -1.)
   {

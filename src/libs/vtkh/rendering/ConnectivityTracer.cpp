@@ -38,8 +38,8 @@ namespace rendering
 #endif
 
 template <typename ArrayHandleType>
-VTKM_EXEC inline void BoundsCheck(const ArrayHandleType& handle,
-                                  const vtkm::Id& index,
+VISKORES_EXEC inline void BoundsCheck(const ArrayHandleType& handle,
+                                  const viskores::Id& index,
                                   const char* file,
                                   int line)
 {
@@ -52,31 +52,31 @@ namespace raytracing
 namespace detail
 {
 
-class AdjustSample : public vtkm::worklet::WorkletMapField
+class AdjustSample : public viskores::worklet::WorkletMapField
 {
-  vtkm::Float64 SampleDistance;
+  viskores::Float64 SampleDistance;
 
 public:
-  VTKM_CONT
-  AdjustSample(const vtkm::Float64 sampleDistance)
+  VISKORES_CONT
+  AdjustSample(const viskores::Float64 sampleDistance)
     : SampleDistance(sampleDistance)
   {
   }
   using ControlSignature = void(FieldIn, FieldInOut);
   using ExecutionSignature = void(_1, _2);
   template <typename FloatType>
-  VTKM_EXEC inline void operator()(const vtkm::UInt8& status, FloatType& currentDistance) const
+  VISKORES_EXEC inline void operator()(const viskores::UInt8& status, FloatType& currentDistance) const
   {
     if (status != RAY_ACTIVE)
       return;
 
-    currentDistance += vtkm::FMod(currentDistance, (FloatType)SampleDistance);
+    currentDistance += viskores::FMod(currentDistance, (FloatType)SampleDistance);
   }
 }; //class AdvanceRay
 
 template <typename FloatType>
-void RayTracking<FloatType>::Compact(vtkm::cont::ArrayHandle<FloatType>& compactedDistances,
-                                     vtkm::cont::ArrayHandle<vtkm::UInt8>& masks)
+void RayTracking<FloatType>::Compact(viskores::cont::ArrayHandle<FloatType>& compactedDistances,
+                                     viskores::cont::ArrayHandle<viskores::UInt8>& masks)
 {
   //
   // These distances are stored in the rays, and it has
@@ -84,20 +84,20 @@ void RayTracking<FloatType>::Compact(vtkm::cont::ArrayHandle<FloatType>& compact
   //
   CurrentDistance = compactedDistances;
 
-  vtkm::cont::ArrayHandleCast<vtkm::Id, vtkm::cont::ArrayHandle<vtkm::UInt8>> castedMasks(masks);
+  viskores::cont::ArrayHandleCast<viskores::Id, viskores::cont::ArrayHandle<viskores::UInt8>> castedMasks(masks);
 
   bool distance1IsEnter = EnterDist == &Distance1;
 
-  vtkm::cont::ArrayHandle<FloatType> compactedDistance1;
-  vtkm::cont::Algorithm::CopyIf(Distance1, masks, compactedDistance1);
+  viskores::cont::ArrayHandle<FloatType> compactedDistance1;
+  viskores::cont::Algorithm::CopyIf(Distance1, masks, compactedDistance1);
   Distance1 = compactedDistance1;
 
-  vtkm::cont::ArrayHandle<FloatType> compactedDistance2;
-  vtkm::cont::Algorithm::CopyIf(Distance2, masks, compactedDistance2);
+  viskores::cont::ArrayHandle<FloatType> compactedDistance2;
+  viskores::cont::Algorithm::CopyIf(Distance2, masks, compactedDistance2);
   Distance2 = compactedDistance2;
 
-  vtkm::cont::ArrayHandle<vtkm::Int32> compactedExitFace;
-  vtkm::cont::Algorithm::CopyIf(ExitFace, masks, compactedExitFace);
+  viskores::cont::ArrayHandle<viskores::Int32> compactedExitFace;
+  viskores::cont::Algorithm::CopyIf(ExitFace, masks, compactedExitFace);
   ExitFace = compactedExitFace;
 
   if (distance1IsEnter)
@@ -113,8 +113,8 @@ void RayTracking<FloatType>::Compact(vtkm::cont::ArrayHandle<FloatType>& compact
 }
 
 template <typename FloatType>
-void RayTracking<FloatType>::Init(const vtkm::Id size,
-                                  vtkm::cont::ArrayHandle<FloatType>& distances)
+void RayTracking<FloatType>::Init(const viskores::Id size,
+                                  viskores::cont::ArrayHandle<FloatType>& distances)
 {
 
   ExitFace.Allocate(size);
@@ -125,25 +125,25 @@ void RayTracking<FloatType>::Init(const vtkm::Id size,
   //
   // Set the initial Distances
   //
-  vtkm::worklet::DispatcherMapField<vtkm::rendering::raytracing::CopyAndOffset<FloatType>> resetDistancesDispatcher(
-    vtkm::rendering::raytracing::CopyAndOffset<FloatType>(0.0f));
+  viskores::worklet::DispatcherMapField<viskores::rendering::raytracing::CopyAndOffset<FloatType>> resetDistancesDispatcher(
+    viskores::rendering::raytracing::CopyAndOffset<FloatType>(0.0f));
   resetDistancesDispatcher.Invoke(distances, *EnterDist);
 
   //
   // Init the exit faces. This value is used to load the next cell
   // base on the cell and face it left
   //
-  vtkm::cont::ArrayHandleConstant<vtkm::Int32> negOne(-1, size);
-  vtkm::cont::Algorithm::Copy(negOne, ExitFace);
+  viskores::cont::ArrayHandleConstant<viskores::Int32> negOne(-1, size);
+  viskores::cont::Algorithm::Copy(negOne, ExitFace);
 
-  vtkm::cont::ArrayHandleConstant<FloatType> negOnef(-1.f, size);
-  vtkm::cont::Algorithm::Copy(negOnef, *ExitDist);
+  viskores::cont::ArrayHandleConstant<FloatType> negOnef(-1.f, size);
+  viskores::cont::Algorithm::Copy(negOnef, *ExitDist);
 }
 
 template <typename FloatType>
 void RayTracking<FloatType>::Swap()
 {
-  vtkm::cont::ArrayHandle<FloatType>* tmpPtr;
+  viskores::cont::ArrayHandle<FloatType>* tmpPtr;
   tmpPtr = EnterDist;
   EnterDist = ExitDist;
   ExitDist = tmpPtr;
@@ -156,52 +156,52 @@ void ConnectivityTracer::Init()
   //
   // Check to see if a sample distance was set
   //
-  vtkm::Bounds coordsBounds = Coords.GetBounds();
-  vtkm::Float64 maxLength = 0.;
-  maxLength = vtkm::Max(maxLength, coordsBounds.X.Length());
-  maxLength = vtkm::Max(maxLength, coordsBounds.Y.Length());
-  maxLength = vtkm::Max(maxLength, coordsBounds.Z.Length());
+  viskores::Bounds coordsBounds = Coords.GetBounds();
+  viskores::Float64 maxLength = 0.;
+  maxLength = viskores::Max(maxLength, coordsBounds.X.Length());
+  maxLength = viskores::Max(maxLength, coordsBounds.Y.Length());
+  maxLength = viskores::Max(maxLength, coordsBounds.Z.Length());
   BumpDistance = maxLength * BumpEpsilon;
 
   if (SampleDistance <= 0)
   {
-    BoundingBox[0] = vtkm::Float32(coordsBounds.X.Min);
-    BoundingBox[1] = vtkm::Float32(coordsBounds.X.Max);
-    BoundingBox[2] = vtkm::Float32(coordsBounds.Y.Min);
-    BoundingBox[3] = vtkm::Float32(coordsBounds.Y.Max);
-    BoundingBox[4] = vtkm::Float32(coordsBounds.Z.Min);
-    BoundingBox[5] = vtkm::Float32(coordsBounds.Z.Max);
+    BoundingBox[0] = viskores::Float32(coordsBounds.X.Min);
+    BoundingBox[1] = viskores::Float32(coordsBounds.X.Max);
+    BoundingBox[2] = viskores::Float32(coordsBounds.Y.Min);
+    BoundingBox[3] = viskores::Float32(coordsBounds.Y.Max);
+    BoundingBox[4] = viskores::Float32(coordsBounds.Z.Min);
+    BoundingBox[5] = viskores::Float32(coordsBounds.Z.Max);
 
     BackgroundColor[0] = 1.f;
     BackgroundColor[1] = 1.f;
     BackgroundColor[2] = 1.f;
     BackgroundColor[3] = 1.f;
-    const vtkm::Float32 defaultSampleRate = 200.f;
+    const viskores::Float32 defaultSampleRate = 200.f;
     // We need to set some default sample distance
-    vtkm::Vec3f_32 extent;
+    viskores::Vec3f_32 extent;
     extent[0] = BoundingBox[1] - BoundingBox[0];
     extent[1] = BoundingBox[3] - BoundingBox[2];
     extent[2] = BoundingBox[5] - BoundingBox[4];
-    SampleDistance = vtkm::Magnitude(extent) / defaultSampleRate;
+    SampleDistance = viskores::Magnitude(extent) / defaultSampleRate;
   }
 }
 
-vtkm::Id ConnectivityTracer::GetNumberOfMeshCells() const
+viskores::Id ConnectivityTracer::GetNumberOfMeshCells() const
 {
   return CellSet.GetNumberOfCells();
 }
 
-void ConnectivityTracer::SetColorMap(const vtkm::cont::ArrayHandle<vtkm::Vec4f_32>& colorMap)
+void ConnectivityTracer::SetColorMap(const viskores::cont::ArrayHandle<viskores::Vec4f_32>& colorMap)
 {
   ColorMap = colorMap;
 }
 
 // TODO: Comment out volume functionality
-void ConnectivityTracer::SetVolumeData(const vtkm::cont::Field& scalarField,
-                                       const vtkm::Range& scalarBounds,
-                                       const vtkm::cont::UnknownCellSet& cellSet,
-                                       const vtkm::cont::CoordinateSystem& coords,
-                                       const vtkm::cont::Field& ghostField)
+void ConnectivityTracer::SetVolumeData(const viskores::cont::Field& scalarField,
+                                       const viskores::Range& scalarBounds,
+                                       const viskores::cont::UnknownCellSet& cellSet,
+                                       const viskores::cont::CoordinateSystem& coords,
+                                       const viskores::cont::Field& ghostField)
 {
   //TODO: Need a way to tell if we have been updated
   ScalarField = scalarField;
@@ -214,7 +214,7 @@ void ConnectivityTracer::SetVolumeData(const vtkm::cont::Field& scalarField,
   const bool isSupportedField = ScalarField.IsCellField() || ScalarField.IsPointField();
   if (!isSupportedField)
   {
-    throw vtkm::cont::ErrorBadValue("Field not accociated with cell set or points");
+    throw viskores::cont::ErrorBadValue("Field not accociated with cell set or points");
   }
   FieldAssocPoints = ScalarField.IsPointField();
 
@@ -233,15 +233,15 @@ void ConnectivityTracer::SetVolumeData(const vtkm::cont::Field& scalarField,
 }
 
 // Absorption-only case
-void ConnectivityTracer::SetEnergyData(const vtkm::cont::Field& absorption,
-                                       const vtkm::Int32 numBins,
-                                       const vtkm::cont::UnknownCellSet& cellSet,
-                                       const vtkm::cont::CoordinateSystem& coords)
+void ConnectivityTracer::SetEnergyData(const viskores::cont::Field& absorption,
+                                       const viskores::Int32 numBins,
+                                       const viskores::cont::UnknownCellSet& cellSet,
+                                       const viskores::cont::CoordinateSystem& coords)
 {
-  bool isSupportedField = absorption.GetAssociation() == vtkm::cont::Field::Association::Cells;
+  bool isSupportedField = absorption.GetAssociation() == viskores::cont::Field::Association::Cells;
   if (!isSupportedField)
   {
-    throw vtkm::cont::ErrorBadValue("Absorption Field '" + absorption.GetName() +
+    throw viskores::cont::ErrorBadValue("Absorption Field '" + absorption.GetName() +
                                     "' not associated with cells");
   }
 
@@ -253,17 +253,17 @@ void ConnectivityTracer::SetEnergyData(const vtkm::cont::Field& absorption,
 
   // Do some basic range checking
   if (numBins < 1)
-    throw vtkm::cont::ErrorBadValue("Number of energy bins is less than 1");
-  vtkm::Id binCount = ScalarField.GetNumberOfValues();
-  vtkm::Id cellCount = this->GetNumberOfMeshCells();
-  if (cellCount != (binCount / vtkm::Id(numBins)))
+    throw viskores::cont::ErrorBadValue("Number of energy bins is less than 1");
+  viskores::Id binCount = ScalarField.GetNumberOfValues();
+  viskores::Id cellCount = this->GetNumberOfMeshCells();
+  if (cellCount != (binCount / viskores::Id(numBins)))
   {
     std::stringstream message;
     message << "Invalid number of absorption bins\n";
     message << "Number of cells: " << cellCount << "\n";
     message << "Number of field values: " << binCount << "\n";
     message << "Number of bins: " << numBins << "\n";
-    throw vtkm::cont::ErrorBadValue(message.str());
+    throw viskores::cont::ErrorBadValue(message.str());
   }
 
   //TODO: Need a way to tell if we have been updated
@@ -282,15 +282,15 @@ void ConnectivityTracer::SetEnergyData(const vtkm::cont::Field& absorption,
 }
 
 // Absorption + Emission case
-void ConnectivityTracer::SetEnergyData(const vtkm::cont::Field& absorption,
-                                       const vtkm::Int32 numBins,
-                                       const vtkm::cont::UnknownCellSet& cellSet,
-                                       const vtkm::cont::CoordinateSystem& coords,
-                                       const vtkm::cont::Field& emission)
+void ConnectivityTracer::SetEnergyData(const viskores::cont::Field& absorption,
+                                       const viskores::Int32 numBins,
+                                       const viskores::cont::UnknownCellSet& cellSet,
+                                       const viskores::cont::CoordinateSystem& coords,
+                                       const viskores::cont::Field& emission)
 {
-  bool isSupportedField = absorption.GetAssociation() == vtkm::cont::Field::Association::Cells;
+  bool isSupportedField = absorption.GetAssociation() == viskores::cont::Field::Association::Cells;
   if (!isSupportedField)
-    throw vtkm::cont::ErrorBadValue("Absorption Field '" + absorption.GetName() +
+    throw viskores::cont::ErrorBadValue("Absorption Field '" + absorption.GetName() +
                                     "' not accociated with cells");
   ScalarField = absorption;
   CellSet = cellSet;
@@ -299,39 +299,39 @@ void ConnectivityTracer::SetEnergyData(const vtkm::cont::Field& absorption,
   // Check for emission
   HasEmission = false;
 
-  if (emission.GetAssociation() != vtkm::cont::Field::Association::Any)
+  if (emission.GetAssociation() != viskores::cont::Field::Association::Any)
   {
-    if (emission.GetAssociation() != vtkm::cont::Field::Association::Cells)
-      throw vtkm::cont::ErrorBadValue("Emission Field '" + emission.GetName() +
+    if (emission.GetAssociation() != viskores::cont::Field::Association::Cells)
+      throw viskores::cont::ErrorBadValue("Emission Field '" + emission.GetName() +
                                       "' not associated with cells");
     HasEmission = true;
     EmissionField = emission;
   }
   // Do some basic range checking
   if (numBins < 1)
-    throw vtkm::cont::ErrorBadValue("Number of energy bins is less than 1");
-  vtkm::Id binCount = ScalarField.GetNumberOfValues();
-  vtkm::Id cellCount = this->GetNumberOfMeshCells();
-  if (cellCount != (binCount / vtkm::Id(numBins)))
+    throw viskores::cont::ErrorBadValue("Number of energy bins is less than 1");
+  viskores::Id binCount = ScalarField.GetNumberOfValues();
+  viskores::Id cellCount = this->GetNumberOfMeshCells();
+  if (cellCount != (binCount / viskores::Id(numBins)))
   {
     std::stringstream message;
     message << "Invalid number of absorption bins\n";
     message << "Number of cells: " << cellCount << "\n";
     message << "Number of field values: " << binCount << "\n";
     message << "Number of bins: " << numBins << "\n";
-    throw vtkm::cont::ErrorBadValue(message.str());
+    throw viskores::cont::ErrorBadValue(message.str());
   }
   if (HasEmission)
   {
     binCount = EmissionField.GetNumberOfValues();
-    if (cellCount != (binCount / vtkm::Id(numBins)))
+    if (cellCount != (binCount / viskores::Id(numBins)))
     {
       std::stringstream message;
       message << "Invalid number of emission bins\n";
       message << "Number of cells: " << cellCount << "\n";
       message << "Number of field values: " << binCount << "\n";
       message << "Number of bins: " << numBins << "\n";
-      throw vtkm::cont::ErrorBadValue(message.str());
+      throw viskores::cont::ErrorBadValue(message.str());
     }
   }
   //TODO: Need a way to tell if we have been updated
@@ -349,15 +349,15 @@ void ConnectivityTracer::SetEnergyData(const vtkm::cont::Field& absorption,
   Locator.Update();
 }
 
-void ConnectivityTracer::SetBackgroundColor(const vtkm::Vec4f_32& backgroundColor)
+void ConnectivityTracer::SetBackgroundColor(const viskores::Vec4f_32& backgroundColor)
 {
   BackgroundColor = backgroundColor;
 }
 
-void ConnectivityTracer::SetSampleDistance(const vtkm::Float32& distance)
+void ConnectivityTracer::SetSampleDistance(const viskores::Float32& distance)
 {
   if (distance <= 0.f)
-    throw vtkm::cont::ErrorBadValue("Sample distance must be positive.");
+    throw viskores::cont::ErrorBadValue("Sample distance must be positive.");
   SampleDistance = distance;
 }
 
@@ -372,7 +372,7 @@ void ConnectivityTracer::ResetTimers()
 
 void ConnectivityTracer::LogTimers()
 {
-  vtkm::rendering::raytracing::Logger* logger = vtkm::rendering::raytracing::Logger::GetInstance();
+  viskores::rendering::raytracing::Logger* logger = viskores::rendering::raytracing::Logger::GetInstance();
   logger->AddLogData("intersect ", IntersectTime);
   logger->AddLogData("integrate ", IntegrateTime);
   logger->AddLogData("sample_cells ", SampleTime);
@@ -381,12 +381,12 @@ void ConnectivityTracer::LogTimers()
 }
 
 template <typename FloatType>
-void ConnectivityTracer::PrintRayStatus(vtkm::rendering::raytracing::Ray<FloatType>& rays)
+void ConnectivityTracer::PrintRayStatus(viskores::rendering::raytracing::Ray<FloatType>& rays)
 {
-  vtkm::Id raysExited = vtkm::rendering::raytracing::RayOperations::GetStatusCount(rays, RAY_EXITED_MESH);
-  vtkm::Id raysActive = vtkm::rendering::raytracing::RayOperations::GetStatusCount(rays, RAY_ACTIVE);
-  vtkm::Id raysAbandoned = vtkm::rendering::raytracing::RayOperations::GetStatusCount(rays, RAY_ABANDONED);
-  vtkm::Id raysExitedDom = vtkm::rendering::raytracing::RayOperations::GetStatusCount(rays, RAY_EXITED_DOMAIN);
+  viskores::Id raysExited = viskores::rendering::raytracing::RayOperations::GetStatusCount(rays, RAY_EXITED_MESH);
+  viskores::Id raysActive = viskores::rendering::raytracing::RayOperations::GetStatusCount(rays, RAY_ACTIVE);
+  viskores::Id raysAbandoned = viskores::rendering::raytracing::RayOperations::GetStatusCount(rays, RAY_ABANDONED);
+  viskores::Id raysExitedDom = viskores::rendering::raytracing::RayOperations::GetStatusCount(rays, RAY_EXITED_DOMAIN);
   std::cout << "\r Ray Status " << std::setw(10) << std::left << " Lost " << std::setw(10)
             << std::left << RaysLost << std::setw(10) << std::left << " Exited " << std::setw(10)
             << std::left << raysExited << std::setw(10) << std::left << " Active " << std::setw(10)
@@ -403,12 +403,12 @@ void ConnectivityTracer::PrintRayStatus(vtkm::rendering::raytracing::Ray<FloatTy
 //      "shadowing" and hitting the same exit point.
 //
 template <typename FloatType>
-class AdvanceRay : public vtkm::worklet::WorkletMapField
+class AdvanceRay : public viskores::worklet::WorkletMapField
 {
   FloatType Offset;
 
 public:
-  VTKM_CONT
+  VISKORES_CONT
   AdvanceRay(const FloatType offset = 0.00001)
     : Offset(offset)
   {
@@ -416,17 +416,17 @@ public:
   using ControlSignature = void(FieldIn, FieldInOut);
   using ExecutionSignature = void(_1, _2);
 
-  VTKM_EXEC inline void operator()(const vtkm::UInt8& status, FloatType& distance) const
+  VISKORES_EXEC inline void operator()(const viskores::UInt8& status, FloatType& distance) const
   {
     if (status == RAY_EXITED_MESH)
       distance += Offset;
   }
 }; //class AdvanceRay
 
-class LocateCell : public vtkm::worklet::WorkletMapField
+class LocateCell : public viskores::worklet::WorkletMapField
 {
 private:
-vtkm::rendering::raytracing::CellIntersector<255> Intersector;
+viskores::rendering::raytracing::CellIntersector<255> Intersector;
 
 public:
   LocateCell() {}
@@ -443,15 +443,15 @@ public:
   using ExecutionSignature = void(_1, _2, _3, _4, _5, _6, _7, _8, _9);
 
   template <typename FloatType, typename PointPortalType>
-  VTKM_EXEC inline void operator()(vtkm::Id& currentCell,
+  VISKORES_EXEC inline void operator()(viskores::Id& currentCell,
                                    PointPortalType& vertices,
-                                   const vtkm::Vec<FloatType, 3>& dir,
+                                   const viskores::Vec<FloatType, 3>& dir,
                                    FloatType& enterDistance,
                                    FloatType& exitDistance,
-                                   vtkm::Int32& enterFace,
-                                   vtkm::UInt8& rayStatus,
-                                   const vtkm::Vec<FloatType, 3>& origin,
-                                   const vtkm::rendering::raytracing::MeshConnectivity& meshConn) const
+                                   viskores::Int32& enterFace,
+                                   viskores::UInt8& rayStatus,
+                                   const viskores::Vec<FloatType, 3>& origin,
+                                   const viskores::rendering::raytracing::MeshConnectivity& meshConn) const
   {
     if (enterFace != -1 && rayStatus == RAY_ACTIVE)
     {
@@ -468,30 +468,30 @@ public:
     FloatType xpoints[8];
     FloatType ypoints[8];
     FloatType zpoints[8];
-    vtkm::Id cellConn[8];
+    viskores::Id cellConn[8];
     FloatType distances[6];
 
-    const vtkm::Int32 numIndices = meshConn.GetCellIndices(cellConn, currentCell);
+    const viskores::Int32 numIndices = meshConn.GetCellIndices(cellConn, currentCell);
     //load local cell data
     for (int i = 0; i < numIndices; ++i)
     {
       BOUNDS_CHECK(vertices, cellConn[i]);
-      vtkm::Vec<FloatType, 3> point = vtkm::Vec<FloatType, 3>(vertices.Get(cellConn[i]));
+      viskores::Vec<FloatType, 3> point = viskores::Vec<FloatType, 3>(vertices.Get(cellConn[i]));
       xpoints[i] = point[0];
       ypoints[i] = point[1];
       zpoints[i] = point[2];
     }
-    const vtkm::UInt8 cellShape = meshConn.GetCellShape(currentCell);
+    const viskores::UInt8 cellShape = meshConn.GetCellShape(currentCell);
     Intersector.IntersectCell(xpoints, ypoints, zpoints, dir, origin, distances, cellShape);
 
-    vtkm::rendering::raytracing::CellTables tables;
-    const vtkm::Int32 numFaces = tables.FaceLookUp(tables.CellTypeLookUp(cellShape), 1);
-    //vtkm::Int32 minFace = 6;
-    vtkm::Int32 maxFace = -1;
+    viskores::rendering::raytracing::CellTables tables;
+    const viskores::Int32 numFaces = tables.FaceLookUp(tables.CellTypeLookUp(cellShape), 1);
+    //viskores::Int32 minFace = 6;
+    viskores::Int32 maxFace = -1;
 
     FloatType minDistance = static_cast<FloatType>(1e32);
     FloatType maxDistance = static_cast<FloatType>(-1);
-    for (vtkm::Int32 i = 0; i < numFaces; ++i)
+    for (viskores::Int32 i = 0; i < numFaces; ++i)
     {
       FloatType dist = distances[i];
 
@@ -524,14 +524,14 @@ public:
   } //operator
 };  //class LocateCell
 
-class RayBumper : public vtkm::worklet::WorkletMapField
+class RayBumper : public viskores::worklet::WorkletMapField
 {
 private:
-  vtkm::rendering::raytracing::CellIntersector<255> Intersector;
-  vtkm::Float64 BumpDistance;
+  viskores::rendering::raytracing::CellIntersector<255> Intersector;
+  viskores::Float64 BumpDistance;
 
 public:
-  RayBumper(vtkm::Float64 bumpDistance)
+  RayBumper(viskores::Float64 bumpDistance)
     : BumpDistance(bumpDistance)
   {
   }
@@ -550,15 +550,15 @@ public:
   using ExecutionSignature = void(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10);
 
   template <typename FloatType, typename PointPortalType, typename LocatorType>
-  VTKM_EXEC inline void operator()(vtkm::Id& currentCell,
+  VISKORES_EXEC inline void operator()(viskores::Id& currentCell,
                                    PointPortalType& vertices,
                                    FloatType& enterDistance,
                                    FloatType& exitDistance,
-                                   vtkm::Int32& enterFace,
-                                   vtkm::UInt8& rayStatus,
-                                   const vtkm::Vec<FloatType, 3>& origin,
-                                   vtkm::Vec<FloatType, 3>& rdir,
-                                   const vtkm::rendering::raytracing::MeshConnectivity& meshConn,
+                                   viskores::Int32& enterFace,
+                                   viskores::UInt8& rayStatus,
+                                   const viskores::Vec<FloatType, 3>& origin,
+                                   viskores::Vec<FloatType, 3>& rdir,
+                                   const viskores::rendering::raytracing::MeshConnectivity& meshConn,
                                    const LocatorType& locator) const
   {
     // We only process lost rays
@@ -571,7 +571,7 @@ public:
 
     bool valid_cell = false;
 
-    vtkm::Id cellId = currentCell;
+    viskores::Id cellId = currentCell;
 
     while (!valid_cell)
     {
@@ -579,8 +579,8 @@ public:
       while (cellId == currentCell)
       {
         query_distance += bumpDistance;
-        vtkm::Vec<FloatType, 3> location = origin + rdir * (query_distance);
-        vtkm::Vec<vtkm::FloatDefault, 3> pcoords;
+        viskores::Vec<FloatType, 3> location = origin + rdir * (query_distance);
+        viskores::Vec<viskores::FloatDefault, 3> pcoords;
         locator.FindCell(location, cellId, pcoords);
       }
 
@@ -594,28 +594,28 @@ public:
       FloatType xpoints[8];
       FloatType ypoints[8];
       FloatType zpoints[8];
-      vtkm::Id cellConn[8];
+      viskores::Id cellConn[8];
       FloatType distances[6];
 
-      const vtkm::Int32 numIndices = meshConn.GetCellIndices(cellConn, currentCell);
+      const viskores::Int32 numIndices = meshConn.GetCellIndices(cellConn, currentCell);
       //load local cell data
       for (int i = 0; i < numIndices; ++i)
       {
         BOUNDS_CHECK(vertices, cellConn[i]);
-        vtkm::Vec<FloatType, 3> point = vtkm::Vec<FloatType, 3>(vertices.Get(cellConn[i]));
+        viskores::Vec<FloatType, 3> point = viskores::Vec<FloatType, 3>(vertices.Get(cellConn[i]));
         xpoints[i] = point[0];
         ypoints[i] = point[1];
         zpoints[i] = point[2];
       }
 
-      const vtkm::UInt8 cellShape = meshConn.GetCellShape(currentCell);
+      const viskores::UInt8 cellShape = meshConn.GetCellShape(currentCell);
       Intersector.IntersectCell(xpoints, ypoints, zpoints, rdir, origin, distances, cellShape);
 
-      vtkm::rendering::raytracing::CellTables tables;
-      const vtkm::Int32 numFaces = tables.FaceLookUp(tables.CellTypeLookUp(cellShape), 1);
+      viskores::rendering::raytracing::CellTables tables;
+      const viskores::Int32 numFaces = tables.FaceLookUp(tables.CellTypeLookUp(cellShape), 1);
 
-      //vtkm::Int32 minFace = 6;
-      vtkm::Int32 maxFace = -1;
+      //viskores::Int32 minFace = 6;
+      viskores::Int32 maxFace = -1;
       FloatType minDistance = static_cast<FloatType>(1e32);
       FloatType maxDistance = static_cast<FloatType>(-1);
       for (int i = 0; i < numFaces; ++i)
@@ -650,10 +650,10 @@ public:
   } //operator
 };  //class RayBumper
 
-class AddPathLengths : public vtkm::worklet::WorkletMapField
+class AddPathLengths : public viskores::worklet::WorkletMapField
 {
 public:
-  VTKM_CONT
+  VISKORES_CONT
   AddPathLengths() {}
 
   using ControlSignature = void(FieldIn,     // ray status
@@ -664,7 +664,7 @@ public:
   using ExecutionSignature = void(_1, _2, _3, _4);
 
   template <typename FloatType>
-  VTKM_EXEC inline void operator()(const vtkm::UInt8& rayStatus,
+  VISKORES_EXEC inline void operator()(const viskores::UInt8& rayStatus,
                                    const FloatType& enterDistance,
                                    const FloatType& exitDistance,
                                    FloatType& distance) const
@@ -684,15 +684,15 @@ public:
   }
 };
 
-class Integrate : public vtkm::worklet::WorkletMapField
+class Integrate : public viskores::worklet::WorkletMapField
 {
 private:
-  const vtkm::Int32 NumBins;
-  const vtkm::Float32 UnitScalar;
+  const viskores::Int32 NumBins;
+  const viskores::Float32 UnitScalar;
 
 public:
-  VTKM_CONT
-  Integrate(const vtkm::Int32 numBins, const vtkm::Float32 unitScalar)
+  VISKORES_CONT
+  Integrate(const viskores::Int32 numBins, const viskores::Float32 unitScalar)
     : NumBins(numBins)
     , UnitScalar(unitScalar)
   {
@@ -709,14 +709,14 @@ public:
   using ExecutionSignature = void(_1, _2, _3, _4, _5, _6, _7, WorkIndex);
 
   template <typename FloatType, typename CellDataPortalType, typename RayDataPortalType>
-  VTKM_EXEC inline void operator()(const vtkm::UInt8& rayStatus,
+  VISKORES_EXEC inline void operator()(const viskores::UInt8& rayStatus,
                                    const FloatType& enterDistance,
                                    const FloatType& exitDistance,
                                    FloatType& currentDistance,
                                    const CellDataPortalType& absorbtionData,
                                    RayDataPortalType& opticalDepthBins,
-                                   const vtkm::Id& currentCell,
-                                   const vtkm::Id& rayIndex) const
+                                   const viskores::Id& currentCell,
+                                   const viskores::Id& rayIndex) const
   {
     if (rayStatus != RAY_ACTIVE || exitDistance <= enterDistance)
     {
@@ -724,10 +724,10 @@ public:
     }
 
     FloatType segmentLength = exitDistance - enterDistance;
-    vtkm::Id rayOffset = NumBins * rayIndex;
-    vtkm::Id cellOffset = NumBins * currentCell;
+    viskores::Id rayOffset = NumBins * rayIndex;
+    viskores::Id cellOffset = NumBins * currentCell;
 
-    for (vtkm::Int32 i = 0; i < NumBins; i++)
+    for (viskores::Int32 i = 0; i < NumBins; i++)
     {
       const int cellOffsetI = cellOffset + i;
       BOUNDS_CHECK(absorbtionData, cellOffsetI);
@@ -743,17 +743,17 @@ public:
   }
 };
 
-class IntegrateEmission : public vtkm::worklet::WorkletMapField
+class IntegrateEmission : public viskores::worklet::WorkletMapField
 {
 private:
-  const vtkm::Int32 NumBins;
-  const vtkm::Float32 UnitScalar;
+  const viskores::Int32 NumBins;
+  const viskores::Float32 UnitScalar;
   bool DivideEmisByAbsorb;
 
 public:
-  VTKM_CONT
-  IntegrateEmission(const vtkm::Int32 numBins,
-                    const vtkm::Float32 unitScalar,
+  VISKORES_CONT
+  IntegrateEmission(const viskores::Int32 numBins,
+                    const viskores::Float32 unitScalar,
                     const bool divideEmisByAbsorb)
     : NumBins(numBins)
     , UnitScalar(unitScalar)
@@ -778,7 +778,7 @@ public:
             typename CellAbsPortalType,
             typename CellEmisPortalType,
             typename RayDataPortalType>
-  VTKM_EXEC inline void operator()(const vtkm::UInt8& rayStatus,
+  VISKORES_EXEC inline void operator()(const viskores::UInt8& rayStatus,
                                    const FloatType& enterDistance,
                                    const FloatType& exitDistance,
                                    FloatType& currentDistance,
@@ -787,8 +787,8 @@ public:
                                    RayDataPortalType& absorptionBins,
                                    RayDataPortalType& emissionBins,
                                    RayDataPortalType& opticalDepthBins,
-                                   const vtkm::Id& currentCell,
-                                   const vtkm::Id& rayIndex) const
+                                   const viskores::Id& currentCell,
+                                   const viskores::Id& rayIndex) const
   {
     if (rayStatus != RAY_ACTIVE || exitDistance <= enterDistance)
     {
@@ -796,8 +796,8 @@ public:
     }
 
     FloatType segmentLength = exitDistance - enterDistance;
-    vtkm::Id rayOffset = NumBins * rayIndex;
-    vtkm::Id cellOffset = NumBins * currentCell;
+    viskores::Id rayOffset = NumBins * rayIndex;
+    viskores::Id cellOffset = NumBins * currentCell;
 
     //
     // Traditionally, we would only keep track of a single intensity value per ray
@@ -817,7 +817,7 @@ public:
 
     if (DivideEmisByAbsorb)
     {
-      for (vtkm::Int32 i = 0; i < NumBins; i++)
+      for (viskores::Int32 i = 0; i < NumBins; i++)
       {
         const int cellOffsetI = cellOffset + i;
         BOUNDS_CHECK(absorptionData, cellOffsetI);
@@ -827,7 +827,7 @@ public:
   
         absorb *= UnitScalar;
         emission *= UnitScalar;
-        FloatType tmp = vtkm::Exp(-absorb * segmentLength);
+        FloatType tmp = viskores::Exp(-absorb * segmentLength);
   
         const int rayOffsetI = rayOffset + i;
         BOUNDS_CHECK(absorptionBins, rayOffsetI);
@@ -845,7 +845,7 @@ public:
     }
     else // (!DivideEmisByAbsorb)
     {
-      for (vtkm::Int32 i = 0; i < NumBins; i++)
+      for (viskores::Int32 i = 0; i < NumBins; i++)
       {
         const int cellOffsetI = cellOffset + i;
         BOUNDS_CHECK(absorptionData, cellOffsetI);
@@ -855,7 +855,7 @@ public:
   
         absorb *= UnitScalar;
         emission *= UnitScalar;
-        FloatType tmp = vtkm::Exp(-absorb * segmentLength);
+        FloatType tmp = viskores::Exp(-absorb * segmentLength);
   
         const int rayOffsetI = rayOffset + i;
         BOUNDS_CHECK(absorptionBins, rayOffsetI);
@@ -881,13 +881,13 @@ public:
 //  intersection and cell intersection mismatch
 //
 //
-class IdentifyMissedRay : public vtkm::worklet::WorkletMapField
+class IdentifyMissedRay : public viskores::worklet::WorkletMapField
 {
 public:
-  vtkm::Id Width;
-  vtkm::Id Height;
-  vtkm::Vec4f_32 BGColor;
-  IdentifyMissedRay(const vtkm::Id width, const vtkm::Id height, vtkm::Vec4f_32 bgcolor)
+  viskores::Id Width;
+  viskores::Id Height;
+  viskores::Vec4f_32 BGColor;
+  IdentifyMissedRay(const viskores::Id width, const viskores::Id height, viskores::Vec4f_32 bgcolor)
     : Width(width)
     , Height(height)
     , BGColor(bgcolor)
@@ -897,7 +897,7 @@ public:
   using ExecutionSignature = void(_1, _2);
 
 
-  VTKM_EXEC inline bool IsBGColor(const vtkm::Vec4f_32 color) const
+  VISKORES_EXEC inline bool IsBGColor(const viskores::Vec4f_32 color) const
   {
     bool isBG = false;
 
@@ -908,49 +908,49 @@ public:
   }
 
   template <typename ColorBufferType>
-  VTKM_EXEC inline void operator()(const vtkm::Id& pixelId, ColorBufferType& buffer) const
+  VISKORES_EXEC inline void operator()(const viskores::Id& pixelId, ColorBufferType& buffer) const
   {
-    vtkm::Id x = pixelId % Width;
-    vtkm::Id y = pixelId / Width;
+    viskores::Id x = pixelId % Width;
+    viskores::Id y = pixelId / Width;
 
     // Conservative check, we only want to check pixels in the middle
     if (x <= 0 || y <= 0)
       return;
     if (x >= Width - 1 || y >= Height - 1)
       return;
-    vtkm::Vec4f_32 pixel;
-    pixel[0] = static_cast<vtkm::Float32>(buffer.Get(pixelId * 4 + 0));
-    pixel[1] = static_cast<vtkm::Float32>(buffer.Get(pixelId * 4 + 1));
-    pixel[2] = static_cast<vtkm::Float32>(buffer.Get(pixelId * 4 + 2));
-    pixel[3] = static_cast<vtkm::Float32>(buffer.Get(pixelId * 4 + 3));
+    viskores::Vec4f_32 pixel;
+    pixel[0] = static_cast<viskores::Float32>(buffer.Get(pixelId * 4 + 0));
+    pixel[1] = static_cast<viskores::Float32>(buffer.Get(pixelId * 4 + 1));
+    pixel[2] = static_cast<viskores::Float32>(buffer.Get(pixelId * 4 + 2));
+    pixel[3] = static_cast<viskores::Float32>(buffer.Get(pixelId * 4 + 3));
     if (!IsBGColor(pixel))
       return;
-    vtkm::Id p0 = (y)*Width + (x + 1);
-    vtkm::Id p1 = (y)*Width + (x - 1);
-    vtkm::Id p2 = (y + 1) * Width + (x);
-    vtkm::Id p3 = (y - 1) * Width + (x);
-    pixel[0] = static_cast<vtkm::Float32>(buffer.Get(p0 * 4 + 0));
-    pixel[1] = static_cast<vtkm::Float32>(buffer.Get(p0 * 4 + 1));
-    pixel[2] = static_cast<vtkm::Float32>(buffer.Get(p0 * 4 + 2));
-    pixel[3] = static_cast<vtkm::Float32>(buffer.Get(p0 * 4 + 3));
+    viskores::Id p0 = (y)*Width + (x + 1);
+    viskores::Id p1 = (y)*Width + (x - 1);
+    viskores::Id p2 = (y + 1) * Width + (x);
+    viskores::Id p3 = (y - 1) * Width + (x);
+    pixel[0] = static_cast<viskores::Float32>(buffer.Get(p0 * 4 + 0));
+    pixel[1] = static_cast<viskores::Float32>(buffer.Get(p0 * 4 + 1));
+    pixel[2] = static_cast<viskores::Float32>(buffer.Get(p0 * 4 + 2));
+    pixel[3] = static_cast<viskores::Float32>(buffer.Get(p0 * 4 + 3));
     if (IsBGColor(pixel))
       return;
-    pixel[0] = static_cast<vtkm::Float32>(buffer.Get(p1 * 4 + 0));
-    pixel[1] = static_cast<vtkm::Float32>(buffer.Get(p1 * 4 + 1));
-    pixel[2] = static_cast<vtkm::Float32>(buffer.Get(p1 * 4 + 2));
-    pixel[3] = static_cast<vtkm::Float32>(buffer.Get(p1 * 4 + 3));
+    pixel[0] = static_cast<viskores::Float32>(buffer.Get(p1 * 4 + 0));
+    pixel[1] = static_cast<viskores::Float32>(buffer.Get(p1 * 4 + 1));
+    pixel[2] = static_cast<viskores::Float32>(buffer.Get(p1 * 4 + 2));
+    pixel[3] = static_cast<viskores::Float32>(buffer.Get(p1 * 4 + 3));
     if (IsBGColor(pixel))
       return;
-    pixel[0] = static_cast<vtkm::Float32>(buffer.Get(p2 * 4 + 0));
-    pixel[1] = static_cast<vtkm::Float32>(buffer.Get(p2 * 4 + 1));
-    pixel[2] = static_cast<vtkm::Float32>(buffer.Get(p2 * 4 + 2));
-    pixel[3] = static_cast<vtkm::Float32>(buffer.Get(p2 * 4 + 3));
+    pixel[0] = static_cast<viskores::Float32>(buffer.Get(p2 * 4 + 0));
+    pixel[1] = static_cast<viskores::Float32>(buffer.Get(p2 * 4 + 1));
+    pixel[2] = static_cast<viskores::Float32>(buffer.Get(p2 * 4 + 2));
+    pixel[3] = static_cast<viskores::Float32>(buffer.Get(p2 * 4 + 3));
     if (IsBGColor(pixel))
       return;
-    pixel[0] = static_cast<vtkm::Float32>(buffer.Get(p3 * 4 + 0));
-    pixel[1] = static_cast<vtkm::Float32>(buffer.Get(p3 * 4 + 1));
-    pixel[2] = static_cast<vtkm::Float32>(buffer.Get(p3 * 4 + 2));
-    pixel[3] = static_cast<vtkm::Float32>(buffer.Get(p3 * 4 + 3));
+    pixel[0] = static_cast<viskores::Float32>(buffer.Get(p3 * 4 + 0));
+    pixel[1] = static_cast<viskores::Float32>(buffer.Get(p3 * 4 + 1));
+    pixel[2] = static_cast<viskores::Float32>(buffer.Get(p3 * 4 + 2));
+    pixel[3] = static_cast<viskores::Float32>(buffer.Get(p3 * 4 + 3));
     if (IsBGColor(pixel))
       return;
 
@@ -959,10 +959,10 @@ public:
 };
 
 template <typename FloatType>
-class SampleCellAssocCells : public vtkm::worklet::WorkletMapField
+class SampleCellAssocCells : public viskores::worklet::WorkletMapField
 {
 private:
-  vtkm::rendering::raytracing::CellSampler<255> Sampler;
+  viskores::rendering::raytracing::CellSampler<255> Sampler;
   FloatType SampleDistance;
   FloatType MinScalar;
   FloatType InvDeltaScalar;
@@ -993,16 +993,16 @@ public:
             typename GhostPortalType,
             typename ColorMapType,
             typename FrameBufferType>
-  VTKM_EXEC inline void operator()(const vtkm::Id& currentCell,
+  VISKORES_EXEC inline void operator()(const viskores::Id& currentCell,
                                    ScalarPortalType& scalarPortal,
                                    GhostPortalType& ghostPortal,
                                    const FloatType& enterDistance,
                                    const FloatType& exitDistance,
                                    FloatType& currentDistance,
-                                   vtkm::UInt8& rayStatus,
+                                   viskores::UInt8& rayStatus,
                                    const ColorMapType& colorMap,
                                    FrameBufferType& frameBuffer,
-                                   const vtkm::Id& pixelIndex,
+                                   const viskores::Id& pixelIndex,
                                    const FloatType& maxDistance) const
   {
 
@@ -1011,19 +1011,19 @@ public:
     if (int(ghostPortal.Get(currentCell)) != 0)
       return;
 
-    vtkm::Vec4f_32 color;
+    viskores::Vec4f_32 color;
     BOUNDS_CHECK(frameBuffer, pixelIndex * 4 + 0);
-    color[0] = static_cast<vtkm::Float32>(frameBuffer.Get(pixelIndex * 4 + 0));
+    color[0] = static_cast<viskores::Float32>(frameBuffer.Get(pixelIndex * 4 + 0));
     BOUNDS_CHECK(frameBuffer, pixelIndex * 4 + 1);
-    color[1] = static_cast<vtkm::Float32>(frameBuffer.Get(pixelIndex * 4 + 1));
+    color[1] = static_cast<viskores::Float32>(frameBuffer.Get(pixelIndex * 4 + 1));
     BOUNDS_CHECK(frameBuffer, pixelIndex * 4 + 2);
-    color[2] = static_cast<vtkm::Float32>(frameBuffer.Get(pixelIndex * 4 + 2));
+    color[2] = static_cast<viskores::Float32>(frameBuffer.Get(pixelIndex * 4 + 2));
     BOUNDS_CHECK(frameBuffer, pixelIndex * 4 + 3);
-    color[3] = static_cast<vtkm::Float32>(frameBuffer.Get(pixelIndex * 4 + 3));
+    color[3] = static_cast<viskores::Float32>(frameBuffer.Get(pixelIndex * 4 + 3));
 
-    vtkm::Float32 scalar;
+    viskores::Float32 scalar;
     BOUNDS_CHECK(scalarPortal, currentCell);
-    scalar = vtkm::Float32(scalarPortal.Get(currentCell));
+    scalar = viskores::Float32(scalarPortal.Get(currentCell));
     //
     // There can be mismatches in the initial enter distance and the current distance
     // due to lost rays at cell borders. For now,
@@ -1033,21 +1033,21 @@ public:
     if (currentDistance < enterDistance)
       currentDistance = enterDistance;
 
-    const vtkm::Id colorMapSize = colorMap.GetNumberOfValues();
-    vtkm::Float32 lerpedScalar;
-    lerpedScalar = static_cast<vtkm::Float32>((scalar - MinScalar) * InvDeltaScalar);
-    vtkm::Id colorIndex = vtkm::Id(lerpedScalar * vtkm::Float32(colorMapSize));
+    const viskores::Id colorMapSize = colorMap.GetNumberOfValues();
+    viskores::Float32 lerpedScalar;
+    lerpedScalar = static_cast<viskores::Float32>((scalar - MinScalar) * InvDeltaScalar);
+    viskores::Id colorIndex = viskores::Id(lerpedScalar * viskores::Float32(colorMapSize));
     if (colorIndex < 0)
       colorIndex = 0;
     if (colorIndex >= colorMapSize)
       colorIndex = colorMapSize - 1;
     BOUNDS_CHECK(colorMap, colorIndex);
-    vtkm::Vec4f_32 sampleColor = colorMap.Get(colorIndex);
+    viskores::Vec4f_32 sampleColor = colorMap.Get(colorIndex);
 
     while (enterDistance <= currentDistance && currentDistance <= exitDistance)
     {
       //composite
-      vtkm::Float32 alpha = sampleColor[3] * (1.f - color[3]);
+      viskores::Float32 alpha = sampleColor[3] * (1.f - color[3]);
       color[0] = color[0] + sampleColor[0] * alpha;
       color[1] = color[1] + sampleColor[1] * alpha;
       color[2] = color[2] + sampleColor[2] * alpha;
@@ -1073,10 +1073,10 @@ public:
 }; //class Sample cell
 
 template <typename FloatType>
-class SampleCellAssocPoints : public vtkm::worklet::WorkletMapField
+class SampleCellAssocPoints : public viskores::worklet::WorkletMapField
 {
 private:
-  vtkm::rendering::raytracing::CellSampler<255> Sampler;
+  viskores::rendering::raytracing::CellSampler<255> Sampler;
   FloatType SampleDistance;
   FloatType MinScalar;
   FloatType InvDeltaScalar;
@@ -1112,17 +1112,17 @@ public:
             typename ScalarPortalType,
             typename ColorMapType,
             typename FrameBufferType>
-  VTKM_EXEC inline void operator()(const vtkm::Id& currentCell,
+  VISKORES_EXEC inline void operator()(const viskores::Id& currentCell,
                                    PointPortalType& vertices,
                                    ScalarPortalType& scalarPortal,
                                    const FloatType& enterDistance,
                                    const FloatType& exitDistance,
                                    FloatType& currentDistance,
-                                   const vtkm::Vec3f_32& dir,
-                                   vtkm::UInt8& rayStatus,
-                                   const vtkm::Id& pixelIndex,
-                                   const vtkm::Vec<FloatType, 3>& origin,
-                                   vtkm::rendering::raytracing::MeshConnectivity& meshConn,
+                                   const viskores::Vec3f_32& dir,
+                                   viskores::UInt8& rayStatus,
+                                   const viskores::Id& pixelIndex,
+                                   const viskores::Vec<FloatType, 3>& origin,
+                                   viskores::rendering::raytracing::MeshConnectivity& meshConn,
                                    const ColorMapType& colorMap,
                                    FrameBufferType& frameBuffer,
                                    const FloatType& maxDistance) const
@@ -1131,38 +1131,38 @@ public:
     if (rayStatus != RAY_ACTIVE)
       return;
 
-    vtkm::Vec4f_32 color;
+    viskores::Vec4f_32 color;
     BOUNDS_CHECK(frameBuffer, pixelIndex * 4 + 0);
-    color[0] = static_cast<vtkm::Float32>(frameBuffer.Get(pixelIndex * 4 + 0));
+    color[0] = static_cast<viskores::Float32>(frameBuffer.Get(pixelIndex * 4 + 0));
     BOUNDS_CHECK(frameBuffer, pixelIndex * 4 + 1);
-    color[1] = static_cast<vtkm::Float32>(frameBuffer.Get(pixelIndex * 4 + 1));
+    color[1] = static_cast<viskores::Float32>(frameBuffer.Get(pixelIndex * 4 + 1));
     BOUNDS_CHECK(frameBuffer, pixelIndex * 4 + 2);
-    color[2] = static_cast<vtkm::Float32>(frameBuffer.Get(pixelIndex * 4 + 2));
+    color[2] = static_cast<viskores::Float32>(frameBuffer.Get(pixelIndex * 4 + 2));
     BOUNDS_CHECK(frameBuffer, pixelIndex * 4 + 3);
-    color[3] = static_cast<vtkm::Float32>(frameBuffer.Get(pixelIndex * 4 + 3));
+    color[3] = static_cast<viskores::Float32>(frameBuffer.Get(pixelIndex * 4 + 3));
 
     if (color[3] >= 1.f)
     {
       rayStatus = RAY_TERMINATED;
       return;
     }
-    vtkm::Vec<vtkm::Float32, 8> scalars;
-    vtkm::Vec<vtkm::Vec<FloatType, 3>, 8> points;
+    viskores::Vec<viskores::Float32, 8> scalars;
+    viskores::Vec<viskores::Vec<FloatType, 3>, 8> points;
     // silence "may" be uninitialized warning
-    for (vtkm::Int32 i = 0; i < 8; ++i)
+    for (viskores::Int32 i = 0; i < 8; ++i)
     {
       scalars[i] = 0.f;
-      points[i] = vtkm::Vec<FloatType, 3>(0.f, 0.f, 0.f);
+      points[i] = viskores::Vec<FloatType, 3>(0.f, 0.f, 0.f);
     }
     //load local scalar cell data
-    vtkm::Id cellConn[8];
-    const vtkm::Int32 numIndices = meshConn.GetCellIndices(cellConn, currentCell);
+    viskores::Id cellConn[8];
+    const viskores::Int32 numIndices = meshConn.GetCellIndices(cellConn, currentCell);
     for (int i = 0; i < numIndices; ++i)
     {
       BOUNDS_CHECK(scalarPortal, cellConn[i]);
-      scalars[i] = static_cast<vtkm::Float32>(scalarPortal.Get(cellConn[i]));
+      scalars[i] = static_cast<viskores::Float32>(scalarPortal.Get(cellConn[i]));
       BOUNDS_CHECK(vertices, cellConn[i]);
-      points[i] = vtkm::Vec<FloatType, 3>(vertices.Get(cellConn[i]));
+      points[i] = viskores::Vec<FloatType, 3>(vertices.Get(cellConn[i]));
     }
     //
     // There can be mismatches in the initial enter distance and the current distance
@@ -1175,13 +1175,13 @@ public:
       currentDistance = enterDistance;
     }
 
-    const vtkm::Id colorMapSize = colorMap.GetNumberOfValues();
-    const vtkm::Int32 cellShape = meshConn.GetCellShape(currentCell);
+    const viskores::Id colorMapSize = colorMap.GetNumberOfValues();
+    const viskores::Int32 cellShape = meshConn.GetCellShape(currentCell);
 
     while (enterDistance <= currentDistance && currentDistance <= exitDistance)
     {
-      vtkm::Vec<FloatType, 3> sampleLoc = origin + currentDistance * dir;
-      vtkm::Float32 lerpedScalar;
+      viskores::Vec<FloatType, 3> sampleLoc = origin + currentDistance * dir;
+      viskores::Float32 lerpedScalar;
       bool validSample = Sampler.SampleCell(points, scalars, sampleLoc, lerpedScalar, cellShape);
       if (!validSample)
       {
@@ -1196,12 +1196,12 @@ public:
         currentDistance += 0.00001f;
         continue;
       }
-      lerpedScalar = static_cast<vtkm::Float32>((lerpedScalar - MinScalar) * InvDeltaScalar);
-      vtkm::Id colorIndex = vtkm::Id(lerpedScalar * vtkm::Float32(colorMapSize));
+      lerpedScalar = static_cast<viskores::Float32>((lerpedScalar - MinScalar) * InvDeltaScalar);
+      viskores::Id colorIndex = viskores::Id(lerpedScalar * viskores::Float32(colorMapSize));
 
-      colorIndex = vtkm::Min(vtkm::Max(colorIndex, vtkm::Id(0)), colorMapSize - 1);
+      colorIndex = viskores::Min(viskores::Max(colorIndex, viskores::Id(0)), colorMapSize - 1);
       BOUNDS_CHECK(colorMap, colorIndex);
-      vtkm::Vec4f_32 sampleColor = colorMap.Get(colorIndex);
+      viskores::Vec4f_32 sampleColor = colorMap.Get(colorIndex);
       //composite
       sampleColor[3] *= (1.f - color[3]);
       color[0] = color[0] + sampleColor[0] * sampleColor[3];
@@ -1229,12 +1229,12 @@ public:
 }; //class Sample cell
 
 template <typename FloatType>
-void ConnectivityTracer::IntersectCell(vtkm::rendering::raytracing::Ray<FloatType>& rays,
+void ConnectivityTracer::IntersectCell(viskores::rendering::raytracing::Ray<FloatType>& rays,
                                        detail::RayTracking<FloatType>& tracker)
 {
-  vtkm::cont::Timer timer;
+  viskores::cont::Timer timer;
   timer.Start();
-  vtkm::worklet::DispatcherMapField<LocateCell> locateDispatch;
+  viskores::worklet::DispatcherMapField<LocateCell> locateDispatch;
   locateDispatch.Invoke(rays.HitIdx,
                         this->Coords,
                         rays.Dir,
@@ -1246,26 +1246,26 @@ void ConnectivityTracer::IntersectCell(vtkm::rendering::raytracing::Ray<FloatTyp
                         MeshContainer);
 
   if (this->CountRayStatus)
-    RaysLost = vtkm::rendering::raytracing::RayOperations::GetStatusCount(rays, RAY_LOST);
+    RaysLost = viskores::rendering::raytracing::RayOperations::GetStatusCount(rays, RAY_LOST);
   this->IntersectTime += timer.GetElapsedTime();
 }
 
 template <typename FloatType>
-void ConnectivityTracer::AccumulatePathLengths(vtkm::rendering::raytracing::Ray<FloatType>& rays,
+void ConnectivityTracer::AccumulatePathLengths(viskores::rendering::raytracing::Ray<FloatType>& rays,
                                                detail::RayTracking<FloatType>& tracker)
 {
-  vtkm::worklet::DispatcherMapField<AddPathLengths> dispatcher;
+  viskores::worklet::DispatcherMapField<AddPathLengths> dispatcher;
   dispatcher.Invoke(
     rays.Status, *(tracker.EnterDist), *(tracker.ExitDist), rays.GetBuffer("path_lengths").Buffer);
 }
 
 template <typename FloatType>
-void ConnectivityTracer::FindLostRays(vtkm::rendering::raytracing::Ray<FloatType>& rays, detail::RayTracking<FloatType>& tracker)
+void ConnectivityTracer::FindLostRays(viskores::rendering::raytracing::Ray<FloatType>& rays, detail::RayTracking<FloatType>& tracker)
 {
-  vtkm::cont::Timer timer;
+  viskores::cont::Timer timer;
   timer.Start();
 
-  vtkm::worklet::DispatcherMapField<RayBumper> bumpDispatch(RayBumper(this->BumpDistance));
+  viskores::worklet::DispatcherMapField<RayBumper> bumpDispatch(RayBumper(this->BumpDistance));
   bumpDispatch.Invoke(rays.HitIdx,
                       this->Coords,
                       *(tracker.EnterDist),
@@ -1281,24 +1281,24 @@ void ConnectivityTracer::FindLostRays(vtkm::rendering::raytracing::Ray<FloatType
 }
 
 template <typename FloatType>
-void ConnectivityTracer::SampleCells(vtkm::rendering::raytracing::Ray<FloatType>& rays, detail::RayTracking<FloatType>& tracker)
+void ConnectivityTracer::SampleCells(viskores::rendering::raytracing::Ray<FloatType>& rays, detail::RayTracking<FloatType>& tracker)
 {
   using SampleP = SampleCellAssocPoints<FloatType>;
   using SampleC = SampleCellAssocCells<FloatType>;
-  vtkm::cont::Timer timer;
+  viskores::cont::Timer timer;
   timer.Start();
 
-  VTKM_ASSERT(rays.Buffers.at(0).GetNumChannels() == 4);
+  VISKORES_ASSERT(rays.Buffers.at(0).GetNumChannels() == 4);
 
   if (FieldAssocPoints)
   {
-    vtkm::worklet::DispatcherMapField<SampleP> dispatcher(
+    viskores::worklet::DispatcherMapField<SampleP> dispatcher(
       SampleP(this->SampleDistance,
-              vtkm::Float32(this->ScalarBounds.Min),
-              vtkm::Float32(this->ScalarBounds.Max)));
+              viskores::Float32(this->ScalarBounds.Min),
+              viskores::Float32(this->ScalarBounds.Max)));
     dispatcher.Invoke(rays.HitIdx,
                       this->Coords,
-                      vtkm::rendering::raytracing::GetScalarFieldArray(this->ScalarField),
+                      viskores::rendering::raytracing::GetScalarFieldArray(this->ScalarField),
                       *(tracker.EnterDist),
                       *(tracker.ExitDist),
                       tracker.CurrentDistance,
@@ -1312,14 +1312,14 @@ void ConnectivityTracer::SampleCells(vtkm::rendering::raytracing::Ray<FloatType>
   }
   else
   {
-    vtkm::worklet::DispatcherMapField<SampleC> dispatcher(
+    viskores::worklet::DispatcherMapField<SampleC> dispatcher(
       SampleC(this->SampleDistance,
-              vtkm::Float32(this->ScalarBounds.Min),
-              vtkm::Float32(this->ScalarBounds.Max)));
+              viskores::Float32(this->ScalarBounds.Min),
+              viskores::Float32(this->ScalarBounds.Max)));
 
     dispatcher.Invoke(rays.HitIdx,
-                      vtkm::rendering::raytracing::GetScalarFieldArray(this->ScalarField),
-                      GhostField.GetData().ExtractComponent<vtkm::UInt8>(0),
+                      viskores::rendering::raytracing::GetScalarFieldArray(this->ScalarField),
+                      GhostField.GetData().ExtractComponent<viskores::UInt8>(0),
                       *(tracker.EnterDist),
                       *(tracker.ExitDist),
                       tracker.CurrentDistance,
@@ -1333,27 +1333,27 @@ void ConnectivityTracer::SampleCells(vtkm::rendering::raytracing::Ray<FloatType>
 }
 
 template <typename FloatType>
-void ConnectivityTracer::IntegrateCells(vtkm::rendering::raytracing::Ray<FloatType>& rays,
+void ConnectivityTracer::IntegrateCells(viskores::rendering::raytracing::Ray<FloatType>& rays,
                                         detail::RayTracking<FloatType>& tracker)
 {
-  vtkm::cont::Timer timer;
+  viskores::cont::Timer timer;
   timer.Start();
 
-  vtkm::cont::ArrayHandle<FloatType> optical_depth = rays.GetBuffer("optical_depths").Buffer;
+  viskores::cont::ArrayHandle<FloatType> optical_depth = rays.GetBuffer("optical_depths").Buffer;
 
   if (HasEmission)
   {
-    vtkm::cont::ArrayHandle<FloatType> absorption = rays.Buffers.at(0).Buffer;
-    vtkm::cont::ArrayHandle<FloatType> emission = rays.GetBuffer("emission").Buffer;
-    vtkm::worklet::DispatcherMapField<IntegrateEmission> dispatcher(IntegrateEmission(rays.Buffers.at(0).GetNumChannels(),
+    viskores::cont::ArrayHandle<FloatType> absorption = rays.Buffers.at(0).Buffer;
+    viskores::cont::ArrayHandle<FloatType> emission = rays.GetBuffer("emission").Buffer;
+    viskores::worklet::DispatcherMapField<IntegrateEmission> dispatcher(IntegrateEmission(rays.Buffers.at(0).GetNumChannels(),
                                                                     UnitScalar,
                                                                     DivideEmisByAbsorb));
     dispatcher.Invoke(rays.Status,
                       *(tracker.EnterDist),
                       *(tracker.ExitDist),
                       rays.Distance,
-                      vtkm::rendering::raytracing::GetScalarFieldArray(ScalarField),
-                      vtkm::rendering::raytracing::GetScalarFieldArray(EmissionField),
+                      viskores::rendering::raytracing::GetScalarFieldArray(ScalarField),
+                      viskores::rendering::raytracing::GetScalarFieldArray(EmissionField),
                       absorption,
                       emission,
                       optical_depth,
@@ -1361,13 +1361,13 @@ void ConnectivityTracer::IntegrateCells(vtkm::rendering::raytracing::Ray<FloatTy
   }
   else
   {
-    vtkm::worklet::DispatcherMapField<Integrate> dispatcher(Integrate(rays.Buffers.at(0).GetNumChannels(),
+    viskores::worklet::DispatcherMapField<Integrate> dispatcher(Integrate(rays.Buffers.at(0).GetNumChannels(),
                                                                       UnitScalar));
     dispatcher.Invoke(rays.Status,
                       *(tracker.EnterDist),
                       *(tracker.ExitDist),
                       rays.Distance,
-                      vtkm::rendering::raytracing::GetScalarFieldArray(ScalarField),
+                      viskores::rendering::raytracing::GetScalarFieldArray(ScalarField),
                       optical_depth,
                       rays.HitIdx);
   }
@@ -1376,10 +1376,10 @@ void ConnectivityTracer::IntegrateCells(vtkm::rendering::raytracing::Ray<FloatTy
 }
 
 // template <typename FloatType>
-// void ConnectivityTracer<CellType>::PrintDebugRay(Ray<FloatType>& rays, vtkm::Id rayId)
+// void ConnectivityTracer<CellType>::PrintDebugRay(Ray<FloatType>& rays, viskores::Id rayId)
 // {
-//   vtkm::Id index = -1;
-//   for (vtkm::Id i = 0; i < rays.NumRays; ++i)
+//   viskores::Id index = -1;
+//   for (viskores::Id i = 0; i < rays.NumRays; ++i)
 //   {
 //     if (rays.PixelIdx.WritePortal().Get(i) == rayId)
 //     {
@@ -1403,17 +1403,17 @@ void ConnectivityTracer::IntegrateCells(vtkm::rendering::raytracing::Ray<FloatTy
 // }
 
 template <typename FloatType>
-void ConnectivityTracer::OffsetMinDistances(vtkm::rendering::raytracing::Ray<FloatType>& rays)
+void ConnectivityTracer::OffsetMinDistances(viskores::rendering::raytracing::Ray<FloatType>& rays)
 {
-  vtkm::worklet::DispatcherMapField<AdvanceRay<FloatType>> dispatcher(
+  viskores::worklet::DispatcherMapField<AdvanceRay<FloatType>> dispatcher(
     AdvanceRay<FloatType>(FloatType(this->BumpDistance)));
   dispatcher.Invoke(rays.Status, rays.MinDistance);
 }
 
 template <typename FloatType>
-void ConnectivityTracer::FindMeshEntry(vtkm::rendering::raytracing::Ray<FloatType>& rays)
+void ConnectivityTracer::FindMeshEntry(viskores::rendering::raytracing::Ray<FloatType>& rays)
 {
-  vtkm::cont::Timer entryTimer;
+  viskores::cont::Timer entryTimer;
   entryTimer.Start();
   //
   // if ray misses the external face it will be marked RAY_EXITED_MESH
@@ -1423,7 +1423,7 @@ void ConnectivityTracer::FindMeshEntry(vtkm::rendering::raytracing::Ray<FloatTyp
 }
 
 template <typename FloatType>
-void ConnectivityTracer::IntegrateMeshSegment(vtkm::rendering::raytracing::Ray<FloatType>& rays)
+void ConnectivityTracer::IntegrateMeshSegment(viskores::rendering::raytracing::Ray<FloatType>& rays)
 {
   this->Init(); // sets sample distance
   detail::RayTracking<FloatType> rayTracker;
@@ -1433,11 +1433,11 @@ void ConnectivityTracer::IntegrateMeshSegment(vtkm::rendering::raytracing::Ray<F
 
   if (this->Integrator == Volume)
   {
-    vtkm::worklet::DispatcherMapField<detail::AdjustSample> adispatcher(SampleDistance);
+    viskores::worklet::DispatcherMapField<detail::AdjustSample> adispatcher(SampleDistance);
     adispatcher.Invoke(rays.Status, rayTracker.CurrentDistance);
   }
 
-  while (vtkm::rendering::raytracing::RayOperations::RaysInMesh(rays))
+  while (viskores::rendering::raytracing::RayOperations::RaysInMesh(rays))
   {
     //
     // Rays the leave the mesh will be marked as RAYEXITED_MESH
@@ -1467,11 +1467,11 @@ void ConnectivityTracer::IntegrateMeshSegment(vtkm::rendering::raytracing::Ray<F
 }
 
 template <typename FloatType>
-void ConnectivityTracer::FullTrace(vtkm::rendering::raytracing::Ray<FloatType>& rays)
+void ConnectivityTracer::FullTrace(viskores::rendering::raytracing::Ray<FloatType>& rays)
 {
 
   this->RaysLost = 0;
-  vtkm::rendering::raytracing::RayOperations::ResetStatus(rays, RAY_EXITED_MESH);
+  viskores::rendering::raytracing::RayOperations::ResetStatus(rays, RAY_EXITED_MESH);
 
   if (this->CountRayStatus)
   {
@@ -1487,35 +1487,35 @@ void ConnectivityTracer::FullTrace(vtkm::rendering::raytracing::Ray<FloatType>& 
 
     if (cullMissedRays)
     {
-      vtkm::cont::ArrayHandle<vtkm::UInt8> activeRays;
-      activeRays = vtkm::rendering::raytracing::RayOperations::CompactActiveRays(rays);
+      viskores::cont::ArrayHandle<viskores::UInt8> activeRays;
+      activeRays = viskores::rendering::raytracing::RayOperations::CompactActiveRays(rays);
       cullMissedRays = false;
     }
 
     IntegrateMeshSegment(rays);
 
-    workRemaining = vtkm::rendering::raytracing::RayOperations::RaysProcessed(rays) != rays.NumRays;
+    workRemaining = viskores::rendering::raytracing::RayOperations::RaysProcessed(rays) != rays.NumRays;
     //
     // Ensure that we move the current distance forward some
     // epsilon so we don't re-enter the cell we just left.
     //
     if (workRemaining)
     {
-      vtkm::rendering::raytracing::RayOperations::CopyDistancesToMin(rays);
+      viskores::rendering::raytracing::RayOperations::CopyDistancesToMin(rays);
       this->OffsetMinDistances(rays);
     }
   } while (workRemaining);
 }
 
 template <typename FloatType>
-void ConnectivityTracer::PartialTrace(vtkm::rendering::raytracing::Ray<FloatType> &rays,
+void ConnectivityTracer::PartialTrace(viskores::rendering::raytracing::Ray<FloatType> &rays,
                                       std::vector<PartialComposite<FloatType>> &partials)
 {
 
   //this->CountRayStatus = true;
   bool hasPathLengths = rays.HasBuffer("path_lengths");
   RaysLost = 0;
-  vtkm::rendering::raytracing::RayOperations::ResetStatus(rays, RAY_EXITED_MESH);
+  viskores::rendering::raytracing::RayOperations::ResetStatus(rays, RAY_EXITED_MESH);
 
   if (CountRayStatus)
   {
@@ -1528,8 +1528,8 @@ void ConnectivityTracer::PartialTrace(vtkm::rendering::raytracing::Ray<FloatType
   {
     FindMeshEntry(rays);
 
-    vtkm::cont::ArrayHandle<vtkm::UInt8> activeRays;
-    activeRays = vtkm::rendering::raytracing::RayOperations::CompactActiveRays(rays);
+    viskores::cont::ArrayHandle<viskores::UInt8> activeRays;
+    activeRays = viskores::rendering::raytracing::RayOperations::CompactActiveRays(rays);
 
     if (0 == rays.NumRays)
     {
@@ -1540,8 +1540,8 @@ void ConnectivityTracer::PartialTrace(vtkm::rendering::raytracing::Ray<FloatType
 
     PartialComposite<FloatType> partial;
     partial.OpticalDepth = rays.GetBuffer("optical_depths").Copy();
-    vtkm::cont::Algorithm::Copy(rays.Distance, partial.Distances);
-    vtkm::cont::Algorithm::Copy(rays.PixelIdx, partial.PixelIds);
+    viskores::cont::Algorithm::Copy(rays.Distance, partial.Distances);
+    viskores::cont::Algorithm::Copy(rays.PixelIdx, partial.PixelIds);
 
     if (HasEmission)
     {
@@ -1570,44 +1570,44 @@ void ConnectivityTracer::PartialTrace(vtkm::rendering::raytracing::Ray<FloatType
       rays.GetBuffer("path_lengths").InitConst(0.0f);
     }
 
-    workRemaining = vtkm::rendering::raytracing::RayOperations::RaysProcessed(rays) != rays.NumRays;
+    workRemaining = viskores::rendering::raytracing::RayOperations::RaysProcessed(rays) != rays.NumRays;
     //
     // Ensure that we move the current distance forward some
     // epsilon so we don't re-enter the cell we just left.
     //
     if (workRemaining)
     {
-      vtkm::rendering::raytracing::RayOperations::CopyDistancesToMin(rays);
+      viskores::rendering::raytracing::RayOperations::CopyDistancesToMin(rays);
       OffsetMinDistances(rays);
     }
   } while (workRemaining);
 }
 
-template class detail::RayTracking<vtkm::Float32>;
-template class detail::RayTracking<vtkm::Float64>;
+template class detail::RayTracking<viskores::Float32>;
+template class detail::RayTracking<viskores::Float64>;
 
-// template struct vtkm::rendering::raytracing::PartialComposite<vtkm::Float32>;
-// template struct vtkm::rendering::raytracing::PartialComposite<vtkm::Float64>;
+// template struct viskores::rendering::raytracing::PartialComposite<viskores::Float32>;
+// template struct viskores::rendering::raytracing::PartialComposite<viskores::Float64>;
 
-template void ConnectivityTracer::FullTrace<vtkm::Float32>(vtkm::rendering::raytracing::Ray<vtkm::Float32>& rays);
-
-template void
-ConnectivityTracer::PartialTrace<vtkm::Float32>(vtkm::rendering::raytracing::Ray<vtkm::Float32> &rays,
-                                                std::vector<PartialComposite<vtkm::Float32>> &partials);
-
-template void ConnectivityTracer::IntegrateMeshSegment<vtkm::Float32>(vtkm::rendering::raytracing::Ray<vtkm::Float32>& rays);
-
-template void ConnectivityTracer::FindMeshEntry<vtkm::Float32>(vtkm::rendering::raytracing::Ray<vtkm::Float32>& rays);
-
-template void ConnectivityTracer::FullTrace<vtkm::Float64>(vtkm::rendering::raytracing::Ray<vtkm::Float64>& rays);
+template void ConnectivityTracer::FullTrace<viskores::Float32>(viskores::rendering::raytracing::Ray<viskores::Float32>& rays);
 
 template void
-ConnectivityTracer::PartialTrace<vtkm::Float64>(vtkm::rendering::raytracing::Ray<vtkm::Float64> &rays,
-                                                std::vector<PartialComposite<vtkm::Float64>> &partials);
+ConnectivityTracer::PartialTrace<viskores::Float32>(viskores::rendering::raytracing::Ray<viskores::Float32> &rays,
+                                                std::vector<PartialComposite<viskores::Float32>> &partials);
 
-template void ConnectivityTracer::IntegrateMeshSegment<vtkm::Float64>(vtkm::rendering::raytracing::Ray<vtkm::Float64>& rays);
+template void ConnectivityTracer::IntegrateMeshSegment<viskores::Float32>(viskores::rendering::raytracing::Ray<viskores::Float32>& rays);
 
-template void ConnectivityTracer::FindMeshEntry<vtkm::Float64>(vtkm::rendering::raytracing::Ray<vtkm::Float64>& rays);
+template void ConnectivityTracer::FindMeshEntry<viskores::Float32>(viskores::rendering::raytracing::Ray<viskores::Float32>& rays);
+
+template void ConnectivityTracer::FullTrace<viskores::Float64>(viskores::rendering::raytracing::Ray<viskores::Float64>& rays);
+
+template void
+ConnectivityTracer::PartialTrace<viskores::Float64>(viskores::rendering::raytracing::Ray<viskores::Float64> &rays,
+                                                std::vector<PartialComposite<viskores::Float64>> &partials);
+
+template void ConnectivityTracer::IntegrateMeshSegment<viskores::Float64>(viskores::rendering::raytracing::Ray<viskores::Float64>& rays);
+
+template void ConnectivityTracer::FindMeshEntry<viskores::Float64>(viskores::rendering::raytracing::Ray<viskores::Float64>& rays);
 }
 }
-} // namespace vtkm::rendering::raytracing
+} // namespace viskores::rendering::raytracing

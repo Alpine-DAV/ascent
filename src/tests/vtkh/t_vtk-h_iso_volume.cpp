@@ -12,7 +12,7 @@
 #include <vtkh/rendering/RayTracer.hpp>
 #include <vtkh/rendering/Scene.hpp>
 
-#include "t_vtkm_test_utils.hpp"
+#include "t_viskores_test_utils.hpp"
 
 #include <iostream>
 
@@ -21,7 +21,7 @@
 //----------------------------------------------------------------------------
 TEST(vtkh_iso_volume, vtkh_iso_volume)
 {
-#ifdef VTKM_ENABLE_KOKKOS
+#ifdef VISKORES_ENABLE_KOKKOS
   vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
@@ -36,7 +36,7 @@ TEST(vtkh_iso_volume, vtkh_iso_volume)
 
   vtkh::IsoVolume iso;
 
-  vtkm::Range iso_range;
+  viskores::Range iso_range;
   iso_range.Min = 10.;
   iso_range.Max = 30.;
   iso.SetRange(iso_range);
@@ -46,11 +46,11 @@ TEST(vtkh_iso_volume, vtkh_iso_volume)
 
   vtkh::DataSet *iso_output = iso.GetOutput();
 
-  vtkm::Bounds bounds = iso_output->GetGlobalBounds();
+  viskores::Bounds bounds = iso_output->GetGlobalBounds();
 
-  vtkm::rendering::Camera camera;
+  viskores::rendering::Camera camera;
   camera.ResetToBounds(bounds);
-  camera.SetPosition(vtkm::Vec<vtkm::Float64,3>(16,-32,-32));
+  camera.SetPosition(viskores::Vec<viskores::Float64,3>(16,-32,-32));
   float bg_color[4] = { 0.f, 0.f, 0.f, 1.f};
   vtkh::Render render = vtkh::MakeRender(512,
                                          512,
@@ -75,7 +75,7 @@ TEST(vtkh_iso_volume, vtkh_iso_volume)
 //----------------------------------------------------------------------------
 TEST(vtkh_iso_volume, vtkh_iso_volume_empty)
 {
-#ifdef VTKM_ENABLE_KOKKOS
+#ifdef VISKORES_ENABLE_KOKKOS
   vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
@@ -90,7 +90,7 @@ TEST(vtkh_iso_volume, vtkh_iso_volume_empty)
 
   vtkh::IsoVolume iso;
 
-  vtkm::Range iso_range;
+  viskores::Range iso_range;
   iso_range.Min = 40e16;
   iso_range.Max = 30e16;
   iso.SetRange(iso_range);
@@ -100,11 +100,11 @@ TEST(vtkh_iso_volume, vtkh_iso_volume_empty)
 
   vtkh::DataSet *iso_output = iso.GetOutput();
 
-  vtkm::Bounds bounds = iso_output->GetGlobalBounds();
+  viskores::Bounds bounds = iso_output->GetGlobalBounds();
 
-  vtkm::rendering::Camera camera;
+  viskores::rendering::Camera camera;
   camera.ResetToBounds(bounds);
-  camera.SetPosition(vtkm::Vec<vtkm::Float64,3>(16,-32,-32));
+  camera.SetPosition(viskores::Vec<viskores::Float64,3>(16,-32,-32));
   float bg_color[4] = { 0.f, 0.f, 0.f, 1.f};
   vtkh::Render render = vtkh::MakeRender(512,
                                          512,

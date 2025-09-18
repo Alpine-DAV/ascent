@@ -22,7 +22,7 @@ namespace rendering
 struct ConnectivityProxy::InternalsType
 {
 protected:
-  using ColorMapType = vtkm::cont::ArrayHandle<vtkm::Vec4f_32>;
+  using ColorMapType = viskores::cont::ArrayHandle<viskores::Vec4f_32>;
   using TracerType = vtkh::rendering::raytracing::ConnectivityTracer;
 
   TracerType Tracer;
@@ -30,14 +30,14 @@ protected:
   std::string FieldName;
   std::string EmissionFieldName;
   RenderMode Mode;
-  vtkm::Bounds SpatialBounds;
+  viskores::Bounds SpatialBounds;
   ColorMapType ColorMap;
-  vtkm::cont::DataSet Dataset;
-  vtkm::Range ScalarRange;
+  viskores::cont::DataSet Dataset;
+  viskores::Range ScalarRange;
   bool CompositeBackground;
 
 public:
-  InternalsType(const vtkm::cont::DataSet& dataSet,
+  InternalsType(const viskores::cont::DataSet& dataSet,
                 const std::string& coordinateName,
                 const std::string& fieldName)
   {
@@ -52,93 +52,93 @@ public:
     EmissionFieldName = "";
   }
 
-  VTKM_CONT
-  void SetUnitScalar(vtkm::Float32 unitScalar) { Tracer.SetUnitScalar(unitScalar); }
+  VISKORES_CONT
+  void SetUnitScalar(viskores::Float32 unitScalar) { Tracer.SetUnitScalar(unitScalar); }
 
-  VTKM_CONT
+  VISKORES_CONT
   void SetDivideEmisByAbsorb(const bool divide_emis_by_absorb)
   {
     Tracer.SetDivideEmisByAbsorb(divide_emis_by_absorb);
   }
 
-  void SetSampleDistance(const vtkm::Float32& distance)
+  void SetSampleDistance(const viskores::Float32& distance)
   {
     if (this->Mode != RenderMode::Volume)
     {
-      throw vtkm::cont::ErrorBadValue(
+      throw viskores::cont::ErrorBadValue(
         "Conn Proxy: volume mode must be set before sample distance set");
     }
     Tracer.SetSampleDistance(distance);
   }
 
-  VTKM_CONT
+  VISKORES_CONT
   void SetRenderMode(RenderMode mode) { Mode = mode; }
 
-  VTKM_CONT
+  VISKORES_CONT
   RenderMode GetRenderMode() { return Mode; }
 
-  VTKM_CONT
+  VISKORES_CONT
   void SetScalarField(const std::string& fieldName)
   {
     this->FieldName = fieldName;
-    const vtkm::cont::ArrayHandle<vtkm::Range> range =
+    const viskores::cont::ArrayHandle<viskores::Range> range =
       this->Dataset.GetField(this->FieldName).GetRange();
     ScalarRange = range.ReadPortal().Get(0);
   }
 
-  VTKM_CONT
-  void SetColorMap(vtkm::cont::ArrayHandle<vtkm::Vec4f_32>& colormap)
+  VISKORES_CONT
+  void SetColorMap(viskores::cont::ArrayHandle<viskores::Vec4f_32>& colormap)
   {
     Tracer.SetColorMap(colormap);
   }
 
-  VTKM_CONT
+  VISKORES_CONT
   void SetCompositeBackground(bool on) { CompositeBackground = on; }
 
-  VTKM_CONT
+  VISKORES_CONT
   void SetDebugPrints(bool on) { Tracer.SetDebugOn(on); }
 
-  VTKM_CONT
-  void SetEpsilon(vtkm::Float64 epsilon)
+  VISKORES_CONT
+  void SetEpsilon(viskores::Float64 epsilon)
   {
     Tracer.SetEpsilon(epsilon);
   }
 
-  VTKM_CONT
+  VISKORES_CONT
   void SetEmissionField(const std::string& fieldName)
   {
     EmissionFieldName = fieldName;
   }
 
-  VTKM_CONT
-  vtkm::Bounds GetSpatialBounds() const
+  VISKORES_CONT
+  viskores::Bounds GetSpatialBounds() const
   {
     return SpatialBounds;
   }
 
-  VTKM_CONT
-  vtkm::Range GetScalarFieldRange()
+  VISKORES_CONT
+  viskores::Range GetScalarFieldRange()
   {
-    const vtkm::cont::ArrayHandle<vtkm::Range> range =
+    const viskores::cont::ArrayHandle<viskores::Range> range =
       this->Dataset.GetField(this->FieldName).GetRange();
     ScalarRange = range.ReadPortal().Get(0);
     return ScalarRange;
   }
 
-  VTKM_CONT
-  void SetScalarRange(const vtkm::Range& range)
+  VISKORES_CONT
+  void SetScalarRange(const viskores::Range& range)
   {
     ScalarRange = range;
   }
 
-  VTKM_CONT
-  vtkm::Range GetScalarRange()
+  VISKORES_CONT
+  viskores::Range GetScalarRange()
   {
     return this->ScalarRange;
   }
 
-  VTKM_CONT
-  void Trace(vtkm::rendering::raytracing::Ray<vtkm::Float64>& rays)
+  VISKORES_CONT
+  void Trace(viskores::rendering::raytracing::Ray<viskores::Float64>& rays)
   {
 
     if (this->Mode == RenderMode::Volume)
@@ -161,8 +161,8 @@ public:
     Tracer.FullTrace(rays);
   }
 
-  VTKM_CONT
-  void Trace(vtkm::rendering::raytracing::Ray<vtkm::Float32>& rays)
+  VISKORES_CONT
+  void Trace(viskores::rendering::raytracing::Ray<viskores::Float32>& rays)
   {
     if (this->Mode == RenderMode::Volume)
     {
@@ -184,8 +184,8 @@ public:
     Tracer.FullTrace(rays);
   }
 
-  VTKM_CONT
-  void PartialTrace(vtkm::rendering::raytracing::Ray<vtkm::Float64> &rays,
+  VISKORES_CONT
+  void PartialTrace(viskores::rendering::raytracing::Ray<viskores::Float64> &rays,
                     PartialVector64 &partials)
   {
     if (EmissionFieldName.empty())
@@ -209,8 +209,8 @@ public:
     Tracer.PartialTrace(rays, partials);
   }
 
-  VTKM_CONT
-  void PartialTrace(vtkm::rendering::raytracing::Ray<vtkm::Float32>& rays,
+  VISKORES_CONT
+  void PartialTrace(viskores::rendering::raytracing::Ray<viskores::Float32>& rays,
                     PartialVector32 &partials)
   {
     if (EmissionFieldName.empty())
@@ -234,21 +234,21 @@ public:
     Tracer.PartialTrace(rays, partials);
   }
 
-  VTKM_CONT
-  void Trace(const vtkm::rendering::Camera& camera, vtkm::rendering::CanvasRayTracer* canvas)
+  VISKORES_CONT
+  void Trace(const viskores::rendering::Camera& camera, viskores::rendering::CanvasRayTracer* canvas)
   {
 
     if (canvas == nullptr)
     {
-      throw vtkm::cont::ErrorBadValue("Conn Proxy: null canvas");
+      throw viskores::cont::ErrorBadValue("Conn Proxy: null canvas");
     }
-    vtkm::rendering::raytracing::Camera rayCamera;
+    viskores::rendering::raytracing::Camera rayCamera;
     rayCamera.SetParameters(
-      camera, (vtkm::Int32)canvas->GetWidth(), (vtkm::Int32)canvas->GetHeight());
-    vtkm::rendering::raytracing::Ray<vtkm::Float32> rays;
+      camera, (viskores::Int32)canvas->GetWidth(), (viskores::Int32)canvas->GetHeight());
+    viskores::rendering::raytracing::Ray<viskores::Float32> rays;
     rayCamera.CreateRays(rays, this->Dataset.GetCoordinateSystem(this->CoordinateName).GetBounds());
     rays.Buffers.at(0).InitConst(0.f);
-    vtkm::rendering::raytracing::RayOperations::MapCanvasToRays(rays, camera, *canvas);
+    viskores::rendering::raytracing::RayOperations::MapCanvasToRays(rays, camera, *canvas);
 
     if (this->Mode == RenderMode::Volume)
     {
@@ -260,7 +260,7 @@ public:
     }
     else
     {
-      throw vtkm::cont::ErrorBadValue("ENERGY MODE Not implemented for this use case\n");
+      throw viskores::cont::ErrorBadValue("ENERGY MODE Not implemented for this use case\n");
     }
 
     Tracer.FullTrace(rays);
@@ -274,16 +274,16 @@ public:
 };
 
 
-VTKM_CONT
-ConnectivityProxy::ConnectivityProxy(const vtkm::cont::DataSet& dataSet,
+VISKORES_CONT
+ConnectivityProxy::ConnectivityProxy(const viskores::cont::DataSet& dataSet,
                                      const std::string& fieldName)
   : Internals(
       std::make_unique<InternalsType>(dataSet, dataSet.GetCoordinateSystemName(), fieldName))
 {
 }
 
-VTKM_CONT
-ConnectivityProxy::ConnectivityProxy(const vtkm::cont::DataSet& dataSet,
+VISKORES_CONT
+ConnectivityProxy::ConnectivityProxy(const viskores::cont::DataSet& dataSet,
                                      const std::string& fieldName,
                                      const std::string& coordinateName)
   : Internals(std::make_unique<InternalsType>(dataSet, coordinateName, fieldName))
@@ -291,12 +291,12 @@ ConnectivityProxy::ConnectivityProxy(const vtkm::cont::DataSet& dataSet,
 }
 
 
-VTKM_CONT
-ConnectivityProxy::ConnectivityProxy(const vtkm::cont::UnknownCellSet& cellset,
-                                     const vtkm::cont::CoordinateSystem& coords,
-                                     const vtkm::cont::Field& scalarField)
+VISKORES_CONT
+ConnectivityProxy::ConnectivityProxy(const viskores::cont::UnknownCellSet& cellset,
+                                     const viskores::cont::CoordinateSystem& coords,
+                                     const viskores::cont::Field& scalarField)
 {
-  vtkm::cont::DataSet dataset;
+  viskores::cont::DataSet dataset;
   dataset.SetCellSet(cellset);
   dataset.AddCoordinateSystem(coords);
   dataset.AddField(scalarField);
@@ -333,78 +333,78 @@ ConnectivityProxy& ConnectivityProxy::operator=(const ConnectivityProxy& rhs)
   return *this;
 }
 
-VTKM_CONT
+VISKORES_CONT
 ConnectivityProxy::ConnectivityProxy(ConnectivityProxy&&) noexcept = default;
-VTKM_CONT
+VISKORES_CONT
 ConnectivityProxy& ConnectivityProxy::operator=(vtkh::rendering::ConnectivityProxy&&) noexcept =
   default;
-VTKM_CONT
+VISKORES_CONT
 ConnectivityProxy::~ConnectivityProxy() = default;
 
-VTKM_CONT
-void ConnectivityProxy::SetSampleDistance(const vtkm::Float32& distance)
+VISKORES_CONT
+void ConnectivityProxy::SetSampleDistance(const viskores::Float32& distance)
 {
   Internals->SetSampleDistance(distance);
 }
 
-VTKM_CONT
+VISKORES_CONT
 void ConnectivityProxy::SetRenderMode(RenderMode mode)
 {
   Internals->SetRenderMode(mode);
 }
 
-VTKM_CONT
+VISKORES_CONT
 void ConnectivityProxy::SetScalarField(const std::string& fieldName)
 {
   Internals->SetScalarField(fieldName);
 }
 
-VTKM_CONT
-void ConnectivityProxy::SetColorMap(vtkm::cont::ArrayHandle<vtkm::Vec4f_32>& colormap)
+VISKORES_CONT
+void ConnectivityProxy::SetColorMap(viskores::cont::ArrayHandle<viskores::Vec4f_32>& colormap)
 {
   Internals->SetColorMap(colormap);
 }
 
-VTKM_CONT
+VISKORES_CONT
 void ConnectivityProxy::SetEmissionField(const std::string& fieldName)
 {
   Internals->SetEmissionField(fieldName);
 }
 
-VTKM_CONT
-vtkm::Bounds ConnectivityProxy::GetSpatialBounds()
+VISKORES_CONT
+viskores::Bounds ConnectivityProxy::GetSpatialBounds()
 {
   return Internals->GetSpatialBounds();
 }
 
-VTKM_CONT
-vtkm::Range ConnectivityProxy::GetScalarFieldRange()
+VISKORES_CONT
+viskores::Range ConnectivityProxy::GetScalarFieldRange()
 {
   return Internals->GetScalarFieldRange();
 }
 
-VTKM_CONT
+VISKORES_CONT
 void ConnectivityProxy::SetCompositeBackground(bool on)
 {
   return Internals->SetCompositeBackground(on);
 }
 
-VTKM_CONT
-void ConnectivityProxy::SetScalarRange(const vtkm::Range& range)
+VISKORES_CONT
+void ConnectivityProxy::SetScalarRange(const viskores::Range& range)
 {
   Internals->SetScalarRange(range);
 }
 
-VTKM_CONT
-vtkm::Range ConnectivityProxy::GetScalarRange()
+VISKORES_CONT
+viskores::Range ConnectivityProxy::GetScalarRange()
 {
   return Internals->GetScalarRange();
 }
 
-VTKM_CONT
-void ConnectivityProxy::Trace(vtkm::rendering::raytracing::Ray<vtkm::Float64>& rays)
+VISKORES_CONT
+void ConnectivityProxy::Trace(viskores::rendering::raytracing::Ray<viskores::Float64>& rays)
 {
-  vtkm::rendering::raytracing::Logger* logger = vtkm::rendering::raytracing::Logger::GetInstance();
+  viskores::rendering::raytracing::Logger* logger = viskores::rendering::raytracing::Logger::GetInstance();
   logger->OpenLogEntry("connectivity_trace_64");
   if (this->Internals->GetRenderMode() == RenderMode::Volume)
   {
@@ -419,11 +419,11 @@ void ConnectivityProxy::Trace(vtkm::rendering::raytracing::Ray<vtkm::Float64>& r
   logger->CloseLogEntry(-1.0);
 }
 
-VTKM_CONT
-void ConnectivityProxy::PartialTrace(vtkm::rendering::raytracing::Ray<vtkm::Float32> &rays,
+VISKORES_CONT
+void ConnectivityProxy::PartialTrace(viskores::rendering::raytracing::Ray<viskores::Float32> &rays,
                                      PartialVector32 &partials)
 {
-  vtkm::rendering::raytracing::Logger* logger = vtkm::rendering::raytracing::Logger::GetInstance();
+  viskores::rendering::raytracing::Logger* logger = viskores::rendering::raytracing::Logger::GetInstance();
   logger->OpenLogEntry("connectivity_trace_32");
   if (this->Internals->GetRenderMode() == RenderMode::Volume)
   {
@@ -439,10 +439,10 @@ void ConnectivityProxy::PartialTrace(vtkm::rendering::raytracing::Ray<vtkm::Floa
   logger->CloseLogEntry(-1.0);
 }
 
-VTKM_CONT
-void ConnectivityProxy::Trace(vtkm::rendering::raytracing::Ray<vtkm::Float32>& rays)
+VISKORES_CONT
+void ConnectivityProxy::Trace(viskores::rendering::raytracing::Ray<viskores::Float32>& rays)
 {
-  vtkm::rendering::raytracing::Logger* logger = vtkm::rendering::raytracing::Logger::GetInstance();
+  viskores::rendering::raytracing::Logger* logger = viskores::rendering::raytracing::Logger::GetInstance();
   logger->OpenLogEntry("connectivity_trace_32");
   if (this->Internals->GetRenderMode() == RenderMode::Volume)
   {
@@ -458,11 +458,11 @@ void ConnectivityProxy::Trace(vtkm::rendering::raytracing::Ray<vtkm::Float32>& r
   logger->CloseLogEntry(-1.0);
 }
 
-VTKM_CONT
-void ConnectivityProxy::PartialTrace(vtkm::rendering::raytracing::Ray<vtkm::Float64> &rays,
+VISKORES_CONT
+void ConnectivityProxy::PartialTrace(viskores::rendering::raytracing::Ray<viskores::Float64> &rays,
                                      PartialVector64 &partials)
 {
-  vtkm::rendering::raytracing::Logger* logger = vtkm::rendering::raytracing::Logger::GetInstance();
+  viskores::rendering::raytracing::Logger* logger = viskores::rendering::raytracing::Logger::GetInstance();
   logger->OpenLogEntry("connectivity_trace_64");
   if (this->Internals->GetRenderMode() == RenderMode::Volume)
   {
@@ -478,11 +478,11 @@ void ConnectivityProxy::PartialTrace(vtkm::rendering::raytracing::Ray<vtkm::Floa
   logger->CloseLogEntry(-1.0);
 }
 
-VTKM_CONT
-void ConnectivityProxy::Trace(const vtkm::rendering::Camera& camera,
-                              vtkm::rendering::CanvasRayTracer* canvas)
+VISKORES_CONT
+void ConnectivityProxy::Trace(const viskores::rendering::Camera& camera,
+                              viskores::rendering::CanvasRayTracer* canvas)
 {
-  vtkm::rendering::raytracing::Logger* logger = vtkm::rendering::raytracing::Logger::GetInstance();
+  viskores::rendering::raytracing::Logger* logger = viskores::rendering::raytracing::Logger::GetInstance();
   logger->OpenLogEntry("connectivity_trace_32");
   logger->AddLogData("volume_mode", "true");
 
@@ -491,29 +491,29 @@ void ConnectivityProxy::Trace(const vtkm::rendering::Camera& camera,
   logger->CloseLogEntry(-1.0);
 }
 
-VTKM_CONT
+VISKORES_CONT
 void ConnectivityProxy::SetDebugPrints(bool on)
 {
   Internals->SetDebugPrints(on);
 }
 
-VTKM_CONT
-void ConnectivityProxy::SetEpsilon(vtkm::Float64 epsilon)
+VISKORES_CONT
+void ConnectivityProxy::SetEpsilon(viskores::Float64 epsilon)
 {
   Internals->SetEpsilon(epsilon);
 }
 
-VTKM_CONT
-void ConnectivityProxy::SetUnitScalar(vtkm::Float32 unitScalar)
+VISKORES_CONT
+void ConnectivityProxy::SetUnitScalar(viskores::Float32 unitScalar)
 {
   Internals->SetUnitScalar(unitScalar);
 }
 
-VTKM_CONT
+VISKORES_CONT
 void ConnectivityProxy::SetDivideEmisByAbsorb(const bool divide_emis_by_absorb)
 {
   Internals->SetDivideEmisByAbsorb(divide_emis_by_absorb);
 }
 
 }
-} // namespace vtkm::rendering
+} // namespace viskores::rendering

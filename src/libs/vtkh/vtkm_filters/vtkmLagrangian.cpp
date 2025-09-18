@@ -1,12 +1,12 @@
-#include "vtkmLagrangian.hpp"
+#include "viskoresLagrangian.hpp"
 
-#include <vtkm/filter/flow/Lagrangian.h>
-#include <vtkm/Particle.h>
+#include <viskores/filter/flow/Lagrangian.h>
+#include <viskores/Particle.h>
 
 namespace vtkh
 {
-vtkm::cont::DataSet
-vtkmLagrangian::Run(vtkm::cont::DataSet &input,
+viskores::cont::DataSet
+viskoresLagrangian::Run(viskores::cont::DataSet &input,
                          std::string field_name,
                          double step_size,
                          int write_frequency,
@@ -15,14 +15,14 @@ vtkmLagrangian::Run(vtkm::cont::DataSet &input,
                          int x_res,
                          int y_res,
                          int z_res,
-			 vtkm::cont::ArrayHandle<vtkm::Particle> basis_particles,
-			 vtkm::cont::ArrayHandle<vtkm::Particle> basis_particles_original,
-			 vtkm::cont::ArrayHandle<vtkm::Id> basis_particle_validity)
+			 viskores::cont::ArrayHandle<viskores::Particle> basis_particles,
+			 viskores::cont::ArrayHandle<viskores::Particle> basis_particles_original,
+			 viskores::cont::ArrayHandle<viskores::Id> basis_particle_validity)
 {
-#ifdef VTKH_BYPASS_VTKM_BIH
-  return vtkm::cont::DataSet();
+#ifdef VTKH_BYPASS_VISKORES_BIH
+  return viskores::cont::DataSet();
 #else
-  vtkm::filter::flow::Lagrangian lagrangianFilter;
+  viskores::filter::flow::Lagrangian lagrangianFilter;
 
   lagrangianFilter.SetStepSize(step_size);
   lagrangianFilter.SetCycle(cycle);

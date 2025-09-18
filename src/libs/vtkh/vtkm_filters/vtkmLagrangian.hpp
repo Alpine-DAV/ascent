@@ -1,16 +1,16 @@
-#ifndef VTK_H_VTKM_LAGRANGIAN_HPP
-#define VTK_H_VTKM_LAGRANGIAN_HPP
+#ifndef VTK_H_VISKORES_LAGRANGIAN_HPP
+#define VTK_H_VISKORES_LAGRANGIAN_HPP
 
-#include <vtkm/cont/DataSet.h>
-#include <vtkm/Particle.h>
+#include <viskores/cont/DataSet.h>
+#include <viskores/Particle.h>
 
 namespace vtkh
 {
 
-class vtkmLagrangian
+class viskoresLagrangian
 {
 public:
-  vtkm::cont::DataSet Run(vtkm::cont::DataSet &input,
+  viskores::cont::DataSet Run(viskores::cont::DataSet &input,
                           std::string field_name,
                           double step_size,
                           int write_frequency,
@@ -19,9 +19,9 @@ public:
                           int x_res,
                           int y_res,
                           int z_res,
-                          vtkm::cont::ArrayHandle<vtkm::Particle> basis_particles,
-			  vtkm::cont::ArrayHandle<vtkm::Particle> basis_particles_original,
-			  vtkm::cont::ArrayHandle<vtkm::Id> basis_particle_validity);
+                          viskores::cont::ArrayHandle<viskores::Particle> basis_particles,
+			  viskores::cont::ArrayHandle<viskores::Particle> basis_particles_original,
+			  viskores::cont::ArrayHandle<viskores::Id> basis_particle_validity);
 };
 }
 #endif

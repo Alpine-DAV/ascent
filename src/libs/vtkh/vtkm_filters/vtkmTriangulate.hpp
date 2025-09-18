@@ -1,17 +1,17 @@
-#ifndef VTK_H_VTKM_TRIANGULATE_HPP
-#define VTK_H_VTKM_TRIANGULATE_HPP
+#ifndef VTK_H_VISKORES_TRIANGULATE_HPP
+#define VTK_H_VISKORES_TRIANGULATE_HPP
 
-#include <vtkm/cont/DataSet.h>
-#include <vtkm/filter/FieldSelection.h>
+#include <viskores/cont/DataSet.h>
+#include <viskores/filter/FieldSelection.h>
 
 namespace vtkh
 {
 
-class vtkmTriangulate
+class viskoresTriangulate
 {
 public:
-  vtkm::cont::DataSet Run(vtkm::cont::DataSet &input,
-                          vtkm::filter::FieldSelection map_fields);
+  viskores::cont::DataSet Run(viskores::cont::DataSet &input,
+                          viskores::filter::FieldSelection map_fields);
 };
 }
 #endif

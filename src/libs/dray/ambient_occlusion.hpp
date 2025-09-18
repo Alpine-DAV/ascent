@@ -49,7 +49,7 @@ class AmbientOcclusion
   // ------------
 
   // These sampling methods can definitely be moved out of AmbientOcclusion.
-  // These sampling methods were adapted from https://gitlab.kitware.com/mclarsen/vtk-m/blob/pathtracer/vtkm/rendering/raytracing/Sampler.h
+  // These sampling methods were adapted from https://gitlab.kitware.com/mclarsen/viskores/blob/pathtracer/viskores/rendering/raytracing/Sampler.h
 
   // static Vec<T,3> CosineWeightedHemisphere(const int32 &sampleNum);
   // static void ConstructTangentBasis( const Vec<T,3> &normal, Vec<T,3> &xAxis, Vec<T,3> &yAxis);

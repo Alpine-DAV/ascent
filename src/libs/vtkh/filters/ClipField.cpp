@@ -1,7 +1,7 @@
 #include "ClipField.hpp"
 
 #include <vtkh/filters/Recenter.hpp>
-#include <vtkh/vtkm_filters/vtkmClipWithField.hpp>
+#include <vtkh/viskores_filters/viskoresClipWithField.hpp>
 
 namespace vtkh
 {
@@ -19,7 +19,7 @@ ClipField::~ClipField()
 }
 
 void
-ClipField::SetClipValue(const vtkm::Float64 clip_value)
+ClipField::SetClipValue(const viskores::Float64 clip_value)
 {
   m_clip_value = clip_value;
 }
@@ -60,14 +60,14 @@ void ClipField::DoExecute()
 
   bool valid_field = false;
   bool is_cell_assoc = m_input->GetFieldAssociation(m_field_name, valid_field) ==
-                       vtkm::cont::Field::Association::Cells;
+                       viskores::cont::Field::Association::Cells;
   bool delete_input = false;
   if(valid_field && is_cell_assoc)
   {
     Recenter recenter;
     recenter.SetInput(m_input);
     recenter.SetField(m_field_name);
-    recenter.SetResultAssoc(vtkm::cont::Field::Association::Points);
+    recenter.SetResultAssoc(viskores::cont::Field::Association::Points);
     recenter.Update();
     this->m_input = recenter.GetOutput();
     delete_input = true;
@@ -75,8 +75,8 @@ void ClipField::DoExecute()
 
   for(int i = 0; i < num_domains; ++i)
   {
-    vtkm::Id domain_id;
-    vtkm::cont::DataSet dom;
+    viskores::Id domain_id;
+    viskores::cont::DataSet dom;
     this->m_input->GetDomain(i, dom, domain_id);
 
     if(!dom.HasField(m_field_name))
@@ -84,7 +84,7 @@ void ClipField::DoExecute()
       continue;
     }
 
-    vtkh::vtkmClipWithField clipper;
+    vtkh::viskoresClipWithField clipper;
     auto dataset = clipper.Run(dom,
                                m_field_name,
                                m_clip_value,

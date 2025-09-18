@@ -1,19 +1,19 @@
-#ifndef VTK_H_VTKM_MESH_QUALITY_HPP
-#define VTK_H_VTKM_MESH_QUALITY_HPP
+#ifndef VTK_H_VISKORES_MESH_QUALITY_HPP
+#define VTK_H_VISKORES_MESH_QUALITY_HPP
 
-#include <vtkm/cont/DataSet.h>
-#include <vtkm/filter/FieldSelection.h>
-#include <vtkm/filter/mesh_info/MeshQuality.h>
+#include <viskores/cont/DataSet.h>
+#include <viskores/filter/FieldSelection.h>
+#include <viskores/filter/mesh_info/MeshQuality.h>
 
 namespace vtkh
 {
 
-class vtkmMeshQuality
+class viskoresMeshQuality
 {
 public:
-  vtkm::cont::DataSet Run(vtkm::cont::DataSet &input,
-                          vtkm::filter::mesh_info::CellMetric metric,
-                          vtkm::filter::FieldSelection map_fields);
+  viskores::cont::DataSet Run(viskores::cont::DataSet &input,
+                          viskores::filter::mesh_info::CellMetric metric,
+                          viskores::filter::FieldSelection map_fields);
 };
 }
 #endif

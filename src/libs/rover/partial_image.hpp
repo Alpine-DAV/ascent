@@ -9,11 +9,11 @@
 
 #include <rover_config.h>
 #include <settings.hpp>
-#include <vtkm_typedefs.hpp>
+#include <viskores_typedefs.hpp>
 
 #include <vector>
 
-#include <vtkm/cont/ArrayHandle.h>
+#include <viskores/cont/ArrayHandle.h>
 #include <vtkh/compositing/AbsorptionPartial.hpp>
 #include <vtkh/compositing/EmissionPartial.hpp>
 // #include <vtkh/compositing/VolumePartial.hpp> // removing volume renderer
@@ -27,13 +27,13 @@ struct PartialImage
   // TODO: Improve naming to reflect what these things actually represent,
   // will require changes elsewhere (absorptionpartial and emissionpartial)
   IdHandle                                 m_pixel_ids;
-  vtkmRayTracing::ChannelBuffer<FloatType> m_transmission;  // holds the fraction of incoming intensity that survives absorption
-  vtkmRayTracing::ChannelBuffer<FloatType> m_intensity;     // holds the intensity emerging from each ray
-  vtkmRayTracing::ChannelBuffer<FloatType> m_optical_depth;
-  vtkm::cont::ArrayHandle<FloatType>       m_distances;
+  viskoresRayTracing::ChannelBuffer<FloatType> m_transmission;  // holds the fraction of incoming intensity that survives absorption
+  viskoresRayTracing::ChannelBuffer<FloatType> m_intensity;     // holds the intensity emerging from each ray
+  viskoresRayTracing::ChannelBuffer<FloatType> m_optical_depth;
+  viskores::cont::ArrayHandle<FloatType>       m_distances;
   std::vector<FloatType>                   m_source_sig;
 
-  void allocate(const vtkm::Id &size, const vtkm::Id &channels)
+  void allocate(const viskores::Id &size, const viskores::Id &channels)
   {
     m_pixel_ids.Allocate(size);
     m_distances.Allocate(size);

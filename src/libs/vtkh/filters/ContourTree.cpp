@@ -2,37 +2,37 @@
 
 #include <vtkh/filters/Recenter.hpp>
 
-// vtkm includes
-#include <vtkm/cont/DeviceAdapter.h>
-#include <vtkm/cont/Storage.h>
-#include <vtkm/internal/Configure.h>
-#include <vtkm/filter/scalar_topology/worklet/contourtree_augmented/PrintVectors.h>
-#include <vtkm/filter/scalar_topology/worklet/contourtree_augmented/ProcessContourTree.h>
-#include <vtkm/filter/scalar_topology/worklet/contourtree_augmented/processcontourtree/Branch.h>
-#include <vtkm/filter/scalar_topology/worklet/contourtree_augmented/processcontourtree/PiecewiseLinearFunction.h>
+// viskores includes
+#include <viskores/cont/DeviceAdapter.h>
+#include <viskores/cont/Storage.h>
+#include <viskores/internal/Configure.h>
+#include <viskores/filter/scalar_topology/worklet/contourtree_augmented/PrintVectors.h>
+#include <viskores/filter/scalar_topology/worklet/contourtree_augmented/ProcessContourTree.h>
+#include <viskores/filter/scalar_topology/worklet/contourtree_augmented/processcontourtree/Branch.h>
+#include <viskores/filter/scalar_topology/worklet/contourtree_augmented/processcontourtree/PiecewiseLinearFunction.h>
 
 #include <vtkh/filters/GhostStripper.hpp> 
 
 #include <fstream>
 
-namespace caugmented_ns = vtkm::worklet::contourtree_augmented;
+namespace caugmented_ns = viskores::worklet::contourtree_augmented;
 
-static void ShiftLogicalOriginToZero(vtkm::cont::PartitionedDataSet& pds)
+static void ShiftLogicalOriginToZero(viskores::cont::PartitionedDataSet& pds)
 {
   // Shift the logical origin (minimum of LocalPointIndexStart) to zero
   // along each dimension
 
   // Compute minimum global point index start for all data sets on this MPI rank
-  std::vector<vtkm::Id> minimumGlobalPointIndexStartThisRank;
-  using ds_const_iterator = vtkm::cont::PartitionedDataSet::const_iterator;
+  std::vector<viskores::Id> minimumGlobalPointIndexStartThisRank;
+  using ds_const_iterator = viskores::cont::PartitionedDataSet::const_iterator;
   for (ds_const_iterator ds_it = pds.cbegin(); ds_it != pds.cend(); ++ds_it)
   {
-    ds_it->GetCellSet().CastAndCallForTypes<vtkm::cont::CellSetListStructured>(
+    ds_it->GetCellSet().CastAndCallForTypes<viskores::cont::CellSetListStructured>(
       [&minimumGlobalPointIndexStartThisRank](const auto& css)
       {
         minimumGlobalPointIndexStartThisRank.resize(css.Dimension,
-                                                    std::numeric_limits<vtkm::Id>::max());
-        for (vtkm::IdComponent d = 0; d < css.Dimension; ++d)
+                                                    std::numeric_limits<viskores::Id>::max());
+        for (viskores::IdComponent d = 0; d < css.Dimension; ++d)
         {
           minimumGlobalPointIndexStartThisRank[d] =
             std::min(minimumGlobalPointIndexStartThisRank[d], css.GetGlobalPointIndexStart()[d]);
@@ -41,24 +41,24 @@ static void ShiftLogicalOriginToZero(vtkm::cont::PartitionedDataSet& pds)
   }
 
   // Perform global reduction to find GlobalPointDimensions across all ranks
-  std::vector<vtkm::Id> minimumGlobalPointIndexStart;
-  auto comm = vtkm::cont::EnvironmentTracker::GetCommunicator();
-  vtkmdiy::mpi::all_reduce(comm,
+  std::vector<viskores::Id> minimumGlobalPointIndexStart;
+  auto comm = viskores::cont::EnvironmentTracker::GetCommunicator();
+  viskoresdiy::mpi::all_reduce(comm,
                            minimumGlobalPointIndexStartThisRank,
                            minimumGlobalPointIndexStart,
-                           vtkmdiy::mpi::minimum<vtkm::Id>{});
+                           viskoresdiy::mpi::minimum<viskores::Id>{});
 
   // Shift all cell sets so that minimum global point index start
   // along each dimension is zero
-  using ds_iterator = vtkm::cont::PartitionedDataSet::iterator;
+  using ds_iterator = viskores::cont::PartitionedDataSet::iterator;
   for (ds_iterator ds_it = pds.begin(); ds_it != pds.end(); ++ds_it)
   {
     // This does not work, i.e., it does not really change the cell set for the DataSet
-    ds_it->GetCellSet().CastAndCallForTypes<vtkm::cont::CellSetListStructured>(
+    ds_it->GetCellSet().CastAndCallForTypes<viskores::cont::CellSetListStructured>(
       [&minimumGlobalPointIndexStart, &ds_it](auto& css) {
         auto pointIndexStart = css.GetGlobalPointIndexStart();
         typename std::remove_reference_t<decltype(css)>::SchedulingRangeType shiftedPointIndexStart;
-        for (vtkm::IdComponent d = 0; d < css.Dimension; ++d)
+        for (viskores::IdComponent d = 0; d < css.Dimension; ++d)
         {
           shiftedPointIndexStart[d] = pointIndexStart[d] - minimumGlobalPointIndexStart[d];
         }
@@ -70,20 +70,20 @@ static void ShiftLogicalOriginToZero(vtkm::cont::PartitionedDataSet& pds)
   }
 }
 
-static void ComputeGlobalPointSize(vtkm::cont::PartitionedDataSet& pds)
+static void ComputeGlobalPointSize(viskores::cont::PartitionedDataSet& pds)
 {
   // Compute GlobalPointDimensions as maximum of GlobalPointIndexStart + PointDimensions
   // for each dimension across all blocks
 
   // Compute GlobalPointDimensions for all data sets on this MPI rank
-  std::vector<vtkm::Id> globalPointDimensionsThisRank;
-  using ds_const_iterator = vtkm::cont::PartitionedDataSet::const_iterator;
+  std::vector<viskores::Id> globalPointDimensionsThisRank;
+  using ds_const_iterator = viskores::cont::PartitionedDataSet::const_iterator;
   for (ds_const_iterator ds_it = pds.cbegin(); ds_it != pds.cend(); ++ds_it)
   {
-    ds_it->GetCellSet().CastAndCallForTypes<vtkm::cont::CellSetListStructured>(
+    ds_it->GetCellSet().CastAndCallForTypes<viskores::cont::CellSetListStructured>(
       [&globalPointDimensionsThisRank](const auto& css) {
         globalPointDimensionsThisRank.resize(css.Dimension, -1);
-        for (vtkm::IdComponent d = 0; d < css.Dimension; ++d)
+        for (viskores::IdComponent d = 0; d < css.Dimension; ++d)
         {
           globalPointDimensionsThisRank[d] =
             std::max(globalPointDimensionsThisRank[d],
@@ -93,20 +93,20 @@ static void ComputeGlobalPointSize(vtkm::cont::PartitionedDataSet& pds)
   }
 
   // Perform global reduction to find GlobalPointDimensions across all ranks
-  std::vector<vtkm::Id> globalPointDimensions;
-  auto comm = vtkm::cont::EnvironmentTracker::GetCommunicator();
-  vtkmdiy::mpi::all_reduce(
-    comm, globalPointDimensionsThisRank, globalPointDimensions, vtkmdiy::mpi::maximum<vtkm::Id>{});
+  std::vector<viskores::Id> globalPointDimensions;
+  auto comm = viskores::cont::EnvironmentTracker::GetCommunicator();
+  viskoresdiy::mpi::all_reduce(
+    comm, globalPointDimensionsThisRank, globalPointDimensions, viskoresdiy::mpi::maximum<viskores::Id>{});
 
   // Set this information in all cell sets
-  using ds_iterator = vtkm::cont::PartitionedDataSet::iterator;
+  using ds_iterator = viskores::cont::PartitionedDataSet::iterator;
   for (ds_iterator ds_it = pds.begin(); ds_it != pds.end(); ++ds_it)
   {
     // This does not work, i.e., it does not really change the cell set for the DataSet
-    ds_it->GetCellSet().CastAndCallForTypes<vtkm::cont::CellSetListStructured>(
+    ds_it->GetCellSet().CastAndCallForTypes<viskores::cont::CellSetListStructured>(
       [&globalPointDimensions, &ds_it](auto& css) {
         typename std::remove_reference_t<decltype(css)>::SchedulingRangeType gpd;
-        for (vtkm::IdComponent d = 0; d < css.Dimension; ++d)
+        for (viskores::IdComponent d = 0; d < css.Dimension; ++d)
         {
           gpd[d] = globalPointDimensions[d];
         }
@@ -121,8 +121,8 @@ static void ComputeGlobalPointSize(vtkm::cont::PartitionedDataSet& pds)
 #ifdef VTKH_PARALLEL
 #include <mpi.h>
 
-// This is from VTK-m diy mpi_cast.hpp. Need the make_DIY_MPI_Comm
-namespace vtkmdiy
+// This is from Viskores diy mpi_cast.hpp. Need the make_DIY_MPI_Comm
+namespace viskoresdiy
 {
 namespace mpi
 {
@@ -145,13 +145,13 @@ namespace vtkh
 {
 
   template<typename T, typename S>
-  void PrintArrayHandle( const vtkm::cont::ArrayHandle<T, S> &a, const char *name )
+  void PrintArrayHandle( const viskores::cont::ArrayHandle<T, S> &a, const char *name )
   {
-    vtkm::Id s = a.GetNumberOfValues();
+    viskores::Id s = a.GetNumberOfValues();
     auto p = a.ReadPortal();
 
     std::cout << "--- " << name << " - size: " << s << " ---\n";
-    for(vtkm::Id i = 0; i < s ;++i)
+    for(viskores::Id i = 0; i < s ;++i)
     {
       if( p.Get(i) != (T)0 )
         std::cout << p.Get(i) << " ";
@@ -200,43 +200,43 @@ void ContourTree::PostExecute()
 
 struct AnalyzerFunctor
 {
-  vtkm::filter::scalar_topology::ContourTreeAugmented& filter;
+  viskores::filter::scalar_topology::ContourTreeAugmented& filter;
   vtkh::ContourTree& contourTree;
   bool dataFieldIsSorted;
 
   public:
-  AnalyzerFunctor(vtkh::ContourTree& contourTree, vtkm::filter::scalar_topology::ContourTreeAugmented& filter): contourTree(contourTree), filter(filter)  {
+  AnalyzerFunctor(vtkh::ContourTree& contourTree, viskores::filter::scalar_topology::ContourTreeAugmented& filter): contourTree(contourTree), filter(filter)  {
   }
 
   void SetDataFieldIsSorted(bool dataFieldIsSorted) {
      this->dataFieldIsSorted = dataFieldIsSorted;
   }
 
-  void operator()(const vtkm::cont::ArrayHandle<vtkm::Float32> &arr) const
+  void operator()(const viskores::cont::ArrayHandle<viskores::Float32> &arr) const
   {
-     contourTree.analysis<vtkm::Float32>(filter, dataFieldIsSorted, arr);
+     contourTree.analysis<viskores::Float32>(filter, dataFieldIsSorted, arr);
   }
 
-  void operator()(const vtkm::cont::ArrayHandle<vtkm::Float64> &arr) const
+  void operator()(const viskores::cont::ArrayHandle<viskores::Float64> &arr) const
   {
-     contourTree.analysis<vtkm::Float64>(filter, dataFieldIsSorted, arr);
+     contourTree.analysis<viskores::Float64>(filter, dataFieldIsSorted, arr);
   }
 
   template <typename T>
   void operator()(const T&) const
   {
-    throw vtkm::cont::ErrorBadValue("AnalyzerFunctor Expected Float32 or Float64!");
+    throw viskores::cont::ErrorBadValue("AnalyzerFunctor Expected Float32 or Float64!");
   }
 };
 
-template<typename DataValueType> void ContourTree::analysis(vtkm::filter::scalar_topology::ContourTreeAugmented& filter,  bool dataFieldIsSorted, const vtkm::cont::UnknownArrayHandle& arr)
+template<typename DataValueType> void ContourTree::analysis(viskores::filter::scalar_topology::ContourTreeAugmented& filter,  bool dataFieldIsSorted, const viskores::cont::UnknownArrayHandle& arr)
 {
   std::vector<DataValueType> iso_values;
 
   DataValueType eps = 0.00001;        // Error away from critical point
-  vtkm::Id numComp = m_levels + 1;    // Number of components the tree should be simplified to
-  vtkm::Id contourType = 0;           // Approach to be used to select contours based on the tree
-  vtkm::Id contourSelectMethod = 0;   // Method to be used to compute the relevant iso values
+  viskores::Id numComp = m_levels + 1;    // Number of components the tree should be simplified to
+  viskores::Id contourType = 0;           // Approach to be used to select contours based on the tree
+  viskores::Id contourSelectMethod = 0;   // Method to be used to compute the relevant iso values
   bool usePersistenceSorter = true;
 
   // Compute the branch decomposition
@@ -280,15 +280,15 @@ template<typename DataValueType> void ContourTree::analysis(vtkm::filter::scalar
       branchParent);             // (output)
 
   // This is from ContourTree.h
-  using IdArrayType = vtkm::cont::ArrayHandle<vtkm::Id>;
+  using IdArrayType = viskores::cont::ArrayHandle<viskores::Id>;
 
   // Create explicit representation of the branch decompostion from the array representation
-  using ValueArray = vtkm::cont::ArrayHandle<DataValueType>;
+  using ValueArray = viskores::cont::ArrayHandle<DataValueType>;
   ValueArray dataField;
 
   arr.AsArrayHandle(dataField);
 
-  using BranchType = vtkm::worklet::contourtree_augmented::process_contourtree_inc::Branch<DataValueType>;
+  using BranchType = viskores::worklet::contourtree_augmented::process_contourtree_inc::Branch<DataValueType>;
 
   BranchType* branchDecompostionRoot = caugmented_ns::ProcessContourTree::ComputeBranchDecomposition<DataValueType>(
       filter.GetContourTree().Superparents,
@@ -305,7 +305,7 @@ template<typename DataValueType> void ContourTree::analysis(vtkm::filter::scalar
 
   // Simplify the contour tree of the branch decompostion
   branchDecompostionRoot->SimplifyToSize(numComp, usePersistenceSorter);
-  using PLFType = vtkm::worklet::contourtree_augmented::process_contourtree_inc::PiecewiseLinearFunction<DataValueType>;
+  using PLFType = viskores::worklet::contourtree_augmented::process_contourtree_inc::PiecewiseLinearFunction<DataValueType>;
 
   // Compute the relevant iso-values
   switch(contourSelectMethod)
@@ -350,7 +350,7 @@ void ContourTree::DoExecute()
 
   // make sure we have a node-centered field
   bool valid_field = false;
-  bool is_cell_assoc = m_input->GetFieldAssociation(m_field_name, valid_field) == vtkm::cont::Field::Association::Cells;
+  bool is_cell_assoc = m_input->GetFieldAssociation(m_field_name, valid_field) == viskores::cont::Field::Association::Cells;
   bool delete_input = false;
   bool do_recenter = true;
   if(do_recenter && valid_field && is_cell_assoc)
@@ -358,7 +358,7 @@ void ContourTree::DoExecute()
     Recenter recenter;
     recenter.SetInput(m_input);
     recenter.SetField(m_field_name);
-    recenter.SetResultAssoc(vtkm::cont::Field::Association::Points);
+    recenter.SetResultAssoc(viskores::cont::Field::Association::Points);
     recenter.Update();
     m_input = recenter.GetOutput();
     delete_input = true;
@@ -391,8 +391,8 @@ void ContourTree::DoExecute()
   assert(num_domains == 1);
 
 #ifndef VTKH_PARALLEL
-  vtkm::cont::DataSet inDataSet;
-  vtkm::Id domain_id;
+  viskores::cont::DataSet inDataSet;
+  viskores::Id domain_id;
 
   this->m_input->GetDomain(0, inDataSet, domain_id);
   this->m_output->AddDomain(inDataSet, domain_id);
@@ -400,17 +400,17 @@ void ContourTree::DoExecute()
 #else // VTKH_PARALLEL
   int mpi_size;
 
-  // Setup VTK-h and VTK-m comm.
+  // Setup VTK-h and Viskores comm.
   MPI_Comm mpi_comm = MPI_Comm_f2c(vtkh::GetMPICommHandle());
-  vtkm::cont::EnvironmentTracker::SetCommunicator(vtkmdiy::mpi::communicator(vtkmdiy::mpi::make_DIY_MPI_Comm(mpi_comm)));
+  viskores::cont::EnvironmentTracker::SetCommunicator(viskoresdiy::mpi::communicator(viskoresdiy::mpi::make_DIY_MPI_Comm(mpi_comm)));
 
   MPI_Comm_size(mpi_comm, &mpi_size);
   MPI_Comm_rank(mpi_comm, &mpi_rank);
 
-  vtkm::cont::PartitionedDataSet inDataSet;
+  viskores::cont::PartitionedDataSet inDataSet;
 
-  vtkm::Id domain_id;
-  vtkm::cont::DataSet dom;
+  viskores::Id domain_id;
+  viskores::cont::DataSet dom;
 
   this->m_input->GetDomain(0, dom, domain_id);
   inDataSet.AppendPartition(dom);
@@ -432,7 +432,7 @@ void ContourTree::DoExecute()
   bool computeRegularStructure = true;
 
   //Convert the mesh of values into contour tree, pairs of vertex ids
-  vtkm::filter::scalar_topology::ContourTreeAugmented filter(useMarchingCubes, computeRegularStructure);
+  viskores::filter::scalar_topology::ContourTreeAugmented filter(useMarchingCubes, computeRegularStructure);
 
   filter.SetActiveField(m_field_name);
 
@@ -450,24 +450,24 @@ void ContourTree::DoExecute()
 
 #ifndef VTKH_PARALLEL
     analyzerFunctor.SetDataFieldIsSorted(false);
-    vtkm::cont::CastAndCall(inDataSet.GetField(m_field_name).GetData(), analyzerFunctor);
+    viskores::cont::CastAndCall(inDataSet.GetField(m_field_name).GetData(), analyzerFunctor);
 #else
     if(mpi_size == 1)
     {
       analyzerFunctor.SetDataFieldIsSorted(false);
-      vtkm::cont::CastAndCall(inDataSet.GetPartitions()[0].GetField(m_field_name).GetData(), analyzerFunctor);
+      viskores::cont::CastAndCall(inDataSet.GetPartitions()[0].GetField(m_field_name).GetData(), analyzerFunctor);
     } else {
       analyzerFunctor.SetDataFieldIsSorted(true);
 
       /*
       if( result.GetPartitions()[0].GetNumberOfFields() > 1 ) {
-        vtkm::cont::CastAndCall(result.GetPartitions()[0].GetField("values").GetData(), analyzerFunctor);
+        viskores::cont::CastAndCall(result.GetPartitions()[0].GetField("values").GetData(), analyzerFunctor);
       } else {
-        vtkm::cont::CastAndCall(result.GetPartitions()[0].GetField(0).GetData(), analyzerFunctor);
+        viskores::cont::CastAndCall(result.GetPartitions()[0].GetField(0).GetData(), analyzerFunctor);
       }*/
 
       // TODO TO BE REVISITED. Tested with: srun -n 8 ./t_vtk-h_contour_tree_par 
-      vtkm::cont::CastAndCall(result.GetPartitions()[0].GetField("resultData").GetData(), analyzerFunctor);
+      viskores::cont::CastAndCall(result.GetPartitions()[0].GetField("resultData").GetData(), analyzerFunctor);
     }
 #endif // VTKH_PARALLEL
   } // mpi_rank == 0

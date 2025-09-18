@@ -1,19 +1,19 @@
-#ifndef VTK_H_VTKM_COMPOSITEVECTOR_HPP
-#define VTK_H_VTKM_COMPOSITEVECTOR_HPP
+#ifndef VTK_H_VISKORES_COMPOSITEVECTOR_HPP
+#define VTK_H_VISKORES_COMPOSITEVECTOR_HPP
 
-#include <vtkm/cont/DataSet.h>
-#include <vtkm/filter/field_transform/CompositeVectors.h>
+#include <viskores/cont/DataSet.h>
+#include <viskores/filter/field_transform/CompositeVectors.h>
 
 namespace vtkh
 {
 
-class vtkmCompositeVector
+class viskoresCompositeVector
 {
 public:
-  vtkm::cont::DataSet Run(vtkm::cont::DataSet &input,
+  viskores::cont::DataSet Run(viskores::cont::DataSet &input,
                           std::vector<std::string> input_field_names,
                           std::string output_field_name,
-			  vtkm::cont::Field::Association assoc);
+			  viskores::cont::Field::Association assoc);
 };
 }
 #endif

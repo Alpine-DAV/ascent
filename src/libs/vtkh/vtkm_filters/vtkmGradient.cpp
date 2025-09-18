@@ -1,17 +1,17 @@
-#include "vtkmGradient.hpp"
-#include <vtkm/filter/vector_analysis/Gradient.h>
+#include "viskoresGradient.hpp"
+#include <viskores/filter/vector_analysis/Gradient.h>
 
 namespace vtkh
 {
 
 
-vtkm::cont::DataSet
-vtkmGradient::Run(vtkm::cont::DataSet &input,
+viskores::cont::DataSet
+viskoresGradient::Run(viskores::cont::DataSet &input,
                   std::string field_name,
                   GradientParameters params,
-                  vtkm::filter::FieldSelection map_fields)
+                  viskores::filter::FieldSelection map_fields)
 {
-  vtkm::filter::vector_analysis::Gradient grad;
+  viskores::filter::vector_analysis::Gradient grad;
   grad.SetOutputFieldName(params.output_name);
   grad.SetFieldsToPass(map_fields);
   grad.SetActiveField(field_name);

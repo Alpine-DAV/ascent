@@ -1,15 +1,15 @@
-#include "vtkmClip.hpp"
-#include <vtkm/filter/contour/ClipWithImplicitFunction.h>
+#include "viskoresClip.hpp"
+#include <viskores/filter/contour/ClipWithImplicitFunction.h>
 
 namespace vtkh
 {
-vtkm::cont::DataSet
-vtkmClip::Run(vtkm::cont::DataSet &input,
-              const vtkm::ImplicitFunctionGeneral &func,
+viskores::cont::DataSet
+viskoresClip::Run(viskores::cont::DataSet &input,
+              const viskores::ImplicitFunctionGeneral &func,
               bool invert,
-              vtkm::filter::FieldSelection map_fields)
+              viskores::filter::FieldSelection map_fields)
 {
-  vtkm::filter::contour::ClipWithImplicitFunction clipper;
+  viskores::filter::contour::ClipWithImplicitFunction clipper;
 
   clipper.SetImplicitFunction(func);
   clipper.SetInvertClip(invert);

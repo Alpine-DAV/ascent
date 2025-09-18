@@ -1,10 +1,10 @@
 #include <iostream>
-#include <vtkh/vtkm_filters/vtkmLagrangian.hpp>
+#include <vtkh/viskores_filters/viskoresLagrangian.hpp>
 #include <vtkh/filters/Lagrangian.hpp>
 #include <vtkh/vtkh.hpp>
 #include <vtkh/Error.hpp>
-#include <vtkm/filter/flow/Lagrangian.h>
-#include <vtkm/Particle.h>
+#include <viskores/filter/flow/Lagrangian.h>
+#include <viskores/Particle.h>
 
 namespace vtkh
 {
@@ -66,36 +66,36 @@ Lagrangian::SetCycle(const int &cycle)
 }
 
 void
-Lagrangian::SetBasisParticles(const vtkm::cont::ArrayHandle<vtkm::Particle> &basisParticles)
+Lagrangian::SetBasisParticles(const viskores::cont::ArrayHandle<viskores::Particle> &basisParticles)
 {
 	m_basis_particles = basisParticles;
 }
 
 void
-Lagrangian::SetBasisParticlesOriginal(const vtkm::cont::ArrayHandle<vtkm::Particle> &basisParticlesOriginal)
+Lagrangian::SetBasisParticlesOriginal(const viskores::cont::ArrayHandle<viskores::Particle> &basisParticlesOriginal)
 {
 	m_basis_particles_original = basisParticlesOriginal;
 }
 
 void
-Lagrangian::SetBasisParticleValidity(const vtkm::cont::ArrayHandle<vtkm::Id> &basisParticleValidity)
+Lagrangian::SetBasisParticleValidity(const viskores::cont::ArrayHandle<viskores::Id> &basisParticleValidity)
 {
 	m_basis_particle_validity = basisParticleValidity;
 }
 
-vtkm::cont::ArrayHandle<vtkm::Particle>
+viskores::cont::ArrayHandle<viskores::Particle>
 Lagrangian::GetBasisParticles()
 {
 	return m_basis_particles;
 }
 
-vtkm::cont::ArrayHandle<vtkm::Particle>
+viskores::cont::ArrayHandle<viskores::Particle>
 Lagrangian::GetBasisParticlesOriginal()
 {
 	return m_basis_particles_original;
 }
 
-vtkm::cont::ArrayHandle<vtkm::Id>
+viskores::cont::ArrayHandle<viskores::Id>
 Lagrangian::GetBasisParticleValidity()
 {
 	return m_basis_particle_validity;
@@ -117,7 +117,7 @@ void Lagrangian::PostExecute()
 
 void Lagrangian::DoExecute()
 {
-  vtkmLagrangian lagrangianFilter;
+  viskoresLagrangian lagrangianFilter;
 
   this->m_output = new DataSet();
   int cycle = this->m_input->GetCycle();
@@ -125,17 +125,17 @@ void Lagrangian::DoExecute()
   const int num_domains = this->m_input->GetNumberOfDomains();
   for(int i = 0; i < num_domains; ++i)
   {
-    vtkm::Id domain_id;
-    vtkm::cont::DataSet dom;
+    viskores::Id domain_id;
+    viskores::cont::DataSet dom;
     this->m_input->GetDomain(i, dom, domain_id);
     if(dom.HasField(m_field_name))
     {
-      using vectorField_d = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64, 3>>;
-      using vectorField_f = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32, 3>>;
+      using vectorField_d = viskores::cont::ArrayHandle<viskores::Vec<viskores::Float64, 3>>;
+      using vectorField_f = viskores::cont::ArrayHandle<viskores::Vec<viskores::Float32, 3>>;
       auto field = dom.GetField(m_field_name).GetData();
       if(!field.IsType<vectorField_d>() && !field.IsType<vectorField_f>())
       {
-        throw Error("Vector field type does not match <vtkm::Vec<vtkm::Float32,3>> or <vtkm::Vec<vtkm::Float64,3>>");
+        throw Error("Vector field type does not match <viskores::Vec<viskores::Float32,3>> or <viskores::Vec<viskores::Float64,3>>");
       }
     }
     else
@@ -143,7 +143,7 @@ void Lagrangian::DoExecute()
       throw Error("Domain does not contain specified vector field for Lagrangian analysis.");
     }
 
-    vtkm::cont::DataSet extractedBasis = lagrangianFilter.Run(dom,
+    viskores::cont::DataSet extractedBasis = lagrangianFilter.Run(dom,
                                                               m_field_name,
                                                               m_step_size,
                                                               m_write_frequency,

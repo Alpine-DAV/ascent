@@ -11,7 +11,7 @@
 ///
 //-----------------------------------------------------------------------------
 
-#include "ascent_runtime_conduit_to_vtkm_parsing.hpp"
+#include "ascent_runtime_conduit_to_viskores_parsing.hpp"
 
 #include <ascent_logging.hpp>
 #include <ascent_logging_old.hpp>
@@ -57,16 +57,16 @@ bool string_equal(const std::string& str1, const std::string& str2)
   return true;
 }
 
-double zoom_to_vtkm_zoom(double in_zoom)
+double zoom_to_viskores_zoom(double in_zoom)
 {
-  // vtkm is weird. increasing the value of zoom, zooms out.
+  // viskores is weird. increasing the value of zoom, zooms out.
   // we dont want that, so we have to convert what normal
-  // people think of zoom into what vtkm wants.
-  // vtkm zoom factor = pow(4.0, zoom)
-  // log4 factor = vtkm_zoom
+  // people think of zoom into what viskores wants.
+  // viskores zoom factor = pow(4.0, zoom)
+  // log4 factor = viskores_zoom
   // Ascent't input expects a zoom factor, ie 1= nozoom
-  double vtkm_zoom = log(in_zoom) / log(4.0);
-  return vtkm_zoom;
+  double viskores_zoom = log(in_zoom) / log(4.0);
+  return viskores_zoom;
 }
 
 void
@@ -90,9 +90,9 @@ parse_image_dims(const conduit::Node &node, int &width, int &height)
 
 //-----------------------------------------------------------------------------
 void
-parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera)
+parse_camera(const conduit::Node camera_node, viskores::rendering::Camera &camera)
 {
-  typedef vtkm::Vec<vtkm::Float32,3> vtkmVec3f;
+  typedef viskores::Vec<viskores::Float32,3> viskoresVec3f;
 
   //
   // Get the optional camera parameters
@@ -119,7 +119,7 @@ parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera)
       conduit::Node n;
       camera_node["look_at"].to_float64_array(n);
       const float64 *coords = n.as_float64_ptr();
-      vtkmVec3f look_at(coords[0], coords[1], coords[2]);
+      viskoresVec3f look_at(coords[0], coords[1], coords[2]);
       camera.SetLookAt(look_at);
   }
 
@@ -128,7 +128,7 @@ parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera)
       conduit::Node n;
       camera_node["position"].to_float64_array(n);
       const float64 *coords = n.as_float64_ptr();
-      vtkmVec3f position(coords[0], coords[1], coords[2]);
+      viskoresVec3f position(coords[0], coords[1], coords[2]);
       camera.SetPosition(position);
   }
 
@@ -137,8 +137,8 @@ parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera)
       conduit::Node n;
       camera_node["up"].to_float64_array(n);
       const float64 *coords = n.as_float64_ptr();
-      vtkmVec3f up(coords[0], coords[1], coords[2]);
-      vtkm::Normalize(up);
+      viskoresVec3f up(coords[0], coords[1], coords[2]);
+      viskores::Normalize(up);
       camera.SetViewUp(up);
   }
 
@@ -149,8 +149,8 @@ parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera)
 
   if(camera_node.has_child("xpan") || camera_node.has_child("ypan"))
   {
-      vtkm::Float64 xpan = 0.;
-      vtkm::Float64 ypan = 0.;
+      viskores::Float64 xpan = 0.;
+      viskores::Float64 ypan = 0.;
       if(camera_node.has_child("xpan")) xpan = camera_node["xpan"].to_float64();
       if(camera_node.has_child("ypan")) xpan = camera_node["ypan"].to_float64();
       camera.Pan(xpan, ypan);
@@ -159,7 +159,7 @@ parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera)
   if(camera_node.has_child("zoom"))
   {
       double zoom = camera_node["zoom"].to_float64();
-      camera.Zoom(zoom_to_vtkm_zoom(zoom));
+      camera.Zoom(zoom_to_viskores_zoom(zoom));
   }
   //
   // With a new potential camera position. We need to reset the
@@ -168,14 +168,14 @@ parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera)
 
   if(camera_node.has_child("near_plane"))
   {
-      vtkm::Range clipping_range = camera.GetClippingRange();
+      viskores::Range clipping_range = camera.GetClippingRange();
       clipping_range.Min = camera_node["near_plane"].to_float64();
       camera.SetClippingRange(clipping_range);
   }
 
   if(camera_node.has_child("far_plane"))
   {
-      vtkm::Range clipping_range = camera.GetClippingRange();
+      viskores::Range clipping_range = camera.GetClippingRange();
       clipping_range.Max = camera_node["far_plane"].to_float64();
       camera.SetClippingRange(clipping_range);
   }
@@ -183,12 +183,12 @@ parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera)
   // this is an offset from the current azimuth
   if(camera_node.has_child("azimuth"))
   {
-      vtkm::Float64 azimuth = camera_node["azimuth"].to_float64();
+      viskores::Float64 azimuth = camera_node["azimuth"].to_float64();
       camera.Azimuth(azimuth);
   }
   if(camera_node.has_child("elevation"))
   {
-      vtkm::Float64 elevation = camera_node["elevation"].to_float64();
+      viskores::Float64 elevation = camera_node["elevation"].to_float64();
       camera.Elevation(elevation);
   }
 }
@@ -202,7 +202,7 @@ bool is_valid_name(const std::string &name)
     lower_name += std::tolower(name[i]);
   }
 
-  std::set<std::string> presets = vtkm::cont::ColorTable::GetPresets();
+  std::set<std::string> presets = viskores::cont::ColorTable::GetPresets();
   bool valid = false;
   for( auto s : presets)
   {
@@ -216,7 +216,7 @@ bool is_valid_name(const std::string &name)
   return valid;
 }
 //-----------------------------------------------------------------------------
-vtkm::cont::ColorTable
+viskores::cont::ColorTable
 parse_color_table(const conduit::Node &color_table_node)
 {
   // default name
@@ -244,7 +244,7 @@ parse_color_table(const conduit::Node &color_table_node)
     }
   }
 
-  vtkm::cont::ColorTable color_table(color_map_name);
+  viskores::cont::ColorTable color_table(color_map_name);
 
   if(color_table_node.has_child("control_points"))
   {
@@ -307,7 +307,7 @@ parse_color_table(const conduit::Node &color_table_node)
                 peg["color"].to_float64_array(n);
                 const float64 *color = n.as_float64_ptr();
 
-                vtkm::Vec<vtkm::Float64,3> ecolor(color[0], color[1], color[2]);
+                viskores::Vec<viskores::Float64,3> ecolor(color[0], color[1], color[2]);
 
                 for(int i = 0; i < 3; ++i)
                 {
@@ -366,7 +366,7 @@ parse_color_table(const conduit::Node &color_table_node)
 
         for(index_t i=0; i<r_vals.number_of_elements();i++)
         {
-            vtkm::Vec<vtkm::Float64,3> ecolor(r_vals[i], g_vals[i], b_vals[i]);
+            viskores::Vec<viskores::Float64,3> ecolor(r_vals[i], g_vals[i], b_vals[i]);
 
             for(int i = 0; i < 3; ++i)
             {

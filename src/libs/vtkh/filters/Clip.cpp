@@ -2,11 +2,11 @@
 
 #include <vtkh/filters/CleanGrid.hpp>
 #include <vtkh/filters/IsoVolume.hpp>
-#include <vtkh/vtkm_filters/vtkmClip.hpp>
-#include <vtkm/ImplicitFunction.h>
+#include <vtkh/viskores_filters/viskoresClip.hpp>
+#include <viskores/ImplicitFunction.h>
 
-#include <vtkm/worklet/DispatcherMapField.h>
-#include <vtkm/worklet/WorkletMapField.h>
+#include <viskores/worklet/DispatcherMapField.h>
+#include <viskores/worklet/WorkletMapField.h>
 
 namespace vtkh
 {
@@ -14,12 +14,12 @@ namespace vtkh
 namespace detail
 {
 
-class MultiPlane : public vtkm::internal::ImplicitFunctionBase<MultiPlane>
+class MultiPlane : public viskores::internal::ImplicitFunctionBase<MultiPlane>
 {
 public:
   MultiPlane() = default;
 
-  VTKM_EXEC_CONT MultiPlane(const Vector points[3],
+  VISKORES_EXEC_CONT MultiPlane(const Vector points[3],
                             const Vector normals[3],
                             const int num_planes)
   {
@@ -27,68 +27,68 @@ public:
     this->m_num_planes = num_planes;
   }
 
-  VTKM_EXEC void SetPlanes(const Vector points[6], const Vector normals[6])
+  VISKORES_EXEC void SetPlanes(const Vector points[6], const Vector normals[6])
   {
-    for (vtkm::Id index : { 0, 1, 2})
+    for (viskores::Id index : { 0, 1, 2})
     {
       this->Points[index] = points[index];
     }
-    for (vtkm::Id index : { 0, 1, 2})
+    for (viskores::Id index : { 0, 1, 2})
     {
       this->Normals[index] = normals[index];
     }
   }
 
-  VTKM_EXEC void SetPlane(int idx, const Vector& point, const Vector& normal)
+  VISKORES_EXEC void SetPlane(int idx, const Vector& point, const Vector& normal)
   {
-    VTKM_ASSERT((idx >= 0) && (idx < 3));
+    VISKORES_ASSERT((idx >= 0) && (idx < 3));
     this->Points[idx] = point;
     this->Normals[idx] = normal;
   }
 
-  VTKM_EXEC_CONT void SetNumPlanes(const int &num)
+  VISKORES_EXEC_CONT void SetNumPlanes(const int &num)
   {
     this->m_num_planes = num;
   }
 
-  VTKM_EXEC_CONT void GetPlanes(Vector points[3], Vector normals[3]) const
+  VISKORES_EXEC_CONT void GetPlanes(Vector points[3], Vector normals[3]) const
   {
-    for (vtkm::Id index : { 0, 1, 2})
+    for (viskores::Id index : { 0, 1, 2})
     {
       points[index] = this->Points[index];
     }
-    for (vtkm::Id index : { 0, 1, 2})
+    for (viskores::Id index : { 0, 1, 2})
     {
       normals[index] = this->Normals[index];
     }
   }
 
-  VTKM_EXEC_CONT const Vector* GetPoints() const { return this->Points; }
+  VISKORES_EXEC_CONT const Vector* GetPoints() const { return this->Points; }
 
-  VTKM_EXEC_CONT const Vector* GetNormals() const { return this->Normals; }
+  VISKORES_EXEC_CONT const Vector* GetNormals() const { return this->Normals; }
 
-  VTKM_EXEC_CONT Scalar Value(const Vector& point) const
+  VISKORES_EXEC_CONT Scalar Value(const Vector& point) const
   {
-    Scalar maxVal = vtkm::NegativeInfinity<Scalar>();
-    for (vtkm::Id index = 0; index < this->m_num_planes; ++index)
+    Scalar maxVal = viskores::NegativeInfinity<Scalar>();
+    for (viskores::Id index = 0; index < this->m_num_planes; ++index)
     {
       const Vector& p = this->Points[index];
       const Vector& n = this->Normals[index];
-      const Scalar val = vtkm::Dot(point - p, n);
-      maxVal = vtkm::Max(maxVal, val);
+      const Scalar val = viskores::Dot(point - p, n);
+      maxVal = viskores::Max(maxVal, val);
     }
     return maxVal;
   }
 
-  VTKM_EXEC_CONT Vector Gradient(const Vector& point) const
+  VISKORES_EXEC_CONT Vector Gradient(const Vector& point) const
   {
-    Scalar maxVal = vtkm::NegativeInfinity<Scalar>();
-    vtkm::Id maxValIdx = 0;
-    for (vtkm::Id index = 0; index < this->m_num_planes; ++index)
+    Scalar maxVal = viskores::NegativeInfinity<Scalar>();
+    viskores::Id maxValIdx = 0;
+    for (viskores::Id index = 0; index < this->m_num_planes; ++index)
     {
       const Vector& p = this->Points[index];
       const Vector& n = this->Normals[index];
-      Scalar val = vtkm::Dot(point - p, n);
+      Scalar val = viskores::Dot(point - p, n);
       if (val > maxVal)
       {
         maxVal = val;
@@ -108,12 +108,12 @@ private:
   int m_num_planes = 3;
 };
 
-class MultiPlaneField : public vtkm::worklet::WorkletMapField
+class MultiPlaneField : public viskores::worklet::WorkletMapField
 {
 protected:
   MultiPlane m_multi_plane;
 public:
-  VTKM_CONT
+  VISKORES_CONT
   MultiPlaneField(MultiPlane &multi_plane)
     : m_multi_plane(multi_plane)
   {
@@ -123,8 +123,8 @@ public:
   typedef void ExecutionSignature(_1, _2);
 
   template<typename T>
-  VTKM_EXEC
-  void operator()(const vtkm::Vec<T,3> &point, vtkm::Float32& distance) const
+  VISKORES_EXEC
+  void operator()(const viskores::Vec<T,3> &point, viskores::Float32& distance) const
   {
     distance = m_multi_plane.Value(point);
   }
@@ -134,7 +134,7 @@ public:
 
 struct Clip::InternalsType
 {
-  vtkm::ImplicitFunctionGeneral m_func;
+  viskores::ImplicitFunctionGeneral m_func;
   detail::MultiPlane m_multi_plane;
   InternalsType()
   {}
@@ -160,10 +160,10 @@ Clip::SetInvertClip(bool invert)
 }
 
 void
-Clip::SetBoxClip(const vtkm::Bounds &clipping_bounds)
+Clip::SetBoxClip(const viskores::Bounds &clipping_bounds)
 {
   m_do_multi_plane = false;
-  auto box = vtkm::Box({ clipping_bounds.X.Min,
+  auto box = viskores::Box({ clipping_bounds.X.Min,
                          clipping_bounds.Y.Min,
                          clipping_bounds.Z.Min},
                        { clipping_bounds.X.Max,
@@ -177,13 +177,13 @@ void
 Clip::SetSphereClip(const double center[3], const double radius)
 {
   m_do_multi_plane = false;
-  vtkm::Vec<vtkm::FloatDefault,3> vec_center;
+  viskores::Vec<viskores::FloatDefault,3> vec_center;
   vec_center[0] = center[0];
   vec_center[1] = center[1];
   vec_center[2] = center[2];
-  vtkm::FloatDefault r = radius;
+  viskores::FloatDefault r = radius;
 
-  auto sphere = vtkm::Sphere(vec_center, r);
+  auto sphere = viskores::Sphere(vec_center, r);
   m_internals->m_func = sphere;
 }
 
@@ -193,19 +193,19 @@ Clip::SetCylinderClip(const double center[3],
                       const double radius)
 {
   m_do_multi_plane = false;
-  vtkm::Vec<vtkm::FloatDefault,3> vec_center;
+  viskores::Vec<viskores::FloatDefault,3> vec_center;
   vec_center[0] = center[0];
   vec_center[1] = center[1];
   vec_center[2] = center[2];
 
-  vtkm::Vec<vtkm::FloatDefault,3> vec_axis;
+  viskores::Vec<viskores::FloatDefault,3> vec_axis;
   vec_axis[0] = axis[0];
   vec_axis[1] = axis[1];
   vec_axis[2] = axis[2];
 
-  vtkm::FloatDefault r = radius;
+  viskores::FloatDefault r = radius;
 
-  auto cylinder = vtkm::Cylinder(vec_center, vec_axis, r);
+  auto cylinder = viskores::Cylinder(vec_center, vec_axis, r);
   m_internals->m_func = cylinder;
 }
 
@@ -213,17 +213,17 @@ void
 Clip::SetPlaneClip(const double origin[3], const double normal[3])
 {
   m_do_multi_plane = false;
-  vtkm::Vec<vtkm::FloatDefault,3> vec_origin;
+  viskores::Vec<viskores::FloatDefault,3> vec_origin;
   vec_origin[0] = origin[0];
   vec_origin[1] = origin[1];
   vec_origin[2] = origin[2];
 
-  vtkm::Vec<vtkm::FloatDefault,3> vec_normal;
+  viskores::Vec<viskores::FloatDefault,3> vec_normal;
   vec_normal[0] = normal[0];
   vec_normal[1] = normal[1];
   vec_normal[2] = normal[2];
 
-  auto plane = vtkm::Plane(vec_origin, vec_normal);
+  auto plane = viskores::Plane(vec_origin, vec_normal);
   m_internals->m_func = plane;
 }
 
@@ -234,7 +234,7 @@ Clip::Set2PlaneClip(const double origin1[3],
                     const double normal2[3])
 {
   m_do_multi_plane = true;
-  vtkm::Vec3f plane_points[3];
+  viskores::Vec3f plane_points[3];
   plane_points[0][0] = float(origin1[0]);
   plane_points[0][1] = float(origin1[1]);
   plane_points[0][2] = float(origin1[2]);
@@ -247,7 +247,7 @@ Clip::Set2PlaneClip(const double origin1[3],
   plane_points[2][1] = 0.f;
   plane_points[2][2] = 0.f;
 
-  vtkm::Vec3f plane_normals[3];
+  viskores::Vec3f plane_normals[3];
   plane_normals[0][0] = float(normal1[0]);
   plane_normals[0][1] = float(normal1[1]);
   plane_normals[0][2] = float(normal1[2]);
@@ -260,8 +260,8 @@ Clip::Set2PlaneClip(const double origin1[3],
   plane_normals[2][1] = 0.f;
   plane_normals[2][2] = 0.f;
 
-  vtkm::Normalize(plane_normals[0]);
-  vtkm::Normalize(plane_normals[1]);
+  viskores::Normalize(plane_normals[0]);
+  viskores::Normalize(plane_normals[1]);
 
   auto planes
     = detail::MultiPlane(plane_points, plane_normals, 2);
@@ -277,7 +277,7 @@ Clip::Set3PlaneClip(const double origin1[3],
                     const double normal3[3])
 {
   m_do_multi_plane = true;
-  vtkm::Vec3f plane_points[3];
+  viskores::Vec3f plane_points[3];
   plane_points[0][0] = float(origin1[0]);
   plane_points[0][1] = float(origin1[1]);
   plane_points[0][2] = float(origin1[2]);
@@ -290,7 +290,7 @@ Clip::Set3PlaneClip(const double origin1[3],
   plane_points[2][1] = float(origin3[1]);
   plane_points[2][2] = float(origin3[2]);
 
-  vtkm::Vec3f plane_normals[3];
+  viskores::Vec3f plane_normals[3];
   plane_normals[0][0] = float(normal1[0]);
   plane_normals[0][1] = float(normal1[1]);
   plane_normals[0][2] = float(normal1[2]);
@@ -303,9 +303,9 @@ Clip::Set3PlaneClip(const double origin1[3],
   plane_normals[2][1] = float(normal3[1]);
   plane_normals[2][2] = float(normal3[2]);
 
-  vtkm::Normalize(plane_normals[0]);
-  vtkm::Normalize(plane_normals[1]);
-  vtkm::Normalize(plane_normals[2]);
+  viskores::Normalize(plane_normals[0]);
+  viskores::Normalize(plane_normals[1]);
+  viskores::Normalize(plane_normals[2]);
 
   auto planes
     = detail::MultiPlane(plane_points, plane_normals, 3);
@@ -339,7 +339,7 @@ void Clip::DoExecute()
   }
   const int num_domains = this->m_input->GetNumberOfDomains();
   // we now have to work around this since
-  // vtkm dropped support for new implicit functions
+  // viskores dropped support for new implicit functions
   if(m_do_multi_plane)
   {
 
@@ -349,26 +349,26 @@ void Clip::DoExecute()
     vtkh::DataSet temp_ds = *(this->m_input);
     for(int i = 0; i < num_domains; ++i)
     {
-      vtkm::cont::DataSet &dom = temp_ds.GetDomain(i);
+      viskores::cont::DataSet &dom = temp_ds.GetDomain(i);
 
-      vtkm::cont::ArrayHandle<vtkm::Float32> clip_field;
-      vtkm::worklet::DispatcherMapField<detail::MultiPlaneField>(detail::MultiPlaneField(m_internals->m_multi_plane))
+      viskores::cont::ArrayHandle<viskores::Float32> clip_field;
+      viskores::worklet::DispatcherMapField<detail::MultiPlaneField>(detail::MultiPlaneField(m_internals->m_multi_plane))
         .Invoke(dom.GetCoordinateSystem().GetData(), clip_field);
 
-      dom.AddField(vtkm::cont::Field(fname,
-                                     vtkm::cont::Field::Association::Points,
+      dom.AddField(viskores::cont::Field(fname,
+                                     viskores::cont::Field::Association::Points,
                                      clip_field));
     } // each domain
 
-    vtkm::Range range;
+    viskores::Range range;
     range.Include(0.);
     if(m_invert)
     {
-      range.Include(vtkm::NegativeInfinity64());
+      range.Include(viskores::NegativeInfinity64());
     }
     else
     {
-      range.Include(vtkm::Infinity64());
+      range.Include(viskores::Infinity64());
     }
     vtkh::IsoVolume isovolume;
     isovolume.SetInput(&temp_ds);
@@ -384,11 +384,11 @@ void Clip::DoExecute()
   {
     for(int i = 0; i < num_domains; ++i)
     {
-      vtkm::Id domain_id;
-      vtkm::cont::DataSet dom;
+      viskores::Id domain_id;
+      viskores::cont::DataSet dom;
       this->m_input->GetDomain(i, dom, domain_id);
 
-      vtkh::vtkmClip clipper;
+      vtkh::viskoresClip clipper;
 
       auto dataset = clipper.Run(dom,
                                  m_internals->m_func,

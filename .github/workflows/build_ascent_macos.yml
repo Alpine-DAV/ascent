@@ -43,5 +43,5 @@ jobs:
         cd install/examples/ascent/using-with-cmake
         cmake -S . -B build
         cmake --build build --verbose -j2
-        export DYLD_LIBRARY_PATH=/home/runner/work/ascent/ascent/install/vtk-m-v2.0.0/lib/:${DYLD_LIBRARY_PATH}
+        export DYLD_LIBRARY_PATH=/home/runner/work/ascent/ascent/install/viskores-v2.0.0/lib/:${DYLD_LIBRARY_PATH}
         ./build/ascent_render_example

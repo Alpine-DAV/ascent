@@ -40,59 +40,59 @@ index 0000000000..8a90495f76
 +Like was done with `Threshold` a while ago, this problem is fixed by deep
 +copying the result into a `CellSetExplicit`. This behavior is consistent
 +with VTK.
-diff --git a/vtkm/filter/entity_extraction/testing/UnitTestExtractGeometryFilter.cxx b/vtkm/filter/entity_extraction/testing/UnitTestExtractGeometryFilter.cxx
+diff --git a/viskores/filter/entity_extraction/testing/UnitTestExtractGeometryFilter.cxx b/viskores/filter/entity_extraction/testing/UnitTestExtractGeometryFilter.cxx
 index 675df8f77c..14de333666 100644
---- a/vtkm/filter/entity_extraction/testing/UnitTestExtractGeometryFilter.cxx
-+++ b/vtkm/filter/entity_extraction/testing/UnitTestExtractGeometryFilter.cxx
+--- a/viskores/filter/entity_extraction/testing/UnitTestExtractGeometryFilter.cxx
++++ b/viskores/filter/entity_extraction/testing/UnitTestExtractGeometryFilter.cxx
 @@ -11,6 +11,7 @@
- #include <vtkm/cont/testing/MakeTestDataSet.h>
- #include <vtkm/cont/testing/Testing.h>
+ #include <viskores/cont/testing/MakeTestDataSet.h>
+ #include <viskores/cont/testing/Testing.h>
  
-+#include <vtkm/filter/clean_grid/CleanGrid.h>
- #include <vtkm/filter/entity_extraction/ExtractGeometry.h>
++#include <viskores/filter/clean_grid/CleanGrid.h>
+ #include <viskores/filter/entity_extraction/ExtractGeometry.h>
  
- using vtkm::cont::testing::MakeTestDataSet;
+ using viskores::cont::testing::MakeTestDataSet;
 @@ -41,11 +42,21 @@ public:
-     vtkm::cont::DataSet output = extractGeometry.Execute(dataset);
-     VTKM_TEST_ASSERT(test_equal(output.GetNumberOfCells(), 8), "Wrong result for ExtractGeometry");
+     viskores::cont::DataSet output = extractGeometry.Execute(dataset);
+     VISKORES_TEST_ASSERT(test_equal(output.GetNumberOfCells(), 8), "Wrong result for ExtractGeometry");
  
-+    vtkm::filter::clean_grid::CleanGrid cleanGrid;
++    viskores::filter::clean_grid::CleanGrid cleanGrid;
 +    cleanGrid.SetCompactPointFields(true);
 +    cleanGrid.SetMergePoints(false);
-+    vtkm::cont::DataSet cleanOutput = cleanGrid.Execute(output);
++    viskores::cont::DataSet cleanOutput = cleanGrid.Execute(output);
 +
-     vtkm::cont::ArrayHandle<vtkm::Float32> outCellData;
+     viskores::cont::ArrayHandle<viskores::Float32> outCellData;
 -    output.GetField("cellvar").GetData().AsArrayHandle(outCellData);
 +    cleanOutput.GetField("cellvar").GetData().AsArrayHandle(outCellData);
  
-     VTKM_TEST_ASSERT(outCellData.ReadPortal().Get(0) == 21.f, "Wrong cell field data");
-     VTKM_TEST_ASSERT(outCellData.ReadPortal().Get(7) == 42.f, "Wrong cell field data");
+     VISKORES_TEST_ASSERT(outCellData.ReadPortal().Get(0) == 21.f, "Wrong cell field data");
+     VISKORES_TEST_ASSERT(outCellData.ReadPortal().Get(7) == 42.f, "Wrong cell field data");
 +
-+    vtkm::cont::ArrayHandle<vtkm::Float32> outPointData;
++    viskores::cont::ArrayHandle<viskores::Float32> outPointData;
 +    cleanOutput.GetField("pointvar").GetData().AsArrayHandle(outPointData);
-+    VTKM_TEST_ASSERT(outPointData.ReadPortal().Get(0) == 99);
-+    VTKM_TEST_ASSERT(outPointData.ReadPortal().Get(7) == 90);
++    VISKORES_TEST_ASSERT(outPointData.ReadPortal().Get(0) == 99);
++    VISKORES_TEST_ASSERT(outPointData.ReadPortal().Get(7) == 90);
    }
  
    static void TestUniformByBox1()
-diff --git a/vtkm/filter/entity_extraction/worklet/ExtractGeometry.h b/vtkm/filter/entity_extraction/worklet/ExtractGeometry.h
+diff --git a/viskores/filter/entity_extraction/worklet/ExtractGeometry.h b/viskores/filter/entity_extraction/worklet/ExtractGeometry.h
 index 97521335f2..449d7eae60 100644
---- a/vtkm/filter/entity_extraction/worklet/ExtractGeometry.h
-+++ b/vtkm/filter/entity_extraction/worklet/ExtractGeometry.h
+--- a/viskores/filter/entity_extraction/worklet/ExtractGeometry.h
++++ b/viskores/filter/entity_extraction/worklet/ExtractGeometry.h
 @@ -10,11 +10,13 @@
- #ifndef vtkm_m_worklet_ExtractGeometry_h
- #define vtkm_m_worklet_ExtractGeometry_h
+ #ifndef viskores_m_worklet_ExtractGeometry_h
+ #define viskores_m_worklet_ExtractGeometry_h
  
-+#include <vtkm/worklet/CellDeepCopy.h>
- #include <vtkm/worklet/WorkletMapTopology.h>
++#include <viskores/worklet/CellDeepCopy.h>
+ #include <viskores/worklet/WorkletMapTopology.h>
  
- #include <vtkm/cont/Algorithm.h>
- #include <vtkm/cont/ArrayCopy.h>
- #include <vtkm/cont/ArrayHandle.h>
-+#include <vtkm/cont/CellSetExplicit.h>
- #include <vtkm/cont/CellSetPermutation.h>
- #include <vtkm/cont/CoordinateSystem.h>
- #include <vtkm/cont/Invoker.h>
+ #include <viskores/cont/Algorithm.h>
+ #include <viskores/cont/ArrayCopy.h>
+ #include <viskores/cont/ArrayHandle.h>
++#include <viskores/cont/CellSetExplicit.h>
+ #include <viskores/cont/CellSetPermutation.h>
+ #include <viskores/cont/CoordinateSystem.h>
+ #include <viskores/cont/Invoker.h>
 @@ -114,28 +116,13 @@ public:
      }
    };
@@ -100,12 +100,12 @@ index 97521335f2..449d7eae60 100644
 -  ////////////////////////////////////////////////////////////////////////////////////
 -  // Extract cells by ids permutes input data
 -  template <typename CellSetType>
--  vtkm::cont::CellSetPermutation<CellSetType> Run(const CellSetType& cellSet,
--                                                  const vtkm::cont::ArrayHandle<vtkm::Id>& cellIds)
+-  viskores::cont::CellSetPermutation<CellSetType> Run(const CellSetType& cellSet,
+-                                                  const viskores::cont::ArrayHandle<viskores::Id>& cellIds)
 -  {
--    using OutputType = vtkm::cont::CellSetPermutation<CellSetType>;
+-    using OutputType = viskores::cont::CellSetPermutation<CellSetType>;
 -
--    vtkm::cont::ArrayCopy(cellIds, this->ValidCellIds);
+-    viskores::cont::ArrayCopy(cellIds, this->ValidCellIds);
 -
 -    return OutputType(this->ValidCellIds, cellSet);
 -  }
@@ -113,33 +113,33 @@ index 97521335f2..449d7eae60 100644
 -  ////////////////////////////////////////////////////////////////////////////////////
 -  // Extract cells by implicit function permutes input data
    template <typename CellSetType, typename ImplicitFunction>
--  vtkm::cont::CellSetPermutation<CellSetType> Run(const CellSetType& cellSet,
--                                                  const vtkm::cont::CoordinateSystem& coordinates,
+-  viskores::cont::CellSetPermutation<CellSetType> Run(const CellSetType& cellSet,
+-                                                  const viskores::cont::CoordinateSystem& coordinates,
 -                                                  const ImplicitFunction& implicitFunction,
 -                                                  bool extractInside,
 -                                                  bool extractBoundaryCells,
 -                                                  bool extractOnlyBoundaryCells)
-+  vtkm::cont::CellSetExplicit<> Run(const CellSetType& cellSet,
-+                                    const vtkm::cont::CoordinateSystem& coordinates,
++  viskores::cont::CellSetExplicit<> Run(const CellSetType& cellSet,
++                                    const viskores::cont::CoordinateSystem& coordinates,
 +                                    const ImplicitFunction& implicitFunction,
 +                                    bool extractInside,
 +                                    bool extractBoundaryCells,
 +                                    bool extractOnlyBoundaryCells)
    {
      // Worklet output will be a boolean passFlag array
-     vtkm::cont::ArrayHandle<bool> passFlags;
+     viskores::cont::ArrayHandle<bool> passFlags;
 @@ -149,7 +136,10 @@ public:
-     vtkm::cont::Algorithm::CopyIf(indices, passFlags, this->ValidCellIds);
+     viskores::cont::Algorithm::CopyIf(indices, passFlags, this->ValidCellIds);
  
      // generate the cellset
--    return vtkm::cont::CellSetPermutation<CellSetType>(this->ValidCellIds, cellSet);
-+    vtkm::cont::CellSetPermutation<CellSetType> permutedCellSet(this->ValidCellIds, cellSet);
+-    return viskores::cont::CellSetPermutation<CellSetType>(this->ValidCellIds, cellSet);
++    viskores::cont::CellSetPermutation<CellSetType> permutedCellSet(this->ValidCellIds, cellSet);
 +
-+    vtkm::cont::CellSetExplicit<> outputCells;
-+    return vtkm::worklet::CellDeepCopy::Run(permutedCellSet);
++    viskores::cont::CellSetExplicit<> outputCells;
++    return viskores::worklet::CellDeepCopy::Run(permutedCellSet);
    }
  
-   vtkm::cont::ArrayHandle<vtkm::Id> GetValidCellIds() const { return this->ValidCellIds; }
+   viskores::cont::ArrayHandle<viskores::Id> GetValidCellIds() const { return this->ValidCellIds; }
 -- 
 GitLab
 

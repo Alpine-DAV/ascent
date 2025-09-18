@@ -1,16 +1,16 @@
-#include "vtkmGhostCellRemove.hpp"
+#include "viskoresGhostCellRemove.hpp"
 
-#include <vtkm/filter/entity_extraction/GhostCellRemove.h>
+#include <viskores/filter/entity_extraction/GhostCellRemove.h>
 
 namespace vtkh
 {
 
-vtkm::cont::DataSet
-vtkmGhostStripper::Run(vtkm::cont::DataSet &input, std::string ghost_field_name)
+viskores::cont::DataSet
+viskoresGhostStripper::Run(viskores::cont::DataSet &input, std::string ghost_field_name)
 {
   input.SetGhostCellFieldName(ghost_field_name);
 
-  vtkm::filter::entity_extraction::GhostCellRemove ghost_buster;
+  viskores::filter::entity_extraction::GhostCellRemove ghost_buster;
   ghost_buster.SetActiveField(ghost_field_name);
   ghost_buster.SetTypesToRemoveToAll();
   auto output = ghost_buster.Execute(input);

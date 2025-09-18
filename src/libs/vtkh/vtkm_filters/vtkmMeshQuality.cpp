@@ -1,14 +1,14 @@
-#include "vtkmMeshQuality.hpp"
+#include "viskoresMeshQuality.hpp"
 
 namespace vtkh
 {
 
-vtkm::cont::DataSet vtkmMeshQuality::Run(vtkm::cont::DataSet &input,
-                                         vtkm::filter::mesh_info::CellMetric metric,
-                                         vtkm::filter::FieldSelection map_fields)
+viskores::cont::DataSet viskoresMeshQuality::Run(viskores::cont::DataSet &input,
+                                         viskores::filter::mesh_info::CellMetric metric,
+                                         viskores::filter::FieldSelection map_fields)
 
 {
-  vtkm::filter::mesh_info::MeshQuality quali;
+  viskores::filter::mesh_info::MeshQuality quali;
   quali.SetMetric(metric);
   quali.SetFieldsToPass(map_fields);
   auto output = quali.Execute(input);

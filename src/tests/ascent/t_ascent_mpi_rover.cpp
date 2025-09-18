@@ -47,7 +47,7 @@ TEST(ascent_rover, test_xray_mpi_blueprint_braid_uniform_multi_domain)
         ASCENT_INFO("Testing xray extract using MPI on a conduit braid_uniform_multi_domain example mesh\n");
     }
 
-    if (is_vtkm_disabled(is_root))
+    if (is_viskores_disabled(is_root))
     {
         return; // Returning early is equivalent to passing the test
     }
@@ -132,7 +132,7 @@ TEST(ascent_rover, test_xray_mpi_blueprint_braid_uniform_multi_domain_rotated)
         ASCENT_INFO("Testing xray extract using MPI on a conduit braid_uniform_multi_domain example mesh (rotated)\n");
     }
 
-    if (is_vtkm_disabled(is_root))
+    if (is_viskores_disabled(is_root))
     {
         return; // Returning early is equivalent to passing the test
     }
@@ -220,7 +220,7 @@ TEST(ascent_rover, test_xray_mpi_blueprint_braid_uniform_multi_domain_absorption
         ASCENT_INFO("Testing xray extract using MPI on a conduit braid_uniform_multi_domain example mesh (absorption only)\n");
     }
 
-    if (is_vtkm_disabled(is_root))
+    if (is_viskores_disabled(is_root))
     {
         return; // Returning early is equivalent to passing the test
     }
@@ -306,7 +306,7 @@ TEST(ascent_rover, test_xray_mpi_blueprint_braid_uniform_single_domain_multiple_
         ASCENT_INFO("Testing xray extract using MPI on a conduit braid_uniform_single_domain example mesh\n");
     }
 
-    if (is_vtkm_disabled(is_root))
+    if (is_viskores_disabled(is_root))
     {
         return; // Returning early is equivalent to passing the test
     }

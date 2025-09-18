@@ -19,9 +19,9 @@
 
 #include <vtkh/vtkh_exports.h>
 
-#include <vtkm/cont/Algorithm.h>
-#include <vtkm/cont/Timer.h>
-#include <vtkm/rendering/raytracing/MortonCodes.h>
+#include <viskores/cont/Algorithm.h>
+#include <viskores/cont/Timer.h>
+#include <viskores/rendering/raytracing/MortonCodes.h>
 
 namespace vtkh
 {
@@ -36,36 +36,36 @@ public:
   MeshConnectivityBuilder();
   ~MeshConnectivityBuilder();
 
-  VTKM_CONT
-  MeshConnectivityContainer* BuildConnectivity(const vtkm::cont::UnknownCellSet& cellset,
-                                               const vtkm::cont::CoordinateSystem& coordinates);
+  VISKORES_CONT
+  MeshConnectivityContainer* BuildConnectivity(const viskores::cont::UnknownCellSet& cellset,
+                                               const viskores::cont::CoordinateSystem& coordinates);
 
-  VTKM_CONT
-  vtkm::cont::ArrayHandle<vtkm::Id4> ExternalTrianglesStructured(
-    vtkm::cont::CellSetStructured<3>& cellSetStructured);
+  VISKORES_CONT
+  viskores::cont::ArrayHandle<viskores::Id4> ExternalTrianglesStructured(
+    viskores::cont::CellSetStructured<3>& cellSetStructured);
 
-  vtkm::cont::ArrayHandle<vtkm::Id> GetFaceConnectivity();
+  viskores::cont::ArrayHandle<viskores::Id> GetFaceConnectivity();
 
-  vtkm::cont::ArrayHandle<vtkm::Id> GetFaceOffsets();
+  viskores::cont::ArrayHandle<viskores::Id> GetFaceOffsets();
 
-  vtkm::cont::ArrayHandle<vtkm::Id4> GetTriangles();
+  viskores::cont::ArrayHandle<viskores::Id4> GetTriangles();
 
 protected:
-  VTKM_CONT
-  void BuildConnectivity(vtkm::cont::CellSetSingleType<>& cellSetUnstructured,
-                         const vtkm::cont::CoordinateSystem::MultiplexerArrayType& coordinates,
-                         vtkm::Bounds coordsBounds);
+  VISKORES_CONT
+  void BuildConnectivity(viskores::cont::CellSetSingleType<>& cellSetUnstructured,
+                         const viskores::cont::CoordinateSystem::MultiplexerArrayType& coordinates,
+                         viskores::Bounds coordsBounds);
 
-  VTKM_CONT
-  void BuildConnectivity(vtkm::cont::CellSetExplicit<>& cellSetUnstructured,
-                         const vtkm::cont::CoordinateSystem::MultiplexerArrayType& coordinates,
-                         vtkm::Bounds coordsBounds);
+  VISKORES_CONT
+  void BuildConnectivity(viskores::cont::CellSetExplicit<>& cellSetUnstructured,
+                         const viskores::cont::CoordinateSystem::MultiplexerArrayType& coordinates,
+                         viskores::Bounds coordsBounds);
 
-  vtkm::cont::ArrayHandle<vtkm::Id> FaceConnectivity;
-  vtkm::cont::ArrayHandle<vtkm::Id> FaceOffsets;
-  vtkm::cont::ArrayHandle<vtkm::Id4> Triangles;
+  viskores::cont::ArrayHandle<viskores::Id> FaceConnectivity;
+  viskores::cont::ArrayHandle<viskores::Id> FaceOffsets;
+  viskores::cont::ArrayHandle<viskores::Id4> Triangles;
 };
 }
 }
-} //namespace vtkm::rendering::raytracing
+} //namespace viskores::rendering::raytracing
 #endif

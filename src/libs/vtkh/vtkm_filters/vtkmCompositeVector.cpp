@@ -1,14 +1,14 @@
-#include "vtkmCompositeVector.hpp"
+#include "viskoresCompositeVector.hpp"
 
 namespace vtkh
 {
-vtkm::cont::DataSet
-vtkmCompositeVector::Run(vtkm::cont::DataSet &input,
+viskores::cont::DataSet
+viskoresCompositeVector::Run(viskores::cont::DataSet &input,
 	     std::vector<std::string> input_field_names,
 	     const std::string output_field_name,
-	     vtkm::cont::Field::Association assoc)
+	     viskores::cont::Field::Association assoc)
 {
-  vtkm::filter::field_transform::CompositeVectors compvec;
+  viskores::filter::field_transform::CompositeVectors compvec;
   
   compvec.SetFieldNameList(input_field_names, assoc);
   compvec.SetOutputFieldName(output_field_name);

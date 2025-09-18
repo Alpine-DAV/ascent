@@ -1,6 +1,6 @@
 #include <vtkh/filters/PointTransform.hpp>
-#include <vtkm/Transform3D.h>
-#include <vtkh/vtkm_filters/vtkmPointTransform.hpp>
+#include <viskores/Transform3D.h>
+#include <vtkh/viskores_filters/viskoresPointTransform.hpp>
 
 namespace vtkh
 {
@@ -21,7 +21,7 @@ PointTransform::~PointTransform()
 void
 PointTransform::ResetTransform()
 {
-  vtkm::MatrixIdentity(m_transform);
+  viskores::MatrixIdentity(m_transform);
 }
 
 //---------------------------------------------------------------------------//
@@ -30,8 +30,8 @@ PointTransform::SetTranslation(const double& tx,
                                const double& ty,
                                const double& tz)
 {
-  vtkm::Matrix<double,4,4> matrix = vtkm::Transform3DTranslate(tx, ty, tz);
-  m_transform = vtkm::MatrixMultiply(m_transform, matrix);
+  viskores::Matrix<double,4,4> matrix = viskores::Transform3DTranslate(tx, ty, tz);
+  m_transform = viskores::MatrixMultiply(m_transform, matrix);
 }
 
 //---------------------------------------------------------------------------//
@@ -41,11 +41,11 @@ PointTransform::SetRotation(const double& angleDegrees,
                             const double& axisY,
                             const double& axisZ)
 {
-  vtkm::Matrix<double,4,4> matrix = vtkm::Transform3DRotate(angleDegrees,
+  viskores::Matrix<double,4,4> matrix = viskores::Transform3DRotate(angleDegrees,
                                                             axisX,
                                                             axisY,
                                                             axisZ);
-  m_transform = vtkm::MatrixMultiply(m_transform, matrix);
+  m_transform = viskores::MatrixMultiply(m_transform, matrix);
 }
 
 //---------------------------------------------------------------------------//
@@ -81,7 +81,7 @@ PointTransform::SetTransform(const double *matrix_values)
 
 //---------------------------------------------------------------------------//
 void
-PointTransform::SetTransform(const vtkm::Matrix<double, 4, 4>& mtx)
+PointTransform::SetTransform(const viskores::Matrix<double, 4, 4>& mtx)
 {
   m_transform = mtx;
 }
@@ -92,8 +92,8 @@ PointTransform::SetScale(const double& sx,
                          const double& sy,
                          const double& sz)
 {
-  vtkm::Matrix<double,4,4> matrix = vtkm::Transform3DScale(sx, sy, sz);
-  m_transform = vtkm::MatrixMultiply(m_transform, matrix);
+  viskores::Matrix<double,4,4> matrix = viskores::Transform3DScale(sx, sy, sz);
+  m_transform = viskores::MatrixMultiply(m_transform, matrix);
 }
 
 
@@ -106,20 +106,20 @@ PointTransform::SetReflect(const double& axisX,
     // reflect recipe:
     // identify - 2*(normal) * (normal)^T
 
-    vtkm::Vec<vtkm::Float64,3> axis;
+    viskores::Vec<viskores::Float64,3> axis;
     axis[0] = axisX;
     axis[1] = axisY;
     axis[2] = axisZ;
-    vtkm::Normalize(axis);
+    viskores::Normalize(axis);
 
-    vtkm::Matrix<double,4,1> m_n;
+    viskores::Matrix<double,4,1> m_n;
     m_n[0] = axis[0];
     m_n[1] = axis[1];
     m_n[2] = axis[2];
     m_n[3] = 0.0;
 
-    vtkm::Matrix<double,1,4> m_nt   = vtkm::MatrixTranspose(m_n);
-    vtkm::Matrix<double,4,4> matrix = vtkm::MatrixMultiply(m_n, m_nt);
+    viskores::Matrix<double,1,4> m_nt   = viskores::MatrixTranspose(m_n);
+    viskores::Matrix<double,4,4> matrix = viskores::MatrixMultiply(m_n, m_nt);
 
     matrix[0][0] = 1.0 - 2.0 * matrix[0][0];
     matrix[0][1] =     - 2.0 * matrix[0][1];
@@ -170,10 +170,10 @@ PointTransform::DoExecute()
 
   for(int i = 0; i < num_domains; ++i)
   {
-    vtkm::Id domain_id;
-    vtkm::cont::DataSet dom;
+    viskores::Id domain_id;
+    viskores::cont::DataSet dom;
     this->m_input->GetDomain(i, dom, domain_id);
-    vtkmPointTransform transformer;
+    viskoresPointTransform transformer;
     auto dataset = transformer.Run(dom,
                                    m_transform,
                                    this->GetFieldSelection());

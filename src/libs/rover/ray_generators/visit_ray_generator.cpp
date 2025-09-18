@@ -57,28 +57,28 @@ VisitRayGenerator::~VisitRayGenerator()
 
 template<typename T>
 void
-VisitRayGenerator::gen_rays(vtkmRayTracing::Ray<T> &rays)
+VisitRayGenerator::gen_rays(viskoresRayTracing::Ray<T> &rays)
 {
-  vtkmTimer timer;
+  viskoresTimer timer;
   double time = 0;
   ROVER_DATA_OPEN("visit_ray_gen");
   const int64 width = rover::settings["width"].to_int64();
   const int64 height = rover::settings["height"].to_int64();
   const int64 size = width * height;
 
-  // TODO: Do we care about supporting old versions of vtkm? This
+  // TODO: Do we care about supporting old versions of viskores? This
   // makes more sense in the context of being a standalone library
-#if (VTKM_VERSION_MAJOR >= 2) && (VTKM_VERSION_MINOR >= 1)
-    vtkmRayTracing::RayOperations::Resize(rays,
+#if (VISKORES_VERSION_MAJOR >= 2) && (VISKORES_VERSION_MINOR >= 1)
+    viskoresRayTracing::RayOperations::Resize(rays,
                                                        size);
 #else
-    vtkmRayTracing::RayOperations::Resize(rays,
+    viskoresRayTracing::RayOperations::Resize(rays,
                                                        size,
-                                                       vtkm::cont::DeviceAdapterTagSerial());
+                                                       viskores::cont::DeviceAdapterTagSerial());
 #endif
 
 
-  vtkm::Vec<T,3> view_side;
+  viskores::Vec<T,3> view_side;
 
   view_side[0] = m_params.m_view_up[1] * m_params.m_normal[2]
                  - m_params.m_view_up[2] * m_params.m_normal[1];
@@ -118,8 +118,8 @@ VisitRayGenerator::gen_rays(vtkmRayTracing::Ray<T> &rays)
   far_height  = far_height  / m_params.m_image_zoom;
   far_width   = far_width   / m_params.m_image_zoom;
 
-  vtkm::Vec<T,3> near_origin;
-  vtkm::Vec<T,3> far_origin;
+  viskores::Vec<T,3> near_origin;
+  viskores::Vec<T,3> far_origin;
   near_origin = m_params.m_focus + m_params.m_near_plane * m_params.m_normal;
   far_origin = m_params.m_focus + m_params.m_far_plane * m_params.m_normal;
 
@@ -163,13 +163,13 @@ VisitRayGenerator::gen_rays(vtkmRayTracing::Ray<T> &rays)
       T near_x = x_start + T(x) * near_dx;
       T far_x = x_end + T(x) * far_dx;
 
-      vtkm::Vec<T,3> start;
-      vtkm::Vec<T,3> end;
+      viskores::Vec<T,3> start;
+      viskores::Vec<T,3> end;
       start = near_origin + near_x * view_side + near_y * m_params.m_view_up;
       end = far_origin + far_x * view_side + far_y * m_params.m_view_up;
 
-      vtkm::Vec<T,3> dir = end - start;
-      vtkm::Normalize(dir);
+      viskores::Vec<T,3> dir = end - start;
+      viskores::Normalize(dir);
 
       pixel_id.Set(id, id);
       origin_x.Set(id, start[0]);

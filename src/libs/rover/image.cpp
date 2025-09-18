@@ -9,24 +9,24 @@
 #include <rover_exceptions.hpp>
 #include <utils/rover_logging.hpp>
 
-#include <vtkm/cont/Field.h>
+#include <viskores/cont/Field.h>
 
 namespace rover
 {
 
 template<typename FloatType>
 void
-Image<FloatType>::normalize_handle(vtkm::cont::ArrayHandle<FloatType> &handle,
+Image<FloatType>::normalize_handle(viskores::cont::ArrayHandle<FloatType> &handle,
                                    bool invert,
                                    float min_val,
                                    float max_val,
                                    bool log_scale)
 {
 
-  vtkm::cont::Field as_field("name meaningless",
-                             vtkm::cont::Field::Association::Points,
+  viskores::cont::Field as_field("name meaningless",
+                             viskores::cont::Field::Association::Points,
                              handle);
-  vtkm::Range range;
+  viskores::Range range;
   as_field.GetRange(&range);
   FloatType min_scalar = static_cast<FloatType>(min_val);
   FloatType max_scalar = static_cast<FloatType>(max_val);
@@ -70,13 +70,13 @@ Image<FloatType>::normalize_handle(vtkm::cont::ArrayHandle<FloatType> &handle,
 
 template<typename FloatType>
 void
-Image<FloatType>::normalize_handle(vtkm::cont::ArrayHandle<FloatType> &handle, bool invert)
+Image<FloatType>::normalize_handle(viskores::cont::ArrayHandle<FloatType> &handle, bool invert)
 {
   // TODO: Surely we can do better than "name meaningless"
-  vtkm::cont::Field as_field("name meaningless",
-                             vtkm::cont::Field::Association::Points,
+  viskores::cont::Field as_field("name meaningless",
+                             viskores::cont::Field::Association::Points,
                              handle);
-  vtkm::Range range;
+  viskores::Range range;
   as_field.GetRange(&range);
   FloatType min_scalar = static_cast<FloatType>(range.Min);
   FloatType max_scalar = static_cast<FloatType>(range.Max);
@@ -121,17 +121,17 @@ Image<FloatType>::operator=(PartialImage<FloatType> partial)
 // template specialization to handle the magic
 
 template <typename T, typename O>
-void cast_array_handle(vtkm::cont::ArrayHandle<T> &cast_to,
-                       vtkm::cont::ArrayHandle<O> &cast_from)
+void cast_array_handle(viskores::cont::ArrayHandle<T> &cast_to,
+                       viskores::cont::ArrayHandle<O> &cast_from)
 {
-  const vtkm::Id size = cast_from.GetNumberOfValues();
+  const viskores::Id size = cast_from.GetNumberOfValues();
   cast_to.Allocate(size);
   auto portal_to = cast_to.WritePortal();
   auto portal_from = cast_from.ReadPortal();
 #ifdef ROVER_OPENMP_ENABLED
   #pragma omp parallel for
 #endif
-  for(vtkm::Id i = 0; i < size; ++i)
+  for(viskores::Id i = 0; i < size; ++i)
   {
     portal_to.Set(i, static_cast<T>(portal_from.Get(i)));
   }
@@ -147,15 +147,15 @@ template<typename T, typename O> void init_from_image(Image<T> &left, Image<O> &
   }
 
 }
-template<> void init_from_image<vtkm::Float32, vtkm::Float32>(Image<vtkm::Float32> &left,
-                                                              Image<vtkm::Float32> &right)
+template<> void init_from_image<viskores::Float32, viskores::Float32>(Image<viskores::Float32> &left,
+                                                              Image<viskores::Float32> &right)
 {
   left.m_intensity_values = right.m_intensity_values;
   left.m_optical_depth_values = right.m_optical_depth_values;
 }
 
-template<> void init_from_image<vtkm::Float64, vtkm::Float64>(Image<vtkm::Float64> &left,
-                                                              Image<vtkm::Float64> &right)
+template<> void init_from_image<viskores::Float64, viskores::Float64>(Image<viskores::Float64> &left,
+                                                              Image<viskores::Float64> &right)
 {
   left.m_intensity_values = right.m_intensity_values;
   left.m_optical_depth_values = right.m_optical_depth_values;
@@ -204,12 +204,12 @@ Image<FloatType>::init_from_partial(PartialImage<FloatType> &partial)
 
   // Helper lambda to expand a channel and push its buffer to the output vector
   auto expand_and_push = [&](int channel_index,
-                                       vtkmRayTracing::ChannelBuffer<FloatType>& channel_group,
+                                       viskoresRayTracing::ChannelBuffer<FloatType>& channel_group,
                                        FloatType default_value,
                                        std::vector<HandleType>& output_vector)
   {
-    vtkmRayTracing::ChannelBuffer<FloatType> channel = channel_group.GetChannel(channel_index);
-    vtkmRayTracing::ChannelBuffer<FloatType> expanded = channel.ExpandBuffer(partial.m_pixel_ids, channel_size, default_value);
+    viskoresRayTracing::ChannelBuffer<FloatType> channel = channel_group.GetChannel(channel_index);
+    viskoresRayTracing::ChannelBuffer<FloatType> expanded = channel.ExpandBuffer(partial.m_pixel_ids, channel_size, default_value);
     output_vector.push_back(expanded.Buffer);
   };
 
@@ -230,7 +230,7 @@ Image<FloatType>::init_from_partial(PartialImage<FloatType> &partial)
 }
 
 template<typename FloatType>
-vtkm::cont::ArrayHandle<FloatType>
+viskores::cont::ArrayHandle<FloatType>
 Image<FloatType>::get_intensity(const int &channel_num)
 {
   if(channel_num < 0 || channel_num >= m_intensity_values.size())
@@ -241,7 +241,7 @@ Image<FloatType>::get_intensity(const int &channel_num)
 }
 
 template<typename FloatType>
-vtkm::cont::ArrayHandle<FloatType>
+viskores::cont::ArrayHandle<FloatType>
 Image<FloatType>::get_optical_depth(const int &channel_num)
 {
   if(channel_num < 0 || channel_num >= m_optical_depth_values.size())
@@ -252,7 +252,7 @@ Image<FloatType>::get_optical_depth(const int &channel_num)
 }
 
 template<typename FloatType>
-vtkm::cont::ArrayHandle<FloatType>
+viskores::cont::ArrayHandle<FloatType>
 Image<FloatType>::flatten_intensity_values()
 {
   const int num_channels = this->get_num_channels();
@@ -279,7 +279,7 @@ Image<FloatType>::flatten_intensity_values()
 }
 
 template<typename FloatType>
-vtkm::cont::ArrayHandle<FloatType>
+viskores::cont::ArrayHandle<FloatType>
 Image<FloatType>::flatten_optical_depth_values()
 {
   const int num_channels = this->get_num_channels();
@@ -344,12 +344,12 @@ Image<FloatType>::normalize_optical_depth(const int &channel_num)
 }
 //
 // Explicit instantiations
-template class Image<vtkm::Float32>;
-template class Image<vtkm::Float64>;
+template class Image<viskores::Float32>;
+template class Image<viskores::Float64>;
 
-template void Image<vtkm::Float32>::operator=<vtkm::Float32>(Image<vtkm::Float32> &other);
-template void Image<vtkm::Float32>::operator=<vtkm::Float64>(Image<vtkm::Float64> &other);
-template void Image<vtkm::Float64>::operator=<vtkm::Float32>(Image<vtkm::Float32> &other);
-template void Image<vtkm::Float64>::operator=<vtkm::Float64>(Image<vtkm::Float64> &other);
+template void Image<viskores::Float32>::operator=<viskores::Float32>(Image<viskores::Float32> &other);
+template void Image<viskores::Float32>::operator=<viskores::Float64>(Image<viskores::Float64> &other);
+template void Image<viskores::Float64>::operator=<viskores::Float32>(Image<viskores::Float32> &other);
+template void Image<viskores::Float64>::operator=<viskores::Float64>(Image<viskores::Float64> &other);
 
 } // namespace rover

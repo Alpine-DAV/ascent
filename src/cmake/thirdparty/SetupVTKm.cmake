@@ -5,79 +5,79 @@
 ###############################################################################
 
 ###############################################################################
-# Setup VTKm
+# Setup Viskores
 ###############################################################################
 
-if(NOT VTKM_DIR)
-    MESSAGE(FATAL_ERROR "VTKm support needs explicit VTKM_DIR")
+if(NOT VISKORES_DIR)
+    MESSAGE(FATAL_ERROR "Viskores support needs explicit VISKORES_DIR")
 endif()
 
-MESSAGE(STATUS "Looking for VTKm using VTKM_DIR = ${VTKM_DIR}")
+MESSAGE(STATUS "Looking for Viskores using VISKORES_DIR = ${VISKORES_DIR}")
 
-# use VTKM_DIR to setup the options that cmake's find VTKm needs
-file(GLOB VTKm_DIR "${VTKM_DIR}/lib/cmake/vtkm-*")
-if(NOT VTKm_DIR)
-    MESSAGE(FATAL_ERROR "Failed to find VTKm at VTKM_DIR=${VTKM_DIR}/lib/cmake/vtk-*")
+# use VISKORES_DIR to setup the options that cmake's find Viskores needs
+file(GLOB Viskores_DIR "${VISKORES_DIR}/lib/cmake/viskores-*")
+if(NOT Viskores_DIR)
+    MESSAGE(FATAL_ERROR "Failed to find Viskores at VISKORES_DIR=${VISKORES_DIR}/lib/cmake/vtk-*")
 endif()
 
-find_package(VTKm REQUIRED QUIET)
+find_package(Viskores REQUIRED QUIET)
 
-#vtkm default type check
-if(NOT VTKm_USE_DEFAULT_TYPES_FOR_ASCENT)
-  message(FATAL_ERROR "Ascent requires VTK-m to be built with default types (VTKm_USE_DEFAULT_TYPES_FOR_ASCENT=ON)")
+#viskores default type check
+if(NOT Viskores_USE_DEFAULT_TYPES_FOR_ASCENT)
+  message(FATAL_ERROR "Ascent requires Viskores to be built with default types (Viskores_USE_DEFAULT_TYPES_FOR_ASCENT=ON)")
 endif()
 
-if(ENABLE_CUDA AND NOT VTKm_ENABLE_CUDA)
-   message(FATAL_ERROR "VTK-h CUDA support requires VTK-m with CUDA support (ENABLE_CUDA == TRUE, however VTKm_ENABLE_CUDA == FALSE")
+if(ENABLE_CUDA AND NOT Viskores_ENABLE_CUDA)
+   message(FATAL_ERROR "VTK-h CUDA support requires Viskores with CUDA support (ENABLE_CUDA == TRUE, however Viskores_ENABLE_CUDA == FALSE")
 endif()
 
 if(ENABLE_CUDA AND BUILD_SHARED_LIBS)
-  if(VTKm_VERSION VERSION_LESS "1.7.0")
-    message(FATAL_ERROR "Cannot build shared libs with CUDA when VTKm is < v1.7.0")
+  if(Viskores_VERSION VERSION_LESS "1.7.0")
+    message(FATAL_ERROR "Cannot build shared libs with CUDA when Viskores is < v1.7.0")
   endif()
 endif()
 
-set(VTKM_FOUND TRUE)
+set(VISKORES_FOUND TRUE)
 
-set(VTKM_TARGETS vtkm::cont vtkm::filter vtkm::rendering)
-message(STATUS "vtkm enalbe mpi:  ${VTKm_ENABLE_MPI}")
+set(VISKORES_TARGETS viskores::cont viskores::filter viskores::rendering)
+message(STATUS "viskores enalbe mpi:  ${Viskores_ENABLE_MPI}")
 message(STATUS "mpi found:  ${MPI_FOUND}")
 
 # add mpi if mfem uses mpi
-if(VTKm_ENABLE_MPI)
+if(Viskores_ENABLE_MPI)
     if(NOT MPI_FOUND)
-        message(FATAL_ERROR "VTKm was built with MPI support (config.mk has VTKM_MPI_ENABLED = TRUE)"
+        message(FATAL_ERROR "Viskores was built with MPI support (config.mk has VISKORES_MPI_ENABLED = TRUE)"
                              "But ASCENT_MPI_ENABLED = FALSE")
     endif()
-    message(STATUS "VTKm was built with MPI support (VTKM_MPI_ENABLED = TRUE)")
-    list(APPEND VTKM_TARGETS ${ascent_blt_mpi_deps}) 
-    set(ASCENT_VTKM_MPI_ENABLED TRUE)
+    message(STATUS "Viskores was built with MPI support (VISKORES_MPI_ENABLED = TRUE)")
+    list(APPEND VISKORES_TARGETS ${ascent_blt_mpi_deps}) 
+    set(ASCENT_VISKORES_MPI_ENABLED TRUE)
 endif()
 
 if(ENABLE_CUDA)
-    # we need to inject the vtkm cuda flags into CMAKE_CUDA_FLAGS
-    vtkm_get_cuda_flags(_fetch_vtkm_cuda_flags)
-    set(CMAKE_CUDA_FLAGS  "${CMAKE_CUDA_FLAGS} ${_fetch_vtkm_cuda_flags}")
-    unset(_fetch_vtkm_cuda_flags)
+    # we need to inject the viskores cuda flags into CMAKE_CUDA_FLAGS
+    viskores_get_cuda_flags(_fetch_viskores_cuda_flags)
+    set(CMAKE_CUDA_FLAGS  "${CMAKE_CUDA_FLAGS} ${_fetch_viskores_cuda_flags}")
+    unset(_fetch_viskores_cuda_flags)
     # we also need
     set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xptxas --disable-optimizer-constants")
 endif()
 
 
-# VTKM does not seem to propagate includes it exposes to us, so we have to work
+# VISKORES does not seem to propagate includes it exposes to us, so we have to work
 # around this.
-file(GLOB VTKM_LCL_DIR "${VTKM_DIR}/include/vtkm-*/vtkm/thirdparty/lcl/vtkmlcl/")
-include_directories("${VTKM_LCL_DIR}")
+file(GLOB VISKORES_LCL_DIR "${VISKORES_DIR}/include/viskores-*/viskores/thirdparty/lcl/viskoreslcl/")
+include_directories("${VISKORES_LCL_DIR}")
 
-# VTKM ridiculous
-file(GLOB VTKM_DIY_DIR "${VTKM_DIR}/include/vtkm-*/vtkm/thirdparty/diy/vtkmdiy/include/")
-include_directories("${VTKM_DIY_DIR}")
+# VISKORES ridiculous
+file(GLOB VISKORES_DIY_DIR "${VISKORES_DIR}/include/viskores-*/viskores/thirdparty/diy/viskoresdiy/include/")
+include_directories("${VISKORES_DIY_DIR}")
 
-blt_register_library(NAME vtkm
-                     LIBRARIES ${VTKM_TARGETS}
+blt_register_library(NAME viskores
+                     LIBRARIES ${VISKORES_TARGETS}
                      )
 
 if(ASCENT_ENABLE_TESTS AND WIN32 AND BUILD_SHARED_LIBS)
     # if we are running tests with dlls, we need path to dlls
-    list(APPEND ASCENT_TPL_DLL_PATHS ${VTKM_DIR}/bin)
+    list(APPEND ASCENT_TPL_DLL_PATHS ${VISKORES_DIR}/bin)
 endif()

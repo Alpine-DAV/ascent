@@ -1,15 +1,15 @@
-#ifndef VTK_H_VTKM_GHOSTSTRIPPER_HPP
-#define VTK_H_VTKM_GHOSTSTRIPPER_HPP
+#ifndef VTK_H_VISKORES_GHOSTSTRIPPER_HPP
+#define VTK_H_VISKORES_GHOSTSTRIPPER_HPP
 
-#include <vtkm/cont/DataSet.h>
+#include <viskores/cont/DataSet.h>
 
 namespace vtkh
 {
 
-class vtkmGhostStripper
+class viskoresGhostStripper
 {
 public:
-  vtkm::cont::DataSet Run(vtkm::cont::DataSet &input,
+  viskores::cont::DataSet Run(viskores::cont::DataSet &input,
                           std::string ghost_field_name);
 };
 }

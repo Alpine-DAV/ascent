@@ -11,10 +11,10 @@ out, but at any rate this should be correct.
  .../worklet/contourtree_distributed/HierarchicalContourTree.h | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/vtkm/filter/scalar_topology/worklet/contourtree_distributed/HierarchicalContourTree.h b/vtkm/filter/scalar_topology/worklet/contourtree_distributed/HierarchicalContourTree.h
+diff --git a/viskores/filter/scalar_topology/worklet/contourtree_distributed/HierarchicalContourTree.h b/viskores/filter/scalar_topology/worklet/contourtree_distributed/HierarchicalContourTree.h
 index a996d4292..e40d5f4f1 100644
---- a/vtkm/filter/scalar_topology/worklet/contourtree_distributed/HierarchicalContourTree.h
-+++ b/vtkm/filter/scalar_topology/worklet/contourtree_distributed/HierarchicalContourTree.h
+--- a/viskores/filter/scalar_topology/worklet/contourtree_distributed/HierarchicalContourTree.h
++++ b/viskores/filter/scalar_topology/worklet/contourtree_distributed/HierarchicalContourTree.h
 @@ -663,7 +663,7 @@ std::string HierarchicalContourTree<FieldType>::PrintDotSuperStructure(const cha
    auto hyperarcsPortal = this->Hyperarcs.ReadPortal();
    auto regularNodeGlobalIdsPortal = this->RegularNodeGlobalIds.ReadPortal();
@@ -23,7 +23,7 @@ index a996d4292..e40d5f4f1 100644
 +  auto whichRoundPortal = this->WhichRound.ReadPortal();
    auto superarcsPortal = this->Superarcs.ReadPortal();
    auto superparentsPortal = this->Superparents.ReadPortal();
-   for (vtkm::Id supernode = 0; supernode < this->Supernodes.GetNumberOfValues(); supernode++)
+   for (viskores::Id supernode = 0; supernode < this->Supernodes.GetNumberOfValues(); supernode++)
 @@ -708,7 +708,7 @@ std::string HierarchicalContourTree<FieldType>::PrintDotSuperStructure(const cha
      if (contourtree_augmented::NoSuchElement(superarcTo))
      { // no superarc

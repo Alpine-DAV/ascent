@@ -1,10 +1,10 @@
 #include "Render.hpp"
 #include <vtkh/rendering/Annotator.hpp>
 #include <png_utils/ascent_png_encoder.hpp>
-#include <vtkh/utils/vtkm_array_utils.hpp>
-#include <vtkm/rendering/MapperRayTracer.h>
-#include <vtkm/rendering/View2D.h>
-#include <vtkm/rendering/View3D.h>
+#include <vtkh/utils/viskores_array_utils.hpp>
+#include <viskores/rendering/MapperRayTracer.h>
+#include <viskores/rendering/View2D.h>
+#include <viskores/rendering/View3D.h>
 
 namespace vtkh
 {
@@ -28,13 +28,13 @@ Render::~Render()
 {
 }
 
-Render::vtkmCanvas&
+Render::viskoresCanvas&
 Render::GetCanvas()
 {
   return m_canvas;
 }
 
-vtkm::Bounds
+viskores::Bounds
 Render::GetSceneBounds() const
 {
   return m_scene_bounds;
@@ -74,20 +74,20 @@ Render::ScaleWorldAnnotations(float x, float y, float z)
   m_world_annotation_scale[2] = z;
 }
 
-vtkm::Int32
+viskores::Int32
 Render::GetWidth() const
 {
   return m_width;
 }
 
-vtkm::Int32
+viskores::Int32
 Render::GetHeight() const
 {
   return m_height;
 }
 
 void
-Render::SetWidth(const vtkm::Int32 width)
+Render::SetWidth(const viskores::Int32 width)
 {
   if(width == m_width) return;
   m_width = width;
@@ -107,7 +107,7 @@ Render::GetShadingOn() const
 }
 
 void
-Render::SetHeight(const vtkm::Int32 height)
+Render::SetHeight(const viskores::Int32 height)
 {
   if(height == m_height) return;
   m_height = height;
@@ -115,19 +115,19 @@ Render::SetHeight(const vtkm::Int32 height)
 }
 
 void
-Render::SetSceneBounds(const vtkm::Bounds &bounds)
+Render::SetSceneBounds(const viskores::Bounds &bounds)
 {
   m_scene_bounds = bounds;
 }
 
-const vtkm::rendering::Camera&
+const viskores::rendering::Camera&
 Render::GetCamera() const
 {
   return m_camera;
 }
 
 void
-Render::SetCamera(const vtkm::rendering::Camera &camera)
+Render::SetCamera(const viskores::rendering::Camera &camera)
 {
    m_camera = camera;
 }
@@ -145,7 +145,7 @@ Render::SetComments(const std::vector<std::string> &comments)
 }
 
 void
-Render::SetColorBarPosition(std::vector<vtkm::Bounds> color_bar_position)
+Render::SetColorBarPosition(std::vector<viskores::Bounds> color_bar_position)
 {
   m_color_bar_position = color_bar_position;
 }
@@ -182,13 +182,13 @@ Render::GetComments() const
   return m_comments;
 }
 
-vtkm::rendering::Color
+viskores::rendering::Color
 Render::GetBackgroundColor() const
 {
   return m_bg_color;
 }
 
-vtkm::rendering::Color
+viskores::rendering::Color
 Render::GetForegroundColor() const
 {
   return m_fg_color;
@@ -212,8 +212,8 @@ Render::RenderWorldAnnotations()
 
 void
 Render::RenderScreenAnnotations(const std::vector<std::string> &field_names,
-                                const std::vector<vtkm::Range> &ranges,
-                                const std::vector<vtkm::cont::ColorTable> &colors,
+                                const std::vector<viskores::Range> &ranges,
+                                const std::vector<viskores::cont::ColorTable> &colors,
                                 const std::vector<int> &is_discrete)
 {
   if(!m_render_annotations) return;
@@ -301,10 +301,10 @@ Render::RenderBackground()
   }
 }
 
-Render::vtkmCanvas
+Render::viskoresCanvas
 Render::CreateCanvas() const
 {
-  Render::vtkmCanvas canvas(m_width, m_height);
+  Render::viskoresCanvas canvas(m_width, m_height);
   canvas.SetBackgroundColor(m_bg_color);
   canvas.SetForegroundColor(m_fg_color);
   canvas.Clear();
@@ -319,7 +319,7 @@ Render::Save()
 #ifdef VTKH_PARALLEL
   if(vtkh::GetMPIRank() != 0) return;
 #endif
-  float* color_buffer = &GetVTKMPointer(m_canvas.GetColorBuffer())[0][0];
+  float* color_buffer = &GetVISKORESPointer(m_canvas.GetColorBuffer())[0][0];
   int height = m_canvas.GetHeight();
   int width = m_canvas.GetWidth();
   ascent::PNGEncoder encoder;
@@ -330,13 +330,13 @@ Render::Save()
 vtkh::Render
 MakeRender(int width,
            int height,
-           vtkm::Bounds scene_bounds,
+           viskores::Bounds scene_bounds,
            const std::string &image_name,
            float bg_color[4],
            float fg_color[4])
 {
   vtkh::Render render;
-  vtkm::rendering::Camera camera;
+  viskores::rendering::Camera camera;
   camera.ResetToBounds(scene_bounds);
   render.SetSceneBounds(scene_bounds);
   render.SetWidth(width);
@@ -365,8 +365,8 @@ MakeRender(int width,
 vtkh::Render
 MakeRender(int width,
            int height,
-           vtkm::Bounds scene_bounds,
-           vtkm::rendering::Camera camera,
+           viskores::Bounds scene_bounds,
+           viskores::rendering::Camera camera,
            const std::string &image_name,
            float bg_color[4],
            float fg_color[4])
@@ -399,7 +399,7 @@ MakeRender(int width,
 vtkh::Render
 MakeRender(int width,
            int height,
-           vtkm::rendering::Camera camera,
+           viskores::rendering::Camera camera,
            vtkh::DataSet &data_set,
            const std::string &image_name,
            float bg_color[4],
@@ -408,7 +408,7 @@ MakeRender(int width,
   vtkh::Render render;
   render.SetCamera(camera);
   render.SetImageName(image_name);
-  vtkm::Bounds bounds = data_set.GetGlobalBounds();
+  viskores::Bounds bounds = data_set.GetGlobalBounds();
   render.SetSceneBounds(bounds);
   render.SetWidth(width);
   render.SetHeight(height);

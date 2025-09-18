@@ -1,16 +1,16 @@
-#include "vtkmLog.hpp"
+#include "viskoresLog.hpp"
 
 namespace vtkh
 {
-vtkm::cont::DataSet
-vtkmLog::Run(vtkm::cont::DataSet &input,
+viskores::cont::DataSet
+viskoresLog::Run(viskores::cont::DataSet &input,
 	     const std::string in_field_name,
 	     const std::string out_field_name,
-	     vtkm::cont::Field::Association in_assoc,
-             vtkmLogFilter::LogBase log_base,
-             vtkm::Float32 min_value)
+	     viskores::cont::Field::Association in_assoc,
+             viskoresLogFilter::LogBase log_base,
+             viskores::Float32 min_value)
 {
-  vtkmLogFilter logarithm;
+  viskoresLogFilter logarithm;
   
   logarithm.SetActiveField(in_field_name, in_assoc);
   logarithm.SetOutputFieldName(out_field_name);

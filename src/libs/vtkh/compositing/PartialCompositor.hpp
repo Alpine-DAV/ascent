@@ -44,7 +44,7 @@
 
 #include <vector>
 #include <iostream>
-#include <vtkm/Types.h>
+#include <viskores/Types.h>
 #include <vtkh/vtkh_exports.h>
 #include "AbsorptionPartial.hpp"
 #include "EmissionPartial.hpp"
@@ -62,8 +62,8 @@ public:
   void
   composite(std::vector<std::vector<PartialType>> &partial_images,
             std::vector<PartialType> &output_partials);
-  void set_background(std::vector<vtkm::Float32> &background_values);
-  void set_background(std::vector<vtkm::Float64> &background_values);
+  void set_background(std::vector<viskores::Float32> &background_values);
+  void set_background(std::vector<viskores::Float64> &background_values);
   void set_comm_handle(int mpi_comm_id);
 protected:
   void merge(const std::vector<std::vector<PartialType>> &in_partials,

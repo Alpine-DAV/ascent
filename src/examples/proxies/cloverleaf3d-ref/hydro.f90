@@ -51,7 +51,7 @@ SUBROUTINE hydro
   CALL conduit_node_set_path_int32(ascent_opts,"mpi_comm",MPI_COMM_WORLD)
   ! To Enable Web Streaming Add, change to "true"
   CALL conduit_node_set_path_char8_str(ascent_opts,"web/stream", "false")
-  CALL conduit_node_set_path_char8_str(ascent_opts,"pipeline/type", "vtkm")
+  CALL conduit_node_set_path_char8_str(ascent_opts,"pipeline/type", "viskores")
   CALL ascent_open(my_ascent,ascent_opts)
 
   timerstart = timer()

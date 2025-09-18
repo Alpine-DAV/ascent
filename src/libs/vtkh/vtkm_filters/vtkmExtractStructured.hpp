@@ -1,20 +1,20 @@
-#ifndef VTK_H_VTKM_EXTRACT_STRUCTURED_HPP
-#define VTK_H_VTKM_EXTRACT_STRUCTURED_HPP
+#ifndef VTK_H_VISKORES_EXTRACT_STRUCTURED_HPP
+#define VTK_H_VISKORES_EXTRACT_STRUCTURED_HPP
 
-#include <vtkm/RangeId3.h>
-#include <vtkm/cont/DataSet.h>
-#include <vtkm/filter/FieldSelection.h>
+#include <viskores/RangeId3.h>
+#include <viskores/cont/DataSet.h>
+#include <viskores/filter/FieldSelection.h>
 
 namespace vtkh
 {
 
-class vtkmExtractStructured
+class viskoresExtractStructured
 {
 public:
-  vtkm::cont::DataSet Run(vtkm::cont::DataSet &input,
-                           vtkm::RangeId3 range,
-                           vtkm::Id3 sample_rate,
-                           vtkm::filter::FieldSelection map_fields);
+  viskores::cont::DataSet Run(viskores::cont::DataSet &input,
+                           viskores::RangeId3 range,
+                           viskores::Id3 sample_rate,
+                           viskores::filter::FieldSelection map_fields);
 };
 }
 #endif

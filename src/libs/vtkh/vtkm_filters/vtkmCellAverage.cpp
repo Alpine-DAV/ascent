@@ -1,15 +1,15 @@
-#include "vtkmCellAverage.hpp"
-#include <vtkm/filter/field_conversion/CellAverage.h>
+#include "viskoresCellAverage.hpp"
+#include <viskores/filter/field_conversion/CellAverage.h>
 
 namespace vtkh
 {
-vtkm::cont::DataSet
-vtkmCellAverage::Run(vtkm::cont::DataSet &input,
+viskores::cont::DataSet
+viskoresCellAverage::Run(viskores::cont::DataSet &input,
                      std::string field_name,
                      std::string output_field_name,
-                     vtkm::filter::FieldSelection map_fields)
+                     viskores::filter::FieldSelection map_fields)
 {
-  vtkm::filter::field_conversion::CellAverage avg;
+  viskores::filter::field_conversion::CellAverage avg;
   avg.SetOutputFieldName(output_field_name);
   avg.SetFieldsToPass(map_fields);
   avg.SetActiveField(field_name);

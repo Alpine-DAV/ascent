@@ -1,16 +1,16 @@
-#include "vtkmClipWithField.hpp"
-#include <vtkm/filter/contour/ClipWithField.h>
+#include "viskoresClipWithField.hpp"
+#include <viskores/filter/contour/ClipWithField.h>
 
 namespace vtkh
 {
-vtkm::cont::DataSet
-vtkmClipWithField::Run(vtkm::cont::DataSet &input,
+viskores::cont::DataSet
+viskoresClipWithField::Run(viskores::cont::DataSet &input,
                        std::string field_name,
                        double clip_value,
                        bool invert,
-                       vtkm::filter::FieldSelection map_fields)
+                       viskores::filter::FieldSelection map_fields)
 {
-  vtkm::filter::contour::ClipWithField clipper;
+  viskores::filter::contour::ClipWithField clipper;
 
   clipper.SetClipValue(clip_value);
   clipper.SetInvertClip(invert);

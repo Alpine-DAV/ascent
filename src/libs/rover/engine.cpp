@@ -4,11 +4,11 @@
 // other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-#include "vtkm_typedefs.hpp"
+#include "viskores_typedefs.hpp"
 #include <engine.hpp>
 #include <rover_exceptions.hpp>
 #include <utils/rover_logging.hpp>
-#include <vtkm/cont/DefaultTypes.h>
+#include <viskores/cont/DefaultTypes.h>
 
 namespace rover
 {
@@ -41,7 +41,7 @@ Engine::validate_tracer()
 }
 
 void
-Engine::set_dataset(vtkm::cont::DataSet &dataset)
+Engine::set_dataset(viskores::cont::DataSet &dataset)
 {
   ROVER_INFO("Executing Engine::set_data_set");
   // TODO: Can we initialize the tracer in the constructor?
@@ -56,7 +56,7 @@ Engine::set_dataset(vtkm::cont::DataSet &dataset)
 
 template<typename Precision>
 void
-Engine::init_emission(vtkmRayTracing::Ray<Precision> &rays,
+Engine::init_emission(viskoresRayTracing::Ray<Precision> &rays,
                       const int num_bins)
 {
   if (rover::settings.has_child("emission"))
@@ -119,13 +119,13 @@ Engine::partial_trace(Ray64 &rays, PartialVector64 &partials)
 int
 Engine::get_num_channels()
 {
-  vtkm::Id absorption_size = 0;
+  viskores::Id absorption_size = 0;
   ArraySizeFunctor functor(&absorption_size);
   const std::string absorption = rover::settings["absorption"].as_string();
   m_dataset.GetField(absorption).
                      GetData().
-                     CastAndCallForTypes<vtkm::TypeListAll, VTKM_DEFAULT_STORAGE_LIST>(functor);
-  vtkm::Id num_cells = m_dataset.GetCellSet().GetNumberOfCells();
+                     CastAndCallForTypes<viskores::TypeListAll, VISKORES_DEFAULT_STORAGE_LIST>(functor);
+  viskores::Id num_cells = m_dataset.GetCellSet().GetNumberOfCells();
 
   // TODO: Seemingly redundant assert followed by a check that num_cells == 0
   assert(num_cells > 0);
@@ -139,7 +139,7 @@ Engine::get_num_channels()
     throw RoverException("Failed to detect bins. Num cells cannot be 0\n");
   }
 
-  vtkm::Id modulo = absorption_size % num_cells;
+  viskores::Id modulo = absorption_size % num_cells;
   if (modulo != 0)
   {
     ROVER_ERROR("Error - Engine::get_num_channels: absorption field size is not evenly divided by num_cells"
@@ -148,12 +148,12 @@ Engine::get_num_channels()
                 << "\n       field size " << absorption_size);
     throw RoverException("absorption field size is not evenly divided by num_cells\n");
   }
-  vtkm::Id num_bins = absorption_size / num_cells;
+  viskores::Id num_bins = absorption_size / num_cells;
   ROVER_INFO("Engine::get_num_channels: Detected " << num_bins << " bins");
   return static_cast<int>(num_bins);
 }
 
-vtkmRange
+viskoresRange
 Engine::get_primary_range()
 {
   ROVER_INFO("Executing Engine::get_primary_range");
@@ -162,7 +162,7 @@ Engine::get_primary_range()
 }
 
 void
-Engine::set_primary_range(const vtkmRange &range)
+Engine::set_primary_range(const viskoresRange &range)
 {
   ROVER_INFO("Executing Engine::set_primary_range");
   validate_tracer();

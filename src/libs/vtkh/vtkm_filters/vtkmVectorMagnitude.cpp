@@ -1,16 +1,16 @@
-#include "vtkmVectorMagnitude.hpp"
+#include "viskoresVectorMagnitude.hpp"
 
-#include <vtkm/filter/vector_analysis/VectorMagnitude.h>
+#include <viskores/filter/vector_analysis/VectorMagnitude.h>
 
 namespace vtkh
 {
-vtkm::cont::DataSet
-vtkmVectorMagnitude::Run(vtkm::cont::DataSet &input,
+viskores::cont::DataSet
+viskoresVectorMagnitude::Run(viskores::cont::DataSet &input,
                          std::string field_name,
                          std::string out_field_name,
-                         vtkm::filter::FieldSelection map_fields)
+                         viskores::filter::FieldSelection map_fields)
 {
-  vtkm::filter::vector_analysis::VectorMagnitude mag;
+  viskores::filter::vector_analysis::VectorMagnitude mag;
   mag.SetActiveField(field_name);
   mag.SetOutputFieldName(out_field_name);
   mag.SetFieldsToPass(map_fields);

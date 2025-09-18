@@ -1,14 +1,14 @@
-#include "vtkmPointTransform.hpp"
-#include <vtkm/filter/field_transform/PointTransform.h>
+#include "viskoresPointTransform.hpp"
+#include <viskores/filter/field_transform/PointTransform.h>
 
 namespace vtkh
 {
-vtkm::cont::DataSet
-vtkmPointTransform::Run(vtkm::cont::DataSet &input,
-                        vtkm::Matrix<double,4,4> &transform,
-                        vtkm::filter::FieldSelection map_fields)
+viskores::cont::DataSet
+viskoresPointTransform::Run(viskores::cont::DataSet &input,
+                        viskores::Matrix<double,4,4> &transform,
+                        viskores::filter::FieldSelection map_fields)
 {
-  vtkm::filter::field_transform::PointTransform trans;
+  viskores::filter::field_transform::PointTransform trans;
 
   trans.SetChangeCoordinateSystem(true);
   trans.SetFieldsToPass(map_fields);

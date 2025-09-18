@@ -2,91 +2,91 @@
 # See License.txt
 #==============================================================================
 
-set(vtkm_filters_headers
-    vtkmCellAverage.hpp
-    vtkmClip.hpp
-    vtkmCleanGrid.hpp
-    vtkmClipWithField.hpp
-    vtkmCompositeVector.hpp
-    vtkmExtractStructured.hpp
-    vtkmGhostCellRemove.hpp
-    vtkmGradient.hpp
-    vtkmHistogram.hpp
-    vtkmLagrangian.hpp
-    vtkmLog.hpp
-    vtkmMarchingCubes.hpp
-    vtkmMeshQuality.hpp
-    vtkmPointAverage.hpp
-    vtkmPointTransform.hpp
-    vtkmProbe.hpp
-    vtkmStatistics.hpp
-    vtkmTetrahedralize.hpp
-    vtkmTriangulate.hpp
-    vtkmThreshold.hpp
-    vtkmVectorMagnitude.hpp
+set(viskores_filters_headers
+    viskoresCellAverage.hpp
+    viskoresClip.hpp
+    viskoresCleanGrid.hpp
+    viskoresClipWithField.hpp
+    viskoresCompositeVector.hpp
+    viskoresExtractStructured.hpp
+    viskoresGhostCellRemove.hpp
+    viskoresGradient.hpp
+    viskoresHistogram.hpp
+    viskoresLagrangian.hpp
+    viskoresLog.hpp
+    viskoresMarchingCubes.hpp
+    viskoresMeshQuality.hpp
+    viskoresPointAverage.hpp
+    viskoresPointTransform.hpp
+    viskoresProbe.hpp
+    viskoresStatistics.hpp
+    viskoresTetrahedralize.hpp
+    viskoresTriangulate.hpp
+    viskoresThreshold.hpp
+    viskoresVectorMagnitude.hpp
     GradientParameters.hpp
     )
 
-set(vtkm_filters_sources
-    vtkmCellAverage.cpp
-    vtkmClip.cpp
-    vtkmCleanGrid.cpp
-    vtkmClipWithField.cpp
-    vtkmCompositeVector.cpp
-    vtkmExtractStructured.cpp
-    vtkmGhostCellRemove.cpp
-    vtkmGradient.cpp
-    vtkmHistogram.cpp
-    vtkmLagrangian.cpp
-    vtkmLog.cpp
-    vtkmMarchingCubes.cpp
-    vtkmMeshQuality.cpp
-    vtkmPointAverage.cpp
-    vtkmPointTransform.cpp
-    vtkmProbe.cpp
-    vtkmStatistics.cpp
-    vtkmTetrahedralize.cpp
-    vtkmTriangulate.cpp
-    vtkmThreshold.cpp
-    vtkmVectorMagnitude.cpp
+set(viskores_filters_sources
+    viskoresCellAverage.cpp
+    viskoresClip.cpp
+    viskoresCleanGrid.cpp
+    viskoresClipWithField.cpp
+    viskoresCompositeVector.cpp
+    viskoresExtractStructured.cpp
+    viskoresGhostCellRemove.cpp
+    viskoresGradient.cpp
+    viskoresHistogram.cpp
+    viskoresLagrangian.cpp
+    viskoresLog.cpp
+    viskoresMarchingCubes.cpp
+    viskoresMeshQuality.cpp
+    viskoresPointAverage.cpp
+    viskoresPointTransform.cpp
+    viskoresProbe.cpp
+    viskoresStatistics.cpp
+    viskoresTetrahedralize.cpp
+    viskoresTriangulate.cpp
+    viskoresThreshold.cpp
+    viskoresVectorMagnitude.cpp
     )
 
 # these are the only headers we need to install
-set(vtkm_filters_install_headers
+set(viskores_filters_install_headers
     GradientParameters.hpp)
 
-# we use these specific vtk-m targets b/c our favorite version
+# we use these specific viskores targets b/c our favorite version
 # of cmake does not yet support transitive deps for object libs
-set(vtkm_filters_deps vtkm::compiler_flags vtkm::diy ${vtkh_base_deps})
+set(viskores_filters_deps viskores::compiler_flags viskores::diy ${vtkh_base_deps})
 
 
-blt_add_library(NAME vtkm_compiled_filters
-                SOURCES ${vtkm_filters_sources}
-                HEADERS ${vtkm_filters_headers}
-                DEPENDS_ON ${vtkm_filters_deps}
+blt_add_library(NAME viskores_compiled_filters
+                SOURCES ${viskores_filters_sources}
+                HEADERS ${viskores_filters_headers}
+                DEPENDS_ON ${viskores_filters_deps}
                 OBJECT TRUE
                 )
 
-vtkm_add_target_information(vtkm_compiled_filters DEVICE_SOURCES ${vtkm_filter_sources})
+viskores_add_target_information(viskores_compiled_filters DEVICE_SOURCES ${viskores_filter_sources})
 
 if(ENABLE_HIDDEN_VISIBILITY)
-  set_target_properties(vtkm_compiled_filters PROPERTIES CXX_VISIBILITY_PRESET hidden)
+  set_target_properties(viskores_compiled_filters PROPERTIES CXX_VISIBILITY_PRESET hidden)
 endif()
 
 if(KOKKOS_FOUND)
-    # vtkm + object libs are fun. Flags are not being propagated, so manually add them
-    set_target_properties(vtkm_compiled_filters PROPERTIES COMPILE_FLAGS "-I${KOKKOS_DIR}/include" )
+    # viskores + object libs are fun. Flags are not being propagated, so manually add them
+    set_target_properties(viskores_compiled_filters PROPERTIES COMPILE_FLAGS "-I${KOKKOS_DIR}/include" )
 endif()
 
 if(CUDA_FOUND)
-    # vtkm + object libs are fun. Flags are not being propagated, so manually add them
-    set_target_properties(vtkm_compiled_filters PROPERTIES COMPILE_FLAGS "--expt-relaxed-constexpr" )
-    # defend against vtkm code cuda can't reason about
+    # viskores + object libs are fun. Flags are not being propagated, so manually add them
+    set_target_properties(viskores_compiled_filters PROPERTIES COMPILE_FLAGS "--expt-relaxed-constexpr" )
+    # defend against viskores code cuda can't reason about
     if(CMAKE_CUDA_COMPILER_VERSION VERSION_LESS 10.0.0)
-        target_compile_definitions(vtkm_compiled_filters PRIVATE VTKH_BYPASS_VTKM_BIH)
+        target_compile_definitions(viskores_compiled_filters PRIVATE VTKH_BYPASS_VISKORES_BIH)
     endif()
 endif()
 
-install(FILES ${vtkm_filters_install_headers}
-        DESTINATION include/ascent/vtkh/vtkm_filters)
+install(FILES ${viskores_filters_install_headers}
+        DESTINATION include/ascent/vtkh/viskores_filters)
 

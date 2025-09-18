@@ -87,7 +87,7 @@ endif()
 ############################################################
 # setup base deps list, shared between mpi and non mpi lib
 ############################################################
-set(vtkh_filters_base_deps vtkm_compiled_filters ${vtkh_base_deps})
+set(vtkh_filters_base_deps viskores_compiled_filters ${vtkh_base_deps})
 
 ############################################################
 # Always install headers
@@ -106,7 +106,7 @@ if (ENABLE_SERIAL)
                     DEPENDS_ON ${vtkh_filters_deps}
                     )
 
-    vtkm_add_target_information(vtkh_filters DEVICE_SOURCES ${vtkh_filter_sources})
+    viskores_add_target_information(vtkh_filters DEVICE_SOURCES ${vtkh_filter_sources})
 
     # build time only defs
     target_compile_definitions(vtkh_filters PRIVATE ASCENT_EXPORTS_FLAG)
@@ -149,7 +149,7 @@ if (MPI_FOUND)
                     )
     
     # if serial is off, still still need to set this
-    vtkm_add_target_information(vtkh_filters_mpi DEVICE_SOURCES ${vtkh_filter_sources})
+    viskores_add_target_information(vtkh_filters_mpi DEVICE_SOURCES ${vtkh_filter_sources})
 
     # build time only defs
     target_compile_definitions(vtkh_filters_mpi PRIVATE ASCENT_EXPORTS_FLAG)

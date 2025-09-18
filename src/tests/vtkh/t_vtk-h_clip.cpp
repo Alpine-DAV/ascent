@@ -13,7 +13,7 @@
 #include <vtkh/rendering/PointRenderer.hpp>
 #include <vtkh/rendering/Scene.hpp>
 
-#include "t_vtkm_test_utils.hpp"
+#include "t_viskores_test_utils.hpp"
 
 #include <iostream>
 
@@ -22,7 +22,7 @@
 //----------------------------------------------------------------------------
 TEST(vtkh_clip, vtkh_box_clip)
 {
-#ifdef VTKM_ENABLE_KOKKOS
+#ifdef VISKORES_ENABLE_KOKKOS
   vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
@@ -38,8 +38,8 @@ TEST(vtkh_clip, vtkh_box_clip)
   //
   // chop the data set at the center
   //
-  vtkm::Bounds clip_bounds = data_set.GetGlobalBounds();
-  vtkm::Vec<vtkm::Float64, 3> center = clip_bounds.Center();
+  viskores::Bounds clip_bounds = data_set.GetGlobalBounds();
+  viskores::Vec<viskores::Float64, 3> center = clip_bounds.Center();
   clip_bounds.X.Max = center[0] + .5;
   clip_bounds.Y.Max = center[1] + .5;
   clip_bounds.Z.Max = center[2] + .5;
@@ -54,11 +54,11 @@ TEST(vtkh_clip, vtkh_box_clip)
 
   vtkh::DataSet *clip_output = clipper.GetOutput();
 
-  vtkm::Bounds bounds = clip_output->GetGlobalBounds();
+  viskores::Bounds bounds = clip_output->GetGlobalBounds();
 
-  vtkm::rendering::Camera camera;
+  viskores::rendering::Camera camera;
   camera.ResetToBounds(bounds);
-  camera.SetPosition(vtkm::Vec<vtkm::Float64,3>(16,-32,-32));
+  camera.SetPosition(viskores::Vec<viskores::Float64,3>(16,-32,-32));
   float bg_color[4] = { 0.f, 0.f, 0.f, 1.f};
   vtkh::Render render = vtkh::MakeRender(512,
                                          512,
@@ -82,7 +82,7 @@ TEST(vtkh_clip, vtkh_box_clip)
 
 TEST(vtkh_clip, vtkh_2_plane_clip)
 {
-#ifdef VTKM_ENABLE_KOKKOS
+#ifdef VISKORES_ENABLE_KOKKOS
   vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
@@ -98,8 +98,8 @@ TEST(vtkh_clip, vtkh_2_plane_clip)
   //
   // chop the data set at the center
   //
-  vtkm::Bounds clip_bounds = data_set.GetGlobalBounds();
-  vtkm::Vec<vtkm::Float64, 3> center = clip_bounds.Center();
+  viskores::Bounds clip_bounds = data_set.GetGlobalBounds();
+  viskores::Vec<viskores::Float64, 3> center = clip_bounds.Center();
   clip_bounds.X.Max = center[0] + .5;
   clip_bounds.Y.Max = center[1] + .5;
   clip_bounds.Z.Max = center[2] + .5;
@@ -117,9 +117,9 @@ TEST(vtkh_clip, vtkh_2_plane_clip)
 
   vtkh::DataSet *clip_output = clipper.GetOutput();
 
-  vtkm::Bounds bounds = clip_output->GetGlobalBounds();
+  viskores::Bounds bounds = clip_output->GetGlobalBounds();
 
-  vtkm::rendering::Camera camera;
+  viskores::rendering::Camera camera;
   camera.ResetToBounds(bounds);
   camera.Azimuth(55.f);
   float bg_color[4] = { 0.f, 0.f, 0.f, 1.f};
@@ -145,7 +145,7 @@ TEST(vtkh_clip, vtkh_2_plane_clip)
 
 TEST(vtkh_clip, vtkh_2_plane_clip_particles)
 {
-#ifdef VTKM_ENABLE_KOKKOS
+#ifdef VISKORES_ENABLE_KOKKOS
   vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
@@ -157,8 +157,8 @@ TEST(vtkh_clip, vtkh_2_plane_clip_particles)
   //
   // chop the data set at the center
   //
-  vtkm::Bounds clip_bounds = data_set.GetGlobalBounds();
-  vtkm::Vec<vtkm::Float64, 3> center = clip_bounds.Center();
+  viskores::Bounds clip_bounds = data_set.GetGlobalBounds();
+  viskores::Vec<viskores::Float64, 3> center = clip_bounds.Center();
   clip_bounds.X.Max = center[0] + .5;
   clip_bounds.Y.Max = center[1] + .5;
   clip_bounds.Z.Max = center[2] + .5;
@@ -176,9 +176,9 @@ TEST(vtkh_clip, vtkh_2_plane_clip_particles)
 
   vtkh::DataSet *clip_output = clipper.GetOutput();
 
-  vtkm::Bounds bounds = clip_output->GetGlobalBounds();
+  viskores::Bounds bounds = clip_output->GetGlobalBounds();
 
-  vtkm::rendering::Camera camera;
+  viskores::rendering::Camera camera;
   camera.ResetToBounds(bounds);
   camera.Azimuth(55.f);
   float bg_color[4] = { 0.f, 0.f, 0.f, 1.f};
@@ -233,11 +233,11 @@ TEST(vtkh_clip, vtkh_sphere_clip)
 
   vtkh::DataSet *clip_output = clipper.GetOutput();
 
-  vtkm::Bounds bounds = clip_output->GetGlobalBounds();
+  viskores::Bounds bounds = clip_output->GetGlobalBounds();
 
-  vtkm::rendering::Camera camera;
+  viskores::rendering::Camera camera;
   camera.ResetToBounds(bounds);
-  camera.SetPosition(vtkm::Vec<vtkm::Float64,3>(32,32,-80));
+  camera.SetPosition(viskores::Vec<viskores::Float64,3>(32,32,-80));
   float bg_color[4] = { 0.f, 0.f, 0.f, 1.f};
   vtkh::Render render = vtkh::MakeRender(512,
                                          512,

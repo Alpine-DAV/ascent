@@ -1,59 +1,59 @@
 //-----------------------------------------------------------------------------
 ///
-/// file: vtkm_dataset_info.hpp
+/// file: viskores_dataset_info.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef VTKM_DATASET_INFO_HPP
-#define VTKM_DATASET_INFO_HPP
+#ifndef VISKORES_DATASET_INFO_HPP
+#define VISKORES_DATASET_INFO_HPP
 
 #include <vtkh/vtkh_exports.h>
-#include <vtkm/cont/DataSet.h>
-#include <vtkm/rendering/Actor.h>
+#include <viskores/cont/DataSet.h>
+#include <viskores/rendering/Actor.h>
 
 namespace vtkh {
 
-class VTKH_API VTKMDataSetInfo
+class VTKH_API VISKORESDataSetInfo
 {
 public:
- typedef typename vtkm::cont::ArrayHandleUniformPointCoordinates UniformArrayHandle;
- typedef vtkm::cont::ArrayHandle<vtkm::FloatDefault> DefaultHandle;
- typedef typename vtkm::cont::ArrayHandleCartesianProduct<DefaultHandle,
+ typedef typename viskores::cont::ArrayHandleUniformPointCoordinates UniformArrayHandle;
+ typedef viskores::cont::ArrayHandle<viskores::FloatDefault> DefaultHandle;
+ typedef typename viskores::cont::ArrayHandleCartesianProduct<DefaultHandle,
                                                           DefaultHandle,
                                                           DefaultHandle> CartesianArrayHandle;
 //-----------------------------------------------------------------------------
-  static bool IsStructured(const vtkm::cont::DataSet &data_set,
+  static bool IsStructured(const viskores::cont::DataSet &data_set,
                            int &topo_dims);
 
-  static bool IsStructured(const vtkm::rendering::Actor &actor, int &topo_dims);
+  static bool IsStructured(const viskores::rendering::Actor &actor, int &topo_dims);
 
-  static bool IsStructured(const vtkm::cont::UnknownCellSet &cell_set, int &topo_dims);
+  static bool IsStructured(const viskores::cont::UnknownCellSet &cell_set, int &topo_dims);
 
-  static bool IsRectilinear(const vtkm::cont::DataSet &data_set);
+  static bool IsRectilinear(const viskores::cont::DataSet &data_set);
 
-  static bool IsRectilinear(const vtkm::rendering::Actor &actor);
+  static bool IsRectilinear(const viskores::rendering::Actor &actor);
 
-  static bool IsRectilinear(const vtkm::cont::CoordinateSystem &coords);
+  static bool IsRectilinear(const viskores::cont::CoordinateSystem &coords);
 
-  static bool IsUniform(const vtkm::cont::DataSet &data_set);
+  static bool IsUniform(const viskores::cont::DataSet &data_set);
 
-  static bool IsUniform(const vtkm::rendering::Actor &actor);
+  static bool IsUniform(const viskores::rendering::Actor &actor);
 
-  static bool IsUniform(const vtkm::cont::CoordinateSystem &coords);
+  static bool IsUniform(const viskores::cont::CoordinateSystem &coords);
 
-  static bool GetPointDims(const vtkm::cont::DataSet &data_set, int *dims);
+  static bool GetPointDims(const viskores::cont::DataSet &data_set, int *dims);
 
-  static bool GetPointDims(const vtkm::rendering::Actor &actor, int *dims);
+  static bool GetPointDims(const viskores::rendering::Actor &actor, int *dims);
 
-  static bool GetPointDims(const vtkm::cont::UnknownCellSet &cell_set, int *dims);
+  static bool GetPointDims(const viskores::cont::UnknownCellSet &cell_set, int *dims);
 
-  static bool GetCellDims(const vtkm::cont::DataSet &data_set, int *dims);
+  static bool GetCellDims(const viskores::cont::DataSet &data_set, int *dims);
 
-  static bool GetCellDims(const vtkm::rendering::Actor &actor, int *dims);
+  static bool GetCellDims(const viskores::rendering::Actor &actor, int *dims);
 
-  static bool GetCellDims(const vtkm::cont::UnknownCellSet &cell_set, int *dims);
+  static bool GetCellDims(const viskores::cont::UnknownCellSet &cell_set, int *dims);
 
-  static bool IsSingleCellShape(const vtkm::cont::UnknownCellSet &cell_set, vtkm::UInt8 &shape_id);
+  static bool IsSingleCellShape(const viskores::cont::UnknownCellSet &cell_set, viskores::UInt8 &shape_id);
 
 };
 

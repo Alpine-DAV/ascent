@@ -1,6 +1,6 @@
 #include "MIR.hpp"
 
-#include <vtkm/filter/contour/MIRFilter.h>
+#include <viskores/filter/contour/MIRFilter.h>
 
 namespace vtkh
 {
@@ -94,27 +94,27 @@ void MIR::DoExecute()
   this->m_output = new DataSet();
   const int num_domains = this->m_input->GetNumberOfDomains();
   //set fake discret color table
-  vtkm::Range ids_range = this->m_input->GetGlobalRange(m_ids_name).ReadPortal().Get(0);
+  viskores::Range ids_range = this->m_input->GetGlobalRange(m_ids_name).ReadPortal().Get(0);
 
   for(int i = 0; i < num_domains; ++i)
   {
-    vtkm::Id domain_id;
-    vtkm::cont::DataSet dom;
+    viskores::Id domain_id;
+    viskores::cont::DataSet dom;
     this->m_input->GetDomain(i, dom, domain_id);
-    vtkm::filter::contour::MIRFilter mir; 
+    viskores::filter::contour::MIRFilter mir; 
     mir.SetLengthCellSetName(m_lengths_name);
     mir.SetPositionCellSetName(m_offsets_name);
     mir.SetIDWholeSetName(m_ids_name);
     mir.SetVFWholeSetName(m_vfs_name);
-    mir.SetErrorScaling(vtkm::Float64(m_error_scaling));
-    mir.SetScalingDecay(vtkm::Float64(m_scaling_decay));
-    mir.SetMaxIterations(vtkm::IdComponent(m_iterations));
-    mir.SetMaxPercentError(vtkm::Float64(m_max_error));
-    vtkm::cont::DataSet output = mir.Execute(dom);
+    mir.SetErrorScaling(viskores::Float64(m_error_scaling));
+    mir.SetScalingDecay(viskores::Float64(m_scaling_decay));
+    mir.SetMaxIterations(viskores::IdComponent(m_iterations));
+    mir.SetMaxPercentError(viskores::Float64(m_max_error));
+    viskores::cont::DataSet output = mir.Execute(dom);
     //cast and call error if cellMat stays as ints
-    vtkm::cont::UnknownArrayHandle float_field = output.GetField("cellMat").GetDataAsDefaultFloat();
-    vtkm::cont::Field::Association field_assoc = output.GetField("cellMat").GetAssociation();
-    vtkm::cont::Field matset_field(m_matset_name,field_assoc, float_field);
+    viskores::cont::UnknownArrayHandle float_field = output.GetField("cellMat").GetDataAsDefaultFloat();
+    viskores::cont::Field::Association field_assoc = output.GetField("cellMat").GetAssociation();
+    viskores::cont::Field matset_field(m_matset_name,field_assoc, float_field);
     output.AddField(matset_field);
     //output.GetField("cellMat").SetData(float_field);
     this->m_output->AddDomain(output, i);

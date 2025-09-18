@@ -6,51 +6,51 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: t_vtkm_smoke.cpp
+/// file: t_viskores_smoke.cpp
 ///
 //-----------------------------------------------------------------------------
 #include <iostream>
 #include "gtest/gtest.h"
 
-#include <vtkm/cont/DataSet.h>
-#include <vtkm/rendering/Actor.h>
+#include <viskores/cont/DataSet.h>
+#include <viskores/rendering/Actor.h>
 #include <iostream>
-#include "t_vtkm_test_utils.hpp"
+#include "t_viskores_test_utils.hpp"
 
 //-----------------------------------------------------------------------------
-TEST(vtkm_smoke, headers_work)
+TEST(viskores_smoke, headers_work)
 {
-    vtkm::cont::DataSet *res;
+    viskores::cont::DataSet *res;
     res = NULL;
     EXPECT_EQ(1, 1);
 }
 
 //-----------------------------------------------------------------------------
-TEST(vtkm_smoke, basic_use_serial)
+TEST(viskores_smoke, basic_use_serial)
 {
-    vtkm::cont::RuntimeDeviceTracker &device_tracker
-      = vtkm::cont::GetRuntimeDeviceTracker();
-    device_tracker.ForceDevice(vtkm::cont::DeviceAdapterTagSerial());
+    viskores::cont::RuntimeDeviceTracker &device_tracker
+      = viskores::cont::GetRuntimeDeviceTracker();
+    device_tracker.ForceDevice(viskores::cont::DeviceAdapterTagSerial());
 
-    vtkm::cont::DataSet data = Make3DExplicitDataSet2();
+    viskores::cont::DataSet data = Make3DExplicitDataSet2();
     //
     // work around for a problem adding scalar fields of size 1
     // to Actors
     //
-    std::vector<vtkm::Float32> scalars;
+    std::vector<viskores::Float32> scalars;
     scalars.push_back(0);
     scalars.push_back(1);
-    vtkm::cont::Field scalarField = vtkm::cont::make_Field("some_field",
-                                                           vtkm::cont::Field::Association::Cells,
+    viskores::cont::Field scalarField = viskores::cont::make_Field("some_field",
+                                                           viskores::cont::Field::Association::Cells,
                                                            scalars,
-                                                           vtkm::CopyFlag::On);
+                                                           viskores::CopyFlag::On);
 
-    const vtkm::cont::CoordinateSystem coords = data.GetCoordinateSystem();
-    vtkm::rendering::Actor actor(data.GetCellSet(),
+    const viskores::cont::CoordinateSystem coords = data.GetCoordinateSystem();
+    viskores::rendering::Actor actor(data.GetCellSet(),
                                  data.GetCoordinateSystem(),
                                  scalarField);
 
-    vtkm::Bounds coordsBounds; // Xmin,Xmax,Ymin..
+    viskores::Bounds coordsBounds; // Xmin,Xmax,Ymin..
     coordsBounds = actor.GetSpatialBounds();
 
     //should be [0,1,0,1,0,1];
@@ -73,31 +73,31 @@ TEST(vtkm_smoke, basic_use_serial)
 
 }
 #ifdef VTKH_FORCE_OPENMP
-TEST(vtkm_smoke, basic_use_openmp)
+TEST(viskores_smoke, basic_use_openmp)
 {
-    vtkm::cont::RuntimeDeviceTracker &device_tracker
-      = vtkm::cont::GetRuntimeDeviceTracker();
-    device_tracker.ForceDevice(vtkm::cont::DeviceAdapterTagOpenMP());
+    viskores::cont::RuntimeDeviceTracker &device_tracker
+      = viskores::cont::GetRuntimeDeviceTracker();
+    device_tracker.ForceDevice(viskores::cont::DeviceAdapterTagOpenMP());
 
-    vtkm::cont::DataSet data = Make3DExplicitDataSet2();
+    viskores::cont::DataSet data = Make3DExplicitDataSet2();
     //
     // work around for a problem adding scalar fields of size 1
     // to Actors
     //
-    std::vector<vtkm::Float32> scalars;
+    std::vector<viskores::Float32> scalars;
     scalars.push_back(0);
     scalars.push_back(1);
-    vtkm::cont::Field scalarField = vtkm::cont::make_Field("some_field",
-                                                           vtkm::cont::Field::Association::Cells,
+    viskores::cont::Field scalarField = viskores::cont::make_Field("some_field",
+                                                           viskores::cont::Field::Association::Cells,
                                                            scalars,
-                                                           vtkm::CopyFlag::Off);
+                                                           viskores::CopyFlag::Off);
 
-    const vtkm::cont::CoordinateSystem coords = data.GetCoordinateSystem();
-    vtkm::rendering::Actor actor(data.GetCellSet(),
+    const viskores::cont::CoordinateSystem coords = data.GetCoordinateSystem();
+    viskores::rendering::Actor actor(data.GetCellSet(),
                                  data.GetCoordinateSystem(),
                                  scalarField);
 
-    vtkm::Bounds coordsBounds; // Xmin,Xmax,Ymin..
+    viskores::Bounds coordsBounds; // Xmin,Xmax,Ymin..
     coordsBounds = actor.GetSpatialBounds();
 
     //should be [0,1,0,1,0,1];
@@ -122,31 +122,31 @@ TEST(vtkm_smoke, basic_use_openmp)
 #endif
 
 #ifdef VTKH_FORCE_CUDA
-TEST(vtkm_smoke, basic_use_cuda)
+TEST(viskores_smoke, basic_use_cuda)
 {
-    vtkm::cont::RuntimeDeviceTracker &device_tracker
-      = vtkm::cont::GetRuntimeDeviceTracker();
-    device_tracker.ForceDevice(vtkm::cont::DeviceAdapterTagCuda());
+    viskores::cont::RuntimeDeviceTracker &device_tracker
+      = viskores::cont::GetRuntimeDeviceTracker();
+    device_tracker.ForceDevice(viskores::cont::DeviceAdapterTagCuda());
 
-    vtkm::cont::DataSet data = Make3DExplicitDataSet2();
+    viskores::cont::DataSet data = Make3DExplicitDataSet2();
     //
     // work around for a problem adding scalar fields of size 1
     // to Actors
     //
-    std::vector<vtkm::Float32> scalars;
+    std::vector<viskores::Float32> scalars;
     scalars.push_back(0);
     scalars.push_back(1);
-    vtkm::cont::Field scalarField = vtkm::cont::make_Field("some_field",
-                                                           vtkm::cont::Field::Association::Cells,
+    viskores::cont::Field scalarField = viskores::cont::make_Field("some_field",
+                                                           viskores::cont::Field::Association::Cells,
                                                            scalars,
-                                                           vtkm::CopyFlag::Off);
+                                                           viskores::CopyFlag::Off);
 
-    const vtkm::cont::CoordinateSystem coords = data.GetCoordinateSystem();
-    vtkm::rendering::Actor actor(data.GetCellSet(),
+    const viskores::cont::CoordinateSystem coords = data.GetCoordinateSystem();
+    viskores::rendering::Actor actor(data.GetCellSet(),
                                  data.GetCoordinateSystem(),
                                  scalarField);
 
-    vtkm::Bounds coordsBounds; // Xmin,Xmax,Ymin..
+    viskores::Bounds coordsBounds; // Xmin,Xmax,Ymin..
     coordsBounds = actor.GetSpatialBounds();
 
     //should be [0,1,0,1,0,1];

@@ -4,31 +4,31 @@ Date: Tue, 2 Jul 2024 10:28:43 -0700
 Subject: [PATCH] fix bug with ray subsetting using wrong near and far planes
 
 ---
- vtkm/rendering/raytracing/Camera.cxx | 12 ++++--------
+ viskores/rendering/raytracing/Camera.cxx | 12 ++++--------
  1 file changed, 4 insertions(+), 8 deletions(-)
 
-diff --git a/vtkm/rendering/raytracing/Camera.cxx b/vtkm/rendering/raytracing/Camera.cxx
+diff --git a/viskores/rendering/raytracing/Camera.cxx b/viskores/rendering/raytracing/Camera.cxx
 index f2a39bef9..10febf39f 100644
---- a/vtkm/rendering/raytracing/Camera.cxx
-+++ b/vtkm/rendering/raytracing/Camera.cxx
-@@ -830,6 +830,7 @@ void Camera::FindSubset(const vtkm::Bounds& bounds)
+--- a/viskores/rendering/raytracing/Camera.cxx
++++ b/viskores/rendering/raytracing/Camera.cxx
+@@ -830,6 +830,7 @@ void Camera::FindSubset(const viskores::Bounds& bounds)
          transformed[2] = (transformed[2] * 0.5f + 0.5f);
-         zmin = vtkm::Min(zmin, transformed[2]);
-         zmax = vtkm::Max(zmax, transformed[2]);
+         zmin = viskores::Min(zmin, transformed[2]);
+         zmax = viskores::Max(zmax, transformed[2]);
 +        // skip if outside near and far clipping
          if (transformed[2] < 0 || transformed[2] > 1)
          {
            continue;
-@@ -894,15 +895,10 @@ VTKM_CONT void Camera::UpdateDimensions(Ray<Precision>& rays,
+@@ -894,15 +895,10 @@ VISKORES_CONT void Camera::UpdateDimensions(Ray<Precision>& rays,
      this->CameraView.SetLookAt(this->GetLookAt());
      this->CameraView.SetPosition(this->GetPosition());
      this->CameraView.SetViewUp(this->GetUp());
 -    //
 -    // Just create come clipping range, we ignore the zmax value in subsetting
 -    //
--    vtkm::Float64 maxDim = vtkm::Max(
+-    viskores::Float64 maxDim = viskores::Max(
 -      boundingBox.X.Max - boundingBox.X.Min,
--      vtkm::Max(boundingBox.Y.Max - boundingBox.Y.Min, boundingBox.Z.Max - boundingBox.Z.Min));
+-      viskores::Max(boundingBox.Y.Max - boundingBox.Y.Min, boundingBox.Z.Max - boundingBox.Z.Min));
  
 -    maxDim *= 100;
 -    this->CameraView.SetClippingRange(.0001, maxDim);

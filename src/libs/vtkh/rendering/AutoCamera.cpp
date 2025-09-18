@@ -7,13 +7,13 @@
 #define M_PI 3.14159265358979323846
 #endif
 
-#include <vtkm/VectorAnalysis.h>
-#include <vtkm/cont/Algorithm.h>
-#include <vtkm/cont/TryExecute.h>
-#include <vtkm/worklet/WorkletMapField.h>
-#include <vtkm/filter/density_estimate/worklet/FieldHistogram.h>
+#include <viskores/VectorAnalysis.h>
+#include <viskores/cont/Algorithm.h>
+#include <viskores/cont/TryExecute.h>
+#include <viskores/worklet/WorkletMapField.h>
+#include <viskores/filter/density_estimate/worklet/FieldHistogram.h>
 //take out
-#include <vtkm/io/VTKDataSetWriter.h>
+#include <viskores/io/VTKDataSetWriter.h>
 
 #ifdef VTKH_PARALLEL
 #include <mpi.h>
@@ -68,9 +68,9 @@ GetCamera(int frame, int nframes, double diameter, float *lookat, double *cam_po
 struct print_f
 {
   template<typename T, typename S>
-  void operator()(const vtkm::cont::ArrayHandle<T,S> &a) const
+  void operator()(const viskores::cont::ArrayHandle<T,S> &a) const
   {
-    vtkm::Id s = a.GetNumberOfValues();
+    viskores::Id s = a.GetNumberOfValues();
     auto p = a.ReadPortal();
     for(int i = 0; i < s; ++i)
     {
@@ -87,7 +87,7 @@ GetScalarData(vtkh::DataSet &vtkhData, const char *field_name)
 {
   //Get domain Ids on this rank
   //will be nonzero even if there is no data
-  std::vector<vtkm::Id> localDomainIds = vtkhData.GetDomainIds();
+  std::vector<viskores::Id> localDomainIds = vtkhData.GetDomainIds();
   std::vector<T> data;
      
   //if there is data: loop through domains and grab all triangles.
@@ -95,19 +95,19 @@ GetScalarData(vtkh::DataSet &vtkhData, const char *field_name)
   {
     for(int i = 0; i < localDomainIds.size(); i++)
     {
-      vtkm::cont::DataSet dataset = vtkhData.GetDomainById(localDomainIds[i]);
-      vtkm::cont::CoordinateSystem coords = dataset.GetCoordinateSystem();
-      vtkm::cont::UnknownCellSet cellset = dataset.GetCellSet();
+      viskores::cont::DataSet dataset = vtkhData.GetDomainById(localDomainIds[i]);
+      viskores::cont::CoordinateSystem coords = dataset.GetCoordinateSystem();
+      viskores::cont::UnknownCellSet cellset = dataset.GetCellSet();
       //Get variable
-      vtkm::cont::Field field = dataset.GetField(field_name);
+      viskores::cont::Field field = dataset.GetField(field_name);
       
       long int size = field.GetNumberOfValues();
       
-      using data_d = vtkm::cont::ArrayHandle<vtkm::Float64>;
-      using data_f = vtkm::cont::ArrayHandle<vtkm::Float32>;
+      using data_d = viskores::cont::ArrayHandle<viskores::Float64>;
+      using data_f = viskores::cont::ArrayHandle<viskores::Float32>;
       if(field.GetData().IsType<data_d>())
       {
-        vtkm::cont::ArrayHandle<vtkm::Float64> field_data;
+        viskores::cont::ArrayHandle<viskores::Float64> field_data;
         field.GetData().AsArrayHandle(field_data);
         auto portal = field_data.ReadPortal();
 
@@ -118,7 +118,7 @@ GetScalarData(vtkh::DataSet &vtkhData, const char *field_name)
       }
       if(field.GetData().IsType<data_f>())
       {
-        vtkm::cont::ArrayHandle<vtkm::Float64> field_data;
+        viskores::cont::ArrayHandle<viskores::Float64> field_data;
         field.GetData().AsArrayHandle(field_data);
         auto portal = field_data.ReadPortal();
 
@@ -137,32 +137,32 @@ GetScalarData(vtkh::DataSet &vtkhData, const char *field_name)
 template <typename T>
 struct CalculateEntropy
 {
-  inline VTKM_EXEC_CONT T operator()(const T& numerator, const T& denominator) const
+  inline VISKORES_EXEC_CONT T operator()(const T& numerator, const T& denominator) const
   {
     const T prob = numerator / denominator;
     if (prob == T(0))
     {
       return T(0);
     }
-    return prob * vtkm::Log(prob);
+    return prob * viskores::Log(prob);
   }
 };
 
 template <typename T>
-T calcEntropyMM(const vtkm::cont::ArrayHandle<T>& data, int nBins, T min, T max)
+T calcEntropyMM(const viskores::cont::ArrayHandle<T>& data, int nBins, T min, T max)
 {
-  vtkm::worklet::FieldHistogram worklet;
-  vtkm::cont::ArrayHandle<vtkm::Id> hist;
+  viskores::worklet::FieldHistogram worklet;
+  viskores::cont::ArrayHandle<viskores::Id> hist;
   T stepSize;
   worklet.Run(data, nBins, min, max, stepSize, hist);
 
-  auto len = vtkm::cont::make_ArrayHandleConstant(
+  auto len = viskores::cont::make_ArrayHandleConstant(
     static_cast<T>(data.GetNumberOfValues()), 
     hist.GetNumberOfValues());
-  vtkm::cont::ArrayHandle<T> subEntropies;
-  vtkm::cont::Algorithm::Transform(hist, len, subEntropies, CalculateEntropy<T>{});
+  viskores::cont::ArrayHandle<T> subEntropies;
+  viskores::cont::Algorithm::Transform(hist, len, subEntropies, CalculateEntropy<T>{});
 
-  T entropy = vtkm::cont::Algorithm::Reduce(subEntropies, T(0));
+  T entropy = viskores::cont::Algorithm::Reduce(subEntropies, T(0));
 
   return (entropy * -1.0);
 }
@@ -203,31 +203,31 @@ T calcEntropyMM( const std::vector<T> array, long len, int nBins , T field_min, 
 }
 
 template <typename FloatType>
-class CopyWithOffset : public vtkm::worklet::WorkletMapField
+class CopyWithOffset : public viskores::worklet::WorkletMapField
 {
 public:
   using ControlSignature = void(FieldIn src, WholeArrayInOut dest);
   using ExecutionSignature = void(InputIndex, _1, _2);
 
-  VTKM_CONT
-  CopyWithOffset(const vtkm::Id offset = 0)
+  VISKORES_CONT
+  CopyWithOffset(const viskores::Id offset = 0)
       : Offset(offset)
   {
   }
   template <typename OutArrayType>
-  VTKM_EXEC inline void operator()(const vtkm::Id idx, const FloatType &srcValue, OutArrayType &destArray) const
+  VISKORES_EXEC inline void operator()(const viskores::Id idx, const FloatType &srcValue, OutArrayType &destArray) const
   {
     destArray.Set(idx + this->Offset, srcValue);
   }
 
 private:
-  vtkm::Id Offset;
+  viskores::Id Offset;
 };
 
 template <typename SrcType, typename DestType>
-void copyArrayWithOffset(const vtkm::cont::ArrayHandle<SrcType> &src, vtkm::cont::ArrayHandle<DestType> &dest, vtkm::Id offset)
+void copyArrayWithOffset(const viskores::cont::ArrayHandle<SrcType> &src, viskores::cont::ArrayHandle<DestType> &dest, viskores::Id offset)
 {
-  vtkm::cont::Invoker invoker;
+  viskores::cont::Invoker invoker;
   invoker(CopyWithOffset<SrcType>(offset), src, dest);
 }
 
@@ -240,7 +240,7 @@ struct MaxValueWithChecks
   {
   }
 
-  VTKM_EXEC_CONT inline T operator()(const T &a, const T &b) const
+  VISKORES_EXEC_CONT inline T operator()(const T &a, const T &b) const
   {
     if (this->IsValid(a) && this->IsValid(b))
     {
@@ -260,9 +260,9 @@ struct MaxValueWithChecks
     }
   }
 
-  VTKM_EXEC_CONT inline bool IsValid(const T &t) const
+  VISKORES_EXEC_CONT inline bool IsValid(const T &t) const
   {
-    return !vtkm::IsNan(t) && t > MinValid && t < MaxValid;
+    return !viskores::IsNan(t) && t > MinValid && t < MaxValid;
   }
 
   T MinValid;
@@ -291,25 +291,25 @@ inline DataCheckFlags operator|(DataCheckFlags lhs, DataCheckFlags rhs)
 }
 
 template <typename FloatType>
-struct CopyWithChecksMask : public vtkm::worklet::WorkletMapField
+struct CopyWithChecksMask : public viskores::worklet::WorkletMapField
 {
 public:
   using ControlSignature = void(FieldIn src, FieldOut dest);
   using ExecutionSignature = void(_1, _2);
 
-  VTKM_CONT
+  VISKORES_CONT
   CopyWithChecksMask(DataCheckFlags checks, DataCheckVals<FloatType> checkVals)
       : Checks(checks),
         CheckVals(checkVals)
   {
   }
 
-  VTKM_EXEC inline void operator()(const FloatType &val, vtkm::IdComponent& mask) const
+  VISKORES_EXEC inline void operator()(const FloatType &val, viskores::IdComponent& mask) const
   {
     bool passed = true;
     if(this->HasCheck(CheckNan))
     {
-      passed = passed && !vtkm::IsNan(val);   
+      passed = passed && !viskores::IsNan(val);   
     }
     if(this->HasCheck(CheckZero)) 
     {
@@ -327,7 +327,7 @@ public:
     mask = passed ? 1 : 0;
   }
   
-  VTKM_EXEC inline bool HasCheck(DataCheckFlags check) const
+  VISKORES_EXEC inline bool HasCheck(DataCheckFlags check) const
   {
     return (Checks & check) == check;
   }
@@ -337,50 +337,50 @@ public:
 };
 
 template<typename SrcType>
-vtkm::cont::ArrayHandle<SrcType> copyWithChecks(
-  const vtkm::cont::ArrayHandle<SrcType>& src, 
+viskores::cont::ArrayHandle<SrcType> copyWithChecks(
+  const viskores::cont::ArrayHandle<SrcType>& src, 
   DataCheckFlags checks, 
   DataCheckVals<SrcType> checkVals = DataCheckVals<SrcType>{})
 {
-  vtkm::cont::ArrayHandle<vtkm::IdComponent> mask;
-  vtkm::cont::Invoker invoker;
+  viskores::cont::ArrayHandle<viskores::IdComponent> mask;
+  viskores::cont::Invoker invoker;
   invoker(CopyWithChecksMask<SrcType>(checks, checkVals), src, mask);
   
-  vtkm::cont::ArrayHandle<SrcType> dest;
-  vtkm::cont::Algorithm::CopyIf(src, mask, dest);
+  viskores::cont::ArrayHandle<SrcType> dest;
+  viskores::cont::Algorithm::CopyIf(src, mask, dest);
   return dest;
 }
 
 template <typename T>
-vtkm::cont::ArrayHandle<T>
+viskores::cont::ArrayHandle<T>
 GetScalarDataAsArrayHandle(vtkh::DataSet &vtkhData, std::string field_name)
 {
   //Get domain Ids on this rank
   //will be nonzero even if there is no data
-  std::vector<vtkm::Id> localDomainIds = vtkhData.GetDomainIds();
-  vtkm::cont::ArrayHandle<T> totalFieldData;
+  std::vector<viskores::Id> localDomainIds = vtkhData.GetDomainIds();
+  viskores::cont::ArrayHandle<T> totalFieldData;
 
   if (!vtkhData.IsEmpty())
   {
     // Loop once to get the total number of items and reserve the vector
-    vtkm::Id totalNumberOfValues = std::accumulate(
+    viskores::Id totalNumberOfValues = std::accumulate(
         localDomainIds.begin(),
         localDomainIds.end(),
         0,
-        [&](const vtkm::Id &acc, const vtkm::Id domainId)
+        [&](const viskores::Id &acc, const viskores::Id domainId)
         {
-          const vtkm::cont::DataSet &dataset = vtkhData.GetDomain(domainId);
-          const vtkm::cont::Field &field = dataset.GetField(field_name);
+          const viskores::cont::DataSet &dataset = vtkhData.GetDomain(domainId);
+          const viskores::cont::Field &field = dataset.GetField(field_name);
           return acc + field.GetData().GetNumberOfValues();
         });
 
     totalFieldData.Allocate(totalNumberOfValues);
-    vtkm::Id offset = 0;
+    viskores::Id offset = 0;
     for (auto &domainId : localDomainIds)
     {
-      const vtkm::cont::DataSet &dataset = vtkhData.GetDomain(domainId);
-      const vtkm::cont::Field &field = dataset.GetField(field_name);
-      const auto fieldData = field.GetData().AsArrayHandle<vtkm::cont::ArrayHandle<T>>();
+      const viskores::cont::DataSet &dataset = vtkhData.GetDomain(domainId);
+      const viskores::cont::Field &field = dataset.GetField(field_name);
+      const auto fieldData = field.GetData().AsArrayHandle<viskores::cont::ArrayHandle<T>>();
       copyArrayWithOffset(fieldData, totalFieldData, offset);
       offset += fieldData.GetNumberOfValues();
     }
@@ -399,21 +399,21 @@ calculateDataEntropy(vtkh::DataSet* dataset, std::string field_name, double fiel
   MPI_Comm_rank(mpi_comm, &rank);
   #endif
 //dataset->PrintSummary(std::cerr);
-  using data_d = vtkm::cont::ArrayHandle<vtkm::Float64>;
-  using data_f = vtkm::cont::ArrayHandle<vtkm::Float32>;
+  using data_d = viskores::cont::ArrayHandle<viskores::Float64>;
+  using data_f = viskores::cont::ArrayHandle<viskores::Float32>;
   
   if(rank == 0)
   {
-    vtkm::cont::Field field = dataset->GetField(field_name,0);
+    viskores::cont::Field field = dataset->GetField(field_name,0);
 
     if(field.GetData().IsType<data_d>())
     {
-      auto field_data = GetScalarDataAsArrayHandle<vtkm::Float64>(*dataset, field_name.c_str());
+      auto field_data = GetScalarDataAsArrayHandle<viskores::Float64>(*dataset, field_name.c_str());
       if (field_data.GetNumberOfValues() > 0) 
       {
         DataCheckFlags checks = CheckNan | CheckZero;
-        field_data = copyWithChecks<vtkm::Float64>(field_data, checks);
-        entropy = calcEntropyMM<vtkm::Float64>(field_data, bins, field_min, field_max);
+        field_data = copyWithChecks<viskores::Float64>(field_data, checks);
+        entropy = calcEntropyMM<viskores::Float64>(field_data, bins, field_min, field_max);
       } 
       else
       {
@@ -422,12 +422,12 @@ calculateDataEntropy(vtkh::DataSet* dataset, std::string field_name, double fiel
     }
     else
     {
-      auto field_data = GetScalarDataAsArrayHandle<vtkm::Float32>(*dataset, field_name.c_str());
+      auto field_data = GetScalarDataAsArrayHandle<viskores::Float32>(*dataset, field_name.c_str());
       if (field_data.GetNumberOfValues() > 0) 
       {
         DataCheckFlags checks = CheckNan | CheckZero;
-        field_data = copyWithChecks<vtkm::Float32>(field_data, checks);
-        entropy = calcEntropyMM<vtkm::Float32>(field_data, bins, vtkm::Float32(field_min), vtkm::Float32(field_max));
+        field_data = copyWithChecks<viskores::Float32>(field_data, checks);
+        entropy = calcEntropyMM<viskores::Float32>(field_data, bins, viskores::Float32(field_min), viskores::Float32(field_max));
       } 
       else
       {
@@ -453,25 +453,25 @@ calculateDepthEntropy(vtkh::DataSet* dataset, std::string field_name, double dia
   MPI_Comm_rank(mpi_comm, &rank);
   #endif
 
-  using data_d = vtkm::cont::ArrayHandle<vtkm::Float64>;
-  using data_f = vtkm::cont::ArrayHandle<vtkm::Float32>;
+  using data_d = viskores::cont::ArrayHandle<viskores::Float64>;
+  using data_f = viskores::cont::ArrayHandle<viskores::Float32>;
 
   if(rank == 0)
   {
-    vtkm::cont::Field field = dataset->GetField(field_name,0);
+    viskores::cont::Field field = dataset->GetField(field_name,0);
 
     if(field.GetData().IsType<data_d>())
     {
-      auto field_data = GetScalarDataAsArrayHandle<vtkm::Float64>(*dataset, "depth");
+      auto field_data = GetScalarDataAsArrayHandle<viskores::Float64>(*dataset, "depth");
       if (field_data.GetNumberOfValues() > 0) 
       {
         DataCheckFlags checks = CheckNan | CheckMinExclusive | CheckMaxExclusive;
-        DataCheckVals<vtkm::Float64> checkVals; 
+        DataCheckVals<viskores::Float64> checkVals; 
 	checkVals.Min = 0;
-       	checkVals.Max = vtkm::Float64(INT_MAX);
-        field_data = copyWithChecks<vtkm::Float64>(field_data, checks, checkVals);
-	vtkm::Float64 min = 0.0;
-        entropy = calcEntropyMM<vtkm::Float64>(field_data, bins, min, diameter);
+       	checkVals.Max = viskores::Float64(INT_MAX);
+        field_data = copyWithChecks<viskores::Float64>(field_data, checks, checkVals);
+	viskores::Float64 min = 0.0;
+        entropy = calcEntropyMM<viskores::Float64>(field_data, bins, min, diameter);
       } 
       else
       {
@@ -480,16 +480,16 @@ calculateDepthEntropy(vtkh::DataSet* dataset, std::string field_name, double dia
     }
     else
     {
-      auto field_data = GetScalarDataAsArrayHandle<vtkm::Float32>(*dataset, "depth");
+      auto field_data = GetScalarDataAsArrayHandle<viskores::Float32>(*dataset, "depth");
       if (field_data.GetNumberOfValues() > 0) 
       {
         DataCheckFlags checks = CheckNan | CheckMinExclusive | CheckMaxExclusive;
-        DataCheckVals<vtkm::Float32> checkVals; 
+        DataCheckVals<viskores::Float32> checkVals; 
 	checkVals.Min = 0;
-       	checkVals.Max = vtkm::Float32(INT_MAX);
-        field_data = copyWithChecks<vtkm::Float32>(field_data, checks, checkVals);
-	vtkm::Float32 min = 0.0;
-        entropy = calcEntropyMM<vtkm::Float32>(field_data, bins, min, vtkm::Float32(diameter));
+       	checkVals.Max = viskores::Float32(INT_MAX);
+        field_data = copyWithChecks<viskores::Float32>(field_data, checks, checkVals);
+	viskores::Float32 min = 0.0;
+        entropy = calcEntropyMM<viskores::Float32>(field_data, bins, min, viskores::Float32(diameter));
       } 
       else
       {
@@ -514,26 +514,26 @@ calculateShadingEntropy(vtkh::DataSet* dataset, std::string field_name, int bins
   MPI_Comm_rank(mpi_comm, &rank);
   #endif
 
-  using data_d = vtkm::cont::ArrayHandle<vtkm::Float64>;
-  using data_f = vtkm::cont::ArrayHandle<vtkm::Float32>;
+  using data_d = viskores::cont::ArrayHandle<viskores::Float64>;
+  using data_f = viskores::cont::ArrayHandle<viskores::Float32>;
 
   if(rank == 0)
   {
-    vtkm::cont::Field field = dataset->GetField(field_name,0);
+    viskores::cont::Field field = dataset->GetField(field_name,0);
 
     if(field.GetData().IsType<data_d>())
     {
-      auto field_data = GetScalarDataAsArrayHandle<vtkm::Float64>(*dataset, "shading");
+      auto field_data = GetScalarDataAsArrayHandle<viskores::Float64>(*dataset, "shading");
       if (field_data.GetNumberOfValues() > 0) 
       {
         DataCheckFlags checks = CheckNan | CheckMinExclusive | CheckMaxExclusive;
-        DataCheckVals<vtkm::Float64> checkVals; 
+        DataCheckVals<viskores::Float64> checkVals; 
 	checkVals.Min = 0;
-       	checkVals.Max = vtkm::Float64(INT_MAX);
-        field_data = copyWithChecks<vtkm::Float64>(field_data, checks, checkVals);
-	vtkm::Float32 min = 0.0;
-	vtkm::Float32 max = 1.0;
-        entropy = calcEntropyMM<vtkm::Float64>(field_data, bins, min, max);
+       	checkVals.Max = viskores::Float64(INT_MAX);
+        field_data = copyWithChecks<viskores::Float64>(field_data, checks, checkVals);
+	viskores::Float32 min = 0.0;
+	viskores::Float32 max = 1.0;
+        entropy = calcEntropyMM<viskores::Float64>(field_data, bins, min, max);
       } 
       else
       {
@@ -542,17 +542,17 @@ calculateShadingEntropy(vtkh::DataSet* dataset, std::string field_name, int bins
     }
     else
     {
-      auto field_data = GetScalarDataAsArrayHandle<vtkm::Float32>(*dataset, "shading");
+      auto field_data = GetScalarDataAsArrayHandle<viskores::Float32>(*dataset, "shading");
       if (field_data.GetNumberOfValues() > 0) 
       {
         DataCheckFlags checks = CheckNan | CheckMinExclusive | CheckMaxExclusive;
-        DataCheckVals<vtkm::Float32> checkVals; 
+        DataCheckVals<viskores::Float32> checkVals; 
 	checkVals.Min = 0;
-       	checkVals.Max = vtkm::Float32(INT_MAX);
-        field_data = copyWithChecks<vtkm::Float32>(field_data, checks, checkVals);
-	vtkm::Float32 min = 0.0;
-	vtkm::Float32 max = 1.0;
-        entropy = calcEntropyMM<vtkm::Float32>(field_data, bins, min, max);
+       	checkVals.Max = viskores::Float32(INT_MAX);
+        field_data = copyWithChecks<viskores::Float32>(field_data, checks, checkVals);
+	viskores::Float32 min = 0.0;
+	viskores::Float32 max = 1.0;
+        entropy = calcEntropyMM<viskores::Float32>(field_data, bins, min, max);
       } 
       else
       {
@@ -567,7 +567,7 @@ calculateShadingEntropy(vtkh::DataSet* dataset, std::string field_name, int bins
 }
 
 double
-calculateMetricScore(vtkh::DataSet* dataset, std::string metric, std::string field_name, vtkm::Float64 field_min, vtkm::Float64 field_max, double diameter, int bins)
+calculateMetricScore(vtkh::DataSet* dataset, std::string metric, std::string field_name, viskores::Float64 field_min, viskores::Float64 field_max, double diameter, int bins)
 {
   double score = 0.0;
 
@@ -600,11 +600,11 @@ calculateMetricScore(vtkh::DataSet* dataset, std::string metric, std::string fie
 }
 
 void
-calculateDiameter(vtkm::Bounds bounds, double &diameter)
+calculateDiameter(viskores::Bounds bounds, double &diameter)
 {
-  vtkm::Float64 xb = vtkm::Float64(bounds.X.Length());
-  vtkm::Float64 yb = vtkm::Float64(bounds.Y.Length());
-  vtkm::Float64 zb = vtkm::Float64(bounds.Z.Length());
+  viskores::Float64 xb = viskores::Float64(bounds.X.Length());
+  viskores::Float64 yb = viskores::Float64(bounds.Y.Length());
+  viskores::Float64 zb = viskores::Float64(bounds.Z.Length());
   diameter = sqrt(xb*xb + yb*yb + zb*zb);
 
 }
@@ -696,7 +696,7 @@ AutoCamera::GetWidth()
   return m_width;
 }
 
-vtkmCamera
+viskoresCamera
 AutoCamera::GetCamera()
 {
   return m_camera;
@@ -720,17 +720,17 @@ AutoCamera::DoExecute()
   MPI_Comm_rank(mpi_comm, &rank);
   #endif
   
-  vtkm::Range range = this->m_input->GetGlobalRange(m_field).ReadPortal().Get(0);
-  vtkm::Float64 field_min = range.Min;
-  vtkm::Float64 field_max = range.Max;
+  viskores::Range range = this->m_input->GetGlobalRange(m_field).ReadPortal().Get(0);
+  viskores::Float64 field_min = range.Min;
+  viskores::Float64 field_max = range.Max;
 
-  vtkm::Bounds g_bounds = this->m_input->GetGlobalBounds();
+  viskores::Bounds g_bounds = this->m_input->GetGlobalBounds();
   double diameter = 0.0;
   detail::calculateDiameter(g_bounds, diameter);
 
-  vtkmCamera *camera = new vtkmCamera;
+  viskoresCamera *camera = new viskoresCamera;
   camera->ResetToBounds(g_bounds);
-  vtkm::Vec<vtkm::Float32,3> lookat = camera->GetLookAt();
+  viskores::Vec<viskores::Float32,3> lookat = camera->GetLookAt();
   float focus[3] = {lookat[0],lookat[1],lookat[2]};
 
   double winning_score  = -1;
@@ -747,7 +747,7 @@ AutoCamera::DoExecute()
 
     double cam_pos[3];
     detail::GetCamera(sample, m_samples, diameter, focus, cam_pos);
-    vtkm::Vec<vtkm::Float64, 3> pos{cam_pos[0],
+    viskores::Vec<viskores::Float64, 3> pos{cam_pos[0],
                             cam_pos[1],
                             cam_pos[2]};
 
@@ -798,7 +798,7 @@ AutoCamera::DoExecute()
   double best_c[3];
   detail::GetCamera(winning_sample, m_samples, diameter, focus, best_c);
 
-  vtkm::Vec<vtkm::Float64, 3> pos{best_c[0], 
+  viskores::Vec<viskores::Float64, 3> pos{best_c[0], 
 				best_c[1], 
 				best_c[2]}; 
   camera->SetPosition(pos);

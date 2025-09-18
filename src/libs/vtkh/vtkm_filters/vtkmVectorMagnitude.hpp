@@ -1,19 +1,19 @@
-#ifndef VTK_H_VTKM_VECTOR_MAGNITUDE_HPP
-#define VTK_H_VTKM_VECTOR_MAGNITUDE_HPP
+#ifndef VTK_H_VISKORES_VECTOR_MAGNITUDE_HPP
+#define VTK_H_VISKORES_VECTOR_MAGNITUDE_HPP
 
-#include <vtkm/cont/DataSet.h>
-#include <vtkm/filter/FieldSelection.h>
+#include <viskores/cont/DataSet.h>
+#include <viskores/filter/FieldSelection.h>
 
 namespace vtkh
 {
 
-class vtkmVectorMagnitude
+class viskoresVectorMagnitude
 {
 public:
-  vtkm::cont::DataSet Run(vtkm::cont::DataSet &input,
+  viskores::cont::DataSet Run(viskores::cont::DataSet &input,
                           std::string field_name,
                           std::string out_field_name,
-                          vtkm::filter::FieldSelection map_fields);
+                          viskores::filter::FieldSelection map_fields);
 };
 }
 #endif

@@ -6,13 +6,13 @@ Subject: [PATCH] DIY: Add include of cstddef to DIY datatypes.hpp
 This is required because size_t is not defined via
 the STL headers included here.
 ---
- vtkm/thirdparty/diy/vtkmdiy/include/vtkmdiy/mpi/datatypes.hpp | 1 +
+ viskores/thirdparty/diy/viskoresdiy/include/viskoresdiy/mpi/datatypes.hpp | 1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/vtkm/thirdparty/diy/vtkmdiy/include/vtkmdiy/mpi/datatypes.hpp b/vtkm/thirdparty/diy/vtkmdiy/include/vtkmdiy/mpi/datatypes.hpp
+diff --git a/viskores/thirdparty/diy/viskoresdiy/include/viskoresdiy/mpi/datatypes.hpp b/viskores/thirdparty/diy/viskoresdiy/include/viskoresdiy/mpi/datatypes.hpp
 index 24d4b3275..bec4a62d8 100644
---- a/vtkm/thirdparty/diy/vtkmdiy/include/vtkmdiy/mpi/datatypes.hpp
-+++ b/vtkm/thirdparty/diy/vtkmdiy/include/vtkmdiy/mpi/datatypes.hpp
+--- a/viskores/thirdparty/diy/viskoresdiy/include/viskoresdiy/mpi/datatypes.hpp
++++ b/viskores/thirdparty/diy/viskoresdiy/include/viskoresdiy/mpi/datatypes.hpp
 @@ -5,6 +5,7 @@
  
  #include <vector>

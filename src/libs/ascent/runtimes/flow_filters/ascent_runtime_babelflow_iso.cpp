@@ -18,16 +18,16 @@
 #include <ascent_runtime_param_check.hpp>
 #include <flow_workspace.hpp>
 
-#ifdef ASCENT_VTKM_ENABLED
+#ifdef ASCENT_VISKORES_ENABLED
 #include <vtkh/vtkh.hpp>
 #include <vtkh/DataSet.hpp>
 #include <vtkh/filters/MarchingCubes.hpp>
 #include <vtkh/rendering/RayTracer.hpp>
 #include <vtkh/rendering/Scene.hpp>
-#include <vtkm/rendering/Canvas.h>
+#include <viskores/rendering/Canvas.h>
 
-#include <vtkm/rendering/CanvasRayTracer.h>
-#include <vtkm/rendering/MapperRayTracer.h>
+#include <viskores/rendering/CanvasRayTracer.h>
+#include <viskores/rendering/MapperRayTracer.h>
 
 #include <ascent_vtkh_data_adapter.hpp>
 #endif
@@ -66,7 +66,7 @@ struct BoundsData
 {
   double m_rangeVec[6];   // Pairs of min, max for x, y, z axes
 
-  BoundsData& operator=( const vtkm::Bounds& bnd )
+  BoundsData& operator=( const viskores::Bounds& bnd )
   {
     m_rangeVec[0] = bnd.X.Min;
     m_rangeVec[1] = bnd.X.Max;
@@ -78,9 +78,9 @@ struct BoundsData
     return *this;
   }
 
-  vtkm::Bounds getVtkmBounds()
+  viskores::Bounds getVtkmBounds()
   {
-    vtkm::Bounds bnd;
+    viskores::Bounds bnd;
 
     bnd.X.Min = m_rangeVec[0];
     bnd.X.Max = m_rangeVec[1];
@@ -236,7 +236,7 @@ int marching_cubes(std::vector<BabelFlow::Payload>& inputs,
 }
 
 
-int vtkm_rendering(std::vector<BabelFlow::Payload>& inputs, 
+int viskores_rendering(std::vector<BabelFlow::Payload>& inputs, 
                    std::vector<BabelFlow::Payload>& outputs, 
                    BabelFlow::TaskId task_id)
 {
@@ -259,21 +259,21 @@ int vtkm_rendering(std::vector<BabelFlow::Payload>& inputs,
   scene.AddRenderer( &renderer );
   scene.AddRender( render );
 
-  vtkm::Range range;
+  viskores::Range range;
   range.Min = iso_surf_data.m_IsoVals.front();
   range.Max = iso_surf_data.m_IsoVals.back();
 
   // {
   //   auto ranges = iso_surf_data.m_DataSet->GetGlobalRange( iso_surf_data.m_FieldName );
   //   int num_components = ranges.GetNumberOfValues();
-  //   std::cout << "vtkm_rendering -- range num components = " << num_components << std::endl;
-  //   vtkm::Range global_range = ranges.ReadPortal().Get(0);
+  //   std::cout << "viskores_rendering -- range num components = " << num_components << std::endl;
+  //   viskores::Range global_range = ranges.ReadPortal().Get(0);
   //   // a min or max may be been set by the user, check to see
-  //   if(range.Min == vtkm::Infinity64())
+  //   if(range.Min == viskores::Infinity64())
   //   {
   //     range.Min = global_range.Min;
   //   }
-  //   if(range.Max == vtkm::NegativeInfinity64())
+  //   if(range.Max == viskores::NegativeInfinity64())
   //   {
   //     range.Max = global_range.Max;
   //   }
@@ -281,7 +281,7 @@ int vtkm_rendering(std::vector<BabelFlow::Payload>& inputs,
 
 #ifdef BFLOW_ISO_DEBUG
   {
-    std::cout << "vtkm_rendering --" << std::endl;
+    std::cout << "viskores_rendering --" << std::endl;
     std::cout << "Num domains: " << iso_surf_data.m_DataSet->GetNumberOfDomains() << std::endl;
     std::cout << "Color table: " << renderer.GetColorTable().GetName() << std::endl;
     std::cout << "Range: " << range << std::endl;
@@ -295,14 +295,14 @@ int vtkm_rendering(std::vector<BabelFlow::Payload>& inputs,
 
   // renderer.Update();
 
-  vtkm::cont::DataSet data_set;
-  vtkm::Id domain_id;
+  viskores::cont::DataSet data_set;
+  viskores::Id domain_id;
   iso_surf_data.m_DataSet->GetDomain( 0, data_set, domain_id );
-  const vtkm::cont::UnknownCellSet &cellset = data_set.GetCellSet();
-  const vtkm::cont::Field &field = data_set.GetField( renderer.GetFieldName() );
-  const vtkm::cont::CoordinateSystem &coords = data_set.GetCoordinateSystem();
+  const viskores::cont::UnknownCellSet &cellset = data_set.GetCellSet();
+  const viskores::cont::Field &field = data_set.GetField( renderer.GetFieldName() );
+  const viskores::cont::CoordinateSystem &coords = data_set.GetCoordinateSystem();
 
-  auto mapper = std::make_shared<vtkm::rendering::MapperRayTracer>();
+  auto mapper = std::make_shared<viskores::rendering::MapperRayTracer>();
 
   mapper->SetActiveColorTable( renderer.GetColorTable() );
 
@@ -313,7 +313,7 @@ int vtkm_rendering(std::vector<BabelFlow::Payload>& inputs,
 
 #ifdef BFLOW_ISO_DEBUG
   {
-    std::cout << "vtkm_rendering -- finished" << std::endl;
+    std::cout << "viskores_rendering -- finished" << std::endl;
   }
 #endif
 
@@ -334,10 +334,10 @@ int vtkm_rendering(std::vector<BabelFlow::Payload>& inputs,
 
   uint32_t img_offset = 0;
 
-  for( vtkm::Id index = 0; index < color_portal.GetNumberOfValues(); ++index )
+  for( viskores::Id index = 0; index < color_portal.GetNumberOfValues(); ++index )
   {
-    vtkm::Vec4f_32 cur_color = color_portal.Get( index );
-    vtkm::Float32 cur_z = depth_portal.Get( index );
+    viskores::Vec4f_32 cur_color = color_portal.Get( index );
+    viskores::Float32 cur_z = depth_portal.Get( index );
 
     // input_img.image[img_offset + 0] = (unsigned char)(cur_color[0] * 255.f);
     // input_img.image[img_offset + 1] = (unsigned char)(cur_color[1] * 255.f);
@@ -442,7 +442,7 @@ public:
 
     BabelFlow::TaskGraph::registerCallback( 1, BabelFlow::SingleTaskGraph::SINGLE_TASK_CB, marching_cubes );
 
-    BabelFlow::TaskGraph::registerCallback( 2, BabelFlow::SingleTaskGraph::SINGLE_TASK_CB, vtkm_rendering );
+    BabelFlow::TaskGraph::registerCallback( 2, BabelFlow::SingleTaskGraph::SINGLE_TASK_CB, viskores_rendering );
 
     BabelFlow::TaskGraph::registerCallback( 3, BabelFlow::RadixKExchange::LEAF_TASK_CB, bflow_comp::volume_render_radixk );
     BabelFlow::TaskGraph::registerCallback( 3, BabelFlow::RadixKExchange::MID_TASK_CB, bflow_comp::composite_radixk );

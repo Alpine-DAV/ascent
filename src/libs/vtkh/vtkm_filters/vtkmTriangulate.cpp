@@ -1,15 +1,15 @@
-#include "vtkmTriangulate.hpp"
+#include "viskoresTriangulate.hpp"
 
-#include <vtkm/filter/geometry_refinement/Triangulate.h>
+#include <viskores/filter/geometry_refinement/Triangulate.h>
 
 namespace vtkh
 {
 
-vtkm::cont::DataSet
-vtkmTriangulate::Run(vtkm::cont::DataSet &input,
-                     vtkm::filter::FieldSelection map_fields)
+viskores::cont::DataSet
+viskoresTriangulate::Run(viskores::cont::DataSet &input,
+                     viskores::filter::FieldSelection map_fields)
 {
-  vtkm::filter::geometry_refinement::Triangulate tri;
+  viskores::filter::geometry_refinement::Triangulate tri;
   tri.SetFieldsToPass(map_fields);
   auto output = tri.Execute(input);
   return output;

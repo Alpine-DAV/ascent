@@ -1,15 +1,15 @@
-#include "vtkmPointAverage.hpp"
-#include <vtkm/filter/field_conversion/PointAverage.h>
+#include "viskoresPointAverage.hpp"
+#include <viskores/filter/field_conversion/PointAverage.h>
 
 namespace vtkh
 {
-vtkm::cont::DataSet
-vtkmPointAverage::Run(vtkm::cont::DataSet &input,
+viskores::cont::DataSet
+viskoresPointAverage::Run(viskores::cont::DataSet &input,
                       std::string field_name,
                       std::string output_field_name,
-                      vtkm::filter::FieldSelection map_fields)
+                      viskores::filter::FieldSelection map_fields)
 {
-  vtkm::filter::field_conversion::PointAverage avg;
+  viskores::filter::field_conversion::PointAverage avg;
   avg.SetOutputFieldName(output_field_name);
   avg.SetFieldsToPass(map_fields);
   avg.SetActiveField(field_name);

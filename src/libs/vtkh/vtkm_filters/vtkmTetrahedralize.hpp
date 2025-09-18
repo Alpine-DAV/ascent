@@ -1,17 +1,17 @@
-#ifndef VTK_H_VTKM_TETRAHEDRALIZE_HPP
-#define VTK_H_VTKM_TETRAHEDRALIZE_HPP
+#ifndef VTK_H_VISKORES_TETRAHEDRALIZE_HPP
+#define VTK_H_VISKORES_TETRAHEDRALIZE_HPP
 
-#include <vtkm/cont/DataSet.h>
-#include <vtkm/filter/FieldSelection.h>
+#include <viskores/cont/DataSet.h>
+#include <viskores/filter/FieldSelection.h>
 
 namespace vtkh
 {
 
-class vtkmTetrahedralize
+class viskoresTetrahedralize
 {
 public:
-  vtkm::cont::DataSet Run(vtkm::cont::DataSet &input,
-                          vtkm::filter::FieldSelection map_fields);
+  viskores::cont::DataSet Run(viskores::cont::DataSet &input,
+                          viskores::filter::FieldSelection map_fields);
 };
 }
 #endif

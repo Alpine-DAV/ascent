@@ -1,15 +1,15 @@
-#include "vtkmMarchingCubes.hpp"
-#include <vtkm/filter/contour/Contour.h>
+#include "viskoresMarchingCubes.hpp"
+#include <viskores/filter/contour/Contour.h>
 
 namespace vtkh
 {
-vtkm::cont::DataSet
-vtkmMarchingCubes::Run(vtkm::cont::DataSet &input,
+viskores::cont::DataSet
+viskoresMarchingCubes::Run(viskores::cont::DataSet &input,
                        std::string field_name,
                        std::vector<double> iso_values,
-                       vtkm::filter::FieldSelection map_fields)
+                       viskores::filter::FieldSelection map_fields)
 {
-  vtkm::filter::contour::Contour marcher;
+  viskores::filter::contour::Contour marcher;
 
   marcher.SetFieldsToPass(map_fields);
   marcher.SetIsoValues(iso_values);

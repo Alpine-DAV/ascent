@@ -402,10 +402,10 @@ TEST(ascent_expressions, braid_sample)
       ASCENT_INFO("Ascent JIT support disabled, skipping test\n");
       return;
   }
-    // only run this test if ascent was built with vtkm support
-  if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+  if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
   {
-      ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+      ASCENT_INFO("Ascent viskores support disabled, skipping test");
       return;
   }
 
@@ -476,10 +476,10 @@ TEST(ascent_expressions, multi_topos)
       ASCENT_INFO("Ascent JIT support disabled, skipping test\n");
       return;
   }
-    // only run this test if ascent was built with vtkm support
-  if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+  if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
   {
-      ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+      ASCENT_INFO("Ascent viskores support disabled, skipping test");
       return;
   }
   conduit::Node multi_dom;
@@ -551,10 +551,10 @@ TEST(ascent_derived, df_add_fields)
   Node n;
   ascent::about(n);
 
-  // only run this test if ascent was built with vtkm support
-  if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+  // only run this test if ascent was built with viskores support
+  if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
   {
-      ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+      ASCENT_INFO("Ascent viskores support disabled, skipping test");
       return;
   }
 
@@ -625,10 +625,10 @@ TEST(ascent_derived, df_power_of_field)
   Node n;
   ascent::about(n);
 
-  // only run this test if ascent was built with vtkm support
-  if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+  // only run this test if ascent was built with viskores support
+  if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
   {
-      ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+      ASCENT_INFO("Ascent viskores support disabled, skipping test");
       return;
   }
 

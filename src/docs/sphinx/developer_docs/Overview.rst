@@ -59,7 +59,7 @@ What Types of Mesh Data Does Ascent Use?
 Ascent supports several different data types, and has adapters for converting between them.
 
   * Conduit Mesh Blueprint: used to publish data to ascent
-  * VTK-h: a simple collection of VTK-m data sets
+  * VTK-h: a simple collection of Viskores data sets
   * MFEM: high-order finite element meshes
 
 Implementers of Flow filters must check the input data type and apply the
@@ -84,28 +84,28 @@ Ascent supports arbitrary domain overloading, so all filters should support
 multiple domains per rank. Additionally, there is no guarantee that a rank will have
 any data at all, especially after a series of transformations.
 
-VTK-m
+Viskores
 -----
 Ascent's ability to perform visualization operations on exascale architectures
-is underpinned by VTK-m. Currently, pipelines in Ascent are constructed with various
-VTK-m filters wrapped by VTK-h and then by a flow filter. Although strongly encouraged,
-Ascent does not need to be compiled with VTK-m support.
+is underpinned by Viskores. Currently, pipelines in Ascent are constructed with various
+Viskores filters wrapped by VTK-h and then by a flow filter. Although strongly encouraged,
+Ascent does not need to be compiled with Viskores support.
 
 VTK-h
 -----
 At the beginning of Ascent development, there was no support for MPI inside of
-VTK-m. To augment VTK-m with distributed-memory capabilities, we created VTK-h,
+Viskores. To augment Viskores with distributed-memory capabilities, we created VTK-h,
 where the `h` stands for hybrid-parallel. Inside of VTK-h, we added a distributed-memory
 image compositing component and functions that answer global (across all MPI ranks)
 questions about data sets such as obtaining the range of a scalar field.
 
-Additionally, VTK-m began as a header only library and VTK-m does not currently build
-a library of filters. VTK-h acts as a stand-in for a library of VTK-m filters, and VTK-h
+Additionally, Viskores began as a header only library and Viskores does not currently build
+a library of filters. VTK-h acts as a stand-in for a library of Viskores filters, and VTK-h
 maintains the build system that manages CUDA, including GPU device selection, OpenMP, and
-Serial compilation. Supporting the range of VTK-m features needed leads to very long
+Serial compilation. Supporting the range of Viskores features needed leads to very long
 compile times, thus VTK-h insulates Ascent from this additional complexity.
 
-In the future, VTK-m will transition to a fully compiled library, and as distributed-memory
-functionality comes online inside VTK-m, we will transition away from VTK-h at some point in
+In the future, Viskores will transition to a fully compiled library, and as distributed-memory
+functionality comes online inside Viskores, we will transition away from VTK-h at some point in
 the future.
 

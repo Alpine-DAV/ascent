@@ -1,16 +1,16 @@
-#include "vtkmExtractStructured.hpp"
-#include <vtkm/filter/entity_extraction/ExtractStructured.h>
+#include "viskoresExtractStructured.hpp"
+#include <viskores/filter/entity_extraction/ExtractStructured.h>
 
 namespace vtkh
 {
-vtkm::cont::DataSet
-vtkmExtractStructured::Run(vtkm::cont::DataSet &input,
-                           vtkm::RangeId3 range,
-                           vtkm::Id3 sample_rate,
-                           vtkm::filter::FieldSelection map_fields)
+viskores::cont::DataSet
+viskoresExtractStructured::Run(viskores::cont::DataSet &input,
+                           viskores::RangeId3 range,
+                           viskores::Id3 sample_rate,
+                           viskores::filter::FieldSelection map_fields)
 {
 
-  vtkm::filter::entity_extraction::ExtractStructured extract;
+  viskores::filter::entity_extraction::ExtractStructured extract;
   extract.SetVOI(range);
   extract.SetSampleRate(sample_rate);
   extract.SetIncludeBoundary(true);

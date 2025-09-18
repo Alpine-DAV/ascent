@@ -154,7 +154,7 @@ bool VTKHCollection::has_field(const std::string field_name) const
   return detail::global_has(has);
 }
 
-vtkm::Bounds VTKHCollection::global_bounds() const
+viskores::Bounds VTKHCollection::global_bounds() const
 {
   // ranks may have different numbers of local vtk-h datasets
   // depending on the topologies at play
@@ -163,7 +163,7 @@ vtkm::Bounds VTKHCollection::global_bounds() const
 
   // to get the global bounds, we include all local bounds
   // then do a mpi reduce here
-  vtkm::Bounds bounds;
+  viskores::Bounds bounds;
   for(auto it = m_datasets.begin(); it != m_datasets.end(); ++it)
   {
     bounds.Include(it->second.GetBounds());
@@ -172,25 +172,25 @@ vtkm::Bounds VTKHCollection::global_bounds() const
 #if defined(ASCENT_MPI_ENABLED)
     MPI_Comm mpi_comm = MPI_Comm_f2c(vtkh::GetMPICommHandle());
 
-    vtkm::Float64 loc_mins[3];
+    viskores::Float64 loc_mins[3];
     //x,y,z
     loc_mins[0] = bounds.X.Min;
     loc_mins[1] = bounds.Y.Min;
     loc_mins[2] = bounds.Z.Min;
 
-    vtkm::Float64 loc_maxs[3];
+    viskores::Float64 loc_maxs[3];
     //x,y,z
     loc_maxs[0] = bounds.X.Max;
     loc_maxs[1] = bounds.Y.Max;
     loc_maxs[2] = bounds.Z.Max;
 
-    vtkm::Float64 global_mins[3];
+    viskores::Float64 global_mins[3];
     //x,y,z
     global_mins[0] = 0.0;
     global_mins[1] = 0.0;
     global_mins[2] = 0.0;
 
-    vtkm::Float64 global_maxs[3];
+    viskores::Float64 global_maxs[3];
     //x,y,z
     global_maxs[0] = 0.0;
     global_maxs[1] = 0.0;
@@ -223,7 +223,7 @@ vtkm::Bounds VTKHCollection::global_bounds() const
   return bounds;
 }
 
-vtkm::Bounds VTKHCollection::global_topology_bounds(const std::string &topo_name) const
+viskores::Bounds VTKHCollection::global_topology_bounds(const std::string &topo_name) const
 {
   // ranks may have different numbers of local vtk-h datasets
   // depending on the topologies at play
@@ -232,7 +232,7 @@ vtkm::Bounds VTKHCollection::global_topology_bounds(const std::string &topo_name
 
   // to get the global bounds, we include all local bounds
   // then do a mpi reduce here
-  vtkm::Bounds bounds;
+  viskores::Bounds bounds;
 
   // this mpi task may not have this topo_name
   auto it = m_datasets.find(topo_name);
@@ -245,25 +245,25 @@ vtkm::Bounds VTKHCollection::global_topology_bounds(const std::string &topo_name
 #if defined(ASCENT_MPI_ENABLED)
     MPI_Comm mpi_comm = MPI_Comm_f2c(vtkh::GetMPICommHandle());
 
-    vtkm::Float64 loc_mins[3];
+    viskores::Float64 loc_mins[3];
     //x,y,z
     loc_mins[0] = bounds.X.Min;
     loc_mins[1] = bounds.Y.Min;
     loc_mins[2] = bounds.Z.Min;
 
-    vtkm::Float64 loc_maxs[3];
+    viskores::Float64 loc_maxs[3];
     //x,y,z
     loc_maxs[0] = bounds.X.Max;
     loc_maxs[1] = bounds.Y.Max;
     loc_maxs[2] = bounds.Z.Max;
 
-    vtkm::Float64 global_mins[3];
+    viskores::Float64 global_mins[3];
     //x,y,z
     global_mins[0] = 0.0;
     global_mins[1] = 0.0;
     global_mins[2] = 0.0;
 
-    vtkm::Float64 global_maxs[3];
+    viskores::Float64 global_maxs[3];
     //x,y,z
     global_maxs[0] = 0.0;
     global_maxs[1] = 0.0;
@@ -296,12 +296,12 @@ vtkm::Bounds VTKHCollection::global_topology_bounds(const std::string &topo_name
   return bounds;
 }
 
-std::vector<vtkm::Id> VTKHCollection::domain_ids() const
+std::vector<viskores::Id> VTKHCollection::domain_ids() const
 {
-  std::vector<vtkm::Id> all_ids;
+  std::vector<viskores::Id> all_ids;
   for(auto it = m_datasets.begin(); it != m_datasets.end(); ++it)
   {
-    std::vector<vtkm::Id> domain_ids = it->second.GetDomainIds();
+    std::vector<viskores::Id> domain_ids = it->second.GetDomainIds();
     for(int i = 0; i < domain_ids.size(); ++i)
     {
       all_ids.push_back(domain_ids[i]);
@@ -342,7 +342,7 @@ std::vector<std::string> VTKHCollection::field_names() const
     vtkh::DataSet domains = it->second;
     if(domains.GetNumberOfDomains() > 0)
     {
-      vtkm::cont::DataSet dom = domains.GetDomain(0);
+      viskores::cont::DataSet dom = domains.GetDomain(0);
       for(int i = 0; i < dom.GetNumberOfFields(); ++i)
       {
         names.insert(dom.GetField(i).GetName());
@@ -356,17 +356,17 @@ std::vector<std::string> VTKHCollection::field_names() const
   return res;
 }
 
-std::map<int, std::map<std::string,vtkm::cont::DataSet>>
+std::map<int, std::map<std::string,viskores::cont::DataSet>>
 VTKHCollection::by_domain_id()
 {
-  std::map<int, std::map<std::string, vtkm::cont::DataSet>> res;
+  std::map<int, std::map<std::string, viskores::cont::DataSet>> res;
 
   for(auto it = m_datasets.begin(); it != m_datasets.end(); ++it)
   {
     const std::string topo_name = it->first;
     vtkh::DataSet &vtkh_dataset = it->second;
 
-    std::vector<vtkm::Id> domain_ids = vtkh_dataset.GetDomainIds();
+    std::vector<viskores::Id> domain_ids = vtkh_dataset.GetDomainIds();
     for(int i = 0; i < domain_ids.size(); ++i)
     {
       const int domain_id = domain_ids[i];
