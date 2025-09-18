@@ -666,18 +666,18 @@ fi # if enable_hip || enable_sycl
 ################
 # Viskores
 ################
-viskores_version=v2.3.0
+viskores_version=1.0.0
 viskores_src_dir=$(ospath ${source_dir}/viskores-${viskores_version})
 viskores_build_dir=$(ospath ${build_dir}/viskores-${viskores_version})
 viskores_install_dir=$(ospath ${install_dir}/viskores-${viskores_version}/)
-viskores_tarball=$(ospath ${source_dir}/viskores-${viskores_version}.tar.gz)
+viskores_tarball=$(ospath ${source_dir}/v${viskores_version}.tar.gz)
 
 # build only if install doesn't exist
 if [ ! -d ${viskores_install_dir} ]; then
 if ${build_viskores}; then
 if [ ! -f ${viskores_tarball} ]; then
   echo "**** Downloading ${viskores_tarball}"
-  curl -L https://gitlab.kitware.com/vtk/viskores/-/archive/${viskores_version}/viskores-${viskores_version}.tar.gz -o ${viskores_tarball}
+  curl -L https://github.com/Viskores/viskores/archive/refs/tags/v${viskores_version}.tar.gz -o ${viskores_tarball}
 fi
 if [ ! -d ${viskores_src_dir} ]; then
   echo "**** Extracting ${viskores_tarball}"
@@ -685,6 +685,7 @@ if [ ! -d ${viskores_src_dir} ]; then
 
   # apply patches
   cd ${viskores_src_dir}
+  echo "**** Applying Patches to ${viskores_tarball}"
   patch -p1 < ${script_dir}/2025_06_18_viskores_z_extents_ray_culling_bugfix_viskores_mr109.patch
   cd ${root_dir}
 fi
@@ -716,7 +717,7 @@ if [[ "$enable_mpicc" == "ON" ]]; then
   viskores_extra_cmake_args="${viskores_extra_cmake_args} -DMPI_CXX_COMPILER=${mpicxx_exe}"
 fi
 
-echo "**** Configuring Viskores ${viskores_version}"
+echo "**** Configuring Viskores v${viskores_version}"
 cmake -S ${viskores_src_dir} -B ${viskores_build_dir} ${cmake_compiler_settings} \
   -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose}\
   -DCMAKE_BUILD_TYPE=${build_config} \
@@ -732,9 +733,9 @@ cmake -S ${viskores_src_dir} -B ${viskores_build_dir} ${cmake_compiler_settings}
   -DViskores_ENABLE_BENCHMARKS=OFF ${viskores_extra_cmake_args} \
   -DCMAKE_INSTALL_PREFIX=${viskores_install_dir}
 
-echo "**** Building Viskores ${viskores_version}"
+echo "**** Building Viskores v${viskores_version}"
 cmake --build ${viskores_build_dir} --config ${build_config} -j${build_jobs}
-echo "**** Installing Viskores ${viskores_version}"
+echo "**** Installing Viskores v${viskores_version}"
 cmake --install ${viskores_build_dir}  --config ${build_config}
 
 fi
