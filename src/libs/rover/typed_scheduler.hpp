@@ -94,8 +94,8 @@ protected:
   MPI_Comm                                  m_comm_handle;
 #endif
 
-  void create_background(const int num_channels);
-  int  get_global_channels();
+  void create_background(const int num_energy_groups);
+  int  get_global_num_energy_groups();
   void set_global_range_and_bounds();
   void add_partial(const vtkhRayTracing::PartialComposite<FloatType> &partial);
   void composite();

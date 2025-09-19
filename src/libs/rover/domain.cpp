@@ -86,9 +86,9 @@ Domain::init()
 }
 
 const int
-Domain::get_num_channels()
+Domain::get_num_energy_groups()
 {
-  return m_engine->get_num_channels();
+  return m_engine->get_num_energy_groups();
 }
 
 void

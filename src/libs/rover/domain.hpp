@@ -39,7 +39,7 @@ public:
   vtkm::Bounds& get_domain_bounds();
   vtkmRange get_primary_range();
   void set_global_bounds(vtkm::Bounds bounds);
-  const int get_num_channels();
+  const int get_num_energy_groups();
 protected:
   std::shared_ptr<Engine> m_engine;
   vtkmDataSet             m_dataset;

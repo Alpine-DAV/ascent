@@ -59,21 +59,21 @@ TypedScheduler<FloatType>::set_ray_generator(RayGenerator *ray_generator)
 
 template<typename FloatType>
 void
-TypedScheduler<FloatType>::create_background(const int num_channels)
+TypedScheduler<FloatType>::create_background(const int num_energy_groups)
 {
   // Initialize background intensities to 0.0f (by default)
   const float64 background_intensity = rover::settings["background_intensity"].to_float64();
-  m_background.resize(num_channels, background_intensity);
+  m_background.resize(num_energy_groups, background_intensity);
 }
 
 template<typename FloatType>
 int
-TypedScheduler<FloatType>::get_global_channels()
+TypedScheduler<FloatType>::get_global_num_energy_groups()
 {
-  int num_channels = 1;
+  int num_energy_groups = 1;
   for (auto& domain : m_domains)
   {
-    num_channels = std::max(num_channels, domain.get_num_channels());
+    num_energy_groups = std::max(num_energy_groups, domain.get_num_energy_groups());
   }
 
 #ifdef ROVER_PARALLEL
@@ -81,15 +81,15 @@ TypedScheduler<FloatType>::get_global_channels()
   timer.Start();
   double time = 0;
   (void) time;
-  int mpi_num_channels;
-  MPI_Allreduce(&num_channels, &mpi_num_channels, 1, MPI_INT, MPI_MAX, m_comm_handle);
-  num_channels = mpi_num_channels;
+  int mpi_num_energy_groups;
+  MPI_Allreduce(&num_energy_groups, &mpi_num_energy_groups, 1, MPI_INT, MPI_MAX, m_comm_handle);
+  num_energy_groups = mpi_num_energy_groups;
   time = timer.GetElapsedTime();
-  ROVER_DATA_ADD("get_global_channels_all_reduce", time);
+  ROVER_DATA_ADD("get_global_num_energy_groups_all_reduce", time);
 #endif
 
-  ROVER_INFO("Global number of channels" << num_channels);
-  return num_channels;
+  ROVER_INFO("Global number of energy groups" << num_energy_groups);
+  return num_energy_groups;
 }
 
 template<typename FloatType>
@@ -248,6 +248,9 @@ TypedScheduler<FloatType>::typed_composite()
   const int num_partials = m_partial_images.size();
   std::vector<std::vector<PartialType>> partials(num_partials);
 
+#ifdef ROVER_OPENMP_ENABLED
+  #pragma omp parallel for
+#endif
   for (int i = 0; i < num_partials; ++i)
   {
     m_partial_images[i].extract_partials(partials[i]);
@@ -277,6 +280,10 @@ TypedScheduler<FloatType>::typed_composite()
     int height = m_partial_images[0].m_height;
     std::vector<std::vector<vtkh::VolumePartial<FloatType>>> partials;
     partials.resize(num_partials);
+    
+#ifdef ROVER_OPENMP_ENABLED
+    #pragma omp parallel for
+#endif
     for (int i = 0; i < num_partials; ++i)
     {
       m_partial_images[i].extract_partials(partials[i]);
@@ -394,7 +401,7 @@ TypedScheduler<FloatType>::trace_rays()
   timer.Start();
   time = trace_timer.GetElapsedTime();
   ROVER_DATA_ADD("total_trace", time);
-  int num_channels = get_global_channels();
+  int num_energy_groups = get_global_energy_groups();
 
   vtkmTimer t1;
   t1.Start();
@@ -403,12 +410,12 @@ TypedScheduler<FloatType>::trace_rays()
   if (m_num_local_domains == 0 || m_partial_images.empty())
   {
     PartialImage<FloatType> partial_image;
-    partial_image.m_transmission = vtkmRayTracing::ChannelBuffer<FloatType>(num_channels, 0);
+    partial_image.m_transmission = vtkmRayTracing::ChannelBuffer<FloatType>(num_energy_groups, 0);
 
     // Add an intensity buffer if the emission field is set
     if (m_has_emission)
     {
-      partial_image.m_intensity = vtkmRayTracing::ChannelBuffer<FloatType>(num_channels, 0);
+      partial_image.m_intensity = vtkmRayTracing::ChannelBuffer<FloatType>(num_energy_groups, 0);
     }
 
     m_partial_images.push_back(partial_image);
@@ -419,7 +426,7 @@ TypedScheduler<FloatType>::trace_rays()
 
   if (m_background.empty())
   {
-    create_background(num_channels);
+    create_background(num_energy_groups);
   }
 
   ROVER_DATA_ADD("default_bg", t1.GetElapsedTime());
@@ -476,9 +483,9 @@ void TypedScheduler<FloatType>::save_png(std::string filename)
   // if (m_render_settings.m_render_mode == energy) // removing volume renderer
   // {
 
-  const int num_channels = m_result.get_num_channels();
-  ROVER_INFO("Saving " << num_channels << " channels");
-  for (int i = 0; i < num_channels; ++i)
+  const int num_energy_groups = m_result.get_num_energy_groups();
+  ROVER_INFO("Saving " << num_energy_groups << " energy groups");
+  for (int i = 0; i < num_energy_groups; ++i)
   {
     std::stringstream sstream;
     sstream << filename << "_" << i << ".png";
@@ -527,10 +534,10 @@ void TypedScheduler<FloatType>::save_bov(std::string file_name)
   // if (m_render_settings.m_render_mode == energy) // removing volume renderer
   // {
     
-  const int num_channels = m_result.get_num_channels();
-  ROVER_INFO("Saving bov with " << num_channels << " channels");
+  const int num_energy_groups = m_result.get_num_energy_groups();
+  ROVER_INFO("Saving bov with " << num_energy_groups << " energy groups");
 
-  for (int i = 0; i < num_channels; ++i)
+  for (int i = 0; i < num_energy_groups; i++)
   {
     std::stringstream sstream;
     sstream << file_name  << "_" << i << ".bov";
@@ -752,6 +759,9 @@ TypedScheduler<FloatType>::write_blueprint_rays_mesh(Node &data_out,
       scaled_unit_left = dx * vtkm::Normal(left);
       scaled_unit_up = dy * vtkm::Normal(up);
 
+#ifdef ROVER_OPENMP_ENABLED
+      #pragma omp parallel for collapse(2)
+#endif
       for (int j = 0; j < image_width; j++)
       {
           for (int k = 0; k < image_height; k++)
@@ -806,7 +816,7 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
   const int64 image_height = rover::settings["height"].to_int64();
   const double aspect_ratio = static_cast<double>(image_width) / static_cast<double>(image_height);
 
-  const int num_channels = m_result.get_num_channels();
+  const int num_energy_groups = m_result.get_num_energy_groups();
 
   vtkmCamera camera = m_ray_generator->get_camera();
   const vtkmVec3f position = camera.GetPosition();
@@ -920,7 +930,7 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
 
   image_coords["values/x"].set(DataType::float64(image_width + 1));
   image_coords["values/y"].set(DataType::float64(image_height + 1));
-  image_coords["values/z"].set(DataType::float64(num_channels + 1));
+  image_coords["values/z"].set(DataType::float64(num_energy_groups + 1));
 
   float64_array image_coords_x = image_coords["values/x"].value();
   float64_array image_coords_y = image_coords["values/y"].value();
@@ -936,7 +946,7 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
     image_coords_y[i] = i;
   }
 
-  for (int i = 0; i <= num_channels; i++)
+  for (int i = 0; i <= num_energy_groups; i++)
   {
     image_coords_z[i] = i;
   }
@@ -1016,7 +1026,7 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
   spatial_coords["type"] = "rectilinear";
   spatial_coords["values/x"].set(DataType::float64(image_width + 1));
   spatial_coords["values/y"].set(DataType::float64(image_height + 1));
-  spatial_coords["values/z"].set(DataType::float64(num_channels + 1));
+  spatial_coords["values/z"].set(DataType::float64(num_energy_groups + 1));
 
   float64_array spatial_coords_x = spatial_coords["values/x"].value();
   float64_array spatial_coords_y = spatial_coords["values/y"].value();
@@ -1032,7 +1042,7 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
     spatial_coords_y[i] = i * spatial_dy;
   }
 
-  for (int i = 0; i <= num_channels; i++)
+  for (int i = 0; i <= num_energy_groups; i++)
   {
     spatial_coords_z[i] = i;
   }  
