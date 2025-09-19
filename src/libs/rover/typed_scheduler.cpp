@@ -401,7 +401,7 @@ TypedScheduler<FloatType>::trace_rays()
   timer.Start();
   time = trace_timer.GetElapsedTime();
   ROVER_DATA_ADD("total_trace", time);
-  int num_energy_groups = get_global_energy_groups();
+  int num_energy_groups = get_global_num_energy_groups();
 
   vtkmTimer t1;
   t1.Start();
