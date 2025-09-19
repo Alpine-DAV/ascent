@@ -623,7 +623,7 @@ void GetMatSetFields(const conduit::Node &node, //materials["matset"]
       if(n_material.number_of_children() != 0)
       {
         conduit::Node tmp = n_next.child(0);
-	n_material = tmp;
+        n_material = tmp;
       }
       else
         n_material = n_next;
@@ -681,7 +681,7 @@ void GetMatSetFields(const conduit::Node &node, //materials["matset"]
       if(n_child.number_of_children() != 0)
       {
         conduit::Node tmp = n_child.child(0);
-	n_vol_frac = tmp;
+        n_vol_frac = tmp;
       }
       else
         n_vol_frac = n_child;	      
@@ -713,7 +713,7 @@ void GetMatSetFields(const conduit::Node &node, //materials["matset"]
       if(n_child.number_of_children() != 0)
       {
         conduit::Node tmp = n_child.child(0);
-	n_material = tmp;
+        n_material = tmp;
       }
       else
         n_material = n_child;
@@ -2872,12 +2872,12 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
             bool supported_type = false;
 
             conduit::Node n_vfs = n_matset["volume_fractions"].child(0);
-	    int num_children = n_vfs.number_of_children();
+            int num_children = n_vfs.number_of_children();
 
-	    if(num_children != 0) //of == 1?  
-	    {
+            if(num_children != 0) //of == 1?  
+            {
               n_vfs = n_matset["volume_fractions"].child(0).child(0);
-	    }
+            }
 
             // we compile vtk-h with fp types
             if(n_vfs.dtype().is_float32())
