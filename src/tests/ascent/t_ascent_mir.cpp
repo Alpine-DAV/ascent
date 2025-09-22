@@ -264,7 +264,6 @@ TEST(ascent_mir, venn_vtkm_mir_sparse_by_material)
     pipelines["pl1/f1/type"] = "mir";
     conduit::Node &params = pipelines["pl1/f1/params"];
     params["matset"] = "matset";         // name of the material set  
-    params["matset"] = "matset";         // name of the vector field
     params["error_scaling"] = 0.0;
     params["scaling_decay"] = 0.0;
     params["iterations"] = 0;

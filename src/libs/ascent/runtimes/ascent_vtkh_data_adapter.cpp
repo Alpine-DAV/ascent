@@ -617,17 +617,16 @@ void GetMatSetFields(const conduit::Node &node, //materials["matset"]
     while(itr.has_next())
     {
 
-      Node n_material;
-      const Node &n_next = itr.next();
+      const conduit::Node * n_material;
+      const conduit::Node &n_next = itr.next();
       //n_material is not leaf i.e. has values: [v0,v1,...,vn] 
-      if(n_material.number_of_children() != 0)
+      if(n_material->number_of_children() != 0)
       {
-        conduit::Node tmp = n_next.child(0);
-        n_material = tmp;
+        n_material = &n_next.child(0);
       }
       else
-        n_material = n_next;
-      const S *data = n_material.value();
+        n_material = &n_next;
+      const S *data = n_material->value();
       //increase length when a material vf value > 0
       for(index_t i = 0; i < neles; ++i)
       {
@@ -675,18 +674,17 @@ void GetMatSetFields(const conduit::Node &node, //materials["matset"]
 
     for(index_t i = 0; i < num_materials; ++i)
     {
-      Node n_vol_frac;	    
-      const Node &n_child = n_vol_fracs.child(i);
+      const conduit::Node * n_vol_frac;	    
+      const conduit::Node &n_child = n_vol_fracs.child(i);
       //n_vol_frac is not leaf i.e. has values: [v0,v1,...,vn] 
       if(n_child.number_of_children() != 0)
       {
-        conduit::Node tmp = n_child.child(0);
-        n_vol_frac = tmp;
+        n_vol_frac = &n_child.child(0);
       }
       else
-        n_vol_frac = n_child;	      
+        n_vol_frac = &n_child;	      
       const Node &n_ele_id = n_ele_ids.child(i);
-      const S *vf_data = n_vol_frac.value();
+      const S *vf_data = n_vol_frac->value();
       const T *id_data = n_ele_id.value();
       int num_vals = n_ele_id.dtype().number_of_elements(); 
 
