@@ -32,8 +32,8 @@ if(ENABLE_CUDA AND NOT Viskores_ENABLE_CUDA)
 endif()
 
 if(ENABLE_CUDA AND BUILD_SHARED_LIBS)
-  if(Viskores_VERSION VERSION_LESS "1.7.0")
-    message(FATAL_ERROR "Cannot build shared libs with CUDA when Viskores is < v1.7.0")
+  if(VISKORES_VERSION VERSION_LESS "1.0.0")
+    message(FATAL_ERROR "Cannot build shared libs with CUDA when Viskores is < v1.0.0")
   endif()
 endif()
 
