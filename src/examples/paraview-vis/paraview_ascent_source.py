@@ -5,20 +5,20 @@
 ###############################################################################
 
 import numpy as np
-from viskoresodules.util import numpy_support, vtkConstants
-from viskoresodules.vtkCommonCore import vtkPoints
-from viskoresodules.vtkCommonDataModel import vtkImageData,\
+from vtkmodules.util import numpy_support, vtkConstants
+from vtkmodules.vtkCommonCore import vtkPoints
+from vtkmodules.vtkCommonDataModel import vtkImageData,\
      vtkRectilinearGrid, vtkStructuredGrid,\
      vtkUnstructuredGrid, vtkCellArray, vtkDataObject
-from viskoresodules.vtkCommonExecutionModel \
+from vtkmodules.vtkCommonExecutionModel \
   import vtkStreamingDemandDrivenPipeline, vtkAlgorithm
-from viskoresodules.vtkIOXML import vtkXMLImageDataWriter,\
+from vtkmodules.vtkIOXML import vtkXMLImageDataWriter,\
      vtkXMLRectilinearGridWriter, vtkXMLStructuredGridWriter,\
      vtkXMLUnstructuredGridWriter
-from viskoresodules.util.vtkAlgorithm import VTKPythonAlgorithmBase
-from viskoresodules.vtkParallelMPI4Py import vtkMPI4PyCommunicator
-from viskoresodules.vtkParallelMPI import vtkMPIController
-from viskoresodules.vtkParallelCore import vtkMultiProcessController
+from vtkmodules.util.vtkAlgorithm import VTKPythonAlgorithmBase
+from vtkmodules.vtkParallelMPI4Py import vtkMPI4PyCommunicator
+from vtkmodules.vtkParallelMPI import vtkMPIController
+from vtkmodules.vtkParallelCore import vtkMultiProcessController
 # needed for paraview decorators
 from paraview.util.vtkAlgorithm import smproxy, smproperty
 import ascent_extract
