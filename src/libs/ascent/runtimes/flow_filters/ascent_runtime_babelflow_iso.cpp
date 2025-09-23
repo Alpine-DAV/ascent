@@ -78,7 +78,7 @@ struct BoundsData
     return *this;
   }
 
-  viskores::Bounds getVtkmBounds()
+  viskores::Bounds getViskoresBounds()
   {
     viskores::Bounds bnd;
 
@@ -247,7 +247,7 @@ int viskores_rendering(std::vector<BabelFlow::Payload>& inputs,
 
   vtkh::Render render = vtkh::MakeRender( iso_surf_data.m_Width,
                                           iso_surf_data.m_Height,
-                                          iso_surf_data.m_bounds.getVtkmBounds(),
+                                          iso_surf_data.m_bounds.getViskoresBounds(),
                                           iso_surf_data.m_FileName );
 
   vtkh::Scene scene;
