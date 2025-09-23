@@ -66,17 +66,7 @@ VisitRayGenerator::gen_rays(viskoresRayTracing::Ray<T> &rays)
   const int64 height = rover::settings["height"].to_int64();
   const int64 size = width * height;
 
-  // TODO: Do we care about supporting old versions of viskores? This
-  // makes more sense in the context of being a standalone library
-#if (VISKORES_VERSION_MAJOR >= 2) && (VISKORES_VERSION_MINOR >= 1)
-    viskoresRayTracing::RayOperations::Resize(rays,
-                                                       size);
-#else
-    viskoresRayTracing::RayOperations::Resize(rays,
-                                                       size,
-                                                       viskores::cont::DeviceAdapterTagSerial());
-#endif
-
+  viskoresRayTracing::RayOperations::Resize(rays, size);
 
   viskores::Vec<T,3> view_side;
 
