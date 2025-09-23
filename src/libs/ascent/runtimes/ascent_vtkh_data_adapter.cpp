@@ -612,7 +612,6 @@ void GetMatSetFields(const conduit::Node &node, //materials["matset"]
   }
   else
   {
-    std::cerr << "in the ELSE------------" << std::endl;
     NodeConstIterator itr = node["volume_fractions"].children();
     std::string material_name;
     while(itr.has_next())
