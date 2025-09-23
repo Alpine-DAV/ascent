@@ -40,7 +40,7 @@ Preferred dependency versions for ascent@0.9.5
 
  * cmake@3.23 or newer
  * conduit@0.9.5
- * viskores@2.3.0
+ * vtk-m@2.3.0
  * raja@v2025.03.1
  * umpire@v2025.03.0
  * camp@v2025.03.0
@@ -89,7 +89,7 @@ Preferred dependency versions for ascent@develop
 
  * cmake@3.23 or newer
  * conduit@0.9.4
- * viskores@2.3.0
+ * vtk-m@2.3.0
  * raja@v2025.03.1
  * umpire@v2025.03.0
  * camp@v2025.03.0
@@ -164,7 +164,7 @@ Preferred dependency versions for ascent@0.9.3
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
  * conduit@0.9.1
- * viskores@2.1.0 (with required `patch <https://github.com/Alpine-DAV/ascent/blob/0aef6cffd522be7419651e6adf586f9a553297d0/scripts/build_ascent/2024_05_03_viskores-mr3215-ext-geom-fix.patch>`_ )
+ * vtk-m@2.1.0 (with required `patch <https://github.com/Alpine-DAV/ascent/blob/0aef6cffd522be7419651e6adf586f9a553297d0/scripts/build_ascent/2024_05_03_vtk-m-mr3215-ext-geom-fix.patch>`_ )
  * raja@2024.02.1
  * umpire@2024.02.1
  * camp@2024.02.1
@@ -219,7 +219,7 @@ Preferred dependency versions for ascent@0.9.2
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
  * conduit@0.8.8
- * viskores@2.0.0
+ * vtk-m@2.0.0
 
 Added
 ~~~~~
@@ -256,7 +256,7 @@ Preferred dependency versions for ascent@0.9.1
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
  * conduit@0.8.7
- * viskores@1.9.0
+ * vtk-m@1.9.0
 
 Added
 ~~~~~
@@ -297,7 +297,7 @@ Preferred dependency versions for ascent@0.9.0
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
  * conduit@0.8.6
- * viskores@1.9.0
+ * vtk-m@1.9.0
 
 Added
 ~~~~~
@@ -348,7 +348,7 @@ Preferred dependency versions for ascent@0.8.0
  * conduit@0.8.2
  * dray@0.1.8
  * vtk-h@0.8.1
- * viskores@1.7.1
+ * vtk-m@1.7.1
 
 Added
 ~~~~~
@@ -404,7 +404,7 @@ Preferred dependency versions for ascent@0.7.1
 * conduit@0.7.2
 * dray@0.1.6
 * vtk-h@0.7.1
-* viskores@1.5.5
+* vtk-m@1.5.5
 
 
 Added
