@@ -612,6 +612,7 @@ void GetMatSetFields(const conduit::Node &node, //materials["matset"]
   }
   else
   {
+    std::cerr << "in the ELSE------------" << std::endl;
     NodeConstIterator itr = node["volume_fractions"].children();
     std::string material_name;
     while(itr.has_next())
@@ -619,8 +620,8 @@ void GetMatSetFields(const conduit::Node &node, //materials["matset"]
 
       const conduit::Node * n_material;
       const conduit::Node &n_next = itr.next();
-      //n_material is not leaf i.e. has values: [v0,v1,...,vn] 
-      if(n_material->number_of_children() != 0)
+      //n_next is not leaf i.e. has values: [v0,v1,...,vn] 
+      if(n_next.number_of_children() != 0)
       {
         n_material = &n_next.child(0);
       }
@@ -676,7 +677,7 @@ void GetMatSetFields(const conduit::Node &node, //materials["matset"]
     {
       const conduit::Node * n_vol_frac;	    
       const conduit::Node &n_child = n_vol_fracs.child(i);
-      //n_vol_frac is not leaf i.e. has values: [v0,v1,...,vn] 
+      //n_child is not leaf i.e. has values: [v0,v1,...,vn] 
       if(n_child.number_of_children() != 0)
       {
         n_vol_frac = &n_child.child(0);
@@ -706,17 +707,16 @@ void GetMatSetFields(const conduit::Node &node, //materials["matset"]
       const Node &n_materials = node["volume_fractions"];
       const Node &n_child = n_materials.child(i);
 
-      Node n_material;
-      //n_material is not leaf i.e. has values: [v0,v1,...,vn] 
+      const Node * n_material;
+      //n_child is not leaf i.e. has values: [v0,v1,...,vn] 
       if(n_child.number_of_children() != 0)
       {
-        conduit::Node tmp = n_child.child(0);
-        n_material = tmp;
+        n_material = &n_child.child(0);
       }
       else
-        n_material = n_child;
+        n_material = &n_child;
 
-      const S *data = n_material.value();
+      const S *data = n_material->value();
 
       for(index_t j = 0; j < neles; ++j)
       {
