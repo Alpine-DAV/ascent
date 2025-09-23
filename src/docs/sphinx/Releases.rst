@@ -190,7 +190,7 @@ Changed
 ~~~~~~~
 
  * Changed the Data Binning filter to accept a ``reduction_field`` parameter (instead of ``var``), and similarly the axis parameters to take ``field`` (instead of ``var``).  The ``var`` style parameters are still accepted, but deprecated and will be removed in a future release.
- * Changed the Streamline and WarpXStreamline filters to apply the Viskores Tube filter to their outputs, allowing for the results to be rendered. 
+ * Changed the Streamline and WarpXStreamline filters to apply the VTK-m Tube filter to their outputs, allowing for the results to be rendered. 
  * Updated CMake Python build infrastructure to use
 
 Fixed
@@ -232,7 +232,7 @@ Added
 Changed
 ~~~~~~~
 
- * Updated Ascent to use Viskores 2.0
+ * Updated Ascent to use VTK-m 2.0
  * Added C++ ``Ascent::info()`` method that returns a reference to execution info in addition the existing info() method that provides copy out semantics.
 
 
@@ -321,7 +321,7 @@ Changed
 
  * **The Great Amalgamation** - The VTK-h, Devil Ray, and AP Compositor projects are now developed in Ascent's source instead of separate repos. These external repos for these projects are archived. This reorg simplifies the development and support of these tightly coupled capabilities. Ascent 0.9.0 will be the first release using these internal versions.
  * ``apcomp``, ``dray``, ``flow``, ``rover``, and ``vtkh`` are now developed in ``src/libs``.
- * Updated to Viskores 1.9
+ * Updated to VTK-m 1.9
  * Update docs related to building Ascent.
  * Updated to BLT v0.5.2
 
@@ -382,7 +382,7 @@ Changed
  * Python CMake detection logic now prefers Python 3
  * Changed Ascent's C-API to use Conduit's C-API object helper methods
  * CMake, Spack, and uberenv changes to support newer versions of Cuda, CMake, etc
- * Updated to use Viskores 1.7.0
+ * Updated to use VTK-m 1.7.0
  * Make Ascent Webserver support optional, linked to if Conduit Relay Web support exists
  * Simplified the relay extract protocol params, for example can now use ``hdf5`` instead of ``blueprint/mesh/hdf5``
  * Updated Spack and Uberenv support for building on Summit
@@ -544,7 +544,7 @@ Changed
 * Updated our uberenv-based to use a 2019/11 version of spack develop.
 * Improved Python error handling and propagation.
 * Updated Docker example to build with Jupyter Notebook support.
-* Updated to Viskores 1.5.0 and associated VTK-h.
+* Updated to VTK-m 1.5.0 and associated VTK-h.
 * Imposed necessary static build constraints for cuda support.
 
 Fixed

@@ -146,7 +146,7 @@ file was created that contains the CMake variables need for an Ascent build:
     set(ENABLE_VTKH "ON" CACHE BOOL "")
 
     # viskores from spack
-    set(VISKORES_DIR "/Users/harrison37/Work/alpine/ascent/uberenv_libs/spack/opt/spack/darwin-ventura-m1/apple-clang-14.0.0/viskores-2.1.0-l5yh5lkvapxdil5fvhhj4l4udm2x6dg7" CACHE PATH "")
+    set(VISKORES_DIR "/Users/harrison37/Work/alpine/ascent/uberenv_libs/spack/opt/spack/darwin-ventura-m1/apple-clang-14.0.0/viskores-1.0.0-l5yh5lkvapxdil5fvhhj4l4udm2x6dg7" CACHE PATH "")
 
     set(Viskores_ENABLE_CUDA "OFF" CACHE BOOL "")
 
