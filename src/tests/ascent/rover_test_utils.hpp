@@ -552,7 +552,11 @@ get_multi_group_curv3d_data(Node &data)
 
     // Verify test data
     Node verify_info;
+#ifdef ROVER_TEST_MPI_ENABLED
+    EXPECT_TRUE(blueprint::mpi::mesh::verify(data, verify_info, COMM));
+#else
     EXPECT_TRUE(blueprint::mesh::verify(data, verify_info));
+#endif
 }
 
 //-----------------------------------------------------------------------------

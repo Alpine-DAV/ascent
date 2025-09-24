@@ -386,6 +386,90 @@ TEST(ascent_rover, test_xray_mpi_blueprint_braid_uniform_single_domain_multiple_
 }
 
 //-----------------------------------------------------------------------------
+TEST(ascent_rover, test_xray_mpi_blueprint_multiple_groups)
+{
+    // Set up MPI
+    MPI_Comm_rank(COMM, &par_rank);
+    MPI_Comm_size(COMM, &par_size);
+    const bool is_root = (0 == par_rank);
+
+    if (is_root)
+    {
+        ASCENT_INFO("Testing xray extract using MPI on multi-group curv3d example mesh\n");
+    }
+
+    if (is_vtkm_disabled(is_root))
+    {
+        return; // Returning early is equivalent to passing the test
+    }
+
+    // Test names
+    const std::string query_name = "tout_rover_xray_mpi_blueprint_multiple_groups";
+    const std::string query_suffix = "_000048.cycle_000048.root";
+
+    // Set up paths
+    const std::string output_path = prepare_output_dir();
+    const std::string query_path = utils::join_file_path(output_path, query_name);
+    const std::string output_data_path = query_path + query_suffix;
+
+    // Remove old test data
+    const int cycle = 48;
+    remove_rover_test_data(query_path, query_suffix, cycle);
+
+    // Generate test data for MPI
+    Node test_data;
+    get_multi_group_curv3d_data(test_data);
+
+    // Define Ascent actions
+    Node extracts;
+    get_common_extract_params(extracts, query_path, "d_multi", "p_multi");
+
+    Node actions;
+    get_default_action_params(actions, extracts);
+
+    // Execute Ascent actions
+    execute_ascent(test_data, actions);
+
+    // Load and verify output mesh
+    Node xray_blueprint_output;
+    load_and_verify_local_data(xray_blueprint_output, output_data_path);
+
+    // Rover's output is only single-domain, so we only use rank 0 to verify the output
+    if (is_root)
+    {
+        // Load and verify baseline data
+        Node baseline_data;
+        get_default_baseline(baseline_data, extracts["e1/params"], cycle);
+
+        // Manually override the remaining fields with expected values
+        baseline_data["time"] = 4.80000019073486;
+        baseline_data["xray_view/position"] = {0.0, 2.49999904632568, 47.0156211853027};
+        baseline_data["xray_view/look_at"] = {0.0, 2.49999904632568, 15.0};
+        baseline_data["xray_view/near_plane"] = 3.20156216621399;
+        baseline_data["xray_view/far_plane"] = 320.156219482422;
+        baseline_data["xray_data/detector_width"] = 3.69684552235394;
+        baseline_data["xray_data/detector_height"] = 3.69684552235394;
+        baseline_data["xray_data/intensity_max"] = 2.94868206977844;
+        baseline_data["xray_data/optical_depth_max"] = 752.98779296875;
+
+        // Diff the baseline data with our new output
+        const Node &state_output = xray_blueprint_output["domain_000000/state"];
+        check_blueprint_diff(baseline_data, state_output);
+    }
+
+    // Render and verify each field for multi-group data
+    render_multi_group_fields(xray_blueprint_output, query_path, cycle);
+
+    // We only want to dump info if we are rank 0
+    if (is_root)
+    {
+        // Dump info
+        const std::string msg = "Rendered XRay diagnostic images using MPI on an example multi-group curv3d mesh";
+        ASCENT_ACTIONS_DUMP(actions, query_path, msg);
+    }
+}
+
+//-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {
     ::testing::InitGoogleTest(&argc, argv);
