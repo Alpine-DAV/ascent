@@ -254,7 +254,7 @@ void ConnectivityTracer::SetEnergyData(const vtkm::cont::Field& absorption,
 
   // Do some basic range checking
   if (NumEnergyGroups < 1)
-    throw vtkm::cont::ErrorBadValue("Number of energy bins is less than 1");
+    throw vtkm::cont::ErrorBadValue("Number of energy groups is less than 1");
   vtkm::Id binCount = ScalarField.GetNumberOfValues();
   vtkm::Id cellCount = this->GetNumberOfMeshCells();
 
@@ -302,7 +302,7 @@ void ConnectivityTracer::SetEnergyData(const vtkm::cont::Field& absorption,
   }
   // Do some basic range checking
   if (NumEnergyGroups < 1)
-    throw vtkm::cont::ErrorBadValue("Number of energy bins is less than 1");
+    throw vtkm::cont::ErrorBadValue("Number of energy groups is less than 1");
   vtkm::Id binCount = ScalarField.GetNumberOfValues();
   vtkm::Id cellCount = this->GetNumberOfMeshCells();
   if (HasEmission)
@@ -702,16 +702,16 @@ public:
     vtkm::Id rayOffset = NumEnergyGroups * rayIndex;
 
     // Get the cell value and use VecTraits to handle both scalar and vector fields
-    using CellValueType = typename CellDataPortalType::ValueType;
-    using VecTraits = vtkm::VecTraits<CellValueType>;
+    using AbsValueType = typename CellDataPortalType::ValueType;
+    using AbsVecTraits = vtkm::VecTraits<AbsValueType>;
     
     BOUNDS_CHECK(absorbtionData, currentCell);
-    CellValueType cellValue = absorbtionData.Get(currentCell);
+    AbsValueType absorptionCell = absorbtionData.Get(currentCell);
     
     // Use VecTraits for uniform handling - dispatcher ensures we get the right array type
     for (vtkm::Int32 i = 0; i < NumEnergyGroups; i++)
     {
-      FloatType absorb = static_cast<FloatType>(VecTraits::GetComponent(cellValue, i));
+      FloatType absorb = static_cast<FloatType>(AbsVecTraits::GetComponent(absorptionCell, i));
       absorb *= UnitScalar;
 
       const int rayOffsetI = rayOffset + i;
@@ -786,13 +786,9 @@ public:
     using EmisVecTraits = vtkm::VecTraits<EmisValueType>;
     
     BOUNDS_CHECK(absorptionData, currentCell);
+    AbsValueType absorptionCell = absorptionData.Get(currentCell);
     BOUNDS_CHECK(emissionData, currentCell);
-    AbsValueType absCellValue = absorptionData.Get(currentCell);
-    EmisValueType emisCellValue = emissionData.Get(currentCell);
-    
-    // Check if these are vector fields or scalar fields
-    vtkm::IdComponent absNumComponents = AbsVecTraits::GetNumberOfComponents(absCellValue);
-    vtkm::IdComponent emisNumComponents = EmisVecTraits::GetNumberOfComponents(emisCellValue);
+    EmisValueType emissionCell = emissionData.Get(currentCell);
     
     //
     // Traditionally, we would only keep track of a single intensity value per ray
@@ -814,8 +810,8 @@ public:
     {
       for (vtkm::Int32 i = 0; i < NumEnergyGroups; i++)
       {
-        FloatType absorb = static_cast<FloatType>(AbsVecTraits::GetComponent(absCellValue, i));
-        FloatType emission = static_cast<FloatType>(EmisVecTraits::GetComponent(emisCellValue, i));
+        FloatType absorb = static_cast<FloatType>(AbsVecTraits::GetComponent(absorptionCell, i));
+        FloatType emission = static_cast<FloatType>(EmisVecTraits::GetComponent(emissionCell, i));
 
         absorb *= UnitScalar;
         emission *= UnitScalar;
@@ -839,8 +835,8 @@ public:
     {
       for (vtkm::Int32 i = 0; i < NumEnergyGroups; i++)
       {
-        FloatType absorb = static_cast<FloatType>(AbsVecTraits::GetComponent(absCellValue, i));
-        FloatType emission = static_cast<FloatType>(EmisVecTraits::GetComponent(emisCellValue, i));
+        FloatType absorb = static_cast<FloatType>(AbsVecTraits::GetComponent(absorptionCell, i));
+        FloatType emission = static_cast<FloatType>(EmisVecTraits::GetComponent(emissionCell, i));
 
         absorb *= UnitScalar;
         emission *= UnitScalar;

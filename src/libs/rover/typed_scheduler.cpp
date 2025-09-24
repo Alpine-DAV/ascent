@@ -81,9 +81,16 @@ TypedScheduler<FloatType>::get_global_num_energy_groups()
   timer.Start();
   double time = 0;
   (void) time;
-  int mpi_num_energy_groups;
-  MPI_Allreduce(&num_energy_groups, &mpi_num_energy_groups, 1, MPI_INT, MPI_MAX, m_comm_handle);
-  num_energy_groups = mpi_num_energy_groups;
+  int mpi_max_energy_groups;
+  MPI_Allreduce(&num_energy_groups, &mpi_max_energy_groups, 1, MPI_INT, MPI_MAX, m_comm_handle);
+
+  // Check that all ranks have the same num_energy_groups
+  if (num_energy_groups != mpi_max_energy_groups)
+  {
+    ROVER_ERROR("Error - TypedScheduler::get_global_num_energy_groups: MPI ranks have inconsistent number of energy groups. "
+                "Local: " << num_energy_groups << ", Global max: " << mpi_max_energy_groups);
+  }
+
   time = timer.GetElapsedTime();
   ROVER_DATA_ADD("get_global_num_energy_groups_all_reduce", time);
 #endif

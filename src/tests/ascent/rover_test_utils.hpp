@@ -115,7 +115,7 @@ render_fields(const Node &data,
 
     add_plots["scenes"] = scenes;
 
-    // Execute all renders in a single Ascent call
+    // Execute all renders in a single Ascent call for better performance
     execute_ascent(data, actions);
 
     // Check all generated images
@@ -161,7 +161,7 @@ render_multi_group_fields(const Node &data,
     }
 
     // Create slices at different z values
-    std::vector<double> z_values = {0.0, 1.0, 2.0};
+    std::vector<double> z_values = {0.001, 1.0, 2.0};
 
     Node pipelines;
     Node scenes;
@@ -176,10 +176,32 @@ render_multi_group_fields(const Node &data,
     add_scenes["action"] = "add_scenes";
 
     int counter = 1;
-    
-    // Create pipelines and scenes for all fields at all z values
+
+    // Create pipelines and scenes for all fields
     for (const auto& field : fields)
     {
+        const bool is_spatial_mesh = field.find("spatial") != std::string::npos;
+
+        // Full topology render
+        std::string scene_name = "s" + std::to_string(counter);
+        std::string plot_name = "p" + std::to_string(counter);
+        std::string render_name = "r" + std::to_string(counter);
+        std::string full_output_path = output_path + "_" + field + "_full";
+
+        // Create scene with pseudocolor plot (no pipeline needed for full topology)
+        scenes[scene_name]["plots"][plot_name]["type"] = "pseudocolor";
+        scenes[scene_name]["plots"][plot_name]["field"] = field;
+        scenes[scene_name]["renders"][render_name]["image_prefix"] = full_output_path;
+
+        // Rotate spatial meshes for test image variety
+        if (is_spatial_mesh)
+        {
+            scenes[scene_name]["renders"][render_name]["camera/azimuth"] = 45.0;
+        }
+
+        counter += 1;
+
+        // Slice renders at different z values
         for (int i = 0; i < z_values.size(); i++)
         {
             double z_val = z_values[i];
@@ -190,7 +212,11 @@ render_multi_group_fields(const Node &data,
             std::string full_output_path = output_path + "_" + field + "_z" + std::to_string(i);
 
             // Create pipeline with slice filter
-            std::string topology = (field.find("spatial") != std::string::npos) ? "spatial_topo" : "image_topo";
+            std::string topology = "image_topo";
+            if (is_spatial_mesh)
+            {
+                topology = "spatial_topo";
+            }
             
             pipelines[pipeline_name]["f1"]["type"] = "slice";
             pipelines[pipeline_name]["f1"]["params"]["topology"] = topology;
@@ -206,12 +232,6 @@ render_multi_group_fields(const Node &data,
             scenes[scene_name]["plots"][plot_name]["field"] = field;
             scenes[scene_name]["plots"][plot_name]["pipeline"] = pipeline_name;
             scenes[scene_name]["renders"][render_name]["image_prefix"] = full_output_path;
-
-            // Rotate spatial meshes for test image variety
-            if (field.find("spatial") != std::string::npos)
-            {
-                scenes[scene_name]["renders"][render_name]["camera"]["azimuth"] = 45.0;
-            }
             
             counter += 1;
         }
@@ -220,7 +240,7 @@ render_multi_group_fields(const Node &data,
     add_pipelines["pipelines"] = pipelines;
     add_scenes["scenes"] = scenes;
 
-    // Execute all renders in a single Ascent call
+    // Execute all renders in a single Ascent call for better performance
     execute_ascent(data, actions);
 
     // Check all generated images
@@ -228,6 +248,11 @@ render_multi_group_fields(const Node &data,
     {
         for (const auto& field : fields)
         {
+            // Full topology
+            std::string full_output_path = output_path + "_" + field + "_full";
+            EXPECT_TRUE(check_test_image(full_output_path, 0.01f, cycle));
+
+            // Slices
             for (int i = 0; i < z_values.size(); i++)
             {
                 std::string full_output_path = output_path + "_" + field + "_z" + std::to_string(i);

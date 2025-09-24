@@ -29,6 +29,7 @@ using namespace ascent;
 //
 
 // TODO: Create an absorption-only multi-group test
+// TODO: Create a mismatched field multi-group test
 // TODO: Create an imaging planes and rays mesh test
 
 //-----------------------------------------------------------------------------

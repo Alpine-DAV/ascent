@@ -120,9 +120,26 @@ int
 Engine::get_num_energy_groups()
 {
   const std::string absorption = rover::settings["absorption"].as_string();
-  const auto &field = m_dataset.GetField(absorption);
-  vtkm::Id num_bins = field.GetData().GetNumberOfComponentsFlat();
-  return static_cast<int>(num_bins);
+  const vtkm::cont::Field &absorption_field = m_dataset.GetField(absorption);
+  vtkm::Id num_absorption_bins = absorption_field.GetData().GetNumberOfComponentsFlat();
+
+  // If the emission field is set, verify that it has the same number of energy groups
+  // as the absorption field
+  if (rover::settings.has_child("emission"))
+  {
+    const std::string emission = rover::settings["emission"].as_string();
+    const vtkm::cont::Field &emission_field = m_dataset.GetField(emission);
+    vtkm::Id num_emission_bins = emission_field.GetData().GetNumberOfComponentsFlat();
+
+    if (num_absorption_bins != num_emission_bins)
+    {
+      ROVER_ERROR("Error - Engine::get_num_energy_groups: number of energy groups in absorption field ("
+                  << num_absorption_bins << ") does not match number of bins in emission field ("
+                  << num_emission_bins << ")");
+    }
+  }
+
+  return static_cast<int>(num_absorption_bins);
 }
 
 vtkmRange
