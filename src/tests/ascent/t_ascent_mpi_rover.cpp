@@ -34,7 +34,6 @@ int par_size = 1;
 // MPI Rover X-Ray tests
 //
 
-// TODO: Create multi-group tests for MPI
 // TODO: Create an imaging planes and rays mesh test for MPI
 
 //-----------------------------------------------------------------------------
