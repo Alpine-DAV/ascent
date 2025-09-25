@@ -9,6 +9,7 @@
 #include <rover_exceptions.hpp>
 #include <utils/rover_logging.hpp>
 #include <vtkm/cont/DefaultTypes.h>
+#include <ascent_logging.hpp>
 
 namespace rover
 {
@@ -36,7 +37,7 @@ Engine::validate_tracer()
   // this in 1 or 2 spots and won't need a helper.
   if (!m_tracer)
   {
-    ROVER_ERROR("Error - Engine::validate_tracer: data was not set before tracing");
+    ASCENT_LOG_ERROR("Error - Engine::validate_tracer: data was not set before tracing");
   }
 }
 
@@ -133,9 +134,9 @@ Engine::get_num_energy_groups()
 
     if (num_absorption_bins != num_emission_bins)
     {
-      ROVER_ERROR("Error - Engine::get_num_energy_groups: number of energy groups in absorption field ("
-                  << num_absorption_bins << ") does not match number of bins in emission field ("
-                  << num_emission_bins << ")");
+      ASCENT_LOG_ERROR("Error - Engine::get_num_energy_groups: number of energy groups in absorption field ("
+                       << num_absorption_bins << ") does not match number of bins in emission field ("
+                       << num_emission_bins << ")");
     }
   }
 

@@ -45,6 +45,7 @@ execute_ascent(const Node &data,
 {
     Ascent ascent;
     Node ascent_opts;
+    ascent_opts["exceptions"] = "forward";
 #ifdef ROVER_TEST_MPI_ENABLED
     ascent_opts["mpi_comm"] = MPI_Comm_c2f(COMM);
 #endif

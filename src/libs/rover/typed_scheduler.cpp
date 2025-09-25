@@ -11,6 +11,7 @@
 #include "vtkm_typedefs.hpp"
 #include <algorithm>
 #include <typed_scheduler.hpp>
+#include <ascent_logging.hpp>
 
 
 using namespace conduit;
@@ -87,7 +88,7 @@ TypedScheduler<FloatType>::get_global_num_energy_groups()
   // Check that all ranks have the same num_energy_groups
   if (num_energy_groups != mpi_max_energy_groups)
   {
-    ROVER_ERROR("Error - TypedScheduler::get_global_num_energy_groups: MPI ranks have inconsistent number of energy groups. "
+    ASCENT_LOG_ERROR("Error - TypedScheduler::get_global_num_energy_groups: MPI ranks have inconsistent number of energy groups. "
                 "Local: " << num_energy_groups << ", Global max: " << mpi_max_energy_groups);
   }
 
@@ -362,7 +363,7 @@ TypedScheduler<FloatType>::trace_rays()
     // TODO: I'm curious about which conditions can cause rays to fail to be created
     if (!m_ray_generator->get_rays(rays))
     {
-      ROVER_ERROR("Failed to create new rays");
+      ASCENT_LOG_ERROR("Failed to create new rays");
     }
 
     ROVER_INFO("Generated " << rays.NumRays << " rays");
@@ -1150,7 +1151,7 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
   Node verify;
   if (!blueprint::verify("mesh", data, verify))
   {
-    ROVER_ERROR("Error: to_blueprint failed to produce a valid conduit mesh: " << verify.to_yaml());
+    ASCENT_LOG_ERROR("Error: to_blueprint failed to produce a valid conduit mesh: " << verify.to_yaml());
   }
 }
 
