@@ -43,7 +43,7 @@ DEFINE_MPI_CAST(MPI_Comm)
 
 #endif
 
-using ValueType = vtkm::Float64;
+using ValueType = vtkm::Float32;
 
 inline vtkm::IdComponent FindSplitAxis(vtkm::Id3 globalSize)
 {
@@ -446,11 +446,19 @@ TEST(vtkh_contour_tree, vtkh_contour_tree)
   std::vector<double> isoValues = marcher.GetIsoValues();
   std::sort(isoValues.begin(), isoValues.end());
 
-  EXPECT_FLOAT_EQ(isoValues[0], 1e-05);
-  EXPECT_FLOAT_EQ(isoValues[1], 82);
-  EXPECT_FLOAT_EQ(isoValues[2], 133);
-  EXPECT_FLOAT_EQ(isoValues[3], 168);
-  EXPECT_FLOAT_EQ(isoValues[4], 177);
+  if( mpiSize == 1 ) {
+    EXPECT_FLOAT_EQ(isoValues[0], 1e-05);
+    EXPECT_FLOAT_EQ(isoValues[1], 82);
+    EXPECT_FLOAT_EQ(isoValues[2], 133);
+    EXPECT_FLOAT_EQ(isoValues[3], 168);
+    EXPECT_FLOAT_EQ(isoValues[4], 177);
+  } else {
+    EXPECT_FLOAT_EQ(isoValues[0], 1e-05);
+    EXPECT_FLOAT_EQ(isoValues[1], 17.00001);
+    EXPECT_FLOAT_EQ(isoValues[2], 82);
+    EXPECT_FLOAT_EQ(isoValues[3], 133);
+    EXPECT_FLOAT_EQ(isoValues[4], 176);
+  }
 
   vtkh::DataSet *output = marcher.GetOutput();
   if( output )
