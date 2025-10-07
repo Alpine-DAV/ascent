@@ -217,41 +217,41 @@ class Ascent(CMakePackage, CudaPackage):
     # Viskores
     #######################
     with when("+vtkh"):
-        # viskores if greater than 0.9.6
-        depends_on("viskores +doubleprecision ~64bitids", when="@0.9.6:")
-        depends_on("vtk-m@1.0.0:", when="@0.9.6:")
-        depends_on("viskores~tbb", when="@0.9.6:")
-        depends_on("viskores+openmp", when="@0.9.6: +openmp")
-        depends_on("viskores~openmp", when="@0.9.6: ~openmp")
-        depends_on("viskores~cuda", when="@0.9.6: ~cuda")
-        depends_on("viskores+cuda", when="@0.9.6: +cuda")
-        depends_on("viskores+fpic", when="@0.9.6:")
-        depends_on("viskores~shared+fpic", when="@0.9.6: ~shared")
+        # viskores if greater than 0.9.5
+        depends_on("viskores +doubleprecision ~64bitids", when="@0.9.5:")
+        depends_on("viskores@1.0.0:", when="@0.9.5:")
+        depends_on("viskores~tbb", when="@0.9.5:")
+        depends_on("viskores+openmp", when="@0.9.5: +openmp")
+        depends_on("viskores~openmp", when="@0.9.5: ~openmp")
+        depends_on("viskores~cuda", when="@0.9.5: ~cuda")
+        depends_on("viskores+cuda", when="@0.9.5: +cuda")
+        depends_on("viskores+fpic", when="@0.9.5:")
+        depends_on("viskores~shared+fpic", when="@0.9.5: ~shared")
 
         # Ascent defaults to C++11
-        depends_on("kokkos cxxstd=11", when="@0.9.6: +vtkh ^viskores +kokkos")
-        depends_on("kokkos@3.7.02", when="@0.9.6: +vtkh ^viskores +kokkos")
+        depends_on("kokkos cxxstd=11", when="@0.9.5: +vtkh ^viskores +kokkos")
+        depends_on("kokkos@3.7.02", when="@0.9.5: +vtkh ^viskores +kokkos")
 
-        # use vtk-m if prior to 0.9.6
-        depends_on("vtk-m +doubleprecision ~64bitids", when="@:0.9.5")
-        depends_on("vtk-m@2.1:", when="@0.9.3:0.9.5")
-        depends_on("vtk-m@2.1:", when="@0.9.3:0.9.5")
-        depends_on("vtk-m@2.0:", when="@0.9.2:0.9.5")
+        # use vtk-m if prior to 0.9.5
+        depends_on("vtk-m +doubleprecision ~64bitids", when="@:0.9.4")
+        depends_on("vtk-m@2.1:", when="@0.9.3:0.9.4")
+        depends_on("vtk-m@2.1:", when="@0.9.3:0.9.4")
+        depends_on("vtk-m@2.0:", when="@0.9.2:0.9.4")
         # 2.1 support needs commit e52b7bb8c9fd131f2fd49edf58037cc5ef77a166
         depends_on("vtk-m@:2.0", when="@:0.9.2")
         depends_on("vtk-m@1.9", when="@0.9.0:0.9.1")
 
-        depends_on("vtk-m~tbb", when="@0.9.0:0.9.5")
-        depends_on("vtk-m+openmp", when="@0.9.0:0.9.5 +openmp")
-        depends_on("vtk-m~openmp", when="@0.9.0:0.9.5 ~openmp")
-        depends_on("vtk-m~cuda", when="@0.9.0:0.9.5 ~cuda")
-        depends_on("vtk-m+cuda", when="@0.9.0:0.9.5 +cuda")
-        depends_on("vtk-m+fpic", when="@0.8.0:0.9.5")
-        depends_on("vtk-m~shared+fpic", when="@0.8.0:0.9.5 ~shared")
+        depends_on("vtk-m~tbb", when="@0.9.0:0.9.4")
+        depends_on("vtk-m+openmp", when="@0.9.0:0.9.4 +openmp")
+        depends_on("vtk-m~openmp", when="@0.9.0:0.9.4 ~openmp")
+        depends_on("vtk-m~cuda", when="@0.9.0:0.9.4 ~cuda")
+        depends_on("vtk-m+cuda", when="@0.9.0:0.9.4 +cuda")
+        depends_on("vtk-m+fpic", when="@0.8.0:0.9.4")
+        depends_on("vtk-m~shared+fpic", when="@0.8.0:0.9.4 ~shared")
         
         # Ascent defaults to C++11
-        depends_on("kokkos cxxstd=11", when="@:0.9.5 +vtkh ^vtk-m +kokkos")
-        depends_on("kokkos@3.7.02", when="@0.9.3:0.9.5 +vtkh ^vtk-m +kokkos")
+        depends_on("kokkos cxxstd=11", when="@:0.9.4 +vtkh ^vtk-m +kokkos")
+        depends_on("kokkos@3.7.02", when="@0.9.3:0.9.4 +vtkh ^vtk-m +kokkos")
 
         #######################
         # VTK-h
