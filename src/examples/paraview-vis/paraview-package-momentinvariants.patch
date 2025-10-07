@@ -36,9 +36,9 @@ diff --git a/var/spack/repos/builtin/packages/viskores/package.py b/var/spack/re
 index b899ef547..3317766a6 100644
 --- a/var/spack/repos/builtin/packages/viskores/package.py
 +++ b/var/spack/repos/builtin/packages/viskores/package.py
-@@ -20,7 +20,7 @@ class Vtkm(CMakePackage, CudaPackage):
-     url      = "https://gitlab.kitware.com/api/v4/projects/vtk%2Fviskores/repository/archive.tar.gz?sha=v1.3.0"
-     git      = "https://gitlab.kitware.com/vtk/viskores.git"
+@@ -20,7 +20,7 @@ class Viskores(CMakePackage, CudaPackage):
+     url      = "https://github.com/Viskores/viskores/archive/refs/tags/v1.0.0.tar.gz"
+     git      = "https://github.com/Viskores/viskores"
  
 -    version('master', branch='master')
 +    version('master', commit='77f17450ba8bfbe09a9570ef9c5cdc275061f34f')
