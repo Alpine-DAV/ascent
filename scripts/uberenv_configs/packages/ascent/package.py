@@ -285,7 +285,7 @@ class Ascent(CMakePackage, CudaPackage):
     depends_on("occa", when="+occa")
 
     # fides
-    depends_on("fides", when="+fides")
+    depends_on("fides@1.2.1", when="+fides")
 
     #######################
     # Devil Ray
