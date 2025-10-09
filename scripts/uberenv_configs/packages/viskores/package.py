@@ -21,15 +21,19 @@ class Viskores(CMakePackage, CudaPackage, ROCmPackage):
     homepage = "https://m.vtk.org/"
     maintainers("kmorel", "vicentebolea")
 
-    url = "https://github.com/Viskores/viskores/archive/refs/tags/v1.0.0.tar.gz"
     git = "https://github.com/Viskores/viskores"
     tags = ["e4s"]
 
     test_requires_compiler = True
 
-    version("master", branch="master")
+    version("main", branch="main")
     version("release", branch="release")
-    version("1.0.0", sha256="")
+    version(
+        "1.0.0",
+        tag="v1.0.0",
+        commit="82b25a885abc046b653992801e6c63b6621b2049",
+        preferred=True,
+    )
 
     variant("shared", default=False, description="build shared libs")
 
@@ -102,7 +106,6 @@ class Viskores(CMakePackage, CudaPackage, ROCmPackage):
     # not overwritten.
     conflicts("+rocm", when="+cuda")
     conflicts("+rocm", when="~kokkos", msg="Viskores does not support HIP without Kokkos")
-    conflicts("+rocm", when="+virtuals", msg="Viskores does not support virtual functions with ROCm")
 
     # Viskores uses the Kokkos SYCL backend.
     # If Kokkos provides multiple backends, the SYCL backend may or
@@ -151,7 +154,6 @@ class Viskores(CMakePackage, CudaPackage, ROCmPackage):
                 self.define_from_variant("Viskores_ENABLE_TBB", "tbb"),
                 self.define_from_variant("Viskores_ENABLE_TESTING_LIBRARY", "testlib"),
                 self.define_from_variant("Viskores_INSTALL_EXAMPLES", "examples"),
-                self.define_from_variant("Viskores_NO_DEPRECATED_VIRTUAL", "virtuals"),
                 self.define_from_variant("Viskores_USE_64BIT_IDS", "64bitids"),
                 self.define_from_variant("Viskores_USE_DOUBLE_PRECISION", "doubleprecision"),
                 self.define(

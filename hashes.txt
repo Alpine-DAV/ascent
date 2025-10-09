@@ -1,2 +1,2 @@
-viskores branch='master' commit='cfe6b34dfbfdf5b5ced30a743d1fcf2af78d7b2a'
+viskores branch='master' commit='82b25a885abc046b653992801e6c63b6621b2049'
 blt  branch='main' commit='fb4246b8bae74c3d7291bef9698fd38863844680'
