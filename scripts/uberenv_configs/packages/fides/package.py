@@ -2,12 +2,10 @@
 #
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-from spack_repo.builtin.build_systems.cmake import CMakePackage
-
 from spack.package import *
 
 
-class Fides(CMakePackage):
+class Fides(CMakePackage, CudaPackage, ROCmPackage):
     """A library that provides a schema for ADIOS2 streams."""
 
     homepage = "https://gitlab.kitware.com/vtk/fides"
@@ -42,18 +40,15 @@ class Fides(CMakePackage):
 
     depends_on("viskores@1.0.0:", when="@1.2.1")
 
-    # Fix missing implicit includes
-    @when("%gcc@7:")
-    def setup_build_environment(self, env: EnvironmentModifications) -> None:
-        env.append_flags("CXXFLAGS", "-include limits -include numeric")
-
     def cmake_args(self):
         spec = self.spec
         options = [
-            self.define("VTKm_DIR", spec["vtk-m"].prefix),
-            self.define("Viskores_DIR", spec["vtk-m"].prefix),
             self.define("ADIOS2_DIR", spec["adios2"].prefix),
             self.define("FIDES_ENABLE_TESTING", "OFF"),
             self.define("FIDES_ENABLE_EXAMPLES", "OFF"),
         ]
+        if "viskores" in spec:
+            options.append(self.define("VISKORES_DIR", spec["viskores"].prefix))
+        if "vtk-m" in spec:
+            options.append(self.define("VTKm_DIR", spec["vtk-m"].prefix))
         return options
