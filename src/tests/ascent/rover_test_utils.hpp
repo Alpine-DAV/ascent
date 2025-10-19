@@ -161,8 +161,8 @@ render_multi_group_fields(const Node &data,
         fields.push_back("intensities_spatial");
     }
 
-    // Create slices at different z values
-    std::vector<double> z_values = {0.001, 1.0, 2.0};
+    // Create slices at the midpoints between different z values
+    std::vector<double> z_values = {0.5, 1.5, 2.5};
 
     Node pipelines;
     Node scenes;
