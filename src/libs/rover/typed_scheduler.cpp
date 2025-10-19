@@ -89,14 +89,16 @@ TypedScheduler<FloatType>::get_global_num_energy_groups()
   timer.Start();
   double time = 0;
   (void) time;
+  int mpi_min_energy_groups;
   int mpi_max_energy_groups;
+  MPI_Allreduce(&num_energy_groups, &mpi_min_energy_groups, 1, MPI_INT, MPI_MIN, m_comm_handle);
   MPI_Allreduce(&num_energy_groups, &mpi_max_energy_groups, 1, MPI_INT, MPI_MAX, m_comm_handle);
 
   // Check that all ranks have the same num_energy_groups
-  if (num_energy_groups != mpi_max_energy_groups)
+  if (mpi_min_energy_groups != mpi_max_energy_groups)
   {
     ASCENT_LOG_ERROR("Error - TypedScheduler::get_global_num_energy_groups: MPI ranks have inconsistent number of energy groups. "
-                "Local: " << num_energy_groups << ", Global max: " << mpi_max_energy_groups);
+                "Local: " << num_energy_groups << ", Global min: " << mpi_min_energy_groups << ", Global max: " << mpi_max_energy_groups);
   }
 
   // Check that all ranks agree on field mismatch state
