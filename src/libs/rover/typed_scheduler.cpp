@@ -72,9 +72,16 @@ int
 TypedScheduler<FloatType>::get_global_num_energy_groups()
 {
   int num_energy_groups = 1;
+  int has_field_mismatch = 0;
+
   for (auto& domain : m_domains)
   {
     num_energy_groups = std::max(num_energy_groups, domain.get_num_energy_groups());
+    // Check if this domain had a field mismatch
+    if (domain.get_field_mismatch_error())
+    {
+      has_field_mismatch = 1;
+    }
   }
 
 #ifdef ROVER_PARALLEL
@@ -92,8 +99,23 @@ TypedScheduler<FloatType>::get_global_num_energy_groups()
                 "Local: " << num_energy_groups << ", Global max: " << mpi_max_energy_groups);
   }
 
+  // Check that all ranks agree on field mismatch state
+  int global_field_mismatch = 0;
+  MPI_Allreduce(&has_field_mismatch, &global_field_mismatch, 1, MPI_INT, MPI_MAX, m_comm_handle);
+  if (global_field_mismatch)
+  {
+    ASCENT_LOG_ERROR("Error - TypedScheduler::get_global_num_energy_groups: "
+                     "mismatched nunmber of absorption and emission fields detected on one or more ranks");
+  }
+
   time = timer.GetElapsedTime();
   ROVER_DATA_ADD("get_global_num_energy_groups_all_reduce", time);
+#else
+  if (has_field_mismatch)
+  {
+    ASCENT_LOG_ERROR("Error - TypedScheduler::get_global_num_energy_groups: "
+                     "mismatched number of absorption and emission fields");
+  }
 #endif
 
   ROVER_INFO("Global number of energy groups" << num_energy_groups);

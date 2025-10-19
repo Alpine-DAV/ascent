@@ -40,6 +40,7 @@ public:
   vtkmRange get_primary_range();
   void set_global_bounds(vtkm::Bounds bounds);
   const int get_num_energy_groups();
+  bool get_field_mismatch_error();
 protected:
   std::shared_ptr<Engine> m_engine;
   vtkmDataSet             m_dataset;

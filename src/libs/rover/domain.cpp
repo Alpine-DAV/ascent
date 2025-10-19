@@ -91,6 +91,12 @@ Domain::get_num_energy_groups()
   return m_engine->get_num_energy_groups();
 }
 
+bool
+Domain::get_field_mismatch_error()
+{
+  return m_engine->get_field_mismatch_error();
+}
+
 void
 Domain::set_dataset(vtkmDataSet &dataset)
 {

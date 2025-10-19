@@ -17,6 +17,7 @@ namespace rover
 Engine::Engine()
 {
   m_tracer = nullptr;
+  m_field_mismatch_error = false;
 }
 
 Engine::~Engine()
@@ -134,13 +135,17 @@ Engine::get_num_energy_groups()
 
     if (num_absorption_bins != num_emission_bins)
     {
-      ASCENT_LOG_ERROR("Error - Engine::get_num_energy_groups: number of energy groups in absorption field ("
-                       << num_absorption_bins << ") does not match number of bins in emission field ("
-                       << num_emission_bins << ")");
+      m_field_mismatch_error = true;
     }
   }
 
   return static_cast<int>(num_absorption_bins);
+}
+
+bool
+Engine::get_field_mismatch_error()
+{
+  return m_field_mismatch_error;
 }
 
 vtkmRange

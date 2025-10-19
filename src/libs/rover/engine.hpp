@@ -44,6 +44,7 @@ public:
   void partial_trace(Ray32 &rays, PartialVector32 &partials);
   void partial_trace(Ray64 &rays, PartialVector64 &partials);
   int  get_num_energy_groups();
+  bool get_field_mismatch_error();
   vtkmRange get_primary_range();
   void set_primary_range(const vtkmRange &range);
   void set_composite_background(bool on);
@@ -51,6 +52,7 @@ public:
 protected:
   vtkmDataSet m_dataset;
   vtkh::rendering::ConnectivityProxy *m_tracer;
+  bool m_field_mismatch_error;
 
   template<typename Precision>
   void init_emission(vtkmRayTracing::Ray<Precision> &rays,
