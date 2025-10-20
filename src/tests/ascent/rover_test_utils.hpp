@@ -194,11 +194,9 @@ render_multi_group_fields(const Node &data,
         scenes[scene_name]["plots"][plot_name]["field"] = field;
         scenes[scene_name]["renders"][render_name]["image_prefix"] = full_output_path;
 
-        // Rotate spatial meshes for test image variety
-        if (is_spatial_mesh)
-        {
-            scenes[scene_name]["renders"][render_name]["camera/azimuth"] = 45.0;
-        }
+        // Rotate and elevate 3D meshes
+        scenes[scene_name]["renders"][render_name]["camera/azimuth"] = 45.0;
+        scenes[scene_name]["renders"][render_name]["camera/elevation"] = 45.0;
 
         counter += 1;
 
