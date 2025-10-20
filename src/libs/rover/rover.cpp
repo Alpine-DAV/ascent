@@ -4,7 +4,9 @@
 // other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-#include <logging/ascent_annotations.hpp>
+#include <ascent_annotations.hpp>
+#include <ascent_logging.hpp>
+
 #include <typed_scheduler.hpp>
 #include <rover.hpp>
 #include <rover_exceptions.hpp>
@@ -12,6 +14,7 @@
 #include <iostream>
 #include <utils/rover_logging.hpp>
 #include <settings.hpp>
+
 
 #ifdef ROVER_PARALLEL
 #include <mpi.h>
@@ -141,7 +144,7 @@ Rover::create_scheduler()
   // Check to see if we have been initialized
   if(-1 == m_rank)
   {
-    ROVER_ERROR("Error - Rover::create_scheduler: MPI was not initialized");
+    ASCENT_LOG_ERROR("Error - Rover::create_scheduler: MPI was not initialized");
   }
   m_scheduler->set_comm_handle(m_comm_handle);
 #endif
@@ -285,7 +288,7 @@ Rover::execute()
   // but a developer would prefer to be made aware.
   if (!m_scheduler)
   {
-    ROVER_ERROR("Error - Rover::execute: Execute called before adding a dataset");
+    ASCENT_LOG_ERROR("Error - Rover::execute: Execute called before adding a dataset");
   }
 
   // Applies the user-supplied parameters and then begins the ray trace
