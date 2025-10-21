@@ -4,6 +4,18 @@ Notable changes to Ascent are documented in this file. This changelog started on
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project aspires to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+### Preferred dependency versions for ascent@develop
+- cmake@3.23 or newer
+- conduit@0.9.5
+- vtk-m@2.3.0
+- raja@v2025.09.0
+- umpire@v2025.09.0
+- camp@v2025.09.2
+- kokkos@4.7.00
+- mfem@4.8
+
+
 ## [0.9.5] - Released 2025-09-10
 ### Preferred dependency versions for ascent@0.9.5
 - cmake@3.23 or newer
