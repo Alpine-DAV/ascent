@@ -1071,9 +1071,6 @@ if [[ "$enable_mpicc" == "ON" ]]; then
   echo 'set(MPI_CXX_COMPILER ' ${mpicxx_exe}  ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
 fi
 
-echo 'set(BLT_CXX_STD c++17 STRING PATH "")' >> ${root_dir}/ascent-config.cmake
-echo 'set(CMAKE_CXX_STANDARD 17 STRING PATH "")' >> ${root_dir}/ascent-config.cmake
-
 echo 'set(CMAKE_VERBOSE_MAKEFILE ' ${enable_verbose} ' CACHE BOOL "")' >> ${root_dir}/ascent-config.cmake
 echo 'set(CMAKE_BUILD_TYPE ' ${build_config} ' CACHE STRING "")' >> ${root_dir}/ascent-config.cmake
 echo 'set(BUILD_SHARED_LIBS ' ${build_shared_libs} ' CACHE STRING "")' >> ${root_dir}/ascent-config.cmake
@@ -1114,7 +1111,6 @@ fi
 
 if [[ "$enable_hip" == "ON" ]]; then
     echo 'set(ENABLE_HIP ON CACHE BOOL "")' >> ${root_dir}/ascent-config.cmake
-    echo 'set(BLT_CXX_STD c++17 CACHE STRING "")' >> ${root_dir}/ascent-config.cmake
     echo 'set(CMAKE_HIP_COMPILER ' ${CXX} ' CACHE STRING "")' >> ${root_dir}/ascent-config.cmake
     echo 'set(CMAKE_HIP_ARCHITECTURES ' ${ROCM_ARCH} ' CACHE STRING "")' >> ${root_dir}/ascent-config.cmake
     echo 'set(ROCM_PATH ' ${ROCM_PATH} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
