@@ -2868,16 +2868,22 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
         {
             bool supported_type = false;
 
-            conduit::Node n_vfs = n_matset["volume_fractions"].child(0);
-            int num_children = n_vfs.number_of_children();
+            const conduit::Node *n_vfs; //= n_matset["volume_fractions"].child(0);
+            const conduit::Node &tmp_vfs = n_matset["volume_fractions"].child(0);
+            int num_children = tmp_vfs.number_of_children();
 
             if(num_children != 0) //of == 1?  
             {
-              n_vfs = n_matset["volume_fractions"].child(0).child(0);
+              n_vfs = tmp_vfs.child_ptr(0);
+            }
+            else
+            {
+              n_vfs = n_matset["volume_fractions"].child_ptr(0);
+
             }
 
             // we compile vtk-h with fp types
-            if(n_vfs.dtype().is_float32())
+            if(n_vfs->dtype().is_float32())
             {
                 supported_type = true;
                 //add calculated material fields for vtkm
@@ -2898,7 +2904,7 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
                 dset->AddField(ids);
                 dset->AddField(vfs);
             }
-            else if(n_vfs.dtype().is_float64())
+            else if(n_vfs->dtype().is_float64())
             {
                 supported_type = true;
                 //add calculated material fields for vtkm
