@@ -3746,7 +3746,6 @@ VTKHUniformGrid::verify_params(const conduit::Node &params,
     res &= check_numeric("origin/y",params, info, false);
     res &= check_numeric("origin/z",params, info, false);
     res &= check_numeric("spacing/dx",params, info, false);
-    res &= check_numeric("spacing/dx",params, info, false);
     res &= check_numeric("spacing/dy",params, info, false);
     res &= check_numeric("spacing/dz",params, info, false);
     res &= check_numeric("invalid_value",params, info, false);
@@ -3858,18 +3857,28 @@ VTKHUniformGrid::execute()
     std::string field = field_selection[0];
     std::string topo_name = collection->field_topology(field);
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+    vtkm::Id global_cells = data.GetGlobalNumberOfCells();
+    std::cerr << "global number of cells: " << global_cells << std::endl;
+    std::cerr << "print data: " <<std::endl;
+    data.PrintSummary(std::cerr);
+    std::cerr << "print data ENDDDDDDDDDDDDD" <<std::endl;
 
     vtkm::Bounds d_bounds = data.GetGlobalBounds();
     vtkm::Float64 x_extents = d_bounds.X.Length() + 1; //add one b/c we are
     vtkm::Float64 y_extents = d_bounds.Y.Length() + 1; //setting num points
     vtkm::Float64 z_extents = d_bounds.Z.Length() + 1; //(not cells) in each dim
+    std::cerr << " x cells: " << global_cells/((z_extents-1)*(y_extents-1)) << std::endl;
+    std::cerr << " y cells: " << global_cells/((z_extents-1)*(x_extents-1)) << std::endl;
+    std::cerr << " z cells: " << global_cells/((x_extents-1)*(y_extents-1)) << std::endl;
+    std::cerr << "extents: " << x_extents << " " << y_extents << " " << z_extents << std::endl;
+    std::cerr << "extents: " << x_extents << " " << y_extents << " " << z_extents << std::endl;
 
     vtkm::Float64 invalid_value = 0.0;
     
     using Vec3f = vtkm::Vec<vtkm::Float64,3>;
     Vec3f v_dims    = {x_extents, y_extents, z_extents}; 
     Vec3f v_origin  = {d_bounds.X.Min,d_bounds.Y.Min,d_bounds.Z.Min};
-    Vec3f v_spacing = {1.,1.,1.};
+    Vec3f v_spacing = {x_extents/100.,y_extents/100.,z_extents/100.};
 
     if(params().has_path("dims"))
     {
@@ -3884,6 +3893,9 @@ VTKHUniformGrid::execute()
       v_dims[0] = (v_dims[0] > 0) ? (v_dims[0]) : 1;
       v_dims[1] = (v_dims[1] > 0) ? (v_dims[1]) : 1;
       v_dims[2] = (v_dims[2] > 0) ? (v_dims[2]) : 1;
+      v_spacing[0] = x_extents/v_dims[0];
+      v_spacing[1] = y_extents/v_dims[1];
+      v_spacing[2] = z_extents/v_dims[2];
     }
     if(params().has_path("origin"))
     {
@@ -3904,6 +3916,10 @@ VTKHUniformGrid::execute()
         v_spacing[1] = get_float64(n_spacing["dy"], data_object);
       if(n_spacing.has_path("dz"))
         v_spacing[2] = get_float64(n_spacing["dz"], data_object);
+
+      v_spacing[0] = (v_spacing[0] > 0) ? (v_spacing[0]) : 1;
+      v_spacing[1] = (v_spacing[1] > 0) ? (v_spacing[1]) : 1;
+      v_spacing[2] = (v_spacing[2] > 0) ? (v_spacing[2]) : 1;
     }
     if(params().has_path("invalid_value"))
     {
