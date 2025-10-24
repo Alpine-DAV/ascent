@@ -3878,7 +3878,7 @@ VTKHUniformGrid::execute()
     using Vec3f = vtkm::Vec<vtkm::Float64,3>;
     Vec3f v_dims    = {x_extents, y_extents, z_extents}; 
     Vec3f v_origin  = {d_bounds.X.Min,d_bounds.Y.Min,d_bounds.Z.Min};
-    Vec3f v_spacing = {x_extents/100.,y_extents/100.,z_extents/100.};
+    Vec3f v_spacing = {1.,1.,1.};
 
     if(params().has_path("dims"))
     {
@@ -3993,6 +3993,19 @@ VTKHSample::verify_params(const conduit::Node &params,
     res &= check_numeric("points/y",params, info, false);
     res &= check_numeric("points/z",params, info, false);
 
+    res &= (check_numeric("box/min/x",params, info, false) 
+           || check_string("box/min/x",params, info, false));
+    res &= (check_numeric("box/min/y",params, info, false) 
+           || check_string("box/min/y",params, info, false));
+    res &= (check_numeric("box/min/z",params, info, false) 
+           || check_string("box/min/z",params, info, false));
+    res &= (check_numeric("box/max/x",params, info, false) 
+           || check_string("box/max/x",params, info, false));
+    res &= (check_numeric("box/max/y",params, info, false) 
+           || check_string("box/max/y",params, info, false));
+    res &= (check_numeric("box/max/z",params, info, false) 
+           || check_string("box/max/z",params, info, false));
+
 
     if(!params.has_child("field") && !params.has_child("fields"))
     {
@@ -4022,6 +4035,13 @@ VTKHSample::verify_params(const conduit::Node &params,
     valid_paths.push_back("points/x");
     valid_paths.push_back("points/y");
     valid_paths.push_back("points/z");
+
+    valid_paths.push_back("box/min/x");
+    valid_paths.push_back("box/min/y");
+    valid_paths.push_back("box/min/z");
+    valid_paths.push_back("box/max/x");
+    valid_paths.push_back("box/max/y");
+    valid_paths.push_back("box/max/z");
 
     std::string surprises = "";
 
