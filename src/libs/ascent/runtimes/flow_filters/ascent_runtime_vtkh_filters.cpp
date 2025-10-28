@@ -4179,6 +4179,42 @@ VTKHSample::execute()
         sampler.Points(x_hnd, y_hnd, z_hnd);
 
     }
+    else if(params().has_path("box"))
+    {
+        vtkm::cont::ArrayHandle<vtkm::Float64> x_hnd, y_hnd, z_hnd;
+        
+        int spatial_dims = 2;
+        int x_dims, y_dims, z_dims;
+        vtkm::Float64 x_min, x_max, y_min, y_max, z_min, z_max;
+        const Node &dims_b = params()["dims"];
+        const Node &min_b = params()["min"];
+        const Node &max_b = params()["max"];
+        x_dims = dims_b["i"].to_int();
+        y_dims = dims_b["j"].to_int();
+
+        int npts = x_vals.dtype().number_of_elements();
+        x_hnd.Allocate(npts);
+        y_hnd.Allocate(npts);
+
+        if(dims_b.has_child("k"))
+        {
+          spatial_dims = 3;
+          z_dims = dims_b["k"].to_int();
+        }
+
+        for(int i=0;i<npts;i++)
+        {
+            x_hnd.WritePortal().Set(i,x_vals[i]);
+            y_hnd.WritePortal().Set(i,y_vals[i]);
+            if(spatial_dims ==3)
+            {
+                z_hnd.WritePortal().Set(i,z_vals[i]);
+            }
+        }
+        
+        sampler.Points(x_hnd, y_hnd, z_hnd);
+
+    }
 
     double invalid_value = 0.0;
     if(params().has_path("invalid_value"))
