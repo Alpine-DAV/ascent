@@ -208,6 +208,7 @@ check_renders_surprises(const conduit::Node &renders_node)
 
   // Valid Visit input camera format
   std::vector<std::string> c_visit_valid_paths;
+  c_visit_valid_paths.push_back("windowCoords");
   c_visit_valid_paths.push_back("view_normal");
   c_visit_valid_paths.push_back("focus");
   c_visit_valid_paths.push_back("view_up");

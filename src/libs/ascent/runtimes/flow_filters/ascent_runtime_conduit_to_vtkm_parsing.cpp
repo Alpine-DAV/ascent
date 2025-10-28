@@ -101,14 +101,20 @@ parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera)
   // -------------------- //
   // 2D camera parameters //
   // -------------------- //
-  if(camera_node.has_child("2d"))
+  if(camera_node.has_child("2d") || camera_node.has_child("windowCoords"))
   {
     // camera:
     //  2d: [l,r,b,t]
     camera.SetModeTo2D();
-    conduit::Node n;
-    camera_node["2d"].to_float64_array(n);
-    const float64 *view_vals = n.as_float64_ptr();
+    float64_accessor view_vals;
+    if(camera_node.has_child("2d"))
+    {
+        view_vals = camera_node["2d"].value();
+    }
+    else
+    {
+        view_vals = camera_node["windowCoords"].value();
+    }
 
     camera.SetViewRange2D(view_vals[0],
                           view_vals[1],
@@ -202,9 +208,7 @@ parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera)
   // ----------------------- //
   if(camera_node.has_child("focus"))
   {
-      conduit::Node n;
-      camera_node["focus"].to_float64_array(n);
-      const float64 *coords = n.as_float64_ptr();
+      float64_accessor coords = camera_node["focus"].value();
       vtkmVec3f look_at(coords[0], coords[1], coords[2]);
       camera.SetLookAt(look_at);
   }
@@ -214,27 +218,21 @@ parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera)
      camera_node.has_child("view_angle") && 
      camera_node.has_child("parallel_scale"))
   {
-      conduit::Node view, focus;
-      camera_node["view_normal"].to_float64_array(view);
-      camera_node["focus"].to_float64_array(focus);
-
-      const conduit::float64 *v = view.value();
-      const conduit::float64 *fc = focus.value();
-
+      // Compute camera distance using perspective projection formula
       conduit::float64 view_angle = camera_node["view_angle"].to_float64() * (vtkm::Pi() / 360.0);
       conduit::float64 parallel_scale = camera_node["parallel_scale"].to_float64();
-
-      // Compute camera distance using perspective projection formula
-      double distance = (parallel_scale) / std::tan(view_angle);
+      conduit::float64 distance = (parallel_scale) / std::tan(view_angle);
 
       // Normalize viewNormal vector
-      conduit::float64 norm = std::sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
-      conduit::float64 v_norm[3] = { v[0]/norm, v[1]/norm, v[2]/norm };
+      float64_accessor view = camera_node["view_normal"].value();
+      conduit::float64 norm = std::sqrt(view[0]*view[0] + view[1]*view[1] + view[2]*view[2]);
+      conduit::float64 view_norm[3] = { view[0]/norm, view[1]/norm, view[2]/norm };
 
+      float64_accessor focus = camera_node["focus"].value();
       conduit::float64 pos[3];
       for(int i = 0; i < 3; ++i)
       {
-        pos[i] = fc[i] + v_norm[i] * distance;
+        pos[i] = focus[i] + view_norm[i] * distance;
       }
 
       vtkmVec3f position(pos[0], pos[1], pos[2]);
@@ -244,7 +242,7 @@ parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera)
       if(camera_node.has_child("near_plane"))
       {
         vtkm::Range clipping_range = camera.GetClippingRange();
-        clipping_range.Min =std::max(0.001, distance + camera_node["near_plane"].to_float64());
+        clipping_range.Min =std::max(CONDUIT_EPSILON, distance + camera_node["near_plane"].to_float64());
         camera.SetClippingRange(clipping_range);
       }
       
@@ -256,11 +254,14 @@ parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera)
       }
   }
 
+  if(camera_node.has_child("view_angle"))
+  {
+      camera.SetFieldOfView(camera_node["view_angle"].to_float64() * 2);
+  }
+
   if(camera_node.has_child("view_up"))
   {
-      conduit::Node n;
-      camera_node["view_up"].to_float64_array(n);
-      const float64 *coords = n.as_float64_ptr();
+      float64_accessor coords = camera_node["view_up"].value();
       vtkmVec3f up(coords[0], coords[1], coords[2]);
       vtkm::Normalize(up);
       camera.SetViewUp(up);
@@ -268,19 +269,13 @@ parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera)
 
   if(camera_node.has_child("image_pan"))
   {
-      vtkm::Float64 xpan = 0.;
-      vtkm::Float64 ypan = 0.;
-
-      conduit::Node n;
-      camera_node["image_pan"].to_float64_array(n);
-      const float64 *pan_xy = n.as_float64_ptr();
+      float64_accessor pan_xy = camera_node["image_pan"].value();
       camera.Pan(pan_xy[0], pan_xy[1]);
   }
 
   if(camera_node.has_child("image_zoom"))
   {
-      double zoom = camera_node["image_zoom"].to_float64();
-      camera.Zoom(zoom_to_vtkm_zoom(zoom));
+      camera.Zoom(zoom_to_vtkm_zoom(camera_node["image_zoom"].to_float64()));
   }
 
   if(camera_node.has_child("perspective"))
