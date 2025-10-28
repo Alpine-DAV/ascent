@@ -26,6 +26,13 @@ class Umpire(CachedCMakePackage, CudaPackage, ROCmPackage):
 
     version("develop", branch="develop", submodules=False)
     version(
+        "2025.09.0",
+        tag="v2025.09.0",
+        commit="6b0ea9edbbbc741c8a429768d946549cd3bd7d33",
+        submodules=False,
+        preferred=True,
+    )
+    version(
         "2025.03.0",
         tag="v2025.03.0",
         commit="1ed0669c57f041baa1f1070693991c3a7a43e7ee",

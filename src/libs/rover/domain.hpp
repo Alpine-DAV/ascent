@@ -39,7 +39,8 @@ public:
   viskores::Bounds& get_domain_bounds();
   viskoresRange get_primary_range();
   void set_global_bounds(viskores::Bounds bounds);
-  const int get_num_channels();
+  const int get_num_energy_groups();
+  bool get_field_mismatch_error();
 protected:
   std::shared_ptr<Engine> m_engine;
   viskoresDataSet             m_dataset;

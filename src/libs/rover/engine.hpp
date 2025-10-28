@@ -43,7 +43,8 @@ public:
   void init_rays(Ray64 &rays);
   void partial_trace(Ray32 &rays, PartialVector32 &partials);
   void partial_trace(Ray64 &rays, PartialVector64 &partials);
-  int  get_num_channels();
+  int  get_num_energy_groups();
+  bool get_field_mismatch_error();
   viskoresRange get_primary_range();
   void set_primary_range(const viskoresRange &range);
   void set_composite_background(bool on);
@@ -51,6 +52,7 @@ public:
 protected:
   viskoresDataSet m_dataset;
   vtkh::rendering::ConnectivityProxy *m_tracer;
+  bool m_field_mismatch_error;
 
   template<typename Precision>
   void init_emission(viskoresRayTracing::Ray<Precision> &rays,

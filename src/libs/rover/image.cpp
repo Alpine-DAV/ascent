@@ -139,8 +139,8 @@ void cast_array_handle(viskores::cont::ArrayHandle<T> &cast_to,
 //
 template<typename T, typename O> void init_from_image(Image<T> &left, Image<O> &right)
 {
-  const size_t channels = right.m_intensity_values.size();
-  for(size_t i = 0; i < channels; ++i)
+  const size_t num_energy_groups = right.m_intensity_values.size();
+  for(size_t i = 0; i < num_energy_groups; ++i)
   {
     cast_array_handle(left.m_intensity_values[i], right.m_intensity_values[i]);
     cast_array_handle(left.m_optical_depth_values[i], right.m_optical_depth_values[i]);
@@ -171,7 +171,7 @@ Image<FloatType>::operator=(Image<O> &other)
 
 template<typename FloatType>
 int
-Image<FloatType>::get_num_channels() const
+Image<FloatType>::get_num_energy_groups() const
 {
   return static_cast<int>(m_intensity_values.size());
 }
@@ -200,7 +200,7 @@ Image<FloatType>::init_from_partial(PartialImage<FloatType> &partial)
   const int64 width = rover::settings["width"].to_int64();
   const int64 height = rover::settings["height"].to_int64();
   const int64 channel_size = width * height;
-  const int num_channels = partial.m_transmission.GetNumChannels();
+  const int num_energy_groups = partial.m_transmission.GetNumChannels();
 
   // Helper lambda to expand a channel and push its buffer to the output vector
   auto expand_and_push = [&](int channel_index,
@@ -213,7 +213,7 @@ Image<FloatType>::init_from_partial(PartialImage<FloatType> &partial)
     output_vector.push_back(expanded.Buffer);
   };
 
-  for (int i = 0; i < num_channels; i++)
+  for (int i = 0; i < num_energy_groups; i++)
   {
     // Intensities
     expand_and_push(i,
@@ -255,15 +255,15 @@ template<typename FloatType>
 viskores::cont::ArrayHandle<FloatType>
 Image<FloatType>::flatten_intensity_values()
 {
-  const int num_channels = this->get_num_channels();
+  const int num_energy_groups = get_num_energy_groups();
 
   HandleType res;
   const int64 width = rover::settings["width"].to_int64();
   const int64 height = rover::settings["height"].to_int64();
   const int64 size = width * height;
-  res.Allocate(num_channels * size);
+  res.Allocate(num_energy_groups * size);
   auto output = res.WritePortal();
-  for(int c = 0; c < num_channels; ++c)
+  for(int c = 0; c < num_energy_groups; ++c)
   {
     auto channel = m_intensity_values[c].ReadPortal();
 
@@ -272,7 +272,8 @@ Image<FloatType>::flatten_intensity_values()
 #endif
     for(int i = 0; i < size; ++i)
     {
-      output.Set( i * num_channels + c, channel.Get(i));
+      // Deinterleave the output: all pixels for group 0, then all pixels for group 1, etc.
+      output.Set(c * size + i, channel.Get(i));
     }
   }
   return res;
@@ -282,15 +283,15 @@ template<typename FloatType>
 viskores::cont::ArrayHandle<FloatType>
 Image<FloatType>::flatten_optical_depth_values()
 {
-  const int num_channels = this->get_num_channels();
+  const int num_energy_groups = get_num_energy_groups();
 
   HandleType res;
   const int64 width = rover::settings["width"].to_int64();
   const int64 height = rover::settings["height"].to_int64();
   const int64 size = width * height;
-  res.Allocate(num_channels * size);
+  res.Allocate(num_energy_groups * size);
   auto output = res.WritePortal();
-  for(int c = 0; c < num_channels; ++c)
+  for(int c = 0; c < num_energy_groups; ++c)
   {
     auto channel = m_optical_depth_values[c].ReadPortal();
 #ifdef ROVER_OPENMP_ENABLED
@@ -298,7 +299,8 @@ Image<FloatType>::flatten_optical_depth_values()
 #endif
     for(int i = 0; i < size; ++i)
     {
-      output.Set( i * num_channels + c, channel.Get(i));
+      // Deinterleave the output: all pixels for group 0, then all pixels for group 1, etc.
+      output.Set( c * size + i, channel.Get(i));
     }
   }
   return res;

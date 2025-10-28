@@ -45,6 +45,7 @@ execute_ascent(const Node &data,
 {
     Ascent ascent;
     Node ascent_opts;
+    ascent_opts["exceptions"] = "forward";
 #ifdef ROVER_TEST_MPI_ENABLED
     ascent_opts["mpi_comm"] = MPI_Comm_c2f(COMM);
 #endif
@@ -115,7 +116,7 @@ render_fields(const Node &data,
 
     add_plots["scenes"] = scenes;
 
-    // Execute all renders in a single Ascent call
+    // Execute all renders in a single Ascent call for better performance
     execute_ascent(data, actions);
 
     // Check all generated images
@@ -125,6 +126,137 @@ render_fields(const Node &data,
         {
             std::string full_output_path = output_path + "_" + field;
             EXPECT_TRUE(check_test_image(full_output_path, 0.01f, cycle));
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
+inline void
+render_multi_group_fields(const Node &data,
+                          const std::string &output_path,
+                          const int cycle = 0,
+                          const bool render_intensities = true)
+{
+    int par_rank = 0;
+#ifdef ROVER_TEST_MPI_ENABLED
+    MPI_Comm_rank(COMM, &par_rank);
+#endif
+    const bool is_root = (0 == par_rank);
+
+    // This is here to help identify which ascent execute is throwing an error
+    if (is_root)
+    {
+        ASCENT_INFO("Executing render_multi_group_fields\n");
+    }
+    
+    std::vector<std::string> fields {
+        "optical_depth",
+        "optical_depth_spatial"
+    };
+
+    // We won't have intensities in the absorption-only case
+    if (render_intensities)
+    {
+        fields.push_back("intensities");
+        fields.push_back("intensities_spatial");
+    }
+
+    // Create slices at the midpoints between different z values
+    std::vector<double> z_values = {0.5, 1.5, 2.5};
+
+    Node pipelines;
+    Node scenes;
+    Node actions;
+
+    // Add pipelines action
+    Node &add_pipelines = actions.append();
+    add_pipelines["action"] = "add_pipelines";
+
+    // Add scenes action
+    Node &add_scenes = actions.append();
+    add_scenes["action"] = "add_scenes";
+
+    int counter = 1;
+
+    // Create pipelines and scenes for all fields
+    for (const auto& field : fields)
+    {
+        const bool is_spatial_mesh = field.find("spatial") != std::string::npos;
+
+        // Full topology render
+        std::string scene_name = "s" + std::to_string(counter);
+        std::string plot_name = "p" + std::to_string(counter);
+        std::string render_name = "r" + std::to_string(counter);
+        std::string full_output_path = output_path + "_" + field + "_full";
+
+        // Create scene with pseudocolor plot (no pipeline needed for full topology)
+        scenes[scene_name]["plots"][plot_name]["type"] = "pseudocolor";
+        scenes[scene_name]["plots"][plot_name]["field"] = field;
+        scenes[scene_name]["renders"][render_name]["image_prefix"] = full_output_path;
+
+        // Rotate and elevate 3D meshes
+        scenes[scene_name]["renders"][render_name]["camera/azimuth"] = 45.0;
+        scenes[scene_name]["renders"][render_name]["camera/elevation"] = 45.0;
+
+        counter += 1;
+
+        // Slice renders at different z values
+        for (int i = 0; i < z_values.size(); i++)
+        {
+            double z_val = z_values[i];
+            std::string pipeline_name = "pl" + std::to_string(counter);
+            std::string scene_name = "s" + std::to_string(counter);
+            std::string plot_name = "p" + std::to_string(counter);
+            std::string render_name = "r" + std::to_string(counter);
+            std::string full_output_path = output_path + "_" + field + "_z" + std::to_string(i);
+
+            // Create pipeline with slice filter
+            std::string topology = "image_topo";
+            if (is_spatial_mesh)
+            {
+                topology = "spatial_topo";
+            }
+            
+            pipelines[pipeline_name]["f1"]["type"] = "slice";
+            pipelines[pipeline_name]["f1"]["params"]["topology"] = topology;
+            pipelines[pipeline_name]["f1"]["params"]["point"]["x"] = 0.0;
+            pipelines[pipeline_name]["f1"]["params"]["point"]["y"] = 0.0;
+            pipelines[pipeline_name]["f1"]["params"]["point"]["z"] = z_val;
+            pipelines[pipeline_name]["f1"]["params"]["normal"]["x"] = 0.0;
+            pipelines[pipeline_name]["f1"]["params"]["normal"]["y"] = 0.0;
+            pipelines[pipeline_name]["f1"]["params"]["normal"]["z"] = 1.0;
+
+            // Create scene with pseudocolor plot
+            scenes[scene_name]["plots"][plot_name]["type"] = "pseudocolor";
+            scenes[scene_name]["plots"][plot_name]["field"] = field;
+            scenes[scene_name]["plots"][plot_name]["pipeline"] = pipeline_name;
+            scenes[scene_name]["renders"][render_name]["image_prefix"] = full_output_path;
+            
+            counter += 1;
+        }
+    }
+
+    add_pipelines["pipelines"] = pipelines;
+    add_scenes["scenes"] = scenes;
+
+    // Execute all renders in a single Ascent call for better performance
+    execute_ascent(data, actions);
+
+    // Check all generated images
+    if (is_root)
+    {
+        for (const auto& field : fields)
+        {
+            // Full topology
+            std::string full_output_path = output_path + "_" + field + "_full";
+            EXPECT_TRUE(check_test_image(full_output_path, 0.01f, cycle));
+
+            // Slices
+            for (int i = 0; i < z_values.size(); i++)
+            {
+                std::string full_output_path = output_path + "_" + field + "_z" + std::to_string(i);
+                EXPECT_TRUE(check_test_image(full_output_path, 0.01f, cycle));
+            }
         }
     }
 }
@@ -366,6 +498,65 @@ get_mpi_braid_multi_domain_test_data(Node &data,
     }
 }
 #endif
+
+//-----------------------------------------------------------------------------
+inline void
+get_multi_group_curv3d_data(Node &data)
+{
+    // Load dataset and verify blueprint
+    const std::string &filename = "multi_curv3d_blueprint.cycle_000048.root";
+    load_and_verify_ascent_data(data, filename);
+
+    // Build multi-group fields per domain
+    for (const auto &child : data.child_names())
+    {
+        int64 num_elements = data[child]["fields/d/values"].dtype().number_of_elements();
+
+        // Allocate new arrays
+        data[child]["fields/d_multi/values/d0"].set(DataType::float32(num_elements));
+        data[child]["fields/d_multi/values/d1"].set(DataType::float32(num_elements));
+        data[child]["fields/d_multi/values/d2"].set(DataType::float32(num_elements));
+        data[child]["fields/p_multi/values/p0"].set(DataType::float32(num_elements));
+        data[child]["fields/p_multi/values/p1"].set(DataType::float32(num_elements));
+        data[child]["fields/p_multi/values/p2"].set(DataType::float32(num_elements));
+
+        // Get array accessors
+        float32_array d_vals  = data[child]["fields/d/values"].value();
+        float32_array p_vals  = data[child]["fields/p/values"].value();
+        float32_array d0_vals = data[child]["fields/d_multi/values/d0"].value();
+        float32_array d1_vals = data[child]["fields/d_multi/values/d1"].value();
+        float32_array d2_vals = data[child]["fields/d_multi/values/d2"].value();
+        float32_array p0_vals = data[child]["fields/p_multi/values/p0"].value();
+        float32_array p1_vals = data[child]["fields/p_multi/values/p1"].value();
+        float32_array p2_vals = data[child]["fields/p_multi/values/p2"].value();
+
+        // Create additional fields by scaling existing ones
+        for (int i = 0; i < num_elements; i++)
+        {
+            d0_vals[i] = d_vals[i];
+            d1_vals[i] = d_vals[i] * 6.0f;
+            d2_vals[i] = d_vals[i] * 3.0f;
+
+            p0_vals[i] = p_vals[i];
+            p1_vals[i] = p_vals[i] * 6.0f;
+            p2_vals[i] = p_vals[i] * 3.0f;
+        }
+
+        // Set topology and association for new fields
+        data[child]["fields/d_multi/topology"] = "mesh1";
+        data[child]["fields/p_multi/topology"] = "mesh1";
+        data[child]["fields/d_multi/association"] = "element";
+        data[child]["fields/p_multi/association"] = "element";
+    }
+
+    // Verify test data
+    Node verify_info;
+#ifdef ROVER_TEST_MPI_ENABLED
+    EXPECT_TRUE(blueprint::mpi::mesh::verify(data, verify_info, COMM));
+#else
+    EXPECT_TRUE(blueprint::mesh::verify(data, verify_info));
+#endif
+}
 
 //-----------------------------------------------------------------------------
 inline void
