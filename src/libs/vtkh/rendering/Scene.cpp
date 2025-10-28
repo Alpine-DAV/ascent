@@ -75,24 +75,11 @@ Scene::IsVolume(vtkh::Renderer *renderer)
   return is_volume;
 }
 
-bool 
-Scene::IsANARI(vtkh::Renderer *renderer)
-{
-  bool is_ANARI = false;
-
-  if(dynamic_cast<vtkh::ANARIRenderer*>(renderer) != nullptr)
-  {
-    is_ANARI = true;
-  }
-  return is_ANARI;
-}
-
 void
 Scene::AddRenderer(vtkh::Renderer *renderer)
 {
   bool is_volume = IsVolume(renderer);
-  bool is_mesh   = IsMesh(renderer);
-  bool is_anari  = IsANARI(renderer);
+  bool is_mesh = IsMesh(renderer);
 
   if(is_volume)
   {
@@ -128,11 +115,6 @@ Scene::AddRenderer(vtkh::Renderer *renderer)
       m_renderers.push_back(renderer);
     }
   }
-  else if(is_anari)
-  {
-    auto anari_renderer = dynamic_cast<vtkh::ANARIRenderer*>(renderer);
-    m_anari_renderers.push_back(anari_renderer);
-  }
   else
   {
     m_renderers.push_front(renderer);
@@ -148,7 +130,6 @@ Scene::Render()
   std::vector<int> is_ct_discrete;
   std::vector<vtkm::cont::ColorTable> color_tables;
   bool do_once = true;
-  bool anari_do_once = true;
 
   //
   // We are going to render images in batches. With databases
@@ -219,27 +200,8 @@ Scene::Render()
       synch_depths = true;
       renderer++;
     }
+
     ASCENT_ANNOTATE_MARK_END("scene render batch opaque pass");
-
-    //
-    // pass 1.5: anari renders
-    // 
-    ASCENT_ANNOTATE_MARK_BEGIN("scene render batch anari pass");
-    if(!m_anari_renderers.empty())
-    {
-      auto renderer = m_anari_renderers[0];
-      auto anari_renderer = dynamic_cast<vtkh::ANARIRenderer*>(renderer);
-      //TODO:: hook up option for ascent composite vs anari ptc composite
-      //(*anari_renderer)->SetComposite(true); //if ascent composites
-      //(*anari_renderer)->SetComposite(false); //if ptc composites
-      anari_renderer->SetRenders(current_batch); 
-      anari_renderer->SetRenderers(m_anari_renderers); 
-      anari_renderer->Update();
-
-      anari_renderer->ClearRenders();
-    }
-    ASCENT_ANNOTATE_MARK_END("scene render batch anari pass");
-
 
     ASCENT_ANNOTATE_MARK_BEGIN("scene render batch volume pass");
     //
@@ -258,8 +220,8 @@ Scene::Render()
       current_batch  = (*renderer)->GetRenders();
       (*renderer)->ClearRenders();
     }
-    ASCENT_ANNOTATE_MARK_END("scene render batch volume pass");
 
+    ASCENT_ANNOTATE_MARK_END("scene render batch volume pass");
 
     if(do_once)
     {

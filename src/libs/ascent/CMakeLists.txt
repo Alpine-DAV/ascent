@@ -43,7 +43,6 @@ set(ASCENT_DRAY_ENABLED   ${ENABLE_DRAY})
 
 set(ASCENT_VTKH_ENABLED   ${ENABLE_VTKH})
 set(ASCENT_VTKM_ENABLED   ${VTKM_FOUND})
-set(ASCENT_ANARI_ENABLED  ${ANARI_FOUND})
 set(ASCENT_HDF5_ENABLED   ${CONDUIT_RELAY_HDF5_ENABLED})
 set(ASCENT_MFEM_ENABLED   ${MFEM_FOUND})
 
@@ -70,7 +69,6 @@ if(ASCENT_VTKM_ENABLED)
     set(ASCENT_VTKM_CUDA_ENABLED   ${CUDA_FOUND})
     set(ASCENT_VTKM_KOKKOS_ENABLED ${HIP_FOUND})
 endif()
-
 
 # ASCENT_ZZZ_ENTIRES are derived vars.
 # We mark them as advanced b/c otherwise folks may see them
@@ -103,7 +101,6 @@ mark_as_advanced(ASCENT_INSTALL_PREFIX
                  ASCENT_VTKM_OPENMP_ENABLED
                  ASCENT_VTKM_CUDA_ENABLED
                  ASCENT_VTKM_KOKKOS_ENABLED
-                 ASCENT_ANARI_ENABLED
                  )
 
 # gen config header
@@ -338,6 +335,7 @@ if(FORTRAN_FOUND)
 endif()
 
 
+
 ################################
 # Add python wrappers if python
 # support was selected
@@ -358,13 +356,6 @@ endif()
 ##################################
 if(CUDA_FOUND)
   set_source_files_properties(${ascent_device_sources} PROPERTIES LANGUAGE CUDA)
-
-  set(CUDA_ARCH_FLAGS)
-  foreach(arch ${CMAKE_CUDA_ARCHITECTURES})
-    list(APPEND CUDA_ARCH_FLAGS --generate-code=arch=compute_${arch},code=sm_${arch})
-  endforeach()
-  message(STATUS "CUDA_ARCH_FLAGS: ${CUDA_ARCH_FLAGS}")
-
 endif()
 
 if(HIP_FOUND)
@@ -439,10 +430,6 @@ if(GENTEN_FOUND)
     list(APPEND ascent_thirdparty_libs genten)
 endif()
 
-if(ANARI_FOUND)
-    list(APPEND ascent_thirdparty_libs vtkm::anari)
-endif()
-
 ##########################################
 # Build a serial version of ascent
 ##########################################
@@ -510,6 +497,7 @@ if (ENABLE_SERIAL)
 
         # updated for vtkm 1.9
         list(APPEND imported_targets_to_link
+                    vtkm::vtkmdiympi_nompi
                     vtkm::io
                     vtkm::rendering
                     vtkm::filter_clean_grid
@@ -566,11 +554,11 @@ if (ENABLE_SERIAL)
                        RESULT locations_on_disk)
 
         separate_arguments(params NATIVE_COMMAND "${CMAKE_CUDA_FLAGS} ${locations_on_disk}")
-        message(STATUS "${CMAKE_CUDA_COMPILER} --device-link ${CUDA_ARCH_FLAGS} ${params} -lcudadevrt -lcudart_static --output-file bcal_vtkm.o")
+        message(STATUS "${CMAKE_CUDA_COMPILER} --device-link ${params} -lcudadevrt -lcudart_static --output-file bcal_vtkm.o")
 
         add_custom_command(TARGET ascent PRE_LINK
                            DEPENDS ascent rover vtkh
-                           COMMAND ${CMAKE_CUDA_COMPILER} --device-link ${CUDA_ARCH_FLAGS} ${params} -lcudadevrt -lcudart_static --output-file bcal_vtkm.o
+                           COMMAND ${CMAKE_CUDA_COMPILER} --device-link ${params} -lcudadevrt -lcudart_static --output-file bcal_vtkm.o
                            COMMENT "manual device link step for Ascent"
                            )
         install(FILES ${CMAKE_CURRENT_BINARY_DIR}/bcal_vtkm.o DESTINATION lib)
@@ -693,7 +681,7 @@ if(MPI_FOUND)
 
     # manual device link for CUDA
     if(VTKM_FOUND AND CUDA_FOUND AND NOT BUILD_SHARED_LIBS)
-        set(internal_targets_to_link $<TARGET_FILE:rover_mpi>)
+        set(internal_targets_to_link $<TARGET_FILE:rover>)
 
         if(ENABLE_VTKH)
             list(APPEND internal_targets_to_link
@@ -713,6 +701,7 @@ if(MPI_FOUND)
 
         # updated for vtkm 1.9
         list(APPEND imported_targets_to_link
+                    vtkm::vtkmdiympi_nompi
                     vtkm::io
                     vtkm::rendering
                     vtkm::filter_clean_grid
@@ -769,10 +758,10 @@ if(MPI_FOUND)
                        RESULT locations_on_disk)
 
         separate_arguments(params NATIVE_COMMAND "${CMAKE_CUDA_FLAGS} ${locations_on_disk}")
-        message(STATUS "${CMAKE_CUDA_COMPILER} --device-link ${CUDA_ARCH_FLAGS} ${params} -lcudadevrt -lcudart_static --output-file bcal_vtkm_mpi.o")
+        message(STATUS "${CMAKE_CUDA_COMPILER} --device-link ${params} -lcudadevrt -lcudart_static --output-file bcal_vtkm_mpi.o")
         add_custom_command(TARGET ascent_mpi PRE_LINK
                             DEPENDS ascent_mpi rover_mpi
-                            COMMAND ${CMAKE_CUDA_COMPILER} --device-link ${CUDA_ARCH_FLAGS} ${params} -lcudadevrt -lcudart_static --output-file bcal_vtkm_mpi.o
+                            COMMAND ${CMAKE_CUDA_COMPILER} --device-link ${params} -lcudadevrt -lcudart_static --output-file bcal_vtkm_mpi.o
                             COMMENT "manual device link step for Ascent parallel"
                             )
         install(FILES ${CMAKE_CURRENT_BINARY_DIR}/bcal_vtkm_mpi.o DESTINATION lib)

@@ -50,9 +50,6 @@ build_raja="${build_raja:=true}"
 build_umpire="${build_umpire:=true}"
 build_mfem="${build_mfem:=true}"
 build_catalyst="${build_catalyst:=false}"
-build_anari="${build_anari:=false}"
-build_ptc="${build_barney:=false}"
-build_ptc="${build_ptc:=false}"
 build_zfp="${build_zfp:=true}"
 
 # ascent options
@@ -666,149 +663,6 @@ fi # build_kokkos
 
 fi # if enable_hip || enable_sycl
 
-
-################
-# anari
-################
-anari_version=0.14.0
-anari_src_dir=$(ospath ${source_dir}/ANARI-SDK-${anari_version})
-anari_build_dir=$(ospath ${build_dir}/anari-v${anari_version})
-anari_install_dir=$(ospath ${install_dir}/anari-v${anari_version}/)
-anari_tarball=$(ospath ${source_dir}/anari-v${anari_version}.tar.gz)
-
-# build only if install doesn't exist
-if [ ! -d ${anari_install_dir} ]; then
-if ${build_anari}; then
-if [ ! -d ${anari_src_dir} ]; then
-  echo "**** Downloading ${anari_tarball}"
-  curl -L https://github.com/KhronosGroup/ANARI-SDK/archive/refs/tags/v${anari_version}/anari-v${anari_version}.tar.gz -o ${anari_tarball}
-  tar ${tar_extra_args} -xzf ${anari_tarball} -C ${source_dir}
-fi
-
-echo "**** Configuring anari ${anari_version}"
-cmake -S ${anari_src_dir} -B ${anari_build_dir} ${cmake_compiler_settings} \
-  -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose}\
-  -DCMAKE_BUILD_TYPE=${build_config} \
-  -DBUILD_VIEWER=OFF \
-  -DBUILD_CTS=OFF \
-  -Danari_BUILD_TESTING=OFF \
-  -DCMAKE_INSTALL_PREFIX=${anari_install_dir} \
-
-echo "**** Building anari ${anari_version}"
-cmake --build ${anari_build_dir} --config ${build_config} -j${build_jobs}
-echo "**** Installing anari ${anari_version}"
-cmake --install ${anari_build_dir} --config ${build_config}
-
-fi
-else
-  echo "**** Skipping anari build, install found at: ${anari_install_dir}"
-fi # build_anari
-
-################
-# anari - ptc 
-################
-ptc_version=1.1.0
-ptc_src_dir=$(ospath ${source_dir}/ANARI-PTC-${ptc_version})
-ptc_build_dir=$(ospath ${build_dir}/ptc-v${ptc_version})
-ptc_install_dir=$(ospath ${install_dir}/ptc-v${ptc_version}/)
-ptc_tarball=$(ospath ${source_dir}/ptc-v${ptc_version}.tar.gz)
-
-# build only if install doesn't exist
-#CAVEAT/TODO: Installs in anari_install_dir
-if [ ! -d ${ptc_install_dir} ]; then
-if ${build_ptc}; then
-if [ ! -d ${ptc_src_dir} ]; then
-  echo "**** Downloading ${ptc_tarball}"
-  curl -L https://github.com/ingowald/ANARI-PTC/archive/refs/tags/v${ptc_version}.tar.gz -o ${ptc_tarball}
-  tar ${tar_extra_args} -xzf ${ptc_tarball} -C ${source_dir}
-fi
-
-ptc_extra_cmake_args=""
-if [[ "$enable_cuda" == "ON" ]]; then
-  ptc_extra_cmake_args="${ptc_extra_cmake_args} -DPTC_ENABLE_CUDA=ON"
-  ptc_extra_cmake_args="${ptc_extra_cmake_args} -DCMAKE_CUDA_HOST_COMPILER=${CXX}"
-  ptc_extra_cmake_args="${ptc_extra_cmake_args} -DCMAKE_CUDA_ARCHITECTURES=${CUDA_ARCH}"
-else
-  ptc_extra_cmake_args="${ptc_extra_cmake_args} -DPTC_DISABLE_CUDA=ON"
-fi
-
-echo "**** Configuring ptc ${ptc_version}"
-cmake -S ${ptc_src_dir} -B ${ptc_build_dir} ${cmake_compiler_settings} \
-  -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose}\
-  -DCMAKE_BUILD_TYPE=${build_config} \
-  -DANARI_SDK=${anari_install_dir} \
-  -DPTC_BUILD_TESTING=OFF ${ptc_extra_cmake_args}\
-  -DCMAKE_INSTALL_PREFIX=${anari_install_dir} \
-
-echo "**** Building ptc ${ptc_version}"
-cmake --build ${ptc_build_dir} --config ${build_config} -j${build_jobs}
-echo "**** Installing ptc ${ptc_version}"
-cmake --install ${ptc_build_dir} --config ${build_config}
-
-fi
-else
-  echo "**** Skipping ptc build, install found at: ${ptc_install_dir}"
-fi # build_ptc
-
-################
-# anari - barney 
-################
-barney_version=0.9.10
-barney_src_dir=$(ospath ${source_dir}/barney-${barney_version})
-barney_build_dir=$(ospath ${build_dir}/barney-v${barney_version})
-barney_install_dir=$(ospath ${install_dir}/barney-v${barney_version}/)
-barney_tarball=$(ospath ${source_dir}/barney-v${barney_version}.tar.gz)
-barney_src_dir="${source_dir}/barney-${barney_version}"
-
-
-# build only if install doesn't exist
-#CAVEAT/TODO: Installs in anari_install_dir
-if [ ! -d ${barney_install_dir} ]; then
-if ${build_barney}; then
-# Clone Barney repo with submodules if not already present
-if [ ! -d "${barney_src_dir}" ]; then
-  echo "**** Cloning Barney v${barney_version} from GitHub"
-  git clone --branch v${barney_version} --recursive https://github.com/ingowald/barney.git ${barney_src_dir}
-fi
-#if [ ! -d ${barney_src_dir} ]; then
-#  echo "**** Downloading ${barney_tarball}"
-#  curl -L https://github.com/ingowald/barney/archive/refs/tags/v${barney_version}.tar.gz -o ${barney_tarball}
-#  tar ${tar_extra_args} -xzf ${barney_tarball} -C ${source_dir}
-#fi
-
-barney_extra_cmake_args=""
-if [[ "$enable_cuda" == "ON" ]]; then
-  barney_extra_cmake_args="${barney_extra_cmake_args} -DBARNEY_ENABLE_CUDA=ON"
-  barney_extra_cmake_args="${barney_extra_cmake_args} -DCMAKE_CUDA_HOST_COMPILER=${CXX}"
-  barney_extra_cmake_args="${barney_extra_cmake_args} -DCMAKE_CUDA_ARCHITECTURES=${CUDA_ARCH}"
-else
-  barney_extra_cmake_args="${barney_extra_cmake_args} -DBARNEY_DISABLE_CUDA=ON"
-  barney_extra_cmake_args="${barney_extra_cmake_args} -DBARNEY_BACKEND_EMBREE=ON"
-fi
-
-if [[ "$enable_mpi" == "ON" ]]; then
-  barney_extra_cmake_args="${barney_extra_cmake_args} -DBARNEY_MPI=ON"
-fi
-
-echo "**** Configuring barney ${barney_version}"
-cmake -S ${barney_src_dir} -B ${barney_build_dir} ${cmake_compiler_settings} \
-  -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose}\
-  -DCMAKE_BUILD_TYPE=${build_config} \
-  -DANARI_SDK=${anari_install_dir} \
-  -Dbarney_BUILD_TESTING=OFF ${barney_extra_cmake_args}\
-  -DCMAKE_INSTALL_PREFIX=${anari_install_dir} \
-
-echo "**** Building barney ${barney_version}"
-cmake --build ${barney_build_dir} --config ${build_config} -j${build_jobs}
-echo "**** Installing barney ${barney_version}"
-cmake --install ${barney_build_dir} --config ${build_config}
-
-fi
-else
-  echo "**** Skipping barney build, install found at: ${barney_install_dir}"
-fi # build_barney
-
-
 ################
 # VTK-m
 ################
@@ -832,7 +686,6 @@ if [ ! -d ${vtkm_src_dir} ]; then
   # apply patches
   cd ${vtkm_src_dir}
   patch -p1 < ${script_dir}/2025_06_18_vtkm_z_extents_ray_culling_bugfix_viskores_mr109.patch
-  patch -p1 < ${script_dir}/2025_07_07_vtkm_anari_mapper_triangles_parameter_fix.patch
   cd ${root_dir}
 fi
 
@@ -862,13 +715,6 @@ if [[ "$enable_mpicc" == "ON" ]]; then
   vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DMPI_C_COMPILER=${mpicc_exe}"
   vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DMPI_CXX_COMPILER=${mpicxx_exe}"
 fi
-
-if ${build_anari}; then
-  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DVTKm_ENABLE_ANARI=ON"
-  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DANARI_DIR=$anari_install_dir}"
-  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DCMAKE_PREFIX_PATH=${anari_install_dir}"
-fi
-
 
 echo "**** Configuring VTK-m ${vtkm_version}"
 cmake -S ${vtkm_src_dir} -B ${vtkm_build_dir} ${cmake_compiler_settings} \
@@ -1181,8 +1027,8 @@ if [ -d ${ascent_checkout_dir} ]; then
     ascent_src_dir=$(abs_path ${ascent_checkout_dir})
     echo "**** Using existing Ascent source repo checkout: ${ascent_src_dir}"
 else
-ascent_version=develop
-ascent_src_dir=$(ospath ${source_dir}/ascent/src)
+    ascent_version=develop
+    ascent_src_dir=$(ospath ${source_dir}/ascent/src)
 fi
 
 # otherwise use ascent develop
@@ -1255,11 +1101,6 @@ echo 'set(ENABLE_DRAY ON CACHE BOOL "")' >> ${root_dir}/ascent-config.cmake
 
 if ${build_catalyst}; then
     echo 'set(CATALYST_DIR ' ${catalyst_cmake_dir} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
-fi
-
-if ${build_anari}; then
-    echo 'set(ENABLE_ANARI ON CACHE BOOL "")' >> ${root_dir}/ascent-config.cmake
-    echo 'set(ANARI_DIR ' ${anari_install_dir}' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
 fi
 
 if [[ "$enable_cuda" == "ON" ]]; then

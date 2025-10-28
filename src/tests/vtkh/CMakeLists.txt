@@ -13,7 +13,6 @@
 # Core VTK-h Unit Tests
 ################################
 set(BASIC_TESTS t_vtk-h_smoke
-                t_vtk-h_anari_volume_renderer
                 t_vtk-h_dataset
                 t_vtk-h_clip
                 t_vtk-h_clip_field

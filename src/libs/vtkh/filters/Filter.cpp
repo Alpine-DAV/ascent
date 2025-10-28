@@ -143,7 +143,7 @@ Filter::CheckForRequiredField(const std::string &field_name)
     msg<<"Cannot verify required field '"<<field_name;
     msg<<"' for vkth filter '"<<this->GetName()<<"' because input is null.";
     throw Error(msg.str());
-						  }
+  }
 
   if(!m_input->GlobalFieldExists(field_name))
   {
