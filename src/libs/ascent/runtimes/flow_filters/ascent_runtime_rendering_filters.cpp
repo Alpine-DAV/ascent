@@ -50,6 +50,7 @@
 #include <vtkh/rendering/MeshRenderer.hpp>
 #include <vtkh/rendering/PointRenderer.hpp>
 #include <vtkh/rendering/VolumeRenderer.hpp>
+#include <vtkh/rendering/ANARIRenderer.hpp>
 #include <vtkh/rendering/AutoCamera.hpp>
 #include <vtkm/cont/DataSet.h>
 
@@ -339,7 +340,12 @@ public:
   ~AscentScene()
   {}
 
-  void add_renderer_container(RendererContainer *container)
+  int GetRendererCount()
+  {
+    return m_renderer_count;
+  }
+
+  void AddRenderer(RendererContainer *container)
   {
     std::string topo = container->topology_name();
 
@@ -1899,6 +1905,24 @@ CreatePlot::execute()
     {
       renderer = new vtkh::MeshRenderer();
     }
+    else if(type == "anari_volume")
+    {
+      vtkh::ANARIVolumeRenderer *aren = new vtkh::ANARIVolumeRenderer();
+      if(plot_params.has_path("samples"))
+      {
+        int samples = plot_params["samples"].to_int32();
+        aren->SetNumberOfSamples(samples);
+      }
+      renderer = aren;
+    }
+    else if(type == "anari_glyphs")
+    {
+       renderer = new vtkh::ANARIGlyphRenderer();
+    }
+    else if(type == "anari_pseudocolor")
+    {
+       renderer = new vtkh::ANARITriangleRenderer();
+    }
     else
     {
         ASCENT_ERROR("create_plot unknown plot type '"<<type<<"'");
@@ -2191,8 +2215,9 @@ ExecScene::execute()
     }
 
     detail::AscentScene *scene = input<detail::AscentScene>(0);
-    std::vector<vtkh::Render> *renders = input<std::vector<vtkh::Render>>(1);
-    scene->execute(*renders);
+    std::vector<vtkh::Render> * renders = input<std::vector<vtkh::Render>>(1);
+    int renderer_count = scene->GetRendererCount();
+    scene->Execute(*renders);
 
     // the images should exist now so add them to the image list
     // this can be used for the web server or jupyter

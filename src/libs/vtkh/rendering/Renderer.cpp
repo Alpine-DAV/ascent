@@ -289,7 +289,6 @@ Renderer::DoExecute()
     }
   }
 
-
 }
 
 void

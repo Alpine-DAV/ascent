@@ -189,6 +189,35 @@ if(KOKKOS_DIR)
 endif()
 
 ###############################################################################
+# Setup ANARI 
+###############################################################################
+if(NOT ANARI_DIR)
+    set(ANARI_DIR ${ASCENT_ANARI_DIR})
+endif()
+
+if(EXISTS ${ANARI_DIR}/lib64/cmake/anari/)
+    set(ANARI_CMAKE_CONFIG_DIR ${ANARI_DIR}/lib64/cmake/anari/)
+endif()
+
+if(EXISTS ${ANARI_DIR}/lib/cmake/anari/)
+    set(ANARI_CMAKE_CONFIG_DIR ${ANARI_DIR}/lib/cmake/anari/)
+endif()
+
+
+if(ANARI_DIR)
+    if(NOT EXISTS ${ANARI_CMAKE_CONFIG_DIR}/anariConfig.cmake)
+	    MESSAGE(FATAL_ERROR "Could not find ANARI CMake include file (${ANARI_CMAKE_CONFIG_DIR}/anariConfig.cmake)")
+    endif()
+
+    ###############################################################################
+    # Import CMake targets
+    ###############################################################################
+    find_dependency(anari REQUIRED
+                    NO_DEFAULT_PATH
+		    PATHS ${ANARI_CMAKE_CONFIG_DIR})
+endif()
+
+###############################################################################
 # Setup VTK-m
 ###############################################################################
 if(NOT VTKM_DIR)
