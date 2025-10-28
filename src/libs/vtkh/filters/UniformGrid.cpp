@@ -30,7 +30,7 @@ using vec2_64  = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,2>>;
 using Vec2d    = vtkm::Vec<double, 2>;
 using Vec3d    = vtkm::Vec<double, 3>;
 
-#define _DEBUG 0
+#define _DEBUG 1
 
 namespace vtkh
 {
@@ -203,7 +203,8 @@ public:
         m_invalid_value(invalid_value)
     {}
 
-    void reduce()
+    void 
+    reduce()
     {
 
       MPI_Comm mpi_comm = MPI_Comm_f2c(vtkh::GetMPICommHandle());
@@ -922,8 +923,11 @@ UniformGrid::DoExecute()
 
   std::vector<vtkm::Id> domain_ids = this->m_input->GetDomainIds(); 
   int num_domains = domain_ids.size();
+  std::cerr << "num_domains: " << num_domains << std::endl;
   bool is_empty = this->m_input->IsEmpty();
   std::cerr << "IS EMPTY: " << is_empty << std::endl;
+  std::cerr << "print out data: " << std::endl;
+  this->m_input->PrintSummary(std::cerr);
 
 #if _DEBUG 
   std::cerr << "m_dims: " << m_dims[0] << " " << m_dims[1] << " " << m_dims[2] << std::endl;
@@ -956,6 +960,14 @@ UniformGrid::DoExecute()
     if(this->m_input->HasDomainId(domain_ids[i]))
     {
       dom = this->m_input->GetDomainById(domain_ids[i]);
+      vtkm::cont::CoordinateSystem cs = dom.GetCoordinateSystem();
+      vtkm::Vec<vtkm::Range,3> range = cs.GetRange();
+      vtkm::Id cs_points = cs.GetNumberOfPoints();
+      std::cerr << "cs num points: " << cs_points << std::endl;
+      std::cerr << " cs rage0: " << range[0].Min << " " << range[0].Max << std::endl;
+      std::cerr << " cs rage1: " << range[1].Min << " " << range[1].Max << std::endl;
+      std::cerr << " cs rage2: " << range[2].Min << " " << range[2].Max << std::endl;
+      std::cerr << " cs rage2 length: " << range[2].Length() << std::endl;
       for(const auto &field_name : m_fields)
       {
         //Uniform Grid Sample

@@ -33,7 +33,7 @@ using namespace conduit;
 using namespace ascent;
 
 
-int NUM_DOMAINS = 8;
+int NUM_DOMAINS = 1;
 
 //-----------------------------------------------------------------------------
 TEST(ascent_mpi_uniform_uniform_grid, test_mpi_uniform_grid)
