@@ -27,7 +27,7 @@ if(FORTRAN_FOUND)
     set(ASCENT_FORTRAN_COMPILER ${CMAKE_Fortran_COMPILER})
 endif()
 
-set(ASCENT_PYTHON_ENABLED   ${PYTHON_FOUND})
+set(ASCENT_PYTHON_ENABLED    ${PYTHON_FOUND})
 set(ASCENT_PYTHON_EXECUTABLE ${PYTHON_FOUND})
 
 set(ASCENT_LOGGING_ENABLED ${ENABLE_LOGGING})
@@ -41,16 +41,16 @@ set(ASCENT_RAJA_ENABLED   ${RAJA_FOUND})
 set(ASCENT_APCOMP_ENABLED ${ENABLE_APCOMP})
 set(ASCENT_DRAY_ENABLED   ${ENABLE_DRAY})
 
-set(ASCENT_VTKH_ENABLED   ${ENABLE_VTKH})
-set(ASCENT_VTKM_ENABLED   ${VTKM_FOUND})
-set(ASCENT_ANARI_ENABLED  ${ANARI_FOUND})
-set(ASCENT_HDF5_ENABLED   ${CONDUIT_RELAY_HDF5_ENABLED})
-set(ASCENT_MFEM_ENABLED   ${MFEM_FOUND})
+set(ASCENT_VTKH_ENABLED     ${ENABLE_VTKH})
+set(ASCENT_VISKORES_ENABLED ${VISKORES_FOUND})
+set(ASCENT_ANARI_ENABLED    ${ANARI_FOUND})
+set(ASCENT_HDF5_ENABLED     ${CONDUIT_RELAY_HDF5_ENABLED})
+set(ASCENT_MFEM_ENABLED     ${MFEM_FOUND})
 
-set(ASCENT_ADIOS2_ENABLED ${ADIOS2_FOUND})
-set(ASCENT_FIDES_ENABLED  ${FIDES_FOUND})
-set(ASCENT_GENTEN_ENABLED ${GENTEN_FOUND})
-set(ASCENT_KOKKOS_ENABLED ${KOKKOS_FOUND})
+set(ASCENT_ADIOS2_ENABLED    ${ADIOS2_FOUND})
+set(ASCENT_FIDES_ENABLED     ${FIDES_FOUND})
+set(ASCENT_GENTEN_ENABLED    ${GENTEN_FOUND})
+set(ASCENT_KOKKOS_ENABLED    ${KOKKOS_FOUND})
 set(ASCENT_BABELFLOW_ENABLED ${BABELFLOW_FOUND})
 
 if(OCCA_FOUND AND UMPIRE_FOUND)
@@ -65,10 +65,10 @@ set(ASCENT_OPENMP_ENABLED ${OPENMP_FOUND})
 set(ASCENT_CUDA_ENABLED   ${CUDA_FOUND})
 set(ASCENT_HIP_ENABLED    ${HIP_FOUND})
 
-if(ASCENT_VTKM_ENABLED)
-    set(ASCENT_VTKM_OPENMP_ENABLED ${OPENMP_FOUND})
-    set(ASCENT_VTKM_CUDA_ENABLED   ${CUDA_FOUND})
-    set(ASCENT_VTKM_KOKKOS_ENABLED ${HIP_FOUND})
+if(ASCENT_VISKORES_ENABLED)
+    set(ASCENT_VISKORES_OPENMP_ENABLED ${OPENMP_FOUND})
+    set(ASCENT_VISKORES_CUDA_ENABLED   ${CUDA_FOUND})
+    set(ASCENT_VISKORES_KOKKOS_ENABLED ${HIP_FOUND})
 endif()
 
 
@@ -88,7 +88,7 @@ mark_as_advanced(ASCENT_INSTALL_PREFIX
                  ASCENT_APCOMP_ENABLED
                  ASCENT_DRAY_ENABLED
                  ASCENT_VTKH_ENABLED
-                 ASCENT_VTKM_ENABLED
+                 ASCENT_VISKORES_ENABLED
                  ASCENT_HDF5_ENABLED
                  ASCENT_MFEM_ENABLED
                  ASCENT_ADIOS2_ENABLED
@@ -100,9 +100,9 @@ mark_as_advanced(ASCENT_INSTALL_PREFIX
                  ASCENT_OPENMP_ENABLED
                  ASCENT_CUDA_ENABLED
                  ASCENT_HIP_ENABLED
-                 ASCENT_VTKM_OPENMP_ENABLED
-                 ASCENT_VTKM_CUDA_ENABLED
-                 ASCENT_VTKM_KOKKOS_ENABLED
+                 ASCENT_VISKORES_OPENMP_ENABLED
+                 ASCENT_VISKORES_CUDA_ENABLED
+                 ASCENT_VISKORES_KOKKOS_ENABLED
                  ASCENT_ANARI_ENABLED
                  )
 
@@ -264,7 +264,7 @@ set(ascent_device_sources runtimes/expressions/ascent_memory_manager.cpp
 # optional features
 #############################
 
-if(VTKM_FOUND)
+if(VISKORES_FOUND)
     set(ascent_vtkh_dep_headers
         runtimes/ascent_data_object.hpp
         runtimes/ascent_vtkh_data_adapter.hpp
@@ -273,7 +273,7 @@ if(VTKM_FOUND)
         runtimes/flow_filters/ascent_runtime_vtkh_utils.hpp
         runtimes/flow_filters/ascent_runtime_rendering_filters.hpp
         runtimes/flow_filters/ascent_runtime_rover_filters.hpp
-        runtimes/flow_filters/ascent_runtime_conduit_to_vtkm_parsing.hpp
+        runtimes/flow_filters/ascent_runtime_conduit_to_viskores_parsing.hpp
         runtimes/flow_filters/ascent_runtime_filters.hpp
         runtimes/ascent_main_runtime.hpp)
 
@@ -285,19 +285,19 @@ if(VTKM_FOUND)
         runtimes/flow_filters/ascent_runtime_vtkh_utils.cpp
         runtimes/flow_filters/ascent_runtime_rendering_filters.cpp
         runtimes/flow_filters/ascent_runtime_rover_filters.cpp
-        runtimes/flow_filters/ascent_runtime_conduit_to_vtkm_parsing.cpp
+        runtimes/flow_filters/ascent_runtime_conduit_to_viskores_parsing.cpp
         runtimes/flow_filters/ascent_runtime_filters.cpp
         runtimes/ascent_main_runtime.cpp)
 
     list(APPEND ascent_headers ${ascent_vtkh_dep_headers})
     list(APPEND ascent_sources ${ascent_vtkh_dep_sources})
 
-    # keep a vtkm-specific device source list
-    set(ascent_vtkm_device_sources ${ascent_vtkh_dep_sources}
+    # keep a viskores-specific device source list
+    set(ascent_viskores_device_sources ${ascent_vtkh_dep_sources}
                                    runtimes/flow_filters/ascent_runtime_blueprint_filters.cpp)
 
     # also make sure that these are in ascent's device source list
-    list(APPEND ascent_device_sources ${ascent_vtkm_device_sources})
+    list(APPEND ascent_device_sources ${ascent_viskores_device_sources})
 endif()
 
 
@@ -396,8 +396,8 @@ if(UMPIRE_FOUND)
     list(APPEND ascent_thirdparty_libs umpire)
 endif()
 
-if(VTKM_FOUND)
-    list(APPEND ascent_thirdparty_libs vtkm vtkh rover)
+if(VISKORES_FOUND)
+    list(APPEND ascent_thirdparty_libs viskores vtkh rover)
 endif()
 
 if(CALIPER_FOUND)
@@ -460,9 +460,9 @@ if (ENABLE_SERIAL)
         set_target_properties(ascent PROPERTIES CXX_VISIBILITY_PRESET hidden)
     endif()
 
-    # special device source logic for vtk-m features
-    if(VTKM_FOUND)
-        vtkm_add_target_information(ascent DEVICE_SOURCES ${ascent_vtkm_device_sources})
+    # special device source logic for viskores features
+    if(VISKORES_FOUND)
+        viskores_add_target_information(ascent DEVICE_SOURCES ${ascent_viskores_device_sources})
     endif()
 
     # build includes
@@ -488,7 +488,7 @@ if (ENABLE_SERIAL)
             )
 
     # manual device link for CUDA
-    if(VTKM_FOUND AND CUDA_FOUND AND NOT BUILD_SHARED_LIBS)
+    if(VISKORES_FOUND AND CUDA_FOUND AND NOT BUILD_SHARED_LIBS)
         set(internal_targets_to_link $<TARGET_FILE:rover>)
 
         if(ENABLE_VTKH)
@@ -508,38 +508,39 @@ if (ENABLE_SERIAL)
 
         set(imported_targets_to_link "")
 
-        # updated for vtkm 1.9
+        # updated for viskores 1.9
         list(APPEND imported_targets_to_link
-                    vtkm::io
-                    vtkm::rendering
-                    vtkm::filter_clean_grid
-                    vtkm::filter_contour
-                    vtkm::filter_core
-                    vtkm::filter_connected_components
-                    vtkm::filter_density_estimate
-                    vtkm::filter_entity_extraction
-                    vtkm::filter_field_conversion
-                    vtkm::filter_field_transform
-                    vtkm::filter_flow
-                    vtkm::filter_geometry_refinement
-                    vtkm::filter_image_processing
-                    vtkm::filter_mesh_info
-                    vtkm::filter_multi_block
-                    vtkm::filter_resampling
-                    vtkm::filter_scalar_topology
-                    vtkm::filter_vector_analysis
-                    vtkm::filter_zfp
-                    vtkm::worklet
-                    vtkm::source
-                    vtkm::cont
+                    viskores::viskoresdiympi_nompi
+                    viskores::io
+                    viskores::rendering
+                    viskores::filter_clean_grid
+                    viskores::filter_contour
+                    viskores::filter_core
+                    viskores::filter_connected_components
+                    viskores::filter_density_estimate
+                    viskores::filter_entity_extraction
+                    viskores::filter_field_conversion
+                    viskores::filter_field_transform
+                    viskores::filter_flow
+                    viskores::filter_geometry_refinement
+                    viskores::filter_image_processing
+                    viskores::filter_mesh_info
+                    viskores::filter_multi_block
+                    viskores::filter_resampling
+                    viskores::filter_scalar_topology
+                    viskores::filter_vector_analysis
+                    viskores::filter_zfp
+                    viskores::worklet
+                    viskores::source
+                    viskores::cont
                     )
 
-        if(TARGET vtkm::vtkmdiympi_nompi)
-            list(APPEND imported_targets_to_link vtkm::vtkmdiympi_nompi)
+        if(TARGET viskores::viskoresdiympi_nompi)
+            list(APPEND imported_targets_to_link viskores::viskoresdiympi_nompi)
         endif()
 
-        if(TARGET vtkm::vtkmdiympi)
-            list(APPEND imported_targets_to_link vtkm::vtkmdiympi)
+        if(TARGET viskores::viskoresdiympi)
+            list(APPEND imported_targets_to_link viskores::viskoresdiympi)
         endif()
 
         if(RAJA_FOUND)
@@ -566,14 +567,14 @@ if (ENABLE_SERIAL)
                        RESULT locations_on_disk)
 
         separate_arguments(params NATIVE_COMMAND "${CMAKE_CUDA_FLAGS} ${locations_on_disk}")
-        message(STATUS "${CMAKE_CUDA_COMPILER} --device-link ${CUDA_ARCH_FLAGS} ${params} -lcudadevrt -lcudart_static --output-file bcal_vtkm.o")
+        message(STATUS "${CMAKE_CUDA_COMPILER} --device-link ${params} -lcudadevrt -lcudart_static --output-file bcal_viskores.o")
 
         add_custom_command(TARGET ascent PRE_LINK
                            DEPENDS ascent rover vtkh
-                           COMMAND ${CMAKE_CUDA_COMPILER} --device-link ${CUDA_ARCH_FLAGS} ${params} -lcudadevrt -lcudart_static --output-file bcal_vtkm.o
+                           COMMAND ${CMAKE_CUDA_COMPILER} --device-link ${params} -lcudadevrt -lcudart_static --output-file bcal_viskores.o
                            COMMENT "manual device link step for Ascent"
                            )
-        install(FILES ${CMAKE_CURRENT_BINARY_DIR}/bcal_vtkm.o DESTINATION lib)
+        install(FILES ${CMAKE_CURRENT_BINARY_DIR}/bcal_viskores.o DESTINATION lib)
     endif()
 
 endif()
@@ -625,19 +626,19 @@ if(MPI_FOUND)
     # this combines our mpi specific deps to the broader list of ascent deps
     list(APPEND ascent_mpi_thirdparty_libs ${ascent_thirdparty_libs})
 
-    if(VTKM_FOUND)
+    if(VISKORES_FOUND)
         # swap vtkh_mpi for vtkh
         list(REMOVE_ITEM ascent_mpi_thirdparty_libs vtkh)
         list(APPEND ascent_mpi_thirdparty_libs vtkh_mpi)
         list(REMOVE_ITEM ascent_mpi_thirdparty_libs rover)
         list(APPEND ascent_mpi_thirdparty_libs rover_mpi)
 
-        # babelflow specific vtk-m sources
+        # babelflow specific viskores sources
         if (BABELFLOW_FOUND)
             list(APPEND ascent_sources runtimes/flow_filters/ascent_runtime_babelflow_iso.cpp)
         endif()
 
-        list(APPEND ascent_vtkm_device_sources runtimes/flow_filters/ascent_runtime_babelflow_iso.cpp)
+        list(APPEND ascent_viskores_device_sources runtimes/flow_filters/ascent_runtime_babelflow_iso.cpp)
     endif()
 
     if(ENABLE_DRAY)
@@ -661,9 +662,9 @@ if(MPI_FOUND)
         set_target_properties(ascent_mpi PROPERTIES CXX_VISIBILITY_PRESET hidden)
     endif()
 
-    # special device source logic for vtk-m features
-    if(VTKM_FOUND)
-        vtkm_add_target_information(ascent_mpi DEVICE_SOURCES ${ascent_vtkm_device_sources})
+    # special device source logic for viskores features
+    if(VISKORES_FOUND)
+        viskores_add_target_information(ascent_mpi DEVICE_SOURCES ${ascent_viskores_device_sources})
     endif()
 
     # build includes
@@ -692,8 +693,8 @@ if(MPI_FOUND)
             )
 
     # manual device link for CUDA
-    if(VTKM_FOUND AND CUDA_FOUND AND NOT BUILD_SHARED_LIBS)
-        set(internal_targets_to_link $<TARGET_FILE:rover_mpi>)
+    if(VISKORES_FOUND AND CUDA_FOUND AND NOT BUILD_SHARED_LIBS)
+        set(internal_targets_to_link $<TARGET_FILE:rover>)
 
         if(ENABLE_VTKH)
             list(APPEND internal_targets_to_link
@@ -711,38 +712,39 @@ if(MPI_FOUND)
 
         set(imported_targets_to_link "")
 
-        # updated for vtkm 1.9
+        # updated for viskores 1.9
         list(APPEND imported_targets_to_link
-                    vtkm::io
-                    vtkm::rendering
-                    vtkm::filter_clean_grid
-                    vtkm::filter_contour
-                    vtkm::filter_core
-                    vtkm::filter_connected_components
-                    vtkm::filter_density_estimate
-                    vtkm::filter_entity_extraction
-                    vtkm::filter_field_conversion
-                    vtkm::filter_field_transform
-                    vtkm::filter_flow
-                    vtkm::filter_geometry_refinement
-                    vtkm::filter_image_processing
-                    vtkm::filter_mesh_info
-                    vtkm::filter_multi_block
-                    vtkm::filter_resampling
-                    vtkm::filter_scalar_topology
-                    vtkm::filter_vector_analysis
-                    vtkm::filter_zfp
-                    vtkm::worklet
-                    vtkm::source
-                    vtkm::cont
+                    viskores::viskoresdiympi_nompi
+                    viskores::io
+                    viskores::rendering
+                    viskores::filter_clean_grid
+                    viskores::filter_contour
+                    viskores::filter_core
+                    viskores::filter_connected_components
+                    viskores::filter_density_estimate
+                    viskores::filter_entity_extraction
+                    viskores::filter_field_conversion
+                    viskores::filter_field_transform
+                    viskores::filter_flow
+                    viskores::filter_geometry_refinement
+                    viskores::filter_image_processing
+                    viskores::filter_mesh_info
+                    viskores::filter_multi_block
+                    viskores::filter_resampling
+                    viskores::filter_scalar_topology
+                    viskores::filter_vector_analysis
+                    viskores::filter_zfp
+                    viskores::worklet
+                    viskores::source
+                    viskores::cont
                     )
 
-        if(TARGET vtkm::vtkmdiympi_nompi)
-            list(APPEND imported_targets_to_link vtkm::vtkmdiympi_nompi)
+        if(TARGET viskores::viskoresdiympi_nompi)
+            list(APPEND imported_targets_to_link viskores::viskoresdiympi_nompi)
         endif()
 
-        if(TARGET vtkm::vtkmdiympi)
-            list(APPEND imported_targets_to_link vtkm::vtkmdiympi)
+        if(TARGET viskores::viskoresdiympi)
+            list(APPEND imported_targets_to_link viskores::viskoresdiympi)
         endif()
 
         if(RAJA_FOUND)
@@ -769,13 +771,13 @@ if(MPI_FOUND)
                        RESULT locations_on_disk)
 
         separate_arguments(params NATIVE_COMMAND "${CMAKE_CUDA_FLAGS} ${locations_on_disk}")
-        message(STATUS "${CMAKE_CUDA_COMPILER} --device-link ${CUDA_ARCH_FLAGS} ${params} -lcudadevrt -lcudart_static --output-file bcal_vtkm_mpi.o")
+        message(STATUS "${CMAKE_CUDA_COMPILER} --device-link ${params} -lcudadevrt -lcudart_static --output-file bcal_viskores_mpi.o")
         add_custom_command(TARGET ascent_mpi PRE_LINK
                             DEPENDS ascent_mpi rover_mpi
-                            COMMAND ${CMAKE_CUDA_COMPILER} --device-link ${CUDA_ARCH_FLAGS} ${params} -lcudadevrt -lcudart_static --output-file bcal_vtkm_mpi.o
+                            COMMAND ${CMAKE_CUDA_COMPILER} --device-link ${params} -lcudadevrt -lcudart_static --output-file bcal_viskores_mpi.o
                             COMMENT "manual device link step for Ascent parallel"
                             )
-        install(FILES ${CMAKE_CURRENT_BINARY_DIR}/bcal_vtkm_mpi.o DESTINATION lib)
+        install(FILES ${CMAKE_CURRENT_BINARY_DIR}/bcal_viskores_mpi.o DESTINATION lib)
     endif()
 
 endif()

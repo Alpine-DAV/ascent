@@ -1,6 +1,6 @@
 #include <vtkh/filters/Gradient.hpp>
 #include <vtkh/filters/Recenter.hpp>
-#include <vtkh/vtkm_filters/vtkmGradient.hpp>
+#include <vtkh/viskores_filters/viskoresGradient.hpp>
 
 namespace vtkh
 {
@@ -46,7 +46,7 @@ void Gradient::DoExecute()
   // make sure we have a node-centered field
   bool valid_field = false;
   bool is_cell_assoc = m_input->GetFieldAssociation(m_field_name, valid_field) ==
-                       vtkm::cont::Field::Association::Cells;
+                       viskores::cont::Field::Association::Cells;
   bool delete_input = false;
 
   if(valid_field && is_cell_assoc)
@@ -54,7 +54,7 @@ void Gradient::DoExecute()
     Recenter recenter;
     recenter.SetInput(m_input);
     recenter.SetField(m_field_name);
-    recenter.SetResultAssoc(vtkm::cont::Field::Association::Points);
+    recenter.SetResultAssoc(viskores::cont::Field::Association::Points);
     recenter.Update();
     m_input = recenter.GetOutput();
     delete_input = true;
@@ -64,8 +64,8 @@ void Gradient::DoExecute()
   for(int i = 0; i < num_domains; ++i)
   {
 
-    vtkm::Id domain_id;
-    vtkm::cont::DataSet dom;
+    viskores::Id domain_id;
+    viskores::cont::DataSet dom;
     this->m_input->GetDomain(i, dom, domain_id);
 
     if(!dom.HasField(m_field_name))
@@ -73,7 +73,7 @@ void Gradient::DoExecute()
       continue;
     }
 
-    vtkh::vtkmGradient grad;
+    vtkh::viskoresGradient grad;
 
     auto dataset = grad.Run(dom,
                             m_field_name,

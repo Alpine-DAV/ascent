@@ -44,7 +44,7 @@ to Ascent.
 
 * :ref:`dev_overview`: a developers view of the Ascent
 * :ref:`build_env`: how to setup a development environment
-* :ref:`vtkh_filter`: developing VTK-m and VTK-h capabilities
+* :ref:`vtkh_filter`: developing Viskores and VTK-h capabilities
 * :ref:`flow_filter`: developing flow filters in Ascent
 
 Submitting Pull Requests

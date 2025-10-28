@@ -1,4 +1,4 @@
-#include <vtkm/filter/clean_grid/CleanGrid.h>
+#include <viskores/filter/clean_grid/CleanGrid.h>
 #include <vtkh/Error.hpp>
 #include <vtkh/filters/ParticleMerging.hpp>
 
@@ -23,7 +23,7 @@ ParticleMerging::SetField(const std::string &field_name)
 }
 
 void
-ParticleMerging::SetRadius(const vtkm::Float64 radius)
+ParticleMerging::SetRadius(const viskores::Float64 radius)
 {
   if(radius <= 0)
   {
@@ -59,15 +59,15 @@ void ParticleMerging::DoExecute()
 
   for(int i = 0; i < num_domains; ++i)
   {
-    vtkm::Id domain_id;
-    vtkm::cont::DataSet dom;
+    viskores::Id domain_id;
+    viskores::cont::DataSet dom;
     this->m_input->GetDomain(i, dom, domain_id);
 
     bool fast_merge = true;
-    vtkm::filter::clean_grid::CleanGrid pointmerge;
+    viskores::filter::clean_grid::CleanGrid pointmerge;
     pointmerge.SetTolerance(m_radius * 2.);
     pointmerge.SetFastMerge(fast_merge);
-    vtkm::cont::DataSet output = pointmerge.Execute(dom);
+    viskores::cont::DataSet output = pointmerge.Execute(dom);
 
     m_output->AddDomain(output, domain_id);
 

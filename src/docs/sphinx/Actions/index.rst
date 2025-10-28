@@ -22,7 +22,7 @@ Ascent Actions
    ExpressionsOverview
    expression_objects
    Binning
-   VTKmColorTables
+   ViskoresColorTables
    DRayColorTables
    ParaViewVisualization
 ..

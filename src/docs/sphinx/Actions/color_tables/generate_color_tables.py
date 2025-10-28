@@ -11,34 +11,34 @@ def repeat_char(times, char):
     return res
 
 
-vtkm_files = [f for f in listdir("./vtkm") if isfile(join("./vtkm", f))]
-#print(vtkm_files)
-vtkm_png_files = [s for s in vtkm_files if ".png" in s]
-vtkm_png_files.sort()
-examples = ".. _vtkm_color_tables:\n\n"
-examples += "VTK-m Color Tables\n"
+viskores_files = [f for f in listdir("./viskores") if isfile(join("./viskores", f))]
+#print(viskores_files)
+viskores_png_files = [s for s in viskores_files if ".png" in s]
+viskores_png_files.sort()
+examples = ".. _viskores_color_tables:\n\n"
+examples += "Viskores Color Tables\n"
 examples +="===================\n"
 examples +="\n"
 
-for c in vtkm_png_files:
+for c in viskores_png_files:
     print(c)
     filename = c
     ctable_name = c.split(".")[0]
     # docutils can't handle names with spaces
     if c.count(' ') != 0:
       nospace = "".join(c.split())
-      copyfile("./vtkm/"+c, "./vtkm/nospace/"+nospace);
+      copyfile("./viskores/"+c, "./viskores/nospace/"+nospace);
       filename = 'nospace/'+nospace
 #    print(ctable_name)
     examples += ctable_name
     examples +="\n"
     examples += repeat_char(len(ctable_name), "-") + "\n"
     examples +="\n"
-    examples += ".. image:: color_tables/vtkm/" + filename + "\n"
+    examples += ".. image:: color_tables/viskores/" + filename + "\n"
     examples +="\n"
 
 #print(examples)
-examples_file = open("../VTKmColorTables.rst", "w")
+examples_file = open("../ViskoresColorTables.rst", "w")
 examples_file.write(examples)
 examples_file.close()
 

@@ -24,10 +24,10 @@ VolumeEngine::~VolumeEngine()
 }
 
 void
-VolumeEngine::set_data_set(vtkm::cont::DataSet &dataset)
+VolumeEngine::set_data_set(viskores::cont::DataSet &dataset)
 {
   if(m_tracer) delete m_tracer;
-  m_tracer = new vtkm::rendering::ConnectivityProxy(dataset, "");
+  m_tracer = new viskores::rendering::ConnectivityProxy(dataset, "");
 }
 
 int VolumeEngine::get_num_channels()
@@ -45,7 +45,7 @@ VolumeEngine::set_primary_field(const std::string &primary_field)
 void
 VolumeEngine::init_rays(Ray32 &rays)
 {
-  vtkm::cont::ArrayHandle<vtkm::Float32> signature;
+  viskores::cont::ArrayHandle<viskores::Float32> signature;
   signature.Allocate(4);
   signature.WritePortal().Set(0,1.f);
   signature.WritePortal().Set(1,1.f);
@@ -57,7 +57,7 @@ VolumeEngine::init_rays(Ray32 &rays)
 void
 VolumeEngine::init_rays(Ray64 &rays)
 {
-  vtkm::cont::ArrayHandle<vtkm::Float64> signature;
+  viskores::cont::ArrayHandle<viskores::Float64> signature;
   signature.Allocate(4);
   signature.WritePortal().Set(0,1.);
   signature.WritePortal().Set(1,1.);
@@ -81,7 +81,7 @@ VolumeEngine::partial_trace(Ray32 &rays)
 
   ROVER_INFO("tracing  rays");
   rays.Buffers.at(0).InitConst(0.);
-  vtkmColorMap corrected = correct_opacity();
+  viskoresColorMap corrected = correct_opacity();
   m_tracer->SetColorMap(corrected);
   return m_tracer->PartialTrace(rays);
 }
@@ -101,25 +101,25 @@ VolumeEngine::partial_trace(Ray64 &rays)
 
   ROVER_INFO("tracing  rays");
   rays.Buffers.at(0).InitConst(0.);
-  vtkmColorMap corrected = correct_opacity();
+  viskoresColorMap corrected = correct_opacity();
   m_tracer->SetColorMap(corrected);
   return m_tracer->PartialTrace(rays);
 }
 
-vtkmRange
+viskoresRange
 VolumeEngine::get_primary_range()
 {
   return m_tracer->GetScalarFieldRange();
 }
 
-vtkmColorMap
+viskoresColorMap
 VolumeEngine::correct_opacity()
 {
   const float correction_scalar = 10.f;
   float samples = m_num_samples;
 
   float ratio = correction_scalar / samples;
-  vtkmColorMap corrected;
+  viskoresColorMap corrected;
   corrected.Allocate(m_color_map.GetNumberOfValues());
 
   auto map_portal = m_color_map.ReadPortal();
@@ -131,8 +131,8 @@ VolumeEngine::correct_opacity()
 #endif
   for(int i = 0; i < num_points; i++)
   {
-    vtkm::Vec<vtkm::Float32,4> color = map_portal.Get(i);
-    color[3] = 1.f - vtkm::Pow((1.f - color[3]), ratio);
+    viskores::Vec<viskores::Float32,4> color = map_portal.Get(i);
+    color[3] = 1.f - viskores::Pow((1.f - color[3]), ratio);
     corr_portal.Set(i, color);
   }
 
@@ -146,20 +146,20 @@ VolumeEngine::set_composite_background(bool on)
 };
 
 void
-VolumeEngine::set_primary_range(const vtkmRange &range)
+VolumeEngine::set_primary_range(const viskoresRange &range)
 {
   return m_tracer->SetScalarRange(range);
 }
 
 void
-VolumeEngine::set_samples(const vtkm::Bounds &global_bounds, const int &samples)
+VolumeEngine::set_samples(const viskores::Bounds &global_bounds, const int &samples)
 {
-  const vtkm::Float32 num_samples = static_cast<float>(samples);
-  vtkm::Vec<vtkm::Float32,3> totalExtent;
-  totalExtent[0] = vtkm::Float32(global_bounds.X.Max - global_bounds.X.Min);
-  totalExtent[1] = vtkm::Float32(global_bounds.Y.Max - global_bounds.Y.Min);
-  totalExtent[2] = vtkm::Float32(global_bounds.Z.Max - global_bounds.Z.Min);
-  vtkm::Float32 sample_distance = vtkm::Magnitude(totalExtent) / num_samples;
+  const viskores::Float32 num_samples = static_cast<float>(samples);
+  viskores::Vec<viskores::Float32,3> totalExtent;
+  totalExtent[0] = viskores::Float32(global_bounds.X.Max - global_bounds.X.Min);
+  totalExtent[1] = viskores::Float32(global_bounds.Y.Max - global_bounds.Y.Min);
+  totalExtent[2] = viskores::Float32(global_bounds.Z.Max - global_bounds.Z.Min);
+  viskores::Float32 sample_distance = viskores::Magnitude(totalExtent) / num_samples;
   m_tracer->SetSampleDistance(sample_distance);
   m_num_samples = samples;
 }

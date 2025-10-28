@@ -41,7 +41,7 @@
 #include <mpi.h>
 #endif
 
-#if defined(ASCENT_VTKM_ENABLED)
+#if defined(ASCENT_VISKORES_ENABLED)
 #include <ascent_vtkh_collection.hpp>
 #include <vtkh/vtkh.hpp>
 #include <vtkh/DataSet.hpp>
@@ -52,9 +52,9 @@
 #include <vtkh/rendering/VolumeRenderer.hpp>
 #include <vtkh/rendering/ANARIRenderer.hpp>
 #include <vtkh/rendering/AutoCamera.hpp>
-#include <vtkm/cont/DataSet.h>
+#include <viskores/cont/DataSet.h>
 
-#include <ascent_runtime_conduit_to_vtkm_parsing.hpp>
+#include <ascent_runtime_conduit_to_viskores_parsing.hpp>
 #include <ascent_runtime_vtkh_utils.hpp>
 #endif
 
@@ -228,7 +228,7 @@ check_renders_surprises(const conduit::Node &renders_node)
   return surprises;
 }
 
-void vtkm_bounds_to_conduit_node(const vtkm::Bounds &bounds,
+void viskores_bounds_to_conduit_node(const viskores::Bounds &bounds,
                                  conduit::Node &res)
 {
     res["xmin"] = bounds.X.Min;
@@ -239,8 +239,8 @@ void vtkm_bounds_to_conduit_node(const vtkm::Bounds &bounds,
     res["zmax"] = bounds.Z.Max;
 }
 
-void conduit_node_to_vtkm_bounds(const conduit::Node &bounds,
-                                 vtkm::Bounds &res)
+void conduit_node_to_viskores_bounds(const conduit::Node &bounds,
+                                 viskores::Bounds &res)
 {
     res.X.Min = bounds["xmin"].to_float64();
     res.X.Max = bounds["xmax"].to_float64();
@@ -402,7 +402,7 @@ public:
 //-----------------------------------------------------------------------------
 
 vtkh::Render parse_render(const conduit::Node &render_node,
-                          vtkm::Bounds &bounds,
+                          viskores::Bounds &bounds,
                           const std::string &image_name)
 {
   int image_width;
@@ -437,7 +437,7 @@ vtkh::Render parse_render(const conduit::Node &render_node,
   //
   if(render_node.has_path("camera"))
   {
-    vtkm::rendering::Camera camera = render.GetCamera();
+    viskores::rendering::Camera camera = render.GetCamera();
     parse_camera(render_node["camera"], camera);
     render.SetCamera(camera);
   }
@@ -572,15 +572,15 @@ vtkh::Render parse_render(const conduit::Node &render_node,
     }
 
     int positions = render_node["color_bar_position"].dtype().number_of_elements()/4;
-    std::vector<vtkm::Bounds> cb_position;
+    std::vector<viskores::Bounds> cb_position;
     for(int i = 0; i < positions; i++)
     {
       conduit::Node n;
       render_node["color_bar_position"].to_float32_array(n);
       const float32 *cb_pos = n.as_float32_ptr();
-      vtkm::Bounds pos(vtkm::Range(cb_pos[0+4*i],cb_pos[1+4*i]),
-			vtkm::Range(cb_pos[2+4*i],cb_pos[3+4*i]),
-			vtkm::Range(0.0,0.0));
+      viskores::Bounds pos(viskores::Range(cb_pos[0+4*i],cb_pos[1+4*i]),
+			viskores::Range(cb_pos[2+4*i],cb_pos[3+4*i]),
+			viskores::Range(0.0,0.0));
       cb_position.push_back(pos);
     }
     render.SetColorBarPosition(cb_position);
@@ -593,7 +593,7 @@ vtkh::Render parse_render(const conduit::Node &render_node,
 class CinemaManager
 {
 protected:
-  std::vector<vtkm::rendering::Camera> m_cameras;
+  std::vector<viskores::rendering::Camera> m_cameras;
   std::vector<std::string>             m_image_names;
   std::vector<std::tuple<float,float>> m_camera_angles;
   std::vector<float>                   m_phi_values;
@@ -601,7 +601,7 @@ protected:
   std::vector<float>                   m_times;
   std::string                          m_csv;
 
-  vtkm::Bounds                         m_bounds;
+  viskores::Bounds                         m_bounds;
   int                                  m_phi;
   float                                m_phi_min;
   float                                m_phi_inc;
@@ -614,7 +614,7 @@ protected:
   std::string                          m_base_path;
   float                                m_time;
 public:
-  CinemaManager(vtkm::Bounds bounds,
+  CinemaManager(viskores::Bounds bounds,
                 const conduit::Node &render_node,
                 const std::string image_name,
                 const std::string path)
@@ -747,7 +747,7 @@ public:
        return conduit::utils::join_file_path(m_base_path, m_image_name);
   }
 
-  void set_bounds(vtkm::Bounds &bounds)
+  void set_bounds(viskores::Bounds &bounds)
   {
     if(bounds != m_bounds)
     {
@@ -843,13 +843,13 @@ public:
       tmp.SetImageName(image_name);
       // we have to make a copy of the camera because
       // zoom is additive for some reason
-      vtkm::rendering::Camera camera = m_cameras[i];
+      viskores::rendering::Camera camera = m_cameras[i];
 
       if(!zoom.dtype().is_empty())
       {
         // Allow default zoom to be overridden
-        double vtkm_zoom = zoom_to_vtkm_zoom(zoom.to_float64());
-        camera.Zoom(vtkm_zoom);
+        double viskores_zoom = zoom_to_viskores_zoom(zoom.to_float64());
+        camera.Zoom(viskores_zoom);
       }
 
       tmp.SetCamera(camera);
@@ -983,22 +983,22 @@ private:
     } // phi
   }
 
-  void create_cinema_cameras(vtkm::Bounds bounds)
+  void create_cinema_cameras(viskores::Bounds bounds)
   {
     m_cameras.clear();
     m_image_names.clear();
-    using vtkmVec3f = vtkm::Vec<vtkm::Float32,3>;
-    vtkmVec3f center = bounds.Center();
-    vtkm::Vec<vtkm::Float32,3> totalExtent;
-    totalExtent[0] = vtkm::Float32(bounds.X.Length());
-    totalExtent[1] = vtkm::Float32(bounds.Y.Length());
-    totalExtent[2] = vtkm::Float32(bounds.Z.Length());
+    using viskoresVec3f = viskores::Vec<viskores::Float32,3>;
+    viskoresVec3f center = bounds.Center();
+    viskores::Vec<viskores::Float32,3> totalExtent;
+    totalExtent[0] = viskores::Float32(bounds.X.Length());
+    totalExtent[1] = viskores::Float32(bounds.Y.Length());
+    totalExtent[2] = viskores::Float32(bounds.Z.Length());
 
-    vtkm::Float32 radius = vtkm::Magnitude(totalExtent) * 2.5 / 2.0;
+    viskores::Float32 radius = viskores::Magnitude(totalExtent) * 2.5 / 2.0;
 
     for(int a = 0; a < m_camera_angles.size(); ++a)
     {
-      vtkm::rendering::Camera camera;
+      viskores::rendering::Camera camera;
       camera.ResetToBounds(bounds);
 
       //
@@ -1006,24 +1006,24 @@ private:
       //  (x = 0, y = 0, z = 1)
       //
 
-      vtkmVec3f pos(0.f,0.f,1.f);
-      vtkmVec3f up(0.f,1.f,0.f);
+      viskoresVec3f pos(0.f,0.f,1.f);
+      viskoresVec3f up(0.f,1.f,0.f);
 
-      vtkm::Matrix<vtkm::Float32,4,4> phi_rot;
-      vtkm::Matrix<vtkm::Float32,4,4> theta_rot;
-      vtkm::Matrix<vtkm::Float32,4,4> rot;
+      viskores::Matrix<viskores::Float32,4,4> phi_rot;
+      viskores::Matrix<viskores::Float32,4,4> theta_rot;
+      viskores::Matrix<viskores::Float32,4,4> rot;
 
       const float phi = std::get<0>(m_camera_angles[a]);
       const float theta = std::get<1>(m_camera_angles[a]);
 
-      phi_rot = vtkm::Transform3DRotateZ(phi);
-      theta_rot = vtkm::Transform3DRotateX(theta);
-      rot = vtkm::MatrixMultiply(phi_rot, theta_rot);
+      phi_rot = viskores::Transform3DRotateZ(phi);
+      theta_rot = viskores::Transform3DRotateX(theta);
+      rot = viskores::MatrixMultiply(phi_rot, theta_rot);
 
-      up = vtkm::Transform3DVector(rot, up);
-      vtkm::Normalize(up);
+      up = viskores::Transform3DVector(rot, up);
+      viskores::Normalize(up);
 
-      pos = vtkm::Transform3DPoint(rot, pos);
+      pos = viskores::Transform3DPoint(rot, pos);
       pos = pos * radius + center;
 
       camera.SetViewUp(up);
@@ -1053,7 +1053,7 @@ public:
     return it != m_databases.end();
   }
 
-  static void create_db(vtkm::Bounds bounds,
+  static void create_db(viskores::Bounds bounds,
                         const conduit::Node &render_node,
                         std::string db_name,
                         std::string path)
@@ -1174,7 +1174,7 @@ CreateRenders::execute()
     // if you want to see all of the bounds info
     // std::cout << n_bounds->to_yaml() << std::endl;
 
-    vtkm::Bounds bounds;
+    viskores::Bounds bounds;
 
     //// if we want view based on all topologies
     //// note: this can be different than the original bounds, it includes
@@ -1182,7 +1182,7 @@ CreateRenders::execute()
 
     // if(n_bounds->has_child("__all_topologies__"))
     // {
-    //     detail::conduit_node_to_vtkm_bounds(n_bounds->fetch("__all_topologies__"),bounds);
+    //     detail::conduit_node_to_viskores_bounds(n_bounds->fetch("__all_topologies__"),bounds);
     // }
 
     // get bounds for active topologies
@@ -1191,8 +1191,8 @@ CreateRenders::execute()
     {
         if(n_bounds->has_child(topo))
         {
-           vtkm::Bounds topo_bounds;
-           detail::conduit_node_to_vtkm_bounds(n_bounds->fetch(topo),topo_bounds);
+           viskores::Bounds topo_bounds;
+           detail::conduit_node_to_viskores_bounds(n_bounds->fetch(topo),topo_bounds);
            bounds.Include(topo_bounds);
         }
     }
@@ -1230,7 +1230,7 @@ CreateRenders::execute()
       }
     }
 
-    vtkm::Bounds original_bounds;
+    viskores::Bounds original_bounds;
     if(needs_original_bounds)
     {
       DataObject *source
@@ -1247,7 +1247,7 @@ CreateRenders::execute()
       for(int i = 0; i < num_renders; ++i)
       {
         const conduit::Node &render_node = renders_node.child(i);
-        vtkm::Bounds scene_bounds(bounds);
+        viskores::Bounds scene_bounds(bounds);
         if(render_node.has_path("use_original_bounds"))
         {
           if(render_node["use_original_bounds"].as_string() == "true")
@@ -1444,7 +1444,7 @@ CreateRenders::execute()
             auto_cam.SetNumSamples(samples);
             auto_cam.Update();
                   
-            vtkm::rendering::Camera *camera = new vtkm::rendering::Camera;
+            viskores::rendering::Camera *camera = new viskores::rendering::Camera;
             *camera = auto_cam.GetCamera();
             vtkh::Render render = vtkh::MakeRender(width,
                                       height,
@@ -1486,7 +1486,7 @@ CreateRenders::execute()
         }
       }
 
-      vtkm::Bounds scene_bounds(bounds);
+      viskores::Bounds scene_bounds(bounds);
       if(params().has_path("use_original_bounds"))
       {
         if(params()["use_original_bounds"].as_string() == "true")
@@ -1559,19 +1559,19 @@ VTKHBounds::execute()
     {
       std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
-      vtkm::Bounds global_bounds;
+      viskores::Bounds global_bounds;
       global_bounds.Include(collection->global_bounds());
       conduit::Node &n_gb = n_bounds->fetch("__all_topologies__");
-      detail::vtkm_bounds_to_conduit_node(global_bounds,n_gb);
+      detail::viskores_bounds_to_conduit_node(global_bounds,n_gb);
 
       std::vector<std::string> topo_names = collection->topology_names();
       // get the bounds for each named topology
       for(auto topo_name : topo_names)
       {
-          vtkm::Bounds topo_bounds;
+          viskores::Bounds topo_bounds;
           topo_bounds.Include(collection->global_topology_bounds(topo_name));
           conduit::Node &curr = n_bounds->fetch(topo_name);
-          detail::vtkm_bounds_to_conduit_node(topo_bounds,curr);
+          detail::viskores_bounds_to_conduit_node(topo_bounds,curr);
       }
     }
 
@@ -1637,23 +1637,23 @@ VTKHUnionBounds::execute()
     // now we have unique names
     for(auto c_name : c_names)
     {
-        vtkm::Bounds bounds;
+        viskores::Bounds bounds;
         if(a_node->has_child(c_name))
         {
-            vtkm::Bounds curr_bounds;
-            detail::conduit_node_to_vtkm_bounds(a_node->fetch(c_name),curr_bounds);
+            viskores::Bounds curr_bounds;
+            detail::conduit_node_to_viskores_bounds(a_node->fetch(c_name),curr_bounds);
             bounds.Include(curr_bounds);
         }
         
         if(b_node->has_child(c_name))
         {
-            vtkm::Bounds curr_bounds;
-            detail::conduit_node_to_vtkm_bounds(b_node->fetch(c_name),curr_bounds);
+            viskores::Bounds curr_bounds;
+            detail::conduit_node_to_viskores_bounds(b_node->fetch(c_name),curr_bounds);
             bounds.Include(curr_bounds);
         }
 
         conduit::Node &r = result->fetch(c_name);
-        detail::vtkm_bounds_to_conduit_node(bounds,r);
+        detail::viskores_bounds_to_conduit_node(bounds,r);
     }
 
     set_output<conduit::Node>(result);
@@ -1931,7 +1931,7 @@ CreatePlot::execute()
     // get the plot params
     if(plot_params.has_path("color_table"))
     {
-      vtkm::cont::ColorTable color_table = parse_color_table(plot_params["color_table"]);
+      viskores::cont::ColorTable color_table = parse_color_table(plot_params["color_table"]);
       if(type != "mesh")
       {
         if(plot_params["color_table"].has_path("annotation"))
@@ -1955,7 +1955,7 @@ CreatePlot::execute()
       renderer->SetColorTable(color_table);
     }
 
-    vtkm::Range scalar_range;
+    viskores::Range scalar_range;
     if(plot_params.has_path("min_value"))
     {
       scalar_range.Min = plot_params["min_value"].to_float64();
@@ -1981,7 +1981,7 @@ CreatePlot::execute()
       {
         // The renderer needs a field, so add one if
         // needed. This will eventually go away once
-        // the mesh mapper in vtkm can handle no field
+        // the mesh mapper in viskores can handle no field
         const std::string fname = "constant_mesh_field";
         data.AddConstantPointField(0.f, fname);
         renderer->SetField(fname);
@@ -2108,32 +2108,32 @@ void generate_camera_meshes(conduit::Node &image_data)
   // Initializing look vector from position to the "look_at" point of interest
   float64_accessor position = camera["position"].value();
   float64_accessor look_at = camera["look_at"].value();
-  vtkm::Vec<vtkm::Float64,3> vtkm_look_at(look_at[0], look_at[1], look_at[2]);
-  vtkm::Vec<vtkm::Float64,3> vtkm_position(position[0], position[1], position[2]);
-  vtkm::Vec<vtkm::Float64,3> vtkm_look = vtkm_look_at - vtkm_position;
-  vtkm::Normalize(vtkm_look);
+  viskores::Vec<viskores::Float64,3> viskores_look_at(look_at[0], look_at[1], look_at[2]);
+  viskores::Vec<viskores::Float64,3> viskores_position(position[0], position[1], position[2]);
+  viskores::Vec<viskores::Float64,3> viskores_look = viskores_look_at - viskores_position;
+  viskores::Normalize(viskores_look);
 
   // Initializing and normalizing up vector
   float64_accessor up = camera["up"].value();
-  vtkm::Vec<vtkm::Float64,3> vtkm_up(up[0], up[1], up[2]);
+  viskores::Vec<viskores::Float64,3> viskores_up(up[0], up[1], up[2]);
 
-  vtkm::Vec<vtkm::Float64,3> forward(0,0,-1);
-  double angle_between = vtkm::ACos(vtkm::Dot(forward, vtkm_look)) / vtkm::Pi() * 180;
+  viskores::Vec<viskores::Float64,3> forward(0,0,-1);
+  double angle_between = viskores::ACos(viskores::Dot(forward, viskores_look)) / viskores::Pi() * 180;
 
   // If the look vector has been rotated by a certain angle, adjust the camera up vector to match
-  if (vtkm::Abs(angle_between) >= 0.001) {
-    vtkm::Vec<vtkm::Float64,3> axisOfRotation = vtkm::Cross(vtkm_look, forward);
-    vtkm_up =
-      vtkm::Transform3DVector(vtkm::Transform3DRotate(-angle_between, axisOfRotation), vtkm_up);
+  if (viskores::Abs(angle_between) >= 0.001) {
+    viskores::Vec<viskores::Float64,3> axisOfRotation = viskores::Cross(viskores_look, forward);
+    viskores_up =
+      viskores::Transform3DVector(viskores::Transform3DRotate(-angle_between, axisOfRotation), viskores_up);
   }
-  vtkm::Normalize(vtkm_up);
+  viskores::Normalize(viskores_up);
 
   // Identifying points where the look vector intersects with the near and far frustum planes
   double near_dist = camera["near_plane"].to_value();
   double far_dist = camera["far_plane"].to_value();
-  vtkm::Vec<vtkm::Float64,3> vtkm_side = vtkm::Cross(vtkm_up, vtkm_look);
-  vtkm::Vec<vtkm::Float64,3> look_near_pt = (vtkm_look * near_dist) + vtkm_position;
-  vtkm::Vec<vtkm::Float64,3> look_far_pt = (vtkm_look * far_dist) + vtkm_position;
+  viskores::Vec<viskores::Float64,3> viskores_side = viskores::Cross(viskores_up, viskores_look);
+  viskores::Vec<viskores::Float64,3> look_near_pt = (viskores_look * near_dist) + viskores_position;
+  viskores::Vec<viskores::Float64,3> look_far_pt = (viskores_look * far_dist) + viskores_position;
 
   // Calculating the bounds of the camera frustums
   int image_height = image_data["image_height"].to_value();
@@ -2142,30 +2142,30 @@ void generate_camera_meshes(conduit::Node &image_data)
   double fov = camera["fov"].to_value();
   double zoom = camera["zoom"].to_value();
   // Near frustum
-  double frust_near_height = near_dist * vtkm::Tan(fov * 0.5 * vtkm::Pi() / 180.0) / zoom;
+  double frust_near_height = near_dist * viskores::Tan(fov * 0.5 * viskores::Pi() / 180.0) / zoom;
   double frust_near_width  = frust_near_height;
-  vtkm::Vec<vtkm::Float64,3> near_frust_ll = look_near_pt + (-1 * vtkm_up * frust_near_height)
-                                             + (vtkm_side * frust_near_width * image_aspect );
-  vtkm::Vec<vtkm::Float64,3> near_frust_lr = look_near_pt + (-1 * vtkm_up * frust_near_height)
-                                             + (-1 * vtkm_side * frust_near_width * image_aspect);
-  vtkm::Vec<vtkm::Float64,3> near_frust_ur = look_near_pt + (vtkm_up * frust_near_height)
-                                             + (-1 * vtkm_side * frust_near_width * image_aspect);
-  vtkm::Vec<vtkm::Float64,3> near_frust_ul = look_near_pt + (vtkm_up * frust_near_height)
-                                             + (vtkm_side * frust_near_width * image_aspect);
+  viskores::Vec<viskores::Float64,3> near_frust_ll = look_near_pt + (-1 * viskores_up * frust_near_height)
+                                             + (viskores_side * frust_near_width * image_aspect );
+  viskores::Vec<viskores::Float64,3> near_frust_lr = look_near_pt + (-1 * viskores_up * frust_near_height)
+                                             + (-1 * viskores_side * frust_near_width * image_aspect);
+  viskores::Vec<viskores::Float64,3> near_frust_ur = look_near_pt + (viskores_up * frust_near_height)
+                                             + (-1 * viskores_side * frust_near_width * image_aspect);
+  viskores::Vec<viskores::Float64,3> near_frust_ul = look_near_pt + (viskores_up * frust_near_height)
+                                             + (viskores_side * frust_near_width * image_aspect);
   // Far frustum
-  double frust_far_height = far_dist * vtkm::Tan(fov * 0.5 * vtkm::Pi() / 180.0) / zoom;
+  double frust_far_height = far_dist * viskores::Tan(fov * 0.5 * viskores::Pi() / 180.0) / zoom;
   double frust_far_width  = frust_far_height;
-  vtkm::Vec<vtkm::Float64,3> far_frust_ll = look_far_pt + (-1 * vtkm_up * frust_far_height)
-                                            + (vtkm_side * frust_far_width * image_aspect);
-  vtkm::Vec<vtkm::Float64,3> far_frust_lr = look_far_pt + (-1 * vtkm_up * frust_far_height)
-                                            + (-1 * vtkm_side * frust_far_width * image_aspect);
-  vtkm::Vec<vtkm::Float64,3> far_frust_ur = look_far_pt + (vtkm_up * frust_far_height)
-                                            + (-1 * vtkm_side * frust_far_width * image_aspect);
-  vtkm::Vec<vtkm::Float64,3> far_frust_ul = look_far_pt + (vtkm_up * frust_far_height)
-                                            + (vtkm_side * frust_far_width * image_aspect);
+  viskores::Vec<viskores::Float64,3> far_frust_ll = look_far_pt + (-1 * viskores_up * frust_far_height)
+                                            + (viskores_side * frust_far_width * image_aspect);
+  viskores::Vec<viskores::Float64,3> far_frust_lr = look_far_pt + (-1 * viskores_up * frust_far_height)
+                                            + (-1 * viskores_side * frust_far_width * image_aspect);
+  viskores::Vec<viskores::Float64,3> far_frust_ur = look_far_pt + (viskores_up * frust_far_height)
+                                            + (-1 * viskores_side * frust_far_width * image_aspect);
+  viskores::Vec<viskores::Float64,3> far_frust_ul = look_far_pt + (viskores_up * frust_far_height)
+                                            + (viskores_side * frust_far_width * image_aspect);
 
   // Assembling frustum mesh
-  vtkm::Vec<vtkm::Float64,3> up_vector_pt = vtkm_up * (far_dist - near_dist) * 0.5 + look_near_pt;
+  viskores::Vec<viskores::Float64,3> up_vector_pt = viskores_up * (far_dist - near_dist) * 0.5 + look_near_pt;
   double x_val_frust[] = {near_frust_ll[0],near_frust_lr[0],near_frust_ur[0],near_frust_ul[0],
                           far_frust_ll[0], far_frust_lr[0], far_frust_ur[0], far_frust_ul[0],
                           look_near_pt[0],  look_far_pt[0], up_vector_pt[0]};
@@ -2238,9 +2238,9 @@ ExecScene::execute()
       image_data["image_height"] = renders->at(i).GetHeight();
 
       // check for 2d vs 3d camera
-      if(renders->at(i).GetCamera().GetMode() ==  vtkm::rendering::Camera::Mode::TwoD)
+      if(renders->at(i).GetCamera().GetMode() ==  viskores::rendering::Camera::Mode::TwoD)
       {
-        vtkm::Bounds bounds =  renders->at(i).GetCamera().GetViewRange2D();
+        viskores::Bounds bounds =  renders->at(i).GetCamera().GetViewRange2D();
         double view_2d[4] = {bounds.X.Min,
                              bounds.Y.Min,
                              bounds.X.Max,
@@ -2261,7 +2261,7 @@ ExecScene::execute()
       auto pan_vals = renders->at(i).GetCamera().GetPan();
       image_data["camera/xpan"] = pan_vals[0];
       image_data["camera/ypan"] = pan_vals[1];
-      vtkm::Bounds bounds=  renders->at(i).GetSceneBounds();
+      viskores::Bounds bounds=  renders->at(i).GetSceneBounds();
       double coord_bounds [6] = {bounds.X.Min,
                                  bounds.Y.Min,
                                  bounds.Z.Min,

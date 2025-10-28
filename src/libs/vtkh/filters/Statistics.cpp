@@ -1,11 +1,11 @@
 #include <vtkh/filters/Statistics.hpp>
-#include <vtkh/vtkm_filters/vtkmStatistics.hpp>
+#include <vtkh/viskores_filters/viskoresStatistics.hpp>
 #include <vtkh/Error.hpp>
 #include <vtkh/Logger.hpp>
-#include <vtkm/cont/Algorithm.h>
-#include <vtkm/cont/ArrayHandleCast.h>
-#include <vtkm/cont/Invoker.h>
-#include <vtkm/cont/PartitionedDataSet.h>
+#include <viskores/cont/Algorithm.h>
+#include <viskores/cont/ArrayHandleCast.h>
+#include <viskores/cont/Invoker.h>
+#include <viskores/cont/PartitionedDataSet.h>
 #include <vector>
 
 #ifdef VTKH_PARALLEL
@@ -68,33 +68,33 @@ void Statistics::DoExecute()
     throw Error("Statistics: field : '"+m_field_name+"' does not exist'");
   }
 
-  std::vector<vtkm::cont::DataSet> vtkm_ds;
+  std::vector<viskores::cont::DataSet> viskores_ds;
 
   
   for(int i = 0; i < num_domains; ++i)
   {
-    vtkm::Id domain_id;
-    vtkm::cont::DataSet dom;
+    viskores::Id domain_id;
+    viskores::cont::DataSet dom;
     this->m_input->GetDomain(i, dom, domain_id);
     if(dom.HasField(m_field_name))
     {
-      vtkm_ds.push_back(dom);
+      viskores_ds.push_back(dom);
     }
   }
 
-  vtkm::cont::PartitionedDataSet data_pds(vtkm_ds);
-  vtkmStatistics stats;
+  viskores::cont::PartitionedDataSet data_pds(viskores_ds);
+  viskoresStatistics stats;
   auto result = stats.Run(data_pds, m_field_name);
 
   int size = result.GetNumberOfFields();
-  vtkm::cont::DataSet dom;
+  viskores::cont::DataSet dom;
   
   for(int i = 0; i < size; i++)
   {
-    //g_field will have assoc=Global which only goes with vtkm::PDS
-    //convert to new field with assoc=WholeDataSet to put in vtkm::DS
-    vtkm::cont::Field g_field = result.GetField(i);
-    vtkm::cont::Field field(g_field.GetName(),vtkm::cont::Field::Association::WholeDataSet,g_field.GetData());
+    //g_field will have assoc=Global which only goes with viskores::PDS
+    //convert to new field with assoc=WholeDataSet to put in viskores::DS
+    viskores::cont::Field g_field = result.GetField(i);
+    viskores::cont::Field field(g_field.GetName(),viskores::cont::Field::Association::WholeDataSet,g_field.GetData());
     dom.AddField(field);
   }
   this->m_output->AddDomain(dom,0);

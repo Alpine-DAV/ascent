@@ -1,9 +1,9 @@
 #include <vtkh/Error.hpp>
 #include <vtkh/filters/VectorMagnitude.hpp>
 
-#include <vtkh/vtkm_filters/vtkmVectorMagnitude.hpp>
-#include <vtkm/filter/vector_analysis/VectorMagnitude.h>
-#include <vtkm/TypeList.h>
+#include <vtkh/viskores_filters/viskoresVectorMagnitude.hpp>
+#include <viskores/filter/vector_analysis/VectorMagnitude.h>
+#include <viskores/TypeList.h>
 
 namespace vtkh
 {
@@ -53,11 +53,11 @@ void VectorMagnitude::DoExecute()
 
   for(int i = 0; i < num_domains; ++i)
   {
-    vtkm::Id domain_id;
-    vtkm::cont::DataSet dom;
+    viskores::Id domain_id;
+    viskores::cont::DataSet dom;
     this->m_input->GetDomain(i, dom, domain_id);
 
-    vtkh::vtkmVectorMagnitude mag;
+    vtkh::viskoresVectorMagnitude mag;
     auto dataset = mag.Run(dom,
                            m_field_name,
                            m_out_name,

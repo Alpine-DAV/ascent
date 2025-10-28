@@ -32,12 +32,12 @@ index_t EXAMPLE_MESH_SIDE_DIM = 50;
 //-----------------------------------------------------------------------------
 TEST(ascent_color_bar_pos, test_color_bar_pos)
 {
-    // the vtkm runtime is currently our only rendering runtime
+    // the viskores runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled") {
-        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled") {
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
         return;
     }
 

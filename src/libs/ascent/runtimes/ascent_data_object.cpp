@@ -14,7 +14,7 @@
 #include "ascent_data_object.hpp"
 #include "ascent_metadata.hpp"
 
-#if defined(ASCENT_VTKM_ENABLED)
+#if defined(ASCENT_VISKORES_ENABLED)
 #include "ascent_vtkh_collection.hpp"
 #include "ascent_vtkh_data_adapter.hpp"
 #endif
@@ -71,7 +71,7 @@ void add_metadata(conduit::Node &dataset)
 DataObject::DataObject()
   : m_low_bp(nullptr),
     m_high_bp(nullptr),
-#if defined(ASCENT_VTKM_ENABLED)
+#if defined(ASCENT_VISKORES_ENABLED)
     m_vtkh(nullptr),
 #endif
 #if defined(ASCENT_DRAY_ENABLED)
@@ -82,7 +82,7 @@ DataObject::DataObject()
   m_name = "default";
 }
 
-#if defined(ASCENT_VTKM_ENABLED)
+#if defined(ASCENT_VISKORES_ENABLED)
 DataObject::DataObject(VTKHCollection *dataset)
   : m_low_bp(nullptr),
     m_high_bp(nullptr),
@@ -100,7 +100,7 @@ DataObject::DataObject(VTKHCollection *dataset)
 DataObject::DataObject(dray::Collection *dataset)
   : m_low_bp(nullptr),
     m_high_bp(nullptr),
-#if defined(ASCENT_VTKM_ENABLED)
+#if defined(ASCENT_VISKORES_ENABLED)
     m_vtkh(nullptr),
 #endif
     m_dray(dataset),
@@ -113,7 +113,7 @@ DataObject::DataObject(dray::Collection *dataset)
 DataObject::DataObject(conduit::Node *dataset)
   : m_low_bp(nullptr),
     m_high_bp(nullptr)
-#if defined(ASCENT_VTKM_ENABLED)
+#if defined(ASCENT_VISKORES_ENABLED)
     ,m_vtkh(nullptr)
 #endif
 #if defined(ASCENT_DRAY_ENABLED)
@@ -142,7 +142,7 @@ void DataObject::reset_all()
   m_low_bp = null_low;
   m_high_bp = null_high;
 
-#if defined(ASCENT_VTKM_ENABLED)
+#if defined(ASCENT_VISKORES_ENABLED)
   std::shared_ptr<VTKHCollection> null_vtkh(nullptr);
   m_vtkh = null_vtkh;
 #endif
@@ -162,7 +162,7 @@ void DataObject::reset(std::shared_ptr<conduit::Node> dataset)
   m_low_bp = null_low;
   m_high_bp = null_high;
 
-#if defined(ASCENT_VTKM_ENABLED)
+#if defined(ASCENT_VISKORES_ENABLED)
   std::shared_ptr<VTKHCollection> null_vtkh(nullptr);
   m_vtkh = null_vtkh;
 #endif
@@ -193,7 +193,7 @@ void DataObject::reset(conduit::Node *dataset)
   m_low_bp = null_low;
   m_high_bp = null_high;
 
-#if defined(ASCENT_VTKM_ENABLED)
+#if defined(ASCENT_VISKORES_ENABLED)
   std::shared_ptr<VTKHCollection> null_vtkh(nullptr);
   m_vtkh = null_vtkh;
 #endif
@@ -268,7 +268,7 @@ std::shared_ptr<dray::Collection> DataObject::as_dray_collection()
 }
 #endif
 
-#if defined(ASCENT_VTKM_ENABLED)
+#if defined(ASCENT_VISKORES_ENABLED)
 std::shared_ptr<VTKHCollection> DataObject::as_vtkh_collection()
 {
   ASCENT_ANNOTATE_MARK_SCOPE("ascent data object as vtkh collection");
@@ -349,7 +349,7 @@ std::shared_ptr<conduit::Node>  DataObject::as_low_order_bp()
     std::shared_ptr<conduit::Node>  low_order(Transmogrifier::low_order(*m_high_bp));
     m_low_bp = low_order;
   }
-#if defined(ASCENT_VTKM_ENABLED)
+#if defined(ASCENT_VISKORES_ENABLED)
   else if(m_source == Source::VTKH)
   {
 
@@ -395,7 +395,7 @@ std::shared_ptr<conduit::Node>  DataObject::as_node()
   {
     ASCENT_ERROR("Source never initialized: default constructed");
   }
-#if defined(ASCENT_VTKM_ENABLED)
+#if defined(ASCENT_VISKORES_ENABLED)
   if(m_source == Source::VTKH && m_low_bp == nullptr)
 
   {

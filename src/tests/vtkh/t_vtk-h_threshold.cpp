@@ -11,7 +11,7 @@
 #include <vtkh/filters/Threshold.hpp>
 #include <vtkh/rendering/RayTracer.hpp>
 #include <vtkh/rendering/Scene.hpp>
-#include "t_vtkm_test_utils.hpp"
+#include "t_viskores_test_utils.hpp"
 
 #include <iostream>
 
@@ -20,7 +20,7 @@
 //----------------------------------------------------------------------------
 TEST(vtkh_threshold, vtkh_serial_threshold)
 {
-#ifdef VTKM_ENABLE_KOKKOS
+#ifdef VISKORES_ENABLE_KOKKOS
   vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
@@ -44,10 +44,10 @@ TEST(vtkh_threshold, vtkh_serial_threshold)
   thresher.SetFieldLowerThreshold(lower_bound);
   thresher.Update();
   vtkh::DataSet *output = thresher.GetOutput();
-  vtkm::Bounds bounds = output->GetGlobalBounds();
+  viskores::Bounds bounds = output->GetGlobalBounds();
 
-  vtkm::rendering::Camera camera;
-  camera.SetPosition(vtkm::Vec<vtkm::Float64,3>(-16, -16, -16));
+  viskores::rendering::Camera camera;
+  camera.SetPosition(viskores::Vec<viskores::Float64,3>(-16, -16, -16));
   camera.ResetToBounds(bounds);
   vtkh::Render render = vtkh::MakeRender(512,
                                          512,

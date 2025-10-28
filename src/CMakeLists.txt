@@ -120,9 +120,9 @@ include(cmake/SetupBLT.cmake)
 include(cmake/CMakeBasics.cmake)
 
 ##################################
-# Helpers for  VTKm device symbols
+# Helpers for  Viskores device symbols
 ##################################
-include(cmake/VTKmDeviceSymbols.cmake)
+include(cmake/ViskoresDeviceSymbols.cmake)
 
 ################################
 # Setup Fortran Support

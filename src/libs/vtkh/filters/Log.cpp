@@ -1,6 +1,6 @@
 #include "Log.hpp"
 #include <vtkh/Error.hpp>
-#include <vtkh/vtkm_filters/vtkmLog.hpp>
+#include <vtkh/viskores_filters/viskoresLog.hpp>
 
 
 namespace vtkh
@@ -30,7 +30,7 @@ Log::SetClampToMin(bool on)
 }
 
 void
-Log::SetClampMin(vtkm::Float32 min_value)
+Log::SetClampMin(viskores::Float32 min_value)
 {
 
   if(min_value <= 0)
@@ -81,7 +81,7 @@ void Log::PostExecute()
 void Log::DoExecute()
 {
 
-  vtkm::Range scalar_range = m_input->GetGlobalRange(m_field_name).ReadPortal().Get(0);
+  viskores::Range scalar_range = m_input->GetGlobalRange(m_field_name).ReadPortal().Get(0);
   if(scalar_range.Min <= 0.f && !m_clamp_to_min)
   {
     std::stringstream msg;
@@ -91,7 +91,7 @@ void Log::DoExecute()
     throw Error(msg.str());
   }
 
-  vtkm::Float32 min_value = scalar_range.Min;
+  viskores::Float32 min_value = scalar_range.Min;
   if(m_clamp_to_min)
   {
     min_value = m_min_value;
@@ -106,29 +106,29 @@ void Log::DoExecute()
 
   for(int i = 0; i < num_domains; ++i)
   {
-    vtkm::cont::DataSet &dom =  this->m_output->GetDomain(i);
+    viskores::cont::DataSet &dom =  this->m_output->GetDomain(i);
 
     if(!dom.HasField(m_field_name))
     {
       continue;
     }
 
-    vtkm::cont::Field::Association in_assoc = dom.GetField(m_field_name).GetAssociation();
-    bool is_cell_assoc = in_assoc == vtkm::cont::Field::Association::Cells;
-    bool is_point_assoc = in_assoc == vtkm::cont::Field::Association::Points;
+    viskores::cont::Field::Association in_assoc = dom.GetField(m_field_name).GetAssociation();
+    bool is_cell_assoc = in_assoc == viskores::cont::Field::Association::Cells;
+    bool is_point_assoc = in_assoc == viskores::cont::Field::Association::Points;
 
     if(!is_cell_assoc && !is_point_assoc)
     {
       throw Error("Log: input field must be zonal or nodal");
     }
 
-    vtkh::vtkmLog logarithm;
+    vtkh::viskoresLog logarithm;
     
     auto output = logarithm.Run(dom,
 		    	     m_field_name,
 			     m_result_name,
 			     in_assoc,
-		   	     vtkmLogFilter::LogBase::E,
+		   	     viskoresLogFilter::LogBase::E,
 		    	     min_value);
     
     log_output->AddDomain(output,i);
@@ -169,7 +169,7 @@ Log10::SetClampToMin(bool on)
 }
 
 void
-Log10::SetClampMin(vtkm::Float32 min_value)
+Log10::SetClampMin(viskores::Float32 min_value)
 {
 
   if(min_value <= 0)
@@ -220,7 +220,7 @@ void Log10::PostExecute()
 void Log10::DoExecute()
 {
 
-  vtkm::Range scalar_range = m_input->GetGlobalRange(m_field_name).ReadPortal().Get(0);
+  viskores::Range scalar_range = m_input->GetGlobalRange(m_field_name).ReadPortal().Get(0);
   if(scalar_range.Min <= 0.f && !m_clamp_to_min)
   {
     std::stringstream msg;
@@ -230,7 +230,7 @@ void Log10::DoExecute()
     throw Error(msg.str());
   }
 
-  vtkm::Float32 min_value = scalar_range.Min;
+  viskores::Float32 min_value = scalar_range.Min;
   if(m_clamp_to_min)
   {
     min_value = m_min_value;
@@ -245,29 +245,29 @@ void Log10::DoExecute()
 
   for(int i = 0; i < num_domains; ++i)
   {
-    vtkm::cont::DataSet &dom =  this->m_output->GetDomain(i);
+    viskores::cont::DataSet &dom =  this->m_output->GetDomain(i);
 
     if(!dom.HasField(m_field_name))
     {
       continue;
     }
 
-    vtkm::cont::Field::Association in_assoc = dom.GetField(m_field_name).GetAssociation();
-    bool is_cell_assoc = in_assoc == vtkm::cont::Field::Association::Cells;
-    bool is_point_assoc = in_assoc == vtkm::cont::Field::Association::Points;
+    viskores::cont::Field::Association in_assoc = dom.GetField(m_field_name).GetAssociation();
+    bool is_cell_assoc = in_assoc == viskores::cont::Field::Association::Cells;
+    bool is_point_assoc = in_assoc == viskores::cont::Field::Association::Points;
 
     if(!is_cell_assoc && !is_point_assoc)
     {
       throw Error("Log10: input field must be zonal or nodal");
     }
 
-    vtkh::vtkmLog logarithm;
+    vtkh::viskoresLog logarithm;
     
     auto output = logarithm.Run(dom,
 		    	     m_field_name,
 			     m_result_name,
 			     in_assoc,
-		   	     vtkmLogFilter::LogBase::TEN,
+		   	     viskoresLogFilter::LogBase::TEN,
 		    	     min_value);
 
     log_output->AddDomain(output,i);
@@ -307,7 +307,7 @@ Log2::SetClampToMin(bool on)
 }
 
 void
-Log2::SetClampMin(vtkm::Float32 min_value)
+Log2::SetClampMin(viskores::Float32 min_value)
 {
 
   if(min_value <= 0)
@@ -358,7 +358,7 @@ void Log2::PostExecute()
 void Log2::DoExecute()
 {
 
-  vtkm::Range scalar_range = m_input->GetGlobalRange(m_field_name).ReadPortal().Get(0);
+  viskores::Range scalar_range = m_input->GetGlobalRange(m_field_name).ReadPortal().Get(0);
   if(scalar_range.Min <= 0.f && !m_clamp_to_min)
   {
     std::stringstream msg;
@@ -368,7 +368,7 @@ void Log2::DoExecute()
     throw Error(msg.str());
   }
 
-  vtkm::Float32 min_value = scalar_range.Min;
+  viskores::Float32 min_value = scalar_range.Min;
   if(m_clamp_to_min)
   {
     min_value = m_min_value;
@@ -383,29 +383,29 @@ void Log2::DoExecute()
 
   for(int i = 0; i < num_domains; ++i)
   {
-    vtkm::cont::DataSet &dom =  this->m_output->GetDomain(i);
+    viskores::cont::DataSet &dom =  this->m_output->GetDomain(i);
 
     if(!dom.HasField(m_field_name))
     {
       continue;
     }
 
-    vtkm::cont::Field::Association in_assoc = dom.GetField(m_field_name).GetAssociation();
-    bool is_cell_assoc = in_assoc == vtkm::cont::Field::Association::Cells;
-    bool is_point_assoc = in_assoc == vtkm::cont::Field::Association::Points;
+    viskores::cont::Field::Association in_assoc = dom.GetField(m_field_name).GetAssociation();
+    bool is_cell_assoc = in_assoc == viskores::cont::Field::Association::Cells;
+    bool is_point_assoc = in_assoc == viskores::cont::Field::Association::Points;
 
     if(!is_cell_assoc && !is_point_assoc)
     {
       throw Error("Log2: input field must be zonal or nodal");
     }
 
-    vtkh::vtkmLog logarithm;
+    vtkh::viskoresLog logarithm;
 
     auto output = logarithm.Run(dom,
 		    	     m_field_name,
 			     m_result_name,
 			     in_assoc,
-		   	     vtkmLogFilter::LogBase::TWO,
+		   	     viskoresLogFilter::LogBase::TWO,
 		    	     min_value);
 
     log_output->AddDomain(output, i);

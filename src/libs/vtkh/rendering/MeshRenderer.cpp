@@ -1,7 +1,7 @@
 #include "MeshRenderer.hpp"
 
-#include <vtkm/rendering/CanvasRayTracer.h>
-#include <vtkm/rendering/MapperWireframer.h>
+#include <viskores/rendering/CanvasRayTracer.h>
+#include <viskores/rendering/MapperWireframer.h>
 #include <memory>
 
 namespace vtkh {
@@ -11,7 +11,7 @@ MeshRenderer::MeshRenderer()
     m_show_internal(false),
     m_use_foreground_color(false)
 {
-  typedef vtkm::rendering::MapperWireframer MapperType;
+  typedef viskores::rendering::MapperWireframer MapperType;
   auto mapper = std::make_shared<MapperType>();
   this->m_mapper = mapper;
 }
@@ -25,7 +25,7 @@ MeshRenderer::PreExecute()
 {
   Renderer::PreExecute();
 
-  typedef vtkm::rendering::MapperWireframer MapperType;
+  typedef viskores::rendering::MapperWireframer MapperType;
   std::shared_ptr<MapperType> mesh_mapper =
     std::dynamic_pointer_cast<MapperType>(this->m_mapper);
 
@@ -34,9 +34,9 @@ MeshRenderer::PreExecute()
 
   if(m_use_foreground_color)
   {
-    vtkm::rendering::Color fg = m_renders[0].GetCanvas().GetForegroundColor();
-    vtkm::cont::ColorTable single_color;
-    vtkm::Vec<vtkm::Float32,3> fg_vec3_not_4;
+    viskores::rendering::Color fg = m_renders[0].GetCanvas().GetForegroundColor();
+    viskores::cont::ColorTable single_color;
+    viskores::Vec<viskores::Float32,3> fg_vec3_not_4;
     fg_vec3_not_4[0] = fg.Components[0];
     fg_vec3_not_4[1] = fg.Components[1];
     fg_vec3_not_4[2] = fg.Components[2];
@@ -78,10 +78,10 @@ MeshRenderer::GetShowInternal() const
   return m_show_internal;
 }
 
-Renderer::vtkmCanvasPtr
+Renderer::viskoresCanvasPtr
 MeshRenderer::GetNewCanvas(int width, int height)
 {
-  return std::make_shared<vtkm::rendering::CanvasRayTracer>(width, height);
+  return std::make_shared<viskores::rendering::CanvasRayTracer>(width, height);
 }
 
 std::string

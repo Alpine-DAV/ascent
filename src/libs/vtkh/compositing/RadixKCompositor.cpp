@@ -65,7 +65,7 @@ void reduce_images(void *b,
   const int current_dim = partners.dim(round);
 
   //create balanced set of ranges for current dim
-  vtkhdiy::DiscreteBounds image_bounds = VTKMBoundsToDIY(image.m_bounds);
+  vtkhdiy::DiscreteBounds image_bounds = VISKORESBoundsToDIY(image.m_bounds);
   int range_length = image_bounds.max[current_dim] - image_bounds.min[current_dim];
   int base_step = range_length / group_size;
   int rem = range_length % group_size;
@@ -82,7 +82,7 @@ void reduce_images(void *b,
   }
   assert(count == range_length);
 
-  std::vector<vtkhdiy::DiscreteBounds> subset_bounds(group_size, VTKMBoundsToDIY(image.m_bounds));
+  std::vector<vtkhdiy::DiscreteBounds> subset_bounds(group_size, VISKORESBoundsToDIY(image.m_bounds));
   int min_pixel = image_bounds.min[current_dim];
   for(int i = 0; i < group_size; ++i)
   {
@@ -106,7 +106,7 @@ void reduce_images(void *b,
   std::vector<ImageType> out_images(group_size);
   for(int i = 0; i < group_size; ++i)
   {
-    out_images[i].SubsetFrom(image, DIYBoundsToVTKM(subset_bounds[i]));
+    out_images[i].SubsetFrom(image, DIYBoundsToVISKORES(subset_bounds[i]));
   } //for
 
   for(int i = 0; i < group_size; ++i)
@@ -137,7 +137,7 @@ template<typename ImageType>
 void
 RadixKCompositor::CompositeImpl(vtkhdiy::mpi::communicator &diy_comm, ImageType &image)
 {
-    vtkhdiy::DiscreteBounds global_bounds = VTKMBoundsToDIY(image.m_orig_bounds);
+    vtkhdiy::DiscreteBounds global_bounds = VISKORESBoundsToDIY(image.m_orig_bounds);
 
     // tells diy to use one thread
     const int num_threads = 1;

@@ -35,7 +35,7 @@ TEST(ascent_rover, test_xray_blueprint_braid)
 {
     ASCENT_INFO("Testing xray extract on conduit braid example mesh\n");
 
-    if (is_vtkm_disabled())
+    if (is_viskores_disabled())
     {
         return; // Returning early is equivalent to passing the test
     }
@@ -103,7 +103,7 @@ TEST(ascent_rover, test_xray_blueprint_braid_rotated)
 {
     ASCENT_INFO("Testing xray extract on conduit braid example mesh (rotated)\n");
 
-    if (is_vtkm_disabled())
+    if (is_viskores_disabled())
     {
         return; // Returning early is equivalent to passing the test
     }
@@ -173,7 +173,7 @@ TEST(ascent_rover, test_xray_blueprint_braid_absorption_only)
 {
     ASCENT_INFO("Testing xray extract on conduit braid example mesh (absorption only)\n");
 
-    if (is_vtkm_disabled())
+    if (is_viskores_disabled())
     {
         return; // Returning early is equivalent to passing the test
     }
@@ -241,7 +241,7 @@ TEST(ascent_rover, test_xray_blueprint_braid_absorption_only_rotated)
 {
     ASCENT_INFO("Testing xray extract on conduit braid example mesh (absorption only, rotated)\n");
 
-    if (is_vtkm_disabled())
+    if (is_viskores_disabled())
     {
         return; // Returning early is equivalent to passing the test
     }
@@ -310,7 +310,7 @@ TEST(ascent_rover, test_xray_blueprint_braid_uniform_multi_domain)
 {
     ASCENT_INFO("Testing xray extract on a conduit braid_uniform_multi_domain example mesh\n");
 
-    if (is_vtkm_disabled())
+    if (is_viskores_disabled())
     {
         return; // Returning early is equivalent to passing the test
     }
@@ -379,7 +379,7 @@ TEST(ascent_rover, test_xray_blueprint_braid_uniform_multi_domain_rotated)
 {
     ASCENT_INFO("Testing xray extract on a conduit braid_uniform_multi_domain example mesh (rotated)\n");
 
-    if (is_vtkm_disabled())
+    if (is_viskores_disabled())
     {
         return; // Returning early is equivalent to passing the test
     }
@@ -451,11 +451,11 @@ TEST(ascent_rover, test_xray_blueprint_braid_uniform_multi_domain_rotated)
 //-----------------------------------------------------------------------------
 TEST(ascent_rover, test_xray_blueprint_braid_lowres)
 {
-    // the vtkm runtime is currently our only rendering runtime
+    // the viskores runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(is_vtkm_disabled(n))
+    // only run this test if ascent was built with viskores support
+    if(is_viskores_disabled(n))
     {
         return;
     }
@@ -540,7 +540,7 @@ TEST(ascent_rover, test_xray_blueprint_curv3d)
 {
     ASCENT_INFO("Testing xray extract on curv3d data\n");
 
-    if (is_vtkm_disabled())
+    if (is_viskores_disabled())
     {
         return; // Returning early is equivalent to passing the test
     }
@@ -610,7 +610,7 @@ TEST(ascent_rover, test_xray_blueprint_curv3d_rotated)
 {
     ASCENT_INFO("Testing xray extract on curv3d data (rotated)\n");
 
-    if (is_vtkm_disabled())
+    if (is_viskores_disabled())
     {
         return; // Returning early is equivalent to passing the test
     }
@@ -680,7 +680,7 @@ TEST(ascent_rover, test_xray_blueprint_curv3d_camera_params)
 {
     ASCENT_INFO("Testing xray extract on curv3d data (all camera params)\n");
 
-    if (is_vtkm_disabled())
+    if (is_viskores_disabled())
     {
         return; // Returning early is equivalent to passing the test
     }
@@ -953,7 +953,7 @@ TEST(ascent_rover, test_xray_blueprint_multi_curv3d)
 {
     ASCENT_INFO("Testing xray extract on multi_curv3d data\n");
 
-    if (is_vtkm_disabled())
+    if (is_viskores_disabled())
     {
         return; // Returning early is equivalent to passing the test
     }
@@ -1026,7 +1026,7 @@ TEST(ascent_rover, test_xray_blueprint_multi_curv3d_rotated)
 {
     ASCENT_INFO("Testing xray extract on multi_curv3d data (rotated)\n");
 
-    if (is_vtkm_disabled())
+    if (is_viskores_disabled())
     {
         return; // Returning early is equivalent to passing the test
     }
@@ -1095,10 +1095,10 @@ TEST(ascent_rover, test_xray_blueprint_multi_curv3d_rotated)
 //-----------------------------------------------------------------------------
 TEST(ascent_rover, test_xray_blueprint_tire)
 {
-    // the vtkm runtime is currently our only rendering runtime
+    // the viskores runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
+    // only run this test if ascent was built with viskores support
     if(is_vtk_disabled(n))
     {
         return;
@@ -1179,10 +1179,10 @@ TEST(ascent_rover, test_xray_blueprint_tire)
 //-----------------------------------------------------------------------------
 TEST(ascent_rover, test_xray_blueprint_curv2d)
 {
-    // the vtkm runtime is currently our only rendering runtime
+    // the viskores runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
+    // only run this test if ascent was built with viskores support
     if(is_vtk_disabled(n))
     {
         return;
@@ -1262,10 +1262,10 @@ TEST(ascent_rover, test_xray_blueprint_curv2d)
 //-----------------------------------------------------------------------------
 TEST(ascent_rover, test_xray_serial_image_params)
 {
-    // the vtkm runtime is currently our only rendering runtime
+    // the viskores runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
+    // only run this test if ascent was built with viskores support
     if(is_vtk_disabled(n))
     {
         return;
@@ -1340,10 +1340,10 @@ TEST(ascent_rover, test_xray_serial_image_params)
 //-----------------------------------------------------------------------------
 TEST(ascent_rover, test_xray_serial)
 {
-    // the vtkm runtime is currently our only rendering runtime
+    // the viskores runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
+    // only run this test if ascent was built with viskores support
     if(is_vtk_disabled(n))
     {
         return;
@@ -1411,10 +1411,10 @@ TEST(ascent_rover, test_xray_serial)
 //-----------------------------------------------------------------------------
 TEST(ascent_rover, test_volume_min_max)
 {
-    // the vtkm runtime is currently our only rendering runtime
+    // the viskores runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
+    // only run this test if ascent was built with viskores support
     if(is_vtk_disabled(n))
     {
         return;
@@ -1478,10 +1478,10 @@ TEST(ascent_rover, test_volume_min_max)
 //-----------------------------------------------------------------------------
 TEST(ascent_rover, test_volume_serial)
 {
-    // the vtkm runtime is currently our only rendering runtime
+    // the viskores runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
+    // only run this test if ascent was built with viskores support
     if(is_vtk_disabled(n))
     {
         return;

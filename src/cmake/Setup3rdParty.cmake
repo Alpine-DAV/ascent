@@ -83,14 +83,14 @@ if (OCCA_DIR)
 endif()
 
 ################################
-# VTKm and supporting libs
+# Viskores and supporting libs
 ################################
-if(VTKM_DIR)
-    include(cmake/thirdparty/SetupVTKm.cmake)
+if(VISKORES_DIR)
+    include(cmake/thirdparty/SetupViskores.cmake)
 endif()
 
-if(ENABLE_VTKH AND NOT VTKM_FOUND)
-     MESSAGE(FATAL_ERROR "VTK-h support requires VTK-m (ENABLE_VTKH=ON and NOT VTKM_FOUND)")
+if(ENABLE_VTKH AND NOT VISKORES_FOUND)
+     MESSAGE(FATAL_ERROR "VTK-h support requires Viskores (ENABLE_VTKH=ON and NOT VISKORES_FOUND)")
 endif()
 
 #

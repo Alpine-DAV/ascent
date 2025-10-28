@@ -45,7 +45,7 @@
 #include <rover_exports.h>
 #include <settings.hpp>
 #include <utils/rover_logging.hpp>
-#include <vtkm_typedefs.hpp>
+#include <viskores_typedefs.hpp>
 
 namespace rover
 {
@@ -58,14 +58,14 @@ public:
 
   bool get_rays(Ray32 &rays);
   bool get_rays(Ray64 &rays);
-  vtkmCamera& get_camera();
-  void set_camera(vtkmCamera &camera);
-  vtkmCoordinates get_coordinates();
-  void set_coordinates(vtkmCoordinates coordinates);
+  viskoresCamera& get_camera();
+  void set_camera(viskoresCamera &camera);
+  viskoresCoordinates get_coordinates();
+  void set_coordinates(viskoresCoordinates coordinates);
 
 protected:
-  vtkmCamera m_camera;
-  vtkmCoordinates m_coordinates;
+  viskoresCamera m_camera;
+  viskoresCoordinates m_coordinates;
 };
 
 } // namespace rover

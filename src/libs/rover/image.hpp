@@ -9,8 +9,8 @@
 
 #include <rover_config.h>
 #include <vector>
-#include <vtkm/cont/ArrayHandle.h>
-#include <vtkm_typedefs.hpp>
+#include <viskores/cont/ArrayHandle.h>
+#include <viskores_typedefs.hpp>
 #include <partial_image.hpp>
 
 namespace rover
@@ -20,7 +20,7 @@ template<typename FloatType>
 class Image
 {
 public:
-  typedef vtkm::cont::ArrayHandle<FloatType> HandleType;
+  typedef viskores::cont::ArrayHandle<FloatType> HandleType;
 
   Image();
   Image(PartialImage<FloatType> &partial);

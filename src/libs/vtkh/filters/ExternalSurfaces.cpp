@@ -2,9 +2,9 @@
 #include <vtkh/Error.hpp>
 #include <vtkh/Logger.hpp>
 #include <vtkh/DataSet.hpp>
-#include <vtkh/utils/vtkm_dataset_info.hpp>
-#include <vtkh/vtkm_filters/vtkmCleanGrid.hpp>
-#include <vtkm/filter/entity_extraction/ExternalFaces.h>
+#include <vtkh/utils/viskores_dataset_info.hpp>
+#include <vtkh/viskores_filters/viskoresCleanGrid.hpp>
+#include <viskores/filter/entity_extraction/ExternalFaces.h>
 
 //---------------------------------------------------------------------------//
 namespace vtkh
@@ -47,17 +47,17 @@ ExternalSurfaces::DoExecute()
 
     for(int i = 0; i < num_domains; ++i)
     {
-        vtkm::Id domain_id;
-        vtkm::cont::DataSet dom;
+        viskores::Id domain_id;
+        viskores::cont::DataSet dom;
         this->m_input->GetDomain(i, dom, domain_id);
 
-        vtkm::filter::entity_extraction::ExternalFaces ext_faces;
+        viskores::filter::entity_extraction::ExternalFaces ext_faces;
         ext_faces.SetCompactPoints(true);
         ext_faces.SetPassPolyData(true);
-        vtkm::cont::DataSet ds_output = ext_faces.Execute(dom);
+        viskores::cont::DataSet ds_output = ext_faces.Execute(dom);
 
         // TODO , do we need to clean the grid?
-        vtkh::vtkmCleanGrid cleaner;
+        vtkh::viskoresCleanGrid cleaner;
         auto clout = cleaner.Run(ds_output, this->GetFieldSelection());
         m_output->AddDomain(clout, domain_id);
 

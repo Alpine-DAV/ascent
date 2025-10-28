@@ -5,7 +5,7 @@
 #include <vtkh/vtkh.hpp>
 #include <vtkh/filters/Filter.hpp>
 #include <vtkh/DataSet.hpp>
-#include <vtkm/Matrix.h>
+#include <viskores/Matrix.h>
 
 namespace vtkh
 {
@@ -35,13 +35,13 @@ public:
                   const double& axisZ);
 
   void SetTransform(const double *matrix_values);
-  void SetTransform(const vtkm::Matrix<double, 4, 4>& mtx);
+  void SetTransform(const viskores::Matrix<double, 4, 4>& mtx);
 
 protected:
   void PreExecute() override;
   void PostExecute() override;
   void DoExecute() override;
-  vtkm::Matrix<vtkm::Float64, 4,4> m_transform;
+  viskores::Matrix<viskores::Float64, 4,4> m_transform;
 };
 
 } //namespace vtkh

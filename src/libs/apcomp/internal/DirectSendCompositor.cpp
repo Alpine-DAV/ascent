@@ -45,14 +45,14 @@ struct Redistribute
       {
         apcompdiy::DiscreteBounds sub_image_bounds(2);
         m_decomposer.fill_bounds(sub_image_bounds, i);
-        Bounds vtkm_sub_bounds = DIYToBounds(sub_image_bounds);
+        Bounds viskores_sub_bounds = DIYToBounds(sub_image_bounds);
 
         apcompdiy::BlockID dest = proxy.out_link().target(i);
         outgoing[dest].resize(local_images);
 
         for(int img = 0;  img < local_images; ++img)
         {
-          outgoing[dest][img].SubsetFrom(block->m_images[img], vtkm_sub_bounds);
+          outgoing[dest][img].SubsetFrom(block->m_images[img], viskores_sub_bounds);
         }
       } //for
 

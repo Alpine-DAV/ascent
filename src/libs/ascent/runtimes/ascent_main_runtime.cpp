@@ -47,14 +47,14 @@
 #include <ascent_data_object.hpp>
 #include <ascent_data_logger.hpp>
 
-#if defined(ASCENT_VTKM_ENABLED)
-#include <vtkm/cont/Error.h>
+#if defined(ASCENT_VISKORES_ENABLED)
+#include <viskores/cont/Error.h>
 #include <vtkh/vtkh.hpp>
 #include <vtkh/Error.hpp>
 #include <vtkh/Logger.hpp>
 
-#ifdef VTKM_CUDA
-#include <vtkm/cont/cuda/ChooseCudaDevice.h>
+#ifdef VISKORES_CUDA
+#include <viskores/cont/cuda/ChooseCudaDevice.h>
 #endif
 #endif
 
@@ -150,7 +150,7 @@ AscentRuntime::Initialize(const conduit::Node &options)
     }
 
     flow::Workspace::set_default_mpi_comm(options["mpi_comm"].to_int());
-#if defined(ASCENT_VTKM_ENABLED)
+#if defined(ASCENT_VISKORES_ENABLED)
     vtkh::Initialize();
     vtkh::SetMPICommHandle(options["mpi_comm"].to_int());
 #endif
@@ -172,7 +172,7 @@ AscentRuntime::Initialize(const conduit::Node &options)
     }
 
 
-#if defined(ASCENT_VTKM_ENABLED)
+#if defined(ASCENT_VISKORES_ENABLED)
     vtkh::Initialize();
 #endif
 
@@ -181,7 +181,7 @@ AscentRuntime::Initialize(const conduit::Node &options)
     // set a info handler so we only display messages on rank 0;
     conduit::utils::set_info_handler(InfoHandler::info_handler);
     AllocationManager::set_conduit_mem_handlers();
-#ifdef VTKM_CUDA
+#ifdef VISKORES_CUDA
 
     bool sel_cuda_device = true;
 
@@ -196,7 +196,7 @@ AscentRuntime::Initialize(const conduit::Node &options)
     //
     if(sel_cuda_device)
     {
-#if defined(ASCENT_VTKM_ENABLED)
+#if defined(ASCENT_VISKORES_ENABLED)
       {
         int device_count = vtkh::CUDADeviceCount();
         int rank_device = m_rank % device_count;
@@ -213,7 +213,7 @@ AscentRuntime::Initialize(const conduit::Node &options)
     }
 #endif
 
-#if defined(ASCENT_KOKKOS_ENABLED) && defined(ASCENT_VTKM_ENABLED)
+#if defined(ASCENT_KOKKOS_ENABLED) && defined(ASCENT_VISKORES_ENABLED)
     int device_count = vtkh::KokkosDeviceCount();
     int rank_device = m_rank % device_count;
     vtkh::SelectKokkosDevice(rank_device);
@@ -797,7 +797,7 @@ AscentRuntime::CreateDefaultFilters()
 
     std::string prev_filter = "verify";
 
-#if defined(ASCENT_VTKM_ENABLED)
+#if defined(ASCENT_VISKORES_ENABLED)
     // we can have multiple ghost fields
     std::vector<std::string> ghost_fields;
     const int num_children = m_ghost_fields.number_of_children();
@@ -1292,7 +1292,7 @@ AscentRuntime::ConvertPlotToFlow(const conduit::Node &plot,
 
   std::string prev_filter = plot_source;
 
-#if defined(ASCENT_VTKM_ENABLED)
+#if defined(ASCENT_VISKORES_ENABLED)
   const int num_ghosts = m_ghost_fields.number_of_children();
   if(num_ghosts != 0)
   {
@@ -2153,7 +2153,7 @@ AscentRuntime::Execute(const conduit::Node &actions)
         m_info["actions"] = actions;
         // m_workspace.graph().save_dot_html("ascent_flow_graph.html");
 
-#if defined(ASCENT_VTKM_ENABLED)
+#if defined(ASCENT_VISKORES_ENABLED)
         if(log_timings)
         {
           int cycle = 0;
@@ -2170,7 +2170,7 @@ AscentRuntime::Execute(const conduit::Node &actions)
         // now execute the data flow graph
         m_workspace.execute();
 
-#if defined(ASCENT_VTKM_ENABLED)
+#if defined(ASCENT_VISKORES_ENABLED)
         if(log_timings)
         {
           vtkh::DataLogger::GetInstance()->CloseLogEntry();
@@ -2235,17 +2235,17 @@ AscentRuntime::Execute(const conduit::Node &actions)
 
     // Defend calling code by repackaging
     // as many errors as possible with catch statements
-#if defined(ASCENT_VTKM_ENABLED)
-    // bottle vtkm and vtkh errors
+#if defined(ASCENT_VISKORES_ENABLED)
+    // bottle viskores and vtkh errors
     catch(vtkh::Error &e)
     {
       m_workspace.reset();
       ASCENT_ERROR("Execution failed with vtkh: "<<e.what());
     }
-    catch(vtkm::cont::Error &e)
+    catch(viskores::cont::Error &e)
     {
       m_workspace.reset();
-      ASCENT_ERROR("Execution failed with vtkm: "<<e.what());
+      ASCENT_ERROR("Execution failed with viskores: "<<e.what());
     }
 #endif
     catch(conduit::Error &e)

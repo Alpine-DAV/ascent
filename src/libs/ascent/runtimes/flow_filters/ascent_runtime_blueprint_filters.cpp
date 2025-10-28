@@ -43,8 +43,8 @@
 #include <conduit_relay_mpi_io_blueprint.hpp>
 #endif
 
-#if defined(ASCENT_VTKM_ENABLED)
-#include <vtkm/cont/DataSet.h>
+#if defined(ASCENT_VISKORES_ENABLED)
+#include <viskores/cont/DataSet.h>
 #include <ascent_vtkh_data_adapter.hpp>
 #endif
 
@@ -52,7 +52,7 @@
 #include <ascent_mfem_data_adapter.hpp>
 #endif
 
-#if defined(ASCENT_VTKM_ENABLED)
+#if defined(ASCENT_VISKORES_ENABLED)
 #include <vtkh/DataSet.hpp>
 #endif
 

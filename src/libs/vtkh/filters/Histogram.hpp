@@ -20,20 +20,20 @@ public:
 
   struct HistogramResult
   {
-    vtkm::cont::ArrayHandle<vtkm::Id> m_bins;
-    vtkm::Range m_range;
-    vtkm::Float64 m_bin_delta;
+    viskores::cont::ArrayHandle<viskores::Id> m_bins;
+    viskores::Range m_range;
+    viskores::Float64 m_bin_delta;
     void Print(std::ostream &out);
-    vtkm::Id totalCount();
+    viskores::Id totalCount();
   };
 
-  //Keep for HistSampling until new VTKM filter   
+  //Keep for HistSampling until new VISKORES filter   
   HistogramResult Run(vtkh::DataSet &data_set, const std::string &field_name);
   HistogramResult
   merge_histograms(std::vector<Histogram::HistogramResult> &histograms);
 
   std::string GetName() const override;
-  void SetRange(const vtkm::Range &range);
+  void SetRange(const viskores::Range &range);
   void SetNumBins(const int num_bins);
 protected:
   void PreExecute() override;
@@ -41,7 +41,7 @@ protected:
   void DoExecute() override;
   std::string m_field_name; 
   int m_num_bins;
-  vtkm::Range m_range;
+  viskores::Range m_range;
 };
 
 } //namespace vtkh

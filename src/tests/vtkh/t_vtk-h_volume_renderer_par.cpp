@@ -12,7 +12,7 @@
 #include <vtkh/filters/IsoVolume.hpp>
 #include <vtkh/rendering/Scene.hpp>
 #include <vtkh/rendering/VolumeRenderer.hpp>
-#include "t_vtkm_test_utils.hpp"
+#include "t_viskores_test_utils.hpp"
 
 #include <iostream>
 #include <mpi.h>
@@ -21,7 +21,7 @@
 //----------------------------------------------------------------------------
 TEST(vtkh_volume_renderer, vtkh_parallel_render)
 {
-#ifdef VTKM_ENABLE_KOKKOS
+#ifdef VISKORES_ENABLE_KOKKOS
   vtkh::InitializeKokkos();
 #endif
   int comm_size, rank;
@@ -41,10 +41,10 @@ TEST(vtkh_volume_renderer, vtkh_parallel_render)
     data_set.AddDomain(CreateTestData(domain_id, num_blocks, base_size), domain_id);
   }
 
-  vtkm::Bounds bounds = data_set.GetGlobalBounds();
+  viskores::Bounds bounds = data_set.GetGlobalBounds();
 
-  vtkm::rendering::Camera camera;
-  camera.SetPosition(vtkm::Vec<vtkm::Float64,3>(-16, -16, -16));
+  viskores::rendering::Camera camera;
+  camera.SetPosition(viskores::Vec<viskores::Float64,3>(-16, -16, -16));
   camera.ResetToBounds(bounds);
   vtkh::Render render = vtkh::MakeRender(512,
                                          512,
@@ -52,7 +52,7 @@ TEST(vtkh_volume_renderer, vtkh_parallel_render)
                                          data_set,
                                          "volume_par");
 
-  vtkm::cont::ColorTable color_map("cool to warm");
+  viskores::cont::ColorTable color_map("cool to warm");
   color_map.AddPointAlpha(0.0, .05);
   color_map.AddPointAlpha(1.0, .5);
 
@@ -71,7 +71,7 @@ TEST(vtkh_volume_renderer, vtkh_parallel_render)
 //----------------------------------------------------------------------------
 TEST(vtkh_volume_renderer, vtkh_parallel_render_unstructured_blank)
 {
-#ifdef VTKM_ENABLE_KOKKOS
+#ifdef VISKORES_ENABLE_KOKKOS
   vtkh::SelectKokkosDevice(1);
 #endif
   int comm_size, rank;
@@ -93,7 +93,7 @@ TEST(vtkh_volume_renderer, vtkh_parallel_render_unstructured_blank)
 
   vtkh::IsoVolume iso;
 
-  vtkm::Range iso_range;
+  viskores::Range iso_range;
   iso_range.Min = 10000.;
   iso_range.Max = 40000.;
   iso.SetRange(iso_range);
@@ -103,14 +103,14 @@ TEST(vtkh_volume_renderer, vtkh_parallel_render_unstructured_blank)
 
   vtkh::DataSet *iso_output = iso.GetOutput();
 
-  vtkm::Bounds bounds = iso_output->GetGlobalBounds();
+  viskores::Bounds bounds = iso_output->GetGlobalBounds();
 
-  vtkm::rendering::Camera camera;
-  vtkm::Vec<vtkm::Float32,3> pos = camera.GetPosition();
+  viskores::rendering::Camera camera;
+  viskores::Vec<viskores::Float32,3> pos = camera.GetPosition();
   pos[0]+=10000.1;
   pos[1]+=10000.1;
   camera.SetPosition(pos);
-  vtkm::Vec<vtkm::Float32,3> look;
+  viskores::Vec<viskores::Float32,3> look;
   look[0] = 100000.f;
   look[1] = 100000.f;
   look[2] = 100000.f;
@@ -122,7 +122,7 @@ TEST(vtkh_volume_renderer, vtkh_parallel_render_unstructured_blank)
                                          "volume_unstructured_blank_par");
 
 
-  vtkm::cont::ColorTable color_map("Cool to Warm");
+  viskores::cont::ColorTable color_map("Cool to Warm");
   color_map.AddPointAlpha(0.0, 0.01);
   //color_map.AddPointAlpha(1.0, 0.2);
   color_map.AddPointAlpha(1.0, 0.6);
@@ -141,7 +141,7 @@ TEST(vtkh_volume_renderer, vtkh_parallel_render_unstructured_blank)
 //-----------------------------------------------------------------------------
 TEST(vtkh_volume_renderer, vtkh_parallel_render_unstructured)
 {
-#ifdef VTKM_ENABLE_KOKKOS
+#ifdef VISKORES_ENABLE_KOKKOS
   vtkh::SelectKokkosDevice(1);
 #endif
   int comm_size, rank;
@@ -163,7 +163,7 @@ TEST(vtkh_volume_renderer, vtkh_parallel_render_unstructured)
 
   vtkh::IsoVolume iso;
 
-  vtkm::Range iso_range;
+  viskores::Range iso_range;
   iso_range.Min = 10.;
   iso_range.Max = 40.;
   iso.SetRange(iso_range);
@@ -173,10 +173,10 @@ TEST(vtkh_volume_renderer, vtkh_parallel_render_unstructured)
 
   vtkh::DataSet *iso_output = iso.GetOutput();
 
-  vtkm::Bounds bounds = iso_output->GetGlobalBounds();
+  viskores::Bounds bounds = iso_output->GetGlobalBounds();
 
-  vtkm::rendering::Camera camera;
-  vtkm::Vec<vtkm::Float32,3> pos = camera.GetPosition();
+  viskores::rendering::Camera camera;
+  viskores::Vec<viskores::Float32,3> pos = camera.GetPosition();
   pos[0]+=.1;
   pos[1]+=.1;
   camera.SetPosition(pos);
@@ -188,7 +188,7 @@ TEST(vtkh_volume_renderer, vtkh_parallel_render_unstructured)
                                          "volume_unstructured_par");
 
 
-  vtkm::cont::ColorTable color_map("Cool to Warm");
+  viskores::cont::ColorTable color_map("Cool to Warm");
   color_map.AddPointAlpha(0.0, 0.01);
   //color_map.AddPointAlpha(1.0, 0.2);
   color_map.AddPointAlpha(1.0, 0.6);

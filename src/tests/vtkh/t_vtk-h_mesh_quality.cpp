@@ -5,7 +5,7 @@
 //-----------------------------------------------------------------------------
 
 #include "gtest/gtest.h"
-#include "t_vtkm_test_utils.hpp"
+#include "t_viskores_test_utils.hpp"
 
 #include <vtkh/vtkh.hpp>
 #include <vtkh/DataSet.hpp>
@@ -21,7 +21,7 @@
 //----------------------------------------------------------------------------
 TEST(vtkh_mesh_quality, vtkh_volume)
 {
-#ifdef VTKM_ENABLE_KOKKOS
+#ifdef VISKORES_ENABLE_KOKKOS
   vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
@@ -39,9 +39,9 @@ TEST(vtkh_mesh_quality, vtkh_volume)
 
   vtkh::DataSet *q_output = quali.GetOutput();
 
-  vtkm::Bounds bounds = q_output->GetGlobalBounds();
+  viskores::Bounds bounds = q_output->GetGlobalBounds();
   float bg_color[4] = { 0.f, 0.f, 0.f, 1.f};
-  vtkm::rendering::Camera camera;
+  viskores::rendering::Camera camera;
   camera.ResetToBounds(bounds);
   vtkh::Render render = vtkh::MakeRender(512,
                                          512,
@@ -64,7 +64,7 @@ TEST(vtkh_mesh_quality, vtkh_volume)
 //----------------------------------------------------------------------------
 TEST(vtkh_mesh_quality, vtkh_not_supported)
 {
-#ifdef VTKM_ENABLE_KOKKOS
+#ifdef VISKORES_ENABLE_KOKKOS
   vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;

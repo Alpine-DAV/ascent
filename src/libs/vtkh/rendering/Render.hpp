@@ -6,9 +6,9 @@
 #include <vtkh/DataSet.hpp>
 #include <vtkh/Error.hpp>
 
-#include <vtkm/rendering/Camera.h>
-#include <vtkm/rendering/CanvasRayTracer.h>
-#include <vtkm/rendering/Mapper.h>
+#include <viskores/rendering/Camera.h>
+#include <viskores/rendering/CanvasRayTracer.h>
+#include <viskores/rendering/Mapper.h>
 
 namespace vtkh {
 //
@@ -23,20 +23,20 @@ namespace vtkh {
 class VTKH_API Render
 {
 public:
-  typedef vtkm::rendering::CanvasRayTracer vtkmCanvas;
+  typedef viskores::rendering::CanvasRayTracer viskoresCanvas;
 
   Render();
   ~Render();
   Render                          Copy() const;
-  vtkmCanvas&                     GetCanvas();
-  const vtkm::rendering::Camera&  GetCamera() const;
+  viskoresCanvas&                     GetCanvas();
+  const viskores::rendering::Camera&  GetCamera() const;
   std::string                     GetImageName() const;
   std::vector<std::string>        GetComments() const;
-  vtkm::Bounds                    GetSceneBounds() const;
-  vtkm::Int32                     GetHeight() const;
-  vtkm::Int32                     GetWidth() const;
-  vtkm::rendering::Color          GetBackgroundColor() const;
-  vtkm::rendering::Color          GetForegroundColor() const;
+  viskores::Bounds                    GetSceneBounds() const;
+  viskores::Int32                     GetHeight() const;
+  viskores::Int32                     GetWidth() const;
+  viskores::rendering::Color          GetBackgroundColor() const;
+  viskores::rendering::Color          GetForegroundColor() const;
   bool                            GetShadingOn() const;
   void                            Print() const;
 
@@ -45,41 +45,41 @@ public:
   void                            DoRenderScreenAnnotations(bool on);
   void                            DoRenderBackground(bool on);
   void                            ScaleWorldAnnotations(float x, float y, float z);
-  void                            SetWidth(const vtkm::Int32 width);
-  void                            SetHeight(const vtkm::Int32 height);
-  void                            SetSceneBounds(const vtkm::Bounds &bounds);
-  void                            SetCamera(const vtkm::rendering::Camera &camera);
+  void                            SetWidth(const viskores::Int32 width);
+  void                            SetHeight(const viskores::Int32 height);
+  void                            SetSceneBounds(const viskores::Bounds &bounds);
+  void                            SetCamera(const viskores::rendering::Camera &camera);
   void                            SetImageName(const std::string &name);
   void                            SetComments(const std::vector<std::string> &comments);
-  void                            SetColorBarPosition(std::vector<vtkm::Bounds> color_bar_position);
+  void                            SetColorBarPosition(std::vector<viskores::Bounds> color_bar_position);
   void                            SetBackgroundColor(float bg_color[4]);
   void                            SetForegroundColor(float fg_color[4]);
   void                            SetShadingOn(bool on);
   void                            RenderWorldAnnotations();
   void                            RenderBackground();
   void                            RenderScreenAnnotations(const std::vector<std::string> &field_names,
-                                                          const std::vector<vtkm::Range> &ranges,
-                                                          const std::vector<vtkm::cont::ColorTable> &colors,
+                                                          const std::vector<viskores::Range> &ranges,
+                                                          const std::vector<viskores::cont::ColorTable> &colors,
                                                           const std::vector<int> &is_discrete);
   void                            Save();
 protected:
-  vtkm::rendering::Camera      m_camera;
+  viskores::rendering::Camera      m_camera;
   std::string                  m_image_name;
   std::vector<std::string>     m_comments;
-  vtkm::Bounds                 m_scene_bounds;
-  vtkm::Int32                  m_width;
-  vtkm::Int32                  m_height;
-  vtkm::rendering::Color       m_bg_color;
-  vtkm::rendering::Color       m_fg_color;
-  vtkmCanvas                   CreateCanvas() const;
-  std::vector<vtkm::Bounds>    m_color_bar_position;
+  viskores::Bounds                 m_scene_bounds;
+  viskores::Int32                  m_width;
+  viskores::Int32                  m_height;
+  viskores::rendering::Color       m_bg_color;
+  viskores::rendering::Color       m_fg_color;
+  viskoresCanvas                   CreateCanvas() const;
+  std::vector<viskores::Bounds>    m_color_bar_position;
   bool                         m_render_annotations;
   bool                         m_render_world_annotations;
   bool                         m_render_screen_annotations;
   bool                         m_render_background;
   bool                         m_shading;
-  vtkmCanvas                   m_canvas;
-  vtkm::Vec<float,3>           m_world_annotation_scale;
+  viskoresCanvas                   m_canvas;
+  viskores::Vec<float,3>           m_world_annotation_scale;
 };
 
 static float vtkh_default_bg_color[4] = {0.f, 0.f, 0.f, 1.f};
@@ -89,7 +89,7 @@ VTKH_API
 vtkh::Render
 MakeRender(int width,
            int height,
-           vtkm::Bounds scene_bounds,
+           viskores::Bounds scene_bounds,
            const std::string &image_name,
            float bg_color[4] = vtkh_default_bg_color,
            float fg_color[4] = vtkh_default_fg_color);
@@ -98,8 +98,8 @@ VTKH_API
 vtkh::Render
 MakeRender(int width,
            int height,
-           vtkm::Bounds scene_bounds,
-           vtkm::rendering::Camera camera,
+           viskores::Bounds scene_bounds,
+           viskores::rendering::Camera camera,
            const std::string &image_name,
            float bg_color[4] = vtkh_default_bg_color,
            float fg_color[4] = vtkh_default_fg_color);
@@ -108,7 +108,7 @@ VTKH_API
 vtkh::Render
 MakeRender(int width,
            int height,
-           vtkm::rendering::Camera camera,
+           viskores::rendering::Camera camera,
            vtkh::DataSet &data_set,
            const std::string &image_name,
            float bg_color[4] = vtkh_default_bg_color,

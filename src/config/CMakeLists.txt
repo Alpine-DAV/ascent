@@ -70,9 +70,9 @@ endif()
 # While CMake knows to ignore these type of vals make does not,
 # so we regularize with explicit vars
 
-if(VTKM_DIR)
-    set(ASCENT_VTKM_DIR ${VTKM_DIR} )
-    set(ASCENT_VTKM_VERSION  ${VTKm_VERSION} )
+if(VISKORES_DIR)
+    set(ASCENT_VISKORES_DIR ${VISKORES_DIR} )
+    set(ASCENT_VISKORES_VERSION  ${Viskores_VERSION} )
 endif()
 
 if(MFEM_DIR)

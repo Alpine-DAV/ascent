@@ -28,7 +28,7 @@
 #include <ascent_runtime_command_filters.hpp>
 #include <ascent_runtime_steering_filters.hpp>
 
-#if defined(ASCENT_VTKM_ENABLED)
+#if defined(ASCENT_VISKORES_ENABLED)
     #include <ascent_runtime_vtkh_filters.hpp>
     #include <ascent_runtime_rendering_filters.hpp>
     #include <ascent_runtime_rover_filters.hpp>
@@ -105,7 +105,7 @@ register_builtin()
     AscentRuntime::register_filter_type<AddFields>("transforms","add_fields");
     AscentRuntime::register_filter_type<PowerOfField>("transforms","power_of_field");
 
-#if defined(ASCENT_VTKM_ENABLED)
+#if defined(ASCENT_VISKORES_ENABLED)
     AscentRuntime::register_filter_type<CreateRenders>();
 
     AscentRuntime::register_filter_type<VTKHBounds>();

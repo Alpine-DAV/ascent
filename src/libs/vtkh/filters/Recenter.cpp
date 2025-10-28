@@ -1,14 +1,14 @@
 #include <vtkh/Error.hpp>
 #include <vtkh/filters/Recenter.hpp>
 
-#include <vtkm/filter/field_conversion/PointAverage.h>
-#include <vtkm/filter/field_conversion/CellAverage.h>
+#include <viskores/filter/field_conversion/PointAverage.h>
+#include <viskores/filter/field_conversion/CellAverage.h>
 
 namespace vtkh
 {
 
 Recenter::Recenter()
- : m_assoc(vtkm::cont::Field::Association::Points)
+ : m_assoc(viskores::cont::Field::Association::Points)
 {
 
 }
@@ -35,11 +35,11 @@ void Recenter::PostExecute()
   Filter::PostExecute();
 }
 
-void Recenter::SetResultAssoc(vtkm::cont::Field::Association assoc)
+void Recenter::SetResultAssoc(viskores::cont::Field::Association assoc)
 {
 
-  if(assoc != vtkm::cont::Field::Association::Cells &&
-     assoc != vtkm::cont::Field::Association::Points)
+  if(assoc != viskores::cont::Field::Association::Cells &&
+     assoc != viskores::cont::Field::Association::Points)
   {
     throw Error("Recenter can only recenter zonal and nodal fields");
   }
@@ -53,20 +53,20 @@ void Recenter::DoExecute()
 
   for(int i = 0; i < num_domains; ++i)
   {
-    vtkm::Id domain_id;
-    vtkm::cont::DataSet dom;
+    viskores::Id domain_id;
+    viskores::cont::DataSet dom;
     this->m_input->GetDomain(i, dom, domain_id);
 
-    vtkm::cont::DataSet out_data, temp;
+    viskores::cont::DataSet out_data, temp;
     // Since there is no way to remove a field from a dataset
     // we have to iterate over the data set to create a shallow
     // copy of everything else
 
-    const vtkm::Id num_fields = dom.GetNumberOfFields();
+    const viskores::Id num_fields = dom.GetNumberOfFields();
 
-    for(vtkm::Id f = 0; f < num_fields; ++f)
+    for(viskores::Id f = 0; f < num_fields; ++f)
     {
-      vtkm::cont::Field field = dom.GetField(f);
+      viskores::cont::Field field = dom.GetField(f);
       if(field.GetName() != m_field_name)
       {
         out_data.AddField(field);
@@ -77,51 +77,51 @@ void Recenter::DoExecute()
       }
     }
 
-    const vtkm::Id num_coords = dom.GetNumberOfCoordinateSystems();
+    const viskores::Id num_coords = dom.GetNumberOfCoordinateSystems();
 
-    for(vtkm::Id f = 0; f < num_coords; ++f)
+    for(viskores::Id f = 0; f < num_coords; ++f)
     {
-      vtkm::cont::CoordinateSystem coords= dom.GetCoordinateSystem(f);
+      viskores::cont::CoordinateSystem coords= dom.GetCoordinateSystem(f);
       out_data.AddCoordinateSystem(coords);
       temp.AddCoordinateSystem(coords);
     }
 
-    vtkm::cont::UnknownCellSet cellset = dom.GetCellSet();
+    viskores::cont::UnknownCellSet cellset = dom.GetCellSet();
     out_data.SetCellSet(cellset);
     temp.SetCellSet(cellset);
 
     if(temp.HasField(m_field_name))
     {
-      vtkm::cont::Field::Association in_assoc = temp.GetField(m_field_name).GetAssociation();
-      bool is_cell_assoc = in_assoc == vtkm::cont::Field::Association::Cells;
-      bool is_point_assoc = in_assoc == vtkm::cont::Field::Association::Points;
+      viskores::cont::Field::Association in_assoc = temp.GetField(m_field_name).GetAssociation();
+      bool is_cell_assoc = in_assoc == viskores::cont::Field::Association::Cells;
+      bool is_point_assoc = in_assoc == viskores::cont::Field::Association::Points;
 
       if(!is_cell_assoc && !is_point_assoc)
       {
         throw Error("Recenter: input field must be zonal or nodal");
       }
 
-      vtkm::cont::DataSet dataset;
+      viskores::cont::DataSet dataset;
       std::string out_name = m_field_name + "_out";
       if(in_assoc != m_assoc)
       {
         if(is_cell_assoc)
         {
-          vtkm::filter::field_conversion::PointAverage avg;
+          viskores::filter::field_conversion::PointAverage avg;
           avg.SetOutputFieldName(out_name);
           avg.SetActiveField(m_field_name);
           dataset = avg.Execute(dom);
         }
         else
         {
-          vtkm::filter::field_conversion::CellAverage avg;
+          viskores::filter::field_conversion::CellAverage avg;
           avg.SetOutputFieldName(out_name);
           avg.SetActiveField(m_field_name);
           dataset = avg.Execute(dom);
         }
 
-        vtkm::cont::Field recentered_field;
-        recentered_field = vtkm::cont::Field(m_field_name,
+        viskores::cont::Field recentered_field;
+        recentered_field = viskores::cont::Field(m_field_name,
                                              dataset.GetField(out_name).GetAssociation(),
                                              dataset.GetField(out_name).GetData());
         out_data.AddField(recentered_field);

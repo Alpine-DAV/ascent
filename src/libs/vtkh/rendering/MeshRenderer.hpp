@@ -12,7 +12,7 @@ public:
   MeshRenderer();
   virtual ~MeshRenderer();
   std::string GetName() const override;
-  static Renderer::vtkmCanvasPtr GetNewCanvas(int width = 1024, int height = 1024);
+  static Renderer::viskoresCanvasPtr GetNewCanvas(int width = 1024, int height = 1024);
 
   void SetIsOverlay(bool on);
   void SetShowInternal(bool on);

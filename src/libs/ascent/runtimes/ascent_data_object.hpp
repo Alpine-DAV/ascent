@@ -33,7 +33,7 @@ namespace ascent
 {
 
 
-#if defined(ASCENT_VTKM_ENABLED)
+#if defined(ASCENT_VISKORES_ENABLED)
 // forward declare
 class VTKHCollection;
 #endif
@@ -56,7 +56,7 @@ public:
   void name(const std::string n);
   std::string name() const;
 
-#if defined(ASCENT_VTKM_ENABLED)
+#if defined(ASCENT_VISKORES_ENABLED)
   DataObject(VTKHCollection *dataset);
   std::shared_ptr<VTKHCollection> as_vtkh_collection();
 
@@ -76,7 +76,7 @@ public:
 protected:
   std::shared_ptr<conduit::Node>  m_low_bp;
   std::shared_ptr<conduit::Node>  m_high_bp;
-#if defined(ASCENT_VTKM_ENABLED)
+#if defined(ASCENT_VISKORES_ENABLED)
   std::shared_ptr<VTKHCollection> m_vtkh;
 #endif
 #if defined(ASCENT_DRAY_ENABLED)

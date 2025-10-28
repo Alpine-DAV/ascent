@@ -5,13 +5,13 @@
 #include <vtkh/vtkh.hpp>
 #include <vtkh/filters/Filter.hpp>
 #include <vtkh/DataSet.hpp>
-#include <vtkm/rendering/Camera.h>
+#include <viskores/rendering/Camera.h>
 
 
 namespace vtkh
 {
 
-typedef vtkm::rendering::Camera vtkmCamera;
+typedef viskores::rendering::Camera viskoresCamera;
 
 class VTKH_API Slice : public Filter
 {
@@ -19,18 +19,18 @@ public:
   Slice();
   virtual ~Slice();
   std::string GetName() const override;
-  void AddPlane(vtkm::Vec<vtkm::Float32,3> point, vtkm::Vec<vtkm::Float32,3> normal);
+  void AddPlane(viskores::Vec<viskores::Float32,3> point, viskores::Vec<viskores::Float32,3> normal);
 protected:
   void PreExecute() override;
   void PostExecute() override;
   void DoExecute() override;
-  std::vector<vtkm::Vec<vtkm::Float32,3>> m_points;
-  std::vector<vtkm::Vec<vtkm::Float32,3>> m_normals;
+  std::vector<viskores::Vec<viskores::Float32,3>> m_points;
+  std::vector<viskores::Vec<viskores::Float32,3>> m_normals;
 };
 
 
 ///
-/// Slice Filter that uses VTK-m support for Implicit Functions
+/// Slice Filter that uses Viskores support for Implicit Functions
 /// to support Spherical and Cylindrical slicing
 ///
 class VTKH_API SliceImplicit : public Filter
@@ -40,7 +40,7 @@ public:
   virtual ~SliceImplicit();
   std::string GetName() const override;
 
-  void SetBoxSlice(const vtkm::Bounds &slice_bounds);
+  void SetBoxSlice(const viskores::Bounds &slice_bounds);
   void SetSphereSlice(const double center[3], const double radius);
   void SetCylinderSlice(const double center[3],
                         const double axis[3],
@@ -78,24 +78,24 @@ public:
   AutoSliceLevels();
   virtual ~AutoSliceLevels();
   std::string GetName() const override;
-  void SetNormal(vtkm::Vec<vtkm::Float32,3> normal);
+  void SetNormal(viskores::Vec<viskores::Float32,3> normal);
   void SetLevels(int levels);
   void SetField(std::string field_name);
-  vtkmCamera* GetCamera();
-  vtkm::Bounds GetDataBounds();
-  vtkm::Float32 GetRadius();
-  vtkm::Vec<vtkm::Float32,3> GetNormal();
+  viskoresCamera* GetCamera();
+  viskores::Bounds GetDataBounds();
+  viskores::Float32 GetRadius();
+  viskores::Vec<viskores::Float32,3> GetNormal();
 protected:
   void PreExecute() override;
   void PostExecute() override;
   void DoExecute() override;
-  std::vector<vtkm::Vec<vtkm::Float32,3>> m_normals;
+  std::vector<viskores::Vec<viskores::Float32,3>> m_normals;
   int m_levels;
   std::string m_field_name;
-  vtkmCamera *m_camera;
-  vtkm::Bounds m_bounds;
-  vtkm::Float32 m_radius;
-  vtkm::Vec<vtkm::Float32,3> m_normal;
+  viskoresCamera *m_camera;
+  viskores::Bounds m_bounds;
+  viskores::Float32 m_radius;
+  viskores::Vec<viskores::Float32,3> m_normal;
 };
 
 } //namespace vtkh

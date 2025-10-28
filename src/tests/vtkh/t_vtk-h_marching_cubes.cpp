@@ -11,7 +11,7 @@
 #include <vtkh/filters/MarchingCubes.hpp>
 #include <vtkh/rendering/RayTracer.hpp>
 #include <vtkh/rendering/Scene.hpp>
-#include "t_vtkm_test_utils.hpp"
+#include "t_viskores_test_utils.hpp"
 
 #include <iostream>
 
@@ -20,7 +20,7 @@
 //----------------------------------------------------------------------------
 TEST(vtkh_marching_cubes, vtkh_serial_marching_cubes)
 {
-#ifdef VTKM_ENABLE_KOKKOS
+#ifdef VISKORES_ENABLE_KOKKOS
   vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
@@ -49,9 +49,9 @@ TEST(vtkh_marching_cubes, vtkh_serial_marching_cubes)
 
   vtkh::DataSet *iso_output = marcher.GetOutput();
 
-  vtkm::Bounds bounds = iso_output->GetGlobalBounds();
+  viskores::Bounds bounds = iso_output->GetGlobalBounds();
   float bg_color[4] = { 0.f, 0.f, 0.f, 1.f};
-  vtkm::rendering::Camera camera;
+  viskores::rendering::Camera camera;
   camera.ResetToBounds(bounds);
   vtkh::Render render = vtkh::MakeRender(512,
                                          512,
@@ -73,7 +73,7 @@ TEST(vtkh_marching_cubes, vtkh_serial_marching_cubes)
 //----------------------------------------------------------------------------
 TEST(vtkh_marching_cubes, vtkh_empty)
 {
-#ifdef VTKM_ENABLE_KOKKOS
+#ifdef VISKORES_ENABLE_KOKKOS
   vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
@@ -102,9 +102,9 @@ TEST(vtkh_marching_cubes, vtkh_empty)
 
   vtkh::DataSet *iso_output = marcher.GetOutput();
 
-  vtkm::Bounds bounds = iso_output->GetGlobalBounds();
+  viskores::Bounds bounds = iso_output->GetGlobalBounds();
   float bg_color[4] = { 0.f, 0.f, 0.f, 1.f};
-  vtkm::rendering::Camera camera;
+  viskores::rendering::Camera camera;
   camera.ResetToBounds(bounds);
   vtkh::Render render = vtkh::MakeRender(512,
                                          512,
@@ -126,7 +126,7 @@ TEST(vtkh_marching_cubes, vtkh_empty)
 //----------------------------------------------------------------------------
 TEST(vtkh_marching_cubes, vtkh_marching_cubes_recenter)
 {
-#ifdef VTKM_ENABLE_KOKKOS
+#ifdef VISKORES_ENABLE_KOKKOS
   vtkh::SelectKokkosDevice(1);
 #endif
   vtkh::DataSet data_set;
@@ -154,9 +154,9 @@ TEST(vtkh_marching_cubes, vtkh_marching_cubes_recenter)
 
   vtkh::DataSet *iso_output = marcher.GetOutput();
 
-  vtkm::Bounds bounds = iso_output->GetGlobalBounds();
+  viskores::Bounds bounds = iso_output->GetGlobalBounds();
   float bg_color[4] = { 0.f, 0.f, 0.f, 1.f};
-  vtkm::rendering::Camera camera;
+  viskores::rendering::Camera camera;
   camera.ResetToBounds(bounds);
   vtkh::Render render = vtkh::MakeRender(512,
                                          512,

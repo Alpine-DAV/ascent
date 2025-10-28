@@ -177,7 +177,7 @@ macro(convert_to_native_escaped_file_path path output)
 endmacro()
 
 ###############################################
-# Protect ourselves from vtkm warning with cuda
+# Protect ourselves from viskores warning with cuda
 ###############################################
 if(CUDA_FOUND)
     if(CMAKE_CUDA_COMPILER_ID STREQUAL "NVIDIA")

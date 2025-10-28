@@ -10,22 +10,22 @@
 #include <vtkh/vtkh.hpp>
 #include <vtkh/DataSet.hpp>
 #include <vtkh/filters/MarchingCubes.hpp>
-#include "t_vtkm_test_utils.hpp"
+#include "t_viskores_test_utils.hpp"
 
-#include <vtkm/cont/DataSetBuilderUniform.h>
-#include <vtkm/cont/PartitionedDataSet.h>
-#include <vtkm/cont/EnvironmentTracker.h>
+#include <viskores/cont/DataSetBuilderUniform.h>
+#include <viskores/cont/PartitionedDataSet.h>
+#include <viskores/cont/EnvironmentTracker.h>
 
-#include <vtkm/filter/scalar_topology/worklet/contourtree_augmented/Types.h>
-#include <vtkm/filter/MapFieldPermutation.h>
+#include <viskores/filter/scalar_topology/worklet/contourtree_augmented/Types.h>
+#include <viskores/filter/MapFieldPermutation.h>
 
 #include <iostream>
 
-#ifdef VTKM_ENABLE_MPI
+#ifdef VISKORES_ENABLE_MPI
 #include <mpi.h>
 
-// This is from VTK-m diy mpi_cast.hpp. Need the make_DIY_MPI_Comm
-namespace vtkmdiy
+// This is from Viskores diy mpi_cast.hpp. Need the make_DIY_MPI_Comm
+namespace viskoresdiy
 {
 namespace mpi
 {
@@ -43,12 +43,12 @@ DEFINE_MPI_CAST(MPI_Comm)
 
 #endif
 
-using ValueType = vtkm::Float64;
+using ValueType = viskores::Float64;
 
-inline vtkm::IdComponent FindSplitAxis(vtkm::Id3 globalSize)
+inline viskores::IdComponent FindSplitAxis(viskores::Id3 globalSize)
 {
-  vtkm::IdComponent splitAxis = 0;
-  for (vtkm::IdComponent d = 1; d < 3; ++d)
+  viskores::IdComponent splitAxis = 0;
+  for (viskores::IdComponent d = 1; d < 3; ++d)
   {
     if (globalSize[d] > globalSize[splitAxis])
     {
@@ -58,21 +58,21 @@ inline vtkm::IdComponent FindSplitAxis(vtkm::Id3 globalSize)
   return splitAxis;
 }
 
-inline vtkm::Id3 ComputeNumberOfBlocksPerAxis(vtkm::Id3 globalSize, vtkm::Id numberOfBlocks)
+inline viskores::Id3 ComputeNumberOfBlocksPerAxis(viskores::Id3 globalSize, viskores::Id numberOfBlocks)
 {
   // Split numberOfBlocks into a power of two and a remainder
-  vtkm::Id powerOfTwoPortion = 1;
+  viskores::Id powerOfTwoPortion = 1;
   while (numberOfBlocks % 2 == 0)
   {
     powerOfTwoPortion *= 2;
     numberOfBlocks /= 2;
   }
 
-  vtkm::Id3 blocksPerAxis{ 1, 1, 1 };
+  viskores::Id3 blocksPerAxis{ 1, 1, 1 };
   if (numberOfBlocks > 1)
   {
     // Split the longest axis according to remainder
-    vtkm::IdComponent splitAxis = FindSplitAxis(globalSize);
+    viskores::IdComponent splitAxis = FindSplitAxis(globalSize);
     blocksPerAxis[splitAxis] = numberOfBlocks;
     globalSize[splitAxis] /= numberOfBlocks;
   }
@@ -80,8 +80,8 @@ inline vtkm::Id3 ComputeNumberOfBlocksPerAxis(vtkm::Id3 globalSize, vtkm::Id num
   // Now perform splits for the power of two remainder of numberOfBlocks
   while (powerOfTwoPortion > 1)
   {
-    vtkm::IdComponent splitAxis = FindSplitAxis(globalSize);
-    VTKM_ASSERT(globalSize[splitAxis] > 1);
+    viskores::IdComponent splitAxis = FindSplitAxis(globalSize);
+    VISKORES_ASSERT(globalSize[splitAxis] > 1);
     blocksPerAxis[splitAxis] *= 2;
     globalSize[splitAxis] /= 2;
     powerOfTwoPortion /= 2;
@@ -90,23 +90,23 @@ inline vtkm::Id3 ComputeNumberOfBlocksPerAxis(vtkm::Id3 globalSize, vtkm::Id num
   return blocksPerAxis;
 }
 
-inline std::tuple<vtkm::Id3, vtkm::Id3, vtkm::Id3> ComputeBlockExtents(vtkm::Id3 globalSize,
-                                                                       vtkm::Id3 blocksPerAxis,
-                                                                       vtkm::Id blockNo)
+inline std::tuple<viskores::Id3, viskores::Id3, viskores::Id3> ComputeBlockExtents(viskores::Id3 globalSize,
+                                                                       viskores::Id3 blocksPerAxis,
+                                                                       viskores::Id blockNo)
 {
   // DEBUG: std::cout << "ComputeBlockExtents("<<globalSize <<", " << blocksPerAxis << ", " << blockNo << ")" << std::endl;
   // DEBUG: std::cout << "Block " << blockNo;
 
-  vtkm::Id3 blockIndex, blockOrigin, blockSize;
-  for (vtkm::IdComponent d = 0; d < 3; ++d)
+  viskores::Id3 blockIndex, blockOrigin, blockSize;
+  for (viskores::IdComponent d = 0; d < 3; ++d)
   {
     blockIndex[d] = blockNo % blocksPerAxis[d];
     blockNo /= blocksPerAxis[d];
 
     float dx = float(globalSize[d] - 1) / float(blocksPerAxis[d]);
-    blockOrigin[d] = vtkm::Id(blockIndex[d] * dx);
-    vtkm::Id maxIdx =
-      blockIndex[d] < blocksPerAxis[d] - 1 ? vtkm::Id((blockIndex[d] + 1) * dx) : globalSize[d] - 1;
+    blockOrigin[d] = viskores::Id(blockIndex[d] * dx);
+    viskores::Id maxIdx =
+      blockIndex[d] < blocksPerAxis[d] - 1 ? viskores::Id((blockIndex[d] + 1) * dx) : globalSize[d] - 1;
     blockSize[d] = maxIdx - blockOrigin[d] + 1;
     // DEBUG: std::cout << " " << blockIndex[d] <<  dx << " " << blockOrigin[d] << " " << maxIdx << " " << blockSize[d] << "; ";
   }
@@ -114,60 +114,60 @@ inline std::tuple<vtkm::Id3, vtkm::Id3, vtkm::Id3> ComputeBlockExtents(vtkm::Id3
   return std::make_tuple(blockIndex, blockOrigin, blockSize);
 }
 
-inline vtkm::cont::DataSet CreateSubDataSet(const vtkm::cont::DataSet& ds,
-                                            vtkm::Id3 blockOrigin,
-                                            vtkm::Id3 blockSize,
+inline viskores::cont::DataSet CreateSubDataSet(const viskores::cont::DataSet& ds,
+                                            viskores::Id3 blockOrigin,
+                                            viskores::Id3 blockSize,
                                             const std::string& fieldName)
 {
-  vtkm::Id3 globalSize;
-  vtkm::cont::CastAndCall(
-    ds.GetCellSet(), vtkm::worklet::contourtree_augmented::GetPointDimensions(), globalSize);
-  const vtkm::Id nOutValues = blockSize[0] * blockSize[1] * blockSize[2];
+  viskores::Id3 globalSize;
+  viskores::cont::CastAndCall(
+    ds.GetCellSet(), viskores::worklet::contourtree_augmented::GetPointDimensions(), globalSize);
+  const viskores::Id nOutValues = blockSize[0] * blockSize[1] * blockSize[2];
 
   const auto inDataArrayHandle = ds.GetPointField(fieldName).GetData();
 
-  vtkm::cont::ArrayHandle<vtkm::Id> copyIdsArray;
+  viskores::cont::ArrayHandle<viskores::Id> copyIdsArray;
   copyIdsArray.Allocate(nOutValues);
   auto copyIdsPortal = copyIdsArray.WritePortal();
 
-  vtkm::Id3 outArrIdx;
+  viskores::Id3 outArrIdx;
   for (outArrIdx[2] = 0; outArrIdx[2] < blockSize[2]; ++outArrIdx[2])
     for (outArrIdx[1] = 0; outArrIdx[1] < blockSize[1]; ++outArrIdx[1])
       for (outArrIdx[0] = 0; outArrIdx[0] < blockSize[0]; ++outArrIdx[0])
       {
-        vtkm::Id3 inArrIdx = outArrIdx + blockOrigin;
-        vtkm::Id inIdx = (inArrIdx[2] * globalSize[1] + inArrIdx[1]) * globalSize[0] + inArrIdx[0];
-        vtkm::Id outIdx =
+        viskores::Id3 inArrIdx = outArrIdx + blockOrigin;
+        viskores::Id inIdx = (inArrIdx[2] * globalSize[1] + inArrIdx[1]) * globalSize[0] + inArrIdx[0];
+        viskores::Id outIdx =
           (outArrIdx[2] * blockSize[1] + outArrIdx[1]) * blockSize[0] + outArrIdx[0];
-        VTKM_ASSERT(inIdx >= 0 && inIdx < inDataArrayHandle.GetNumberOfValues());
-        VTKM_ASSERT(outIdx >= 0 && outIdx < nOutValues);
+        VISKORES_ASSERT(inIdx >= 0 && inIdx < inDataArrayHandle.GetNumberOfValues());
+        VISKORES_ASSERT(outIdx >= 0 && outIdx < nOutValues);
         copyIdsPortal.Set(outIdx, inIdx);
       }
   // DEBUG: std::cout << copyIdsPortal.GetNumberOfValues() << std::endl;
 
-  vtkm::cont::Field permutedField;
+  viskores::cont::Field permutedField;
   bool success =
-    vtkm::filter::MapFieldPermutation(ds.GetPointField(fieldName), copyIdsArray, permutedField);
+    viskores::filter::MapFieldPermutation(ds.GetPointField(fieldName), copyIdsArray, permutedField);
   if (!success)
-    throw vtkm::cont::ErrorBadType("Field copy failed (probably due to invalid type)");
+    throw viskores::cont::ErrorBadType("Field copy failed (probably due to invalid type)");
 
-  vtkm::cont::DataSetBuilderUniform dsb;
+  viskores::cont::DataSetBuilderUniform dsb;
   if (globalSize[2] <= 1) // 2D Data Set
   {
-    vtkm::Id2 dimensions{ blockSize[0], blockSize[1] };
-    vtkm::cont::DataSet dataSet = dsb.Create(dimensions);
-    vtkm::cont::CellSetStructured<2> cellSet;
+    viskores::Id2 dimensions{ blockSize[0], blockSize[1] };
+    viskores::cont::DataSet dataSet = dsb.Create(dimensions);
+    viskores::cont::CellSetStructured<2> cellSet;
     cellSet.SetPointDimensions(dimensions);
-    cellSet.SetGlobalPointDimensions(vtkm::Id2{ globalSize[0], globalSize[1] });
-    cellSet.SetGlobalPointIndexStart(vtkm::Id2{ blockOrigin[0], blockOrigin[1] });
+    cellSet.SetGlobalPointDimensions(viskores::Id2{ globalSize[0], globalSize[1] });
+    cellSet.SetGlobalPointIndexStart(viskores::Id2{ blockOrigin[0], blockOrigin[1] });
     dataSet.SetCellSet(cellSet);
     dataSet.AddField(permutedField);
     return dataSet;
   }
   else
   {
-    vtkm::cont::DataSet dataSet = dsb.Create(blockSize);
-    vtkm::cont::CellSetStructured<3> cellSet;
+    viskores::cont::DataSet dataSet = dsb.Create(blockSize);
+    viskores::cont::CellSetStructured<3> cellSet;
     cellSet.SetPointDimensions(blockSize);
     cellSet.SetGlobalPointDimensions(globalSize);
     cellSet.SetGlobalPointIndexStart(blockOrigin);
@@ -178,21 +178,21 @@ inline vtkm::cont::DataSet CreateSubDataSet(const vtkm::cont::DataSet& ds,
 }
 
 //
-// VTK-m data read code from "TestingContourTreeUniformDistributedFilter.h"
+// Viskores data read code from "TestingContourTreeUniformDistributedFilter.h"
 // function: RunContourTreeDUniformDistributed
 //
-void GetPartitionedDataSet( const vtkm::cont::DataSet& ds, const std::string &fieldName, const int numberOfBlocks,
-                            const int rank, const int numberOfRanks, vtkm::cont::PartitionedDataSet &pds )
+void GetPartitionedDataSet( const viskores::cont::DataSet& ds, const std::string &fieldName, const int numberOfBlocks,
+                            const int rank, const int numberOfRanks, viskores::cont::PartitionedDataSet &pds )
 {
   // Get dimensions of data set
-  vtkm::Id3 globalSize;
-  vtkm::cont::CastAndCall(ds.GetCellSet(), vtkm::worklet::contourtree_augmented::GetPointDimensions(), globalSize);
+  viskores::Id3 globalSize;
+  viskores::cont::CastAndCall(ds.GetCellSet(), viskores::worklet::contourtree_augmented::GetPointDimensions(), globalSize);
 
   // Determine split
-  vtkm::Id3 blocksPerAxis = ComputeNumberOfBlocksPerAxis(globalSize, numberOfBlocks);
-  vtkm::Id blocksPerRank = numberOfBlocks / numberOfRanks;
-  vtkm::Id numRanksWithExtraBlock = numberOfBlocks % numberOfRanks;
-  vtkm::Id blocksOnThisRank, startBlockNo;
+  viskores::Id3 blocksPerAxis = ComputeNumberOfBlocksPerAxis(globalSize, numberOfBlocks);
+  viskores::Id blocksPerRank = numberOfBlocks / numberOfRanks;
+  viskores::Id numRanksWithExtraBlock = numberOfBlocks % numberOfRanks;
+  viskores::Id blocksOnThisRank, startBlockNo;
 
   if (rank < numRanksWithExtraBlock)
   {
@@ -206,16 +206,16 @@ void GetPartitionedDataSet( const vtkm::cont::DataSet& ds, const std::string &fi
   }
 
   // Created partitioned (split) data set
-  //vtkm::cont::PartitionedDataSet pds;
-  vtkm::cont::ArrayHandle<vtkm::Id3> localBlockIndices;
+  //viskores::cont::PartitionedDataSet pds;
+  viskores::cont::ArrayHandle<viskores::Id3> localBlockIndices;
 
   localBlockIndices.Allocate(blocksOnThisRank);
 
   auto localBlockIndicesPortal = localBlockIndices.WritePortal();
 
-    for (vtkm::Id blockNo = 0; blockNo < blocksOnThisRank; ++blockNo)
+    for (viskores::Id blockNo = 0; blockNo < blocksOnThisRank; ++blockNo)
   {
-    vtkm::Id3 blockOrigin, blockSize, blockIndex;
+    viskores::Id3 blockOrigin, blockSize, blockIndex;
     std::tie(blockIndex, blockOrigin, blockSize) =
       ComputeBlockExtents(globalSize, blocksPerAxis, startBlockNo + blockNo);
     pds.AppendPartition(CreateSubDataSet(ds, blockOrigin, blockSize, fieldName));
@@ -224,10 +224,10 @@ void GetPartitionedDataSet( const vtkm::cont::DataSet& ds, const std::string &fi
 }
 
 
-#ifdef VTKM_ENABLE_MPI
-  #define VDATASET vtkm::cont::PartitionedDataSet
+#ifdef VISKORES_ENABLE_MPI
+  #define VDATASET viskores::cont::PartitionedDataSet
 #else
-  #define VDATASET vtkm::cont::DataSet
+  #define VDATASET viskores::cont::DataSet
 #endif
 
 //----------------------------------------------------------------------------
@@ -288,40 +288,40 @@ bool ReadTestData(const std::string& filename, VDATASET &inDataSet,
   // Finish reading the data from file.
   inFile.close();
 
-  vtkm::cont::DataSetBuilderUniform dsb;
+  viskores::cont::DataSetBuilderUniform dsb;
 
-#ifdef VTKM_ENABLE_MPI
-  vtkm::cont::DataSet ds;
-  vtkm::cont::DataSet *pds = &ds;
-#else // VTKM_ENABLE_MPI
-  vtkm::cont::DataSet *pds = &inDataSet;
-#endif // VTKM_ENABLE_MPI
+#ifdef VISKORES_ENABLE_MPI
+  viskores::cont::DataSet ds;
+  viskores::cont::DataSet *pds = &ds;
+#else // VISKORES_ENABLE_MPI
+  viskores::cont::DataSet *pds = &inDataSet;
+#endif // VISKORES_ENABLE_MPI
 
   {
     // build the input dataset
     // 2D data
     if(nDims == 2)
     {
-      vtkm::Id2 vdims;
-      vdims[0] = static_cast<vtkm::Id>(dims[0]);
-      vdims[1] = static_cast<vtkm::Id>(dims[1]);
+      viskores::Id2 vdims;
+      vdims[0] = static_cast<viskores::Id>(dims[0]);
+      vdims[1] = static_cast<viskores::Id>(dims[1]);
       *pds = dsb.Create(vdims);
     }
     // 3D data
     else
     {
-      vtkm::Id3 vdims;
-      vdims[0] = static_cast<vtkm::Id>(dims[0]);
-      vdims[1] = static_cast<vtkm::Id>(dims[1]);
-      vdims[2] = static_cast<vtkm::Id>(dims[2]);
+      viskores::Id3 vdims;
+      vdims[0] = static_cast<viskores::Id>(dims[0]);
+      vdims[1] = static_cast<viskores::Id>(dims[1]);
+      vdims[2] = static_cast<viskores::Id>(dims[2]);
       *pds = dsb.Create(vdims);
     }
     pds->AddPointField("values", values);
   }
 
-#ifdef VTKM_ENABLE_MPI
+#ifdef VISKORES_ENABLE_MPI
   GetPartitionedDataSet( ds, "values", mpiSize, mpiRank, mpiSize, inDataSet );
-#endif // VTKM_ENABLE_MPI
+#endif // VISKORES_ENABLE_MPI
 
   return( true );
 }
@@ -335,10 +335,10 @@ bool GetDataSet( vtkh::DataSet &data_set, const int mpiRank, const int mpiSize )
   if( ReadTestData(filename, ds, mpiRank, mpiSize) == false )
     return( false );
 
-#ifdef VTKM_ENABLE_MPI
-  for(vtkm::Id id = 0; id < ds.GetNumberOfPartitions(); ++id)
+#ifdef VISKORES_ENABLE_MPI
+  for(viskores::Id id = 0; id < ds.GetNumberOfPartitions(); ++id)
   {
-    vtkm::cont::DataSet dom = ds.GetPartition(id);
+    viskores::cont::DataSet dom = ds.GetPartition(id);
 
     data_set.AddDomain(dom, id);
   }
@@ -394,11 +394,11 @@ TEST(vtkh_contour_tree, vtkh_contour_tree)
   // Default values if we are serial.
   int mpiSize = 1, mpiRank = 0;
 
-#ifdef VTKM_ENABLE_KOKKOS
+#ifdef VISKORES_ENABLE_KOKKOS
   vtkh::InitializeKokkos();
 #endif
 
-#ifdef VTKM_ENABLE_MPI
+#ifdef VISKORES_ENABLE_MPI
   MPI_Init(NULL, NULL);
 
   MPI_Comm_size(MPI_COMM_WORLD, &mpiSize);
@@ -410,18 +410,18 @@ TEST(vtkh_contour_tree, vtkh_contour_tree)
   // Setup MPI comm for VTK-h.
   vtkh::SetMPICommHandle(MPI_Comm_c2f(MPI_COMM_WORLD));
 
-  // Setup VTK-m GlobalCommuncator. 
+  // Setup Viskores GlobalCommuncator. 
   // This is need because the GlobalCommuncator does not setup it self up right if you call MPI_Init.
   auto comm = MPI_COMM_WORLD;
-  vtkm::cont::EnvironmentTracker::SetCommunicator(vtkmdiy::mpi::communicator(vtkmdiy::mpi::make_DIY_MPI_Comm(comm)));
+  viskores::cont::EnvironmentTracker::SetCommunicator(viskoresdiy::mpi::communicator(viskoresdiy::mpi::make_DIY_MPI_Comm(comm)));
 
-  auto envComm = vtkm::cont::EnvironmentTracker::GetCommunicator();
+  auto envComm = viskores::cont::EnvironmentTracker::GetCommunicator();
   if( mpiRank != envComm.rank() || mpiSize != envComm.size() )
   {
     // Print message to check for how this was built.
     std::cout << "mpiRank:  " << mpiRank        << " mpiSize:  " << mpiSize        << std::endl;
     std::cout << "Env Rank: " << envComm.rank() << " Env Size: " << envComm.size() << std::endl;
-    std::cout << "If the Rank and Size do not match, VTK-m needs to be built with VTKm_ENABLE_MPI." << std::endl;
+    std::cout << "If the Rank and Size do not match, Viskores needs to be built with Viskores_ENABLE_MPI." << std::endl;
   }
 #endif
 
@@ -456,7 +456,7 @@ TEST(vtkh_contour_tree, vtkh_contour_tree)
   if( output )
     delete output;
 
-#ifdef VTKM_ENABLE_MPI
+#ifdef VISKORES_ENABLE_MPI
   MPI_Finalize();
 #endif
 }
