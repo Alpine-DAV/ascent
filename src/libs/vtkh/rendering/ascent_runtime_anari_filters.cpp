@@ -47,20 +47,20 @@
 #include <vtkh/rendering/PointRenderer.hpp>
 #include <vtkh/rendering/VolumeRenderer.hpp>
 #include <vtkh/rendering/AutoCamera.hpp>
-#include <vtkm/rendering/Camera.h>
-#include <vtkm/cont/DataSet.h>
-// #include <vtkm/io/VTKDataSetReader.h>
-// #include <vtkm/io/VTKDataSetWriter.h>
+#include <viskores/rendering/Camera.h>
+#include <viskores/cont/DataSet.h>
+// #include <viskores/io/VTKDataSetReader.h>
+// #include <viskores/io/VTKDataSetWriter.h>
 
-#include <vtkm/interop/anari/ANARIMapperTriangles.h>
-#include <vtkm/interop/anari/ANARIMapperGlyphs.h>
-#include <vtkm/interop/anari/ANARIMapperVolume.h>
-#include <vtkm/interop/anari/ANARIScene.h>
+#include <viskores/interop/anari/ANARIMapperTriangles.h>
+#include <viskores/interop/anari/ANARIMapperGlyphs.h>
+#include <viskores/interop/anari/ANARIMapperVolume.h>
+#include <viskores/interop/anari/ANARIScene.h>
 
-#include <vtkm/cont/EnvironmentTracker.h>
-#include <vtkm/cont/FieldRangeGlobalCompute.h>
+#include <viskores/cont/EnvironmentTracker.h>
+#include <viskores/cont/FieldRangeGlobalCompute.h>
 
-#include <ascent_runtime_conduit_to_vtkm_parsing.hpp>
+#include <ascent_runtime_conduit_to_viskores_parsing.hpp>
 #include <ascent_runtime_vtkh_utils.hpp>
 
 #include <png_utils/ascent_png_encoder.hpp>
@@ -75,7 +75,7 @@
 using namespace conduit;
 using namespace flow;
 
-using namespace vtkm::interop::anari;
+using namespace viskores::interop::anari;
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -276,18 +276,18 @@ public:
   std::vector<anari_cpp::Light> lights;
 
   std::string field_name;
-  vtkm::Range scalar_range; // scalar value range set by users
-  vtkm::cont::ColorTable tfn = vtkm::cont::ColorTable("Cool to Warm");
+  viskores::Range scalar_range; // scalar value range set by users
+  viskores::cont::ColorTable tfn = viskores::cont::ColorTable("Cool to Warm");
 
   // camera parameters
-  vtkm::rendering::Camera cam;
+  viskores::rendering::Camera cam;
 
   // framebuffer parameters
   std::string img_name = "anari_volume";
-  vtkm::Vec2ui_32 img_size = vtkm::Vec2ui_32(1024, 768);
+  viskores::Vec2ui_32 img_size = viskores::Vec2ui_32(1024, 768);
 
   // renderer parameters
-  vtkm::Vec4f_32 background = vtkm::Vec4f_32(0.0f, 0.0f, 0.0f, 0.f);
+  viskores::Vec4f_32 background = viskores::Vec4f_32(0.0f, 0.0f, 0.0f, 0.f);
   int pixelSamples = 128;
 
 public:
@@ -328,23 +328,23 @@ AnariImpl::set_tfn(ANARIMapper& mapper)
 {
   constexpr int resolution = 256;
 
-  constexpr vtkm::Float32 conversionToFloatSpace = (1.0f / 255.0f);
-  vtkm::cont::ArrayHandle<vtkm::Vec4ui_8> temp;
+  constexpr viskores::Float32 conversionToFloatSpace = (1.0f / 255.0f);
+  viskores::cont::ArrayHandle<viskores::Vec4ui_8> temp;
   {
-    vtkm::cont::ScopedRuntimeDeviceTracker tracker(vtkm::cont::DeviceAdapterTagSerial{});
+    viskores::cont::ScopedRuntimeDeviceTracker tracker(viskores::cont::DeviceAdapterTagSerial{});
     tfn.Sample(resolution, temp);
   }
   auto colorPortal = temp.ReadPortal();
 
   // Create the color and opacity arrays
   auto colorArray   = anari_cpp::newArray1D(device, ANARI_FLOAT32_VEC3, resolution);
-  auto* colors      = anari_cpp::map<vtkm::Vec3f_32>(device, colorArray  );
+  auto* colors      = anari_cpp::map<viskores::Vec3f_32>(device, colorArray  );
   auto opacityArray = anari_cpp::newArray1D(device, ANARI_FLOAT32,      resolution);
-  auto* opacities   = anari_cpp::map<vtkm::Float32 >(device, opacityArray);
-  for (vtkm::Id i = 0; i < resolution; ++i)
+  auto* opacities   = anari_cpp::map<viskores::Float32 >(device, opacityArray);
+  for (viskores::Id i = 0; i < resolution; ++i)
   {
     auto color = colorPortal.Get(i);
-    colors[i] = vtkm::Vec3f_32(color[0], color[1], color[2]) * conversionToFloatSpace;
+    colors[i] = viskores::Vec3f_32(color[0], color[1], color[2]) * conversionToFloatSpace;
     opacities[i] = color[3] * conversionToFloatSpace;
   }
 
@@ -353,11 +353,11 @@ AnariImpl::set_tfn(ANARIMapper& mapper)
 
   mapper.SetANARIColorMap(colorArray, opacityArray, true);
   if (scalar_range.IsNonEmpty()) {
-    mapper.SetANARIColorMapValueRange(vtkm::Vec2f_32(scalar_range.Min, scalar_range.Max));
+    mapper.SetANARIColorMapValueRange(viskores::Vec2f_32(scalar_range.Min, scalar_range.Max));
   }
   else {
     auto range = tfn.GetRange();
-    mapper.SetANARIColorMapValueRange(vtkm::Vec2f_32(range.Min, range.Max));
+    mapper.SetANARIColorMapValueRange(viskores::Vec2f_32(range.Min, range.Max));
   }
   mapper.SetANARIColorMapOpacityScale(1.0f);
 }
@@ -373,7 +373,7 @@ AnariImpl::set_lights()
 
   // create default lights
   anari_cpp::Light sun = anari_cpp::newObject<anari_cpp::Light>(device, "directional");
-  anari_cpp::setParameter(device, sun, "direction", vtkm::Vec3f_32(0.0f, -1.0f, 0.0f));
+  anari_cpp::setParameter(device, sun, "direction", viskores::Vec3f_32(0.0f, -1.0f, 0.0f));
   anari_cpp::setParameter(device, sun, "irradiance", 2.f);
   anari_cpp::setParameter(device, sun, "angularDiameter", 0.00925f);
   anari_cpp::setParameter(device, sun, "radiance", 1.f);
@@ -404,8 +404,8 @@ AnariImpl::render_triangles(vtkh::DataSet &dset)
   
   // static int step = 0;
   // for (int i = 0; i < dset.GetNumberOfDomains(); ++i) {
-  //   vtkm::io::VTKDataSetWriter writer("anari_triangles_" + std::to_string(i) + "_" + std::to_string(step) + ".vtk");
-  //   writer.SetFileType(vtkm::io::FileType::BINARY);
+  //   viskores::io::VTKDataSetWriter writer("anari_triangles_" + std::to_string(i) + "_" + std::to_string(step) + ".vtk");
+  //   writer.SetFileType(viskores::io::FileType::BINARY);
   //   writer.WriteDataSet(dset.GetDomain(i));
   // }
   // step++;
@@ -414,7 +414,7 @@ AnariImpl::render_triangles(vtkh::DataSet &dset)
   ANARIScene scene(device);
   for (int i = 0; i < dset.GetNumberOfDomains(); ++i)
   {
-    auto& mTri = scene.AddMapper(vtkm::interop::anari::ANARIMapperTriangles(device));
+    auto& mTri = scene.AddMapper(viskores::interop::anari::ANARIMapperTriangles(device));
     mTri.SetName(("triangles_" + std::to_string(i)).c_str());
     mTri.SetActor({ 
       dset.GetDomain(i).GetCellSet(), 
@@ -454,7 +454,7 @@ AnariImpl::render_glyphs(vtkh::DataSet &dset)
   ANARIScene scene(device);
   for (int i = 0; i < dset.GetNumberOfDomains(); ++i)
   {
-    auto& mVol = scene.AddMapper(vtkm::interop::anari::ANARIMapperGlyphs(device));
+    auto& mVol = scene.AddMapper(viskores::interop::anari::ANARIMapperGlyphs(device));
     mVol.SetName(("glyphs_" + std::to_string(i)).c_str());
     mVol.SetActor({ 
       dset.GetDomain(i).GetCellSet(), 
@@ -493,7 +493,7 @@ AnariImpl::render_volume(vtkh::DataSet &dset)
   ANARIScene scene(device);
   for (int i = 0; i < dset.GetNumberOfDomains(); ++i)
   {
-    auto& mVol = scene.AddMapper(vtkm::interop::anari::ANARIMapperVolume(device));
+    auto& mVol = scene.AddMapper(viskores::interop::anari::ANARIMapperVolume(device));
     mVol.SetName(("volume_" + std::to_string(i)).c_str());
     mVol.SetActor({ 
       dset.GetDomain(i).GetCellSet(), 
@@ -520,7 +520,7 @@ AnariImpl::render(ANARIScene& scene)
   //    -- missing parameters: xpan, ypan (through imageRegion)
   //
   const auto cam_zoom = cam.GetZoom();
-  const auto cam_type = cam.GetMode() == vtkm::rendering::Camera::Mode::ThreeD ? "perspective" : "orthographic";
+  const auto cam_type = cam.GetMode() == viskores::rendering::Camera::Mode::ThreeD ? "perspective" : "orthographic";
   const auto cam_dir = cam.GetLookAt() - cam.GetPosition();
   // TODO: what is the correct way to apply zoom?
   const auto cam_pos = cam_zoom > 0
@@ -537,7 +537,7 @@ AnariImpl::render(ANARIScene& scene)
   anari_cpp::setParameter(device, camera, "far",  cam_range.Max);
   if (cam_type == "perspective")
   {
-    anari_cpp::setParameter(device, camera, "fov", cam.GetFieldOfView() / 180.0 * vtkm::Pi());
+    anari_cpp::setParameter(device, camera, "fov", cam.GetFieldOfView() / 180.0 * viskores::Pi());
   }
   else
   {
@@ -566,7 +566,7 @@ AnariImpl::render(ANARIScene& scene)
   // on rank 0, access framebuffer and write its content as PNG file
   int rank = 0;
 #ifdef ASCENT_MPI_ENABLED
-  rank = vtkm::cont::EnvironmentTracker::GetCommunicator().rank();
+  rank = viskores::cont::EnvironmentTracker::GetCommunicator().rank();
 #endif
   if (rank == 0) 
   {
@@ -583,7 +583,7 @@ AnariImpl::render(ANARIScene& scene)
 
 //-----------------------------------------------------------------------------
 static void
-parse_params(AnariImpl& self, const conduit::Node &params, const vtkm::Bounds& bounds)
+parse_params(AnariImpl& self, const conduit::Node &params, const viskores::Bounds& bounds)
 {
   Node meta = Metadata::n_metadata;
   int cycle = 0;
@@ -596,7 +596,7 @@ parse_params(AnariImpl& self, const conduit::Node &params, const vtkm::Bounds& b
   self.field_name = params["field"].as_string();
 
   // Parse camera
-  vtkm::rendering::Camera camera;
+  viskores::rendering::Camera camera;
   camera.ResetToBounds(bounds); // if we don't have camera params, we need to add a default camera
   if (params.has_path("camera"))
   {
@@ -607,12 +607,12 @@ parse_params(AnariImpl& self, const conduit::Node &params, const vtkm::Bounds& b
   // Set transfer function
   if (params.has_path("color_table"))
   {
-    vtkm::cont::ColorTable color_table = parse_color_table(params["color_table"]);
+    viskores::cont::ColorTable color_table = parse_color_table(params["color_table"]);
     self.tfn = color_table;
   }
 
   // Set data value range
-  self.scalar_range = vtkm::Range();
+  self.scalar_range = viskores::Range();
   if (params.has_path("min_value"))
   {
     self.scalar_range.Min = params["min_value"].to_float64();
@@ -632,7 +632,7 @@ parse_params(AnariImpl& self, const conduit::Node &params, const vtkm::Bounds& b
   int image_width;
   int image_height;
   parse_image_dims(params, image_width, image_height);
-  self.img_size = vtkm::Vec2ui_32(image_width, image_height);
+  self.img_size = viskores::Vec2ui_32(image_width, image_height);
 }
 
 
@@ -700,7 +700,7 @@ AnariTriangles::execute()
   }
 
   // It is important to compute the data bounds
-  vtkm::Bounds bounds = collection->global_bounds();
+  viskores::Bounds bounds = collection->global_bounds();
 
   // Initialize ANARI /////////////////////////////////////////////////////////
   parse_params(*pimpl, params(), bounds);
@@ -773,7 +773,7 @@ AnariGlyphs::execute()
   }
 
   // It is important to compute the data bounds
-  vtkm::Bounds bounds = collection->global_bounds();
+  viskores::Bounds bounds = collection->global_bounds();
 
   // Initialize ANARI /////////////////////////////////////////////////////////
   parse_params(*pimpl, params(), bounds);
@@ -845,7 +845,7 @@ AnariVolume::execute()
   }
 
   // It is important to compute the data bounds
-  vtkm::Bounds bounds = collection->global_bounds();
+  viskores::Bounds bounds = collection->global_bounds();
 
   // Initialize ANARI /////////////////////////////////////////////////////////
   parse_params(*pimpl, params(), bounds);

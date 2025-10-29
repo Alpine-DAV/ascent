@@ -1,6 +1,6 @@
 #include "ANARIRenderer.hpp"
 
-#include <vtkh/utils/vtkm_array_utils.hpp>
+#include <vtkh/utils/viskores_array_utils.hpp>
 #include <vtkh/compositing/Compositor.hpp>
 #include <vtkh/Logger.hpp>
 
@@ -11,11 +11,11 @@
 #include <mpi.h>
 #endif
 
-#include <vtkm/interop/anari/ANARIScene.h>
-#include <vtkm/rendering/CanvasRayTracer.h>
-#include <vtkm/cont/ColorTable.h>
-#include <vtkm/rendering/ConnectivityProxy.h>
-#include <vtkm/rendering/raytracing/Camera.h>
+#include <viskores/interop/anari/ANARIScene.h>
+#include <viskores/rendering/CanvasRayTracer.h>
+#include <viskores/cont/ColorTable.h>
+#include <viskores/rendering/ConnectivityProxy.h>
+#include <viskores/rendering/raytracing/Camera.h>
 
 #include <png_utils/ascent_png_encoder.hpp>
 
@@ -89,13 +89,13 @@ anari_device_load()
   return dev;
 }
 
-//static void setColorMap(anari_cpp::Device d, vtkm::interop::anari::ANARIMapper& mapper, vtkm::Range &range)
+//static void setColorMap(anari_cpp::Device d, viskores::interop::anari::ANARIMapper& mapper, viskores::Range &range)
 //{
 //  auto colorArray = anari_cpp::newArray1D(d, ANARI_FLOAT32_VEC3, 3);
-//  auto* colors = anari_cpp::map<vtkm::Vec3f_32>(d, colorArray);
-//  colors[0] = vtkm::Vec3f_32(0.23, 0.29, 0.75);
-//  colors[1] = vtkm::Vec3f_32(0.87, 0.87, 0.87);
-//  colors[2] = vtkm::Vec3f_32(0.71, 0.02, 0.15);
+//  auto* colors = anari_cpp::map<viskores::Vec3f_32>(d, colorArray);
+//  colors[0] = viskores::Vec3f_32(0.23, 0.29, 0.75);
+//  colors[1] = viskores::Vec3f_32(0.87, 0.87, 0.87);
+//  colors[2] = viskores::Vec3f_32(0.71, 0.02, 0.15);
 ////color table point: 0 rgba: 0 0.231373 0.298039 0.752941
 ////color table point: 1 rgba: 0.5 0.865 0.865 0.865
 ////color table point: 2 rgba: 1 0.705882 0.0156863 0.14902
@@ -110,22 +110,22 @@ anari_device_load()
 //  float min = range.Min;
 //  float max = range.Max;
 //  mapper.SetANARIColorMap(colorArray, opacityArray, true);
-//  mapper.SetANARIColorMapValueRange(vtkm::Vec2f_32(min, max));
+//  mapper.SetANARIColorMapValueRange(viskores::Vec2f_32(min, max));
 //  mapper.SetANARIColorMapOpacityScale(0.5f);
 //}
 
-static void setColorMap(anari_cpp::Device d, vtkm::interop::anari::ANARIMapper& mapper, vtkm::Range &range, vtkm::cont::ColorTable &color_table)
+static void setColorMap(anari_cpp::Device d, viskores::interop::anari::ANARIMapper& mapper, viskores::Range &range, viskores::cont::ColorTable &color_table)
 {
-  vtkm::Int32 num_points = color_table.GetNumberOfPoints(); 
+  viskores::Int32 num_points = color_table.GetNumberOfPoints(); 
   auto colorArray = anari_cpp::newArray1D(d, ANARI_FLOAT32_VEC3, num_points);
-  auto* colors = anari_cpp::map<vtkm::Vec3f_32>(d, colorArray);
+  auto* colors = anari_cpp::map<viskores::Vec3f_32>(d, colorArray);
   for(int i = 0; i < num_points; i++)
   {
-    vtkm::Vec4f_64 color; 
+    viskores::Vec4f_64 color; 
     //returned as location, RGB
     color_table.GetPoint(i,color);
-    colors[i] = vtkm::Vec3f_32((float)color[1], (float)color[2], (float)color[3]);
-    //colors[i] = vtkm::Vec3f_64(i%2, i%1, i%2);
+    colors[i] = viskores::Vec3f_32((float)color[1], (float)color[2], (float)color[3]);
+    //colors[i] = viskores::Vec3f_64(i%2, i%1, i%2);
   }
 //color table point: 0 rgba: 0 0.231373 0.298039 0.752941
 //color table point: 1 rgba: 0.5 0.865 0.865 0.865
@@ -141,37 +141,37 @@ static void setColorMap(anari_cpp::Device d, vtkm::interop::anari::ANARIMapper& 
   float min = range.Min;
   float max = range.Max;
   mapper.SetANARIColorMap(colorArray, opacityArray, true);
-  mapper.SetANARIColorMapValueRange(vtkm::Vec2f_32(min, max));
+  mapper.SetANARIColorMapValueRange(viskores::Vec2f_32(min, max));
   mapper.SetANARIColorMapOpacityScale(0.5f);
 }
 
 
 static void 
-setColorMap2(anari_cpp::Device d, vtkm::interop::anari::ANARIMapper& mapper, vtkm::cont::ColorTable &color_table, vtkm::Range &field_range)
+setColorMap2(anari_cpp::Device d, viskores::interop::anari::ANARIMapper& mapper, viskores::cont::ColorTable &color_table, viskores::Range &field_range)
 {
-  vtkm::Int32 num_points = color_table.GetNumberOfPoints(); 
+  viskores::Int32 num_points = color_table.GetNumberOfPoints(); 
   auto colorArray = anari_cpp::newArray1D(d, ANARI_FLOAT64_VEC3, num_points);
-  auto* colors = anari_cpp::map<vtkm::Vec3f_64>(d, colorArray);
+  auto* colors = anari_cpp::map<viskores::Vec3f_64>(d, colorArray);
   for(int i = 0; i < num_points; i++)
   {
-    vtkm::Vec4f_64 color; 
+    viskores::Vec4f_64 color; 
     //returned as location, RGB
     color_table.GetPoint(i,color);
-    //colors[i] = vtkm::Vec3f_64(color[1], color[2], color[3]);
-    //colors[i] = vtkm::Vec3f_64(i%2, i%1, i%2);
+    //colors[i] = viskores::Vec3f_64(color[1], color[2], color[3]);
+    //colors[i] = viskores::Vec3f_64(i%2, i%1, i%2);
   }
-  colors[0] = vtkm::Vec3f_32(0.f, 0.f, 1.f);
-  colors[1] = vtkm::Vec3f_32(0.f, 1.f, 0.f);
-  colors[2] = vtkm::Vec3f_32(1.f, 0.f, 0.f);
+  colors[0] = viskores::Vec3f_32(0.f, 0.f, 1.f);
+  colors[1] = viskores::Vec3f_32(0.f, 1.f, 0.f);
+  colors[2] = viskores::Vec3f_32(1.f, 0.f, 0.f);
 
   anari_cpp::unmap(d, colorArray);
 
-  vtkm::Int32 num_points_alpha = color_table.GetNumberOfPointsAlpha(); 
+  viskores::Int32 num_points_alpha = color_table.GetNumberOfPointsAlpha(); 
   auto opacityArray = anari_cpp::newArray1D(d, ANARI_FLOAT64, num_points_alpha);
   auto* opacities = anari_cpp::map<float>(d, opacityArray);
   for(int i = 0; i < num_points_alpha; i++)
   {
-    vtkm::Vec4f_64 alpha; 
+    viskores::Vec4f_64 alpha; 
     //returned as location, alpha, midpoint and sharpness 
     color_table.GetPointAlpha(i,alpha);
     opacities[i] = alpha[1];
@@ -180,10 +180,10 @@ setColorMap2(anari_cpp::Device d, vtkm::interop::anari::ANARIMapper& mapper, vtk
   opacities[1] = 1.;
   anari_cpp::unmap(d, opacityArray);
 
-  vtkm::Float64 min = field_range.Min;
-  vtkm::Float64 max = field_range.Max;
+  viskores::Float64 min = field_range.Min;
+  viskores::Float64 max = field_range.Max;
   mapper.SetANARIColorMap(colorArray, opacityArray, true);
-  mapper.SetANARIColorMapValueRange(vtkm::Vec2f_64(min, max));
+  mapper.SetANARIColorMapValueRange(viskores::Vec2f_64(min, max));
 //  mapper.SetANARIColorMapOpacityScale(0.5f);
 }
 
@@ -192,9 +192,9 @@ setColorMap2(anari_cpp::Device d, vtkm::interop::anari::ANARIMapper& mapper, vtk
 
 ANARIRenderer::ANARIRenderer()
 {
-  m_color_table = vtkm::cont::ColorTable("Cool to Warm");
+  m_color_table = viskores::cont::ColorTable("Cool to Warm");
   //old:
-  typedef vtkm::rendering::MapperRayTracer TracerType;
+  typedef viskores::rendering::MapperRayTracer TracerType;
   m_tracer = std::make_shared<TracerType>();
   this->m_mapper = m_tracer;
   //m_tracer->SetCompositeBackground(false);
@@ -293,7 +293,7 @@ ANARIRenderer::DoExecute()
 
   // create default m_lights
   anari_cpp::Light sun = anari_cpp::newObject<anari_cpp::Light>(m_device, "directional");
-  anari_cpp::setParameter(m_device, sun, "direction", vtkm::Vec3f_32(0.0f, -1.0f, 0.0f));
+  anari_cpp::setParameter(m_device, sun, "direction", viskores::Vec3f_32(0.0f, -1.0f, 0.0f));
   anari_cpp::setParameter(m_device, sun, "irradiance", 2.f);
   anari_cpp::setParameter(m_device, sun, "angularDiameter", 0.00925f);
   anari_cpp::setParameter(m_device, sun, "radiance", 1.f);
@@ -301,7 +301,7 @@ ANARIRenderer::DoExecute()
   m_lights.push_back(sun);
 
   // Build Scene
-  vtkm::interop::anari::ANARIScene scene(m_device);
+  viskores::interop::anari::ANARIScene scene(m_device);
   int num_renderers = m_anari_renderers.size();
   bool isVol, isTri, isGlyph, isPoint;
 
@@ -311,7 +311,7 @@ ANARIRenderer::DoExecute()
   //std::cerr << "num_renderers: " << num_renderers << std::endl;
   for(int i = 0; i < num_renderers; i++)
   {
-    vtkm::Range field_range = m_input->GetGlobalRange(m_field_name).ReadPortal().Get(0);
+    viskores::Range field_range = m_input->GetGlobalRange(m_field_name).ReadPortal().Get(0);
     int num_domains = m_input->GetNumberOfDomains();
     auto a_renderer = m_anari_renderers[i];
     //std::cerr << "for renderer i: " << i << std::endl;
@@ -337,7 +337,7 @@ ANARIRenderer::DoExecute()
         //if(m_input->IsUnstructured())
         //{
         //  std::cerr << "in unstructured" << std::endl;
-        //  auto& mIso = scene.AddMapper(vtkm::interop::anari::ANARIMapperTriangles(m_device));
+        //  auto& mIso = scene.AddMapper(viskores::interop::anari::ANARIMapperTriangles(m_device));
         //  mIso.SetName(("isosurface_" + std::to_string(i)).c_str());
         //  mIso.SetActor({ 
         //    m_input->GetDomain(i).GetCellSet(), 
@@ -349,7 +349,7 @@ ANARIRenderer::DoExecute()
         //  //detail::set_tfn(mIso,m_device,m_color_table,m_range);
         //}
 
-        auto& mVol = scene.AddMapper(vtkm::interop::anari::ANARIMapperVolume(m_device));
+        auto& mVol = scene.AddMapper(viskores::interop::anari::ANARIMapperVolume(m_device));
         mVol.SetName(("volume_" + std::to_string(i)).c_str());
         mVol.SetActor({ 
           m_input->GetDomain(i).GetCellSet(), 
@@ -361,7 +361,7 @@ ANARIRenderer::DoExecute()
       }
       else if(isTri)
       {
-        auto& mTri = scene.AddMapper(vtkm::interop::anari::ANARIMapperTriangles(m_device));
+        auto& mTri = scene.AddMapper(viskores::interop::anari::ANARIMapperTriangles(m_device));
         mTri.SetName(("triangle_" + std::to_string(i)).c_str());
         mTri.SetActor({ 
           m_input->GetDomain(i).GetCellSet(), 
@@ -372,7 +372,7 @@ ANARIRenderer::DoExecute()
       }
       else if(isPoint)
       {
-        auto& mPoint = scene.AddMapper(vtkm::interop::anari::ANARIMapperPoints(m_device));
+        auto& mPoint = scene.AddMapper(viskores::interop::anari::ANARIMapperPoints(m_device));
         mPoint.SetName(("points_" + std::to_string(i)).c_str());
         mPoint.SetActor({ 
           m_input->GetDomain(i).GetCellSet(), 
@@ -384,7 +384,7 @@ ANARIRenderer::DoExecute()
       }
       else if(isGlyph)
       {
-        auto& mGlyph = scene.AddMapper(vtkm::interop::anari::ANARIMapperGlyphs(m_device));
+        auto& mGlyph = scene.AddMapper(viskores::interop::anari::ANARIMapperGlyphs(m_device));
         mGlyph.SetName(("glyphs_" + std::to_string(i)).c_str());
         mGlyph.SetActor({ 
           m_input->GetDomain(i).GetCellSet(), 
@@ -405,12 +405,12 @@ ANARIRenderer::DoExecute()
   int num_renders = static_cast<int>(m_renders.size());
   for(int i = 0; i < num_renders; ++i)
   {
-    vtkm::rendering::Camera cam = m_renders[i].GetCamera();
-    vtkm::rendering::Canvas &canvas = m_renders[i].GetCanvas();
-    vtkm::Vec4f_32 background = m_renders[i].GetBackgroundColor().Components;
+    viskores::rendering::Camera cam = m_renders[i].GetCamera();
+    viskores::rendering::Canvas &canvas = m_renders[i].GetCanvas();
+    viskores::Vec4f_32 background = m_renders[i].GetBackgroundColor().Components;
     std::string img_name = m_renders[i].GetImageName();
-    vtkm::Float32 height = m_renders[i].GetHeight();
-    vtkm::Float32 width = m_renders[i].GetWidth();
+    viskores::Float32 height = m_renders[i].GetHeight();
+    viskores::Float32 width = m_renders[i].GetWidth();
     // Finalize
     //render(scene);
     // m_renderer parameters
@@ -422,7 +422,7 @@ ANARIRenderer::DoExecute()
     //    -- missing parameters: xpan, ypan (through imageRegion)
     //
     const auto cam_zoom = cam.GetZoom();
-    const auto cam_type = cam.GetMode() == vtkm::rendering::Camera::Mode::ThreeD ? "perspective" : "orthographic";
+    const auto cam_type = cam.GetMode() == viskores::rendering::Camera::Mode::ThreeD ? "perspective" : "orthographic";
     const auto cam_dir = cam.GetLookAt() - cam.GetPosition();
     // TODO: what is the correct way to apply zoom?
     const auto cam_pos = cam_zoom > 0
@@ -439,7 +439,7 @@ ANARIRenderer::DoExecute()
     anari_cpp::setParameter(m_device, camera, "far",  cam_range.Max);
     if (cam_type == "perspective")
     {
-      anari_cpp::setParameter(m_device, camera, "fov", cam.GetFieldOfView() / 180.0 * vtkm::Pi());
+      anari_cpp::setParameter(m_device, camera, "fov", cam.GetFieldOfView() / 180.0 * viskores::Pi());
     }
     else
     {
@@ -454,7 +454,7 @@ ANARIRenderer::DoExecute()
     anari_cpp::commitParameters(m_device, world);
 
     // m_frame parameters
-    vtkm::Vec2ui_32 img_size = vtkm::Vec2ui_32(width,height);
+    viskores::Vec2ui_32 img_size = viskores::Vec2ui_32(width,height);
     anari_cpp::setParameter(m_device, m_frame, "size", img_size);
     //anari_cpp::setParameter(m_device, m_frame, "channel.color", ANARI_UFIXED8_VEC4);
     anari_cpp::setParameter(m_device, m_frame, "channel.color", ANARI_FLOAT32_VEC4);
@@ -469,8 +469,8 @@ ANARIRenderer::DoExecute()
     anari_cpp::wait(m_device, m_frame);
 
     //const auto a_colors = anari_cpp::map<uint32_t>(m_device, m_frame, "channel.color");
-    const auto a_colors = anari_cpp::map<vtkm::Vec4f_32>(m_device, m_frame, "channel.color");
-    const auto a_depths = anari_cpp::map<vtkm::Float32>(m_device, m_frame, "channel.depth");
+    const auto a_colors = anari_cpp::map<viskores::Vec4f_32>(m_device, m_frame, "channel.color");
+    const auto a_depths = anari_cpp::map<viskores::Float32>(m_device, m_frame, "channel.depth");
 
     ascent::PNGEncoder encoder;
     encoder.Encode((float *)a_colors.data, a_colors.width, a_colors.height);
@@ -483,19 +483,19 @@ ANARIRenderer::DoExecute()
     {
       int color_index = pixel*4;
       //std::cerr << "color index: " << color_index << std::endl;
-      vtkm::Vec4f_32 color;
+      viskores::Vec4f_32 color;
       //color[0] = a_colors.data[color_index];
       //color[1] = a_colors.data[color_index+1];
       //color[2] = a_colors.data[color_index+2];
       //color[3] = a_colors.data[color_index+3];
       v_colors.Set(pixel,a_colors.data[pixel]);
-      //vtkm::rendering::Color color;
+      //viskores::rendering::Color color;
       //color.SetComponentFromByte(0, a_colors.data[color_index]);
       //color.SetComponentFromByte(1, a_colors.data[color_index + 1]);
       //color.SetComponentFromByte(2, a_colors.data[color_index + 2]);
       //color.SetComponentFromByte(3, a_colors.data[color_index + 3]);
       //std::cerr << "get depth" << std::endl;
-      vtkm::Float32 d = d_pixels[pixel];
+      viskores::Float32 d = d_pixels[pixel];
       //if(d < 10000)
       //  std::cerr << "set depth: " << d << " at pixel: " << pixel << std::endl;
       v_depths.Set(pixel,d);
@@ -529,10 +529,10 @@ ANARIRenderer::PostExecute()
 }
 
 
-Renderer::vtkmCanvasPtr
+Renderer::viskoresCanvasPtr
 ANARIRenderer::GetNewCanvas(int width, int height)
 {
-  return std::make_shared<vtkm::rendering::CanvasRayTracer>(width, height);
+  return std::make_shared<viskores::rendering::CanvasRayTracer>(width, height);
 }
 
 std::string

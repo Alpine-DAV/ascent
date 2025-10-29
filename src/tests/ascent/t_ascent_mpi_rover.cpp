@@ -397,7 +397,7 @@ TEST(ascent_rover, test_xray_mpi_blueprint_multiple_groups)
         ASCENT_INFO("Testing xray extract using MPI on multi-group curv3d example mesh\n");
     }
 
-    if (is_vtkm_disabled(is_root))
+    if (is_viskores_disabled(is_root))
     {
         return; // Returning early is equivalent to passing the test
     }

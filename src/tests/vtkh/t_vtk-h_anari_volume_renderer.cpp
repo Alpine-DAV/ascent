@@ -11,7 +11,7 @@
 #include <vtkh/filters/IsoVolume.hpp>
 #include <vtkh/rendering/Scene.hpp>
 #include <vtkh/rendering/ANARIRenderer.hpp>
-#include "t_vtkm_test_utils.hpp"
+#include "t_viskores_test_utils.hpp"
 
 #include <iostream>
 
@@ -36,7 +36,7 @@ TEST(vtkh_volume_renderer, vtkh_parallel_render_ustructured)
 
   vtkh::IsoVolume iso;
 
-  vtkm::Range iso_range;
+  viskores::Range iso_range;
   iso_range.Min = 10.;
   iso_range.Max = 40.;
   iso.SetRange(iso_range);
@@ -46,10 +46,10 @@ TEST(vtkh_volume_renderer, vtkh_parallel_render_ustructured)
 
   vtkh::DataSet *iso_output = iso.GetOutput();
 
-  vtkm::Bounds bounds = iso_output->GetGlobalBounds();
+  viskores::Bounds bounds = iso_output->GetGlobalBounds();
 
-  vtkm::rendering::Camera camera;
-  vtkm::Vec<vtkm::Float32,3> pos = camera.GetPosition();
+  viskores::rendering::Camera camera;
+  viskores::Vec<viskores::Float32,3> pos = camera.GetPosition();
   pos[0]+=.1;
   pos[1]+=.1;
   camera.SetPosition(pos);
@@ -61,7 +61,7 @@ TEST(vtkh_volume_renderer, vtkh_parallel_render_ustructured)
                                          "volume_unstructured");
 
 
-  vtkm::cont::ColorTable color_map("Cool to Warm");
+  viskores::cont::ColorTable color_map("Cool to Warm");
   color_map.AddPointAlpha(0.0, 0.01);
   color_map.AddPointAlpha(1.0, 0.6);
 
@@ -92,10 +92,10 @@ TEST(vtkh_volume_renderer, vtkh_parallel_render)
     data_set.AddDomain(CreateTestData(i, num_blocks, base_size), i);
   }
 
-  vtkm::Bounds bounds = data_set.GetGlobalBounds();
+  viskores::Bounds bounds = data_set.GetGlobalBounds();
 
-  vtkm::rendering::Camera camera;
-  vtkm::Vec<vtkm::Float32,3> pos = camera.GetPosition();
+  viskores::rendering::Camera camera;
+  viskores::Vec<viskores::Float32,3> pos = camera.GetPosition();
   pos[0]+=.1;
   pos[1]+=.1;
   camera.SetPosition(pos);
@@ -107,7 +107,7 @@ TEST(vtkh_volume_renderer, vtkh_parallel_render)
                                          "volume");
 
 
-  vtkm::cont::ColorTable color_map("Cool to Warm");
+  viskores::cont::ColorTable color_map("Cool to Warm");
   color_map.AddPointAlpha(0.0, 0.01);
   color_map.AddPointAlpha(1.0, 0.6);
   //std::cerr << "input data in UNIT TEST START " << std::endl;

@@ -440,7 +440,7 @@ if(GENTEN_FOUND)
 endif()
 
 if(ANARI_FOUND)
-    list(APPEND ascent_thirdparty_libs vtkm::anari)
+    list(APPEND ascent_thirdparty_libs viskores::anari)
 endif()
 
 ##########################################

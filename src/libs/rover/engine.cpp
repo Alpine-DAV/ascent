@@ -59,7 +59,7 @@ Engine::set_dataset(viskores::cont::DataSet &dataset)
 template<typename Precision>
 void
 <<<<<<< HEAD
-Engine::init_emission(vtkmRayTracing::Ray<Precision> &rays,
+Engine::init_emission(viskoresRayTracing::Ray<Precision> &rays,
                       const int num_energy_groups)
 =======
 Engine::init_emission(viskoresRayTracing::Ray<Precision> &rays,
@@ -128,8 +128,8 @@ Engine::get_num_energy_groups()
 {
 <<<<<<< HEAD
   const std::string absorption = rover::settings["absorption"].as_string();
-  const vtkm::cont::Field &absorption_field = m_dataset.GetField(absorption);
-  vtkm::Id num_absorption_bins = absorption_field.GetData().GetNumberOfComponentsFlat();
+  const viskores::cont::Field &absorption_field = m_dataset.GetField(absorption);
+  viskores::Id num_absorption_bins = absorption_field.GetData().GetNumberOfComponentsFlat();
 
   // If the emission field is set, verify that it has the same number of energy groups
   // as the absorption field
@@ -160,28 +160,18 @@ Engine::get_num_energy_groups()
 >>>>>>> task/9_18_25-1607-move-from-vtk-m-to-viskores
   {
     const std::string emission = rover::settings["emission"].as_string();
-    const vtkm::cont::Field &emission_field = m_dataset.GetField(emission);
-    vtkm::Id num_emission_bins = emission_field.GetData().GetNumberOfComponentsFlat();
+    const viskores::cont::Field &emission_field = m_dataset.GetField(emission);
+viskores::Id num_emission_bins = emission_field.GetData().GetNumberOfComponentsFlat();
 
     if (num_absorption_bins != num_emission_bins)
     {
       m_field_mismatch_error = true;
     }
   }
-<<<<<<< HEAD
 
-  return static_cast<int>(num_absorption_bins);
-}
-
-bool
-Engine::get_field_mismatch_error()
-{
-  return m_field_mismatch_error;
-=======
   viskores::Id num_bins = absorption_size / num_cells;
   ROVER_INFO("Engine::get_num_channels: Detected " << num_bins << " bins");
   return static_cast<int>(num_bins);
->>>>>>> task/9_18_25-1607-move-from-vtk-m-to-viskores
 }
 
 viskoresRange

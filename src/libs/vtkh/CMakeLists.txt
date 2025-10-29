@@ -53,7 +53,7 @@ if(KOKKOS_FOUND)
 endif()
 
 if(ANARI_FOUND)
-    list(APPEND vtkh_base_deps vtkm::anari)
+    list(APPEND vtkh_base_deps viskores::anari)
 endif()
 
 add_subdirectory(utils)

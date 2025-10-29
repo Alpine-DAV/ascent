@@ -29,7 +29,7 @@ endif()
 find_package(anari REQUIRED
          NO_DEFAULT_PATH
          PATHS ${ANARI_DIR})
-if(NOT TARGET vtkm::anari)
-    message(FATAL_ERROR "vtkm::anari not found, check your VTK-m install")
+if(NOT TARGET viskores::anari)
+    message(FATAL_ERROR "viskores::anari not found, check your VTK-m install")
 endif()
 

@@ -3,11 +3,11 @@
 
 #include <vtkh/vtkh_exports.h>
 #include <vtkh/rendering/Renderer.hpp>
-#include <vtkm/rendering/MapperRayTracer.h>
-#include <vtkm/interop/anari/ANARIMapperGlyphs.h>
-#include <vtkm/interop/anari/ANARIMapperPoints.h>
-#include <vtkm/interop/anari/ANARIMapperTriangles.h>
-#include <vtkm/interop/anari/ANARIMapperVolume.h>
+#include <viskores/rendering/MapperRayTracer.h>
+#include <viskores/interop/anari/ANARIMapperGlyphs.h>
+#include <viskores/interop/anari/ANARIMapperPoints.h>
+#include <viskores/interop/anari/ANARIMapperTriangles.h>
+#include <viskores/interop/anari/ANARIMapperVolume.h>
 
 
 namespace vtkh {
@@ -19,7 +19,7 @@ public:
   ANARIRenderer();
   virtual ~ANARIRenderer();
   std::string GetName() const override;
-  static Renderer::vtkmCanvasPtr GetNewCanvas(int width = 1024, int height = 1024);
+  static Renderer::viskoresCanvasPtr GetNewCanvas(int width = 1024, int height = 1024);
   void SetNumberOfSamples(int num_samples);
   void SetRenderers(std::vector<vtkh::ANARIRenderer*> anari_renderers);
   bool IsANARITriangle(ANARIRenderer *renderer);
@@ -34,7 +34,7 @@ protected:
   virtual void DoExecute() override;
   virtual void PostExecute() override;
 
-  std::shared_ptr<vtkm::rendering::MapperRayTracer> m_tracer;
+  std::shared_ptr<viskores::rendering::MapperRayTracer> m_tracer;
 
   int m_num_samples;
   anari_cpp::Device m_device;
