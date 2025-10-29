@@ -402,6 +402,68 @@ Now we add a second render to the same example using every available parameter:
         near_plane: 0.1
         far_plane: 100.1
 
+Rendering Camera Configuration
+---------------------------------
+Ascent supports rendering in both 2D and 3D. For 3D rendering, Ascent supports two primary methods for defining the camera:
+the Ascent native (VTKm style) camera, which is camera-centric, and the VisIt style camera, which is view-centric.
+Both formats provide control over how scenes are rendered, but they differ in terminology, orientation, and internal computation of the view matrix.
+
+2D Camera
+^^^^^^^^^
+2D rendering can be accomplished by defining the 2D view bounds of the rendered scene.
+
+- ``2d`` or ``windowCoords``: Enables 2D rendering mode. Expects a 4-element array defining the 2D view bounds [x0 (left), x1 (right), y0 (bottom), y1 (top)].
+
+Ascent Native (VTKm Style) Camera
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The native Ascent camera follows the VTKm camera model which focuses on defining the camera's physical parameters and orientation in 3D space.
+This camera-centric approach specifies where the camera is located, what it is looking at, and how it is oriented.
+The following parameters are supported:
+
+- ``look_at`` : A 3-element array [x, y, z] indicating the point the camera is directed toward.
+- ``position`` : A 3-element array [x, y, z] indicating the camera's position in space.
+- ``up`` : A 3-element vector that defines the up direction of the camera.
+- ``fov`` : Field of view in degrees for perspective projection.
+- ``xpan`` : Pan offset in the horizontal direction.
+- ``ypan`` : Pan offset in the vertical direction.
+- ``zoom`` : Uniform zoom factor applied to the view.
+- ``near_plane`` : Distance from the camera to the near clipping plane.
+- ``far_plane`` : Distance from the camera to the far clipping plane.
+- ``azimuth`` : Rotates the camera around the up axis.
+- ``elevation`` : Rotates the camera around the right axis.
+
+VisIt Style Camera
+^^^^^^^^^^^^^^^^^^
+Alternatively, the camera can be defined using the VisIt camera parameters which follows a view centric approach. 
+Instead of positioning the camera explicitly, it defines the view using vectors like ``view_normal`` and ``view_up``, which describe the direction and orientation of the camera relative to a focal point.
+The following parameters are supported:
+
+- ``view_normal`` : A vector [x, y, z] indicating the direction to the camera from the ``focus`` point.
+- ``focus`` : A 3D point [x, y, z] indicating the point of focus in the scene.
+- ``view_up`` : A vector indicating which direction is up in the rendered view.
+- ``view_angle`` : Field of view half-angle in degrees. This is equivalent to 2x the ``fov`` value of the Ascent Camera
+- ``parallel_scale`` : Half of the image height in world space.
+- ``near_plane`` : Distance from the ``focus`` point along the ``view_normal`` to the near clipping plane.
+- ``far_plane`` : Distance from the ``focus`` point along the ``view_normal`` to the far clipping plane.
+- ``image_pan`` : A 2-element array [x, y] specifying image-space panning.
+- ``image_zoom`` : Zoom factor for the image.
+
+
+Unsupported VisIt Camera Parameters
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In addition to the above supported VisIt camera parameters, there are a number of VisIt camera parameters that are not completely translatable to the VTKm style camera and are therefore currently ignored.
+
+.. Note::
+   These parameters are safely ignored if provided. They will not influence the rendered image but also will not produce errors.
+
+- ``perspective`` : Boolean flag (true/false) indicating whether to use perspective (true) or parallel (false) projection. In Ascent, only perspective projection is currently used so this flag is ignored.
+- ``eye_angle`` : Used in stereo rendering to control the eye separation angle. Ascent does not currently support stereo rendering, so this has no effect.
+- ``center_of_rotation_set`` : Boolean flag indicating whether ``center_of_rotation`` has been explicitly set. Not used in Ascent.
+- ``center_of_rotation`` : A 3D point used as the pivot for interactive rotation in VisIt. Ascent does not support interactive camera manipulation, so this is ignored.
+- ``axis_3d_scale_flag`` : Boolean flag that enables non-uniform axis scaling (e.g., X:Y:Z aspect ratios). Not supported in Ascent.
+- ``axis_3d_scale`` : A 3D vector specifying per-axis scaling for non-uniform visualizations. No effect in Ascent.
+- ``shear`` : A 3-element array used to apply a shear transformation to the view. Not currently implemented.
+- ``window_valid`` : Internal VisIt flag to indicate whether the current window setup is valid. Irrelevant in Ascent and ignored.
 
 Additional Render Options
 -------------------------

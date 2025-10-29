@@ -98,15 +98,23 @@ parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera)
   // Get the optional camera parameters
   //
 
-  // check for 2d mode first
-  if(camera_node.has_child("2d"))
+  // -------------------- //
+  // 2D camera parameters //
+  // -------------------- //
+  if(camera_node.has_child("2d") || camera_node.has_child("windowCoords"))
   {
     // camera:
     //  2d: [l,r,b,t]
     camera.SetModeTo2D();
-    conduit::Node n;
-    camera_node["2d"].to_float64_array(n);
-    const float64 *view_vals = n.as_float64_ptr();
+    float64_accessor view_vals;
+    if(camera_node.has_child("2d"))
+    {
+        view_vals = camera_node["2d"].value();
+    }
+    else
+    {
+        view_vals = camera_node["windowCoords"].value();
+    }
 
     camera.SetViewRange2D(view_vals[0],
                           view_vals[1],
@@ -114,6 +122,9 @@ parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera)
                           view_vals[3]);
   }
 
+  // ------------------------ //
+  // Ascent camera parameters //
+  // ------------------------ //
   if(camera_node.has_child("look_at"))
   {
       conduit::Node n;
@@ -190,6 +201,113 @@ parse_camera(const conduit::Node camera_node, vtkm::rendering::Camera &camera)
   {
       vtkm::Float64 elevation = camera_node["elevation"].to_float64();
       camera.Elevation(elevation);
+  }
+
+  // ----------------------- //
+  // Visit camera parameters //
+  // ----------------------- //
+  if(camera_node.has_child("focus"))
+  {
+      float64_accessor coords = camera_node["focus"].value();
+      vtkmVec3f look_at(coords[0], coords[1], coords[2]);
+      camera.SetLookAt(look_at);
+  }
+
+  if(camera_node.has_child("view_normal") && 
+     camera_node.has_child("focus") && 
+     camera_node.has_child("view_angle") && 
+     camera_node.has_child("parallel_scale"))
+  {
+      // Compute camera distance using perspective projection formula
+      conduit::float64 view_angle = camera_node["view_angle"].to_float64() * (vtkm::Pi() / 360.0);
+      conduit::float64 parallel_scale = camera_node["parallel_scale"].to_float64();
+      conduit::float64 distance = (parallel_scale) / std::tan(view_angle);
+
+      // Normalize viewNormal vector
+      float64_accessor view = camera_node["view_normal"].value();
+      conduit::float64 norm = std::sqrt(view[0]*view[0] + view[1]*view[1] + view[2]*view[2]);
+      conduit::float64 view_norm[3] = { view[0]/norm, view[1]/norm, view[2]/norm };
+
+      float64_accessor focus = camera_node["focus"].value();
+      conduit::float64 pos[3];
+      for(int i = 0; i < 3; ++i)
+      {
+        pos[i] = focus[i] + view_norm[i] * distance;
+      }
+
+      vtkmVec3f position(pos[0], pos[1], pos[2]);
+      camera.SetPosition(position);
+
+      // Clipping planes require positional information to be computed
+      if(camera_node.has_child("near_plane"))
+      {
+        vtkm::Range clipping_range = camera.GetClippingRange();
+        clipping_range.Min =std::max(CONDUIT_EPSILON, distance + camera_node["near_plane"].to_float64());
+        camera.SetClippingRange(clipping_range);
+      }
+      
+      if(camera_node.has_child("far_plane"))
+      {
+        vtkm::Range clipping_range = camera.GetClippingRange();
+        clipping_range.Max = distance + camera_node["far_plane"].to_float64();
+        camera.SetClippingRange(clipping_range);
+      }
+  }
+
+  if(camera_node.has_child("view_angle"))
+  {
+      camera.SetFieldOfView(camera_node["view_angle"].to_float64() * 2);
+  }
+
+  if(camera_node.has_child("view_up"))
+  {
+      float64_accessor coords = camera_node["view_up"].value();
+      vtkmVec3f up(coords[0], coords[1], coords[2]);
+      vtkm::Normalize(up);
+      camera.SetViewUp(up);
+  }
+
+  if(camera_node.has_child("image_pan"))
+  {
+      float64_accessor pan_xy = camera_node["image_pan"].value();
+      camera.Pan(pan_xy[0], pan_xy[1]);
+  }
+
+  if(camera_node.has_child("image_zoom"))
+  {
+      camera.Zoom(zoom_to_vtkm_zoom(camera_node["image_zoom"].to_float64()));
+  }
+
+  if(camera_node.has_child("perspective"))
+  {
+    ASCENT_INFO("Visit camera parameter \"perspective\" is recognized but currently has no effect");
+  }
+
+  if(camera_node.has_child("eye_angle"))
+  {
+    ASCENT_INFO("Visit camera parameter \"eye_angle\" is recognized but currently has no effect");
+  }
+
+  if(camera_node.has_child("center_of_rotation_set") ||
+     camera_node.has_child("center_of_rotation"))
+  {
+    ASCENT_INFO("Visit camera parameter \"center_of_rotation\" and \"center_of_rotation_set\" are recognized but currently have no effect");
+  }
+
+  if(camera_node.has_child("axis_3d_scale_flag") ||
+     camera_node.has_child("axis_3d_scale"))
+  {
+    ASCENT_INFO("Visit camera parameter \"axis_3d_scale\" and \"axis_3d_scale_flag\" are recognized but currently have no effect");
+  }
+
+  if(camera_node.has_child("shear"))
+  {
+    ASCENT_INFO("Visit camera parameter \"shear\" is recognized but currently has no effect");
+  }
+
+  if(camera_node.has_child("window_valid"))
+  {
+    ASCENT_INFO("Visit camera parameter \"window_valid\" is recognized but currently has no effect");
   }
 }
 
