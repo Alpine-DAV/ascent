@@ -576,10 +576,10 @@ TEST(ascent_render_2d, test_render_2d_cam)
     scenes["scene1/renders/r1/camera/2d"] = {-10.0,10.0,-10.0,10.0};
 
     scenes["scene1/renders/r2/image_prefix"] =  output_file_v2;
-    scenes["scene1/renders/r2/camera/2d"] = {-20.0,20.0,-20.0,20.0};
+    scenes["scene1/renders/r2/camera/windowCoords"] = {-20.0,20.0,-20.0,20.0};
 
     scenes["scene1/renders/r3/image_prefix"] =  output_file_v3;
-    scenes["scene1/renders/r3/camera/2d"] = {-7.0,3.0,0.0,4.0};
+    scenes["scene1/renders/r3/camera/windowCoords"] = {-7.0,3.0,0.0,4.0};
 
     scenes["scene1/renders/r4/image_prefix"] = output_file_v4;
     scenes["scene1/renders/r4/camera/2d"] = {-10.0,0.0,-10.0,10.0};
