@@ -2242,7 +2242,7 @@ ExecScene::execute()
     detail::AscentScene *scene = input<detail::AscentScene>(0);
     std::vector<vtkh::Render> * renders = input<std::vector<vtkh::Render>>(1);
     int renderer_count = scene->GetRendererCount();
-    scene->Execute(*renders);
+    scene->execute(*renders);
 
     // the images should exist now so add them to the image list
     // this can be used for the web server or jupyter

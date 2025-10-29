@@ -209,7 +209,7 @@ parse_camera(const conduit::Node camera_node, viskores::rendering::Camera &camer
   if(camera_node.has_child("focus"))
   {
       float64_accessor coords = camera_node["focus"].value();
-      vtkmVec3f look_at(coords[0], coords[1], coords[2]);
+      viskoresVec3f look_at(coords[0], coords[1], coords[2]);
       camera.SetLookAt(look_at);
   }
 
@@ -219,7 +219,7 @@ parse_camera(const conduit::Node camera_node, viskores::rendering::Camera &camer
      camera_node.has_child("parallel_scale"))
   {
       // Compute camera distance using perspective projection formula
-      conduit::float64 view_angle = camera_node["view_angle"].to_float64() * (vtkm::Pi() / 360.0);
+      conduit::float64 view_angle = camera_node["view_angle"].to_float64() * (viskores::Pi() / 360.0);
       conduit::float64 parallel_scale = camera_node["parallel_scale"].to_float64();
       conduit::float64 distance = (parallel_scale) / std::tan(view_angle);
 
@@ -235,20 +235,20 @@ parse_camera(const conduit::Node camera_node, viskores::rendering::Camera &camer
         pos[i] = focus[i] + view_norm[i] * distance;
       }
 
-      vtkmVec3f position(pos[0], pos[1], pos[2]);
+      viskoresVec3f position(pos[0], pos[1], pos[2]);
       camera.SetPosition(position);
 
       // Clipping planes require positional information to be computed
       if(camera_node.has_child("near_plane"))
       {
-        vtkm::Range clipping_range = camera.GetClippingRange();
+        viskores::Range clipping_range = camera.GetClippingRange();
         clipping_range.Min =std::max(CONDUIT_EPSILON, distance + camera_node["near_plane"].to_float64());
         camera.SetClippingRange(clipping_range);
       }
       
       if(camera_node.has_child("far_plane"))
       {
-        vtkm::Range clipping_range = camera.GetClippingRange();
+        viskores::Range clipping_range = camera.GetClippingRange();
         clipping_range.Max = distance + camera_node["far_plane"].to_float64();
         camera.SetClippingRange(clipping_range);
       }
@@ -262,8 +262,8 @@ parse_camera(const conduit::Node camera_node, viskores::rendering::Camera &camer
   if(camera_node.has_child("view_up"))
   {
       float64_accessor coords = camera_node["view_up"].value();
-      vtkmVec3f up(coords[0], coords[1], coords[2]);
-      vtkm::Normalize(up);
+      viskoresVec3f up(coords[0], coords[1], coords[2]);
+      viskores::Normalize(up);
       camera.SetViewUp(up);
   }
 
@@ -275,7 +275,7 @@ parse_camera(const conduit::Node camera_node, viskores::rendering::Camera &camer
 
   if(camera_node.has_child("image_zoom"))
   {
-      camera.Zoom(zoom_to_vtkm_zoom(camera_node["image_zoom"].to_float64()));
+      camera.Zoom(zoom_to_viskores_zoom(camera_node["image_zoom"].to_float64()));
   }
 
   if(camera_node.has_child("perspective"))
