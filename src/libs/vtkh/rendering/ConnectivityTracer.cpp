@@ -234,7 +234,7 @@ void ConnectivityTracer::SetVolumeData(const viskores::cont::Field& scalarField,
 
 // Absorption-only case
 void ConnectivityTracer::SetEnergyData(const viskores::cont::Field& absorption,
-                                       const viskores::Int32 numBins,
+                                       const viskores::Int32 numEnergyGroups,
                                        const viskores::cont::UnknownCellSet& cellSet,
                                        const viskores::cont::CoordinateSystem& coords)
 {
@@ -253,19 +253,10 @@ void ConnectivityTracer::SetEnergyData(const viskores::cont::Field& absorption,
   NumEnergyGroups = numEnergyGroups;
 
   // Do some basic range checking
-  if (numBins < 1)
-    throw viskores::cont::ErrorBadValue("Number of energy bins is less than 1");
+  if (NumEnergyGroups < 1)
+    throw viskores::cont::ErrorBadValue("Number of energy groups is less than 1");
   viskores::Id binCount = ScalarField.GetNumberOfValues();
   viskores::Id cellCount = this->GetNumberOfMeshCells();
-  if (cellCount != (binCount / viskores::Id(numBins)))
-  {
-    std::stringstream message;
-    message << "Invalid number of absorption bins\n";
-    message << "Number of cells: " << cellCount << "\n";
-    message << "Number of field values: " << binCount << "\n";
-    message << "Number of bins: " << numBins << "\n";
-    throw viskores::cont::ErrorBadValue(message.str());
-  }
 
   //TODO: Need a way to tell if we have been updated
   this->Integrator = Energy;
@@ -284,7 +275,7 @@ void ConnectivityTracer::SetEnergyData(const viskores::cont::Field& absorption,
 
 // Absorption + Emission case
 void ConnectivityTracer::SetEnergyData(const viskores::cont::Field& absorption,
-                                       const viskores::Int32 numBins,
+                                       const viskores::Int32 numEnergyGroups,
                                        const viskores::cont::UnknownCellSet& cellSet,
                                        const viskores::cont::CoordinateSystem& coords,
                                        const viskores::cont::Field& emission)
@@ -292,7 +283,7 @@ void ConnectivityTracer::SetEnergyData(const viskores::cont::Field& absorption,
   bool isSupportedField = absorption.GetAssociation() == viskores::cont::Field::Association::Cells;
   if (!isSupportedField)
     throw viskores::cont::ErrorBadValue("Absorption Field '" + absorption.GetName() +
-                                    "' not accociated with cells");
+                                    "' not associated with cells");
   ScalarField = absorption;
   CellSet = cellSet;
   Coords = coords;
@@ -310,31 +301,13 @@ void ConnectivityTracer::SetEnergyData(const viskores::cont::Field& absorption,
     EmissionField = emission;
   }
   // Do some basic range checking
-  if (numBins < 1)
-    throw viskores::cont::ErrorBadValue("Number of energy bins is less than 1");
+  if (NumEnergyGroups < 1)
+    throw viskores::cont::ErrorBadValue("Number of energy groups is less than 1");
   viskores::Id binCount = ScalarField.GetNumberOfValues();
   viskores::Id cellCount = this->GetNumberOfMeshCells();
-  if (cellCount != (binCount / viskores::Id(numBins)))
-  {
-    std::stringstream message;
-    message << "Invalid number of absorption bins\n";
-    message << "Number of cells: " << cellCount << "\n";
-    message << "Number of field values: " << binCount << "\n";
-    message << "Number of bins: " << numBins << "\n";
-    throw viskores::cont::ErrorBadValue(message.str());
-  }
   if (HasEmission)
   {
     binCount = EmissionField.GetNumberOfValues();
-    if (cellCount != (binCount / viskores::Id(numBins)))
-    {
-      std::stringstream message;
-      message << "Invalid number of emission bins\n";
-      message << "Number of cells: " << cellCount << "\n";
-      message << "Number of field values: " << binCount << "\n";
-      message << "Number of bins: " << numBins << "\n";
-      throw viskores::cont::ErrorBadValue(message.str());
-    }
   }
   //TODO: Need a way to tell if we have been updated
   this->Integrator = Energy;
@@ -689,13 +662,13 @@ public:
 class Integrate : public viskores::worklet::WorkletMapField
 {
 private:
-  const viskores::Int32 NumBins;
+  const viskores::Int32 NumEnergyGroups;
   const viskores::Float32 UnitScalar;
 
 public:
   VISKORES_CONT
-  Integrate(const viskores::Int32 numBins, const viskores::Float32 unitScalar)
-    : NumBins(numBins)
+  Integrate(const viskores::Int32 numEnergyGroups, const viskores::Float32 unitScalar)
+    : NumEnergyGroups(numEnergyGroups)
     , UnitScalar(unitScalar)
   {
   }
@@ -726,10 +699,17 @@ public:
     }
 
     FloatType segmentLength = exitDistance - enterDistance;
-    viskores::Id rayOffset = NumBins * rayIndex;
-    viskores::Id cellOffset = NumBins * currentCell;
+    viskores::Id rayOffset = NumEnergyGroups * rayIndex;
 
-    for (viskores::Int32 i = 0; i < NumBins; i++)
+    // Get the cell value and use VecTraits to handle both scalar and vector fields
+    using AbsValueType = typename CellDataPortalType::ValueType;
+    using AbsVecTraits = viskores::VecTraits<AbsValueType>;
+    
+    BOUNDS_CHECK(absorbtionData, currentCell);
+    AbsValueType absorptionCell = absorbtionData.Get(currentCell);
+    
+    // Use VecTraits for uniform handling - dispatcher ensures we get the right array type
+    for (viskores::Int32 i = 0; i < NumEnergyGroups; i++)
     {
       FloatType absorb = static_cast<FloatType>(AbsVecTraits::GetComponent(absorptionCell, i));
       absorb *= UnitScalar;
@@ -747,13 +727,13 @@ public:
 class IntegrateEmission : public viskores::worklet::WorkletMapField
 {
 private:
-  const viskores::Int32 NumBins;
+  const viskores::Int32 NumEnergyGroups;
   const viskores::Float32 UnitScalar;
   bool DivideEmisByAbsorb;
 
 public:
   VISKORES_CONT
-  IntegrateEmission(const viskores::Int32 numBins,
+  IntegrateEmission(const viskores::Int32 numEnergyGroups,
                     const viskores::Float32 unitScalar,
                     const bool divideEmisByAbsorb)
     : NumEnergyGroups(numEnergyGroups)
@@ -797,9 +777,19 @@ public:
     }
 
     FloatType segmentLength = exitDistance - enterDistance;
-    viskores::Id rayOffset = NumBins * rayIndex;
-    viskores::Id cellOffset = NumBins * currentCell;
+    viskores::Id rayOffset = NumEnergyGroups * rayIndex;
 
+    // Get the cell values to determine if we have vector or scalar fields
+    using AbsValueType = typename CellAbsPortalType::ValueType;
+    using EmisValueType = typename CellEmisPortalType::ValueType;
+    using AbsVecTraits = viskores::VecTraits<AbsValueType>;
+    using EmisVecTraits = viskores::VecTraits<EmisValueType>;
+    
+    BOUNDS_CHECK(absorptionData, currentCell);
+    AbsValueType absorptionCell = absorptionData.Get(currentCell);
+    BOUNDS_CHECK(emissionData, currentCell);
+    EmisValueType emissionCell = emissionData.Get(currentCell);
+    
     //
     // Traditionally, we would only keep track of a single intensity value per ray
     // per bin and we would integrate from the beginning to end of the ray. In a
@@ -818,7 +808,7 @@ public:
 
     if (DivideEmisByAbsorb)
     {
-      for (viskores::Int32 i = 0; i < NumBins; i++)
+      for (viskores::Int32 i = 0; i < NumEnergyGroups; i++)
       {
         FloatType absorb = static_cast<FloatType>(AbsVecTraits::GetComponent(absorptionCell, i));
         FloatType emission = static_cast<FloatType>(EmisVecTraits::GetComponent(emissionCell, i));
@@ -826,7 +816,7 @@ public:
         absorb *= UnitScalar;
         emission *= UnitScalar;
         FloatType tmp = viskores::Exp(-absorb * segmentLength);
-  
+
         const int rayOffsetI = rayOffset + i;
         BOUNDS_CHECK(absorptionBins, rayOffsetI);
         FloatType absorbIntensity = static_cast<FloatType>(absorptionBins.Get(rayOffsetI));
@@ -843,7 +833,7 @@ public:
     }
     else // (!DivideEmisByAbsorb)
     {
-      for (viskores::Int32 i = 0; i < NumBins; i++)
+      for (viskores::Int32 i = 0; i < NumEnergyGroups; i++)
       {
         FloatType absorb = static_cast<FloatType>(AbsVecTraits::GetComponent(absorptionCell, i));
         FloatType emission = static_cast<FloatType>(EmisVecTraits::GetComponent(emissionCell, i));
@@ -851,7 +841,7 @@ public:
         absorb *= UnitScalar;
         emission *= UnitScalar;
         FloatType tmp = viskores::Exp(-absorb * segmentLength);
-  
+
         const int rayOffsetI = rayOffset + i;
         BOUNDS_CHECK(absorptionBins, rayOffsetI);
         FloatType absorbIntensity = static_cast<FloatType>(absorptionBins.Get(rayOffsetI));
@@ -1340,15 +1330,15 @@ void ConnectivityTracer::IntegrateCells(viskores::rendering::raytracing::Ray<Flo
   {
     viskores::cont::ArrayHandle<FloatType> absorption = rays.Buffers.at(0).Buffer;
     viskores::cont::ArrayHandle<FloatType> emission = rays.GetBuffer("emission").Buffer;
-    viskores::worklet::DispatcherMapField<IntegrateEmission> dispatcher(IntegrateEmission(rays.Buffers.at(0).GetNumChannels(),
-                                                                    UnitScalar,
-                                                                    DivideEmisByAbsorb));
+    viskores::worklet::DispatcherMapField<IntegrateEmission> dispatcher(IntegrateEmission(NumEnergyGroups,
+                                                                                      UnitScalar,
+                                                                                      DivideEmisByAbsorb));
     dispatcher.Invoke(rays.Status,
                       *(tracker.EnterDist),
                       *(tracker.ExitDist),
                       rays.Distance,
-                      viskores::rendering::raytracing::GetScalarFieldArray(ScalarField),
-                      viskores::rendering::raytracing::GetScalarFieldArray(EmissionField),
+                      ScalarField.GetData(),
+                      EmissionField.GetData(),
                       absorption,
                       emission,
                       optical_depth,
@@ -1356,14 +1346,12 @@ void ConnectivityTracer::IntegrateCells(viskores::rendering::raytracing::Ray<Flo
   }
   else
   {
-    viskores::worklet::DispatcherMapField<Integrate> dispatcher(Integrate(rays.Buffers.at(0).GetNumChannels(),
-                                                                      UnitScalar));
+    viskores::worklet::DispatcherMapField<Integrate> dispatcher(Integrate(NumEnergyGroups, UnitScalar));
     dispatcher.Invoke(rays.Status,
                       *(tracker.EnterDist),
                       *(tracker.ExitDist),
                       rays.Distance,
                       ScalarField.GetData(),
-                      viskores::rendering::raytracing::GetScalarFieldArray(ScalarField),
                       optical_depth,
                       rays.HitIdx);
   }

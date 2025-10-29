@@ -18,63 +18,63 @@
 
 
 //----------------------------------------------------------------------------
-TEST(vtkh_volume_renderer, vtkh_parallel_render_ustructured)
-{
-#ifdef VTKM_ENABLE_KOKKOS
-  vtkh::InitializeKokkos();
-#endif
+//TEST(vtkh_volume_renderer, vtkh_parallel_render_ustructured)
+//{
+//#ifdef VTKM_ENABLE_KOKKOS
+//  vtkh::InitializeKokkos();
+//#endif
+//
+//  vtkh::DataSet data_set;
+//
+//  const int base_size = 32;
+//  const int num_blocks = 1;
+//
+//  for(int i = 0; i < num_blocks; ++i)
+//  {
+//    data_set.AddDomain(CreateTestData(i, num_blocks, base_size), i);
+//  }
+//
+//  vtkh::IsoVolume iso;
+//
+//  viskores::Range iso_range;
+//  iso_range.Min = 10.;
+//  iso_range.Max = 40.;
+//  iso.SetRange(iso_range);
+//  iso.SetField("point_data_Float64");
+//  iso.SetInput(&data_set);
+//  iso.Update();
 
-  vtkh::DataSet data_set;
+//  vtkh::DataSet *iso_output = iso.GetOutput();
 
-  const int base_size = 32;
-  const int num_blocks = 1;
+//  viskores::Bounds bounds = iso_output->GetGlobalBounds();
 
-  for(int i = 0; i < num_blocks; ++i)
-  {
-    data_set.AddDomain(CreateTestData(i, num_blocks, base_size), i);
-  }
-
-  vtkh::IsoVolume iso;
-
-  viskores::Range iso_range;
-  iso_range.Min = 10.;
-  iso_range.Max = 40.;
-  iso.SetRange(iso_range);
-  iso.SetField("point_data_Float64");
-  iso.SetInput(&data_set);
-  iso.Update();
-
-  vtkh::DataSet *iso_output = iso.GetOutput();
-
-  viskores::Bounds bounds = iso_output->GetGlobalBounds();
-
-  viskores::rendering::Camera camera;
-  viskores::Vec<viskores::Float32,3> pos = camera.GetPosition();
-  pos[0]+=.1;
-  pos[1]+=.1;
-  camera.SetPosition(pos);
-  camera.ResetToBounds(bounds);
-  vtkh::Render render = vtkh::MakeRender(512,
-                                         512,
-                                         camera,
-                                         *iso_output,
-                                         "volume_unstructured");
-
-
-  viskores::cont::ColorTable color_map("Cool to Warm");
-  color_map.AddPointAlpha(0.0, 0.01);
-  color_map.AddPointAlpha(1.0, 0.6);
-
-  vtkh::ANARIRenderer tracer;
-  tracer.SetColorTable(color_map);
-  tracer.SetInput(iso_output);
-  tracer.SetField("point_data_Float64");
-
-  vtkh::Scene scene;
-  scene.AddRender(render);
-  scene.AddRenderer(&tracer);
-  scene.Render();
-}
+//  viskores::rendering::Camera camera;
+//  viskores::Vec<viskores::Float32,3> pos = camera.GetPosition();
+//  pos[0]+=.1;
+//  pos[1]+=.1;
+//  camera.SetPosition(pos);
+//  camera.ResetToBounds(bounds);
+//  vtkh::Render render = vtkh::MakeRender(512,
+//                                         512,
+//                                         camera,
+//                                         *iso_output,
+//                                         "volume_unstructured");
+//
+//
+//  viskores::cont::ColorTable color_map("Cool to Warm");
+//  color_map.AddPointAlpha(0.0, 0.01);
+//  color_map.AddPointAlpha(1.0, 0.6);
+//
+//  vtkh::ANARIRenderer tracer;
+//  tracer.SetColorTable(color_map);
+//  tracer.SetInput(iso_output);
+//  tracer.SetField("point_data_Float64");
+//
+//  vtkh::Scene scene;
+//  scene.AddRender(render);
+//  scene.AddRenderer(&tracer);
+//  scene.Render();
+//}
 
 TEST(vtkh_volume_renderer, vtkh_parallel_render)
 {

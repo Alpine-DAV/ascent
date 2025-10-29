@@ -442,12 +442,12 @@ TypedScheduler<FloatType>::trace_rays()
   if (m_num_local_domains == 0 || m_partial_images.empty())
   {
     PartialImage<FloatType> partial_image;
-    partial_image.m_transmission = viskoresRayTracing::ChannelBuffer<FloatType>(num_channels, 0);
+    partial_image.m_transmission = viskoresRayTracing::ChannelBuffer<FloatType>(num_energy_groups, 0);
 
     // Add an intensity buffer if the emission field is set
     if (m_has_emission)
     {
-      partial_image.m_intensity = viskoresRayTracing::ChannelBuffer<FloatType>(num_channels, 0);
+      partial_image.m_intensity = viskoresRayTracing::ChannelBuffer<FloatType>(num_energy_groups, 0);
     }
 
     m_partial_images.push_back(partial_image);

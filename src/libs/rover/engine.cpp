@@ -8,8 +8,8 @@
 #include <engine.hpp>
 #include <rover_exceptions.hpp>
 #include <utils/rover_logging.hpp>
-#include <ascent_logging.hpp>
 #include <viskores/cont/DefaultTypes.h>
+#include <ascent_logging.hpp>
 
 namespace rover
 {
@@ -58,13 +58,8 @@ Engine::set_dataset(viskores::cont::DataSet &dataset)
 
 template<typename Precision>
 void
-<<<<<<< HEAD
 Engine::init_emission(viskoresRayTracing::Ray<Precision> &rays,
                       const int num_energy_groups)
-=======
-Engine::init_emission(viskoresRayTracing::Ray<Precision> &rays,
-                      const int num_bins)
->>>>>>> task/9_18_25-1607-move-from-vtk-m-to-viskores
 {
   if (rover::settings.has_child("emission"))
   {
@@ -126,7 +121,6 @@ Engine::partial_trace(Ray64 &rays, PartialVector64 &partials)
 int
 Engine::get_num_energy_groups()
 {
-<<<<<<< HEAD
   const std::string absorption = rover::settings["absorption"].as_string();
   const viskores::cont::Field &absorption_field = m_dataset.GetField(absorption);
   viskores::Id num_absorption_bins = absorption_field.GetData().GetNumberOfComponentsFlat();
@@ -134,34 +128,10 @@ Engine::get_num_energy_groups()
   // If the emission field is set, verify that it has the same number of energy groups
   // as the absorption field
   if (rover::settings.has_child("emission"))
-=======
-  viskores::Id absorption_size = 0;
-  ArraySizeFunctor functor(&absorption_size);
-  const std::string absorption = rover::settings["absorption"].as_string();
-  m_dataset.GetField(absorption).
-                     GetData().
-                     CastAndCallForTypes<viskores::TypeListAll, VISKORES_DEFAULT_STORAGE_LIST>(functor);
-  viskores::Id num_cells = m_dataset.GetCellSet().GetNumberOfCells();
-
-  // TODO: Seemingly redundant assert followed by a check that num_cells == 0
-  assert(num_cells > 0);
-  assert(absorption_size > 0);
-  if (num_cells == 0)
-  {
-    ROVER_ERROR("Error - Engine::get_num_channels: num cells is 0"
-                << "\n        num cells " << num_cells
-                << "\n        field size " <<a bsorption_size);
-    m_dataset.PrintSummary(std::cerr);
-    throw RoverException("Failed to detect bins. Num cells cannot be 0\n");
-  }
-
-  viskores::Id modulo = absorption_size % num_cells;
-  if (modulo != 0)
->>>>>>> task/9_18_25-1607-move-from-vtk-m-to-viskores
   {
     const std::string emission = rover::settings["emission"].as_string();
     const viskores::cont::Field &emission_field = m_dataset.GetField(emission);
-viskores::Id num_emission_bins = emission_field.GetData().GetNumberOfComponentsFlat();
+    viskores::Id num_emission_bins = emission_field.GetData().GetNumberOfComponentsFlat();
 
     if (num_absorption_bins != num_emission_bins)
     {
@@ -169,9 +139,13 @@ viskores::Id num_emission_bins = emission_field.GetData().GetNumberOfComponentsF
     }
   }
 
-  viskores::Id num_bins = absorption_size / num_cells;
-  ROVER_INFO("Engine::get_num_channels: Detected " << num_bins << " bins");
-  return static_cast<int>(num_bins);
+  return static_cast<int>(num_absorption_bins);
+}
+
+bool
+Engine::get_field_mismatch_error()
+{
+  return m_field_mismatch_error;
 }
 
 viskoresRange

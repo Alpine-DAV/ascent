@@ -17,7 +17,7 @@ MESSAGE(STATUS "Looking for ANARI using ANARI_DIR = ${ANARI_DIR}")
 set(ANARI_DIR_ORIG ${ANARI_DIR})
 set(ANARI_FOUND TRUE)
 
-file(GLOB ANARI_DIR "${ANARI_DIR}/lib/cmake/anari-*")
+file(GLOB ANARI_DIR "${ANARI_DIR}/lib64/cmake/anari-*")
 if(NOT EXISTS ${ANARI_DIR}/anariConfig.cmake)
     MESSAGE(FATAL_ERROR "Could not find ANARI CMake at (${ANARI_DIR}/lib/cmake/anari-*)")
 endif()
