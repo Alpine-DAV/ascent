@@ -670,7 +670,7 @@ fi # if enable_hip || enable_sycl
 ################
 # anari
 ################
-anari_version=0.14.0
+anari_version=0.14.1
 anari_src_dir=$(ospath ${source_dir}/ANARI-SDK-${anari_version})
 anari_build_dir=$(ospath ${build_dir}/anari-v${anari_version})
 anari_install_dir=$(ospath ${install_dir}/anari-v${anari_version}/)
@@ -768,7 +768,8 @@ if ${build_barney}; then
 # Clone Barney repo with submodules if not already present
 if [ ! -d "${barney_src_dir}" ]; then
   echo "**** Cloning Barney v${barney_version} from GitHub"
-  git clone --branch v${barney_version} --recursive https://github.com/ingowald/barney.git ${barney_src_dir}
+  git clone --recursive -b devel https://github.com/ingowald/barney.git ${barney_src_dir}
+  #git clone --branch v${barney_version} --recursive https://github.com/ingowald/barney.git ${barney_src_dir}
 fi
 #if [ ! -d ${barney_src_dir} ]; then
 #  echo "**** Downloading ${barney_tarball}"
