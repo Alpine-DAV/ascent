@@ -55,10 +55,11 @@ struct EmissionPartial
   double                 m_depth;
   std::vector<FloatType> m_bins;
   std::vector<FloatType> m_emission_bins;
+  std::vector<FloatType> m_optical_depth_bins;
 
   EmissionPartial()
     : m_pixel_id(0),
-      m_depth(0.f)
+      m_depth(0.0f)
   {
 
   }
@@ -102,19 +103,29 @@ struct EmissionPartial
   {
     const int num_bins = static_cast<int>(m_bins.size());
     assert(num_bins == (int)other.m_bins.size());
-    for(int i = 0; i < num_bins; ++i)
+    for (int i = 0; i < num_bins; i++)
     {
       m_bins[i] *= other.m_bins[i];
     }
   }
 
-  inline void blend_emission(EmissionPartial<FloatType> &other)
+  inline void blend_emission(const EmissionPartial<FloatType> &other)
   {
     const int num_bins = static_cast<int>(m_bins.size());
     assert(num_bins == (int)other.m_bins.size());
-    for(int i = 0; i < num_bins; ++i)
+    for (int i = 0; i < num_bins; i++)
     {
       m_emission_bins[i] *= other.m_bins[i];
+    }
+  }
+
+  inline void blend_optical_depth(const EmissionPartial<FloatType> &other)
+  {
+    const int num_bins = static_cast<int>(m_optical_depth_bins.size());
+    assert(num_bins == (int)other.m_optical_depth_bins.size());
+    for (int i = 0; i < num_bins; i++)
+    {
+      m_optical_depth_bins[i] += other.m_optical_depth_bins[i];
     }
   }
 
@@ -122,21 +133,12 @@ struct EmissionPartial
   {
     const int num_bins = static_cast<int>(m_bins.size());
     assert(num_bins == (int)other.m_bins.size());
-    for(int i = 0; i < num_bins; ++i)
+    for (int i = 0; i < num_bins; i++)
     {
       m_emission_bins[i] += other.m_emission_bins[i];
     }
   }
-
-  static void composite_background(std::vector<EmissionPartial> &partials,
-                                   const std::vector<FloatType> &background)
-  {
-    //for(
-  }
-
 };
 
 } // namespace rover
-
-
 #endif

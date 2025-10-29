@@ -5,11 +5,16 @@ set(vtkh_rendering_headers
     ANARIRenderer.hpp
     Annotator.hpp
     AutoCamera.hpp
+    ConnectivityProxy.hpp
+    ConnectivityTracer.hpp
     LineRenderer.hpp
+    MeshConnectivityBuilder.hpp
+    MeshConnectivityContainers.hpp
     MeshRenderer.hpp
     RayTracer.hpp
     Render.hpp
     Renderer.hpp
+    PartialComposite.hpp
     PointRenderer.hpp
     ScalarRenderer.hpp
     Scene.hpp
@@ -20,7 +25,11 @@ set(vtkh_rendering_sources
     ANARIRenderer.cpp
     Annotator.cpp
     AutoCamera.cpp
+    ConnectivityProxy.cpp
+    ConnectivityTracer.cpp
     LineRenderer.cpp
+    MeshConnectivityBuilder.cpp
+    MeshConnectivityContainers.cpp
     MeshRenderer.cpp
     RayTracer.cpp
     Render.cpp

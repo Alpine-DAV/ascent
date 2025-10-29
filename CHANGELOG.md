@@ -7,6 +7,48 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ## Unreleased
 ### Preferred dependency versions for ascent@develop
 - cmake@3.23 or newer
+- conduit@0.9.5
+- vtk-m@2.3.0
+- raja@v2025.09.0
+- umpire@v2025.09.0
+- camp@v2025.09.2
+- kokkos@4.7.00
+- mfem@4.8
+
+### Added
+- Added ability to define cameras for rendering using visit camera view parameters
+
+## [0.9.5] - Released 2025-09-10
+### Preferred dependency versions for ascent@0.9.5
+- cmake@3.23 or newer
+- conduit@0.9.5
+- vtk-m@2.3.0
+- raja@v2025.03.1
+- umpire@v2025.03.0
+- camp@v2025.03.0
+- kokkos@4.7.00
+- mfem@4.8
+
+### Added
+- Added 1D & 2D contour capabilities, but 1D is limited to extracts until a viskroes fix
+- Added support for Absorption-only Rover (XRay Raytracing).
+- Added optical depth compositing for Rover (XRay Raytracing).
+- Added Caliper annotations for outer Ascent interface, Ascent Relay, and Rover (XRay Raytracing).
+- Added caching functionality for the actions, when `cache_actions` option is `true`. When used, actions are only read once.
+- Added El Capitan build script. 
+
+### Changed
+- Fixed issues with MPI use of XRay Raytracing
+- Changed scene bounds calculation to only use topologies plotted, instead of all topologies.
+- Updated to Conduit 0.9.5.
+- Updated to Kokkos 4.7.00.
+
+### Fixed
+- Fixed a bug with foreground and background settings for mesh plots.
+
+## [0.9.4] - Released 2025-07-18
+### Preferred dependency versions for  ascent@0.9.4
+- cmake@3.23 or newer
 - conduit@0.9.4
 - vtk-m@2.3.0
 - raja@v2025.03.1
@@ -17,6 +59,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ### Added
 - Added ability to specify either fields (list of strings) or field (string) for uniform grid sample filter
+- Added a `sample` filter that allows you to sample field values at a list of explicit points or along a line.
 - Added use case to vtkh data adaptor for blueprint meshes with explicit mesh coordinates with implicit topology (a blueprint structured mesh).
 - Added a compressed color table format.
 - Added action options relating to logging functionality including `open_log`, `flush_log`, and `close_log` to toggle logging as well as `set_log_threshold` and `set_echo_threshold` to control logging and standard output levels.
@@ -39,11 +82,13 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added support for special keyword formatting for output paths. Current supported keywords include
 `cycle`, `family`, and `time`.
 - Added support for formatting of output paths for extracts.
-
+- Added support for parallel timestep mode to replay allowing for parallel in time processes in addition to pre-existing distributed-memory parallelism.
 
 ### Changed
+- Extensive improvements to Rover X Ray Ray Tracing Diagnostic features (the `xray` extract).
 - Changed the replay utility's binary names such that `replay_ser` is now `ascent_replay` and `raplay_mpi` is now `ascent_replay_mpi`. This will help prevent potential name collisions with other tools that also have replay utilities.
 - Updated several preferred tpl versions
+- Changed bounding box used for default scene bounds to be the union of all topologies used in scene plots. Perviously, the union of all topologies in the dataset where used. 
 
 ### Fixed
 - Fixed WarpX filter that was not allowing for rendering of the output streamlines

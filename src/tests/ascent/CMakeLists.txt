@@ -73,6 +73,7 @@ set(BASIC_TESTS t_ascent_smoke
                 t_ascent_triggers
                 t_ascent_blueprint_reductions
                 t_ascent_sampling
+                t_ascent_sample
                 t_ascent_uniform_grid
                 t_ascent_mir
                 t_ascent_hola)
@@ -116,7 +117,8 @@ if(VTKM_FOUND)
    list(APPEND BASIC_TESTS t_ascent_ascent_runtime)
    list(APPEND VTKH_DEP_TESTS t_ascent_vtkh_data_adapter)
    list(APPEND MPI_TESTS   t_ascent_mpi_ascent_runtime
-                           t_ascent_mpi_relay_extract)
+                           t_ascent_mpi_relay_extract
+                           t_ascent_mpi_rover)
 endif()
 
 
@@ -184,6 +186,9 @@ if(MPI_FOUND AND ENABLE_MPI)
     foreach(TEST ${MPI_TESTS})
         # this uses 2 procs
         add_cpp_mpi_test(TEST ${TEST} NUM_MPI_TASKS 2 DEPENDS_ON ascent_mpi)
+        if ("${TEST}" STREQUAL "t_ascent_mpi_rover")
+            target_compile_definitions(${TEST} PRIVATE ROVER_TEST_MPI_ENABLED)
+        endif()
     endforeach()
 
     # add the hola mpi test which uses 8 ranks

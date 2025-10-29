@@ -11,17 +11,17 @@
 #include <conduit.hpp>
 #include <conduit_blueprint.hpp>
 #include <vtkh/compositing/PartialCompositor.hpp>
+#include <vtkh/rendering/PartialComposite.hpp>
 
 // mpi include
 #ifdef ROVER_PARALLEL
 #include <mpi.h>
 #endif
-
 // rover includes
 #include <domain.hpp>
 #include <image.hpp>
 #include <png_utils/ascent_png_encoder.hpp>
-#include <ray_generators/camera_generator.hpp>
+#include <ray_generators/ray_generator.hpp>
 #include <rover_exceptions.hpp>
 #include <scheduler.hpp>
 
@@ -40,14 +40,50 @@ public:
   void set_comm_handle(MPI_Comm comm_handle) override;
 #endif
 
-  void add_dataset(vtkmDataSet &dataset) override;
+  void add_dataset(vtkh::DataSet &dataset) override;
   void set_ray_generator(RayGenerator *ray_generator) override;
   void trace_rays() override;
   void save_png(std::string file_name) override;
   void save_bov(std::string file_name) override;
   void to_blueprint(Node &dataset) override;
 
+  void write_blueprint_imaging_plane(Node &data_out,
+                                     const std::string plane_name,
+                                     const double plane_width,
+                                     const double plane_height,
+                                     const vtkmVec3f &center,
+                                     const vtkmVec3f &left,
+                                     const vtkmVec3f &up,
+                                     vtkmVec3f &llc,
+                                     vtkmVec3f &lrc,
+                                     vtkmVec3f &ulc,
+                                     vtkmVec3f &urc);
+
+  void write_blueprint_ray_corners_mesh(Node &data_out,
+                                        const vtkmVec3f &llc_near,
+                                        const vtkmVec3f &llc_far,
+                                        const vtkmVec3f &lrc_near,
+                                        const vtkmVec3f &lrc_far,
+                                        const vtkmVec3f &urc_near,
+                                        const vtkmVec3f &urc_far,
+                                        const vtkmVec3f &ulc_near,
+                                        const vtkmVec3f &ulc_far);
+
+  void write_blueprint_rays_mesh(Node &data_out,
+                                 const int64 image_width,
+                                 const int64 image_height,
+                                 const double detector_width,
+                                 const double detector_height,
+                                 const vtkmVec3f &lrc_near,
+                                 const double far_detector_width,
+                                 const double far_detector_height,
+                                 const vtkmVec3f &lrc_far,
+                                 const vtkmVec3f &left,
+                                 const vtkmVec3f &up);
+
 protected:
+  int                                       m_num_local_domains;
+  bool                                      m_has_emission;
   std::vector<Domain>                       m_domains;
   RayGenerator                             *m_ray_generator;
   std::vector<vtkm::Float64>                m_background;
@@ -58,14 +94,13 @@ protected:
   MPI_Comm                                  m_comm_handle;
 #endif
 
-  void create_default_background(const int num_channels);
-  void set_background(const std::vector<vtkm::Float32> &background);
-  void set_background(const std::vector<vtkm::Float64> &background);
-
-  int  get_global_channels();
+  void create_background(const int num_energy_groups);
+  int  get_global_num_energy_groups();
   void set_global_range_and_bounds();
-  void add_partial(vtkmRayTracing::PartialComposite<FloatType> &partial);
+  void add_partial(const vtkhRayTracing::PartialComposite<FloatType> &partial);
   void composite();
+  template<typename PartialType>
+  void typed_composite();
 };
 
 }; // namespace rover

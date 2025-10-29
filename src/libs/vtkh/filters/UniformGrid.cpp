@@ -88,9 +88,11 @@ MakeEmptyField(std::string field_name , vtkm::Id field_id, Vec3f dims, vtkm::con
   else if(field_id == 3)
   {
     vec2_32 ah_empty = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32,2>>();
+    // note Vec2f was declared as float64 in the vtkmProbe filter ...
+    vtkm::Vec<vtkm::Float32,2> empty_vec = vtkm::make_Vec(0.0,0.0);
     for(int i = 0; i < num_values; ++i)
     {
-      Vec2f empty_vec = vtkm::make_Vec(0.0,0.0);
+
       ah_empty.WritePortal().Set(i,empty_vec);
     }
     vtkm::cont::Field f_empty(field_name,
@@ -101,9 +103,9 @@ MakeEmptyField(std::string field_name , vtkm::Id field_id, Vec3f dims, vtkm::con
   else if(field_id == 4)
   {
     vec2_64 ah_empty = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,2>>();
+    vtkm::Vec<vtkm::Float32,2> empty_vec = vtkm::make_Vec(0.0,0.0);
     for(int i = 0; i < num_values; ++i)
     {
-      Vec2d empty_vec = vtkm::make_Vec(0.0,0.0);
       ah_empty.WritePortal().Set(i,empty_vec);
     }
     vtkm::cont::Field f_empty(field_name,
@@ -114,9 +116,9 @@ MakeEmptyField(std::string field_name , vtkm::Id field_id, Vec3f dims, vtkm::con
   else if(field_id == 5)
   {
     vec3_32 ah_empty = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32,3>>();
+    vtkm::Vec<vtkm::Float32,3> empty_vec = vtkm::make_Vec(0.0,0.0,0.0);
     for(int i = 0; i < num_values; ++i)
     {
-      Vec3f empty_vec = vtkm::make_Vec(0.0,0.0,0.0);
       ah_empty.WritePortal().Set(i,empty_vec);
     }
     vtkm::cont::Field f_empty(field_name,
@@ -875,10 +877,10 @@ UniformGrid::DoExecute()
       {
         //Uniform Grid Sample
         vtkh::vtkmProbe probe;
-        probe.dims(m_dims);
-        probe.origin(m_origin);
-        probe.spacing(m_spacing);
-        probe.invalidValue(m_invalid_value);
+        probe.setBoxDims(m_dims);
+        probe.setBoxOrigin(m_origin);
+        probe.setBoxSpacing(m_spacing);
+        probe.setInvalidValue(m_invalid_value);
         auto dataset = probe.Run(dom);
         vtkm::cont::Field tmp_field = dataset.GetField(field_name);
 

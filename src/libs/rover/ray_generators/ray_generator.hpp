@@ -42,27 +42,31 @@
 #ifndef rover_ray_generator_h
 #define rover_ray_generator_h
 
-#include <vtkm_typedefs.hpp>
+#include <rover_exports.h>
 #include <settings.hpp>
+#include <utils/rover_logging.hpp>
+#include <vtkm_typedefs.hpp>
 
 namespace rover
 {
 
-class RayGenerator
+class ROVER_API RayGenerator
 {
 public:
-  RayGenerator();
-  virtual ~RayGenerator();
-  virtual void get_rays(vtkmRayTracing::Ray<vtkm::Float32> &rays) = 0;
-  virtual void get_rays(vtkmRayTracing::Ray<vtkm::Float64> &rays) = 0;
+  RayGenerator() = default;
+  ~RayGenerator() = default;
 
+  bool get_rays(Ray32 &rays);
+  bool get_rays(Ray64 &rays);
   vtkmCamera& get_camera();
-  bool get_has_rays() const;
-  void reset();
+  void set_camera(vtkmCamera &camera);
+  vtkmCoordinates get_coordinates();
+  void set_coordinates(vtkmCoordinates coordinates);
+
 protected:
   vtkmCamera m_camera;
-  bool m_has_rays;
+  vtkmCoordinates m_coordinates;
 };
 
-}; //namespace rover
+} // namespace rover
 #endif

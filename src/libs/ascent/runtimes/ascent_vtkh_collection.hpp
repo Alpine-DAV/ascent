@@ -60,6 +60,8 @@ public:
 
   vtkm::Bounds global_bounds() const;
 
+  vtkm::Bounds global_topology_bounds(const std::string &topo_name) const;
+
   // returns the local topology names
   std::vector<std::string> topology_names() const;
 

@@ -407,6 +407,121 @@ TEST(ascent_render_2d, test_render_2d_uniform_render_serial_backend)
 }
 
 //-----------------------------------------------------------------------------
+TEST(ascent_render_2d, test_render_2d_multi_topo_extents)
+{
+    // the ascent runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with vtkm support
+    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping test");
+
+        return;
+    }
+
+    //
+    // Create an example mesh.
+    //
+    std::string data_yml = R"xyzxyz(
+        state:
+            cycle: 100
+        coordsets: 
+          coords_small: 
+            type: "uniform"
+            dims: 
+              i: 3
+              j: 3
+            origin: 
+              x: -10.0
+              y: -10.0
+            spacing: 
+              dx: 10.0
+              dy: 10.0
+          coords_big: 
+            type: "uniform"
+            dims: 
+              i: 3
+              j: 3
+            origin: 
+              x: -1000.0
+              y: -1000.0
+            spacing: 
+              dx: 1000.0
+              dy: 1000.0
+        topologies: 
+          topo_small: 
+            type: "uniform"
+            coordset: "coords_small"
+          topo_big: 
+            type: "uniform"
+            coordset: "coords_big"
+        fields: 
+          field_small: 
+            association: "element"
+            topology: "topo_small"
+            values: [0.0, 1.0, 2.0, 3.0]
+          field_big: 
+            association: "element"
+            topology: "topo_big"
+            values: [0.0, -1.0, -2.0, -3.0]
+    )xyzxyz";
+
+    Node data, verify_info;
+    data.parse(data_yml,"yaml");
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing 2d Rendering with multi topo with varying extents");
+
+    string output_path = prepare_output_dir();
+    string output_base = conduit::utils::join_file_path(output_path,"tout_render_2d_multi_topo_extents");
+    string output_fsmall = output_base + "_small";
+    string output_fbig   = output_base + "_big";
+
+    // remove old images before rendering
+    remove_test_image(output_fsmall);
+    remove_test_image(output_fbig);
+
+    conduit::Node actions;
+    conduit::Node &add_plots = actions.append();
+    add_plots["action"] = "add_scenes";
+
+    conduit::Node & scenes = add_plots["scenes"];
+    scenes["s1/plots/p1/type"]  = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "field_small";
+    scenes["s1/image_prefix"] = output_fsmall;
+
+    scenes["s2/plots/p1/type"]  = "pseudocolor";
+    scenes["s2/plots/p1/field"] = "field_big";
+    scenes["s2/image_prefix"] = output_fbig;
+
+    scenes["s2/plots/p2/type"]  = "pseudocolor";
+    scenes["s2/plots/p2/field"] = "field_big";
+    scenes["s2/image_prefix"] = output_fbig;
+
+
+    scenes["s2/plots/p3/type"]  = "pseudocolor";
+    scenes["s2/plots/p3/field"] = "field_big";
+    scenes["s2/image_prefix"] = output_fbig;
+
+
+    Node info;
+    Ascent ascent;
+    ascent.open();
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.info(info);
+    ascent.close();
+
+    ofstream ofs;
+    ofs.open(output_base + "_graph.html");
+    ofs <<info["flow_graph_dot_html"].as_string();
+    ofs.close();
+
+    EXPECT_TRUE(check_test_image(output_fsmall));
+    EXPECT_TRUE(check_test_image(output_fbig));
+}
+//-----------------------------------------------------------------------------
 TEST(ascent_render_2d, test_render_2d_cam)
 {
 
@@ -461,10 +576,10 @@ TEST(ascent_render_2d, test_render_2d_cam)
     scenes["scene1/renders/r1/camera/2d"] = {-10.0,10.0,-10.0,10.0};
 
     scenes["scene1/renders/r2/image_prefix"] =  output_file_v2;
-    scenes["scene1/renders/r2/camera/2d"] = {-20.0,20.0,-20.0,20.0};
+    scenes["scene1/renders/r2/camera/windowCoords"] = {-20.0,20.0,-20.0,20.0};
 
     scenes["scene1/renders/r3/image_prefix"] =  output_file_v3;
-    scenes["scene1/renders/r3/camera/2d"] = {-7.0,3.0,0.0,4.0};
+    scenes["scene1/renders/r3/camera/windowCoords"] = {-7.0,3.0,0.0,4.0};
 
     scenes["scene1/renders/r4/image_prefix"] = output_file_v4;
     scenes["scene1/renders/r4/camera/2d"] = {-10.0,0.0,-10.0,10.0};

@@ -274,11 +274,8 @@ GetExplicitCoordinateSystem(const conduit::Node &n_coords,
 
     if(z_element_stride == 0)
     {
-      z_coords_handle.Allocate(nverts);
-      // TODO: Set on device?
-      // This does not get initialized to zero
+      z_coords_handle.AllocateAndFill(nverts,0.0);
       T *z = vtkh::GetVTKMPointer(z_coords_handle);
-      memset(z, 0, nverts * sizeof(T));
     }
     else if(z_element_stride == 1)
     {
@@ -620,8 +617,16 @@ void GetMatSetFields(const conduit::Node &node, //materials["matset"]
     while(itr.has_next())
     {
 
-      const Node &n_material = itr.next();
-      const S *data = n_material.value();
+      const conduit::Node * n_material;
+      const conduit::Node &n_next = itr.next();
+      //n_next is not leaf i.e. has values: [v0,v1,...,vn] 
+      if(n_next.number_of_children() != 0)
+      {
+        n_material = &n_next.child(0);
+      }
+      else
+        n_material = &n_next;
+      const S *data = n_material->value();
       //increase length when a material vf value > 0
       for(index_t i = 0; i < neles; ++i)
       {
@@ -669,9 +674,17 @@ void GetMatSetFields(const conduit::Node &node, //materials["matset"]
 
     for(index_t i = 0; i < num_materials; ++i)
     {
-      const Node &n_vol_frac = n_vol_fracs.child(i);
+      const conduit::Node * n_vol_frac;	    
+      const conduit::Node &n_child = n_vol_fracs.child(i);
+      //n_child is not leaf i.e. has values: [v0,v1,...,vn] 
+      if(n_child.number_of_children() != 0)
+      {
+        n_vol_frac = &n_child.child(0);
+      }
+      else
+        n_vol_frac = &n_child;	      
       const Node &n_ele_id = n_ele_ids.child(i);
-      const S *vf_data = n_vol_frac.value();
+      const S *vf_data = n_vol_frac->value();
       const T *id_data = n_ele_id.value();
       int num_vals = n_ele_id.dtype().number_of_elements(); 
 
@@ -691,8 +704,18 @@ void GetMatSetFields(const conduit::Node &node, //materials["matset"]
     for(index_t i = 0; i < num_materials; ++i)
     {
       const Node &n_materials = node["volume_fractions"];
-      const Node &n_material = n_materials.child(i);
-      const S *data = n_material.value();
+      const Node &n_child = n_materials.child(i);
+
+      const Node * n_material;
+      //n_child is not leaf i.e. has values: [v0,v1,...,vn] 
+      if(n_child.number_of_children() != 0)
+      {
+        n_material = &n_child.child(0);
+      }
+      else
+        n_material = &n_child;
+
+      const S *data = n_material->value();
 
       for(index_t j = 0; j < neles; ++j)
       {
@@ -1336,16 +1359,63 @@ VTKHDataAdapter::RectilinearBlueprintToVTKmDataSet
 
     int32 ndims = 2;
 
-    // todo assumes float64
-    const float64 *x_coords_ptr = n_coords["values/x"].as_float64_ptr();
-    const float64 *y_coords_ptr = n_coords["values/y"].as_float64_ptr();
-    const float64 *z_coords_ptr = NULL;
+    if (zero_copy && 
+        (!n_coords["values/x"].dtype().is_float64() || 
+         !n_coords["values/y"].dtype().is_float64()))
+    {
+        ASCENT_INFO("Zero-copy requested, but either x or y coordinate data is not float64." <<
+                    "x type: " << n_coords["values/x"].dtype().name() << 
+                    ", y type: " << n_coords["values/y"].dtype().name() << 
+                    ". Turning zero-copy off.");
+        zero_copy = false;
+    }
 
+    const float64 *x_coords_ptr;
+    Node temp_x;
+    if (n_coords["values/x"].dtype().is_float64())
+    {
+        x_coords_ptr = n_coords["values/x"].as_float64_ptr();
+    }
+    else
+    {
+        n_coords["values/x"].to_float64_array(temp_x);
+        x_coords_ptr = temp_x.value();
+    }
+    
+    const float64 *y_coords_ptr;
+    Node temp_y;
+    if (n_coords["values/y"].dtype().is_float64())
+    {
+        y_coords_ptr = n_coords["values/y"].as_float64_ptr();
+    }
+    else
+    {
+        n_coords["values/y"].to_float64_array(temp_y);
+        y_coords_ptr = temp_y.value();
+    }
+
+    const float64 *z_coords_ptr = NULL;
+    Node temp_z;
     if(n_coords.has_path("values/z"))
     {
+        if (zero_copy && !n_coords["values/z"].dtype().is_float64())
+        {
+            ASCENT_INFO("Zero-copy requested, but z coordinate data is " <<
+                        n_coords["values/z"].dtype().name() <<
+                        " not float64. Turning zero-copy off.");
+            zero_copy = false;
+        }
         ndims = 3;
         z_npts = n_coords["values/z"].dtype().number_of_elements();
-        z_coords_ptr = n_coords["values/z"].as_float64_ptr();
+        if (n_coords["values/z"].dtype().is_float64())
+        {
+            z_coords_ptr = n_coords["values/z"].as_float64_ptr();
+        }
+        else
+        {
+            n_coords["values/z"].to_float64_array(temp_z);
+            z_coords_ptr = temp_z.value();
+        }
     }
 
     vtkm::cont::ArrayHandle<vtkm::Float64> x_coords_handle;
@@ -2798,9 +2868,22 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
         {
             bool supported_type = false;
 
-            const conduit::Node n_vfs = n_matset["volume_fractions"].child(0);
+            const conduit::Node *n_vfs; //= n_matset["volume_fractions"].child(0);
+            const conduit::Node &tmp_vfs = n_matset["volume_fractions"].child(0);
+            int num_children = tmp_vfs.number_of_children();
+
+            if(num_children != 0) //of == 1?  
+            {
+              n_vfs = tmp_vfs.child_ptr(0);
+            }
+            else
+            {
+              n_vfs = n_matset["volume_fractions"].child_ptr(0);
+
+            }
+
             // we compile vtk-h with fp types
-            if(n_vfs.dtype().is_float32())
+            if(n_vfs->dtype().is_float32())
             {
                 supported_type = true;
                 //add calculated material fields for vtkm
@@ -2821,7 +2904,7 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
                 dset->AddField(ids);
                 dset->AddField(vfs);
             }
-            else if(n_vfs.dtype().is_float64())
+            else if(n_vfs->dtype().is_float64())
             {
                 supported_type = true;
                 //add calculated material fields for vtkm

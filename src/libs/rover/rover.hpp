@@ -23,7 +23,6 @@
 #include <settings.hpp>
 #include <image.hpp>
 #include <ray_generators/ray_generator.hpp>
-#include <ray_generators/camera_generator.hpp>
 #include <scheduler.hpp>
 
 using namespace conduit;
@@ -37,8 +36,8 @@ public:
   Rover();
   ~Rover();
 
-  void update_time_and_cycle(Node &metadata);
-  void update_settings(Node &params);
+  void update_time_and_cycle(const Node &metadata);
+  void update_settings(const Node &params);
   void print_settings();
 
   #ifdef ROVER_PARALLEL
@@ -58,7 +57,7 @@ public:
   void save_bov(const std::string &filename);
 private:
   vtkmCamera m_camera;
-  CameraGenerator m_ray_generator;
+  RayGenerator m_ray_generator;
   Scheduler *m_scheduler;
 
 #ifdef ROVER_PARALLEL

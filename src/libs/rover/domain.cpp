@@ -4,6 +4,7 @@
 // other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+#include "vtkm_typedefs.hpp"
 #include <domain.hpp>
 #include <engine.hpp>
 #include <rover_exceptions.hpp>
@@ -15,6 +16,12 @@ namespace rover
 Domain::Domain()
 {
   m_engine = std::make_shared<Engine>();
+}
+
+Domain::Domain(vtkmDataSet &dataset)
+{
+  m_engine = std::make_shared<Engine>();
+  set_dataset(dataset);
 }
 
 Domain::~Domain()
@@ -63,7 +70,6 @@ Domain::init()
 #endif
 
   m_engine->set_dataset(m_dataset);
-  m_engine->init();
 
 #if 0 // removing volume renderer
   if(m_render_settings.m_render_mode == volume)
@@ -79,10 +85,16 @@ Domain::init()
 
 }
 
-int
-Domain::get_num_channels()
+const int
+Domain::get_num_energy_groups()
 {
-  return m_engine->get_num_channels();
+  return m_engine->get_num_energy_groups();
+}
+
+bool
+Domain::get_field_mismatch_error()
+{
+  return m_engine->get_field_mismatch_error();
 }
 
 void
@@ -112,16 +124,16 @@ Domain::init_rays(Ray64 &rays)
   m_engine->init_rays(rays);
 }
 
-PartialVector32
-Domain::partial_trace(Ray32 &rays)
+void
+Domain::partial_trace(Ray32 &rays, PartialVector32 &partials)
 {
-  return m_engine->partial_trace(rays);
+  m_engine->partial_trace(rays, partials);
 }
 
-PartialVector64
-Domain::partial_trace(Ray64 &rays)
+void
+Domain::partial_trace(Ray64 &rays, PartialVector64 &partials)
 {
-  return m_engine->partial_trace(rays);
+  m_engine->partial_trace(rays, partials);
 }
 
 void
@@ -142,7 +154,7 @@ Domain::get_primary_range()
   return m_engine->get_primary_range();
 }
 
-vtkm::Bounds
+vtkm::Bounds&
 Domain::get_domain_bounds()
 {
   return m_domain_bounds;

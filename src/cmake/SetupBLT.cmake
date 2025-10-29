@@ -18,10 +18,10 @@ if(NOT BLT_SOURCE_DIR)
 endif()
 
 ################################################################
-# if not set, prefer c++14 lang standard
+# if not set, prefer c++17 lang standard
 ################################################################
 if(NOT BLT_CXX_STD)
-    set(BLT_CXX_STD "c++14" CACHE STRING "")
+    set(BLT_CXX_STD "c++17" CACHE STRING "")
 endif()
 
 ################################################################

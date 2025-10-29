@@ -4,6 +4,9 @@
 // other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+#include <ascent_annotations.hpp>
+#include <ascent_logging.hpp>
+
 #include <typed_scheduler.hpp>
 #include <rover.hpp>
 #include <rover_exceptions.hpp>
@@ -11,6 +14,7 @@
 #include <iostream>
 #include <utils/rover_logging.hpp>
 #include <settings.hpp>
+
 
 #ifdef ROVER_PARALLEL
 #include <mpi.h>
@@ -20,24 +24,23 @@ namespace rover
 {
 
 // Namespaced settings instance
+Node metadata;
 Node settings;
 
 Rover::Rover()
 {
-  // Ensure that we always start from a default state
+  // Always start from a default state
+  rover::metadata.reset();
   rover::settings.reset();
 
-  // Settings
-  // TODO: Figure out if color_table needs to be set by us here
-  rover::settings["rover/color_table"] = "Cool to Warm";
-  rover::settings["rover/divide_emission_by_abs"] = "false";
-  rover::settings["rover/height"] = 200;
-  rover::settings["rover/num_samples"] = 400;
-  rover::settings["rover/precision"] = "single";
-  rover::settings["rover/ray_scope"] = "global_rays";
-  rover::settings["rover/scattering_type"] = "non_scattering";
-  rover::settings["rover/width"] = 200;
-  rover::settings["rover/unit_scalar"] = 1.0f;
+  // Default values for rover settings
+  rover::settings["background_intensity"] = 0.0f;
+  rover::settings["divide_emis_by_absorb"] = "false";
+  rover::settings["enable_rays_mesh"] = "false";
+  rover::settings["height"] = 200;
+  rover::settings["precision"] = "single";
+  rover::settings["width"] = 200;
+  rover::settings["unit_scalar"] = 1.0f;
 
   // We don't instantiate the scheduler until we determine if the
   // user has requested a specific precision to use
@@ -62,35 +65,37 @@ Rover::~Rover()
 }
 
 void
-Rover::update_time_and_cycle(Node &metadata)
+Rover::update_time_and_cycle(const Node &metadata)
 {
   if (metadata.has_child("time"))
   {
-    rover::settings["state/time"].set(metadata["time"]);
+    rover::metadata["time"].set(metadata["time"]);
   }
 
   if (metadata.has_child("cycle"))
   {
-    rover::settings["state/cycle"].set(metadata["cycle"]);
+    rover::metadata["cycle"].set(metadata["cycle"]);
   }
 }
 
 void
-Rover::update_settings(Node &params)
+Rover::update_settings(const Node &params)
 {
   ROVER_INFO("Executing Rover::update_settings");
 
   if (params.has_child("rover"))
   {
-    for (const auto &param_name : params["rover"].child_names())
-    {
-      rover::settings["rover"][param_name].set(params["rover"][param_name]);
-    }
+    rover::settings.update(params["rover"]);
   }
 
   if (params.has_child("camera"))
   {
     rover::settings["camera"].set(params["camera"]);
+  }
+
+  if (params.has_child("image_params"))
+  {
+    rover::settings["image_params"].set(params["image_params"]);
   }
 }
 
@@ -124,7 +129,8 @@ Rover::get_mpi_comm_handle()
 void
 Rover::create_scheduler()
 {
-  const std::string precision = rover::settings["rover/precision"].as_string();
+  // Each MPI rank creates its own scheduler
+  const std::string precision = rover::settings["precision"].as_string();
   if ("double" == precision)
   {
     m_scheduler = new TypedScheduler<vtkm::Float64>();
@@ -138,7 +144,7 @@ Rover::create_scheduler()
   // Check to see if we have been initialized
   if(-1 == m_rank)
   {
-    ROVER_ERROR("Error - Rover::create_scheduler: MPI was not initialized");
+    ASCENT_LOG_ERROR("Error - Rover::create_scheduler: MPI was not initialized");
   }
   m_scheduler->set_comm_handle(m_comm_handle);
 #endif
@@ -155,24 +161,33 @@ Rover::add_dataset(vtkh::DataSet &dataset)
     create_scheduler();
   }
 
-  for (int i = 0; i < dataset.GetNumberOfDomains(); i++)
-  {
-    m_scheduler->add_dataset(dataset.GetDomain(i));
-  }
-
+  m_scheduler->add_dataset(dataset);
+  // ResetToBounds automatically sets a conservative far plane,
+  // which can be manually overriden in cases where reasonable
+  // imaging plane meshes are desired
   m_camera.ResetToBounds(dataset.GetGlobalBounds());
 }
 
 void
 Rover::update_camera()
 {
-  // Early return if the default params weren't changed
+  ASCENT_ANNOTATE_MARK_SCOPE("rover update camera");
+
   if (!rover::settings.has_child("camera"))
   {
-    return;
+    return; // Early return if the default params weren't changed
   }
 
+  // The order in which these parameters are applied matters
+  // TODO: Match the ordering in #1547 once it's done
   const Node &camera_params = rover::settings["camera"];
+
+  if (camera_params.has_child("position"))
+  {
+    const float64_accessor vec3 = camera_params["position"].value();
+    const vtkmVec3f position(vec3[0], vec3[1], vec3[2]);
+    m_camera.SetPosition(position);
+  }
 
   if (camera_params.has_child("azimuth"))
   {
@@ -258,6 +273,7 @@ Rover::update_camera()
 void
 Rover::update_ray_generator()
 {
+  ASCENT_ANNOTATE_MARK_SCOPE("rover update ray generator");
   m_ray_generator.set_camera(m_camera);
   m_scheduler->set_ray_generator(&m_ray_generator);
 }
@@ -265,13 +281,17 @@ Rover::update_ray_generator()
 void
 Rover::execute()
 {
-  // TODO: Not sure if this needs to be a full error. We're not in
-  // an unrecoverable state, we just simply have nothing to x-ray
+  ASCENT_ANNOTATE_MARK_SCOPE("rover execute");
+  // This doesn't technically need to be a full error. We're not in
+  // an unrecoverable state, we could simply instantiate a new scheduler
+  // and have nothing to x-ray. In practice, a user should never encounter this,
+  // but a developer would prefer to be made aware.
   if (!m_scheduler)
   {
-    ROVER_ERROR("Error - Rover::execute: Execute called before adding a dataset");
+    ASCENT_LOG_ERROR("Error - Rover::execute: Execute called before adding a dataset");
   }
 
+  // Applies the user-supplied parameters and then begins the ray trace
   update_camera();
   update_ray_generator();
   m_scheduler->trace_rays();
@@ -348,6 +368,13 @@ Rover::save_png(const std::string &filename)
 void
 Rover::save_bov(const std::string &filename)
 {
+#ifdef ROVER_PARALLEL
+  // TODO: Support writing in parallel
+  if(m_rank != 0)
+  {
+    return;
+  }
+#endif
   m_scheduler->save_bov(filename);
 }
 

@@ -106,7 +106,7 @@ register_builtin()
     AscentRuntime::register_filter_type<PowerOfField>("transforms","power_of_field");
 
 #if defined(ASCENT_VTKM_ENABLED)
-    AscentRuntime::register_filter_type<DefaultRender>();
+    AscentRuntime::register_filter_type<CreateRenders>();
 
     AscentRuntime::register_filter_type<VTKHBounds>();
     AscentRuntime::register_filter_type<VTKHUnionBounds>();
@@ -148,6 +148,7 @@ register_builtin()
     AscentRuntime::register_filter_type<VTKHStreamline>("transforms","streamline");
     AscentRuntime::register_filter_type<VTKHWarpXStreamline>("transforms","warpx_streamline");
     AscentRuntime::register_filter_type<VTKHUniformGrid>("transforms","uniform_grid");
+    AscentRuntime::register_filter_type<VTKHSample>("transforms","sample");
     AscentRuntime::register_filter_type<VTKHVTKFileExtract>("extracts", "vtk");
     AscentRuntime::register_filter_type<VTKHMIR>("transforms","mir");
 

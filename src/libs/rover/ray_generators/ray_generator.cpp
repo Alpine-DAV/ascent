@@ -39,19 +39,42 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-#include <ray_generators/ray_generator.hpp>
+
+#include "ray_generator.hpp"
 
 namespace rover
 {
 
-RayGenerator::RayGenerator()
+bool
+RayGenerator::get_rays(Ray32 &rays)
 {
-  m_has_rays = true;
+  const int64 width = rover::settings["width"].to_int64();
+  const int64 height = rover::settings["height"].to_int64();
+
+  vtkmRayCamera ray_generator;
+  ray_generator.SetParameters(m_camera, width, height);
+  ray_generator.CreateRays(rays, m_coordinates.GetBounds());
+
+  return rays.NumRays > 0;
 }
 
-RayGenerator::~RayGenerator()
+bool
+RayGenerator::get_rays(Ray64 &rays)
 {
+  const int64 width = rover::settings["width"].to_int64();
+  const int64 height = rover::settings["height"].to_int64();
 
+  vtkmRayCamera ray_generator;
+  ray_generator.SetParameters(m_camera, width, height);
+  ray_generator.CreateRays(rays, m_coordinates.GetBounds());
+
+  return rays.NumRays > 0;
+}
+
+void
+RayGenerator::set_camera(vtkmCamera &camera)
+{
+  m_camera = camera;
 }
 
 vtkmCamera&
@@ -60,16 +83,16 @@ RayGenerator::get_camera()
   return m_camera;
 }
 
-bool
-RayGenerator::get_has_rays() const
+vtkmCoordinates
+RayGenerator::get_coordinates()
 {
-  return m_has_rays;
+  return m_coordinates;
 }
 
 void
-RayGenerator::reset()
+RayGenerator::set_coordinates(vtkmCoordinates coordinates)
 {
-  m_has_rays = true;
+  m_coordinates = coordinates;
 }
 
-} // naspace rover
+} // namespace rover

@@ -154,17 +154,6 @@ check_renders_surprises(const conduit::Node &renders_node)
   r_valid_paths.push_back("image_width");
   r_valid_paths.push_back("image_height");
   r_valid_paths.push_back("scene_bounds");
-  r_valid_paths.push_back("camera/look_at");
-  r_valid_paths.push_back("camera/position");
-  r_valid_paths.push_back("camera/up");
-  r_valid_paths.push_back("camera/fov");
-  r_valid_paths.push_back("camera/xpan");
-  r_valid_paths.push_back("camera/ypan");
-  r_valid_paths.push_back("camera/zoom");
-  r_valid_paths.push_back("camera/near_plane");
-  r_valid_paths.push_back("camera/far_plane");
-  r_valid_paths.push_back("camera/azimuth");
-  r_valid_paths.push_back("camera/elevation");
   r_valid_paths.push_back("type");
   r_valid_paths.push_back("phi");
   r_valid_paths.push_back("phi_range");
@@ -201,6 +190,45 @@ check_renders_surprises(const conduit::Node &renders_node)
 
   std::vector<std::string> r_ignore_paths;
   r_ignore_paths.push_back("phi_theta_positions");
+  r_ignore_paths.push_back("camera");
+
+  // Valid Ascent input camera format
+  std::vector<std::string> c_ascent_valid_paths;
+  c_ascent_valid_paths.push_back("2d");
+  c_ascent_valid_paths.push_back("look_at");
+  c_ascent_valid_paths.push_back("position");
+  c_ascent_valid_paths.push_back("up");
+  c_ascent_valid_paths.push_back("fov");
+  c_ascent_valid_paths.push_back("xpan");
+  c_ascent_valid_paths.push_back("ypan");
+  c_ascent_valid_paths.push_back("zoom");
+  c_ascent_valid_paths.push_back("near_plane");
+  c_ascent_valid_paths.push_back("far_plane");
+  c_ascent_valid_paths.push_back("azimuth");
+  c_ascent_valid_paths.push_back("elevation");
+
+  // Valid Visit input camera format
+  std::vector<std::string> c_visit_valid_paths;
+  c_visit_valid_paths.push_back("windowCoords");
+  c_visit_valid_paths.push_back("view_normal");
+  c_visit_valid_paths.push_back("focus");
+  c_visit_valid_paths.push_back("view_up");
+  c_visit_valid_paths.push_back("view_angle");
+  c_visit_valid_paths.push_back("parallel_scale");
+  c_visit_valid_paths.push_back("near_plane");
+  c_visit_valid_paths.push_back("far_plane");
+  c_visit_valid_paths.push_back("image_pan");
+  c_visit_valid_paths.push_back("image_zoom");
+  c_visit_valid_paths.push_back("perspective");
+  c_visit_valid_paths.push_back("eye_angle");
+  c_visit_valid_paths.push_back("center_of_rotation_set");
+  c_visit_valid_paths.push_back("center_of_rotation");
+  c_visit_valid_paths.push_back("axis_3d_scale_flag");
+  c_visit_valid_paths.push_back("axis_3d_scale");
+  c_visit_valid_paths.push_back("shear");
+  c_visit_valid_paths.push_back("window_valid");
+
+  std::vector<std::string> c_ignore_paths;
 
   for(int i = 0; i < num_renders; ++i)
   {
@@ -224,9 +252,49 @@ check_renders_surprises(const conduit::Node &renders_node)
         }
       }
     }
+
+    if(render_node.has_path("camera"))
+    {
+        const conduit::Node &camera_node = render_node["camera"];
+        std::string c_ascent_surprises = surprise_check(c_ascent_valid_paths, c_ignore_paths, camera_node);
+        std::string c_visit_surprises = surprise_check(c_visit_valid_paths, c_ignore_paths, camera_node);
+
+        if(!c_ascent_surprises.empty() && !c_visit_surprises.empty())
+        {
+            surprises += "Cameras must follow either an ascent format or a visit format, not both.\n";
+            surprises += "\nAscent camera surpises:\n";
+            surprises += c_ascent_surprises;
+            surprises += "\nVisit camera surprises:\n";
+            surprises += c_visit_surprises;
+        }
+    }
   }
   return surprises;
 }
+
+void vtkm_bounds_to_conduit_node(const vtkm::Bounds &bounds,
+                                 conduit::Node &res)
+{
+    res["xmin"] = bounds.X.Min;
+    res["xmax"] = bounds.X.Max;
+    res["ymin"] = bounds.Y.Min;
+    res["ymax"] = bounds.Y.Max;
+    res["zmin"] = bounds.Z.Min;
+    res["zmax"] = bounds.Z.Max;
+}
+
+void conduit_node_to_vtkm_bounds(const conduit::Node &bounds,
+                                 vtkm::Bounds &res)
+{
+    res.X.Min = bounds["xmin"].to_float64();
+    res.X.Max = bounds["xmax"].to_float64();
+    res.Y.Min = bounds["ymin"].to_float64();
+    res.Y.Max = bounds["ymax"].to_float64();
+    res.Z.Min = bounds["zmin"].to_float64();
+    res.Z.Max = bounds["zmax"].to_float64();
+}
+
+
 // A simple container to create registry entries for
 // renderer and the data set it renders. Without this,
 // pipeline results (data sets) would be deleted before
@@ -249,9 +317,11 @@ protected:
   // be freed before we can render it
   DataObject m_data;
 public:
+  
   RendererContainer()
    : m_valid(false)
   {};
+  
   RendererContainer(std::string key,
                     flow::Registry *r,
                     vtkh::Renderer *renderer,
@@ -276,9 +346,14 @@ public:
   {
     return m_valid;
   }
+  
+  std::string topology_name()
+  {
+    return m_topo_name;
+  }
 
   vtkh::Renderer *
-  Fetch()
+  fetch_renderer()
   {
     return m_registry->fetch<vtkh::Renderer>(m_key);
   }
@@ -297,6 +372,7 @@ class AscentScene
 protected:
   int m_renderer_count;
   flow::Registry *m_registry;
+  std::vector<std::string> m_active_topos;
   AscentScene() {};
 public:
 
@@ -313,8 +389,16 @@ public:
     return m_renderer_count;
   }
 
-  void AddRenderer(RendererContainer *container)
+  void add_renderer_container(RendererContainer *container)
   {
+    std::string topo = container->topology_name();
+
+    auto it = std::find(m_active_topos.begin(),m_active_topos.end(),topo);
+    if( it == m_active_topos.end())
+    {
+      m_active_topos.push_back(topo);
+    }
+
     ostringstream oss;
     oss << "key_" << m_renderer_count;
     m_registry->add<RendererContainer>(oss.str(),container,1);
@@ -322,14 +406,16 @@ public:
     m_renderer_count++;
   }
 
-  void Execute(std::vector<vtkh::Render> &renders)
+  void execute(std::vector<vtkh::Render> &renders)
   {
+    // we know the active topos now.
+
     vtkh::Scene scene;
     for(int i = 0; i < m_renderer_count; i++)
     {
       ostringstream oss;
       oss << "key_" << i;
-      vtkh::Renderer * r = m_registry->fetch<RendererContainer>(oss.str())->Fetch();
+      vtkh::Renderer * r = m_registry->fetch<RendererContainer>(oss.str())->fetch_renderer();
       scene.AddRenderer(r);
     }
 
@@ -348,6 +434,13 @@ public:
         m_registry->consume(oss.str());
     }
   }
+
+  const std::vector<std::string> &
+  active_topologies()
+  {
+      return m_active_topos;
+  }
+
 }; // Ascent Scene
 
 //-----------------------------------------------------------------------------
@@ -1037,30 +1130,31 @@ std::map<std::string, CinemaManager> CinemaDatabases::m_databases;
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-DefaultRender::DefaultRender()
+CreateRenders::CreateRenders()
 :Filter()
 {
 // empty
 }
 
 //-----------------------------------------------------------------------------
-DefaultRender::~DefaultRender()
+CreateRenders::~CreateRenders()
 {
 // empty
 }
 
 //-----------------------------------------------------------------------------
 void
-DefaultRender::declare_interface(Node &i)
+CreateRenders::declare_interface(Node &i)
 {
-    i["type_name"] = "default_render";
-    i["port_names"].append() = "a";
+    i["type_name"] = "create_renders";
+    i["port_names"].append() = "scene";
+    i["port_names"].append() = "bounds";
     i["output_port"] = "true";
 }
 
 //-----------------------------------------------------------------------------
 bool
-DefaultRender::verify_params(const conduit::Node &params,
+CreateRenders::verify_params(const conduit::Node &params,
                              conduit::Node &info)
 {
     info.reset();
@@ -1096,13 +1190,19 @@ DefaultRender::verify_params(const conduit::Node &params,
 //-----------------------------------------------------------------------------
 
 void
-DefaultRender::execute()
+CreateRenders::execute()
 {
 
-    if(!input(0).check_type<vtkm::Bounds>())
+    if(!input(0).check_type<detail::AscentScene>())
     {
-      ASCENT_ERROR("'a' input must be a vktm::Bounds * instance");
+        ASCENT_ERROR("'scene' must be a AscentScene * instance");
     }
+
+    if(!input(1).check_type<conduit::Node>())
+    {
+      ASCENT_ERROR("'bounds' input must be a conduit::Node * instance");
+    }
+    
 
     int mpi_comm_id = -1;
     int rank = 0;
@@ -1112,7 +1212,34 @@ DefaultRender::execute()
     MPI_Comm_rank(mpi_comm, &rank);
 #endif
 
-    vtkm::Bounds *bounds = input<vtkm::Bounds>(0);
+    detail::AscentScene *scene = input<detail::AscentScene>(0);
+    conduit::Node *n_bounds = input<conduit::Node>(1);
+
+    // if you want to see all of the bounds info
+    // std::cout << n_bounds->to_yaml() << std::endl;
+
+    vtkm::Bounds bounds;
+
+    //// if we want view based on all topologies
+    //// note: this can be different than the original bounds, it includes
+    //// all topologies after pipelines (if any)
+
+    // if(n_bounds->has_child("__all_topologies__"))
+    // {
+    //     detail::conduit_node_to_vtkm_bounds(n_bounds->fetch("__all_topologies__"),bounds);
+    // }
+
+    // get bounds for active topologies
+    const std::vector<std::string> active_topos = scene->active_topologies();
+    for(auto topo : active_topos)
+    {
+        if(n_bounds->has_child(topo))
+        {
+           vtkm::Bounds topo_bounds;
+           detail::conduit_node_to_vtkm_bounds(n_bounds->fetch(topo),topo_bounds);
+           bounds.Include(topo_bounds);
+        }
+    }
 
     std::vector<vtkh::Render> *renders = new std::vector<vtkh::Render>();
 
@@ -1164,7 +1291,7 @@ DefaultRender::execute()
       for(int i = 0; i < num_renders; ++i)
       {
         const conduit::Node &render_node = renders_node.child(i);
-        vtkm::Bounds scene_bounds = *bounds;
+        vtkm::Bounds scene_bounds(bounds);
         if(render_node.has_path("use_original_bounds"))
         {
           if(render_node["use_original_bounds"].as_string() == "true")
@@ -1218,7 +1345,7 @@ DefaultRender::execute()
           bool exists = detail::CinemaDatabases::db_exists(db_name);
           if(!exists)
           {
-            detail::CinemaDatabases::create_db(*bounds,render_node, db_name, output_path);
+            detail::CinemaDatabases::create_db(bounds,render_node, db_name, output_path);
           }
 
           detail::CinemaManager &manager = detail::CinemaDatabases::get_db(db_name);
@@ -1375,8 +1502,8 @@ DefaultRender::execute()
           else
           {
             vtkh::Render render = detail::parse_render(render_node,
-                                                      scene_bounds,
-                                                      image_name);
+                                                       scene_bounds,
+                                                       image_name);
             renders->push_back(render);
           }
         }
@@ -1403,7 +1530,7 @@ DefaultRender::execute()
         }
       }
 
-      vtkm::Bounds scene_bounds = *bounds;
+      vtkm::Bounds scene_bounds(bounds);
       if(params().has_path("use_original_bounds"))
       {
         if(params()["use_original_bounds"].as_string() == "true")
@@ -1457,11 +1584,12 @@ VTKHBounds::declare_interface(Node &i)
     i["output_port"] = "true";
 }
 
+
 //-----------------------------------------------------------------------------
 void
 VTKHBounds::execute()
 {
-    vtkm::Bounds *bounds = new vtkm::Bounds;
+    conduit::Node *n_bounds = new conduit::Node();
 
     if(!input(0).check_type<DataObject>())
     {
@@ -1474,10 +1602,24 @@ VTKHBounds::execute()
     if(data_object->is_valid())
     {
       std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
-      bounds->Include(collection->global_bounds());
+
+      vtkm::Bounds global_bounds;
+      global_bounds.Include(collection->global_bounds());
+      conduit::Node &n_gb = n_bounds->fetch("__all_topologies__");
+      detail::vtkm_bounds_to_conduit_node(global_bounds,n_gb);
+
+      std::vector<std::string> topo_names = collection->topology_names();
+      // get the bounds for each named topology
+      for(auto topo_name : topo_names)
+      {
+          vtkm::Bounds topo_bounds;
+          topo_bounds.Include(collection->global_topology_bounds(topo_name));
+          conduit::Node &curr = n_bounds->fetch(topo_name);
+          detail::vtkm_bounds_to_conduit_node(topo_bounds,curr);
+      }
     }
 
-    set_output<vtkm::Bounds>(bounds);
+    set_output<conduit::Node>(n_bounds);
 }
 
 
@@ -1509,24 +1651,56 @@ VTKHUnionBounds::declare_interface(Node &i)
 void
 VTKHUnionBounds::execute()
 {
-    if(!input(0).check_type<vtkm::Bounds>())
+    if(!input(0).check_type<conduit::Node>())
     {
-        ASCENT_ERROR("'a' must be a vtkm::Bounds * instance");
+        ASCENT_ERROR("'a' must be a conduit::Node * instance");
     }
 
-    if(!input(1).check_type<vtkm::Bounds>())
+    if(!input(1).check_type<conduit::Node>())
     {
-        ASCENT_ERROR("'b' must be a vtkm::Bounds * instance");
+        ASCENT_ERROR("'b' must be a conduit::Node * instance");
     }
 
-    vtkm::Bounds *result = new vtkm::Bounds;
+    conduit::Node *result =  new conduit::Node();
+    conduit::Node *a_node =  input<conduit::Node>(0);
+    conduit::Node *b_node =  input<conduit::Node>(1);
 
-    vtkm::Bounds *bounds_a = input<vtkm::Bounds>(0);
-    vtkm::Bounds *bounds_b = input<vtkm::Bounds>(1);
+    // we want all unique child names between the two nodes
+    std::set<std::string> c_names;
 
-    result->Include(*bounds_a);
-    result->Include(*bounds_b);
-    set_output<vtkm::Bounds>(result);
+    for(auto c_name : a_node->child_names())
+    {
+        c_names.insert(c_name);
+    }
+
+    for(auto c_name : b_node->child_names())
+    {
+        c_names.insert(c_name);
+    }
+
+    // now we have unique names
+    for(auto c_name : c_names)
+    {
+        vtkm::Bounds bounds;
+        if(a_node->has_child(c_name))
+        {
+            vtkm::Bounds curr_bounds;
+            detail::conduit_node_to_vtkm_bounds(a_node->fetch(c_name),curr_bounds);
+            bounds.Include(curr_bounds);
+        }
+        
+        if(b_node->has_child(c_name))
+        {
+            vtkm::Bounds curr_bounds;
+            detail::conduit_node_to_vtkm_bounds(b_node->fetch(c_name),curr_bounds);
+            bounds.Include(curr_bounds);
+        }
+
+        conduit::Node &r = result->fetch(c_name);
+        detail::vtkm_bounds_to_conduit_node(bounds,r);
+    }
+
+    set_output<conduit::Node>(result);
 }
 
 //-----------------------------------------------------------------------------
@@ -1574,7 +1748,7 @@ AddPlot::execute()
     // it is
     if(cont->is_valid())
     {
-      scene->AddRenderer(cont);
+      scene->add_renderer_container(cont);
     }
     set_output<detail::AscentScene>(scene);
 }
@@ -1718,6 +1892,8 @@ CreatePlot::execute()
       }
     }
 
+    // we now have the topo_name
+
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
 
     std::string type = params()["type"].as_string();
@@ -1840,8 +2016,6 @@ CreatePlot::execute()
     {
       renderer->SetField(field_name);
     }
-
-
 
 
     if(type == "mesh")
