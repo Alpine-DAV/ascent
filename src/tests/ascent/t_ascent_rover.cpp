@@ -769,7 +769,7 @@ TEST(ascent_rover, test_xray_blueprint_multiple_groups)
 {
     ASCENT_INFO("Testing xray extract on multi-group curv3d example mesh\n");
 
-    if (is_vtkm_disabled())
+    if (is_viskores_disabled())
     {
         return; // Returning early is equivalent to passing the test
     }
@@ -837,7 +837,7 @@ TEST(ascent_rover, test_xray_blueprint_multiple_groups_absorption_only)
 {
     ASCENT_INFO("Testing xray extract on multi-group curv3d example mesh (absorption only)\n");
 
-    if (is_vtkm_disabled())
+    if (is_viskores_disabled())
     {
         return; // Returning early is equivalent to passing the test
     }
@@ -905,7 +905,7 @@ TEST(ascent_rover, test_xray_blueprint_multiple_groups_mismatched)
 {
     ASCENT_INFO("Testing xray extract on multi-group curv3d example mesh (mismatched number of fields)\n");
 
-    if (is_vtkm_disabled())
+    if (is_viskores_disabled())
     {
         return; // Returning early is equivalent to passing the test
     }

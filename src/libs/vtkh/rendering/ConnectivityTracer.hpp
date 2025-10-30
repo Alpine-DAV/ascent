@@ -227,7 +227,7 @@ protected:
   bool FieldAssocPoints;
   bool HasEmission; // Mode for integrating through energy bins
   bool DivideEmisByAbsorb;
-  vtkm::Int32 NumEnergyGroups;
+  viskores::Int32 NumEnergyGroups;
 
   // timers
   viskores::Float64 IntersectTime;

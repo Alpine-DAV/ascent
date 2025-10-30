@@ -50,12 +50,6 @@ MIR::SetOutputName(const std::string output_name)
   m_output_name = output_name;
 }
 
-void
-MIR::SetOutputName(const std::string output_name)
-{
-  m_output_name = output_name;
-}
-
 void 
 MIR::SetErrorScaling(const double error_scaling)
 {
