@@ -56,7 +56,7 @@ Ascent requires Conduit and provides optional features that depend on third-part
      - Required TPLS
 
    * - VTK-h Rendering and Filtering Pipelines
-     - VTk-m (Serial, OpenMP, CUDA, Kokkos)
+     - Viskores (Serial, OpenMP, CUDA, Kokkos)
 
    * - MFEM High-Order to Low-Order Refinement for VTK-h Pipelines
      - MFEM
