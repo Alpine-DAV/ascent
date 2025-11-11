@@ -15,7 +15,7 @@ set(ABOUT_SOURCES
 
 set(ABOUT_DEPS ascent)
 
-if(OPENMP_FOUND)
+if(ENABLE_OPENMP)
    list(APPEND deps openmp)
 endif()
 
@@ -38,7 +38,7 @@ endif()
 if(MPI_FOUND)
 
     set(ABOUT_MPI_DEPS ascent_mpi mpi)
-    if(OPENMP_FOUND)
+    if(ENABLE_OPENMP)
            list(APPEND about_mpi_deps openmp)
     endif()
 

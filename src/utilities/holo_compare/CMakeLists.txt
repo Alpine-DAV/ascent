@@ -15,7 +15,7 @@ set(HOLO_SOURCES
 
 set(holo_deps ascent)
 
-if(OPENMP_FOUND)
+if(ENABLE_OPENMP)
    list(APPEND deps openmp)
 endif()
 

@@ -15,7 +15,7 @@ set(REPLAY_SOURCES
 
 set(replay_deps ascent)
 
-if(OPENMP_FOUND)
+if(ENABLE_OPENMP)
    list(APPEND deps openmp)
 endif()
 
@@ -38,7 +38,7 @@ endif()
 if(MPI_FOUND)
 
     set(ascent_replay_mpi_deps ascent_mpi mpi)
-    if(OPENMP_FOUND)
+    if(ENABLE_OPENMP)
            list(APPEND ascent_replay_mpi_deps openmp)
     endif()
 
