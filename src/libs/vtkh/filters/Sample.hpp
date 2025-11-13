@@ -27,6 +27,14 @@ public:
             double y_end,
             double z_end);
 
+  void Box(int * dims,
+           double x_start,
+           double y_start,
+           double z_start,
+           double x_end,
+           double y_end,
+           double z_end);
+
   void Points(vtkm::cont::ArrayHandle<vtkm::Float64> xs,
               vtkm::cont::ArrayHandle<vtkm::Float64> ys,
               vtkm::cont::ArrayHandle<vtkm::Float64> zs);

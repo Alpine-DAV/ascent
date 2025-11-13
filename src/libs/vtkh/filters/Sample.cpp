@@ -954,6 +954,64 @@ Sample::Line(int num_samples,
 
 //---------------------------------------------------------------------------//
 void
+Sample::Box(int *dims,
+            double x_start,
+            double y_start,
+            double z_start,
+            double x_end,
+            double y_end,
+            double z_end)
+
+{
+  int num_samples = dims[0]*dims[1]*dims[2];
+  std::cerr << "num_samples: "  << num_samples << std::endl;
+
+  // alloc array handles to hold num_samples
+  // alloc xs, ys, zs
+  m_points_xs.Allocate(num_samples);
+  m_points_ys.Allocate(num_samples);
+  m_points_zs.Allocate(num_samples);
+  
+  auto x_portal = m_points_xs.WritePortal();
+  auto y_portal = m_points_ys.WritePortal();
+  auto z_portal = m_points_zs.WritePortal();
+  
+  const int Nx = dims[0];
+  const int Ny = dims[1];
+  const int Nz = dims[2];
+  std::cerr << "Nx: " << Nx << " Ny: " << Ny << " Nz: " << Nz << std::endl;
+  
+  std::cerr << "x_start: " << x_start << " x_end: " << x_end << std::endl;
+  std::cerr << "y_start: " << y_start << " y_end: " << y_end << std::endl;
+  std::cerr << "z_start: " << z_start << " z_end: " << z_end << std::endl;
+  //unset *_start&*_end are both set to (max-min)/2
+  const double dx = (Nx > 1) ? (x_end - x_start) / double(Nx - 1) : 0.0;
+  const double dy = (Ny > 1) ? (y_end - y_start) / double(Ny - 1) : 0.0;
+  const double dz = (Nz > 1) ? (z_end - z_start) / double(Nz - 1) : 0.0;
+  std::cerr << "dx: " << dx << " dy: " << dy << " dz: " << dz << std::endl;
+  
+  int idx = 0;
+  for (int i = 0; i < Nx; ++i)
+  {
+    double x = (Nx > 1) ? (x_start + i * dx) : x_start;
+    for (int j = 0; j < Ny; ++j)
+    {
+      double y = (Ny > 1) ? (y_start + j * dy) : y_start;
+      for (int k = 0; k < Nz; ++k)
+      {
+        double z = (Nz > 1) ? (z_start + k * dz) : z_start;
+        x_portal.Set(idx, x);
+        y_portal.Set(idx, y);
+        z_portal.Set(idx, z);
+        std::cerr << "i: " << i << " j: " << j << " k: " << k << " x: " << x << " y: " << y << " z: " << z << std::endl;
+        std::cerr << "idx: " << idx << std::endl;
+        idx++;
+      }
+    }
+  }
+}
+//---------------------------------------------------------------------------//
+void
 Sample::Points(vtkm::cont::ArrayHandle<vtkm::Float64> xs,
                vtkm::cont::ArrayHandle<vtkm::Float64> ys,
                vtkm::cont::ArrayHandle<vtkm::Float64> zs)

@@ -3993,6 +3993,9 @@ VTKHSample::verify_params(const conduit::Node &params,
     res &= check_numeric("points/y",params, info, false);
     res &= check_numeric("points/z",params, info, false);
 
+    res &= check_numeric("box/dims/x",params, info, false);
+    res &= check_numeric("box/dims/y",params, info, false);
+    res &= check_numeric("box/dims/z",params, info, false);
     res &= (check_numeric("box/min/x",params, info, false) 
            || check_string("box/min/x",params, info, false));
     res &= (check_numeric("box/min/y",params, info, false) 
@@ -4036,6 +4039,9 @@ VTKHSample::verify_params(const conduit::Node &params,
     valid_paths.push_back("points/y");
     valid_paths.push_back("points/z");
 
+    valid_paths.push_back("box/dims/i");
+    valid_paths.push_back("box/dims/j");
+    valid_paths.push_back("box/dims/k");
     valid_paths.push_back("box/min/x");
     valid_paths.push_back("box/min/y");
     valid_paths.push_back("box/min/z");
@@ -4181,38 +4187,147 @@ VTKHSample::execute()
     }
     else if(params().has_path("box"))
     {
-        vtkm::cont::ArrayHandle<vtkm::Float64> x_hnd, y_hnd, z_hnd;
+      params().print();
         
-        int spatial_dims = 2;
-        int x_dims, y_dims, z_dims;
+        int dims[3];
         vtkm::Float64 x_min, x_max, y_min, y_max, z_min, z_max;
-        const Node &dims_b = params()["dims"];
-        const Node &min_b = params()["min"];
-        const Node &max_b = params()["max"];
-        x_dims = dims_b["i"].to_int();
-        y_dims = dims_b["j"].to_int();
+        vtkm::Bounds g_bounds = data.GetGlobalBounds();
+        const Node &dims_b = params()["box/dims"];
+        const Node &min_b = params()["box/min"];
+        const Node &max_b = params()["box/max"];
+        dims_b.print();
 
-        int npts = x_vals.dtype().number_of_elements();
-        x_hnd.Allocate(npts);
-        y_hnd.Allocate(npts);
+        if(dims_b.has_child("i"))
+        {
+          dims[0] = dims_b["i"].to_int();
+        }
+        else
+          dims[0] = 1;
+
+        if(dims_b.has_child("j"))
+        {
+          dims[1] = dims_b["j"].to_int();
+        }
+        else
+          dims[1] = 1;
 
         if(dims_b.has_child("k"))
         {
-          spatial_dims = 3;
-          z_dims = dims_b["k"].to_int();
+          dims[2] = dims_b["k"].to_int();
+        }
+        else
+          dims[2] = 1;
+        
+        if(min_b.has_child("x"))
+        {
+          if(min_b["x"].dtype().is_string())
+          {
+            if(min_b["x"].as_string() != "min")
+              ASCENT_ERROR("minimum value for x must be the string `min` or a scalar double");
+            x_min = g_bounds.X.Min;
+          }
+          else
+          {
+            x_min = min_b["x"].as_float64();
+          }
+        }
+        else //not set; default (max-min)/2
+        {
+          x_min = (g_bounds.X.Max - g_bounds.X.Min)/2.0;
         }
 
-        for(int i=0;i<npts;i++)
+        if(min_b.has_child("y"))
         {
-            x_hnd.WritePortal().Set(i,x_vals[i]);
-            y_hnd.WritePortal().Set(i,y_vals[i]);
-            if(spatial_dims ==3)
-            {
-                z_hnd.WritePortal().Set(i,z_vals[i]);
-            }
+          if(min_b["y"].dtype().is_string())
+          {
+            if(min_b["y"].as_string() != "min")
+              ASCENT_ERROR("minimum value for y must be the string `min` or a scalar double");
+            y_min = g_bounds.Y.Min;
+          }
+          else
+          {
+            y_min = min_b["y"].as_float64();
+          }
         }
+        else //not set; default (max-min)/2
+        {
+          y_min = (g_bounds.Y.Max - g_bounds.Y.Min)/2.0;
+        }
+
+        if(min_b.has_child("z"))
+        {
+          if(min_b["z"].dtype().is_string())
+          {
+            if(min_b["z"].as_string() != "min")
+              ASCENT_ERROR("minimum value for z must be the string `min` or a scalar double");
+            z_min = g_bounds.Z.Min;
+          }
+          else
+          {
+            z_min = min_b["z"].as_float64();
+          }
+        }
+        else //not set; default (max-min)/2
+        {
+          z_min = (g_bounds.Z.Max - g_bounds.Z.Min)/2.0;
+        }
+
+        if(max_b.has_child("x"))
+        {
+          if(max_b["x"].dtype().is_string())
+          {
+            if(max_b["x"].as_string() != "max")
+              ASCENT_ERROR("maximum value for x must be the string `max` or a scalar double");
+            x_max = g_bounds.X.Max;
+          }
+          else
+          {
+            x_max = max_b["x"].as_float64();
+          }
+        }
+        else //not set; default (max-min)/2
+        {
+          x_max = (g_bounds.X.Max - g_bounds.X.Min)/2.0;
+        }
+
+        if(max_b.has_child("y"))
+        {
+          if(max_b["y"].dtype().is_string())
+          {
+            if(max_b["y"].as_string() != "max")
+              ASCENT_ERROR("maximum value for y must be the string `max` or a scalar double");
+            y_max = g_bounds.Y.Max;
+          }
+          else
+          {
+            y_max = max_b["y"].as_float64();
+          }
+        }
+        else //not set; default (max-min)/2
+        {
+          y_max = (g_bounds.Y.Max - g_bounds.Y.Min)/2.0;
+        }
+
+        if(max_b.has_child("z"))
+        {
+          if(max_b["z"].dtype().is_string())
+          {
+            if(max_b["z"].as_string() != "max")
+              ASCENT_ERROR("maximum value for z must be the string `max` or a scalar double");
+            z_max = g_bounds.Z.Max;
+          }
+          else
+          {
+            z_max = max_b["z"].as_float64();
+          }
+        }
+        else //not set; default (max-min)/2
+        {
+          z_max = (g_bounds.Z.Max - g_bounds.Z.Min)/2.0;
+        }
+
         
-        sampler.Points(x_hnd, y_hnd, z_hnd);
+        sampler.Box(dims, x_min, y_min, z_min, x_max, y_max, z_max);
 
     }
 
