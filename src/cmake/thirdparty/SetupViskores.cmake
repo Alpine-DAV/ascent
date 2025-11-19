@@ -31,12 +31,6 @@ if(ENABLE_CUDA AND NOT Viskores_ENABLE_CUDA)
    message(FATAL_ERROR "VTK-h CUDA support requires Viskores with CUDA support (ENABLE_CUDA == TRUE, however Viskores_ENABLE_CUDA == FALSE")
 endif()
 
-if(ENABLE_CUDA AND BUILD_SHARED_LIBS)
-  if(VISKORES_VERSION VERSION_LESS "1.0.0")
-    message(FATAL_ERROR "Cannot build shared libs with CUDA when Viskores is < v1.0.0")
-  endif()
-endif()
-
 set(VISKORES_FOUND TRUE)
 
 set(VISKORES_TARGETS viskores::cont viskores::filter viskores::rendering)
