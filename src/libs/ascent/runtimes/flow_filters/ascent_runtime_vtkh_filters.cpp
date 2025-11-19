@@ -3858,20 +3858,11 @@ VTKHUniformGrid::execute()
     std::string topo_name = collection->field_topology(field);
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
     vtkm::Id global_cells = data.GetGlobalNumberOfCells();
-    std::cerr << "global number of cells: " << global_cells << std::endl;
-    std::cerr << "print data: " <<std::endl;
-    data.PrintSummary(std::cerr);
-    std::cerr << "print data ENDDDDDDDDDDDDD" <<std::endl;
 
     vtkm::Bounds d_bounds = data.GetGlobalBounds();
     vtkm::Float64 x_extents = d_bounds.X.Length() + 1; //add one b/c we are
     vtkm::Float64 y_extents = d_bounds.Y.Length() + 1; //setting num points
     vtkm::Float64 z_extents = d_bounds.Z.Length() + 1; //(not cells) in each dim
-    std::cerr << " x cells: " << global_cells/((z_extents-1)*(y_extents-1)) << std::endl;
-    std::cerr << " y cells: " << global_cells/((z_extents-1)*(x_extents-1)) << std::endl;
-    std::cerr << " z cells: " << global_cells/((x_extents-1)*(y_extents-1)) << std::endl;
-    std::cerr << "extents: " << x_extents << " " << y_extents << " " << z_extents << std::endl;
-    std::cerr << "extents: " << x_extents << " " << y_extents << " " << z_extents << std::endl;
 
     vtkm::Float64 invalid_value = 0.0;
     

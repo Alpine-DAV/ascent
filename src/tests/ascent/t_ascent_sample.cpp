@@ -401,9 +401,9 @@ TEST(ascent_sample, box_3d)
           fields: ["braid"]
           box:
             dims:
-              i: 10.0
-              j: 10.0
-              k: 10.0
+              i: 5.0
+              j: 5.0
+              k: 5.0
             max:
               x: max 
               y: max 
@@ -413,6 +413,15 @@ TEST(ascent_sample, box_3d)
               y: 0.0
               z: 0.0
           invalid_value: -10.0
+- 
+  action: "add_scenes"
+  scenes: 
+    s1:
+      plots:
+        p1:
+          type: "pseudocolor"
+          field: "braid"
+          pipeline: pl1
 - 
   action: "add_extracts"
   extracts: 
@@ -424,7 +433,8 @@ TEST(ascent_sample, box_3d)
 )xyzxyz";
     conduit::Node actions;
     actions.parse(acts_str,"yaml");
-    actions[1]["extracts/e1/params/path"] = output_file;
+    actions[1]["scenes/s1/image_prefix"] = output_file;
+    actions[2]["extracts/e1/params/path"] = output_file;
     //actions.print();
 
     //

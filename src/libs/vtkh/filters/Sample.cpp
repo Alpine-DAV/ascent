@@ -781,10 +781,6 @@ Sample::DoExecute()
   const int num_domains = domain_ids.size();
 
 #if _DEBUG 
-  std::cerr << "m_dims: " << m_dims[0] << " " << m_dims[1] << " " << m_dims[2] << std::endl;
-  std::cerr << "m_origin: " << m_origin[0] << " " << m_origin[1] << " " << m_origin[2] << std::endl;
-  std::cerr << "m_spacing: " << m_spacing[0] << " " << m_spacing[1] << " " << m_spacing[2] << std::endl;
-  std::cerr << "input num cells: " << m_input->GetGlobalNumberOfCells() << std::endl; 
 #ifdef VTKH_PARALLEL
   std::cerr << "par rank " << par_rank << " num domains: " << num_domains << std::endl;
 #endif
@@ -964,7 +960,6 @@ Sample::Box(int *dims,
 
 {
   int num_samples = dims[0]*dims[1]*dims[2];
-  std::cerr << "num_samples: "  << num_samples << std::endl;
 
   // alloc array handles to hold num_samples
   // alloc xs, ys, zs
@@ -979,16 +974,19 @@ Sample::Box(int *dims,
   const int Nx = dims[0];
   const int Ny = dims[1];
   const int Nz = dims[2];
+  //unset *_start&*_end are both set to (max-min)/2
+  const double dx = (Nx > 1) ? (x_end - x_start) / double(Nx - 1) : 0.0;
+  const double dy = (Ny > 1) ? (y_end - y_start) / double(Ny - 1) : 0.0;
+  const double dz = (Nz > 1) ? (z_end - z_start) / double(Nz - 1) : 0.0;
+
+#if _DEBUG 
   std::cerr << "Nx: " << Nx << " Ny: " << Ny << " Nz: " << Nz << std::endl;
   
   std::cerr << "x_start: " << x_start << " x_end: " << x_end << std::endl;
   std::cerr << "y_start: " << y_start << " y_end: " << y_end << std::endl;
   std::cerr << "z_start: " << z_start << " z_end: " << z_end << std::endl;
-  //unset *_start&*_end are both set to (max-min)/2
-  const double dx = (Nx > 1) ? (x_end - x_start) / double(Nx - 1) : 0.0;
-  const double dy = (Ny > 1) ? (y_end - y_start) / double(Ny - 1) : 0.0;
-  const double dz = (Nz > 1) ? (z_end - z_start) / double(Nz - 1) : 0.0;
   std::cerr << "dx: " << dx << " dy: " << dy << " dz: " << dz << std::endl;
+#endif
   
   int idx = 0;
   for (int i = 0; i < Nx; ++i)
@@ -1003,8 +1001,10 @@ Sample::Box(int *dims,
         x_portal.Set(idx, x);
         y_portal.Set(idx, y);
         z_portal.Set(idx, z);
+#if _DEBUG 
         std::cerr << "i: " << i << " j: " << j << " k: " << k << " x: " << x << " y: " << y << " z: " << z << std::endl;
         std::cerr << "idx: " << idx << std::endl;
+#endif
         idx++;
       }
     }
