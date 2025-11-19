@@ -653,7 +653,7 @@ cmake -S ${kokkos_src_dir} -B ${kokkos_build_dir} ${cmake_compiler_settings} \
 
 echo "**** Building Kokkos ${kokkos_version}"
 cmake --build ${kokkos_build_dir} --config ${build_config} -j${build_jobs}
-echo "**** Installing Viskores ${kokkos_version}"
+echo "**** Installing Kokkos ${kokkos_version}"
 cmake --install ${kokkos_build_dir} --config ${build_config}
 
 fi
