@@ -78,16 +78,16 @@ class CTX:
     def gen_launch(self):
         res  = "#!/bin/bash\n"
         res += "set -x\n"
-        res += "docker stop azemu_exec\n"
-        res += "docker rm  azemu_exec\n"
-        res += "docker run --name azemu_exec -t -d {0}\n".format(self.container)
+        res += "docker stop azemu_exec_" + self.name + "\n"
+        res += "docker rm  azemu_exec_" + self.name + "\n"
+        res += "docker run --name azemu_exec_" + self.name + " -t -d {0}\n".format(self.container)
         #res += 'docker exec azemu_exec sh -c "apt-get update && env DEBIAN_FRONTEND=\"noninteractive\" TZ=\"America/Los_Angeles\" apt-get install -y sudo software-properties-common git"\n'
-        res += 'docker exec azemu_exec sh -c "apt-get update && env apt-get install -y sudo"\n'
-        res += 'docker exec azemu_exec sh -c "useradd -ms /bin/bash -G sudo user && echo \\"user:docker\\\" | chpasswd"\n'
-        res += 'docker exec azemu_exec sh -c "echo \\"user ALL=(root) NOPASSWD:ALL\\\" > /etc/sudoers.d/user &&  chmod 0440 /etc/sudoers.d/user"\n'
-        res += 'docker cp {0} azemu_exec://home/user/\n'.format(self.script_file())
-        res += 'docker exec -u user azemu_exec  sh -c "echo [AZEMU EXEC SCRIPT]!"\n'
-        res += 'docker exec -u user --workdir=//home/user/ -i azemu_exec ./{0}\n'.format(self.script_file())
+        res += 'docker exec azemu_exec_' + self.name + ' sh -c "apt-get update && env apt-get install -y sudo"\n'
+        res += 'docker exec azemu_exec_' + self.name + ' sh -c "useradd -ms /bin/bash -G sudo user && echo \\"user:docker\\\" | chpasswd"\n'
+        res += 'docker exec azemu_exec_' + self.name + ' sh -c "echo \\"user ALL=(root) NOPASSWD:ALL\\\" > /etc/sudoers.d/user &&  chmod 0440 /etc/sudoers.d/user"\n'
+        res += 'docker cp {0} azemu_exec_'.format(self.script_file()) + self.name + '://home/user/\n'
+        res += 'docker exec -u user azemu_exec_' + self.name + '  sh -c "echo [AZEMU EXEC SCRIPT]!"\n'
+        res += 'docker exec -u user --workdir=//home/user/ -i azemu_exec_' + self.name + ' ./{0}\n'.format(self.script_file())
         return res
 
     def __str__(self):
@@ -220,7 +220,7 @@ def proc_steps(steps, config, ctx):
             ctx.print_esc(s)
             ctx.print('echo ">start checkout"')
             ctx.print("date")
-            ctx.print("git clone --recursive --depth=1 -b {0} {1} ".format(
+            ctx.print("git clone --recursive -b {0} {1} ".format(
                       config["repo_branch"],
                       config["repo_url"]))
             ctx.set_cwd(config["name"])
