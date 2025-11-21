@@ -59,8 +59,8 @@ stages:
           python scripts/ci/check_blt_time_travel.py
         displayName: 'BLT Time Travel Check'
 
-main checks build using docker containers that
-include tpls built with uber
+# main checks build using docker containers that
+# include tpls built with uber
 - stage: Main
   jobs:
   - job: Linux
