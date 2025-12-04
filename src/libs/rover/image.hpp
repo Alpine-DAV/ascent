@@ -27,7 +27,7 @@ public:
 
   HandleType get_intensity(const int &channel_num);
   HandleType get_optical_depth(const int &channel_num);
-  int get_num_channels() const;
+  int get_num_energy_groups() const;
   bool has_intensity(const int &channel_num) const;
   bool has_optical_depth(const int &channel_num) const;
   void normalize_intensity(const int &channel_num);

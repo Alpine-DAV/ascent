@@ -15,6 +15,7 @@ public:
   virtual ~MIR();
   std::string GetName() const override;
   void SetMatSet(const std::string matset_name);
+  void SetOutputName(const std::string output_field);
   void SetErrorScaling(const double error_scaling);
   void SetScalingDecay(const double scaling_decay);
   void SetIterations(const int iterations);
@@ -26,6 +27,7 @@ protected:
   void DoExecute() override;
 
   std::string m_matset_name;
+  std::string m_output_name;
   std::string m_lengths_name;
   std::string m_offsets_name;
   std::string m_ids_name;

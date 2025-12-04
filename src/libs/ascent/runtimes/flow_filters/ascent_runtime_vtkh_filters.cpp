@@ -6470,6 +6470,7 @@ VTKHMIR::verify_params(const conduit::Node &params,
     info.reset();
 
     bool res = check_string("matset",params, info, true);
+    res &= check_string("output_name", params, info, false);
     res &= check_numeric("error_scaling", params, info, false);
     res &= check_numeric("scaling_decay", params, info, false);
     res &= check_numeric("iterations", params, info, false);
@@ -6477,6 +6478,7 @@ VTKHMIR::verify_params(const conduit::Node &params,
 
     std::vector<std::string> valid_paths;
     valid_paths.push_back("matset");
+    valid_paths.push_back("output_name");
     valid_paths.push_back("error_scaling");
     valid_paths.push_back("scaling_decay");
     valid_paths.push_back("iterations");
@@ -6512,7 +6514,7 @@ VTKHMIR::execute()
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
     std::string matset_name = params()["matset"].as_string();
-    std::string ids_name = "material_ids";//matset_name + "_ids";
+    std::string ids_name = "material_ids"; 
     if(!collection->has_field(ids_name))
     {
       bool throw_error = false;
@@ -6529,6 +6531,7 @@ VTKHMIR::execute()
     double scaling_decay = 0.0; 
     double max_error = 0.00001;
     int iterations = 0;
+    std::string output_name = matset_name;
     if(params().has_path("error_scaling"))
       error_scaling = params()["error_scaling"].to_float64();
     if(params().has_path("scaling_decay"))
@@ -6537,12 +6540,15 @@ VTKHMIR::execute()
       iterations = params()["iterations"].to_int64();
     if(params().has_path("max_error"))
       max_error = params()["max_error"].to_float64();
+    if(params().has_path("output_name"))
+      output_name = params()["output_name"].as_string();
 
     vtkh::MIR mir;
     mir.SetErrorScaling(error_scaling);
     mir.SetScalingDecay(scaling_decay);
     mir.SetIterations(iterations);
     mir.SetMaxError(max_error);
+    mir.SetOutputName(output_name);
     mir.SetMatSet(matset_name);
     mir.SetInput(&data);
     mir.Update();

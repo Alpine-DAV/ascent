@@ -44,6 +44,12 @@ MIR::SetMatSet(const std::string matset_name)
   m_vfs_name = "volume_fractions";// matset_name + "_vfs";
 }
 
+void
+MIR::SetOutputName(const std::string output_name)
+{
+  m_output_name = output_name;
+}
+
 void 
 MIR::SetErrorScaling(const double error_scaling)
 {
@@ -110,13 +116,14 @@ void MIR::DoExecute()
     mir.SetScalingDecay(vtkm::Float64(m_scaling_decay));
     mir.SetMaxIterations(vtkm::IdComponent(m_iterations));
     mir.SetMaxPercentError(vtkm::Float64(m_max_error));
+
     vtkm::cont::DataSet output = mir.Execute(dom);
+
     //cast and call error if cellMat stays as ints
     vtkm::cont::UnknownArrayHandle float_field = output.GetField("cellMat").GetDataAsDefaultFloat();
     vtkm::cont::Field::Association field_assoc = output.GetField("cellMat").GetAssociation();
-    vtkm::cont::Field matset_field(m_matset_name,field_assoc, float_field);
+    vtkm::cont::Field matset_field(m_output_name, field_assoc, float_field);
     output.AddField(matset_field);
-    //output.GetField("cellMat").SetData(float_field);
     this->m_output->AddDomain(output, i);
 //    this->m_output->AddDomain(dom, i); //original data
   }
