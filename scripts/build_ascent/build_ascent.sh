@@ -33,6 +33,7 @@ enable_mpicc="${enable_mpicc:=OFF}"
 enable_find_mpi="${enable_find_mpi:=ON}"
 enable_tests="${enable_tests:=OFF}"
 enable_verbose="${enable_verbose:=ON}"
+enable_64bit_ids="$enable_64bit_ids:=OFF}"
 build_jobs="${build_jobs:=6}"
 build_config="${build_config:=Release}"
 build_shared_libs="${build_shared_libs:=ON}"
@@ -634,7 +635,6 @@ if [[ "$enable_hip" == "ON" ]]; then
 fi
 
 if [[ "$enable_sycl" == "ON" ]]; then
-  #kokkos_extra_cmake_args="-DCMAKE_CXX_FLAGS=-fPIC -fp-model=precise -Wno-unused-command-line-argument -Wno-deprecated-declarations -fsycl-device-code-split=per_kernel -fsycl-max-parallel-link-jobs=128"
   kokkos_extra_cmake_args="${kokkos_extra_cmake_args} -DKokkos_ENABLE_SYCL=ON"
   kokkos_extra_cmake_args="${kokkos_extra_cmake_args} -DKokkos_ARCH_INTEL_PVC=ON"
   kokkos_extra_cmake_args="${kokkos_extra_cmake_args} -DCMAKE_CXX_EXTENSIONS=OFF"
@@ -689,31 +689,45 @@ if [ ! -d ${vtkm_src_dir} ]; then
   cd ${root_dir}
 fi
 
-
-vtkm_extra_cmake_args=""
+vtkm_extra_cmake_args=()
 if [[ "$enable_cuda" == "ON" ]]; then
-  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DVTKm_ENABLE_CUDA=ON"
-  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DCMAKE_CUDA_HOST_COMPILER=${CXX}"
-  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DCMAKE_CUDA_ARCHITECTURES=${CUDA_ARCH}"
+  vtkm_extra_cmake_args+=(
+      -DVTKm_ENABLE_CUDA=ON
+      -DCMAKE_CUDA_HOST_COMPILER="${CXX}"
+      -DCMAKE_CUDA_ARCHITECTURES="${CUDA_ARCH}"
+    )
 fi
 
 if [[ "$enable_hip" == "ON" ]]; then
-  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DVTKm_ENABLE_KOKKOS=ON"
-  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DCMAKE_PREFIX_PATH=${kokkos_install_dir}"
-  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DCMAKE_HIP_ARCHITECTURES=${ROCM_ARCH}"
-  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DVTKm_ENABLE_KOKKOS_THRUST=OFF"
+  vtkm_extra_cmake_args+=(
+      -DVTKm_ENABLE_KOKKOS=ON
+      -DCMAKE_PREFIX_PATH="${kokkos_install_dir}"
+      -DCMAKE_HIP_ARCHITECTURES="${ROCM_ARCH}"
+      -DVTKm_ENABLE_KOKKOS_THRUST=OFF
+    )
 fi
 
 if [[ "$enable_sycl" == "ON" ]]; then
-  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DVTKm_ENABLE_KOKKOS=ON"
-  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DCMAKE_PREFIX_PATH=${kokkos_install_dir}"
-  #vtkm_extra_cmake_args="-DCMAKE_CXX_FLAGS=-fPIC -fp-model=precise -Wno-unused-command-line-argument -Wno-deprecated-declarations -fsycl-device-code-split=per_kernel -fsycl-max-parallel-link-jobs=128"
+  vtkm_extra_cmake_args+=(
+    -DVTKm_ENABLE_KOKKOS=ON
+    -DCMAKE_PREFIX_PATH="${kokkos_install_dir}"
+    -DCMAKE_CXX_FLAGS="-fPIC -fp-model=precise -Wno-unused-command-line-argument -Wno-deprecated-declarations -fsycl-device-code-split=per_kernel -fsycl-max-parallel-link-jobs=20"
+  )
 fi
 
 
 if [[ "$enable_mpicc" == "ON" ]]; then
-  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DMPI_C_COMPILER=${mpicc_exe}"
-  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DMPI_CXX_COMPILER=${mpicxx_exe}"
+vtkm_extra_cmake_args+=(
+    -DMPI_C_COMPILER="${mpicc_exe}"
+    -DMPI_CXX_COMPILER="${mpicxx_exe}"
+  )
+fi
+
+if [[ "$enable_64bit_ids" == "ON" ]]; then
+  vtkm_extra_cmake_args+=(
+      -DVTKM_ALLOW_64BIT_IDS_FOR_ASCENT=ON
+      -DVTKm_USE_64BIT_IDS=ON
+    )
 fi
 
 echo "**** Configuring VTK-m ${vtkm_version}"
@@ -721,7 +735,8 @@ cmake -S ${vtkm_src_dir} -B ${vtkm_build_dir} ${cmake_compiler_settings} \
   -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose}\
   -DCMAKE_BUILD_TYPE=${build_config} \
   -DBUILD_SHARED_LIBS=${build_shared_libs} \
-  -DVTKm_USE_64BIT_IDS=OFF \
+  -DVTKm_USE_64BIT_IDS=${enable_64bit_ids} \
+  -DVTKM_ALLOW_64BIT_IDS_FOR_ASCENT=${enable_64bit_ids} \
   -DVTKm_USE_DOUBLE_PRECISION=ON \
   -DVTKm_USE_DEFAULT_TYPES_FOR_ASCENT=ON \
   -DVTKm_ENABLE_MPI=${enable_mpi} \
@@ -729,8 +744,9 @@ cmake -S ${vtkm_src_dir} -B ${vtkm_build_dir} ${cmake_compiler_settings} \
   -DVTKm_ENABLE_RENDERING=ON \
   -DVTKm_ENABLE_TESTING=OFF\
   -DBUILD_TESTING=OFF \
-  -DVTKm_ENABLE_BENCHMARKS=OFF ${vtkm_extra_cmake_args} \
-  -DCMAKE_INSTALL_PREFIX=${vtkm_install_dir}
+  -DVTKm_ENABLE_BENCHMARKS=OFF \
+  -DCMAKE_INSTALL_PREFIX=${vtkm_install_dir} \
+  "${vtkm_extra_cmake_args[@]}"
 
 echo "**** Building VTK-m ${vtkm_version}"
 cmake --build ${vtkm_build_dir} --config ${build_config} -j${build_jobs}
