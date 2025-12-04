@@ -1,21 +1,18 @@
 #!/bin/bash -l
 
-export IGC_FunctionCloningThreshold=1
-export IGC_ControlInlineTinySize=100
-export IGC_OCLInlineThreshold=200
-export IGC_PartitionUnit=1
-export IGC_ForceOCLSIMDWidth=16
-export ZE_AFFINITY_MASK=0.0
-
-# Proxies
-export HTTP_PROXY=http://proxy.alcf.anl.gov:3128
-export HTTPS_PROXY=http://proxy.alcf.anl.gov:3128
-export http_proxy=http://proxy.alcf.anl.gov:3128
-export https_proxy=http://proxy.alcf.anl.gov:3128
+if [[ ! "${HOSTNAME}" =~ aurora-uan ]]; then
+  export HTTP_PROXY="http://proxy.alcf.anl.gov:3128"
+  export HTTPS_PROXY="http://proxy.alcf.anl.gov:3128"
+  export http_proxy="http://proxy.alcf.anl.gov:3128"
+  export https_proxy="http://proxy.alcf.anl.gov:3128"
+  export ftp_proxy="http://proxy.alcf.anl.gov:3128"
+  export no_proxy="admin,polaris-adminvm-01,localhost,*.cm.polaris.alcf.anl.gov,polaris-*,*.polaris.alcf.anl.gov,*.alcf.anl.gov"
+fi
 
 module reset
 module use /soft/modulefiles
-module load spack-pe-gcc cmake
-module load oneapi/eng-compiler/2023.12.15.002
+module load cmake
+module load python/3.10.14
+module load py-cython py-numpy py-pip py-wheel py-setuptools
 
-env CC=`which icx` CXX=`which icpx` FTN=`which ifx` enable_sycl=ON enable_mpi=ON enable_fortran=ON raja_enable_vectorization=OFF enable_tests=ON enable_verbose=ON ./build_ascent_sycl.sh
+env CC=`which mpicc` CXX=`which mpicxx` FTN=`which mpifort` enable_64bit_ids=ON enable_sycl=ON enable_mpi=ON enable_find_mpi=OFF enable_fortran=ON enable_python=ON raja_enable_vectorization=ON enable_tests=OFF enable_verbose=OFF ./build_ascent_sycl.sh
