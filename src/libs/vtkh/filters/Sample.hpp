@@ -55,6 +55,7 @@ protected:
 
   std::vector<std::string> m_fields;
   vtkm::Float64 m_invalid_value;
+  int m_num_samples;
 };
 
 } //namespace vtkh

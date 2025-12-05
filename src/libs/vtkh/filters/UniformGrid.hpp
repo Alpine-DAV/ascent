@@ -10,7 +10,7 @@
 namespace vtkh
 {
 
-using Vec3f = vtkm::Vec<vtkm::Float64,3>;
+using Vec3_f64    = vtkm::Vec<vtkm::Float64, 3>;
 
 class VTKH_API UniformGrid : public Filter
 {
@@ -18,18 +18,18 @@ public:
   UniformGrid();
   virtual ~UniformGrid();
   std::string GetName() const override;
-  void Dims(const Vec3f dims);
-  void Origin(const Vec3f origin);
-  void Spacing(const Vec3f spacing);
+  void Dims(const Vec3_f64 dims);
+  void Origin(const Vec3_f64 origin);
+  void Spacing(const Vec3_f64 spacing);
   void Fields(const std::vector<std::string> fields);
   void InvalidValue(const vtkm::Float64 invalid_value);
 protected:
   void PreExecute() override;
   void PostExecute() override;
   void DoExecute() override;
-  Vec3f m_dims;
-  Vec3f m_origin;
-  Vec3f m_spacing;
+  Vec3_f64 m_dims;
+  Vec3_f64 m_origin;
+  Vec3_f64 m_spacing;
   std::vector<std::string> m_fields;
   vtkm::Float64 m_invalid_value;
 };

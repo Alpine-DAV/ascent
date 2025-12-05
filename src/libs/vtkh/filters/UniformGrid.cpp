@@ -18,7 +18,6 @@
 #include <vtkm/cont/Algorithm.h>
 #include <vtkm/worklet/WorkletMapField.h>
 #include <vtkm/worklet/DispatcherMapField.h>
-#include <vtkm/cont/DataSetBuilderUniform.h>
 
 using scalarI = vtkm::cont::ArrayHandle<vtkm::Int32>;
 using scalarF = vtkm::cont::ArrayHandle<vtkm::Float32>;
@@ -30,7 +29,7 @@ using vec2_64  = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,2>>;
 using Vec2d    = vtkm::Vec<double, 2>;
 using Vec3d    = vtkm::Vec<double, 3>;
 
-#define _DEBUG 1
+#define _DEBUG 0
 
 namespace vtkh
 {
@@ -39,7 +38,7 @@ namespace detail
 {
 
 vtkm::cont::Field 
-MakeEmptyField(std::string field_name , vtkm::Id field_id, Vec3f dims, vtkm::cont::Field::Association assoc, vtkm::Float64 val)
+MakeEmptyField(std::string field_name , vtkm::Id field_id, Vec3_f64 dims, vtkm::cont::Field::Association assoc, vtkm::Float64 val)
 {
   int num_values = 0;
   if(assoc == vtkm::cont::Field::Association::Cells) //cell centered field
@@ -150,7 +149,7 @@ class GlobalReduceField
   const vtkm::cont::DataSet &m_dataset;
   const std::string         m_field;
   const vtkm::Float64       m_invalid_value;
-  const Vec3f               &m_dims;
+  const Vec3_f64               &m_dims;
   const vtkm::Id            m_field_id;
   vtkm::cont::DataSet       &m_result;
 
@@ -158,7 +157,7 @@ public:
   GlobalReduceField(const vtkm::cont::DataSet &dataset, 
                     const std::string &field, 
                     const vtkm::Float64 &invalid_value, 
-                    const Vec3f &dims,
+                    const Vec3_f64 &dims,
                     const vtkm::Id &field_id,
                     vtkm::cont::DataSet &result)
     : m_dataset(dataset),
@@ -185,14 +184,14 @@ public:
     const std::string &m_field_name;
     const vtkm::cont::DataSet &m_data_set;
     const vtkm::Float64 &m_invalid_value;
-    const Vec3f &m_dims;
+    const Vec3_f64 &m_dims;
     const vtkm::Id &m_field_id;
     vtkm::cont::DataSet &m_result;
   
     ReduceField(const std::string &field_name,
                 const vtkm::cont::DataSet &data_set, 
                 const vtkm::Float64 &invalid_value,
-                const Vec3f &dims, 
+                const Vec3_f64 &dims, 
                 const vtkm::Id &field_id, 
                 vtkm::cont::DataSet &result)
       : m_field_name(field_name),
@@ -213,7 +212,6 @@ public:
       int par_size;
       MPI_Comm_rank(mpi_comm, &par_rank);
       MPI_Comm_size(mpi_comm, &par_size);
-      std::cerr << "par_rank is here: " << par_rank << std::endl;
 
       vtkm::cont::Field res;
       vtkm::cont::Field field;
@@ -246,18 +244,14 @@ public:
       vtkm::cont::ArrayHandle<unsigned char> ah_mask;
       if (!is_empty)
       {
-        std::cerr << " par_rank : " << par_rank << " is non emtpy: " << !is_empty << std::endl;
         uah_field = field.GetData();
         m_data_set.GetPointField("HIDDEN").GetData().AsArrayHandle(ah_mask);
       }
       else
       {
-        std::cerr <<" uah allocate: " << std::endl;
-        std::cerr <<"  ah MASK allocate: " << std::endl;
         ah_mask.AllocateAndFill(num_points, 2);
       }
       auto mask_portal = ah_mask.ReadPortal();
-      std::cerr << " par_rank : " << par_rank << " after the allocate " << std::endl;
 
 #if _DEBUG 
       std::cerr << "NUM_POINTS: " << num_points << std::endl;
@@ -274,10 +268,8 @@ public:
       for(int j = 0; j < num_points; ++j)
       {
 
-        std::cerr << "par rank says has num field vasl: " << par_rank << std::endl;
         if(mask_portal.Get(j) == 0)
 	      {
-          std::cerr << "par rank says it is valid: " << par_rank << std::endl;
           l_rank_mask[j] = par_rank;
 	      }
       }
@@ -287,7 +279,6 @@ public:
 
       //combine fields
       ////send to root process
-      std::cerr << "rank " << par_rank << " HEREEEEEEEEEEEEEEEEEEEEE"  << std::endl;
       if(m_field_id == 0)
       {
 #if _DEBUG 
@@ -377,8 +368,6 @@ public:
 #if _DEBUG 
         std::cerr << "In scalar double global reduce for field: " << field.GetName() << std::endl;
 #endif
-      std::cerr << "rank " << par_rank << " HEREEEEEEEEEEEEEEEEEEEEE 222222"  << std::endl;
-            std::cerr << "is it this? " << std::endl;
         scalarD ah_field; 
         if(is_empty)
           ah_field.AllocateAndFill(num_points, 0.0);
@@ -390,7 +379,6 @@ public:
           //if we do not own the point, set it to zero
           if(g_rank_mask[i] != par_rank)
           {
-      std::cerr << "rank " << par_rank << " HEREEEEEEEEEEEEEEEEEEEEE 999999999999999"  << std::endl;
             ah_field.WritePortal().Set(i,(double)0.0);
           }
         }
@@ -406,7 +394,6 @@ public:
             case vtkm::cont::Field::Association::WholeDataSet: assoc_str = "WholeDataSet"; break;
             case vtkm::cont::Field::Association::Any:         assoc_str = "Any"; break; // if present in your VTK-m
           }
-          std::cerr << "rank: " << par_rank << " field assoc: " << assoc_str << std::endl;
         if(par_rank == 0)
         {
           for(int i = 0; i < num_points; ++i)
@@ -437,8 +424,6 @@ public:
         std::vector<float> local_y_points(num_points,(float)0.0);
         std::vector<float> global_x_points(num_points,(float)0.0);
         std::vector<float> global_y_points(num_points,(float)0.0);
-
-	      //std::cerr <<  	ah_field.ReadPortal().Get(i) << ": " << ah_field.ReadPortal().Get(i)[0] << " " << ah_field.ReadPortal().Get(i)[1] << " | ";
 
         for(int i = 0; i < num_points; ++i)
         {
@@ -489,8 +474,6 @@ public:
         std::vector<double> global_x_points(num_points,(double)0.0);
         std::vector<double> global_y_points(num_points,(double)0.0);
 
-	      //std::cerr <<  	ah_field.ReadPortal().Get(i) << ": " << ah_field.ReadPortal().Get(i)[0] << " " << ah_field.ReadPortal().Get(i)[1] << " | ";
-
         for(int i = 0; i < num_points; ++i)
         {
           //if we do not own the point, set it to zero
@@ -538,7 +521,7 @@ public:
         std::vector<float> global_x_points(num_points,0);
         std::vector<float> global_y_points(num_points,0);
         std::vector<float> global_z_points(num_points,0);
-	      //std::cerr << ah_field.ReadPortal().Get(i) << ": " << ah_field.ReadPortal().Get(i)[0] << " " << ah_field.ReadPortal().Get(i)[1] << " | ";
+
         for(int i = 0; i < num_points; ++i)
         {
           //if we do not own the point, set it to zero
@@ -596,8 +579,6 @@ public:
         std::vector<double> global_y_points(num_points,0);
         std::vector<double> global_z_points(num_points,0);
 
-      	//std::cerr <<  	ah_field.ReadPortal().Get(i) << ": " << ah_field.ReadPortal().Get(i)[0] << " " << ah_field.ReadPortal().Get(i)[1] << " | ";
-
         for(int i = 0; i < num_points; ++i)
         {
           //if we do not own the point, set it to zero
@@ -645,9 +626,8 @@ public:
       }//end vec3_64
       else
       {
-      std::cerr << "rank " << par_rank << " HEREEEEEEEEEEEEEEEEEEEEE 3333333333"  << std::endl;
-          m_result.AddField(field);
-          return;
+        m_result.AddField(field);
+        return;
       }
 
       m_result.AddField(res);
@@ -923,11 +903,7 @@ UniformGrid::DoExecute()
 
   std::vector<vtkm::Id> domain_ids = this->m_input->GetDomainIds(); 
   int num_domains = domain_ids.size();
-  std::cerr << "num_domains: " << num_domains << std::endl;
   bool is_empty = this->m_input->IsEmpty();
-  std::cerr << "IS EMPTY: " << is_empty << std::endl;
-  std::cerr << "print out data: " << std::endl;
-  this->m_input->PrintSummary(std::cerr);
 
 #if _DEBUG 
   std::cerr << "m_dims: " << m_dims[0] << " " << m_dims[1] << " " << m_dims[2] << std::endl;
@@ -939,35 +915,13 @@ UniformGrid::DoExecute()
 #endif
 #endif
 
-//      }
-//
-//    }
-//
-//
-//      std::cerr << "INPUT STARTT: "  << std::endl;
-//      this->m_input->PrintSummary(std::cerr);
-//      std::cerr << "INPUTT ENDDDDDDDDDDDDD" << std::endl;
-//  } //end field loop
-
   vtkm::cont::DataSet local_res;
   for(int i = 0; i < num_domains; ++i)
   {
-#ifdef VTKH_PARALLEL
-    std::cerr << "rank: " << par_rank << " but now we are in num domains: " << num_domains <<std::endl;
-#endif
     vtkm::cont::DataSet dom;
-    
     if(this->m_input->HasDomainId(domain_ids[i]))
     {
       dom = this->m_input->GetDomainById(domain_ids[i]);
-      vtkm::cont::CoordinateSystem cs = dom.GetCoordinateSystem();
-      vtkm::Vec<vtkm::Range,3> range = cs.GetRange();
-      vtkm::Id cs_points = cs.GetNumberOfPoints();
-      std::cerr << "cs num points: " << cs_points << std::endl;
-      std::cerr << " cs rage0: " << range[0].Min << " " << range[0].Max << std::endl;
-      std::cerr << " cs rage1: " << range[1].Min << " " << range[1].Max << std::endl;
-      std::cerr << " cs rage2: " << range[2].Min << " " << range[2].Max << std::endl;
-      std::cerr << " cs rage2 length: " << range[2].Length() << std::endl;
       for(const auto &field_name : m_fields)
       {
         //Uniform Grid Sample
@@ -1026,16 +980,13 @@ UniformGrid::DoExecute()
   //take uniform sampled grid and reduce to root process
   vtkm::cont::DataSet reduced_output;
   reduced_output.CopyStructure(local_res);
-  std::cerr << "rank is now this one : " << par_rank << std::endl;
   
   for(const auto &field_name : m_fields)
   {
-  std::cerr << "rank is now this one : " << par_rank << " field name: " << field_name <<  std::endl;
     vtkm::cont::DataSet reduced;
     bool valid_field;
     vtkm::Id field_id = this->m_input->GetFieldType(field_name, valid_field);
     vtkh::detail::GlobalReduceField g_reducefield(local_res, field_name, m_invalid_value, m_dims, field_id, reduced);
-    std::cerr << "rank ???? : " << par_rank << " field name: " << field_name <<  std::endl;
     g_reducefield.Reduce();
     vtkm::cont::Field reduced_field = reduced.GetField(field_name);
     reduced_output.AddField(reduced_field);
@@ -1056,7 +1007,6 @@ UniformGrid::DoExecute()
       this->m_output->PrintSummary(std::cerr); 
       std::cerr << "FINAL OUTPUT END---------------------" << std::endl;
     }
-    std::cerr <<" PAR RANK " << par_rank << " at the very end" << std::endl;
 #endif //end _DEBUG
 #else //serial
   this->m_output->AddDomain(local_res,0);
@@ -1076,19 +1026,19 @@ UniformGrid::GetName() const
 }
 
 void
-UniformGrid::Dims(const Vec3f dims)
+UniformGrid::Dims(const Vec3_f64 dims)
 {
   m_dims = dims;
 }
 
 void
-UniformGrid::Origin(const Vec3f origin)
+UniformGrid::Origin(const Vec3_f64 origin)
 {
   m_origin = origin;
 }
 
 void
-UniformGrid::Spacing(const Vec3f spacing)
+UniformGrid::Spacing(const Vec3_f64 spacing)
 {
   m_spacing = spacing;
 }

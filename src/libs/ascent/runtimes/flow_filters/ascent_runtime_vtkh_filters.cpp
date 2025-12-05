@@ -4188,6 +4188,7 @@ VTKHSample::execute()
         const Node &max_b = params()["box/max"];
         dims_b.print();
 
+        //Grab Dims
         if(dims_b.has_child("i"))
         {
           dims[0] = dims_b["i"].to_int();
@@ -4209,6 +4210,7 @@ VTKHSample::execute()
         else
           dims[2] = 1;
         
+        //Grab Mins
         if(min_b.has_child("x"))
         {
           if(min_b["x"].dtype().is_string())
@@ -4263,6 +4265,7 @@ VTKHSample::execute()
           z_min = (g_bounds.Z.Max - g_bounds.Z.Min)/2.0;
         }
 
+        //Grab Maxes
         if(max_b.has_child("x"))
         {
           if(max_b["x"].dtype().is_string())
