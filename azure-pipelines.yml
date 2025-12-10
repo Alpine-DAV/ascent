@@ -508,7 +508,7 @@ stages:
            export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_EXAMPLES=$ENABLE_EXAMPLES"
            export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_UTILS=$ENABLE_UTILS"
            export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=../install"
-           export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_CXX_FLAGS=-fno-lto -DCMAKE_CUDA_ARCHITECTURES=70
+           export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_CXX_FLAGS=-fno-lto -DCMAKE_CUDA_ARCHITECTURES=70"
            # configure
            cmake ${CMAKE_OPTS} -C ${HOST_CONFIG} ../src
         displayName: 'Configure with CMake'
