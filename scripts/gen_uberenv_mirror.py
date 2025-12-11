@@ -14,7 +14,7 @@ from os.path import join as pjoin
 
 
 def key_pkgs():
-    return  ["ascent", "vtk-h", "vtk-m", "conduit"]
+    return  ["ascent", "vtk-h", "viskores", "conduit"]
 
 def specs():
     return  ["+python+mfem+dray+babelflow ^openmpi", "+mfem+dray+babelflow ^mpich"]

@@ -8,9 +8,10 @@
 #include <logging/ascent_annotations.hpp>
 #include "ray_generators/ray_generator.hpp"
 #include "settings.hpp"
-#include "vtkm_typedefs.hpp"
+#include "viskores_typedefs.hpp"
 #include <algorithm>
 #include <typed_scheduler.hpp>
+#include <ascent_logging.hpp>
 
 
 using namespace conduit;
@@ -59,55 +60,86 @@ TypedScheduler<FloatType>::set_ray_generator(RayGenerator *ray_generator)
 
 template<typename FloatType>
 void
-TypedScheduler<FloatType>::create_background(const int num_channels)
+TypedScheduler<FloatType>::create_background(const int num_energy_groups)
 {
   // Initialize background intensities to 0.0f (by default)
   const float64 background_intensity = rover::settings["background_intensity"].to_float64();
-  m_background.resize(num_channels, background_intensity);
+  m_background.resize(num_energy_groups, background_intensity);
 }
 
 template<typename FloatType>
 int
-TypedScheduler<FloatType>::get_global_channels()
+TypedScheduler<FloatType>::get_global_num_energy_groups()
 {
-  int num_channels = 1;
+  int num_energy_groups = 1;
+  int has_field_mismatch = 0;
+
   for (auto& domain : m_domains)
   {
-    num_channels = std::max(num_channels, domain.get_num_channels());
+    num_energy_groups = std::max(num_energy_groups, domain.get_num_energy_groups());
+    // Check if this domain had a field mismatch
+    if (domain.get_field_mismatch_error())
+    {
+      has_field_mismatch = 1;
+    }
   }
 
 #ifdef ROVER_PARALLEL
-  vtkmTimer timer;
+  viskoresTimer timer;
   timer.Start();
   double time = 0;
   (void) time;
-  int mpi_num_channels;
-  MPI_Allreduce(&num_channels, &mpi_num_channels, 1, MPI_INT, MPI_MAX, m_comm_handle);
-  num_channels = mpi_num_channels;
+  int mpi_min_energy_groups;
+  int mpi_max_energy_groups;
+  MPI_Allreduce(&num_energy_groups, &mpi_min_energy_groups, 1, MPI_INT, MPI_MIN, m_comm_handle);
+  MPI_Allreduce(&num_energy_groups, &mpi_max_energy_groups, 1, MPI_INT, MPI_MAX, m_comm_handle);
+
+  // Check that all ranks have the same num_energy_groups
+  if (mpi_min_energy_groups != mpi_max_energy_groups)
+  {
+    ASCENT_LOG_ERROR("Error - TypedScheduler::get_global_num_energy_groups: MPI ranks have inconsistent number of energy groups. "
+                "Local: " << num_energy_groups << ", Global min: " << mpi_min_energy_groups << ", Global max: " << mpi_max_energy_groups);
+  }
+
+  // Check that all ranks agree on field mismatch state
+  int global_field_mismatch = 0;
+  MPI_Allreduce(&has_field_mismatch, &global_field_mismatch, 1, MPI_INT, MPI_MAX, m_comm_handle);
+  if (global_field_mismatch)
+  {
+    ASCENT_LOG_ERROR("Error - TypedScheduler::get_global_num_energy_groups: "
+                     "mismatched nunmber of absorption and emission fields detected on one or more ranks");
+  }
+
   time = timer.GetElapsedTime();
-  ROVER_DATA_ADD("get_global_channels_all_reduce", time);
+  ROVER_DATA_ADD("get_global_num_energy_groups_all_reduce", time);
+#else
+  if (has_field_mismatch)
+  {
+    ASCENT_LOG_ERROR("Error - TypedScheduler::get_global_num_energy_groups: "
+                     "mismatched number of absorption and emission fields");
+  }
 #endif
 
-  ROVER_INFO("Global number of channels" << num_channels);
-  return num_channels;
+  ROVER_INFO("Global number of energy groups" << num_energy_groups);
+  return num_energy_groups;
 }
 
 template<typename FloatType>
 void
 TypedScheduler<FloatType>::set_global_range_and_bounds()
 {
-  vtkmRange global_range;
-  vtkm::Bounds global_bounds;
-  vtkmTimer timer;
+  viskoresRange global_range;
+  viskores::Bounds global_bounds;
+  viskoresTimer timer;
   timer.Start();
   double time = 0.0;
 
   for (int i = 0; i < m_num_local_domains; ++i)
   {
-    vtkmRange local_range = m_domains[i].get_primary_range();
+    viskoresRange local_range = m_domains[i].get_primary_range();
     global_range.Include(local_range);
 
-    vtkm::Bounds local_bounds = m_domains[i].get_domain_bounds();
+    viskores::Bounds local_bounds = m_domains[i].get_domain_bounds();
     global_bounds.Include(local_bounds);
   }
 
@@ -248,6 +280,9 @@ TypedScheduler<FloatType>::typed_composite()
   const int num_partials = m_partial_images.size();
   std::vector<std::vector<PartialType>> partials(num_partials);
 
+#ifdef ROVER_OPENMP_ENABLED
+  #pragma omp parallel for
+#endif
   for (int i = 0; i < num_partials; ++i)
   {
     m_partial_images[i].extract_partials(partials[i]);
@@ -277,6 +312,10 @@ TypedScheduler<FloatType>::typed_composite()
     int height = m_partial_images[0].m_height;
     std::vector<std::vector<vtkh::VolumePartial<FloatType>>> partials;
     partials.resize(num_partials);
+    
+#ifdef ROVER_OPENMP_ENABLED
+    #pragma omp parallel for
+#endif
     for (int i = 0; i < num_partials; ++i)
     {
       m_partial_images[i].extract_partials(partials[i]);
@@ -308,8 +347,8 @@ TypedScheduler<FloatType>::trace_rays()
   ASCENT_ANNOTATE_MARK_SCOPE("rover trace rays");
 
   ROVER_INFO("Executing TypedScheduler::trace_rays");
-  vtkmTimer tot_timer;
-  vtkmTimer timer;
+  viskoresTimer tot_timer;
+  viskoresTimer timer;
   tot_timer.Start();
   timer.Start();
   double time = 0.0;
@@ -323,20 +362,20 @@ TypedScheduler<FloatType>::trace_rays()
 
   set_global_range_and_bounds();
 
-  vtkmTimer trace_timer;
+  viskoresTimer trace_timer;
   trace_timer.Start();
 
-  vtkmRayTracing::Ray<FloatType> rays;
+  viskoresRayTracing::Ray<FloatType> rays;
 
   for (int i = 0; i < m_num_local_domains; i++)
   {
-    vtkmTimer domain_timer;
+    viskoresTimer domain_timer;
     domain_timer.Start();
     std::stringstream domain_s;
     domain_s << "trace_domain_" << i;
     ROVER_DATA_OPEN(domain_s.str());
 
-    vtkmLogger::GetInstance()->Clear();
+    viskoresLogger::GetInstance()->Clear();
 
     // Setting the coordinate system miminizes the number of rays generated
     m_ray_generator->set_coordinates(m_domains[i].get_dataset().GetCoordinateSystem());
@@ -348,7 +387,7 @@ TypedScheduler<FloatType>::trace_rays()
     // TODO: I'm curious about which conditions can cause rays to fail to be created
     if (!m_ray_generator->get_rays(rays))
     {
-      ROVER_ERROR("Failed to create new rays");
+      ASCENT_LOG_ERROR("Failed to create new rays");
     }
 
     ROVER_INFO("Generated " << rays.NumRays << " rays");
@@ -371,7 +410,7 @@ TypedScheduler<FloatType>::trace_rays()
     ASCENT_ANNOTATE_MARK_END("rover trace rays for domain");
 
 #ifdef ROVER_ENABLE_LOGGING
-    DataLogger::GetInstance()->GetStream()<<vtkmLogger::GetInstance()->GetStream().str();
+    DataLogger::GetInstance()->GetStream()<<viskoresLogger::GetInstance()->GetStream().str();
 #endif
 
     ROVER_INFO("Schedule: creating partial image in domain "<<i);
@@ -394,21 +433,21 @@ TypedScheduler<FloatType>::trace_rays()
   timer.Start();
   time = trace_timer.GetElapsedTime();
   ROVER_DATA_ADD("total_trace", time);
-  int num_channels = get_global_channels();
+  int num_energy_groups = get_global_num_energy_groups();
 
-  vtkmTimer t1;
+  viskoresTimer t1;
   t1.Start();
 
   // Add a blank partial image if we had no domains
   if (m_num_local_domains == 0 || m_partial_images.empty())
   {
     PartialImage<FloatType> partial_image;
-    partial_image.m_transmission = vtkmRayTracing::ChannelBuffer<FloatType>(num_channels, 0);
+    partial_image.m_transmission = viskoresRayTracing::ChannelBuffer<FloatType>(num_energy_groups, 0);
 
     // Add an intensity buffer if the emission field is set
     if (m_has_emission)
     {
-      partial_image.m_intensity = vtkmRayTracing::ChannelBuffer<FloatType>(num_channels, 0);
+      partial_image.m_intensity = viskoresRayTracing::ChannelBuffer<FloatType>(num_energy_groups, 0);
     }
 
     m_partial_images.push_back(partial_image);
@@ -419,7 +458,7 @@ TypedScheduler<FloatType>::trace_rays()
 
   if (m_background.empty())
   {
-    create_background(num_channels);
+    create_background(num_energy_groups);
   }
 
   ROVER_DATA_ADD("default_bg", t1.GetElapsedTime());
@@ -476,9 +515,9 @@ void TypedScheduler<FloatType>::save_png(std::string filename)
   // if (m_render_settings.m_render_mode == energy) // removing volume renderer
   // {
 
-  const int num_channels = m_result.get_num_channels();
-  ROVER_INFO("Saving " << num_channels << " channels");
-  for (int i = 0; i < num_channels; ++i)
+  const int num_energy_groups = m_result.get_num_energy_groups();
+  ROVER_INFO("Saving " << num_energy_groups << " energy groups");
+  for (int i = 0; i < num_energy_groups; ++i)
   {
     std::stringstream sstream;
     sstream << filename << "_" << i << ".png";
@@ -492,7 +531,7 @@ void TypedScheduler<FloatType>::save_png(std::string filename)
       m_result.normalize_intensity(i);
     }
     
-    FloatType *buffer = get_vtkm_ptr(m_result.get_intensity(i));
+    FloatType *buffer = get_viskores_ptr(m_result.get_intensity(i));
     encoder.EncodeChannel(buffer, width, height);
     encoder.Save(sstream.str());
   }
@@ -503,10 +542,10 @@ void TypedScheduler<FloatType>::save_png(std::string filename)
   {
 
     assert(m_result.get_num_channels() == 4);
-    vtkm::cont::ArrayHandle<FloatType> colors;
+    viskores::cont::ArrayHandle<FloatType> colors;
     colors = m_result.flatten_intensities();
     FloatType * buffer
-      = get_vtkm_ptr(colors);
+      = get_viskores_ptr(colors);
 
     encoder.Encode(buffer, width, height);
     encoder.Save(file_name + ".png");
@@ -527,16 +566,16 @@ void TypedScheduler<FloatType>::save_bov(std::string file_name)
   // if (m_render_settings.m_render_mode == energy) // removing volume renderer
   // {
     
-  const int num_channels = m_result.get_num_channels();
-  ROVER_INFO("Saving bov with " << num_channels << " channels");
+  const int num_energy_groups = m_result.get_num_energy_groups();
+  ROVER_INFO("Saving bov with " << num_energy_groups << " energy groups");
 
-  for (int i = 0; i < num_channels; ++i)
+  for (int i = 0; i < num_energy_groups; i++)
   {
     std::stringstream sstream;
     sstream << file_name  << "_" << i << ".bov";
     m_result.normalize_intensity(i);
 
-    FloatType *buffer = get_vtkm_ptr(m_result.get_intensity(i));
+    FloatType *buffer = get_viskores_ptr(m_result.get_intensity(i));
     std::fstream bov(sstream.str(), std::ios::out | std::ios::binary);
     bov.write((char*)buffer, sizeof(FloatType) *size);
     bov.close();
@@ -550,13 +589,13 @@ TypedScheduler<FloatType>::write_blueprint_imaging_plane(Node &data_out,
                                                          const std::string plane_name,
                                                          const double plane_width,
                                                          const double plane_height,
-                                                         const vtkmVec3f &center,
-                                                         const vtkmVec3f &left,
-                                                         const vtkmVec3f &up,
-                                                         vtkmVec3f &llc,
-                                                         vtkmVec3f &lrc,
-                                                         vtkmVec3f &ulc,
-                                                         vtkmVec3f &urc)
+                                                         const viskoresVec3f &center,
+                                                         const viskoresVec3f &left,
+                                                         const viskoresVec3f &up,
+                                                         viskoresVec3f &llc,
+                                                         viskoresVec3f &lrc,
+                                                         viskoresVec3f &ulc,
+                                                         viskoresVec3f &urc)
 {
   // Define imaging plane coordset
   Node &plane_coords = data_out["coordsets"][plane_name + "_coords"];
@@ -568,8 +607,8 @@ TypedScheduler<FloatType>::write_blueprint_imaging_plane(Node &data_out,
   float64_array yvals = plane_coords["values/y"].value();
   float64_array zvals = plane_coords["values/z"].value();
 
-  vtkmVec3f up_scaled = plane_height * up;
-  vtkmVec3f left_scaled = plane_width * left;
+  viskoresVec3f up_scaled = plane_height * up;
+  viskoresVec3f left_scaled = plane_width * left;
 
   llc = center - up_scaled + left_scaled;
   lrc = center - up_scaled - left_scaled;
@@ -621,14 +660,14 @@ TypedScheduler<FloatType>::write_blueprint_imaging_plane(Node &data_out,
 template<typename FloatType>
 void
 TypedScheduler<FloatType>::write_blueprint_ray_corners_mesh(Node &data_out,
-                                                            const vtkmVec3f &llc_near,
-                                                            const vtkmVec3f &llc_far,
-                                                            const vtkmVec3f &lrc_near,
-                                                            const vtkmVec3f &lrc_far,
-                                                            const vtkmVec3f &urc_near,
-                                                            const vtkmVec3f &urc_far,
-                                                            const vtkmVec3f &ulc_near,
-                                                            const vtkmVec3f &ulc_far)
+                                                            const viskoresVec3f &llc_near,
+                                                            const viskoresVec3f &llc_far,
+                                                            const viskoresVec3f &lrc_near,
+                                                            const viskoresVec3f &lrc_far,
+                                                            const viskoresVec3f &urc_near,
+                                                            const viskoresVec3f &urc_far,
+                                                            const viskoresVec3f &ulc_near,
+                                                            const viskoresVec3f &ulc_far)
 {
   const int num_corners = 4;
   const int num_points = 8;
@@ -708,12 +747,12 @@ TypedScheduler<FloatType>::write_blueprint_rays_mesh(Node &data_out,
                                                      const int64 image_height,
                                                      const double detector_width,
                                                      const double detector_height,
-                                                     const vtkmVec3f &lrc_near,
+                                                     const viskoresVec3f &lrc_near,
                                                      const double far_detector_width,
                                                      const double far_detector_height,
-                                                     const vtkmVec3f &lrc_far,
-                                                     const vtkmVec3f &left,
-                                                     const vtkmVec3f &up)
+                                                     const viskoresVec3f &lrc_far,
+                                                     const viskoresVec3f &left,
+                                                     const viskoresVec3f &up)
 {
   const int64 num_lines = image_width * image_height;
   const int64 num_points = num_lines * 2;
@@ -728,9 +767,9 @@ TypedScheduler<FloatType>::write_blueprint_rays_mesh(Node &data_out,
   float64_array yvals_ray = ray_coords["values/y"].value();
   float64_array zvals_ray = ray_coords["values/z"].value();
 
-  vtkmVec3f scaled_unit_left;
-  vtkmVec3f scaled_unit_up;
-  vtkmVec3f lrc;
+  viskoresVec3f scaled_unit_left;
+  viskoresVec3f scaled_unit_up;
+  viskoresVec3f lrc;
 
   for (int i = 0; i < 2; i++)
   {
@@ -749,14 +788,17 @@ TypedScheduler<FloatType>::write_blueprint_rays_mesh(Node &data_out,
           lrc = lrc_far;
       }
 
-      scaled_unit_left = dx * vtkm::Normal(left);
-      scaled_unit_up = dy * vtkm::Normal(up);
+      scaled_unit_left = dx * viskores::Normal(left);
+      scaled_unit_up = dy * viskores::Normal(up);
 
+#ifdef ROVER_OPENMP_ENABLED
+      #pragma omp parallel for collapse(2)
+#endif
       for (int j = 0; j < image_width; j++)
       {
           for (int k = 0; k < image_height; k++)
           {
-              vtkmVec3f temp = lrc + (j + 0.5f) * scaled_unit_left + (k + 0.5f) * scaled_unit_up;
+              viskoresVec3f temp = lrc + (j + 0.5f) * scaled_unit_left + (k + 0.5f) * scaled_unit_up;
               // 3d to 1d conversion
               const int64 index = i * image_width * image_height + j * image_height + k;
               xvals_ray[index] = temp[0];
@@ -806,26 +848,26 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
   const int64 image_height = rover::settings["height"].to_int64();
   const double aspect_ratio = static_cast<double>(image_width) / static_cast<double>(image_height);
 
-  const int num_channels = m_result.get_num_channels();
+  const int num_energy_groups = m_result.get_num_energy_groups();
 
-  vtkmCamera camera = m_ray_generator->get_camera();
-  const vtkmVec3f position = camera.GetPosition();
-  const vtkmVec3f look_at = camera.GetLookAt();
-  const vtkmVec3f up = vtkm::Normal(camera.GetViewUp());
-  const vtkmVec3f forward = vtkm::Normal(look_at - position);
-  const vtkmVec3f left = vtkm::Normal(vtkm::Cross(up, forward));
-  const double view_distance = vtkm::Magnitude(look_at - position);
+  viskoresCamera camera = m_ray_generator->get_camera();
+  const viskoresVec3f position = camera.GetPosition();
+  const viskoresVec3f look_at = camera.GetLookAt();
+  const viskoresVec3f up = viskores::Normal(camera.GetViewUp());
+  const viskoresVec3f forward = viskores::Normal(look_at - position);
+  const viskoresVec3f left = viskores::Normal(viskores::Cross(up, forward));
+  const double view_distance = viskores::Magnitude(look_at - position);
   const double zoom = camera.GetZoom();
   const double view_angle_deg = camera.GetFieldOfView();
-  const double view_angle_rad = view_angle_deg * vtkm::Pi_180f();
-  const double frustum_scale = vtkm::Tan(view_angle_rad / 2.0f) / zoom;
+  const double view_angle_rad = view_angle_deg * viskores::Pi_180f();
+  const double frustum_scale = viskores::Tan(view_angle_rad / 2.0f) / zoom;
   const double near_plane = camera.GetClippingRange().Min;
   const double far_plane = camera.GetClippingRange().Max;
-  vtkmVec2f xy_pan = camera.GetPan();
+  viskoresVec2f xy_pan = camera.GetPan();
 
   // These calculations are based on VisIt's perspective calculations, but diverge
   // due to differences in how near and far planes are represented. VisIt represents
-  // them as offsets from the view plane (e.g. -0.5, 0.5), while vtkm represents them
+  // them as offsets from the view plane (e.g. -0.5, 0.5), while viskores represents them
   // as positive distances away from the camera position (e.g. 3, 300).
 
   const double near_height = near_plane * frustum_scale;
@@ -835,9 +877,9 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
   const double far_height = far_plane * frustum_scale;
   const double far_width = far_height * aspect_ratio;
 
-  const vtkmVec3f center_near = position + near_plane * forward;
-  const vtkmVec3f center_view = look_at;
-  const vtkmVec3f center_far = position + far_plane * forward;
+  const viskoresVec3f center_near = position + near_plane * forward;
+  const viskoresVec3f center_view = look_at;
+  const viskoresVec3f center_far = position + far_plane * forward;
 
   const double detector_height = near_height * 2.0f;
   const double detector_width = detector_height * aspect_ratio;
@@ -848,20 +890,20 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
   const double spatial_dx = near_width * 2.0f / image_width;
   const double spatial_dy = near_height * 2.0f / image_height;
 
-  vtkmVec3f llc_near;
-  vtkmVec3f lrc_near;
-  vtkmVec3f ulc_near;
-  vtkmVec3f urc_near;
+  viskoresVec3f llc_near;
+  viskoresVec3f lrc_near;
+  viskoresVec3f ulc_near;
+  viskoresVec3f urc_near;
 
-  vtkmVec3f llc_view;
-  vtkmVec3f lrc_view;
-  vtkmVec3f ulc_view;
-  vtkmVec3f urc_view;
+  viskoresVec3f llc_view;
+  viskoresVec3f lrc_view;
+  viskoresVec3f ulc_view;
+  viskoresVec3f urc_view;
 
-  vtkmVec3f llc_far;
-  vtkmVec3f lrc_far;
-  vtkmVec3f ulc_far;
-  vtkmVec3f urc_far;
+  viskoresVec3f llc_far;
+  viskoresVec3f lrc_far;
+  viskoresVec3f ulc_far;
+  viskoresVec3f urc_far;
 
   ROVER_INFO("Saving blueprint file with output size " << width << "x" << height);
 
@@ -920,7 +962,7 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
 
   image_coords["values/x"].set(DataType::float64(image_width + 1));
   image_coords["values/y"].set(DataType::float64(image_height + 1));
-  image_coords["values/z"].set(DataType::float64(num_channels + 1));
+  image_coords["values/z"].set(DataType::float64(num_energy_groups + 1));
 
   float64_array image_coords_x = image_coords["values/x"].value();
   float64_array image_coords_y = image_coords["values/y"].value();
@@ -936,7 +978,7 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
     image_coords_y[i] = i;
   }
 
-  for (int i = 0; i <= num_channels; i++)
+  for (int i = 0; i <= num_energy_groups; i++)
   {
     image_coords_z[i] = i;
   }
@@ -959,8 +1001,8 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
   optical_depth["topology"] = "image_topo";
   optical_depth["association"] = "element";
   optical_depth["units"] = "optical depth metadata";
-  vtkm::cont::ArrayHandle<FloatType> optical_values = m_result.flatten_optical_depth_values();
-  FloatType *optical_buffer = get_vtkm_ptr(optical_values);
+  viskores::cont::ArrayHandle<FloatType> optical_values = m_result.flatten_optical_depth_values();
+  FloatType *optical_buffer = get_viskores_ptr(optical_values);
   const int num_optical_values = optical_values.GetNumberOfValues();
 
   auto optical_min_max = std::minmax_element(optical_buffer, optical_buffer + num_optical_values);
@@ -990,8 +1032,8 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
     intensities["topology"] = "image_topo";
     intensities["association"] = "element";
     intensities["units"] = "intensity units";
-    vtkm::cont::ArrayHandle<FloatType> intensity_values = m_result.flatten_intensity_values();
-    FloatType *intensity_buffer = get_vtkm_ptr(intensity_values);
+    viskores::cont::ArrayHandle<FloatType> intensity_values = m_result.flatten_intensity_values();
+    FloatType *intensity_buffer = get_viskores_ptr(intensity_values);
     const int num_intensity_values = intensity_values.GetNumberOfValues();
   
     auto intensity_min_max = std::minmax_element(intensity_buffer, intensity_buffer + num_intensity_values);
@@ -1016,7 +1058,7 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
   spatial_coords["type"] = "rectilinear";
   spatial_coords["values/x"].set(DataType::float64(image_width + 1));
   spatial_coords["values/y"].set(DataType::float64(image_height + 1));
-  spatial_coords["values/z"].set(DataType::float64(num_channels + 1));
+  spatial_coords["values/z"].set(DataType::float64(num_energy_groups + 1));
 
   float64_array spatial_coords_x = spatial_coords["values/x"].value();
   float64_array spatial_coords_y = spatial_coords["values/y"].value();
@@ -1032,7 +1074,7 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
     spatial_coords_y[i] = i * spatial_dy;
   }
 
-  for (int i = 0; i <= num_channels; i++)
+  for (int i = 0; i <= num_energy_groups; i++)
   {
     spatial_coords_z[i] = i;
   }  
@@ -1133,12 +1175,12 @@ TypedScheduler<FloatType>::to_blueprint(Node &data)
   Node verify;
   if (!blueprint::verify("mesh", data, verify))
   {
-    ROVER_ERROR("Error: to_blueprint failed to produce a valid conduit mesh: " << verify.to_yaml());
+    ASCENT_LOG_ERROR("Error: to_blueprint failed to produce a valid conduit mesh: " << verify.to_yaml());
   }
 }
 
 // Explicit instantiation
-template class TypedScheduler<vtkm::Float32>;
-template class TypedScheduler<vtkm::Float64>;
+template class TypedScheduler<viskores::Float32>;
+template class TypedScheduler<viskores::Float64>;
 
 }; // namespace rover

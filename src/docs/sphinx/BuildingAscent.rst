@@ -56,7 +56,7 @@ Ascent requires Conduit and provides optional features that depend on third-part
      - Required TPLS
 
    * - VTK-h Rendering and Filtering Pipelines
-     - VTk-m (Serial, OpenMP, CUDA, Kokkos)
+     - Viskores (Serial, OpenMP, CUDA, Kokkos)
 
    * - MFEM High-Order to Low-Order Refinement for VTK-h Pipelines
      - MFEM
@@ -172,7 +172,7 @@ Main CMake Options
      - *(default = OFF)*
 
    * - ``ENABLE_VTKH``
-     - Controls if VTK-h is built.. Requires VTK-m. (VTK-h is now developed as part of Ascent)
+     - Controls if VTK-h is built.. Requires Viskores. (VTK-h is now developed as part of Ascent)
      - *(default = OFF)*
 
    * - ``ENABLE_EXAMPLES``
@@ -235,8 +235,8 @@ CMake Options for Third-party Library Paths
    * - ``OCCA_DIR``
      - Path to an OCCA install (optional)
 
-   * - ``VTKM_DIR``
-     - Path to a VTK-m install (optional)
+   * - ``VISKORES_DIR``
+     - Path to a Viskores install (optional)
 
    * - ``KOKKOS_DIR``
      - Path to a Kokkos install (optional)
@@ -666,7 +666,7 @@ Install ParaView and Ascent
 
   - If you need ascent built with vtkh you can use ``spack install
     ascent+python``. Note that you need specific versions of
-    ``vtkh`` and ``vtkm`` that work with the version of Ascent built.  Those
+    ``vtkh`` and ``viskores`` that work with the version of Ascent built.  Those
     versions can be read from ``scripts/uberenv/project.json``
     by cloning ``spack_url``, branch ``spack_branch``.
     ``paraview-package-momentinvariants.patch`` is already setup to
@@ -803,7 +803,7 @@ Notes
 - For the ``laghos`` simulation accessed through Python extracts
   interface, only the higher order mesh is accessible at the moment,
   which is a uniform dataset. The documentation shows a non-uniform mesh but
-  that is only available in the ``vtkm`` pipelines.
+  that is only available in the ``viskores`` pipelines.
 
 
 

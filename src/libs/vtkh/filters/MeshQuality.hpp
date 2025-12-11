@@ -5,7 +5,7 @@
 #include <vtkh/vtkh.hpp>
 #include <vtkh/filters/Filter.hpp>
 #include <vtkh/DataSet.hpp>
-#include <vtkm/filter/mesh_info/MeshQuality.h>
+#include <viskores/filter/mesh_info/MeshQuality.h>
 
 namespace vtkh
 {
@@ -17,13 +17,13 @@ public:
   virtual ~MeshQuality();
   std::string GetName() const override;
 
-  void cell_metric(vtkm::filter::mesh_info::CellMetric metric);
+  void cell_metric(viskores::filter::mesh_info::CellMetric metric);
 
 protected:
   void PreExecute() override;
   void PostExecute() override;
   void DoExecute() override;
-  vtkm::filter::mesh_info::CellMetric m_metric;
+  viskores::filter::mesh_info::CellMetric m_metric;
 };
 
 } //namespace vtkh

@@ -2,13 +2,13 @@
 #include <vtkh/filters/Streamline.hpp>
 #include <vtkh/vtkh.hpp>
 #include <vtkh/Error.hpp>
-#include <vtkm/filter/flow/Streamline.h>
-#include <vtkm/cont/EnvironmentTracker.h>
-#include <vtkm/filter/geometry_refinement/Tube.h>
+#include <viskores/filter/flow/Streamline.h>
+#include <viskores/cont/EnvironmentTracker.h>
+#include <viskores/filter/geometry_refinement/Tube.h>
 
 #if VTKH_PARALLEL
-#include <vtkm/thirdparty/diy/diy.h>
-#include <vtkm/thirdparty/diy/mpi-cast.h>
+#include <viskores/thirdparty/diy/diy.h>
+#include <viskores/thirdparty/diy/mpi-cast.h>
 #include <mpi.h>
 #endif
 
@@ -44,12 +44,12 @@ void Streamline::DoExecute()
 {
   this->m_output = new DataSet();
 
-#ifndef VTKH_BYPASS_VTKM_BIH
+#ifndef VTKH_BYPASS_VISKORES_BIH
 
 #ifdef VTKH_PARALLEL
-  // Setup VTK-h and VTK-m comm.
+  // Setup VTK-h and Viskores comm.
   MPI_Comm mpi_comm = MPI_Comm_f2c(vtkh::GetMPICommHandle());
-  vtkm::cont::EnvironmentTracker::SetCommunicator(vtkmdiy::mpi::communicator(vtkmdiy::mpi::make_DIY_MPI_Comm(mpi_comm)));
+  viskores::cont::EnvironmentTracker::SetCommunicator(viskoresdiy::mpi::communicator(viskoresdiy::mpi::make_DIY_MPI_Comm(mpi_comm)));
 #endif
 
   //Make sure that the field exists on any domain.
@@ -58,7 +58,7 @@ void Streamline::DoExecute()
     throw Error("Domain does not contain specified vector field for ParticleAdvection analysis.");
   }
 
-  vtkm::cont::PartitionedDataSet inputs;
+  viskores::cont::PartitionedDataSet inputs;
 
   //Create a partitioned dataset for all domains with the field.
   if (this->m_input->FieldExists(m_field_name))
@@ -66,13 +66,13 @@ void Streamline::DoExecute()
     const int num_domains = this->m_input->GetNumberOfDomains();
     for (int i = 0; i < num_domains; i++)
     {
-      vtkm::Id domain_id;
-      vtkm::cont::DataSet dom;
+      viskores::Id domain_id;
+      viskores::cont::DataSet dom;
       this->m_input->GetDomain(i, dom, domain_id);
       if(dom.HasField(m_field_name))
       {
-        using vectorField_d = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64, 3>>;
-        using vectorField_f = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32, 3>>;
+        using vectorField_d = viskores::cont::ArrayHandle<viskores::Vec<viskores::Float64, 3>>;
+        using vectorField_f = viskores::cont::ArrayHandle<viskores::Vec<viskores::Float32, 3>>;
         auto field = dom.GetField(m_field_name).GetData();
         if(field.IsType<vectorField_d>() && !field.IsType<vectorField_f>())
         {
@@ -98,13 +98,13 @@ void Streamline::DoExecute()
 
   if (!validField)
   {
-    throw Error("Vector field type does not match <vtkm::Vec<vtkm::Float32,3>> or <vtkm::Vec<vtkm::Float64,3>>");
+    throw Error("Vector field type does not match <viskores::Vec<viskores::Float32,3>> or <viskores::Vec<viskores::Float64,3>>");
   }
 
-  //Everything is valid. Call the VTKm filter.
+  //Everything is valid. Call the Viskores filter.
 
-  vtkm::filter::flow::Streamline streamlineFilter;
-  auto seedsAH = vtkm::cont::make_ArrayHandle(m_seeds, vtkm::CopyFlag::Off);
+  viskores::filter::flow::Streamline streamlineFilter;
+  auto seedsAH = viskores::cont::make_ArrayHandle(m_seeds, viskores::CopyFlag::Off);
 
   streamlineFilter.SetStepSize(m_step_size);
   streamlineFilter.SetActiveField(m_field_name);
@@ -118,16 +118,16 @@ void Streamline::DoExecute()
 
     if(!m_radius_set)
     {
-      vtkm::Float32 radius = 0.0;
-      vtkm::Bounds coordBounds = out.GetPartition(0).GetCoordinateSystem().GetBounds();
+      viskores::Float32 radius = 0.0;
+      viskores::Bounds coordBounds = out.GetPartition(0).GetCoordinateSystem().GetBounds();
       // set a default radius
-      vtkm::Float64 lx = coordBounds.X.Length();
-      vtkm::Float64 ly = coordBounds.Y.Length();
-      vtkm::Float64 lz = coordBounds.Z.Length();
-      vtkm::Float64 mag = vtkm::Sqrt(lx * lx + ly * ly + lz * lz);
+      viskores::Float64 lx = coordBounds.X.Length();
+      viskores::Float64 ly = coordBounds.Y.Length();
+      viskores::Float64 lz = coordBounds.Z.Length();
+      viskores::Float64 mag = viskores::Sqrt(lx * lx + ly * ly + lz * lz);
       // same as used in vtk ospray
-      constexpr vtkm::Float64 heuristic = 1000.;
-      radius = static_cast<vtkm::Float32>(mag / heuristic);
+      constexpr viskores::Float64 heuristic = 1000.;
+      radius = static_cast<viskores::Float32>(mag / heuristic);
       m_tube_size = radius;
     }
 
@@ -136,21 +136,21 @@ void Streamline::DoExecute()
     if(m_tube_size < min_tube_size)
     {
       int num_domains = out.GetNumberOfPartitions();
-      for (vtkm::Id i = 0; i < num_domains; i++)
+      for (viskores::Id i = 0; i < num_domains; i++)
       {
         this->m_output->AddDomain(out.GetPartition(i), i);
       }
       return;
     }
 
-    vtkm::filter::geometry_refinement::Tube tubeFilter;
+    viskores::filter::geometry_refinement::Tube tubeFilter;
     tubeFilter.SetCapping(m_tube_capping);
     tubeFilter.SetNumberOfSides(m_tube_sides);
     tubeFilter.SetRadius(m_tube_size);
 
     auto tubeOut = tubeFilter.Execute(out);
 
-    for (vtkm::Id i = 0; i < tubeOut.GetNumberOfPartitions(); i++)
+    for (viskores::Id i = 0; i < tubeOut.GetNumberOfPartitions(); i++)
     {
       this->m_output->AddDomain(tubeOut.GetPartition(i), i);
     }
@@ -158,7 +158,7 @@ void Streamline::DoExecute()
   }
   else
   {
-    for (vtkm::Id i = 0; i < out.GetNumberOfPartitions(); i++)
+    for (viskores::Id i = 0; i < out.GetNumberOfPartitions(); i++)
     {
       this->m_output->AddDomain(out.GetPartition(i), i);
     }

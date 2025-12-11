@@ -6,7 +6,7 @@
 
 #include <utils/rover_logging.hpp>
 #include <utils/vtk_dataset_reader.hpp>
-#include <vtkm/io/VTKDataSetReader.h>
+#include <viskores/io/VTKDataSetReader.h>
 #include <iostream>
 #include <fstream>
 #include <cstdlib>
@@ -49,12 +49,12 @@ VTKReader::VTKReader()
 void
 VTKReader::read_file(const std::string &file_name)
 {
-  vtkm::io::VTKDataSetReader reader(file_name.c_str());
+  viskores::io::VTKDataSetReader reader(file_name.c_str());
   m_dataset= reader.ReadDataSet();
 
 }
 
-vtkmDataSet
+viskoresDataSet
 VTKReader::get_data_set()
 {
   return m_dataset;
@@ -131,7 +131,7 @@ MultiDomainVTKReader::read_file(const std::string &directory, const std::string 
      for(int i = begining_domain; i <= end_domain; ++i)
      {
         //std::cout<<"Reading "<<number_of_domains<<" files\n";
-        vtkm::io::VTKDataSetReader reader(file_names[i].c_str());
+        viskores::io::VTKDataSetReader reader(file_names[i].c_str());
         m_datasets.push_back(reader.ReadDataSet());
         //m_datasets[i].PrintSummary(std::cout);
      }
@@ -146,7 +146,7 @@ MultiDomainVTKReader::read_file(const std::string &directory, const std::string 
   header_file.close();
 }
 
-std::vector<vtkmDataSet>
+std::vector<viskoresDataSet>
 MultiDomainVTKReader::get_data_sets()
 {
   return m_datasets;

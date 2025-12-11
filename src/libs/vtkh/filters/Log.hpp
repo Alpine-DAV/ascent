@@ -5,7 +5,7 @@
 #include <vtkh/vtkh.hpp>
 #include <vtkh/filters/Filter.hpp>
 #include <vtkh/DataSet.hpp>
-#include <vtkm/Range.h>
+#include <viskores/Range.h>
 
 namespace vtkh
 {
@@ -19,7 +19,7 @@ public:
   void SetField(const std::string &field_name);
   void SetResultField(const std::string &field_name);
   void SetClampToMin(bool on);
-  void SetClampMin(vtkm::Float32 min_value);
+  void SetClampMin(viskores::Float32 min_value);
 
   std::string GetField() const;
   std::string GetResultField() const;
@@ -29,7 +29,7 @@ protected:
   void DoExecute() override;
   std::string m_field_name;
   std::string m_result_name;
-  vtkm::Float32 m_min_value;
+  viskores::Float32 m_min_value;
   bool m_clamp_to_min;
 
 };
@@ -44,7 +44,7 @@ public:
   void SetField(const std::string &field_name);
   void SetResultField(const std::string &field_name);
   void SetClampToMin(bool on);
-  void SetClampMin(vtkm::Float32 min_value);
+  void SetClampMin(viskores::Float32 min_value);
 
   std::string GetField() const;
   std::string GetResultField() const;
@@ -54,7 +54,7 @@ protected:
   void DoExecute() override;
   std::string m_field_name;
   std::string m_result_name;
-  vtkm::Float32 m_min_value;
+  viskores::Float32 m_min_value;
   bool m_clamp_to_min;
 
 };
@@ -68,7 +68,7 @@ public:
   void SetField(const std::string &field_name);
   void SetResultField(const std::string &field_name);
   void SetClampToMin(bool on);
-  void SetClampMin(vtkm::Float32 min_value);
+  void SetClampMin(viskores::Float32 min_value);
 
   std::string GetField() const;
   std::string GetResultField() const;
@@ -78,7 +78,7 @@ protected:
   void DoExecute() override;
   std::string m_field_name;
   std::string m_result_name;
-  vtkm::Float32 m_min_value;
+  viskores::Float32 m_min_value;
   bool m_clamp_to_min;
 
 };

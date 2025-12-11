@@ -6,7 +6,7 @@
 #include <vtkh/filters/Filter.hpp>
 #include <vtkh/DataSet.hpp>
 
-#include <vtkm/Particle.h>
+#include <viskores/Particle.h>
 
 namespace vtkh
 {

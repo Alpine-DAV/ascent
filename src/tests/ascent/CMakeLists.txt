@@ -113,7 +113,7 @@ set(MPI_TESTS  t_ascent_mpi_smoke
 # same for t_ascent_babelflow_pmt_mpi and t_ascent_babelflow_comp_mpi
 
 # include the "ascent" pipeline
-if(VTKM_FOUND)
+if(VISKORES_FOUND)
    list(APPEND BASIC_TESTS t_ascent_ascent_runtime)
    list(APPEND VTKH_DEP_TESTS t_ascent_vtkh_data_adapter)
    list(APPEND MPI_TESTS   t_ascent_mpi_ascent_runtime
@@ -170,9 +170,9 @@ if (ENABLE_SERIAL)
         add_cpp_test(TEST ${TEST} DEPENDS_ON ascent)
     endforeach()
 
-    if(VTKM_FOUND)
-      # special test case where we test vtkm conversions
-       vtkm_add_target_information(t_ascent_vtkh_data_adapter
+    if(VISKORES_FOUND)
+      # special test case where we test viskores conversions
+       viskores_add_target_information(t_ascent_vtkh_data_adapter
                                    DEVICE_SOURCES t_ascent_vtkh_data_adapter.cpp)
        set_target_properties(t_ascent_vtkh_data_adapter PROPERTIES CXX_VISIBILITY_PRESET hidden)
     endif()

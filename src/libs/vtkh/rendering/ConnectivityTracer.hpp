@@ -20,12 +20,12 @@
 
 #include <vtkh/vtkh_exports.h>
 
-#include <vtkm/cont/CellLocatorGeneral.h>
-#include <vtkm/cont/Timer.h>
-#include <vtkm/rendering/raytracing/CellIntersector.h>
-#include <vtkm/rendering/raytracing/CellSampler.h>
-#include <vtkm/rendering/raytracing/RayOperations.h>
-#include <vtkm/worklet/WorkletMapField.h>
+#include <viskores/cont/CellLocatorGeneral.h>
+#include <viskores/cont/Timer.h>
+#include <viskores/rendering/raytracing/CellIntersector.h>
+#include <viskores/rendering/raytracing/CellSampler.h>
+#include <viskores/rendering/raytracing/RayOperations.h>
+#include <viskores/worklet/WorkletMapField.h>
 
 namespace vtkh
 {
@@ -47,12 +47,12 @@ template <typename FloatType>
 class RayTracking
 {
 public:
-  vtkm::cont::ArrayHandle<vtkm::Int32> ExitFace;
-  vtkm::cont::ArrayHandle<FloatType> CurrentDistance;
-  vtkm::cont::ArrayHandle<FloatType> Distance1;
-  vtkm::cont::ArrayHandle<FloatType> Distance2;
-  vtkm::cont::ArrayHandle<FloatType>* EnterDist;
-  vtkm::cont::ArrayHandle<FloatType>* ExitDist;
+  viskores::cont::ArrayHandle<viskores::Int32> ExitFace;
+  viskores::cont::ArrayHandle<FloatType> CurrentDistance;
+  viskores::cont::ArrayHandle<FloatType> Distance1;
+  viskores::cont::ArrayHandle<FloatType> Distance2;
+  viskores::cont::ArrayHandle<FloatType>* EnterDist;
+  viskores::cont::ArrayHandle<FloatType>* ExitDist;
 
   RayTracking()
   {
@@ -60,10 +60,10 @@ public:
     ExitDist = &Distance2;
   }
 
-  void Compact(vtkm::cont::ArrayHandle<FloatType>& compactedDistances,
-               vtkm::cont::ArrayHandle<vtkm::UInt8>& masks);
+  void Compact(viskores::cont::ArrayHandle<FloatType>& compactedDistances,
+               viskores::cont::ArrayHandle<viskores::UInt8>& masks);
 
-  void Init(const vtkm::Id size, vtkm::cont::ArrayHandle<FloatType>& distances);
+  void Init(const viskores::Id size, viskores::cont::ArrayHandle<FloatType>& distances);
 
   void Swap();
 };
@@ -84,6 +84,7 @@ public:
     , BumpEpsilon(1e-3)
     , CountRayStatus(false)
     , UnitScalar(1.f)
+    , NumEnergyGroups(1)
   {
   }
 
@@ -101,28 +102,28 @@ public:
     Energy
   };
 
-  void SetVolumeData(const vtkm::cont::Field& scalarField,
-                     const vtkm::Range& scalarBounds,
-                     const vtkm::cont::UnknownCellSet& cellSet,
-                     const vtkm::cont::CoordinateSystem& coords,
-                     const vtkm::cont::Field& ghostField);
+  void SetVolumeData(const viskores::cont::Field& scalarField,
+                     const viskores::Range& scalarBounds,
+                     const viskores::cont::UnknownCellSet& cellSet,
+                     const viskores::cont::CoordinateSystem& coords,
+                     const viskores::cont::Field& ghostField);
 
   // Absporption-only case
-  void SetEnergyData(const vtkm::cont::Field& absorption,
-                     const vtkm::Int32 numBins,
-                     const vtkm::cont::UnknownCellSet& cellSet,
-                     const vtkm::cont::CoordinateSystem& coords);
+  void SetEnergyData(const viskores::cont::Field& absorption,
+                     const viskores::Int32 numBins,
+                     const viskores::cont::UnknownCellSet& cellSet,
+                     const viskores::cont::CoordinateSystem& coords);
 
   // Absorption + Emission case
-  void SetEnergyData(const vtkm::cont::Field& absorption,
-                     const vtkm::Int32 numBins,
-                     const vtkm::cont::UnknownCellSet& cellSet,
-                     const vtkm::cont::CoordinateSystem& coords,
-                     const vtkm::cont::Field& emission);
+  void SetEnergyData(const viskores::cont::Field& absorption,
+                     const viskores::Int32 numBins,
+                     const viskores::cont::UnknownCellSet& cellSet,
+                     const viskores::cont::CoordinateSystem& coords,
+                     const viskores::cont::Field& emission);
 
-  void SetBackgroundColor(const vtkm::Vec4f_32& backgroundColor);
-  void SetSampleDistance(const vtkm::Float32& distance);
-  void SetColorMap(const vtkm::cont::ArrayHandle<vtkm::Vec4f_32>& colorMap);
+  void SetBackgroundColor(const viskores::Vec4f_32& backgroundColor);
+  void SetSampleDistance(const viskores::Float32& distance);
+  void SetColorMap(const viskores::cont::ArrayHandle<viskores::Vec4f_32>& colorMap);
 
   MeshConnectivityContainer* GetMeshContainer() { return MeshContainer; }
 
@@ -130,12 +131,12 @@ public:
 
   void SetDebugOn(bool on) { CountRayStatus = on; }
 
-  void SetUnitScalar(const vtkm::Float32 unitScalar) { UnitScalar = unitScalar; }
+  void SetUnitScalar(const viskores::Float32 unitScalar) { UnitScalar = unitScalar; }
   void SetDivideEmisByAbsorb(const bool divide_emis_by_absorb) {DivideEmisByAbsorb = divide_emis_by_absorb; }
-  void SetEpsilon(const vtkm::Float64 epsilon) { BumpEpsilon = epsilon; }
+  void SetEpsilon(const viskores::Float64 epsilon) { BumpEpsilon = epsilon; }
 
 
-  vtkm::Id GetNumberOfMeshCells() const;
+  viskores::Id GetNumberOfMeshCells() const;
 
   void ResetTimers();
   void LogTimers();
@@ -147,7 +148,7 @@ public:
   /// Note: rays will be compacted
   ///
   template <typename FloatType>
-  void FullTrace(vtkm::rendering::raytracing::Ray<FloatType>& rays);
+  void FullTrace(viskores::rendering::raytracing::Ray<FloatType>& rays);
 
   ///
   /// Integrates rays through the mesh. If rays leave the mesh and
@@ -156,7 +157,7 @@ public:
   /// puzzle pieces. Note: rays will be compacted
   ///
   template <typename FloatType>
-  void PartialTrace(vtkm::rendering::raytracing::Ray<FloatType> &rays,
+  void PartialTrace(viskores::rendering::raytracing::Ray<FloatType> &rays,
                     std::vector<PartialComposite<FloatType>> &partials);
 
   ///
@@ -165,57 +166,57 @@ public:
   ///  Precondition: rays.HitIdx is set to a valid mesh cell
   ///
   template <typename FloatType>
-  void IntegrateMeshSegment(vtkm::rendering::raytracing::Ray<FloatType>& rays);
+  void IntegrateMeshSegment(viskores::rendering::raytracing::Ray<FloatType>& rays);
 
   ///
   /// Find the entry point in the mesh
   ///
   template <typename FloatType>
-  void FindMeshEntry(vtkm::rendering::raytracing::Ray<FloatType>& rays);
+  void FindMeshEntry(viskores::rendering::raytracing::Ray<FloatType>& rays);
 
 private:
   template <typename FloatType>
-  void IntersectCell(vtkm::rendering::raytracing::Ray<FloatType>& rays, detail::RayTracking<FloatType>& tracker);
+  void IntersectCell(viskores::rendering::raytracing::Ray<FloatType>& rays, detail::RayTracking<FloatType>& tracker);
 
   template <typename FloatType>
-  void AccumulatePathLengths(vtkm::rendering::raytracing::Ray<FloatType>& rays, detail::RayTracking<FloatType>& tracker);
+  void AccumulatePathLengths(viskores::rendering::raytracing::Ray<FloatType>& rays, detail::RayTracking<FloatType>& tracker);
 
   template <typename FloatType>
-  void FindLostRays(vtkm::rendering::raytracing::Ray<FloatType>& rays, detail::RayTracking<FloatType>& tracker);
+  void FindLostRays(viskores::rendering::raytracing::Ray<FloatType>& rays, detail::RayTracking<FloatType>& tracker);
 
   template <typename FloatType>
-  void SampleCells(vtkm::rendering::raytracing::Ray<FloatType>& rays, detail::RayTracking<FloatType>& tracker);
+  void SampleCells(viskores::rendering::raytracing::Ray<FloatType>& rays, detail::RayTracking<FloatType>& tracker);
 
   template <typename FloatType>
-  void IntegrateCells(vtkm::rendering::raytracing::Ray<FloatType>& rays, detail::RayTracking<FloatType>& tracker);
+  void IntegrateCells(viskores::rendering::raytracing::Ray<FloatType>& rays, detail::RayTracking<FloatType>& tracker);
 
   template <typename FloatType>
-  void OffsetMinDistances(vtkm::rendering::raytracing::Ray<FloatType>& rays);
+  void OffsetMinDistances(viskores::rendering::raytracing::Ray<FloatType>& rays);
 
   template <typename FloatType>
-  void PrintRayStatus(vtkm::rendering::raytracing::Ray<FloatType>& rays);
+  void PrintRayStatus(viskores::rendering::raytracing::Ray<FloatType>& rays);
 
 protected:
   // Data set info
-  vtkm::cont::Field ScalarField;
-  vtkm::cont::Field EmissionField;
-  vtkm::cont::Field GhostField;
-  vtkm::cont::UnknownCellSet CellSet;
-  vtkm::cont::CoordinateSystem Coords;
-  vtkm::Range ScalarBounds;
-  vtkm::Float32 BoundingBox[6];
+  viskores::cont::Field ScalarField;
+  viskores::cont::Field EmissionField;
+  viskores::cont::Field GhostField;
+  viskores::cont::UnknownCellSet CellSet;
+  viskores::cont::CoordinateSystem Coords;
+  viskores::Range ScalarBounds;
+  viskores::Float32 BoundingBox[6];
 
-  vtkm::cont::ArrayHandle<vtkm::Vec4f_32> ColorMap;
+  viskores::cont::ArrayHandle<viskores::Vec4f_32> ColorMap;
 
-  vtkm::Vec4f_32 BackgroundColor;
-  vtkm::Float32 SampleDistance;
-  vtkm::Id RaysLost;
+  viskores::Vec4f_32 BackgroundColor;
+  viskores::Float32 SampleDistance;
+  viskores::Id RaysLost;
   IntegrationMode Integrator;
 
   MeshConnectivityContainer* MeshContainer;
-  vtkm::cont::CellLocatorGeneral Locator;
-  vtkm::Float64 BumpEpsilon;
-  vtkm::Float64 BumpDistance;
+  viskores::cont::CellLocatorGeneral Locator;
+  viskores::Float64 BumpEpsilon;
+  viskores::Float64 BumpDistance;
   //
   // flags
   bool CountRayStatus;
@@ -226,17 +227,18 @@ protected:
   bool FieldAssocPoints;
   bool HasEmission; // Mode for integrating through energy bins
   bool DivideEmisByAbsorb;
+  viskores::Int32 NumEnergyGroups;
 
   // timers
-  vtkm::Float64 IntersectTime;
-  vtkm::Float64 IntegrateTime;
-  vtkm::Float64 SampleTime;
-  vtkm::Float64 LostRayTime;
-  vtkm::Float64 MeshEntryTime;
-  vtkm::Float32 UnitScalar;
+  viskores::Float64 IntersectTime;
+  viskores::Float64 IntegrateTime;
+  viskores::Float64 SampleTime;
+  viskores::Float64 LostRayTime;
+  viskores::Float64 MeshEntryTime;
+  viskores::Float32 UnitScalar;
 
 }; // class ConnectivityTracer<CellType,ConnectivityType>
 }
 }
-} // namespace vtkm::rendering::raytracing
+} // namespace viskores::rendering::raytracing
 #endif

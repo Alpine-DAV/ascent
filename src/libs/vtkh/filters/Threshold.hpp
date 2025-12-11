@@ -5,7 +5,7 @@
 #include <vtkh/vtkh.hpp>
 #include <vtkh/filters/Filter.hpp>
 #include <vtkh/DataSet.hpp>
-#include <vtkm/Range.h>
+#include <viskores/Range.h>
 
 #include <memory>
 
@@ -37,7 +37,7 @@ public:
   void SetBoundaryThreshold(bool boundary);
 
   // threshold by box
-  void SetBoxThreshold(const vtkm::Bounds &box_bounds);
+  void SetBoxThreshold(const viskores::Bounds &box_bounds);
 
   // threshold by plane
   void SetPlaneThreshold(const double plane_origin[3],
@@ -59,7 +59,7 @@ protected:
   void PostExecute() override;
   void DoExecute()   override;
 
-  // for vtkm implicit fun for non field cases
+  // for viskores implicit fun for non field cases
   struct Internals;
   std::shared_ptr<Internals> m_internals;
 

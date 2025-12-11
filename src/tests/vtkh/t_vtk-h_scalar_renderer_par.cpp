@@ -10,8 +10,8 @@
 #include <vtkh/vtkh.hpp>
 #include <vtkh/DataSet.hpp>
 #include <vtkh/rendering/ScalarRenderer.hpp>
-#include <vtkm/io/VTKDataSetWriter.h>
-#include "t_vtkm_test_utils.hpp"
+#include <viskores/io/VTKDataSetWriter.h>
+#include "t_viskores_test_utils.hpp"
 
 #include <iostream>
 #include <mpi.h>
@@ -37,9 +37,9 @@ TEST(vtkh_scalar_renderer, vtkh_parallel_render)
     data_set.AddDomain(CreateTestData(domain_id, num_blocks, base_size), domain_id);
   }
 
-  vtkm::Bounds bounds = data_set.GetGlobalBounds();
+  viskores::Bounds bounds = data_set.GetGlobalBounds();
 
-  vtkm::rendering::Camera camera;
+  viskores::rendering::Camera camera;
   camera.ResetToBounds(bounds);
   camera.Azimuth(-30.f);
   camera.Elevation(-30.f);
@@ -54,8 +54,8 @@ TEST(vtkh_scalar_renderer, vtkh_parallel_render)
 
   if(vtkh::GetMPIRank() == 0)
   {
-    vtkm::cont::DataSet &result = output->GetDomain(0);
-    vtkm::io::VTKDataSetWriter writer("scalar_data.vtk");
+    viskores::cont::DataSet &result = output->GetDomain(0);
+    viskores::io::VTKDataSetWriter writer("scalar_data.vtk");
     writer.WriteDataSet(result);
   }
 
@@ -81,9 +81,9 @@ TEST(vtkh_scalar_renderer, vtkh_parallel_render_fields_specified)
     data_set.AddDomain(CreateTestData(domain_id, num_blocks, base_size), domain_id);
   }
 
-  vtkm::Bounds bounds = data_set.GetGlobalBounds();
+  viskores::Bounds bounds = data_set.GetGlobalBounds();
 
-  vtkm::rendering::Camera camera;
+  viskores::rendering::Camera camera;
   camera.ResetToBounds(bounds);
   camera.Azimuth(-30.f);
   camera.Elevation(-30.f);
@@ -100,8 +100,8 @@ TEST(vtkh_scalar_renderer, vtkh_parallel_render_fields_specified)
 
   if(vtkh::GetMPIRank() == 0)
   {
-    vtkm::cont::DataSet &result = output->GetDomain(0);
-    vtkm::io::VTKDataSetWriter writer("scalar_data_field_names_specified.vtk");
+    viskores::cont::DataSet &result = output->GetDomain(0);
+    viskores::io::VTKDataSetWriter writer("scalar_data_field_names_specified.vtk");
     writer.WriteDataSet(result);
   }
 
@@ -114,7 +114,7 @@ int main(int argc, char* argv[])
 
     ::testing::InitGoogleTest(&argc, argv);
     MPI_Init(&argc, &argv);
-#ifdef VTKM_ENABLE_KOKKOS
+#ifdef VISKORES_ENABLE_KOKKOS
     vtkh::InitializeKokkos();
 #endif
     result = RUN_ALL_TESTS();

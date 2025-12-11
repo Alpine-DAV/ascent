@@ -1,0 +1,74 @@
+From c9ec6ae6a62b9bd257e727e999987ef31384e3ac Mon Sep 17 00:00:00 2001
+From: Vicente Adolfo Bolea Sanchez <vicente.bolea@kitware.com>
+Date: Thu, 30 Nov 2023 15:55:32 -0500
+Subject: [PATCH] kokkos: let link viskores_cont to roc::rocthrust
+
+Also reorder the declarion of the option Viskores_ENABLE_KOKKOS_THRUST
+to be set before calling ViskoresDeviceAdapters.
+---
+ CMake/ViskoresDeviceAdapters.cmake           |  5 +----
+ CMakeLists.txt                           | 10 +++++-----
+ viskores/cont/kokkos/internal/CMakeLists.txt |  3 +++
+ 3 files changed, 9 insertions(+), 9 deletions(-)
+
+diff --git a/CMake/ViskoresDeviceAdapters.cmake b/CMake/ViskoresDeviceAdapters.cmake
+index fb13d0bf85..7b8bf2df9b 100644
+--- a/CMake/ViskoresDeviceAdapters.cmake
++++ b/CMake/ViskoresDeviceAdapters.cmake
+@@ -360,10 +360,7 @@ if(Viskores_ENABLE_KOKKOS AND NOT TARGET viskores_kokkos)
+ 
+     # Make sure rocthrust is available if requested
+     if(Viskores_ENABLE_KOKKOS_THRUST)
+-      find_package(rocthrust)
+-      if(NOT rocthrust_FOUND)
+-        message(FATAL_ERROR "rocthrust not found. Please set Viskores_ENABLE_KOKKOS_THRUST to OFF.")
+-      endif()
++      find_package(rocthrust REQUIRED CONFIG)
+     endif()
+   endif()
+ 
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 39a9b3bc09..d8204114c7 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -191,6 +191,11 @@ viskores_option(Viskores_OVERRIDE_CTEST_TIMEOUT "Disable default ctest timeout" OFF)
+ # Viskores_ENABLE_MPI=ON.
+ cmake_dependent_option(Viskores_ENABLE_GPU_MPI "Enable GPU AWARE MPI support" OFF "Viskores_ENABLE_MPI" OFF)
+ 
++# By default: Set Viskores_ENABLE_KOKKOS_THRUST to ON if Viskores_ENABLE_KOKKOS is ON, otherwise
++# disable it (or if the user explicitly turns this option OFF)
++cmake_dependent_option(Viskores_ENABLE_KOKKOS_THRUST "Enable Kokkos thrust support (only valid with CUDA and HIP)"
++  ON "Viskores_ENABLE_KOKKOS;Kokkos_ENABLE_CUDA OR Kokkos_ENABLE_HIP" OFF)
++
+ mark_as_advanced(
+   Viskores_ENABLE_LOGGING
+   Viskores_NO_ASSERT
+@@ -232,11 +237,6 @@ include(ViskoresBuildType)
+ # Include the viskores wrappers
+ include(ViskoresWrappers)
+ 
+-# By default: Set Viskores_ENABLE_KOKKOS_THRUST to ON if Viskores_ENABLE_KOKKOS is ON, otherwise
+-# disable it (or if the user explicitly turns this option OFF)
+-cmake_dependent_option(Viskores_ENABLE_KOKKOS_THRUST "Enable Kokkos thrust support (only valid with CUDA and HIP)"
+-  ON "Viskores_ENABLE_KOKKOS;Kokkos_ENABLE_CUDA OR Kokkos_ENABLE_HIP" OFF)
+-
+ # Create viskores_compiler_flags library. This is an interface library that
+ # holds all the C++ compiler flags that are needed for consumers and
+ # when building Viskores.
+diff --git a/viskores/cont/kokkos/internal/CMakeLists.txt b/viskores/cont/kokkos/internal/CMakeLists.txt
+index 9f924b0f4b..9b731c9fdd 100644
+--- a/viskores/cont/kokkos/internal/CMakeLists.txt
++++ b/viskores/cont/kokkos/internal/CMakeLists.txt
+@@ -34,6 +34,9 @@ if (TARGET viskores_kokkos)
+   elseif(TARGET viskores_kokkos_hip)
+     set_source_files_properties(${sources} TARGET_DIRECTORY viskores_cont PROPERTIES LANGUAGE HIP)
+     kokkos_compilation(SOURCE ${sources})
++    if (Viskores_ENABLE_KOKKOS_THRUST)
++      target_link_libraries(viskores_cont INTERFACE roc::rocthrust)
++    endif()
+   endif()
+ 
+ else()
+-- 
+2.35.3
+

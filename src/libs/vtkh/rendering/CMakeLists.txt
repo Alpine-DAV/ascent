@@ -53,7 +53,7 @@ if (ENABLE_SERIAL)
                     DEPENDS_ON ${vtkh_rendering_deps}
                     )
 
-    vtkm_add_target_information(vtkh_rendering DEVICE_SOURCES ${vtkh_rendering_sources})
+    viskores_add_target_information(vtkh_rendering DEVICE_SOURCES ${vtkh_rendering_sources})
 
     # build time only defs
     target_compile_definitions(vtkh_rendering PRIVATE ASCENT_EXPORTS_FLAG)
@@ -82,7 +82,7 @@ if (MPI_FOUND)
                     DEPENDS_ON ${vtkh_rendering_mpi_deps}
                     )
 
-    vtkm_add_target_information(vtkh_rendering_mpi DEVICE_SOURCES ${vtkh_rendering_sources})
+    viskores_add_target_information(vtkh_rendering_mpi DEVICE_SOURCES ${vtkh_rendering_sources})
 
     # build time only defs
     target_compile_definitions(vtkh_rendering_mpi PRIVATE ASCENT_EXPORTS_FLAG)

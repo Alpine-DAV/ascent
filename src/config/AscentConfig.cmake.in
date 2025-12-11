@@ -65,8 +65,8 @@ if(NOT ASCENT_FOUND)
     # advertise if vtk-h support is enabled
     set(ASCENT_VTKH_ENABLED @ENABLE_VTKH@)
 
-    # vtk-m dir
-    set(ASCENT_VTKM_DIR "@VTKM_DIR@")
+    # viskores dir
+    set(ASCENT_VISKORES_DIR "@VISKORES_DIR@")
 
     # advertise if mfem support is enabled
     set(ASCENT_MFEM_ENABLED @MFEM_FOUND@)
@@ -131,7 +131,7 @@ if(NOT ASCENT_FOUND)
     # setup blt targets
     include(${ASCENT_CMAKE_CONFIG_DIR}/BLTSetupTargets.cmake)
 
-    # setup dependent pkgs (conduit, vtk-m, etc)
+    # setup dependent pkgs (conduit, viskores, etc)
     include(${ASCENT_CMAKE_CONFIG_DIR}/ascent_setup_deps.cmake)
 
     # include the main exported targets

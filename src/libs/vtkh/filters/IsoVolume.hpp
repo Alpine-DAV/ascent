@@ -14,14 +14,14 @@ public:
   IsoVolume();
   virtual ~IsoVolume();
   std::string GetName() const override;
-  void SetRange(const vtkm::Range range);
+  void SetRange(const viskores::Range range);
   void SetField(const std::string field_name);
 protected:
   void PreExecute() override;
   void PostExecute() override;
   void DoExecute() override;
 
-  vtkm::Range m_range;
+  viskores::Range m_range;
   std::string m_field_name;
 };
 

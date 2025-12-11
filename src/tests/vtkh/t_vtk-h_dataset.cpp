@@ -8,7 +8,7 @@
 
 #include <vtkh/vtkh.hpp>
 #include <vtkh/DataSet.hpp>
-#include "t_vtkm_test_utils.hpp"
+#include "t_viskores_test_utils.hpp"
 
 #include <iostream>
 
@@ -17,7 +17,7 @@
 //-----------------------------------------------------------------------------
 TEST(vtkh_dataset, vtkh_range)
 {
-#ifdef VTKM_ENABLE_KOKKOS
+#ifdef VISKORES_ENABLE_KOKKOS
   vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
@@ -28,7 +28,7 @@ TEST(vtkh_dataset, vtkh_range)
   data_set.AddDomain(CreateTestData(0, num_blocks, base_size), 0);
   data_set.AddDomain(CreateTestData(1, num_blocks, base_size), 1);
 
-  vtkm::Bounds data_bounds = data_set.GetBounds();
+  viskores::Bounds data_bounds = data_set.GetBounds();
 
   const double max_val = base_size * num_blocks;
   const double min_val = 0.;
@@ -43,20 +43,20 @@ TEST(vtkh_dataset, vtkh_range)
   EXPECT_EQ(data_bounds.Y.Max, max_val);
   EXPECT_EQ(data_bounds.Z.Max, max_val);
 
-  vtkm::cont::ArrayHandle<vtkm::Range> vec_range;
+  viskores::cont::ArrayHandle<viskores::Range> vec_range;
   vec_range = data_set.GetGlobalRange("vector_data_Float64");
 
   EXPECT_EQ(3, vec_range.GetNumberOfValues());
 
 
-  vtkm::cont::ArrayHandle<vtkm::Range> scalar_range;
+  viskores::cont::ArrayHandle<viskores::Range> scalar_range;
   scalar_range = data_set.GetGlobalRange("point_data_Float64");
   EXPECT_EQ(1, scalar_range.GetNumberOfValues());
 
-  vtkm::Float64 min_coord = 0.;
-  vtkm::Float64 max_coord = vtkm::Float64(base_size * num_blocks);
+  viskores::Float64 min_coord = 0.;
+  viskores::Float64 max_coord = viskores::Float64(base_size * num_blocks);
 
-  vtkm::Bounds bounds  = data_set.GetBounds();
+  viskores::Bounds bounds  = data_set.GetBounds();
   EXPECT_EQ(min_coord, bounds.X.Min);
   EXPECT_EQ(min_coord, bounds.Y.Min);
   EXPECT_EQ(min_coord, bounds.Z.Min);

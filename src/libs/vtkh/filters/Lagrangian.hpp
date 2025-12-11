@@ -5,8 +5,8 @@
 #include <vtkh/vtkh.hpp>
 #include <vtkh/filters/Filter.hpp>
 #include <vtkh/DataSet.hpp>
-#include <vtkm/filter/flow/Lagrangian.h>
-#include <vtkm/Particle.h>
+#include <viskores/filter/flow/Lagrangian.h>
+#include <viskores/Particle.h>
 
 namespace vtkh
 {
@@ -25,12 +25,12 @@ public:
   void SetSeedResolutionInX(const int &x_res);
   void SetSeedResolutionInY(const int &y_res);
   void SetSeedResolutionInZ(const int &z_res);
-  void SetBasisParticles(const vtkm::cont::ArrayHandle<vtkm::Particle> &basisParticles);
-  void SetBasisParticlesOriginal(const vtkm::cont::ArrayHandle<vtkm::Particle> &basisParticlesOriginal);
-  void SetBasisParticleValidity(const vtkm::cont::ArrayHandle<vtkm::Id> &basisParticleValidity);
-  vtkm::cont::ArrayHandle<vtkm::Particle> GetBasisParticles();
-  vtkm::cont::ArrayHandle<vtkm::Particle> GetBasisParticlesOriginal();
-  vtkm::cont::ArrayHandle<vtkm::Id> GetBasisParticleValidity();
+  void SetBasisParticles(const viskores::cont::ArrayHandle<viskores::Particle> &basisParticles);
+  void SetBasisParticlesOriginal(const viskores::cont::ArrayHandle<viskores::Particle> &basisParticlesOriginal);
+  void SetBasisParticleValidity(const viskores::cont::ArrayHandle<viskores::Id> &basisParticleValidity);
+  viskores::cont::ArrayHandle<viskores::Particle> GetBasisParticles();
+  viskores::cont::ArrayHandle<viskores::Particle> GetBasisParticlesOriginal();
+  viskores::cont::ArrayHandle<viskores::Id> GetBasisParticleValidity();
 
 
 protected:
@@ -44,9 +44,9 @@ protected:
   int m_cycle;
   int m_cust_res;
   int m_x_res, m_y_res, m_z_res;
-  vtkm::cont::ArrayHandle<vtkm::Particle> m_basis_particles;
-  vtkm::cont::ArrayHandle<vtkm::Particle> m_basis_particles_original;
-  vtkm::cont::ArrayHandle<vtkm::Id> m_basis_particle_validity;
+  viskores::cont::ArrayHandle<viskores::Particle> m_basis_particles;
+  viskores::cont::ArrayHandle<viskores::Particle> m_basis_particles_original;
+  viskores::cont::ArrayHandle<viskores::Id> m_basis_particle_validity;
 };
 
 } //namespace vtkh

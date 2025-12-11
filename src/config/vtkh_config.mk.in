@@ -21,31 +21,31 @@
 
 VTKH_DIR = @ASCENT_INSTALL_PREFIX@
 
-VTKH_VTKM_DIR = @ASCENT_VTKM_DIR@
-VTKH_VTKM_VERSION = @ASCENT_VTKM_VERSION@
+VTKH_VISKORES_DIR = @ASCENT_VISKORES_DIR@
+VTKH_VISKORES_VERSION = @ASCENT_VISKORES_VERSION@
 
 VTKH_OPENMP_LINK_FLAGS = @OpenMP_CXX_FLAGS@
 
 VTKH_MPI_LIBS =@ASCENT_CONFIG_MK_MPI_LINK_FLAGS@
 
 #########################
-# VTKM
+# VISKORES
 #########################
 
 #########################
-# include settings from installed vtkm
+# include settings from installed viskores
 #########################
-include $(VTKH_VTKM_DIR)/share/vtkm-$(VTKH_VTKM_VERSION)/vtkm_config.mk
+include $(VTKH_VISKORES_DIR)/share/viskores-$(VTKH_VISKORES_VERSION)/viskores_config.mk
 
 #########################
-# vtk-m lib flags
+# viskores lib flags
 #########################
-VTKH_VTKM_LIB_FLAGS = $(VTKm_LIB_FLAGS)
+VTKH_VISKORES_LIB_FLAGS = $(Viskores_LIB_FLAGS)
 
 #########################
-# vtk-m include flags
+# viskores include flags
 #########################
-VTKH_VTKM_INCLUDE_FLAGS = $(VTKm_INCLUDE_FLAGS)
+VTKH_VISKORES_INCLUDE_FLAGS = $(Viskores_INCLUDE_FLAGS)
 
 #########################
 # VTKH
@@ -54,7 +54,7 @@ VTKH_VTKM_INCLUDE_FLAGS = $(VTKm_INCLUDE_FLAGS)
 #########################
 # VTKH Include Flags
 #########################
-VTKH_INCLUDE_FLAGS = -I $(VTKH_DIR)/include/ascent/ $(VTKM_VTKM_INCLUDE_FLAGS)
+VTKH_INCLUDE_FLAGS = -I $(VTKH_DIR)/include/ascent/ $(VISKORES_VISKORES_INCLUDE_FLAGS)
 
 #########################
 # VTKH Lib Flags
@@ -67,7 +67,7 @@ VTKH_LIB_FLAGS=-L $(VTKH_DIR)/lib \
                   -lvtkh_filters \
                   -lvtkh_core \
                   -lvtkh_utils \
-                  -lascent_lodepng $(VTKH_VTKM_LIB_FLAGS) $(VTKH_OPENMP_LINK_FLAGS)
+                  -lascent_lodepng $(VTKH_VISKORES_LIB_FLAGS) $(VTKH_OPENMP_LINK_FLAGS)
 
 
 # If using VTKH with mpi
@@ -77,7 +77,7 @@ VTKH_MPI_LIB_FLAGS=-L $(VTKH_DIR)/lib \
                       -lvtkh_filters_mpi \
                       -lvtkh_core_mpi \
                       -lvtkh_utils_mpi \
-                      -lascent_lodepng $(VTKH_VTKM_LIB_FLAGS) $(VTKH_OPENMP_LINK_FLAGS)
+                      -lascent_lodepng $(VTKH_VISKORES_LIB_FLAGS) $(VTKH_OPENMP_LINK_FLAGS)
 
 
 

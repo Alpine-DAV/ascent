@@ -1,5 +1,5 @@
 #include <vtkh/filters/Tetrahedralize.hpp>
-#include <vtkh/vtkm_filters/vtkmTetrahedralize.hpp>
+#include <vtkh/viskores_filters/viskoresTetrahedralize.hpp>
 
 namespace vtkh
 {
@@ -31,10 +31,10 @@ void Tetrahedralize::DoExecute()
 
   for(int i = 0; i < num_domains; ++i)
   {
-    vtkm::Id domain_id;
-    vtkm::cont::DataSet dom;
+    viskores::Id domain_id;
+    viskores::cont::DataSet dom;
     this->m_input->GetDomain(i, dom, domain_id);
-    vtkmTetrahedralize tetter;
+    viskoresTetrahedralize tetter;
     // insert interesting stuff
     auto dataset = tetter.Run(dom, this->GetFieldSelection());
 

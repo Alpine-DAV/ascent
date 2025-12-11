@@ -14,8 +14,8 @@ if(NOT FIDES_DIR)
     MESSAGE(FATAL_ERROR "Fides support needs explicit FIDES_DIR")
 endif()
 
-if(NOT VTKM_DIR)
-    MESSAGE(FATAL_ERROR "Fides support needs VTK-m (VTKM_DIR not set)")
+if(NOT VISKORES_DIR)
+    MESSAGE(FATAL_ERROR "Fides support needs Viskores (VISKORES_DIR not set)")
 endif()
 
 if(NOT ADIOS2_DIR)

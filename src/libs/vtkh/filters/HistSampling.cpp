@@ -4,16 +4,16 @@
 #include <vtkh/filters/Histogram.hpp>
 #include <vtkh/Error.hpp>
 
-#include <vtkm/worklet/DispatcherMapField.h>
-#include <vtkm/worklet/WorkletMapField.h>
+#include <viskores/worklet/DispatcherMapField.h>
+#include <viskores/worklet/WorkletMapField.h>
 
-#include <vtkm/worklet/DescriptiveStatistics.h>
-//#include <vtkm/filter/CreateResult.h>
-#include <vtkm/cont/ArrayHandleTransform.h>
-#include <vtkm/worklet/DispatcherMapField.h>
+#include <viskores/worklet/DescriptiveStatistics.h>
+//#include <viskores/filter/CreateResult.h>
+#include <viskores/cont/ArrayHandleTransform.h>
+#include <viskores/worklet/DispatcherMapField.h>
 #include <iostream>
 #include <algorithm>
-#include <vtkm/worklet/WorkletMapField.h>
+#include <viskores/worklet/WorkletMapField.h>
 #include <iostream>
 
 namespace vtkh
@@ -22,31 +22,31 @@ namespace vtkh
 namespace detail
 {
 
-class RandomGenerate : public vtkm::worklet::WorkletMapField
+class RandomGenerate : public viskores::worklet::WorkletMapField
 {
 protected:
-  vtkm::Int32 m_seed;
+  viskores::Int32 m_seed;
 public:
-  VTKM_CONT
-  RandomGenerate(vtkm::Int32 seed)
+  VISKORES_CONT
+  RandomGenerate(viskores::Int32 seed)
    : m_seed(seed)
   {}
 
   typedef void ControlSignature(FieldOut);
   typedef void ExecutionSignature(WorkIndex, _1);
 
-  VTKM_EXEC
-  void operator()(const vtkm::Id &index, vtkm::Float32 &value) const
+  VISKORES_EXEC
+  void operator()(const viskores::Id &index, viskores::Float32 &value) const
   {
-    const vtkm::Int32 sample = static_cast<vtkm::UInt32>(m_seed + index);
-    vtkm::Float32 y = 0.0f;
-    vtkm::Float32 yadd = 1.0f;
-    vtkm::Int32 bn = sample;
-    const vtkm::Int32 base = 7;
+    const viskores::Int32 sample = static_cast<viskores::UInt32>(m_seed + index);
+    viskores::Float32 y = 0.0f;
+    viskores::Float32 yadd = 1.0f;
+    viskores::Int32 bn = sample;
+    const viskores::Int32 base = 7;
     while (bn != 0)
     {
-      yadd *= 1.0f / (vtkm::Float32)base;
-      y += (vtkm::Float32)(bn % base) * yadd;
+      yadd *= 1.0f / (viskores::Float32)base;
+      y += (viskores::Float32)(bn % base) * yadd;
       bn /= base;
     }
 
@@ -55,36 +55,36 @@ public:
 }; //class RandomGenerate
 
 
-vtkm::cont::ArrayHandle<vtkm::Float32>
-calculate_pdf(const vtkm::Int32 tot_points,
-              const vtkm::Int32 num_bins,
-              const vtkm::Float32 sample_percent,
-              vtkm::cont::ArrayHandle<vtkm::Id> mybins)
+viskores::cont::ArrayHandle<viskores::Float32>
+calculate_pdf(const viskores::Int32 tot_points,
+              const viskores::Int32 num_bins,
+              const viskores::Float32 sample_percent,
+              viskores::cont::ArrayHandle<viskores::Id> mybins)
 {
-  vtkm::cont:: ArrayHandle <vtkm::Id > bins;
-  vtkm::cont:: Algorithm ::Copy(mybins , bins);
-  vtkm::cont::ArrayHandleIndex indexArray (num_bins);
-  vtkm::cont::ArrayHandle<vtkm::Id> indices;
-  vtkm::cont::Algorithm::Copy(indexArray, indices);
+  viskores::cont:: ArrayHandle <viskores::Id > bins;
+  viskores::cont:: Algorithm ::Copy(mybins , bins);
+  viskores::cont::ArrayHandleIndex indexArray (num_bins);
+  viskores::cont::ArrayHandle<viskores::Id> indices;
+  viskores::cont::Algorithm::Copy(indexArray, indices);
 
-  vtkm::cont:: ArrayHandleZip <vtkm::cont:: ArrayHandle <vtkm::Id >,
-                               vtkm::cont:: ArrayHandle <vtkm::Id >>
+  viskores::cont:: ArrayHandleZip <viskores::cont:: ArrayHandle <viskores::Id >,
+                               viskores::cont:: ArrayHandle <viskores::Id >>
                                  zipArray(bins, indices );
 
-  vtkm::cont::Algorithm::Sort(zipArray);
+  viskores::cont::Algorithm::Sort(zipArray);
 
   auto binPortal = zipArray.ReadPortal();
 
-  vtkm::Float32 remainingSamples = sample_percent*tot_points;
+  viskores::Float32 remainingSamples = sample_percent*tot_points;
 
-  vtkm::Float32 remainingBins = num_bins;
-  std::vector<vtkm::Float32> targetSamples;
+  viskores::Float32 remainingBins = num_bins;
+  std::vector<viskores::Float32> targetSamples;
 
   for (int i = 0; i < num_bins; ++i)
   {
-    vtkm::Float32 targetNeededSamples = remainingSamples / (1.0f*remainingBins);
-    vtkm::Float32 curCount = (vtkm::Float32)binPortal.Get(i).first;
-    vtkm::Float32 samplesTaken;
+    viskores::Float32 targetNeededSamples = remainingSamples / (1.0f*remainingBins);
+    viskores::Float32 curCount = (viskores::Float32)binPortal.Get(i).first;
+    viskores::Float32 samplesTaken;
 
     if(curCount < targetNeededSamples)
     {
@@ -99,7 +99,7 @@ calculate_pdf(const vtkm::Int32 tot_points,
     remainingSamples = remainingSamples - samplesTaken;
   }
 
-  vtkm::cont::ArrayHandle<vtkm::Float32> acceptanceProbsVec;
+  viskores::cont::ArrayHandle<viskores::Float32> acceptanceProbsVec;
   acceptanceProbsVec.Allocate(num_bins);
   auto acceptance_portal = acceptanceProbsVec.WritePortal();
   for(int i = 0; i < num_bins; ++i)
@@ -107,9 +107,9 @@ calculate_pdf(const vtkm::Int32 tot_points,
     acceptance_portal.Set(i, -1.f);
   }
 
-  vtkm::Float32 sum=0.0;
+  viskores::Float32 sum=0.0;
   int counter=0;
-  for(vtkm::Float32 n : targetSamples)
+  for(viskores::Float32 n : targetSamples)
   {
     acceptance_portal.Set(binPortal.Get(counter).second,n/binPortal.Get(counter).first);
     if (binPortal.Get(counter).first < 0.00000000000001f)
@@ -193,16 +193,16 @@ HistSampling::GetField() const
   return m_field_name;
 }
 
-struct LookupWorklet : public vtkm::worklet::WorkletMapField
+struct LookupWorklet : public viskores::worklet::WorkletMapField
 {
 protected:
-  vtkm::Id m_num_bins;
-  vtkm::Float64 m_min;
-  vtkm::Float64 m_bin_delta;
+  viskores::Id m_num_bins;
+  viskores::Float64 m_min;
+  viskores::Float64 m_bin_delta;
 public:
-  LookupWorklet(const vtkm::Id num_bins,
-                const vtkm::Float64 min_value,
-                const vtkm::Float64 bin_delta)
+  LookupWorklet(const viskores::Id num_bins,
+                const viskores::Float64 min_value,
+                const viskores::Float64 bin_delta)
     : m_num_bins(num_bins),
       m_min(min_value),
       m_bin_delta(bin_delta)
@@ -212,11 +212,11 @@ public:
   using ExecutionSignature = _2(_1, _3, _4);
 
   template <typename TablePortal>
-  VTKM_EXEC vtkm::UInt8 operator()(const vtkm::Float64 &field_value,
+  VISKORES_EXEC viskores::UInt8 operator()(const viskores::Float64 &field_value,
                                    TablePortal table,
-                                   const vtkm::Float32 &random) const
+                                   const viskores::Float32 &random) const
   {
-    vtkm::Id bin = static_cast<vtkm::Id>((field_value - m_min) / m_bin_delta);
+    viskores::Id bin = static_cast<viskores::Id>((field_value - m_min) / m_bin_delta);
     if(bin < 0)
     {
       bin = 0;
@@ -231,7 +231,7 @@ public:
 };
 
 
-void PrintStatInfo(vtkm::worklet::DescriptiveStatistics::StatState<vtkm::Float64> statinfo)
+void PrintStatInfo(viskores::worklet::DescriptiveStatistics::StatState<viskores::Float64> statinfo)
 {
 
   std::cout << "   Minimum " << statinfo.Min() << std::endl;
@@ -242,14 +242,14 @@ void PrintStatInfo(vtkm::worklet::DescriptiveStatistics::StatState<vtkm::Float64
   std::cout << "   Skewness " << statinfo.Skewness() << std::endl;
   std::cout << "   Kurtosis " << statinfo.Kurtosis() << std::endl;
   
-  // Not supported by VTK-m 2.1
+  // Not supported by Viskores 2.1
   // std::cout << "   Median " << statinfo.median << std::endl;
   // std::cout << "   Raw Moment 1-4 [ ";
-  // for (vtkm::Id i = 0; i < 4; i++)
+  // for (viskores::Id i = 0; i < 4; i++)
   //   std::cout << statinfo.rawMoment[i] << " ";
   // std::cout << "]" << std::endl;
   // std::cout << "   Central Moment 1-4 [ ";
-  // for (vtkm::Id i = 0; i < 4; i++)
+  // for (viskores::Id i = 0; i < 4; i++)
   //   std::cout << statinfo.centralMoment[i] << " ";
   // std::cout << "]" << std::endl;
 }
@@ -279,24 +279,24 @@ void HistSampling::DoExecute()
   Histogram::HistogramResult histogram = histogrammer.Run(*input,m_field_name);
   //histogram.Print(std::cout);
 
-  vtkm::Id numberOfBins = histogram.m_bins.GetNumberOfValues();
+  viskores::Id numberOfBins = histogram.m_bins.GetNumberOfValues();
 
   bool valid_field;
-  vtkm::cont::Field::Association assoc = input->GetFieldAssociation(m_field_name,
+  viskores::cont::Field::Association assoc = input->GetFieldAssociation(m_field_name,
                                                                     valid_field);
 
 
-  vtkm::Id global_num_values = histogram.totalCount();
-  vtkm::cont:: ArrayHandle <vtkm::Id > globCounts = histogram.m_bins;
+  viskores::Id global_num_values = histogram.totalCount();
+  viskores::cont:: ArrayHandle <viskores::Id > globCounts = histogram.m_bins;
 
-  vtkm::cont::ArrayHandle <vtkm::Float32 > probArray;
+  viskores::cont::ArrayHandle <viskores::Float32 > probArray;
   probArray = detail::calculate_pdf(global_num_values, numberOfBins, m_sample_percent, globCounts);
 
   for(int i = 0; i < num_domains; ++i)
   {
-    vtkm::Range range;
-    vtkm::Float64 delta;
-    vtkm::cont::DataSet &dom = input->GetDomain(i);
+    viskores::Range range;
+    viskores::Float64 delta;
+    viskores::cont::DataSet &dom = input->GetDomain(i);
 
     if(!dom.HasField(m_field_name))
     {
@@ -305,10 +305,10 @@ void HistSampling::DoExecute()
       continue;
     }
 
-    vtkm::cont::ArrayHandle<vtkm::Float64> data;
+    viskores::cont::ArrayHandle<viskores::Float64> data;
     dom.GetField(m_field_name).GetData().AsArrayHandle(data);
  
-    //auto vtkm::worklet::DescriptiveStatistics::Run(data);
+    //auto viskores::worklet::DescriptiveStatistics::Run(data);
 
     //std::cout << "Statistics for CELL data:" << std::endl;
     //PrintStatInfo(statinfo);
@@ -316,21 +316,21 @@ void HistSampling::DoExecute()
 
     // start doing sampling
 
-    vtkm::Int32 tot_points = data.GetNumberOfValues();
+    viskores::Int32 tot_points = data.GetNumberOfValues();
 
     // use the acceptance probabilities to create a stencil buffer
-    vtkm::cont::ArrayHandle<vtkm::Float32> randArray;
+    viskores::cont::ArrayHandle<viskores::Float32> randArray;
 
     randArray.Allocate(tot_points);
 
-    const vtkm::Int32 seed = 0;
+    const viskores::Int32 seed = 0;
 
-    vtkm::worklet::DispatcherMapField<detail::RandomGenerate>(seed).Invoke(randArray);
+    viskores::worklet::DispatcherMapField<detail::RandomGenerate>(seed).Invoke(randArray);
 
 
 
-    vtkm::cont::ArrayHandle <vtkm::UInt8> stencilBool;
-    vtkm::worklet::DispatcherMapField<LookupWorklet>(LookupWorklet{numberOfBins,
+    viskores::cont::ArrayHandle <viskores::UInt8> stencilBool;
+    viskores::worklet::DispatcherMapField<LookupWorklet>(LookupWorklet{numberOfBins,
                                                      histogram.m_range.Min,
                                                      histogram.m_bin_delta}).Invoke(data,
                                                                                     stencilBool,
@@ -338,10 +338,10 @@ void HistSampling::DoExecute()
                                                                                     randArray);
 
 
-    vtkm::cont::ArrayHandle <vtkm::Float32> output;
-    vtkm::cont::Algorithm ::Copy(stencilBool , output );
+    viskores::cont::ArrayHandle <viskores::Float32> output;
+    viskores::cont::Algorithm ::Copy(stencilBool , output );
 
-    if(assoc == vtkm::cont::Field::Association::Points)
+    if(assoc == viskores::cont::Field::Association::Points)
     {
       dom.AddPointField("valSampled", output);
     }

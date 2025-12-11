@@ -35,14 +35,14 @@ index_t EXAMPLE_MESH_SIDE_DIM = 100;
 float64 RADIUS = .25;
 
 //-----------------------------------------------------------------------------
-TEST(ascent_mir, venn_vtkm_mir_full)
+TEST(ascent_mir, venn_viskores_mir_full)
 {
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
         return;
     }
 
@@ -75,20 +75,17 @@ TEST(ascent_mir, venn_vtkm_mir_full)
 
     pipelines["pl1/f1/type"] = "mir";
     conduit::Node &params = pipelines["pl1/f1/params"];
-    //params["field"] = "circle_a";         // name of the vector field
-    params["matset"] = "matset";         // name of the vector field
+    params["matset"] = "matset";         // name of the material set  
     params["error_scaling"] = 0.0;
     params["scaling_decay"] = 0.0;
     params["iterations"] = 0;
     params["max_error"] = 0.00001;
-    //params["output_name"] = "mag_vorticity";   // name of the output field
+    params["output_name"] = "matset";   // name of the output field; default is `matset` param
 
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]         = "pseudocolor";
-//    scenes["s1/plots/p1/matset"] = "matset";
     scenes["s1/plots/p1/field"] = "matset";
     scenes["s1/plots/p1/color_table/discrete"] = "true";
-//    scenes["s1/plots/p1/field"] = "circle_b";
     scenes["s1/plots/p1/pipeline"] = "pl1";
     scenes["s1/image_prefix"] = output_file;
 
@@ -132,14 +129,14 @@ TEST(ascent_mir, venn_vtkm_mir_full)
 }
 //
 ////-----------------------------------------------------------------------------
-TEST(ascent_mir, venn_vtkm_mir_sparse_by_element)
+TEST(ascent_mir, venn_viskores_mir_sparse_by_element)
 {
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
         return;
     }
 
@@ -172,20 +169,17 @@ TEST(ascent_mir, venn_vtkm_mir_sparse_by_element)
 
     pipelines["pl1/f1/type"] = "mir";
     conduit::Node &params = pipelines["pl1/f1/params"];
-    //params["field"] = "circle_a";         // name of the vector field
-    params["matset"] = "matset";         // name of the vector field
+    params["matset"] = "matset";         // name of the material set  
     params["error_scaling"] = 0.0;
     params["scaling_decay"] = 0.0;
     params["iterations"] = 0;
     params["max_error"] = 0.00001;
-    //params["output_name"] = "mag_vorticity";   // name of the output field
+    params["output_name"] = "matset";   // name of the output field; default is `matset` param
 
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]         = "pseudocolor";
-//    scenes["s1/plots/p1/matset"] = "matset";
     scenes["s1/plots/p1/field"] = "matset";
     scenes["s1/plots/p1/color_table/discrete"] = "true";
-//    scenes["s1/plots/p1/field"] = "circle_b";
     scenes["s1/plots/p1/pipeline"] = "pl1";
     scenes["s1/image_prefix"] = output_file;
 
@@ -229,14 +223,14 @@ TEST(ascent_mir, venn_vtkm_mir_sparse_by_element)
 }
 
 //-----------------------------------------------------------------------------
-TEST(ascent_mir, venn_vtkm_mir_sparse_by_material)
+TEST(ascent_mir, venn_viskores_mir_sparse_by_material)
 {
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
         return;
     }
 
@@ -269,20 +263,17 @@ TEST(ascent_mir, venn_vtkm_mir_sparse_by_material)
 
     pipelines["pl1/f1/type"] = "mir";
     conduit::Node &params = pipelines["pl1/f1/params"];
-    //params["field"] = "circle_a";         // name of the vector field
-    params["matset"] = "matset";         // name of the vector field
+    params["matset"] = "matset";         // name of the material set  
     params["error_scaling"] = 0.0;
     params["scaling_decay"] = 0.0;
     params["iterations"] = 0;
     params["max_error"] = 0.00001;
-    //params["output_name"] = "mag_vorticity";   // name of the output field
+    params["output_name"] = "matset";   // name of the output field; default is `matset` param
 
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]         = "pseudocolor";
-//    scenes["s1/plots/p1/matset"] = "matset";
     scenes["s1/plots/p1/color_table/discrete"] = "true";
     scenes["s1/plots/p1/field"] = "matset";
-//    scenes["s1/plots/p1/field"] = "circle_b";
     scenes["s1/plots/p1/pipeline"] = "pl1";
     scenes["s1/image_prefix"] = output_file;
 

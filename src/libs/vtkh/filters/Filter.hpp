@@ -4,7 +4,7 @@
 #include <vtkh/vtkh_exports.h>
 #include <vtkh/vtkh.hpp>
 #include <vtkh/DataSet.hpp>
-#include <vtkm/filter/FieldSelection.h>
+#include <viskores/filter/FieldSelection.h>
 
 namespace vtkh
 {
@@ -33,7 +33,7 @@ protected:
   /// These are all temporary methods added to gets things building again
   /// while we totally deprecate vtk-h compnents
   ///
-  vtkm::filter::FieldSelection GetFieldSelection() const;
+  viskores::filter::FieldSelection GetFieldSelection() const;
   //@}
 
   std::vector<std::string> m_map_fields;

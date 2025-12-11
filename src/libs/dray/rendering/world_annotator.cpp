@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: (BSD-3-Clause)
 
 // I believe this is this codes third migration, at least
-// VisIt (maybe) -> EAVL -> vtkm -> here
+// VisIt (maybe) -> EAVL -> viskores -> here
 
 #include <dray/rendering/world_annotator.hpp>
 #include <dray/rendering/line_renderer.hpp>

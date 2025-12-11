@@ -4,7 +4,7 @@
 // other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-#include "vtkm_typedefs.hpp"
+#include "viskores_typedefs.hpp"
 #include <domain.hpp>
 #include <engine.hpp>
 #include <rover_exceptions.hpp>
@@ -18,7 +18,7 @@ Domain::Domain()
   m_engine = std::make_shared<Engine>();
 }
 
-Domain::Domain(vtkmDataSet &dataset)
+Domain::Domain(viskoresDataSet &dataset)
 {
   m_engine = std::make_shared<Engine>();
   set_dataset(dataset);
@@ -86,13 +86,19 @@ Domain::init()
 }
 
 const int
-Domain::get_num_channels()
+Domain::get_num_energy_groups()
 {
-  return m_engine->get_num_channels();
+  return m_engine->get_num_energy_groups();
+}
+
+bool
+Domain::get_field_mismatch_error()
+{
+  return m_engine->get_field_mismatch_error();
 }
 
 void
-Domain::set_dataset(vtkmDataSet &dataset)
+Domain::set_dataset(viskoresDataSet &dataset)
 {
   ROVER_INFO("Setting dataset");
   m_engine->set_dataset(dataset);
@@ -100,7 +106,7 @@ Domain::set_dataset(vtkmDataSet &dataset)
   m_domain_bounds = m_dataset.GetCoordinateSystem().GetBounds();
 }
 
-const vtkmDataSet&
+const viskoresDataSet&
 Domain::get_dataset()
 {
   return m_dataset;
@@ -131,7 +137,7 @@ Domain::partial_trace(Ray64 &rays, PartialVector64 &partials)
 }
 
 void
-Domain::set_primary_range(const vtkmRange &range)
+Domain::set_primary_range(const viskoresRange &range)
 {
   m_engine->set_primary_range(range);
 }
@@ -142,20 +148,20 @@ Domain::set_composite_background(bool on)
   m_engine->set_composite_background(on);
 }
 
-vtkmRange
+viskoresRange
 Domain::get_primary_range()
 {
   return m_engine->get_primary_range();
 }
 
-vtkm::Bounds&
+viskores::Bounds&
 Domain::get_domain_bounds()
 {
   return m_domain_bounds;
 }
 
 void
-Domain::set_global_bounds(vtkm::Bounds bounds)
+Domain::set_global_bounds(viskores::Bounds bounds)
 {
   m_global_bounds = bounds;
 }

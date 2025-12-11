@@ -1,39 +1,39 @@
 
 #include <vtkh/filters/Sample.hpp>
 #include <vtkh/Error.hpp>
-#include <vtkh/vtkm_filters/vtkmProbe.hpp>
-#include <vtkh/utils/vtkm_array_utils.hpp>
+#include <vtkh/viskores_filters/viskoresProbe.hpp>
+#include <vtkh/utils/viskores_array_utils.hpp>
 
 #include <limits>
 
 #ifdef VTKH_PARALLEL
-#include <vtkm/thirdparty/diy/diy.h>
-#include <vtkm/thirdparty/diy/mpi-cast.h>
-#include <vtkm/cont/EnvironmentTracker.h>
-#include <vtkm/cont/DataSetBuilderUniform.h>
+#include <viskores/thirdparty/diy/diy.h>
+#include <viskores/thirdparty/diy/mpi-cast.h>
+#include <viskores/cont/EnvironmentTracker.h>
+#include <viskores/cont/DataSetBuilderUniform.h>
 
 #include <mpi.h>
 #endif
 
-#include <vtkm/cont/Algorithm.h>
-#include <vtkm/worklet/WorkletMapField.h>
-#include <vtkm/worklet/DispatcherMapField.h>
+#include <viskores/cont/Algorithm.h>
+#include <viskores/worklet/WorkletMapField.h>
+#include <viskores/worklet/DispatcherMapField.h>
 
-using Scalar_i32_hnd = vtkm::cont::ArrayHandle<vtkm::Int32>;
-using Scalar_f32_hnd = vtkm::cont::ArrayHandle<vtkm::Float32>;
-using Scalar_f64_hnd = vtkm::cont::ArrayHandle<vtkm::Float64>;
+using Scalar_i32_hnd = viskores::cont::ArrayHandle<viskores::Int32>;
+using Scalar_f32_hnd = viskores::cont::ArrayHandle<viskores::Float32>;
+using Scalar_f64_hnd = viskores::cont::ArrayHandle<viskores::Float64>;
 
-using Vec2_f32_hnd  = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32,2>>;
-using Vec2_f64_hnd  = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,2>>;
+using Vec2_f32_hnd  = viskores::cont::ArrayHandle<viskores::Vec<viskores::Float32,2>>;
+using Vec2_f64_hnd  = viskores::cont::ArrayHandle<viskores::Vec<viskores::Float64,2>>;
 
-using Vec3_f32_hnd  = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32,3>>;
-using Vec3_f64_hnd  = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,3>>;
+using Vec3_f32_hnd  = viskores::cont::ArrayHandle<viskores::Vec<viskores::Float32,3>>;
+using Vec3_f64_hnd  = viskores::cont::ArrayHandle<viskores::Vec<viskores::Float64,3>>;
 
-using Vec2_f32    = vtkm::Vec<vtkm::Float32, 2>;
-using Vec3_f32    = vtkm::Vec<vtkm::Float32, 3>;
+using Vec2_f32    = viskores::Vec<viskores::Float32, 2>;
+using Vec3_f32    = viskores::Vec<viskores::Float32, 3>;
 
-using Vec2_f64    = vtkm::Vec<vtkm::Float64, 2>;
-using Vec3_f64    = vtkm::Vec<vtkm::Float64, 3>;
+using Vec2_f64    = viskores::Vec<viskores::Float64, 2>;
+using Vec3_f64    = viskores::Vec<viskores::Float64, 3>;
 
 
 #define _DEBUG 0
@@ -45,14 +45,14 @@ namespace vtkh
 //---------------------------------------------------------------------------//
 namespace detail
 {
-vtkm::cont::Field 
-MakeEmptyField(std::string field_name , vtkm::Id field_id, int num_values, vtkm::cont::Field::Association assoc, vtkm::Float64 val)
+viskores::cont::Field 
+MakeEmptyField(std::string field_name , viskores::Id field_id, int num_values, viskores::cont::Field::Association assoc, viskores::Float64 val)
 {
   if(field_id == 0)
   {
     std::vector<int> v_empty(num_values, (int) val);
-    Scalar_i32_hnd ah_empty = vtkm::cont::make_ArrayHandle(v_empty.data(),num_values,vtkm::CopyFlag::On);
-    vtkm::cont::Field f_empty(field_name,
+    Scalar_i32_hnd ah_empty = viskores::cont::make_ArrayHandle(v_empty.data(),num_values,viskores::CopyFlag::On);
+    viskores::cont::Field f_empty(field_name,
                               assoc,
                               ah_empty);
     return f_empty;
@@ -60,8 +60,8 @@ MakeEmptyField(std::string field_name , vtkm::Id field_id, int num_values, vtkm:
   else if(field_id == 1)
   {
     std::vector<float> v_empty(num_values, (float) val);
-    Scalar_f32_hnd ah_empty = vtkm::cont::make_ArrayHandle(v_empty.data(),num_values,vtkm::CopyFlag::On);
-    vtkm::cont::Field f_empty(field_name,
+    Scalar_f32_hnd ah_empty = viskores::cont::make_ArrayHandle(v_empty.data(),num_values,viskores::CopyFlag::On);
+    viskores::cont::Field f_empty(field_name,
                               assoc,
                               ah_empty);
     return f_empty;
@@ -69,67 +69,67 @@ MakeEmptyField(std::string field_name , vtkm::Id field_id, int num_values, vtkm:
   else if(field_id == 2)
   {
     std::vector<double> v_empty(num_values, (double) val);
-    Scalar_f64_hnd ah_empty = vtkm::cont::make_ArrayHandle(v_empty.data(),num_values,vtkm::CopyFlag::On);
-    vtkm::cont::Field f_empty(field_name,
+    Scalar_f64_hnd ah_empty = viskores::cont::make_ArrayHandle(v_empty.data(),num_values,viskores::CopyFlag::On);
+    viskores::cont::Field f_empty(field_name,
                               assoc,
                               ah_empty);
     return f_empty;
   }
   else if(field_id == 3)
   {
-    Vec2_f32_hnd ah_empty = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32,2>>();
-    // note Vec2f was declared as float64 in the vtkmProbe filter ...
-    vtkm::Vec<vtkm::Float32,2> empty_vec = vtkm::make_Vec((float) val, (float) val);
+    Vec2_f32_hnd ah_empty = viskores::cont::ArrayHandle<viskores::Vec<viskores::Float32,2>>();
+    // note Vec2f was declared as float64 in the viskoresProbe filter ...
+    viskores::Vec<viskores::Float32,2> empty_vec = viskores::make_Vec((float) val, (float) val);
     for(int i = 0; i < num_values; ++i)
     {
 
       ah_empty.WritePortal().Set(i,empty_vec);
     }
-    vtkm::cont::Field f_empty(field_name,
+    viskores::cont::Field f_empty(field_name,
                               assoc,
                               ah_empty);
     return f_empty;
   }
   else if(field_id == 4)
   {
-    Vec2_f64_hnd ah_empty = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,2>>();
-    vtkm::Vec<vtkm::Float64,2> empty_vec = vtkm::make_Vec(val, val);
+    Vec2_f64_hnd ah_empty = viskores::cont::ArrayHandle<viskores::Vec<viskores::Float64,2>>();
+    viskores::Vec<viskores::Float64,2> empty_vec = viskores::make_Vec(val, val);
     for(int i = 0; i < num_values; ++i)
     {
       ah_empty.WritePortal().Set(i,empty_vec);
     }
-    vtkm::cont::Field f_empty(field_name,
+    viskores::cont::Field f_empty(field_name,
                               assoc,
                               ah_empty);
     return f_empty;
   }
   else if(field_id == 5)
   {
-    Vec3_f32_hnd ah_empty = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32,3>>();
-    vtkm::Vec<vtkm::Float32,3> empty_vec = vtkm::make_Vec((float) val, (float) val, (float) val);
+    Vec3_f32_hnd ah_empty = viskores::cont::ArrayHandle<viskores::Vec<viskores::Float32,3>>();
+    viskores::Vec<viskores::Float32,3> empty_vec = viskores::make_Vec((float) val, (float) val, (float) val);
     for(int i = 0; i < num_values; ++i)
     {
       ah_empty.WritePortal().Set(i,empty_vec);
     }
-    vtkm::cont::Field f_empty(field_name,
+    viskores::cont::Field f_empty(field_name,
                               assoc,
                               ah_empty);
     return f_empty;
   }
   else if(field_id == 6)
   {
-    Vec3_f64_hnd  ah_empty = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,3>>();
+    Vec3_f64_hnd  ah_empty = viskores::cont::ArrayHandle<viskores::Vec<viskores::Float64,3>>();
     for(int i = 0; i < num_values; ++i)
     {
-      Vec3_f64 empty_vec = vtkm::make_Vec(val, val, val);
+      Vec3_f64 empty_vec = viskores::make_Vec(val, val, val);
       ah_empty.WritePortal().Set(i,empty_vec);
     }
-    vtkm::cont::Field f_empty(field_name,
+    viskores::cont::Field f_empty(field_name,
                               assoc,
                               ah_empty);
     return f_empty;
   }
-  vtkm::cont::Field field;
+  viskores::cont::Field field;
   return field;
 }
 
@@ -137,21 +137,21 @@ MakeEmptyField(std::string field_name , vtkm::Id field_id, int num_values, vtkm:
 #ifdef VTKH_PARALLEL
 class GlobalReduceField
 {
-  const vtkm::cont::DataSet &m_dataset;
+  const viskores::cont::DataSet &m_dataset;
   std::string               m_field;
-  vtkm::Float64             m_invalid_value;
+  viskores::Float64             m_invalid_value;
   const int                 m_num_points;
-  const vtkm::Id            m_field_id;
-  vtkm::cont::DataSet       &m_result;
+  const viskores::Id            m_field_id;
+  viskores::cont::DataSet       &m_result;
 
 public:
   //-------------------------------------------------------------------------//
-  GlobalReduceField(const vtkm::cont::DataSet &dataset,
+  GlobalReduceField(const viskores::cont::DataSet &dataset,
                     const std::string field,
                     const int num_points,
-                    const vtkm::Id field_id,
-                    const vtkm::Float64 invalid_value,
-                    vtkm::cont::DataSet &result)
+                    const viskores::Id field_id,
+                    const viskores::Float64 invalid_value,
+                    viskores::cont::DataSet &result)
     : m_dataset(dataset),
       m_field(field),
       m_num_points(num_points),
@@ -168,7 +168,7 @@ public:
   void
   Reduce()
   {
-    vtkm::cont::DataSet res;
+    viskores::cont::DataSet res;
     res.CopyStructure(m_dataset);
     ReduceField r_field(m_field, m_dataset, m_invalid_value, m_num_points, m_field_id, m_result);
     r_field.reduce();
@@ -178,20 +178,20 @@ public:
   //-------------------------------------------------------------------------//
   struct ReduceField
   {
-    const vtkm::cont::DataSet &m_data_set;
+    const viskores::cont::DataSet &m_data_set;
     const std::string m_field_name;
-    const vtkm::Float64 m_invalid_value;
+    const viskores::Float64 m_invalid_value;
     const int m_num_points;
-    const vtkm::Id m_field_id;
-    vtkm::cont::DataSet &m_result;
+    const viskores::Id m_field_id;
+    viskores::cont::DataSet &m_result;
   
     //-----------------------------------------------------------------------//
     ReduceField(const std::string field_name,
-                const vtkm::cont::DataSet &data_set,
-                const vtkm::Float64 invalid_value,
+                const viskores::cont::DataSet &data_set,
+                const viskores::Float64 invalid_value,
                 const int num_points, 
-                const vtkm::Id field_id, 
-                vtkm::cont::DataSet &result)
+                const viskores::Id field_id, 
+                viskores::cont::DataSet &result)
       : m_field_name(field_name),
         m_data_set(data_set),
         m_invalid_value(invalid_value),
@@ -205,14 +205,14 @@ public:
     reduce()
     {
       MPI_Comm mpi_comm = MPI_Comm_f2c(vtkh::GetMPICommHandle());
-      vtkm::cont::EnvironmentTracker::SetCommunicator(vtkmdiy::mpi::communicator(vtkmdiy::mpi::make_DIY_MPI_Comm(mpi_comm)));
+      viskores::cont::EnvironmentTracker::SetCommunicator(viskoresdiy::mpi::communicator(viskoresdiy::mpi::make_DIY_MPI_Comm(mpi_comm)));
       int par_rank;
       int par_size;
       MPI_Comm_rank(mpi_comm, &par_rank);
       MPI_Comm_size(mpi_comm, &par_size);
 
-      vtkm::cont::Field res;
-      vtkm::cont::Field field;
+      viskores::cont::Field res;
+      viskores::cont::Field field;
 
       bool is_empty = false;
       if(m_data_set.HasField(m_field_name))
@@ -223,7 +223,7 @@ public:
       else
       {
         is_empty = true;
-        field = detail::MakeEmptyField(m_field_name,  m_field_id, m_num_points, vtkm::cont::Field::Association::Points, m_invalid_value); 
+        field = detail::MakeEmptyField(m_field_name,  m_field_id, m_num_points, viskores::cont::Field::Association::Points, m_invalid_value); 
       }
 
       if(m_field_name == "HIDDEN")
@@ -234,8 +234,8 @@ public:
         return;
       }
 
-      vtkm::cont::UnknownArrayHandle uah_field;
-      vtkm::cont::ArrayHandle<unsigned char> ah_mask;
+      viskores::cont::UnknownArrayHandle uah_field;
+      viskores::cont::ArrayHandle<unsigned char> ah_mask;
       if (!is_empty)
       {
         uah_field = field.GetData();
@@ -281,7 +281,7 @@ public:
 #endif
         //loop through field, zero out invalid and unowned values
         Scalar_i32_hnd ah_field = field.GetData().AsArrayHandle<Scalar_i32_hnd>();
-        int *local_field = GetVTKMPointer(ah_field);
+        int *local_field = GetviskoresPointer(ah_field);
         std::vector<int> global_field(m_num_points,0);
 
         for(int i = 0; i < m_num_points; ++i)
@@ -305,12 +305,12 @@ public:
             }
           }
           
-          Scalar_i32_hnd ah_out = vtkm::cont::make_ArrayHandle(global_field.data(), 
-                                                               m_num_points,
-                                                               vtkm::CopyFlag::On);
-          vtkm::cont::Field out_field(m_field_name,
-                                      vtkm::cont::Field::Association::Points,
-                                      ah_out);
+          Scalar_i32_hnd ah_out = viskores::cont::make_ArrayHandle(global_field.data(), 
+                                                                   m_num_points,
+                                                                   viskores::CopyFlag::On);
+          viskores::cont::Field out_field(m_field_name,
+                                          viskores::cont::Field::Association::Points,
+                                          ah_out);
           res = out_field;
         }
         else
@@ -325,7 +325,7 @@ public:
 #endif
         //loop through field, zero out invalid value
         Scalar_f32_hnd ah_field = field.GetData().AsArrayHandle<Scalar_f32_hnd>();
-        float * local_field = GetVTKMPointer(ah_field);
+        float * local_field = GetviskoresPointer(ah_field);
         std::vector<float> global_field(m_num_points,0);
 
         for(int i = 0; i < m_num_points; ++i)
@@ -348,10 +348,10 @@ public:
               global_field[i] = (float) m_invalid_value;
             }
           }
-          Scalar_f32_hnd ah_out = vtkm::cont::make_ArrayHandle(global_field.data(),m_num_points,vtkm::CopyFlag::On);
-          vtkm::cont::Field out_field(m_field_name,
-                                      vtkm::cont::Field::Association::Points,
-                                      ah_out);
+          Scalar_f32_hnd ah_out = viskores::cont::make_ArrayHandle(global_field.data(),m_num_points,viskores::CopyFlag::On);
+          viskores::cont::Field out_field(m_field_name,
+                                          viskores::cont::Field::Association::Points,
+                                          ah_out);
 
           res = out_field;
         }
@@ -376,7 +376,7 @@ public:
           }
         }
 
-        double * local_field = GetVTKMPointer(ah_field);
+        double * local_field = GetviskoresPointer(ah_field);
         std::vector<double> global_field(m_num_points,0.0);
         MPI_Reduce(local_field, global_field.data(), m_num_points, MPI_DOUBLE, MPI_SUM, 0, mpi_comm);
 
@@ -390,11 +390,11 @@ public:
             }
           }
           
-          Scalar_f64_hnd ah_out = vtkm::cont::make_ArrayHandle(global_field.data(),m_num_points,vtkm::CopyFlag::On);
+          Scalar_f64_hnd ah_out = viskores::cont::make_ArrayHandle(global_field.data(),m_num_points,viskores::CopyFlag::On);
 
-          vtkm::cont::Field out_field(m_field_name,
-                                      vtkm::cont::Field::Association::Points,
-                                      ah_out);
+          viskores::cont::Field out_field(m_field_name,
+                                          viskores::cont::Field::Association::Points,
+                                          ah_out);
           res = out_field;
         }
         else
@@ -427,7 +427,7 @@ public:
 
         if(par_rank == 0)
         {
-            Vec2_f32_hnd ah_out = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32,2>>();
+            Vec2_f32_hnd ah_out = viskores::cont::ArrayHandle<viskores::Vec<viskores::Float32,2>>();
             ah_out.Allocate(m_num_points);
             for(int i = 0; i < m_num_points; ++i)
             {
@@ -437,13 +437,13 @@ public:
                 global_y_points[i] = (float)m_invalid_value;
               }
 
-              vtkm::Vec<vtkm::Float32,2> points_vec = vtkm::make_Vec(global_x_points[i],global_y_points[i]);
+              viskores::Vec<viskores::Float32,2> points_vec = viskores::make_Vec(global_x_points[i],global_y_points[i]);
               ah_out.WritePortal().Set(i,points_vec);
             }
 
-            vtkm::cont::Field out_field(m_field_name,
-                                        vtkm::cont::Field::Association::Points,
-                                        ah_out);
+            viskores::cont::Field out_field(m_field_name,
+                                            viskores::cont::Field::Association::Points,
+                                            ah_out);
             res = out_field;
         }
         else
@@ -476,7 +476,7 @@ public:
 
         if(par_rank == 0)
         {
-          Vec2_f64_hnd ah_out = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,2>>();
+          Vec2_f64_hnd ah_out = viskores::cont::ArrayHandle<viskores::Vec<viskores::Float64,2>>();
           ah_out.Allocate(m_num_points);
           for(int i = 0; i < m_num_points; ++i)
           {
@@ -485,12 +485,12 @@ public:
               global_x_points[i] = m_invalid_value;
               global_y_points[i] = m_invalid_value;
             }
-            vtkm::Vec<vtkm::Float64,2> points_vec = vtkm::make_Vec(global_x_points[i],global_y_points[i]);
+            viskores::Vec<viskores::Float64,2> points_vec = viskores::make_Vec(global_x_points[i],global_y_points[i]);
             ah_out.WritePortal().Set(i,points_vec);
           }
-          vtkm::cont::Field out_field(m_field_name,
-                                      vtkm::cont::Field::Association::Points,
-                                      ah_out);
+          viskores::cont::Field out_field(m_field_name,
+                                          viskores::cont::Field::Association::Points,
+                                          ah_out);
 			      
           res = out_field;
         }
@@ -526,7 +526,7 @@ public:
 
         if(par_rank == 0)
         {
-          Vec3_f32_hnd ah_out = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32,3>>();
+          Vec3_f32_hnd ah_out = viskores::cont::ArrayHandle<viskores::Vec<viskores::Float32,3>>();
           ah_out.Allocate(m_num_points);
           for(int i = 0; i < m_num_points; ++i)
           {
@@ -537,15 +537,15 @@ public:
               global_z_points[i] = m_invalid_value;
             }
 
-            vtkm::Vec<vtkm::Float32,3> points_vec = vtkm::make_Vec(global_x_points[i],
+            viskores::Vec<viskores::Float32,3> points_vec = viskores::make_Vec(global_x_points[i],
                                                                    global_y_points[i],
                                                                    global_z_points[i]);
             ah_out.WritePortal().Set(i,points_vec);
           }
         
-          vtkm::cont::Field out_field(m_field_name,
-                                      vtkm::cont::Field::Association::Points,
-                                      ah_out);
+          viskores::cont::Field out_field(m_field_name,
+                                          viskores::cont::Field::Association::Points,
+                                          ah_out);
 
           res = out_field;
         }
@@ -583,7 +583,7 @@ public:
 
         if(par_rank == 0)
         {
-          Vec3_f64_hnd ah_out = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,3>>();
+          Vec3_f64_hnd ah_out = viskores::cont::ArrayHandle<viskores::Vec<viskores::Float64,3>>();
           ah_out.Allocate(m_num_points);
           for(int i = 0; i < m_num_points; ++i)
           {
@@ -594,14 +594,14 @@ public:
               global_z_points[i] = m_invalid_value;
             }
             
-            vtkm::Vec<vtkm::Float64,3> points_vec = vtkm::make_Vec(global_x_points[i],
+            viskores::Vec<viskores::Float64,3> points_vec = viskores::make_Vec(global_x_points[i],
                                                                    global_y_points[i],
                                                                    global_z_points[i]);
             ah_out.WritePortal().Set(i,points_vec);
           }
-          vtkm::cont::Field out_field(m_field_name,
-                                      vtkm::cont::Field::Association::Points,
-                                      ah_out);
+          viskores::cont::Field out_field(m_field_name,
+                                          viskores::cont::Field::Association::Points,
+                                          ah_out);
 
           res = out_field;
         }
@@ -626,19 +626,19 @@ public:
 //---------------------------------------------------------------------------//
 class LocalReduceField
 {
-  vtkm::cont::DataSet &m_dataset;
-  vtkm::cont::Field   &m_field;
-  vtkm::cont::Field   &m_mask;
+  viskores::cont::DataSet &m_dataset;
+  viskores::cont::Field   &m_field;
+  viskores::cont::Field   &m_mask;
   const std::string   m_field_name;
-  vtkm::Float64       m_invalid_value;
+  viskores::Float64       m_invalid_value;
 
 public:
   //-------------------------------------------------------------------------//
-  LocalReduceField(vtkm::cont::DataSet &dataset,
-                   vtkm::cont::Field &field,
-                   vtkm::cont::Field &mask,
+  LocalReduceField(viskores::cont::DataSet &dataset,
+                   viskores::cont::Field &field,
+                   viskores::cont::Field &mask,
                    const std::string &field_name,
-                   vtkm::Float64 invalid_value)
+                   viskores::Float64 invalid_value)
     : m_dataset(dataset),
       m_field(field),
       m_mask(mask),
@@ -654,17 +654,17 @@ public:
   void
   LocalReduce()
   {
-    vtkm::cont::UnknownArrayHandle uah_field = m_field.GetData();
-    vtkm::cont::UnknownArrayHandle uah_local_field = m_dataset.GetField(m_field_name).GetData();
+    viskores::cont::UnknownArrayHandle uah_field = m_field.GetData();
+    viskores::cont::UnknownArrayHandle uah_local_field = m_dataset.GetField(m_field_name).GetData();
 
     //mask where 0 is valid adn 2 is invalid
     //holds individual domain
-    vtkm::cont::ArrayHandle<unsigned char> tmp_mask;
+    viskores::cont::ArrayHandle<unsigned char> tmp_mask;
     m_mask.GetData().AsArrayHandle(tmp_mask);
 
     //mask where 0 is valid adn 2 is invalid
     //holds all domains combined
-    vtkm::cont::ArrayHandle<unsigned char> local_mask;
+    viskores::cont::ArrayHandle<unsigned char> local_mask;
     if(m_field.IsPointField())
     {
       m_dataset.GetPointField("HIDDEN").GetData().AsArrayHandle(local_mask);
@@ -685,13 +685,13 @@ public:
       //loop through field, zero out invalid values
       Scalar_i32_hnd tmp_data = m_field.GetData().AsArrayHandle<Scalar_i32_hnd>();
       Scalar_i32_hnd local_data = m_dataset.GetField(m_field_name).GetData().AsArrayHandle<Scalar_i32_hnd>();
-      int *tmp_field = GetVTKMPointer(tmp_data);
-      int *local_field = GetVTKMPointer(local_data);
+      int *tmp_field = GetVISKORESPointer(tmp_data);
+      int *local_field = GetVISKORESPointer(local_data);
 
       for(int i = 0; i < num_points; ++i)
       {
         //tie breaker will be higher domain number 
-	      //which we loop through as we VTKmProbe/sample
+	      //which we loop through as we ViskoresProbe/sample
         if((tmp_mask_portal.Get(i) == 0)) //incoming domain
         {
           local_field[i] = tmp_field[i];
@@ -705,13 +705,13 @@ public:
       //loop through field, zero out invalid values
       Scalar_f32_hnd tmp_data = m_field.GetData().AsArrayHandle<Scalar_f32_hnd>();
       Scalar_f32_hnd local_data = m_dataset.GetField(m_field_name).GetData().AsArrayHandle<Scalar_f32_hnd>();
-      float *tmp_field = GetVTKMPointer(tmp_data);
-      float *local_field = GetVTKMPointer(local_data);
+      float *tmp_field = GetVISKORESPointer(tmp_data);
+      float *local_field = GetVISKORESPointer(local_data);
 
       for(int i = 0; i < num_points; ++i)
       {
         //tie breaker will be higher domain number 
-	      //which we loop through as we VTKmProbe/sample
+	      //which we loop through as we ViskoresProbe/sample
         if((tmp_mask_portal.Get(i) == 0)) //incoming domain
         {
           local_field[i] = tmp_field[i];
@@ -725,13 +725,13 @@ public:
       //loop through field, zero out invalid values
       Scalar_f64_hnd tmp_data = m_field.GetData().AsArrayHandle<Scalar_f64_hnd>();
       Scalar_f64_hnd local_data = m_dataset.GetField(m_field_name).GetData().AsArrayHandle<Scalar_f64_hnd>();
-      double *tmp_field = GetVTKMPointer(tmp_data);
-      double *local_field = GetVTKMPointer(local_data);
+      double *tmp_field = GetVISKORESPointer(tmp_data);
+      double *local_field = GetVISKORESPointer(local_data);
 
       for(int i = 0; i < num_points; ++i)
       {
         //tie breaker will be higher domain number 
-	      //which we loop through as we VTKmProbe/sample
+	      //which we loop through as we ViskoresProbe/sample
         if((tmp_mask_portal.Get(i) == 0)) //incoming domain
         {
           local_field[i] = tmp_field[i];
@@ -753,13 +753,13 @@ public:
         float local_x = local_data.ReadPortal().Get(i)[0];
         float local_y = local_data.ReadPortal().Get(i)[1];
         //tie breaker will be higher domain number 
-	      //which we loop through as we VTKmProbe/sample
+	      //which we loop through as we ViskoresProbe/sample
         if((tmp_mask_portal.Get(i) == 0)) //incoming domain
         {
           w_local_mask_portal.Set(i,0);
           local_x = tmp_x;
           local_y = tmp_y;
-          vtkm::Vec<vtkm::Float32,2> vec = vtkm::make_Vec(local_x,local_y);
+          viskores::Vec<viskores::Float32,2> vec = viskores::make_Vec(local_x,local_y);
           local_data.WritePortal().Set(i,vec);
         }
       }
@@ -777,13 +777,13 @@ public:
         double local_x = local_data.ReadPortal().Get(i)[0];
         double local_y = local_data.ReadPortal().Get(i)[1];
         //tie breaker will be higher domain number 
-	      //which we loop through as we VTKmProbe/sample
+	      //which we loop through as we ViskoresProbe/sample
         if((tmp_mask_portal.Get(i) == 0)) //incoming domain
         {
           w_local_mask_portal.Set(i,0);
           local_x = tmp_x;
           local_y = tmp_y;
-          vtkm::Vec<vtkm::Float64,2> vec = vtkm::make_Vec(local_x,local_y);
+          viskores::Vec<viskores::Float64,2> vec = viskores::make_Vec(local_x,local_y);
           local_data.WritePortal().Set(i,vec);
         }
       }
@@ -803,14 +803,14 @@ public:
         float local_y = local_data.ReadPortal().Get(i)[1];
         float local_z = local_data.ReadPortal().Get(i)[2];
         //tie breaker will be higher domain number 
-	      //which we loop through as we VTKmProbe/sample
+	      //which we loop through as we ViskoresProbe/sample
         if((tmp_mask_portal.Get(i) == 0)) //incoming domain
         {
           w_local_mask_portal.Set(i,0);
           local_x = tmp_x;
           local_y = tmp_y;
           local_z = tmp_z;
-          vtkm::Vec<vtkm::Float32,3> vec = vtkm::make_Vec(local_x,local_y,local_z);
+          viskores::Vec<viskores::Float32,3> vec = viskores::make_Vec(local_x,local_y,local_z);
           local_data.WritePortal().Set(i,vec);
         }
       }
@@ -830,14 +830,14 @@ public:
         double local_y = local_data.ReadPortal().Get(i)[1];
         double local_z = local_data.ReadPortal().Get(i)[2];
         //tie breaker will be higher domain number 
-	      //which we loop through as we VTKmProbe/sample
+	      //which we loop through as we ViskoresProbe/sample
         if((tmp_mask_portal.Get(i) == 0)) //incoming domain
         {
           w_local_mask_portal.Set(i,0);
           local_x = tmp_x;
           local_y = tmp_y;
           local_z = tmp_z;
-          vtkm::Vec<vtkm::Float64,3> vec = vtkm::make_Vec(local_x,local_y,local_z);
+          viskores::Vec<viskores::Float64,3> vec = viskores::make_Vec(local_x,local_y,local_z);
           local_data.WritePortal().Set(i,vec);
         }
       }
@@ -876,9 +876,9 @@ void
 Sample::DoExecute()
 {
 #ifdef VTKH_PARALLEL
-  // Setup VTK-h and VTK-m comm.
+  // Setup VTK-h and Viskores comm.
   MPI_Comm mpi_comm = MPI_Comm_f2c(vtkh::GetMPICommHandle());
-  vtkm::cont::EnvironmentTracker::SetCommunicator(vtkmdiy::mpi::communicator(vtkmdiy::mpi::make_DIY_MPI_Comm(mpi_comm)));
+  viskores::cont::EnvironmentTracker::SetCommunicator(viskoresdiy::mpi::communicator(viskoresdiy::mpi::make_DIY_MPI_Comm(mpi_comm)));
   int par_rank;
   int par_size;
   MPI_Comm_rank(mpi_comm, &par_rank);
@@ -893,13 +893,13 @@ Sample::DoExecute()
   std::cerr << "INPUT START" << std::endl;
   this->m_input->PrintSummary(std::cerr); 
   std::cerr << "INPUT END---------------------" << std::endl;
-  vtkm::Bounds bounds = m_input->GetGlobalBounds();
+  viskores::Bounds bounds = m_input->GetGlobalBounds();
   std::cerr << "GlobalBounds: " << std::endl;
   std::cerr << bounds.X.Min << " " << bounds.X.Max << " " << bounds.Y.Min << " " << bounds.Y.Max << " " << bounds.Z.Min << " " << bounds.Z.Max << std::endl; 
 #endif
 #endif
 
-  std::vector<vtkm::Id> domain_ids = this->m_input->GetDomainIds(); 
+  std::vector<viskores::Id> domain_ids = this->m_input->GetDomainIds(); 
   const int num_domains = domain_ids.size();
 
 #if _DEBUG 
@@ -908,10 +908,10 @@ Sample::DoExecute()
 #endif
 #endif
 
-  vtkm::cont::DataSet local_res;
+  viskores::cont::DataSet local_res;
   for(int i = 0; i < num_domains; ++i)
   {
-    vtkm::cont::DataSet dom;
+    viskores::cont::DataSet dom;
     
     if(this->m_input->HasDomainId(domain_ids[i]))
     {
@@ -919,26 +919,26 @@ Sample::DoExecute()
       for(const auto &field_name : m_fields)
       {
         //Uniform Grid Sample
-        vtkh::vtkmProbe probe;
+        vtkh::viskoresProbe probe;
         probe.setPoints(m_points_xs,m_points_ys,m_points_zs);
         probe.setInvalidValue(m_invalid_value);
         auto dataset = probe.Run(dom);
-        vtkm::cont::Field tmp_field = dataset.GetField(field_name);
+        viskores::cont::Field tmp_field = dataset.GetField(field_name);
 
 #if _DEBUG 
         std::cerr <<"UNIFORM GRID OUTPUT START: " << std::endl;
         dataset.PrintSummary(std::cerr);
         std::cerr <<"UNIFORM GRID OUTPUT END" << std::endl;
 #endif
-        vtkm::cont::Field valid_field;
+        viskores::cont::Field valid_field;
         if(tmp_field.IsPointField())
         {
-          vtkm::cont::Field point_field = dataset.GetPointField("HIDDEN");
+          viskores::cont::Field point_field = dataset.GetPointField("HIDDEN");
           valid_field = point_field;
         }
         else
         {
-          vtkm::cont::Field cell_field = dataset.GetCellField("HIDDEN");
+          viskores::cont::Field cell_field = dataset.GetCellField("HIDDEN");
           valid_field = cell_field;
         }
 
@@ -974,16 +974,16 @@ Sample::DoExecute()
 
 #ifdef VTKH_PARALLEL
   //take uniform sampled grid and reduce to root process
-  vtkm::cont::DataSet reduced_output;
+  viskores::cont::DataSet reduced_output;
   reduced_output.CopyStructure(local_res);
   
   for(const auto &field_name : m_fields)
   {
-    vtkm::cont::DataSet reduced;
+    viskores::cont::DataSet reduced;
     bool valid_field;
-    vtkm::Id field_id = this->m_input->GetFieldType(field_name, valid_field);
+    viskores::Id field_id = this->m_input->GetFieldType(field_name, valid_field);
     vtkh::detail::GlobalReduceField g_reducefield(local_res, field_name, m_invalid_value, m_num_samples, field_id, reduced);
-    vtkm::cont::Field reduced_field = reduced.GetField(field_name);
+    viskores::cont::Field reduced_field = reduced.GetField(field_name);
     reduced_output.AddField(reduced_field);
   }
   
@@ -1138,9 +1138,9 @@ Sample::Box(int *num_points,
 }
 //---------------------------------------------------------------------------//
 void
-Sample::Points(vtkm::cont::ArrayHandle<vtkm::Float64> xs,
-               vtkm::cont::ArrayHandle<vtkm::Float64> ys,
-               vtkm::cont::ArrayHandle<vtkm::Float64> zs)
+Sample::Points(viskores::cont::ArrayHandle<viskores::Float64> xs,
+               viskores::cont::ArrayHandle<viskores::Float64> ys,
+               viskores::cont::ArrayHandle<viskores::Float64> zs)
 {
   m_num_samples = xs.GetNumberOfValues();
   m_points_xs = xs;
@@ -1157,7 +1157,7 @@ Sample::Fields(const std::vector<std::string> fields)
 
 //---------------------------------------------------------------------------//
 void
-Sample::InvalidValue(const vtkm::Float64 invalid_value)
+Sample::InvalidValue(const viskores::Float64 invalid_value)
 {
   m_invalid_value = invalid_value;
 }

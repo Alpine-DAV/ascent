@@ -210,11 +210,11 @@ FilterQuery::execute()
       // for now always copy the bp if its not the original data source
       // There is one main reasons for this:
       //   the data will likely be passed to the vtkh ghost stripper, which could create
-      //   a new data sets with memory owned by vtkm. Since conduit can't take ownership of
+      //   a new data sets with memory owned by viskores. Since conduit can't take ownership of
       //   that memory, this data could could go out of scope and that would be bad. To ensure
       //   that it does not go out of scope
       //   TODO: We could be smarter than this. For example, we could provide a way to map a
-      //   new field, if created, back on to the original source (e.g., vtkm)
+      //   new field, if created, back on to the original source (e.g., viskores)
       conduit::Node *new_source = new conduit::Node(*eval.data_object().as_low_order_bp());
       DataObject *new_do = new DataObject(new_source);
       set_output<DataObject>(new_do);

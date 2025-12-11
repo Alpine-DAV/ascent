@@ -1,5 +1,5 @@
 #include <vtkh/filters/CellAverage.hpp>
-#include <vtkh/vtkm_filters/vtkmCellAverage.hpp>
+#include <vtkh/viskores_filters/viskoresCellAverage.hpp>
 #include <vtkh/Error.hpp>
 
 namespace vtkh
@@ -50,8 +50,8 @@ void CellAverage::DoExecute()
 
   for(int i = 0; i < num_domains; ++i)
   {
-    vtkm::Id domain_id;
-    vtkm::cont::DataSet dom;
+    viskores::Id domain_id;
+    viskores::cont::DataSet dom;
     this->m_input->GetDomain(i, dom, domain_id);
 
     if(!dom.HasField(m_field_name))
@@ -59,7 +59,7 @@ void CellAverage::DoExecute()
       continue;
     }
 
-    vtkh::vtkmCellAverage avg;
+    vtkh::viskoresCellAverage avg;
     auto dataset = avg.Run(dom,
                            m_field_name,
                            m_output_field_name,
