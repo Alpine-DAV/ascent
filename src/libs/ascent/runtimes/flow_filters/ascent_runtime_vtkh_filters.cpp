@@ -4178,15 +4178,12 @@ VTKHSample::execute()
     }
     else if(params().has_path("box"))
     {
-      params().print();
-        
         int dims[3];
         vtkm::Float64 x_min, x_max, y_min, y_max, z_min, z_max;
         vtkm::Bounds g_bounds = data.GetGlobalBounds();
         const Node &dims_b = params()["box/dims"];
         const Node &min_b = params()["box/min"];
         const Node &max_b = params()["box/max"];
-        dims_b.print();
 
         //Grab Dims
         if(dims_b.has_child("i"))
