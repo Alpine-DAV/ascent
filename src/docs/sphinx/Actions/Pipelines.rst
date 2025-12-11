@@ -941,9 +941,85 @@ the data set has more than one domain. Without ghost, the averaging will not be 
   params["association"] = "vertex";   // output field association
   // or params["association"] = "element";   // output field association
 
+
+Sample
+~~~~~~~~~~~~~~~~~~~~~
+Sample filter allows the user to re-sample the input mesh into a set of user-defined points, a line, or a box. 
+To apply the sample filter to a list of 2D or 3D points, the user must specify the `x`, `y`, and `z`, as a list of point locations.
+
+.. code-block:: c++
+
+  conduit::Node pipelines;
+  // pipeline 1
+  pipelines["pl1/f1/type"] = "sample";
+  //points
+  double x_points[] = {-9.0, 0.0, 3.0, 0.0, 0.0, 0.0, 3.0, 3.0, -5.0, 7.24, -7.24, 9.0};
+  double y_points[] = {-9.0, 0.0, 3.0, 3.0, 0.0, 3.0, 3.0, 0.0, -5.0, -8.34,  8.34, 9.0};
+  double z_points[] = {-9.0, 0.0, 3.0, 0.0, 3.0, 3.0, 0.0, 3.0, -5.0,  4.78,  4.78, 9.0};
+
+  //params
+  conduit::Node &params = pipelines["pl1/f1/params"];
+  params["field"] = "braid";   //required
+  params["point/x"].set(x_points);
+  params["point/y"].set(y_points);  
+  params["point/z"].set(z_points); 
+  //field value for sampled points outside of input mesh
+  params["invalid_value"] = -10.0; 
+
+
+To apply the sample filter to a 2D or 3D line, the user must specify the starting location for `x`, `y`, and `z`,
+as well as the number of sample points along the line (`num_samples`).  
+
+.. code-block:: c++
+
+  conduit::Node pipelines;
+  // pipeline 1
+  pipelines["pl1/f1/type"] = "sample";
+  //params
+  conduit::Node &params = pipelines["pl1/f1/params"];
+  params["field"] = "braid";   //required
+  params["line/num_samples"] = 100.0; 
+  params["line/start/x"] = 10.0;  
+  params["line/start/y"] = 10.0;  
+  params["line/start/z"] = 10.0;  
+  params["line/end/x"] = 0.0; 
+  params["line/end/y"] = 0.0;  
+  params["line/end/z"] = 0.0;  
+  //field value for sampled points outside of input mesh
+  params["invalid_value"] = -10.0; 
+
+To apply the sample filter to a 2D plane or 3D box, the user must specify the number of points 
+to sample along each axis (`dims/i`, `dims/j`, `dims/k`), 
+as well as the maximum and minimum values for each axis (`max/x`, `max/y`, `max/z`, `min/x`, `min/y`, `min/z`).
+
+For distributed data, the final output of this filter is composited on the root process, and ties for sampled points are handled by taking the average of all valid values.
+
+.. code-block:: c++
+
+  conduit::Node pipelines;
+  // pipeline 1
+  pipelines["pl1/f1/type"] = "sample";
+  //params optional
+  conduit::Node &params = pipelines["pl1/f1/params"];
+  params["field"] = "braid";   //required
+  params["box/dims/i"] = 10.0; //default: 1.0 
+  params["box/dims/j"] = 10.0; //default: 1.0 
+  params["box/dims/k"] = 10.0; //default: 1.0 
+  params["box/min/x"]  = 0.0;  //default: (x_max - x_min)/2.0 
+  params["box/min/y"]  = 0.0;  //default: (y_max - y_min)/2.0 
+  params["box/min/z"]  = 0.0;  //default: (z_max - z_min)/2.0 
+  params["box/max/x"]  = 0.0;  //default: (x_max - x_min)/2.0 
+  params["box/max/y"]  = 0.0;  //default: (y_max - y_min)/2.0 
+  params["box/max/z"]  = 0.0;  //default: (z_max - z_min)/2.0 
+  //field value for sampled points outside of input mesh
+  params["invalid_value"] = -100.0; //default: 0.0
+
 Uniform Grid
 ~~~~~~~~~~~~~~~~~~~~~
-Uniform Grid filter changes the coordinate system of the input mesh to that of the user-specified regular mesh. Input fields are transferred by sampling the data at the vertex locations of the output geometry. For the output geometry, users must specify the field (`field`) to be sampled, and have the option to specify the origin (`origin`), the number of points along each axis (`dims`) from the origin, and the spacing between these points (`spacing`). 
+Uniform Grid filter changes the coordinate system of the input mesh to that of the user-specified regular mesh. 
+Input fields are sampled at the vertex locations of the defined output geometry. 
+For the output geometry, users must specify the field (`field`) to be sampled, and have the option to specify the origin (`origin`), the number of points along each axis (`dims`) from the origin, and the spacing between these points (`spacing`). 
+If the `origin` and `spacing` are not specified, `dims` will be equally spaced across the extents of each axis. 
 
 For distributed data, the final output of this filter is composited on the root process, and ties for sampled points are handled by taking the average of all valid values.
 
@@ -961,9 +1037,9 @@ For distributed data, the final output of this filter is composited on the root 
   params["dims/i"] = 10.0;    //default: x extents
   params["dims/j"] = 10.0;    //default: y extents
   params["dims/k"] = 10.0;    //default: z extents
-  params["spacing/dx"] = 1.0; //default: 1.0
-  params["spacing/dy"] = 1.0; //default: 1.0
-  params["spacing/dz"] = 1.0; //default: 1.0
+  params["spacing/dx"] = 1.0; //default: 1.0 
+  params["spacing/dy"] = 1.0; //default: 1.0 
+  params["spacing/dz"] = 1.0; //default: 1.0 
   //field value for sampled points outside of input mesh
   params["invalid_value"] = -100.0; //default: 0.0
 
