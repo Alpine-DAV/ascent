@@ -13,7 +13,7 @@ public:
   virtual ~RayTracer();
   std::string GetName() const override;
   void SetShadingOn(bool on) override;
-  static Renderer::vtkmCanvasPtr GetNewCanvas(int width = 1024, int height = 1024);
+  static Renderer::viskoresCanvasPtr GetNewCanvas(int width = 1024, int height = 1024);
 };
 
 } // namespace vtkh

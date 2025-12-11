@@ -31,7 +31,7 @@ configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/rover_config.h.in"
 ############################################################
 # setup base deps list
 ############################################################
-set(rover_base_deps ascent_lodepng vtkm conduit::conduit)
+set(rover_base_deps ascent_lodepng viskores conduit::conduit)
 
 if(CUDA_FOUND)
     # triggers cuda compile
@@ -68,7 +68,7 @@ set(rover_headers
       ray_generators/ray_generator.hpp
       ray_generators/visit_ray_generator.hpp
       rover_exports.h
-      vtkm_typedefs.hpp
+      viskores_typedefs.hpp
       # utils headers
       utils/rover_logging.hpp
       utils/vtk_dataset_reader.hpp
@@ -98,7 +98,7 @@ if (ENABLE_SERIAL)
                     DEPENDS_ON ${rover_thirdparty_deps}
                     )
 
-    vtkm_add_target_information(rover DEVICE_SOURCES ${rover_sources})
+    viskores_add_target_information(rover DEVICE_SOURCES ${rover_sources})
 
     # build includes
     # this allows us to include as <header.hpp>
@@ -140,7 +140,7 @@ if(MPI_FOUND)
                   DEPENDS_ON ${rover_mpi_thirdparty_deps}
                   )
 
-  vtkm_add_target_information(rover_mpi DEVICE_SOURCES ${rover_sources})
+  viskores_add_target_information(rover_mpi DEVICE_SOURCES ${rover_sources})
 
   # build includes
   # this allows us to include as <rover/header.hpp>

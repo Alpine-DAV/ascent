@@ -13,14 +13,14 @@
 #include <vtkh/filters/VectorMagnitude.hpp>
 #include <vtkh/rendering/RayTracer.hpp>
 #include <vtkh/rendering/Scene.hpp>
-#include "t_vtkm_test_utils.hpp"
+#include "t_viskores_test_utils.hpp"
 
 #include <iostream>
 
 //----------------------------------------------------------------------------
 TEST(vtkh_vector_ops, vtkh_vector_magnitude)
 {
-#ifdef VTKM_ENABLE_KOKKOS
+#ifdef VISKORES_ENABLE_KOKKOS
   vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
@@ -44,9 +44,9 @@ TEST(vtkh_vector_ops, vtkh_vector_magnitude)
 
   vtkh::DataSet *mag_output = mag.GetOutput();
 
-  vtkm::Bounds bounds = mag_output->GetGlobalBounds();
+  viskores::Bounds bounds = mag_output->GetGlobalBounds();
   float bg_color[4] = { 0.f, 0.f, 0.f, 1.f};
-  vtkm::rendering::Camera camera;
+  viskores::rendering::Camera camera;
   camera.Azimuth(70.f);
   camera.ResetToBounds(bounds);
   vtkh::Render render = vtkh::MakeRender(512,
@@ -70,7 +70,7 @@ TEST(vtkh_vector_ops, vtkh_vector_magnitude)
 //----------------------------------------------------------------------------
 TEST(vtkh_vector_ops, vtkh_composite_vector)
 {
-#ifdef VTKM_ENABLE_KOKKOS
+#ifdef VISKORES_ENABLE_KOKKOS
   vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
@@ -99,10 +99,10 @@ TEST(vtkh_vector_ops, vtkh_composite_vector)
   mag.Update();
 
   vtkh::DataSet *mag_output = mag.GetOutput();
-  vtkm::Bounds bounds = mag_output->GetGlobalBounds();
+  viskores::Bounds bounds = mag_output->GetGlobalBounds();
 
-  vtkm::rendering::Camera camera;
-  camera.SetPosition(vtkm::Vec<vtkm::Float64,3>(-16, -16, -16));
+  viskores::rendering::Camera camera;
+  camera.SetPosition(viskores::Vec<viskores::Float64,3>(-16, -16, -16));
   camera.ResetToBounds(bounds);
   vtkh::Render render = vtkh::MakeRender(512,
                                          512,
@@ -125,7 +125,7 @@ TEST(vtkh_vector_ops, vtkh_composite_vector)
 //----------------------------------------------------------------------------
 TEST(vtkh_vector_ops, vtkh_vector_component)
 {
-#ifdef VTKM_ENABLE_KOKKOS
+#ifdef VISKORES_ENABLE_KOKKOS
   vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
@@ -155,10 +155,10 @@ TEST(vtkh_vector_ops, vtkh_vector_component)
   comp.Update();
 
   vtkh::DataSet *comp_output = comp.GetOutput();
-  vtkm::Bounds bounds = comp_output->GetGlobalBounds();
+  viskores::Bounds bounds = comp_output->GetGlobalBounds();
 
-  vtkm::rendering::Camera camera;
-  camera.SetPosition(vtkm::Vec<vtkm::Float64,3>(-16, -16, -16));
+  viskores::rendering::Camera camera;
+  camera.SetPosition(viskores::Vec<viskores::Float64,3>(-16, -16, -16));
   camera.ResetToBounds(bounds);
   vtkh::Render render = vtkh::MakeRender(512,
                                          512,

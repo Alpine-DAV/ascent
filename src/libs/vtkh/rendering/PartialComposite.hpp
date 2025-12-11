@@ -17,8 +17,8 @@
 
 #include <vtkh/vtkh_exports.h>
 
-#include <vtkm/cont/ArrayHandle.h>
-#include <vtkm/rendering/raytracing/ChannelBuffer.h>
+#include <viskores/cont/ArrayHandle.h>
+#include <viskores/rendering/raytracing/ChannelBuffer.h>
 
 namespace vtkh
 {
@@ -30,14 +30,14 @@ namespace raytracing
 template <typename FloatType>
 struct VTKH_API PartialComposite
 {
-  vtkm::cont::ArrayHandle<vtkm::Id> PixelIds;   // pixel that owns composite
-  vtkm::cont::ArrayHandle<FloatType> Distances; // distance of composite end
-  vtkm::rendering::raytracing::ChannelBuffer<FloatType> Transmission;              // holds either color or absorption
-  vtkm::rendering::raytracing::ChannelBuffer<FloatType> Intensity;           // holds the intensity emerging from each ray
-  vtkm::rendering::raytracing::ChannelBuffer<FloatType> OpticalDepth;
-  vtkm::cont::ArrayHandle<FloatType> PathLengths; // Total distance traversed through the mesh
+  viskores::cont::ArrayHandle<viskores::Id> PixelIds;   // pixel that owns composite
+  viskores::cont::ArrayHandle<FloatType> Distances; // distance of composite end
+  viskores::rendering::raytracing::ChannelBuffer<FloatType> Transmission;              // holds either color or absorption
+  viskores::rendering::raytracing::ChannelBuffer<FloatType> Intensity;           // holds the intensity emerging from each ray
+  viskores::rendering::raytracing::ChannelBuffer<FloatType> OpticalDepth;
+  viskores::cont::ArrayHandle<FloatType> PathLengths; // Total distance traversed through the mesh
 };
 }
 }
-} // namespace vtkm::rendering::raytracing
+} // namespace viskores::rendering::raytracing
 #endif

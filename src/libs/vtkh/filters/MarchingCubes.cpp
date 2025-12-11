@@ -7,7 +7,7 @@
 
 #include <vtkh/filters/CleanGrid.hpp>
 #include <vtkh/filters/Recenter.hpp>
-#include <vtkh/vtkm_filters/vtkmMarchingCubes.hpp>
+#include <vtkh/viskores_filters/viskoresMarchingCubes.hpp>
 
 #include <sstream>
 
@@ -96,7 +96,7 @@ void MarchingCubes::PreExecute()
     }
     else
     {
-      vtkm::Range scalar_range = m_input->GetGlobalRange(m_field_name).ReadPortal().Get(0);
+      viskores::Range scalar_range = m_input->GetGlobalRange(m_field_name).ReadPortal().Get(0);
       float length = scalar_range.Length();
       float step = length / (m_levels + 1.f);
 
@@ -131,14 +131,14 @@ void MarchingCubes::DoExecute()
   // make sure we have a node-centered field
   bool valid_field = false;
   bool is_cell_assoc = m_input->GetFieldAssociation(m_field_name, valid_field) ==
-                       vtkm::cont::Field::Association::Cells;
+                       viskores::cont::Field::Association::Cells;
   bool delete_input = false;
   if(valid_field && is_cell_assoc)
   {
     Recenter recenter;
     recenter.SetInput(m_input);
     recenter.SetField(m_field_name);
-    recenter.SetResultAssoc(vtkm::cont::Field::Association::Points);
+    recenter.SetResultAssoc(viskores::cont::Field::Association::Points);
     recenter.Update();
     m_input = recenter.GetOutput();
     delete_input = true;
@@ -148,8 +148,8 @@ void MarchingCubes::DoExecute()
   for(int i = 0; i < num_domains; ++i)
   {
 
-    vtkm::Id domain_id;
-    vtkm::cont::DataSet dom;
+    viskores::Id domain_id;
+    viskores::cont::DataSet dom;
     this->m_input->GetDomain(i, dom, domain_id);
 
     if(!dom.HasField(m_field_name))
@@ -157,7 +157,7 @@ void MarchingCubes::DoExecute()
       continue;
     }
 
-    vtkh::vtkmMarchingCubes marcher;
+    vtkh::viskoresMarchingCubes marcher;
 
     auto dataset = marcher.Run(dom,
                                m_field_name,

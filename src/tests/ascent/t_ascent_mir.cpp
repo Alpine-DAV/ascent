@@ -35,14 +35,14 @@ index_t EXAMPLE_MESH_SIDE_DIM = 100;
 float64 RADIUS = .25;
 
 //-----------------------------------------------------------------------------
-TEST(ascent_mir, venn_vtkm_mir_full)
+TEST(ascent_mir, venn_viskores_mir_full)
 {
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
         return;
     }
 
@@ -129,14 +129,14 @@ TEST(ascent_mir, venn_vtkm_mir_full)
 }
 //
 ////-----------------------------------------------------------------------------
-TEST(ascent_mir, venn_vtkm_mir_sparse_by_element)
+TEST(ascent_mir, venn_viskores_mir_sparse_by_element)
 {
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
         return;
     }
 
@@ -223,14 +223,14 @@ TEST(ascent_mir, venn_vtkm_mir_sparse_by_element)
 }
 
 //-----------------------------------------------------------------------------
-TEST(ascent_mir, venn_vtkm_mir_sparse_by_material)
+TEST(ascent_mir, venn_viskores_mir_sparse_by_material)
 {
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
         return;
     }
 

@@ -79,200 +79,200 @@ These tables provides an inventory of Ascent's features and the programming and 
 
    * - VTK-h Clip
      - Transform
-     - VTK-m (Serial, OpenMP, Cuda, Kokkos)
-     - VTK-h and VTK-m APIs
+     - Viskores (Serial, OpenMP, Cuda, Kokkos)
+     - VTK-h and Viskores APIs
      - `VTKHClip <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/flow_filters/scent_runtime_vtkh_filters.hpp#L125>`_
 
    * - VTK-h Clip with Field
      - Transform
-     - VTK-m (Serial, OpenMP, Cuda, Kokkos)
-     - VTK-h and VTK-m APIs
+     - Viskores (Serial, OpenMP, Cuda, Kokkos)
+     - VTK-h and Viskores APIs
      - `VTKHClipWithField <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/flow_filters/ascent_runtime_vtkh_filters.hpp#L138>`_
 
    * - VTK-h Isovolume
      - Transform
-     - VTK-m (Serial, OpenMP, Cuda, Kokkos)
-     - VTK-h and VTK-m APIs
+     - Viskores (Serial, OpenMP, Cuda, Kokkos)
+     - VTK-h and Viskores APIs
      - `VTKHIsoVolume <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/flow_filters/ascent_runtime_vtkh_filters.hpp#L151>`_
 
    * - VTK-h Lagrangian
      - Transform
-     - VTK-m (Serial, OpenMP, Cuda, Kokkos) + MPI
-     - VTK-h and VTK-m APIs
+     - Viskores (Serial, OpenMP, Cuda, Kokkos) + MPI
+     - VTK-h and Viskores APIs
      - `VTKHLagrangian <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/flow_filters/ascent_runtime_vtkh_filters.hpp#L164>`_
 
    * - VTK-h Log
      - Transform
-     - VTK-m (Serial, OpenMP, Cuda, Kokkos) + MPI
-     - VTK-h and VTK-m APIs
+     - Viskores (Serial, OpenMP, Cuda, Kokkos) + MPI
+     - VTK-h and Viskores APIs
      - `VTKHLog <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/flow_filters/ascent_runtime_vtkh_filters.hpp#L177>`_
 
    * - VTK-h Recenter
      - Transform
-     - VTK-m (Serial, OpenMP, Cuda, Kokkos)
-     - VTK-h and VTK-m APIs
+     - Viskores (Serial, OpenMP, Cuda, Kokkos)
+     - VTK-h and Viskores APIs
      - `VTKHRecenter <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/flow_filters/ascent_runtime_vtkh_filters.hpp#L190>`_
 
    * - VTK-h Hist Sampling 
      - Transform
-     - VTK-m (Serial, OpenMP, Cuda, Kokkos) + MPI
-     - VTK-h and VTK-m APIs
+     - Viskores (Serial, OpenMP, Cuda, Kokkos) + MPI
+     - VTK-h and Viskores APIs
      - `VTKHHistSampling <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/flow_filters/ascent_runtime_vtkh_filters.hpp#L203>`_
 
    * - VTK-h Q Criterion 
      - Transform
-     - VTK-m (Serial, OpenMP, Cuda, Kokkos)
-     - VTK-h and VTK-m APIs
+     - Viskores (Serial, OpenMP, Cuda, Kokkos)
+     - VTK-h and Viskores APIs
      - `VTKHQCriterion <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/flow_filters/ascent_runtime_vtkh_filters.hpp#L216>`_
 
    * - VTK-h Divergence 
      - Transform
-     - VTK-m (Serial, OpenMP, Cuda, Kokkos) 
-     - VTK-h and VTK-m APIs
+     - Viskores (Serial, OpenMP, Cuda, Kokkos) 
+     - VTK-h and Viskores APIs
      - `VTKHDivergence <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/flow_filters/ascent_runtime_vtkh_filters.hpp#L229>`_
 
    * - VTK-h Vorticity 
      - Transform
-     - VTK-m (Serial, OpenMP, Cuda, Kokkos)
-     - VTK-h and VTK-m APIs
+     - Viskores (Serial, OpenMP, Cuda, Kokkos)
+     - VTK-h and Viskores APIs
      - `VTKHVorticity <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/flow_filters/ascent_runtime_vtkh_filters.hpp#L242>`_
 
    * - VTK-h Gradient 
      - Transform
-     - VTK-m (Serial, OpenMP, Cuda, Kokkos)
-     - VTK-h and VTK-m APIs
+     - Viskores (Serial, OpenMP, Cuda, Kokkos)
+     - VTK-h and Viskores APIs
      - `VTKHGradient <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/flow_filters/ascent_runtime_vtkh_filters.hpp#L255>`_
 
    * - VTK-h No Op 
      - Transform
      - None 
-     - VTK-h and VTK-m APIs
+     - VTK-h and Viskores APIs
      - `VTKHNoOp <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/flow_filters/ascent_runtime_vtkh_filters.hpp#L268>`_
 
    * - VTK-h Vector Component 
      - Transform
-     - VTK-m (Serial, OpenMP, Cuda, Kokkos)
-     - VTK-h and VTK-m APIs
+     - Viskores (Serial, OpenMP, Cuda, Kokkos)
+     - VTK-h and Viskores APIs
      - `VTKHVectorComponent <hhttps://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/flow_filters/ascent_runtime_vtkh_filters.hpp#L281>`_
 
    * - VTK-h Composite Vector 
      - Transform
-     - VTK-m (Serial, OpenMP, Cuda, Kokkos)
-     - VTK-h and VTK-m APIs
+     - Viskores (Serial, OpenMP, Cuda, Kokkos)
+     - VTK-h and Viskores APIs
      - `VTKHCompositeVector <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/flow_filters/ascent_runtime_vtkh_filters.hpp#L294>`_
 
    * - VTK-h Statistics 
      - Extract
-     - VTK-m (OpenMP, Cuda, Kokkos) + MPI
-     - VTK-h and VTK-m APIs
+     - Viskores (OpenMP, Cuda, Kokkos) + MPI
+     - VTK-h and Viskores APIs
      - `VTKHStats <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/flow_filters/ascent_runtime_vtkh_filters.hpp#L307>`_
 
    * - VTK-h Histogram 
      - Extract
-     - VTK-m (OpenMP, Cuda, Kokkos) + MPI
-     - VTK-h and VTK-m APIs
+     - Viskores (OpenMP, Cuda, Kokkos) + MPI
+     - VTK-h and Viskores APIs
      - `VTKHHistogram <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/flow_filters/ascent_runtime_vtkh_filters.hpp#L320>`_
 
    * - VTK-h Project 2D 
      - Transform
-     - VTK-m (Serial, OpenMP, Cuda, Kokkos) + MPI
-     - VTK-h and VTK-m APIs
+     - Viskores (Serial, OpenMP, Cuda, Kokkos) + MPI
+     - VTK-h and Viskores APIs
      - `VTKHProject2D <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/flow_filters/ascent_runtime_vtkh_filters.hpp#L334>`_
 
    * - VTK-h Clean Grid 
      - Transform
-     - VTK-m (Serial, OpenMP, Cuda, Kokkos)
-     - VTK-h and VTK-m APIs
+     - Viskores (Serial, OpenMP, Cuda, Kokkos)
+     - VTK-h and Viskores APIs
      - `VTKHCleanGrid <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/flow_filters/ascent_runtime_vtkh_filters.hpp#L348>`_
 
    * - VTK-h Scale 
      - Transform
-     - VTK-m (Serial, OpenMP, Cuda, Kokkos)
-     - VTK-h and VTK-m APIs
+     - Viskores (Serial, OpenMP, Cuda, Kokkos)
+     - VTK-h and Viskores APIs
      - `VTKHScale <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/flow_filters/ascent_runtime_vtkh_filters.hpp#L361>`_
 
    * - VTK-h Triangulate 
      - Transform
-     - VTK-m (Serial, OpenMP, Cuda, Kokkos)
-     - VTK-h and VTK-m APIs
+     - Viskores (Serial, OpenMP, Cuda, Kokkos)
+     - VTK-h and Viskores APIs
      - `VTKHTriangulate <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/flow_filters/ascent_runtime_vtkh_filters.hpp#L374>`_
 
    * - VTK-h Particle Advection 
      - Transform
-     - VTK-m (Serial, OpenMP, Cuda, Kokkos) + MPI
-     - VTK-h and VTK-m APIs
+     - Viskores (Serial, OpenMP, Cuda, Kokkos) + MPI
+     - VTK-h and Viskores APIs
      - `VTKHParticleAdvection <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/flow_filters/ascent_runtime_vtkh_filters.hpp#L387>`_
 
    * - VTK-h Streamline 
      - Transform
-     - VTK-m (Serial, OpenMP, Cuda, Kokkos) + MPI
-     - VTK-h and VTK-m APIs
+     - Viskores (Serial, OpenMP, Cuda, Kokkos) + MPI
+     - VTK-h and Viskores APIs
      - `VTKHStreamline <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/flow_filters/ascent_runtime_vtkh_filters.hpp#L403>`_
 
    * - VTK-h Contour 
      - Transform
-     - VTK-m (Serial, OpenMP, Cuda, Kokkos) + MPI
-     - VTK-h and VTK-m APIs
+     - Viskores (Serial, OpenMP, Cuda, Kokkos) + MPI
+     - VTK-h and Viskores APIs
      - `VTKHMarchingCubes <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/flow_filters/ascent_runtime_vtkh_filters.hpp#L47>`_
 
    * - VTK-h Vector Magnitude 
      - Transform
-     - VTK-m (Serial, OpenMP, Cuda, Kokkos)
-     - VTK-h and VTK-m APIs
+     - Viskores (Serial, OpenMP, Cuda, Kokkos)
+     - VTK-h and Viskores APIs
      - `VTKHVectorMagnitude <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/flow_filters/ascent_runtime_vtkh_filters.hpp#L60>`_
 
    * - VTK-h Slice 
      - Transform
-     - VTK-m (Serial, OpenMP, Cuda, Kokkos)
-     - VTK-h and VTK-m APIs
+     - Viskores (Serial, OpenMP, Cuda, Kokkos)
+     - VTK-h and Viskores APIs
      - `VTKHSlice <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/flow_filters/ascent_runtime_vtkh_filters.hpp#L73>`_
 
    * - VTK-h 3 Slice 
      - Transform
-     - VTK-m (Serial, OpenMP, Cuda, Kokkos)
-     - VTK-h and VTK-m APIs
+     - Viskores (Serial, OpenMP, Cuda, Kokkos)
+     - VTK-h and Viskores APIs
      - `VTKH3Slice <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/flow_filters/ascent_runtime_vtkh_filters.hpp#L86>`_
 
    * - VTK-h Threshold 
      - Transform
-     - VTK-m (Serial, OpenMP, Cuda, Kokkos)
-     - VTK-h and VTK-m APIs
+     - Viskores (Serial, OpenMP, Cuda, Kokkos)
+     - VTK-h and Viskores APIs
      - `VTKHThreshold <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/flow_filters/ascent_runtime_vtkh_filters.hpp#L99>`_
 
    * - VTK-h Ghost Stripper 
      - Transform
-     - VTK-m (Serial, OpenMP, Cuda, Kokkos)
-     - VTK-h and VTK-m APIs
+     - Viskores (Serial, OpenMP, Cuda, Kokkos)
+     - VTK-h and Viskores APIs
      - `VTKHGhostStripper <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/flow_filters/ascent_runtime_vtkh_filters.hpp#L112>`_
 
    * - VTK-h Mesh Renderer 
      - Extract
-     - VTK-m (Serial, OpenMP, Cuda, Kokkos) + MPI
-     - VTK-h and VTK-m APIs
+     - Viskores (Serial, OpenMP, Cuda, Kokkos) + MPI
+     - VTK-h and Viskores APIs
      - `VTKHMeshRenderer <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/vtkh/rendering/MeshRenderer.hpp#L9>`_
 
    * - VTK-h Volume Renderer 
      - Extract
-     - VTK-m (Serial, OpenMP, Cuda, Kokkos) + MPI
-     - VTK-h and VTK-m APIs
+     - Viskores (Serial, OpenMP, Cuda, Kokkos) + MPI
+     - VTK-h and Viskores APIs
      - `VTKHVolumeRenderer <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/vtkh/rendering/VolumeRenderer.hpp#L15>`_
 
    * - VTK-h Scalar Renderer 
      - Extract
-     - VTK-m (Serial, OpenMP, Cuda, Kokkos) + MPI
-     - VTK-h and VTK-m APIs
+     - Viskores (Serial, OpenMP, Cuda, Kokkos) + MPI
+     - VTK-h and Viskores APIs
      - `VTKHScalarRenderer <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/vtkh/rendering/ScalarRenderer.hpp#L16>`_
 
    * - VTK-h Point Renderer 
      - Extract
-     - VTK-m (Serial, OpenMP, Cuda, Kokkos) + MPI
-     - VTK-h and VTK-m APIs
+     - Viskores (Serial, OpenMP, Cuda, Kokkos) + MPI
+     - VTK-h and Viskores APIs
      - `VTKHPointRenderer <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/vtkh/rendering/PointRenderer.hpp#L9>`_
 
    * - VTK-h Line Renderer 
      - Extract
-     - VTK-m (Serial, OpenMP, Cuda, Kokkos) + MPI
-     - VTK-h and VTK-m APIs
+     - Viskores (Serial, OpenMP, Cuda, Kokkos) + MPI
+     - VTK-h and Viskores APIs
      - `VTKHLineRenderer <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/vtkh/rendering/LineRenderer.hpp#L9>`_
 
 

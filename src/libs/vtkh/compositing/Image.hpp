@@ -3,7 +3,7 @@
 
 #include <sstream>
 #include <vector>
-#include <vtkm/Bounds.h>
+#include <viskores/Bounds.h>
 
 #include <vtkh/vtkh_exports.h>
 
@@ -16,8 +16,8 @@ struct VTKH_API Image
     // 1-width and 1-height. Actual width would be calculated
     // m_bounds.X.Max - m_bounds.X.Min + 1
     // 1024 - 1 + 1 = 1024
-    vtkm::Bounds                 m_orig_bounds;
-    vtkm::Bounds                 m_bounds;
+    viskores::Bounds                 m_orig_bounds;
+    viskores::Bounds                 m_bounds;
     std::vector<unsigned char>   m_pixels;
     std::vector<float>           m_depths;
     int                          m_orig_rank;
@@ -31,7 +31,7 @@ struct VTKH_API Image
     {}
 
 
-    Image(const vtkm::Bounds &bounds)
+    Image(const viskores::Bounds &bounds)
       : m_orig_bounds(bounds),
         m_bounds(bounds),
         m_orig_rank(-1),
@@ -174,7 +174,7 @@ struct VTKH_API Image
     // Fill this image with a sub-region of another image
     //
     void SubsetFrom(const Image &image,
-                    const vtkm::Bounds &sub_region)
+                    const viskores::Bounds &sub_region)
     {
       m_orig_bounds = image.m_orig_bounds;
       m_bounds = sub_region;
@@ -284,8 +284,8 @@ struct VTKH_API Image
 
     void Swap(Image &other)
     {
-      vtkm::Bounds orig   = m_orig_bounds;
-      vtkm::Bounds bounds = m_bounds;
+      viskores::Bounds orig   = m_orig_bounds;
+      viskores::Bounds bounds = m_bounds;
 
       m_orig_bounds = other.m_orig_bounds;
       m_bounds      = other.m_bounds;
@@ -300,7 +300,7 @@ struct VTKH_API Image
 
     void Clear()
     {
-      vtkm::Bounds empty;
+      viskores::Bounds empty;
       m_orig_bounds = empty;
       m_bounds = empty;
       m_pixels.clear();

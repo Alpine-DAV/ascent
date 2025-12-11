@@ -39,8 +39,8 @@ TEST(ascent_render_3d, test_render_3d_render_default_runtime)
     // the ascent runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
         ASCENT_INFO("Ascent support disabled, skipping 3D default"
                       "Pipeline test");
@@ -110,8 +110,8 @@ TEST(ascent_render_3d, test_render_3d_original_bounds)
     // the ascent runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
         ASCENT_INFO("Ascent support disabled, skipping 3D default"
                       "Pipeline test");
@@ -215,8 +215,8 @@ TEST(ascent_render_3d, test_render_3d_single_comp_scalar)
     // the ascent runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
         ASCENT_INFO("Ascent support disabled, skipping 3D default"
                       "Pipeline test");
@@ -288,8 +288,8 @@ TEST(ascent_render_3d, test_render_3d_points)
     // the ascent runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
         ASCENT_INFO("Ascent support disabled, skipping 3D default"
                       "Pipeline test");
@@ -361,8 +361,8 @@ TEST(ascent_render_3d, test_render_3d_points_const_radius)
     // the ascent runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
         ASCENT_INFO("Ascent support disabled, skipping 3D default"
                       "Pipeline test");
@@ -437,8 +437,8 @@ TEST(ascent_render_3d, test_render_3d_points_variable_radius)
     // the ascent runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
         ASCENT_INFO("Ascent support disabled, skipping 3D default"
                       "Pipeline test");
@@ -515,8 +515,8 @@ TEST(ascent_render_3d, test_render_3d_bg_fg_color)
     // the ascent runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
         ASCENT_INFO("Ascent support disabled, skipping 3D default"
                       "Pipeline test");
@@ -591,8 +591,8 @@ TEST(ascent_render_3d, test_render_3d_no_annotations)
     // the ascent runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
         ASCENT_INFO("Ascent support disabled, skipping 3D default"
                       "Pipeline test");
@@ -665,8 +665,8 @@ TEST(ascent_render_3d, test_render_3d_no_world_annotations)
     // the ascent runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
         ASCENT_INFO("Ascent support disabled, skipping 3D default"
                       "Pipeline test");
@@ -738,8 +738,8 @@ TEST(ascent_render_3d, test_render_3d_no_screen_annotations)
     // the ascent runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
         ASCENT_INFO("Ascent support disabled, skipping 3D default"
                       "Pipeline test");
@@ -813,8 +813,8 @@ TEST(ascent_render_3d, test_render_3d_name_format)
     // the ascent runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
         ASCENT_INFO("Ascent support disabled, skipping 3D default"
                       "Pipeline test");
@@ -885,8 +885,8 @@ TEST(ascent_render_3d, test_render_3d_name_format_keywords)
     // the ascent runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
         ASCENT_INFO("Ascent support disabled, skipping 3D default"
                       "Pipeline test");
@@ -976,8 +976,8 @@ TEST(ascent_render_3d, test_render_output_dir_not_exist)
     // the ascent runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
         ASCENT_INFO("Ascent support disabled, skipping 3D default"
                       "Pipeline test");
@@ -1052,8 +1052,8 @@ TEST(ascent_render_3d, test_render_3d_no_bg)
     // the ascent runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
         ASCENT_INFO("Ascent support disabled, skipping 3D default"
                       "Pipeline test");
@@ -1125,8 +1125,8 @@ TEST(ascent_render_3d, test_render_3d_render_azimuth)
     // the ascent runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
         ASCENT_INFO("Ascent support disabled, skipping 3D default"
                       "Pipeline test");
@@ -1199,8 +1199,8 @@ TEST(ascent_render_3d, test_render_3d_multi_render_default_runtime)
     // the ascent runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
         ASCENT_INFO("Ascent support disabled, skipping 3D default"
                       "Pipeline test");
@@ -1307,8 +1307,8 @@ TEST(ascent_render_3d, test_render_3d_render_mesh)
     // the ascent runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
         ASCENT_INFO("Ascent support disabled, skipping 3D default"
                       "Pipeline test");
@@ -1380,8 +1380,8 @@ TEST(ascent_render_3d, test_render_3d_multi_render_mesh)
     // the ascent runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
         ASCENT_INFO("Ascent support disabled, skipping 3D default"
                       "Pipeline test");
@@ -1471,8 +1471,8 @@ TEST(ascent_render_3d, test_render_3d_render_ascent_serial_backend_uniform)
 
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
         ASCENT_INFO("Ascent support disabled, skipping 3D serial test");
         return;
@@ -1540,8 +1540,8 @@ TEST(ascent_render_3d, test_render_3d_render_ascent_serial_backend)
 
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
         ASCENT_INFO("Ascent support disabled, skipping 3D serial test");
         return;
@@ -1608,8 +1608,8 @@ TEST(ascent_render_3d, test_render_3d_render_ascent_min_max)
 
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
         ASCENT_INFO("Ascent support disabled, skipping 3D serial test");
         return;
@@ -1678,14 +1678,14 @@ TEST(ascent_render_3d, test_render_3d_render_ascent_openmp_backend)
 
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
         ASCENT_INFO("Ascent support disabled, skipping 3D Ascent-openmp test");
         return;
     }
 
-    if(n["runtimes/ascent/vtkm/backends/openmp"].as_string() != "enabled")
+    if(n["runtimes/ascent/viskores/backends/openmp"].as_string() != "enabled")
     {
         ASCENT_INFO("Ascent openmp support disabled, skipping 3D Ascent-opemp test");
         return;
@@ -1752,14 +1752,14 @@ TEST(ascent_render_3d, test_3d_render_ascent_runtime_cuda_backend)
 
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
         ASCENT_INFO("Ascent support disabled, skipping 3D Ascent-cuda test");
         return;
     }
 
-    if(n["runtimes/ascent/vtkm/backends/cuda"].as_string() != "enabled")
+    if(n["runtimes/ascent/viskores/backends/cuda"].as_string() != "enabled")
     {
         ASCENT_INFO("Ascent CUDA support disabled, skipping 3D Ascent-cuda test");
         return;
@@ -1782,7 +1782,7 @@ TEST(ascent_render_3d, test_3d_render_ascent_runtime_cuda_backend)
 
 
     string output_path = prepare_output_dir();
-    string output_file = conduit::utils::join_file_path(output_path, "tout_render_3d_vtkm_cuda_backend");
+    string output_file = conduit::utils::join_file_path(output_path, "tout_render_3d_viskores_cuda_backend");
 
     // remove old images before rendering
     remove_test_image(output_file);
@@ -1825,8 +1825,8 @@ TEST(ascent_render_3d, test_render_3d_multi_render)
     // the ascent runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
         ASCENT_INFO("Ascent support disabled, skipping 3D default"
                       "Pipeline test");
@@ -1965,8 +1965,8 @@ TEST(ascent_render_3d, test_render_3d_milk_chocolate)
     // the ascent runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
         ASCENT_INFO("Ascent support disabled, skipping 3D default"
                       "Pipeline test");
@@ -2064,8 +2064,8 @@ TEST(ascent_render_3d, test_render_3d_compressed_color_table)
     // the ascent runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
         ASCENT_INFO("Ascent support disabled, skipping 3D default"
                       "Pipeline test");
@@ -2089,7 +2089,7 @@ TEST(ascent_render_3d, test_render_3d_compressed_color_table)
     ASCENT_INFO("Testing 3D Rendering with Compressed Color Table");
 
     string output_path = prepare_output_dir();
-    string output_file = conduit::utils::join_file_path(output_path,"vtkm_compressed_color_table");
+    string output_file = conduit::utils::join_file_path(output_path,"viskores_compressed_color_table");
 
     // remove old images before rendering
     remove_test_image(output_file);
@@ -2146,8 +2146,8 @@ TEST(ascent_render_3d, test_render_3d_disable_color_bar)
     // the ascent runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
         ASCENT_INFO("Ascent support disabled, skipping 3D default"
                       "Pipeline test");
@@ -2223,7 +2223,7 @@ TEST(ascent_render_3d, render_3d_domain_overload)
     Node n;
     ascent::about(n);
     // only run this test if ascent was built with ascent support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
         ASCENT_INFO("Ascent support disabled, skipping 3D MPI "
                       "Runtime test");
@@ -2301,7 +2301,7 @@ TEST(ascent_render_3d, render_3d_empty_data)
     Node n;
     ascent::about(n);
     // only run this test if ascent was built with ascent support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
         ASCENT_INFO("Ascent support disabled, skipping 3D MPI "
                       "Runtime test");
@@ -2346,8 +2346,8 @@ TEST(ascent_render_3d, test_render_3d_supported_field_dtypes)
     // the ascent runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
         ASCENT_INFO("Ascent support disabled, skipping 3D default"
                       "Pipeline test");
@@ -2616,8 +2616,8 @@ TEST(ascent_render_3d, test_render_3d_supported_conn_dtypes)
     // the ascent runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
         ASCENT_INFO("Ascent support disabled, skipping 3D default"
                       "Pipeline test");
@@ -2790,8 +2790,8 @@ TEST(ascent_render_3d, test_render_3d_points_implicit_topo)
     // the ascent runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
         ASCENT_INFO("Ascent support disabled, skipping 3D default"
                       "Pipeline test");
@@ -2852,8 +2852,8 @@ TEST(ascent_render_3d, test_render_3d_pyra)
     // the ascent runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
         ASCENT_INFO("Ascent support disabled, skipping 3D default"
                       "Pipeline test");
@@ -2927,8 +2927,8 @@ TEST(ascent_render_3d, test_render_3d_wedge)
     // the ascent runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
         ASCENT_INFO("Ascent support disabled, skipping 3D default"
                       "Pipeline test");
@@ -3003,8 +3003,8 @@ TEST(ascent_render_3d, test_render_3d_extreme_extents)
     // the ascent runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
         ASCENT_INFO("Ascent support disabled, skipping 3D default"
                       "Pipeline test");
@@ -3145,7 +3145,7 @@ TEST(ascent_render_3d, test_render_3d_extreme_extents)
 TEST(ascent_render_3d, test_render_3d_ray_zcull_bug)
 {
     //
-    // this test exercises a ray culling bug in vtk-m
+    // this test exercises a ray culling bug in viskores
     // the bug improperly culls rays that are valid due to a bad
     // check related to the near and far plane
     // we have a patch and will work on getting a fixed in to 2.2
@@ -3154,8 +3154,8 @@ TEST(ascent_render_3d, test_render_3d_ray_zcull_bug)
     // the ascent runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
         ASCENT_INFO("Ascent support disabled, skipping 3D default"
                       "Pipeline test");
@@ -3245,8 +3245,8 @@ TEST(ascent_render_3d, test_render_3d_camera_frustum_meshes)
     Node n;
     ascent::about(n);
 
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
 
         ASCENT_INFO("Ascent support disabled, skipping camera frustum mesh tests");
@@ -3384,13 +3384,13 @@ TEST(ascent_render_3d, test_render_3d_camera_frustum_meshes)
 TEST(ascent_render_3d, test_render_3d_bentgrid_example)
 {
 
-    // the vtkm runtime is currently our only rendering runtime
+    // the viskores runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
         return;
     }
 
@@ -3460,8 +3460,8 @@ TEST(ascent_render_3d, test_render_3d_zero_zoom_handled)
     // the ascent runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
         ASCENT_INFO("Ascent support disabled, skipping 3D default"
                       "Pipeline test");
@@ -3537,8 +3537,8 @@ TEST(ascent_render_3d, test_render_3d_multi_topo_extents)
     // the ascent runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
         ASCENT_INFO("Ascent support disabled, skipping test");
         return;
@@ -3660,8 +3660,8 @@ TEST(ascent_render_3d, test_render_ascent_camera)
     Node n;
     ascent::about(n);
 
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
 
         ASCENT_INFO("Ascent support disabled, skipping 3D default"
@@ -3787,8 +3787,8 @@ TEST(ascent_render_3d, test_render_visit_camera)
     Node n;
     ascent::about(n);
 
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
 
         ASCENT_INFO("Ascent support disabled, skipping 3D default"
@@ -3917,8 +3917,8 @@ TEST(ascent_render_3d, test_render_invalid_camera)
     // the ascent runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
         ASCENT_INFO("Ascent support disabled, skipping 3D default"
                       "Pipeline test");
@@ -4044,8 +4044,8 @@ TEST(ascent_render_3d, test_render_3d_mesh_bg_fg_color)
     // the ascent runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
         ASCENT_INFO("Ascent support disabled, skipping 3D default"
                       "Pipeline test");

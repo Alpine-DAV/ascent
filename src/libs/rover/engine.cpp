@@ -4,11 +4,11 @@
 // other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-#include "vtkm_typedefs.hpp"
+#include "viskores_typedefs.hpp"
 #include <engine.hpp>
 #include <rover_exceptions.hpp>
 #include <utils/rover_logging.hpp>
-#include <vtkm/cont/DefaultTypes.h>
+#include <viskores/cont/DefaultTypes.h>
 #include <ascent_logging.hpp>
 
 namespace rover
@@ -43,7 +43,7 @@ Engine::validate_tracer()
 }
 
 void
-Engine::set_dataset(vtkm::cont::DataSet &dataset)
+Engine::set_dataset(viskores::cont::DataSet &dataset)
 {
   ROVER_INFO("Executing Engine::set_data_set");
   // TODO: Can we initialize the tracer in the constructor?
@@ -58,7 +58,7 @@ Engine::set_dataset(vtkm::cont::DataSet &dataset)
 
 template<typename Precision>
 void
-Engine::init_emission(vtkmRayTracing::Ray<Precision> &rays,
+Engine::init_emission(viskoresRayTracing::Ray<Precision> &rays,
                       const int num_energy_groups)
 {
   if (rover::settings.has_child("emission"))
@@ -122,16 +122,16 @@ int
 Engine::get_num_energy_groups()
 {
   const std::string absorption = rover::settings["absorption"].as_string();
-  const vtkm::cont::Field &absorption_field = m_dataset.GetField(absorption);
-  vtkm::Id num_absorption_bins = absorption_field.GetData().GetNumberOfComponentsFlat();
+  const viskores::cont::Field &absorption_field = m_dataset.GetField(absorption);
+  viskores::Id num_absorption_bins = absorption_field.GetData().GetNumberOfComponentsFlat();
 
   // If the emission field is set, verify that it has the same number of energy groups
   // as the absorption field
   if (rover::settings.has_child("emission"))
   {
     const std::string emission = rover::settings["emission"].as_string();
-    const vtkm::cont::Field &emission_field = m_dataset.GetField(emission);
-    vtkm::Id num_emission_bins = emission_field.GetData().GetNumberOfComponentsFlat();
+    const viskores::cont::Field &emission_field = m_dataset.GetField(emission);
+    viskores::Id num_emission_bins = emission_field.GetData().GetNumberOfComponentsFlat();
 
     if (num_absorption_bins != num_emission_bins)
     {
@@ -148,7 +148,7 @@ Engine::get_field_mismatch_error()
   return m_field_mismatch_error;
 }
 
-vtkmRange
+viskoresRange
 Engine::get_primary_range()
 {
   ROVER_INFO("Executing Engine::get_primary_range");
@@ -157,7 +157,7 @@ Engine::get_primary_range()
 }
 
 void
-Engine::set_primary_range(const vtkmRange &range)
+Engine::set_primary_range(const viskoresRange &range)
 {
   ROVER_INFO("Executing Engine::set_primary_range");
   validate_tracer();

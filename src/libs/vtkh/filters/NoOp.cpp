@@ -1,4 +1,4 @@
-//#include <vtkm/filter/your_vtkm_filter.h>
+//#include <viskores/filter/your_viskores_filter.h>
 #include <vtkh/filters/NoOp.hpp>
 
 namespace vtkh
@@ -38,8 +38,8 @@ void NoOp::DoExecute()
 
   for(int i = 0; i < num_domains; ++i)
   {
-    vtkm::Id domain_id;
-    vtkm::cont::DataSet dom;
+    viskores::Id domain_id;
+    viskores::cont::DataSet dom;
     this->m_input->GetDomain(i, dom, domain_id);
     // insert interesting stuff
     m_output->AddDomain(dom, domain_id);

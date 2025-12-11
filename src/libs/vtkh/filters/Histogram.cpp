@@ -1,10 +1,10 @@
 #include <vtkh/filters/Histogram.hpp>
 #include <vtkh/Error.hpp>
 #include <vtkh/Logger.hpp>
-#include <vtkh/utils/vtkm_array_utils.hpp>
-#include <vtkh/vtkm_filters/vtkmHistogram.hpp>
-#include <vtkm/filter/density_estimate/worklet/FieldHistogram.h>
-#include <vtkm/cont/PartitionedDataSet.h>
+#include <vtkh/utils/viskores_array_utils.hpp>
+#include <vtkh/viskores_filters/viskoresHistogram.hpp>
+#include <viskores/filter/density_estimate/worklet/FieldHistogram.h>
+#include <viskores/cont/PartitionedDataSet.h>
 
 #ifdef VTKH_PARALLEL
 #include <mpi.h>
@@ -19,23 +19,23 @@ namespace detail
 struct HistoFunctor
 {
 
-  vtkm::Range m_range;
-  vtkm::Id m_num_bins;
+  viskores::Range m_range;
+  viskores::Id m_num_bins;
 
-  vtkm::cont::ArrayHandle<vtkm::Id> m_bins;
-  vtkm::Float64 m_bin_delta;
+  viskores::cont::ArrayHandle<viskores::Id> m_bins;
+  viskores::Float64 m_bin_delta;
 
   template<typename T, typename S>
-  void operator()(const vtkm::cont::ArrayHandle<T,S> &array)
+  void operator()(const viskores::cont::ArrayHandle<T,S> &array)
   {
     T bin_delta;
     T min_range = static_cast<T>(m_range.Min);
     T max_range = static_cast<T>(m_range.Max);
 
-    //TODO:Rewrite using vtkm::filter::density_estimate::Histogram
-    vtkm::worklet::FieldHistogram worklet;
+    //TODO:Rewrite using viskores::filter::density_estimate::Histogram
+    viskores::worklet::FieldHistogram worklet;
     worklet.Run(array,m_num_bins,min_range,max_range,bin_delta,m_bins);
-    m_bin_delta = static_cast<vtkm::Float64>(bin_delta);
+    m_bin_delta = static_cast<viskores::Float64>(bin_delta);
   }
 };
 
@@ -43,7 +43,7 @@ template<typename T>
 void reduce(T *array, int size);
 
 template<>
-void reduce<vtkm::Int32>(vtkm::Int32 *array, int size)
+void reduce<viskores::Int32>(viskores::Int32 *array, int size)
 {
 #ifdef VTKH_PARALLEL
   MPI_Comm mpi_comm = MPI_Comm_f2c(vtkh::GetMPICommHandle());
@@ -55,7 +55,7 @@ void reduce<vtkm::Int32>(vtkm::Int32 *array, int size)
 }
 
 template<>
-void reduce<vtkm::Int64>(vtkm::Int64 *array, int size)
+void reduce<viskores::Int64>(viskores::Int64 *array, int size)
 {
 #ifdef VTKH_PARALLEL
   MPI_Comm mpi_comm = MPI_Comm_f2c(vtkh::GetMPICommHandle());
@@ -81,7 +81,7 @@ Histogram::~Histogram()
 }
 
 void
-Histogram::SetRange(const vtkm::Range &range)
+Histogram::SetRange(const viskores::Range &range)
 {
   m_range = range;
 }
@@ -127,14 +127,14 @@ Histogram::DoExecute()
 
   this->m_output = new DataSet();
 
-  vtkm::Range range;
+  viskores::Range range;
   if(m_range.IsNonEmpty())
   {
     range = m_range;
   }
   else
   {
-    vtkm::cont::ArrayHandle<vtkm::Range> ranges = this->m_input->GetGlobalRange(m_field_name);
+    viskores::cont::ArrayHandle<viskores::Range> ranges = this->m_input->GetGlobalRange(m_field_name);
 
     if(ranges.GetNumberOfValues() != 1)
     {
@@ -145,23 +145,23 @@ Histogram::DoExecute()
 
   const int num_domains = this->m_input->GetNumberOfDomains();
   std::vector<HistogramResult> local_histograms;
-  vtkm::cont::PartitionedDataSet p_dataset;
+  viskores::cont::PartitionedDataSet p_dataset;
 
   for(int i = 0; i < num_domains; ++i)
   {
-    vtkm::Id domain_id;
-    vtkm::cont::DataSet dom;
+    viskores::Id domain_id;
+    viskores::cont::DataSet dom;
     this->m_input->GetDomain(i, dom, domain_id);
     if(!dom.HasField(m_field_name)) continue;
 
-    vtkm::cont::Field field = dom.GetField(m_field_name);
+    viskores::cont::Field field = dom.GetField(m_field_name);
     p_dataset.AddField(field);
   }
 
-  vtkmHistogram hist;
+  viskoresHistogram hist;
   auto result = hist.Run(p_dataset, m_num_bins, range);
 
-  std::vector<vtkm::cont::DataSet> v_datasets = result.GetPartitions();
+  std::vector<viskores::cont::DataSet> v_datasets = result.GetPartitions();
   int size = v_datasets.size();
   for(int i  = 0; i < size; i++)
   {
@@ -179,18 +179,18 @@ Histogram::GetName() const
 }
 
 //Needed for HistSampling
-//Will remove once HistSampling VTKm filter is written
+//Will remove once HistSampling Viskores filter is written
 
 void
 Histogram::HistogramResult::Print(std::ostream &out)
 {
   auto binPortal = m_bins.ReadPortal();
   const int num_bins = m_bins.GetNumberOfValues();
-  vtkm::Id sum = 0;
-  for (vtkm::Id i = 0; i < num_bins; i++)
+  viskores::Id sum = 0;
+  for (viskores::Id i = 0; i < num_bins; i++)
   {
-    vtkm::Float64 lo = m_range.Min + (static_cast<vtkm::Float64>(i) * m_bin_delta);
-    vtkm::Float64 hi = lo + m_bin_delta;
+    viskores::Float64 lo = m_range.Min + (static_cast<viskores::Float64>(i) * m_bin_delta);
+    viskores::Float64 hi = lo + m_bin_delta;
     sum += binPortal.Get(i);
     out << " Bin [" << i << "] Range[" << lo
     << ", " << hi << "] = " << binPortal.Get(i)
@@ -199,13 +199,13 @@ Histogram::HistogramResult::Print(std::ostream &out)
   out<<"total points: "<<sum<<"\n";
 }
 
-vtkm::Id
+viskores::Id
 Histogram::HistogramResult::totalCount()
 {
   auto binPortal = m_bins.ReadPortal();
   const int num_bins = m_bins.GetNumberOfValues();
-  vtkm::Id sum = 0;
-  for (vtkm::Id i = 0; i < num_bins; i++)
+  viskores::Id sum = 0;
+  for (viskores::Id i = 0; i < num_bins; i++)
   {
     sum += binPortal.Get(i);
   }
@@ -269,14 +269,14 @@ Histogram::Run(vtkh::DataSet &data_set, const std::string &field_name)
   }
 
 
-  vtkm::Range range;
+  viskores::Range range;
   if(m_range.IsNonEmpty())
   {
     range = m_range;
   }
   else
   {
-    vtkm::cont::ArrayHandle<vtkm::Range> ranges = data_set.GetGlobalRange(field_name);
+    viskores::cont::ArrayHandle<viskores::Range> ranges = data_set.GetGlobalRange(field_name);
 
     if(ranges.GetNumberOfValues() != 1)
     {
@@ -289,18 +289,18 @@ Histogram::Run(vtkh::DataSet &data_set, const std::string &field_name)
   std::vector<HistogramResult> local_histograms;
   for(int i = 0; i < num_domains; ++i)
   {
-    vtkm::Id domain_id;
-    vtkm::cont::DataSet dom;
+    viskores::Id domain_id;
+    viskores::cont::DataSet dom;
     data_set.GetDomain(i, dom, domain_id);
     if(!dom.HasField(field_name)) continue;
 
-    vtkm::cont::Field field = dom.GetField(field_name);
+    viskores::cont::Field field = dom.GetField(field_name);
 
     detail::HistoFunctor hist;
     hist.m_num_bins = m_num_bins;
     hist.m_range = range;
 
-    field.GetData().ResetTypes(vtkm::TypeListFieldScalar(), VTKM_DEFAULT_STORAGE_LIST{}).CastAndCall(hist);
+    field.GetData().ResetTypes(viskores::TypeListFieldScalar(), VISKORES_DEFAULT_STORAGE_LIST{}).CastAndCall(hist);
     HistogramResult dom_hist;
     dom_hist.m_bins = hist.m_bins;
     dom_hist.m_bin_delta = hist.m_bin_delta;
@@ -309,7 +309,7 @@ Histogram::Run(vtkh::DataSet &data_set, const std::string &field_name)
   }
 
   HistogramResult local = merge_histograms(local_histograms);
-  vtkm::Id * bin_ptr = GetVTKMPointer(local.m_bins);
+  viskores::Id * bin_ptr = GetVISKORESPointer(local.m_bins);
   detail::reduce(bin_ptr, m_num_bins);
 
   VTKH_DATA_CLOSE();

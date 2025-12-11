@@ -103,13 +103,13 @@ gen_example_2d_mixed_mesh(Node &data)
 //-----------------------------------------------------------------------------
 TEST(ascent_pipeline, test_render_2d_mixed)
 {
-    // the vtkm runtime is currently our only rendering runtime
+    // the viskores runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
         return;
     }
 
@@ -165,13 +165,13 @@ TEST(ascent_pipeline, test_render_2d_mixed)
 //-----------------------------------------------------------------------------
 TEST(ascent_pipeline, test_render_2d_mixed_bad_shape_ids_error)
 {
-    // the vtkm runtime is currently our only rendering runtime
+    // the viskores runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
         return;
     }
 
@@ -211,14 +211,14 @@ TEST(ascent_pipeline, test_render_2d_mixed_bad_shape_ids_error)
 //-----------------------------------------------------------------------------
 TEST(ascent_pipeline, test_extract_and_render_2d_mixed)
 {
-    // exec a pipeline to make sure we got through the vtk-m conversion 
-    // the vtkm runtime is currently our only rendering runtime
+    // exec a pipeline to make sure we got through the viskores conversion 
+    // the viskores runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
         return;
     }
 
@@ -235,7 +235,7 @@ TEST(ascent_pipeline, test_extract_and_render_2d_mixed)
     // Create the actions.
     //
 
-    // apply threshold to make sure we do vtk-m round trip
+    // apply threshold to make sure we do viskores round trip
 
     Node actions;
     Node &add_act = actions.append();

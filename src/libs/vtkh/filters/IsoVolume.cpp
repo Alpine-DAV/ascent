@@ -17,7 +17,7 @@ IsoVolume::~IsoVolume()
 }
 
 void
-IsoVolume::SetRange(const vtkm::Range range)
+IsoVolume::SetRange(const viskores::Range range)
 {
   m_range = range;
 }

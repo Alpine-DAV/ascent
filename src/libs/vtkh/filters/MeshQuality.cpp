@@ -1,13 +1,13 @@
 #include <vtkh/filters/MeshQuality.hpp>
-#include <vtkh/vtkm_filters/vtkmMeshQuality.hpp>
-#include <vtkh/vtkm_filters/vtkmCleanGrid.hpp>
+#include <vtkh/viskores_filters/viskoresMeshQuality.hpp>
+#include <vtkh/viskores_filters/viskoresCleanGrid.hpp>
 #include <vtkh/Error.hpp>
 
 namespace vtkh
 {
 
 MeshQuality::MeshQuality()
-  : m_metric(vtkm::filter::mesh_info::CellMetric::Volume)
+  : m_metric(viskores::filter::mesh_info::CellMetric::Volume)
 {
 
 }
@@ -17,7 +17,7 @@ MeshQuality::~MeshQuality()
 
 }
 
-void MeshQuality::cell_metric(vtkm::filter::mesh_info::CellMetric metric)
+void MeshQuality::cell_metric(viskores::filter::mesh_info::CellMetric metric)
 {
   m_metric = metric;
 }
@@ -43,17 +43,17 @@ void MeshQuality::DoExecute()
 
   for(int i = 0; i < num_domains; ++i)
   {
-    vtkm::Id domain_id;
-    vtkm::cont::DataSet dom;
+    viskores::Id domain_id;
+    viskores::cont::DataSet dom;
     this->m_input->GetDomain(i, dom, domain_id);
 
     // force this to an fully explicit data set because
-    // old vtkm was not handling this
-    vtkh::vtkmCleanGrid cleaner;
+    // old viskores was not handling this
+    vtkh::viskoresCleanGrid cleaner;
     auto dataset = cleaner.Run(dom, this->GetFieldSelection());
 
-    vtkmMeshQuality quali;
-    vtkm::cont::DataSet res = quali.Run(dataset, m_metric, this->GetFieldSelection());
+    viskoresMeshQuality quali;
+    viskores::cont::DataSet res = quali.Run(dataset, m_metric, this->GetFieldSelection());
     m_output->AddDomain(res, domain_id);
   }
 }

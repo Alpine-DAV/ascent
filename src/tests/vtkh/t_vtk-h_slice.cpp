@@ -11,14 +11,14 @@
 #include <vtkh/filters/Slice.hpp>
 #include <vtkh/rendering/RayTracer.hpp>
 #include <vtkh/rendering/Scene.hpp>
-#include "t_vtkm_test_utils.hpp"
+#include "t_viskores_test_utils.hpp"
 
 #include <iostream>
 
 //-----------------------------------------------------------------------------
 TEST(vtkh_slice, vtkh_slice)
 {
-#ifdef VTKM_ENABLE_KOKKOS
+#ifdef VISKORES_ENABLE_KOKKOS
   vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
@@ -33,16 +33,16 @@ TEST(vtkh_slice, vtkh_slice)
 
   vtkh::Slice slicer;
 
-  vtkm::Vec<vtkm::Float32,3> normal(.5f,.5f,.5f);
-  vtkm::Vec<vtkm::Float32,3> point(16.f,16.f,16.f);
+  viskores::Vec<viskores::Float32,3> normal(.5f,.5f,.5f);
+  viskores::Vec<viskores::Float32,3> point(16.f,16.f,16.f);
   slicer.AddPlane(point, normal);
   slicer.SetInput(&data_set);
   slicer.Update();
   vtkh::DataSet *slice  = slicer.GetOutput();
 
-  vtkm::Bounds bounds = slice->GetGlobalBounds();
+  viskores::Bounds bounds = slice->GetGlobalBounds();
   float bg_color[4] = { 0.f, 0.f, 0.f, 1.f};
-  vtkm::rendering::Camera camera;
+  viskores::rendering::Camera camera;
   camera.ResetToBounds(bounds);
   vtkh::Render render = vtkh::MakeRender(512,
                                          512,
@@ -65,7 +65,7 @@ TEST(vtkh_slice, vtkh_slice)
 //-----------------------------------------------------------------------------
 TEST(vtkh_slice, vtkh_mulit_slice)
 {
-#ifdef VTKM_ENABLE_KOKKOS
+#ifdef VISKORES_ENABLE_KOKKOS
   vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
@@ -78,16 +78,16 @@ TEST(vtkh_slice, vtkh_mulit_slice)
     data_set.AddDomain(CreateTestData(i, num_blocks, base_size), i);
   }
 
-  vtkm::Bounds bounds;
+  viskores::Bounds bounds;
   vtkh::Scene scene;
 
   // add the first slice
   vtkh::Slice slicer1;
 
-  vtkm::Vec<vtkm::Float32,3> normal1(.0f,5.f,.5f);
-  vtkm::Vec<vtkm::Float32,3> point1(16.f,16.f,16.f);
-  vtkm::Vec<vtkm::Float32,3> normal2(.5f,.5f,.5f);
-  vtkm::Vec<vtkm::Float32,3> point2(16.f,16.f,16.f);
+  viskores::Vec<viskores::Float32,3> normal1(.0f,5.f,.5f);
+  viskores::Vec<viskores::Float32,3> point1(16.f,16.f,16.f);
+  viskores::Vec<viskores::Float32,3> normal2(.5f,.5f,.5f);
+  viskores::Vec<viskores::Float32,3> point2(16.f,16.f,16.f);
   slicer1.AddPlane(point1, normal1);
   slicer1.AddPlane(point2, normal2);
   slicer1.SetInput(&data_set);
@@ -118,7 +118,7 @@ TEST(vtkh_slice, vtkh_mulit_slice)
 //---------------------------------------------------------------------------//
 TEST(vtkh_slice, vtkh_slice_implicit_sphere)
 {
-#ifdef VTKM_ENABLE_KOKKOS
+#ifdef VISKORES_ENABLE_KOKKOS
   vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
@@ -139,9 +139,9 @@ TEST(vtkh_slice, vtkh_slice_implicit_sphere)
   slicer.Update();
   vtkh::DataSet *slice  = slicer.GetOutput();
 
-  vtkm::Bounds bounds = slice->GetGlobalBounds();
+  viskores::Bounds bounds = slice->GetGlobalBounds();
   float bg_color[4] = { 0.f, 0.f, 0.f, 1.f};
-  vtkm::rendering::Camera camera;
+  viskores::rendering::Camera camera;
   camera.ResetToBounds(bounds);
   vtkh::Render render = vtkh::MakeRender(512,
                                          512,
@@ -164,7 +164,7 @@ TEST(vtkh_slice, vtkh_slice_implicit_sphere)
 //---------------------------------------------------------------------------//
 TEST(vtkh_slice, vtkh_slice_implicit_cylinder)
 {
-#ifdef VTKM_ENABLE_KOKKOS
+#ifdef VISKORES_ENABLE_KOKKOS
   vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
@@ -194,9 +194,9 @@ TEST(vtkh_slice, vtkh_slice_implicit_cylinder)
   slicer.Update();
   vtkh::DataSet *slice  = slicer.GetOutput();
 
-  vtkm::Bounds bounds = slice->GetGlobalBounds();
+  viskores::Bounds bounds = slice->GetGlobalBounds();
   float bg_color[4] = { 0.f, 0.f, 0.f, 1.f};
-  vtkm::rendering::Camera camera;
+  viskores::rendering::Camera camera;
   camera.ResetToBounds(bounds);
   vtkh::Render render = vtkh::MakeRender(512,
                                          512,
@@ -219,7 +219,7 @@ TEST(vtkh_slice, vtkh_slice_implicit_cylinder)
 //---------------------------------------------------------------------------//
 TEST(vtkh_slice, vtkh_slice_implicit_box)
 {
-#ifdef VTKM_ENABLE_KOKKOS
+#ifdef VISKORES_ENABLE_KOKKOS
   vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
@@ -234,9 +234,9 @@ TEST(vtkh_slice, vtkh_slice_implicit_box)
 
   vtkh::SliceImplicit slicer;
 
-  vtkm::Bounds slice_bounds(vtkm::Range(0, 20),
-                            vtkm::Range(0, 15),
-                            vtkm::Range(-1, 5));
+  viskores::Bounds slice_bounds(viskores::Range(0, 20),
+                            viskores::Range(0, 15),
+                            viskores::Range(-1, 5));
 
   // note: we keep one face "open"
   slicer.SetBoxSlice(slice_bounds);
@@ -244,9 +244,9 @@ TEST(vtkh_slice, vtkh_slice_implicit_box)
   slicer.Update();
   vtkh::DataSet *slice  = slicer.GetOutput();
 
-  vtkm::Bounds bounds = slice->GetGlobalBounds();
+  viskores::Bounds bounds = slice->GetGlobalBounds();
   float bg_color[4] = { 0.f, 0.f, 0.f, 1.f};
-  vtkm::rendering::Camera camera;
+  viskores::rendering::Camera camera;
   camera.ResetToBounds(bounds);
   vtkh::Render render = vtkh::MakeRender(512,
                                          512,
@@ -280,7 +280,7 @@ TEST(vtkh_slice, vtkh_slice_implicit_box)
 //---------------------------------------------------------------------------//
 TEST(vtkh_slice, vtkh_slice_implicit_plane)
 {
-#ifdef VTKM_ENABLE_KOKKOS
+#ifdef VISKORES_ENABLE_KOKKOS
   vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
@@ -305,9 +305,9 @@ TEST(vtkh_slice, vtkh_slice_implicit_plane)
   slicer.Update();
   vtkh::DataSet *slice  = slicer.GetOutput();
 
-  vtkm::Bounds bounds = slice->GetGlobalBounds();
+  viskores::Bounds bounds = slice->GetGlobalBounds();
   float bg_color[4] = { 0.f, 0.f, 0.f, 1.f};
-  vtkm::rendering::Camera camera;
+  viskores::rendering::Camera camera;
   camera.ResetToBounds(bounds);
   vtkh::Render render = vtkh::MakeRender(512,
                                          512,
@@ -337,7 +337,7 @@ TEST(vtkh_slice, vtkh_slice_implicit_plane)
 // //---------------------------------------------------------------------------//
 // TEST(vtkh_slice, vtkh_slice_implicit_2plane)
 // {
-// #ifdef VTKM_ENABLE_KOKKOS
+// #ifdef VISKORES_ENABLE_KOKKOS
 //   vtkh::InitializeKokkos();
 // #endif
 //   vtkh::DataSet data_set;
@@ -369,9 +369,9 @@ TEST(vtkh_slice, vtkh_slice_implicit_plane)
 //   slicer.Update();
 //   vtkh::DataSet *slice  = slicer.GetOutput();
 //
-//   vtkm::Bounds bounds = slice->GetGlobalBounds();
+//   viskores::Bounds bounds = slice->GetGlobalBounds();
 //   float bg_color[4] = { 0.f, 0.f, 0.f, 1.f};
-//   vtkm::rendering::Camera camera;
+//   viskores::rendering::Camera camera;
 //   camera.ResetToBounds(bounds);
 //   vtkh::Render render = vtkh::MakeRender(512,
 //                                          512,

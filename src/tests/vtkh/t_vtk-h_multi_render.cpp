@@ -12,7 +12,7 @@
 #include <vtkh/rendering/RayTracer.hpp>
 #include <vtkh/rendering/Scene.hpp>
 #include <vtkh/rendering/VolumeRenderer.hpp>
-#include "t_vtkm_test_utils.hpp"
+#include "t_viskores_test_utils.hpp"
 
 #include <iostream>
 
@@ -21,7 +21,7 @@
 //----------------------------------------------------------------------------
 TEST(vtkh_raytracer, vtkh_serial_render)
 {
-#ifdef VTKM_ENABLE_KOKKOS
+#ifdef VISKORES_ENABLE_KOKKOS
   vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
@@ -50,9 +50,9 @@ TEST(vtkh_raytracer, vtkh_serial_render)
 
   vtkh::DataSet *iso_output = marcher.GetOutput();
 
-  vtkm::Bounds bounds = data_set.GetGlobalBounds();
+  viskores::Bounds bounds = data_set.GetGlobalBounds();
 
-  vtkm::rendering::Camera camera;
+  viskores::rendering::Camera camera;
   camera.ResetToBounds(bounds);
   vtkh::Render render = vtkh::MakeRender(512,
                                          512,
@@ -64,7 +64,7 @@ TEST(vtkh_raytracer, vtkh_serial_render)
   tracer.SetInput(iso_output);
   tracer.SetField("cell_data_Float64");
 
-  vtkm::cont::ColorTable color_map("Cool to Warm");
+  viskores::cont::ColorTable color_map("Cool to Warm");
   color_map.AddPointAlpha(0.0, .1);
   color_map.AddPointAlpha(1.0, .3);
 
@@ -85,7 +85,7 @@ TEST(vtkh_raytracer, vtkh_serial_render)
 //----------------------------------------------------------------------------
 TEST(vtkh_raytracer, vtkh_serial_batch)
 {
-#ifdef VTKM_ENABLE_KOKKOS
+#ifdef VISKORES_ENABLE_KOKKOS
   vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
@@ -114,16 +114,16 @@ TEST(vtkh_raytracer, vtkh_serial_batch)
 
   vtkh::DataSet *iso_output = marcher.GetOutput();
 
-  vtkm::Bounds bounds = data_set.GetGlobalBounds();
+  viskores::Bounds bounds = data_set.GetGlobalBounds();
 
-  vtkm::rendering::Camera camera;
+  viskores::rendering::Camera camera;
   camera.ResetToBounds(bounds);
 
   vtkh::RayTracer tracer;
   tracer.SetInput(iso_output);
   tracer.SetField("cell_data_Float64");
 
-  vtkm::cont::ColorTable color_map("Cool to Warm");
+  viskores::cont::ColorTable color_map("Cool to Warm");
   color_map.AddPointAlpha(0.0, .1);
   color_map.AddPointAlpha(1.0, .3);
 

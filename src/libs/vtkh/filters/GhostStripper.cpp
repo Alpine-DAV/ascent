@@ -1,15 +1,15 @@
 #include <vtkh/filters/GhostStripper.hpp>
 #include <vtkh/Error.hpp>
 #include <vtkh/Logger.hpp>
-#include <vtkh/utils/vtkm_dataset_info.hpp>
-#include <vtkh/vtkm_filters/vtkmThreshold.hpp>
-#include <vtkh/vtkm_filters/vtkmCleanGrid.hpp>
-#include <vtkh/vtkm_filters/vtkmExtractStructured.hpp>
+#include <vtkh/utils/viskores_dataset_info.hpp>
+#include <vtkh/viskores_filters/viskoresThreshold.hpp>
+#include <vtkh/viskores_filters/viskoresCleanGrid.hpp>
+#include <vtkh/viskores_filters/viskoresExtractStructured.hpp>
 
-#include <vtkm/worklet/DispatcherMapField.h>
-#include <vtkm/worklet/WorkletMapField.h>
-#include <vtkm/cont/Algorithm.h>
-#include <vtkm/BinaryOperators.h>
+#include <viskores/worklet/DispatcherMapField.h>
+#include <viskores/worklet/WorkletMapField.h>
+#include <viskores/cont/Algorithm.h>
+#include <viskores/BinaryOperators.h>
 
 #include <limits>
 
@@ -21,20 +21,20 @@ namespace detail
 // only do reductions for positive numbers
 struct MinMaxIgnore
 {
-  VTKM_EXEC_CONT
-  vtkm::Vec<vtkm::Id, 2> operator()(const vtkm::Id& a) const
+  VISKORES_EXEC_CONT
+  viskores::Vec<viskores::Id, 2> operator()(const viskores::Id& a) const
   {
-    return vtkm::make_Vec(a, a);
+    return viskores::make_Vec(a, a);
   }
 
-  VTKM_EXEC_CONT
-  vtkm::Vec<vtkm::Id, 2> operator()(const vtkm::Vec<vtkm::Id, 2>& a,
-                                    const vtkm::Vec<vtkm::Id, 2>& b) const
+  VISKORES_EXEC_CONT
+  viskores::Vec<viskores::Id, 2> operator()(const viskores::Vec<viskores::Id, 2>& a,
+                                    const viskores::Vec<viskores::Id, 2>& b) const
   {
-    vtkm::Vec<vtkm::Id,2> min_max;
+    viskores::Vec<viskores::Id,2> min_max;
     if(a[0] >= 0 && b[0] >=0)
     {
-      min_max[0] = vtkm::Min(a[0], b[0]);
+      min_max[0] = viskores::Min(a[0], b[0]);
     }
     else if(a[0] < 0)
     {
@@ -47,7 +47,7 @@ struct MinMaxIgnore
 
     if(a[1] >= 0 && b[1] >=0)
     {
-      min_max[1] = vtkm::Max(a[1], b[1]);
+      min_max[1] = viskores::Max(a[1], b[1]);
     }
     else if(a[1] < 0)
     {
@@ -63,14 +63,14 @@ struct MinMaxIgnore
 };
 
 template<int DIMS>
-VTKM_EXEC_CONT
-vtkm::Vec<vtkm::Id,3> get_logical(const vtkm::Id &index, const vtkm::Vec<vtkm::Id,3> &cell_dims);
+VISKORES_EXEC_CONT
+viskores::Vec<viskores::Id,3> get_logical(const viskores::Id &index, const viskores::Vec<viskores::Id,3> &cell_dims);
 
 template<>
-VTKM_EXEC_CONT
-vtkm::Vec<vtkm::Id,3> get_logical<3>(const vtkm::Id &index, const vtkm::Vec<vtkm::Id,3> &cell_dims)
+VISKORES_EXEC_CONT
+viskores::Vec<viskores::Id,3> get_logical<3>(const viskores::Id &index, const viskores::Vec<viskores::Id,3> &cell_dims)
 {
-  vtkm::Vec<vtkm::Id,3> res(0,0,0);
+  viskores::Vec<viskores::Id,3> res(0,0,0);
   res[0] = index % cell_dims[0];
   res[1] = (index / (cell_dims[0])) % (cell_dims[1]);
   res[2] = index / ((cell_dims[0]) * (cell_dims[1]));
@@ -78,40 +78,40 @@ vtkm::Vec<vtkm::Id,3> get_logical<3>(const vtkm::Id &index, const vtkm::Vec<vtkm
 }
 
 template<>
-VTKM_EXEC_CONT
-vtkm::Vec<vtkm::Id,3> get_logical<2>(const vtkm::Id &index, const vtkm::Vec<vtkm::Id,3> &cell_dims)
+VISKORES_EXEC_CONT
+viskores::Vec<viskores::Id,3> get_logical<2>(const viskores::Id &index, const viskores::Vec<viskores::Id,3> &cell_dims)
 {
-  vtkm::Vec<vtkm::Id,3> res(0,0,0);
+  viskores::Vec<viskores::Id,3> res(0,0,0);
   res[0] = index % cell_dims[0];
   res[1] = index / cell_dims[0];
   return res;
 }
 
 template<>
-VTKM_EXEC_CONT
-vtkm::Vec<vtkm::Id,3> get_logical<1>(const vtkm::Id &index, const vtkm::Vec<vtkm::Id,3> &cell_dims)
+VISKORES_EXEC_CONT
+viskores::Vec<viskores::Id,3> get_logical<1>(const viskores::Id &index, const viskores::Vec<viskores::Id,3> &cell_dims)
 {
-  vtkm::Vec<vtkm::Id,3> res(0,0,0);
+  viskores::Vec<viskores::Id,3> res(0,0,0);
   res[0] = index;
   return res;
 }
 
 template<int DIMS>
-class GhostIndex : public vtkm::worklet::WorkletMapField
+class GhostIndex : public viskores::worklet::WorkletMapField
 {
 protected:
-  vtkm::Vec<vtkm::Id,3> m_cell_dims;
-  vtkm::Int32 m_min_value;
-  vtkm::Int32 m_max_value;
-  vtkm::Id m_default_value;
-  vtkm::Int32 m_dim;
+  viskores::Vec<viskores::Id,3> m_cell_dims;
+  viskores::Int32 m_min_value;
+  viskores::Int32 m_max_value;
+  viskores::Id m_default_value;
+  viskores::Int32 m_dim;
 public:
-  VTKM_CONT
-  GhostIndex(vtkm::Vec<vtkm::Id,3> cell_dims,
-             vtkm::Int32 min_value,
-             vtkm::Int32 max_value,
-             vtkm::Id default_value,
-             vtkm::Id dim)
+  VISKORES_CONT
+  GhostIndex(viskores::Vec<viskores::Id,3> cell_dims,
+             viskores::Int32 min_value,
+             viskores::Int32 max_value,
+             viskores::Id default_value,
+             viskores::Id dim)
     : m_cell_dims(cell_dims),
       m_min_value(min_value),
       m_max_value(max_value),
@@ -124,8 +124,8 @@ public:
   typedef void ExecutionSignature(_1, WorkIndex, _2);
 
   template<typename T>
-  VTKM_EXEC
-  void operator()(const T &value, const vtkm::Id &index, vtkm::Id &ghost_index) const
+  VISKORES_EXEC
+  void operator()(const T &value, const viskores::Id &index, viskores::Id &ghost_index) const
   {
 
     // we are finding the logical min max of valid zones
@@ -135,28 +135,28 @@ public:
     }
     else
     {
-      vtkm::Vec<vtkm::Id,3> logical = get_logical<DIMS>(index, m_cell_dims);
+      viskores::Vec<viskores::Id,3> logical = get_logical<DIMS>(index, m_cell_dims);
       ghost_index = logical[m_dim];
     }
   }
 }; //class GhostIndex
 
 template<int DIMS>
-class CanStructuredStrip : public vtkm::worklet::WorkletMapField
+class CanStructuredStrip : public viskores::worklet::WorkletMapField
 {
 protected:
-  vtkm::Vec<vtkm::Id,3> m_cell_dims;
-  vtkm::Int32 m_min_value;
-  vtkm::Int32 m_max_value;
-  vtkm::Vec<vtkm::Id,3> m_valid_min;
-  vtkm::Vec<vtkm::Id,3> m_valid_max;
+  viskores::Vec<viskores::Id,3> m_cell_dims;
+  viskores::Int32 m_min_value;
+  viskores::Int32 m_max_value;
+  viskores::Vec<viskores::Id,3> m_valid_min;
+  viskores::Vec<viskores::Id,3> m_valid_max;
 public:
-  VTKM_CONT
-  CanStructuredStrip(vtkm::Vec<vtkm::Id,3> cell_dims,
-           vtkm::Int32 min_value,
-           vtkm::Int32 max_value,
-           vtkm::Vec<vtkm::Id,3> valid_min,
-           vtkm::Vec<vtkm::Id,3> valid_max)
+  VISKORES_CONT
+  CanStructuredStrip(viskores::Vec<viskores::Id,3> cell_dims,
+           viskores::Int32 min_value,
+           viskores::Int32 max_value,
+           viskores::Vec<viskores::Id,3> valid_min,
+           viskores::Vec<viskores::Id,3> valid_max)
     : m_cell_dims(cell_dims),
       m_min_value(min_value),
       m_max_value(max_value),
@@ -169,17 +169,17 @@ public:
   typedef void ExecutionSignature(_1, WorkIndex, _2);
 
   template<typename T>
-  VTKM_EXEC
-  void operator()(const T &value, const vtkm::Id &index, vtkm::UInt8 &can_do) const
+  VISKORES_EXEC
+  void operator()(const T &value, const viskores::Id &index, viskores::UInt8 &can_do) const
   {
     can_do = 0; // this is a valid zone
     // we are validating if non-valid cells fall completely outside
     // the min max range of valid cells
     if(value >= m_min_value && value <= m_max_value) return;
 
-    vtkm::Vec<vtkm::Id,3> logical = get_logical<DIMS>(index, m_cell_dims);
+    viskores::Vec<viskores::Id,3> logical = get_logical<DIMS>(index, m_cell_dims);
     bool inside = true;
-    for(vtkm::Int32 i = 0; i < DIMS; ++i)
+    for(viskores::Int32 i = 0; i < DIMS; ++i)
     {
       if(logical[i] < m_valid_min[i] || logical[i] > m_valid_max[i])
       {
@@ -197,36 +197,36 @@ public:
 }; //class CanStructuredStrip
 
 template<int DIMS>
-bool CanStrip(vtkm::cont::Field  &ghost_field,
-              const vtkm::Int32 min_value,
-              const vtkm::Int32 max_value,
-              vtkm::Vec<vtkm::Id,3> &min,
-              vtkm::Vec<vtkm::Id,3> &max,
-              vtkm::Vec<vtkm::Id,3> cell_dims,
-              vtkm::Id size,
+bool CanStrip(viskores::cont::Field  &ghost_field,
+              const viskores::Int32 min_value,
+              const viskores::Int32 max_value,
+              viskores::Vec<viskores::Id,3> &min,
+              viskores::Vec<viskores::Id,3> &max,
+              viskores::Vec<viskores::Id,3> cell_dims,
+              viskores::Id size,
               bool &should_strip)
 {
 
   VTKH_DATA_OPEN("can_strip");
-  vtkm::cont::ArrayHandle<vtkm::Id> dim_indices;
+  viskores::cont::ArrayHandle<viskores::Id> dim_indices;
 
-  vtkm::Vec<vtkm::Id, 3> valid_min = {0,0,0};
-  vtkm::Vec<vtkm::Id, 3> valid_max = {0,0,0};
+  viskores::Vec<viskores::Id, 3> valid_min = {0,0,0};
+  viskores::Vec<viskores::Id, 3> valid_max = {0,0,0};
 
-  for(vtkm::Int32 i = 0; i < DIMS; ++i)
+  for(viskores::Int32 i = 0; i < DIMS; ++i)
   {
-    vtkm::worklet::DispatcherMapField<GhostIndex<DIMS>>(
+    viskores::worklet::DispatcherMapField<GhostIndex<DIMS>>(
         GhostIndex<DIMS>(cell_dims,
                       min_value,
                       max_value,
                       -1,
                       i))
-       .Invoke(ghost_field.GetData().ResetTypes(vtkm::TypeListScalarAll(),
-                                                VTKM_DEFAULT_STORAGE_LIST{}),
+       .Invoke(ghost_field.GetData().ResetTypes(viskores::TypeListScalarAll(),
+                                                VISKORES_DEFAULT_STORAGE_LIST{}),
            dim_indices);
 
-    vtkm::Vec<vtkm::Id,2> d = {-1, -1};
-    auto mm = vtkm::cont::Algorithm::Reduce(dim_indices,
+    viskores::Vec<viskores::Id,2> d = {-1, -1};
+    auto mm = viskores::cont::Algorithm::Reduce(dim_indices,
                                             d,
                                             detail::MinMaxIgnore());
 
@@ -234,30 +234,30 @@ bool CanStrip(vtkm::cont::Field  &ghost_field,
     valid_max[i] = mm[1];
   }
 
-  vtkm::cont::ArrayHandle<vtkm::UInt8> valid_flags;
+  viskores::cont::ArrayHandle<viskores::UInt8> valid_flags;
   valid_flags.Allocate(size);
 
   min = valid_min;
   max = valid_max;
 
-  vtkm::worklet::DispatcherMapField<CanStructuredStrip<DIMS>>
+  viskores::worklet::DispatcherMapField<CanStructuredStrip<DIMS>>
     (CanStructuredStrip<DIMS>(cell_dims,
                               min_value,
                               max_value,
                               valid_min,
                               valid_max))
-     .Invoke(ghost_field.GetData().ResetTypes(vtkm::TypeListScalarAll(),
-                                              VTKM_DEFAULT_STORAGE_LIST{}),
+     .Invoke(ghost_field.GetData().ResetTypes(viskores::TypeListScalarAll(),
+                                              VISKORES_DEFAULT_STORAGE_LIST{}),
          valid_flags);
 
-  vtkm::Vec<vtkm::Id,2> baseline = {-1, -1};
-  auto resMinMax = vtkm::cont::Algorithm::Reduce(valid_flags,
+  viskores::Vec<viskores::Id,2> baseline = {-1, -1};
+  auto resMinMax = viskores::cont::Algorithm::Reduce(valid_flags,
                                                  baseline,
                                                  detail::MinMaxIgnore());
 
   VTKH_DATA_CLOSE();
 
-  vtkm::UInt8 res = resMinMax[1];
+  viskores::UInt8 res = resMinMax[1];
   bool can_strip = res == 0;
   if(can_strip)
   {
@@ -278,25 +278,25 @@ bool CanStrip(vtkm::cont::Field  &ghost_field,
   return can_strip;
 }
 
-bool StructuredStrip(vtkm::cont::DataSet &dataset,
-                     vtkm::cont::Field   &ghost_field,
-                     const vtkm::Int32 min_value,
-                     const vtkm::Int32 max_value,
-                     vtkm::Vec<vtkm::Id,3> &min,
-                     vtkm::Vec<vtkm::Id,3> &max,
+bool StructuredStrip(viskores::cont::DataSet &dataset,
+                     viskores::cont::Field   &ghost_field,
+                     const viskores::Int32 min_value,
+                     const viskores::Int32 max_value,
+                     viskores::Vec<viskores::Id,3> &min,
+                     viskores::Vec<viskores::Id,3> &max,
                      bool &should_strip)
 {
   VTKH_DATA_OPEN("structured_strip");
-  vtkm::cont::UnknownCellSet cell_set = dataset.GetCellSet();
+  viskores::cont::UnknownCellSet cell_set = dataset.GetCellSet();
   int dims[3];
-  VTKMDataSetInfo::GetPointDims(cell_set, dims);
-  vtkm::Vec<vtkm::Id,3> cell_dims(0,0,0);
+  VISKORESDataSetInfo::GetPointDims(cell_set, dims);
+  viskores::Vec<viskores::Id,3> cell_dims(0,0,0);
 
 
   bool can_strip = false;
-  vtkm::Id size = 0;
+  viskores::Id size = 0;
   should_strip = false;
-  if(cell_set.IsType<vtkm::cont::CellSetStructured<1>>())
+  if(cell_set.IsType<viskores::cont::CellSetStructured<1>>())
   {
     cell_dims[0] = dims[0] - 1;
     size = cell_dims[0];
@@ -310,7 +310,7 @@ bool StructuredStrip(vtkm::cont::DataSet &dataset,
                             size,
                             should_strip);
   }
-  else if(cell_set.IsType<vtkm::cont::CellSetStructured<2>>())
+  else if(cell_set.IsType<viskores::cont::CellSetStructured<2>>())
   {
     cell_dims[0] = dims[0] - 1;
     cell_dims[1] = dims[1] - 1;
@@ -325,7 +325,7 @@ bool StructuredStrip(vtkm::cont::DataSet &dataset,
                             size,
                             should_strip);
   }
-  else if(cell_set.IsType<vtkm::cont::CellSetStructured<3>>())
+  else if(cell_set.IsType<viskores::cont::CellSetStructured<3>>())
   {
     cell_dims[0] = dims[0] - 1;
     cell_dims[1] = dims[1] - 1;
@@ -367,13 +367,13 @@ GhostStripper::SetField(const std::string &field_name)
 }
 
 void
-GhostStripper::SetMinValue(const vtkm::Int32 min_value)
+GhostStripper::SetMinValue(const viskores::Int32 min_value)
 {
   m_min_value = min_value;
 }
 
 void
-GhostStripper::SetMaxValue(const vtkm::Int32 max_value)
+GhostStripper::SetMaxValue(const viskores::Int32 max_value)
 {
   m_max_value = max_value;
 }
@@ -402,8 +402,8 @@ void GhostStripper::DoExecute()
   for(int i = 0; i < num_domains; ++i)
   {
 
-    vtkm::Id domain_id;
-    vtkm::cont::DataSet dom;
+    viskores::Id domain_id;
+    viskores::cont::DataSet dom;
     this->m_input->GetDomain(i, dom, domain_id);
 
     if(!dom.HasField(m_field_name))
@@ -411,8 +411,8 @@ void GhostStripper::DoExecute()
       continue;
     }
 
-    vtkm::cont::Field field = dom.GetField(m_field_name);
-    vtkm::Range ghost_range = field.GetRange().ReadPortal().Get(0);
+    viskores::cont::Field field = dom.GetField(m_field_name);
+    viskores::Range ghost_range = field.GetRange().ReadPortal().Get(0);
 
     if(ghost_range.Min >= m_min_value &&
        ghost_range.Max <= m_max_value)
@@ -425,9 +425,9 @@ void GhostStripper::DoExecute()
     int topo_dims = 0;
     bool do_threshold = true;
 
-    if(VTKMDataSetInfo::IsStructured(dom, topo_dims))
+    if(VISKORESDataSetInfo::IsStructured(dom, topo_dims))
     {
-      vtkm::Vec<vtkm::Id,3> min, max;
+      viskores::Vec<viskores::Id,3> min, max;
       bool should_strip; // just because we can doesn't mean we should
       bool can_strip = detail::StructuredStrip(dom,
                                               field,
@@ -442,11 +442,11 @@ void GhostStripper::DoExecute()
         if(should_strip)
         {
           VTKH_DATA_OPEN("extract_structured");
-          //vtkm::RangeId3 range(min[0],max[0]+1, min[1], max[1]+1, min[2], max[2]+1);
-          vtkm::RangeId3 range(min[0],max[0]+2, min[1], max[1]+2, min[2], max[2]+2);
-          vtkm::Id3 sample(1, 1, 1);
+          //viskores::RangeId3 range(min[0],max[0]+1, min[1], max[1]+1, min[2], max[2]+1);
+          viskores::RangeId3 range(min[0],max[0]+2, min[1], max[1]+2, min[2], max[2]+2);
+          viskores::Id3 sample(1, 1, 1);
 
-          vtkh::vtkmExtractStructured extract;
+          vtkh::viskoresExtractStructured extract;
           auto output = extract.Run(dom,
                                     range,
                                     sample,
@@ -466,7 +466,7 @@ void GhostStripper::DoExecute()
 
     if(do_threshold)
     {
-      vtkmThreshold thresholder;
+      viskoresThreshold thresholder;
 
       auto tout = thresholder.Run(dom,
                                   m_field_name,
@@ -474,7 +474,7 @@ void GhostStripper::DoExecute()
                                   m_max_value,
                                   this->GetFieldSelection());
 
-      vtkh::vtkmCleanGrid cleaner;
+      vtkh::viskoresCleanGrid cleaner;
       auto clout = cleaner.Run(tout, this->GetFieldSelection());
       m_output->AddDomain(clout, domain_id);
     }

@@ -16,12 +16,12 @@ public:
   CleanGrid();
   virtual ~CleanGrid();
   std::string GetName() const override;
-  void Tolerance(const vtkm::Float64 tolerance);
+  void Tolerance(const viskores::Float64 tolerance);
 protected:
   void PreExecute() override;
   void PostExecute() override;
   void DoExecute() override;
-  vtkm::Float64 m_tolerance;
+  viskores::Float64 m_tolerance;
 };
 
 } //namespace vtkh

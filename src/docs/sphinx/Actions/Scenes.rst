@@ -218,7 +218,7 @@ Color Tables
 ^^^^^^^^^^^^
 The color map translates normalized scalars to color values. Color maps
 can be applied to each each plot in a scene.
-Image of the color tables provided by VTK-m can be found in :ref:`vtkm_color_tables`.
+Image of the color tables provided by Viskores can be found in :ref:`viskores_color_tables`.
 Minimally, a color table name needs to be specified, but the ``color_table`` node allows you to specify RGB and Alpha (opacity) control points for complete customization of color maps.
 Alpha control points are used when rendering volumes.
 The built-in Color map names are: ``Cool to Warm``, ``Black-Body Radiation``, ``Samsel Fire``, ``Inferno``, ``Linear YGB``, ``Cold and Hot``, ``Rainbow Desaturated``, ``Cool to Warm (Extended)``, ``X Ray``, ``Black, Blue and White``, ``Viridis``, ``Linear Green``, ``Jet``, and ``Rainbow``.
@@ -405,7 +405,7 @@ Now we add a second render to the same example using every available parameter:
 Rendering Camera Configuration
 ---------------------------------
 Ascent supports rendering in both 2D and 3D. For 3D rendering, Ascent supports two primary methods for defining the camera:
-the Ascent native (VTKm style) camera, which is camera-centric, and the VisIt style camera, which is view-centric.
+the Ascent native (Viskores style) camera, which is camera-centric, and the VisIt style camera, which is view-centric.
 Both formats provide control over how scenes are rendered, but they differ in terminology, orientation, and internal computation of the view matrix.
 
 2D Camera
@@ -414,9 +414,9 @@ Both formats provide control over how scenes are rendered, but they differ in te
 
 - ``2d`` or ``windowCoords``: Enables 2D rendering mode. Expects a 4-element array defining the 2D view bounds [x0 (left), x1 (right), y0 (bottom), y1 (top)].
 
-Ascent Native (VTKm Style) Camera
+Ascent Native (Viskores Style) Camera
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The native Ascent camera follows the VTKm camera model which focuses on defining the camera's physical parameters and orientation in 3D space.
+The native Ascent camera follows the Viskores camera model which focuses on defining the camera's physical parameters and orientation in 3D space.
 This camera-centric approach specifies where the camera is located, what it is looking at, and how it is oriented.
 The following parameters are supported:
 
@@ -451,7 +451,7 @@ The following parameters are supported:
 
 Unsupported VisIt Camera Parameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In addition to the above supported VisIt camera parameters, there are a number of VisIt camera parameters that are not completely translatable to the VTKm style camera and are therefore currently ignored.
+In addition to the above supported VisIt camera parameters, there are a number of VisIt camera parameters that are not completely translatable to the Viskores style camera and are therefore currently ignored.
 
 .. Note::
    These parameters are safely ignored if provided. They will not influence the rendered image but also will not produce errors.

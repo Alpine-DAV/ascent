@@ -6,7 +6,7 @@
 #include <vtkh/filters/Filter.hpp>
 #include <vtkh/DataSet.hpp>
 
-#include <vtkh/vtkm_filters/GradientParameters.hpp>
+#include <vtkh/viskores_filters/GradientParameters.hpp>
 
 namespace vtkh
 {

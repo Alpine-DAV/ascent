@@ -11,7 +11,7 @@
 #include <vtkh/filters/NoOp.hpp>
 #include <vtkh/rendering/RayTracer.hpp>
 #include <vtkh/rendering/Scene.hpp>
-#include "t_vtkm_test_utils.hpp"
+#include "t_viskores_test_utils.hpp"
 
 #include <iostream>
 
@@ -20,7 +20,7 @@
 //----------------------------------------------------------------------------
 TEST(vtkh_no_op, vtkh_serial_no_op)
 {
-#ifdef VTKM_ENABLE_KOKKOS
+#ifdef VISKORES_ENABLE_KOKKOS
   vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
@@ -41,9 +41,9 @@ TEST(vtkh_no_op, vtkh_serial_no_op)
 
   vtkh::DataSet *noop_output = noop.GetOutput();
 
-  vtkm::Bounds bounds = noop_output->GetGlobalBounds();
+  viskores::Bounds bounds = noop_output->GetGlobalBounds();
   float bg_color[4] = { 0.f, 0.f, 0.f, 1.f};
-  vtkm::rendering::Camera camera;
+  viskores::rendering::Camera camera;
   camera.ResetToBounds(bounds);
   vtkh::Render render = vtkh::MakeRender(512,
                                          512,

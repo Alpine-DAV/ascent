@@ -3,7 +3,7 @@
 
 #include <sstream>
 #include <vector>
-#include <vtkm/Bounds.h>
+#include <viskores/Bounds.h>
 
 #include <vtkh/vtkh_exports.h>
 
@@ -16,8 +16,8 @@ struct VTKH_API PayloadImage
     // 1-width and 1-height. Actual width would be calculated
     // m_bounds.X.Max - m_bounds.X.Min + 1
     // 1024 - 1 + 1 = 1024
-    vtkm::Bounds                 m_orig_bounds;
-    vtkm::Bounds                 m_bounds;
+    viskores::Bounds                 m_orig_bounds;
+    viskores::Bounds                 m_bounds;
     std::vector<unsigned char>   m_payloads;
     std::vector<float>           m_depths;
     int                          m_orig_rank;
@@ -27,13 +27,13 @@ struct VTKH_API PayloadImage
     PayloadImage()
     {}
 
-    PayloadImage(const vtkm::Bounds &bounds, const int payload_bytes)
+    PayloadImage(const viskores::Bounds &bounds, const int payload_bytes)
       : m_orig_bounds(bounds),
         m_bounds(bounds),
         m_orig_rank(-1),
         m_payload_bytes(payload_bytes)
     {
-      m_default_value = vtkm::Nan32();
+      m_default_value = viskores::Nan32();
       const int dx  = bounds.X.Max - bounds.X.Min + 1;
       const int dy  = bounds.Y.Max - bounds.Y.Min + 1;
       m_payloads.resize(dx * dy * m_payload_bytes);
@@ -87,7 +87,7 @@ struct VTKH_API PayloadImage
     // Fill this image with a sub-region of another image
     //
     void SubsetFrom(const PayloadImage &image,
-                    const vtkm::Bounds &sub_region)
+                    const viskores::Bounds &sub_region)
     {
       m_orig_bounds = image.m_orig_bounds;
       m_bounds = sub_region;
@@ -172,8 +172,8 @@ struct VTKH_API PayloadImage
 
     void Swap(PayloadImage &other)
     {
-      vtkm::Bounds orig   = m_orig_bounds;
-      vtkm::Bounds bounds = m_bounds;
+      viskores::Bounds orig   = m_orig_bounds;
+      viskores::Bounds bounds = m_bounds;
 
       m_orig_bounds = other.m_orig_bounds;
       m_bounds      = other.m_bounds;
@@ -188,7 +188,7 @@ struct VTKH_API PayloadImage
 
     void Clear()
     {
-      vtkm::Bounds empty;
+      viskores::Bounds empty;
       m_orig_bounds = empty;
       m_bounds = empty;
       m_payloads.clear();

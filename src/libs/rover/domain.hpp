@@ -13,7 +13,7 @@
 
 #include <conduit.hpp>
 #include <engine.hpp>
-#include <vtkm_typedefs.hpp>
+#include <viskores_typedefs.hpp>
 #include <settings.hpp>
 
 using namespace conduit;
@@ -24,28 +24,28 @@ class Domain
 {
 public:
   Domain();
-  Domain(vtkmDataSet &dataset);
+  Domain(viskoresDataSet &dataset);
   ~Domain();
 
   void init();
-  const vtkmDataSet& get_dataset();
+  const viskoresDataSet& get_dataset();
   void partial_trace(Ray32 &rays, PartialVector32 &partials);
   void partial_trace(Ray64 &rays, PartialVector64 &partials);
   void init_rays(Ray32 &rays);
   void init_rays(Ray64 &rays);
-  void set_dataset(vtkmDataSet &dataset);
-  void set_primary_range(const vtkmRange &range);
+  void set_dataset(viskoresDataSet &dataset);
+  void set_primary_range(const viskoresRange &range);
   void set_composite_background(bool on);
-  vtkm::Bounds& get_domain_bounds();
-  vtkmRange get_primary_range();
-  void set_global_bounds(vtkm::Bounds bounds);
+  viskores::Bounds& get_domain_bounds();
+  viskoresRange get_primary_range();
+  void set_global_bounds(viskores::Bounds bounds);
   const int get_num_energy_groups();
   bool get_field_mismatch_error();
 protected:
   std::shared_ptr<Engine> m_engine;
-  vtkmDataSet             m_dataset;
-  vtkm::Bounds            m_global_bounds;
-  vtkm::Bounds            m_domain_bounds;
+  viskoresDataSet             m_dataset;
+  viskores::Bounds            m_global_bounds;
+  viskores::Bounds            m_domain_bounds;
 }; // class domain
 } // namespace rover
 #endif

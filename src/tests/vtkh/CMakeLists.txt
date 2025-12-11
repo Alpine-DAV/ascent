@@ -39,16 +39,16 @@ set(BASIC_TESTS t_vtk-h_smoke
                 t_vtk-h_volume_renderer
                 )
 
-#if vtkm has mpi on then this serial case will fail
-#if(NOT VTKM_ENABLE_MPI)
-if(NOT ASCENT_VTKM_MPI_ENABLED)
+#if viskores has mpi on then this serial case will fail
+#if(NOT VISKORES_ENABLE_MPI)
+if(NOT ASCENT_VISKORES_MPI_ENABLED)
     list(APPEND BASIC_TESTS t_vtk-h_warpx_streamline)
 endif()
 
-# Contour tree depends on the VTK-m build type.
-# If vtkm was built with/out mpi support, we only run the
+# Contour tree depends on the Viskores build type.
+# If viskores was built with/out mpi support, we only run the
 # non-mpi contour tree test
-if(NOT VTKm_ENABLE_MPI AND VTKH_ENABLE_FILTER_CONTOUR_TREE)
+if(NOT Viskores_ENABLE_MPI AND VTKH_ENABLE_FILTER_CONTOUR_TREE)
     list(APPEND BASIC_TESTS t_vtk-h_contour_tree)
 endif()
 
@@ -69,10 +69,10 @@ set(MPI_TESTS t_vtk-h_smoke_par
               t_vtk-h_warpx_streamline_par
               )
 
-# Contour tree depends on the VTK-m build type.
-# If vtkm was built with mpi support, we only run the
+# Contour tree depends on the Viskores build type.
+# If viskores was built with mpi support, we only run the
 # par contour tree test
-if(VTKm_ENABLE_MPI AND VTKH_ENABLE_FILTER_CONTOUR_TREE)
+if(Viskores_ENABLE_MPI AND VTKH_ENABLE_FILTER_CONTOUR_TREE)
     list(APPEND MPI_TESTS t_vtk-h_contour_tree_par)
 endif()
 
@@ -85,7 +85,7 @@ if (ENABLE_SERIAL)
     foreach(TEST ${BASIC_TESTS})
         if(ENABLE_CUDA)
             add_cpp_test(TEST ${TEST} DEPENDS_ON ascent vtkh cuda)
-            vtkm_add_target_information(${TEST} DEVICE_SOURCES ${TEST}.cpp)
+            viskores_add_target_information(${TEST} DEVICE_SOURCES ${TEST}.cpp)
             set_target_properties(${TEST} PROPERTIES LINKER_LANGUAGE CUDA)
         else()
             add_cpp_test(TEST ${TEST} DEPENDS_ON ascent vtkh)
@@ -109,7 +109,7 @@ if(MPI_FOUND)
         # this uses 2 procs
         if(ENABLE_CUDA)
             add_cpp_mpi_test(TEST ${TEST} NUM_PROCS 2 DEPENDS_ON ascent_mpi vtkh_mpi cuda)
-            vtkm_add_target_information(${TEST} DEVICE_SOURCES ${TEST}.cpp)
+            viskores_add_target_information(${TEST} DEVICE_SOURCES ${TEST}.cpp)
         else()
             add_cpp_mpi_test(TEST ${TEST} NUM_PROCS 2 DEPENDS_ON ascent_mpi vtkh_mpi)
         endif()

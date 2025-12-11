@@ -610,10 +610,10 @@ Ascent::open(const conduit::Node &options)
         else if(runtime_type == "ascent")
         {
             m_runtime = new AscentRuntime();
-            if(m_options.has_path("runtime/vtkm/backend"))
+            if(m_options.has_path("runtime/viskores/backend"))
             {
     #if defined(ASCENT_VTKH_ENABLED)
-              std::string backend = m_options["runtime/vtkm/backend"].as_string();
+              std::string backend = m_options["runtime/viskores/backend"].as_string();
               if(backend == "serial")
               {
                 vtkh::ForceSerial();
@@ -631,8 +631,8 @@ Ascent::open(const conduit::Node &options)
                 ASCENT_ERROR("Ascent unrecognized backend "<<backend);
               }
     #else
-              ASCENT_ERROR("Ascent vtkm backend is disabled. "
-                          "Ascent was not built with vtk-m support");
+              ASCENT_ERROR("Ascent viskores backend is disabled. "
+                          "Ascent was not built with viskores support");
     #endif
             }
         }
@@ -1149,47 +1149,47 @@ about(conduit::Node &n)
 #endif
     
     
-// vtk-m + vtk-h
+// viskores + vtk-h
 #if defined(ASCENT_VTKH_ENABLED)
-    // call this vtkm so people don't have to know
+    // call this viskores so people don't have to know
     // about vtkh
-    n["runtimes/ascent/vtkm/status"] = "enabled";
+    n["runtimes/ascent/viskores/status"] = "enabled";
     if(vtkh::IsSerialEnabled())
     {
-        n["runtimes/ascent/vtkm/backends/serial"] = "enabled";
+        n["runtimes/ascent/viskores/backends/serial"] = "enabled";
     }
     else
     {
-        n["runtimes/ascent/vtkm/backends/serial"] = "disabled";
+        n["runtimes/ascent/viskores/backends/serial"] = "disabled";
     }
 
     if(vtkh::IsOpenMPEnabled())
     {
-        n["runtimes/ascent/vtkm/backends/openmp"] = "enabled";
+        n["runtimes/ascent/viskores/backends/openmp"] = "enabled";
     }
     else
     {
-        n["runtimes/ascent/vtkm/backends/openmp"] = "disabled";
+        n["runtimes/ascent/viskores/backends/openmp"] = "disabled";
     }
 
     if(vtkh::IsCUDAEnabled())
     {
-        n["runtimes/ascent/vtkm/backends/cuda"] = "enabled";
+        n["runtimes/ascent/viskores/backends/cuda"] = "enabled";
     }
     else
     {
-        n["runtimes/ascent/vtkm/backends/cuda"] = "disabled";
+        n["runtimes/ascent/viskores/backends/cuda"] = "disabled";
     }
     if(vtkh::IsKokkosAvailable())
     {
-        n["runtimes/ascent/vtkm/backends/kokkos"] = "enabled";
+        n["runtimes/ascent/viskores/backends/kokkos"] = "enabled";
     }
     else
     {
-        n["runtimes/ascent/vtkm/backends/kokkos"] = "disabled";
+        n["runtimes/ascent/viskores/backends/kokkos"] = "disabled";
     }
 #else
-     n["runtimes/ascent/vtkm/status"] = "disabled";
+     n["runtimes/ascent/viskores/status"] = "disabled";
 #endif
 
 #if defined(ASCENT_MFEM_ENABLED)

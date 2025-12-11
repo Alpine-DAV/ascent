@@ -615,11 +615,11 @@ get_common_extract_params(Node &extracts,
 
 //-----------------------------------------------------------------------------
 inline const bool
-is_vtkm_disabled(const bool is_root = true)
+is_viskores_disabled(const bool is_root = true)
 {
     Node about_info;
     ascent::about(about_info);
-    if ("disabled" != about_info["runtimes/ascent/vtkm/status"].as_string())
+    if ("disabled" != about_info["runtimes/ascent/viskores/status"].as_string())
     {
         // Viskores is enabled
         return false;

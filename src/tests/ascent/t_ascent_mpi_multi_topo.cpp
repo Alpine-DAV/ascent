@@ -34,8 +34,8 @@ TEST(ascent_mpi_mult_topo, test_multi_semi_madness)
 {
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
         ASCENT_INFO("Ascent support disabled, skipping MPI multi topo "
                       "runtime test");

@@ -17,8 +17,8 @@
 
 // forward decs
 
-// vtkm
-namespace vtkm
+// viskores
+namespace viskores
 {
 namespace cont
 {
@@ -47,7 +47,7 @@ namespace ascent
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-// Class that Handles Blueprint to vtk-h, VTKm Data Transforms
+// Class that Handles Blueprint to vtk-h, Viskores Data Transforms
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
@@ -72,20 +72,20 @@ public:
                                                   bool zero_copy = false);
 
 
-    // convert blueprint data to a vtkm Data Set
+    // convert blueprint data to a viskores Data Set
     // assumes "n" conforms to the mesh blueprint
     //
     //  conduit::blueprint::mesh::verify(n,info) == true
     //
-    static vtkm::cont::DataSet  *BlueprintToVTKmDataSet(const conduit::Node &n,
+    static viskores::cont::DataSet  *BlueprintToViskoresDataSet(const conduit::Node &n,
                                                         bool zero_copy,
                                                         const std::string &topo_name);
 
 
-    // wraps a single VTKm data set into a VTKH dataset
-    static vtkh::DataSet    *VTKmDataSetToVTKHDataSet(vtkm::cont::DataSet *dset);
+    // wraps a single Viskores data set into a VTKH dataset
+    static vtkh::DataSet    *ViskoresDataSetToVTKHDataSet(viskores::cont::DataSet *dset);
 
-    static void              VTKmToBlueprintDataSet(const vtkm::cont::DataSet *dset,
+    static void              ViskoresToBlueprintDataSet(const viskores::cont::DataSet *dset,
                                                     conduit::Node &node,
                                                     const std::string &topo_name,
                                                     bool zero_copy);
@@ -99,7 +99,7 @@ public:
                                                               bool zero_copy = false);
 private:
     // helpers for specific conversion cases
-    static vtkm::cont::DataSet  *UniformBlueprintToVTKmDataSet(const std::string &coords_name,
+    static viskores::cont::DataSet  *UniformBlueprintToViskoresDataSet(const std::string &coords_name,
                                                                const conduit::Node &n_coords,
                                                                const std::string &topo_name,
                                                                const conduit::Node &n_topo,
@@ -107,7 +107,7 @@ private:
                                                                int &nverts);
 
 
-    static vtkm::cont::DataSet  *RectilinearBlueprintToVTKmDataSet(const std::string &coords_name,
+    static viskores::cont::DataSet  *RectilinearBlueprintToViskoresDataSet(const std::string &coords_name,
                                                                    const conduit::Node &n_coords,
                                                                    const std::string &topo_name,
                                                                    const conduit::Node &n_topo,
@@ -115,7 +115,7 @@ private:
                                                                    int &nverts,
                                                                    bool zero_copy);
 
-    static vtkm::cont::DataSet  *StructuredBlueprintToVTKmDataSet(const std::string &coords_name,
+    static viskores::cont::DataSet  *StructuredBlueprintToViskoresDataSet(const std::string &coords_name,
                                                                   const conduit::Node &n_coords,
                                                                   const std::string &topo_name,
                                                                   const conduit::Node &n_topo,
@@ -123,7 +123,7 @@ private:
                                                                   int &nverts,
                                                                   bool zero_copy);
 
-     static vtkm::cont::DataSet *PointsImplicitBlueprintToVTKmDataSet(const std::string &coords_name,
+     static viskores::cont::DataSet *PointsImplicitBlueprintToViskoresDataSet(const std::string &coords_name,
                                                                       const conduit::Node &n_coords,
                                                                       const std::string &topo_name,
                                                                       const conduit::Node &n_topo,
@@ -131,7 +131,7 @@ private:
                                                                       int &nverts,
                                                                       bool zero_copy);
 
-     static vtkm::cont::DataSet *UnstructuredBlueprintToVTKmDataSet(const std::string &coords_name,
+     static viskores::cont::DataSet *UnstructuredBlueprintToViskoresDataSet(const std::string &coords_name,
                                                                     const conduit::Node &n_coords,
                                                                     const std::string &topo_name,
                                                                     const conduit::Node &n_topo,
@@ -145,7 +145,7 @@ private:
                                           const std::string &topo_name,
                                           int neles,
                                           int nverts,
-                                          vtkm::cont::DataSet *dset,
+                                          viskores::cont::DataSet *dset,
                                           bool zero_copy);
 
     static void                  AddVectorField(const std::string &field_name,
@@ -153,7 +153,7 @@ private:
                                                 const std::string &topo_name,
                                                 int neles,
                                                 int nverts,
-                                                vtkm::cont::DataSet *dset,
+                                                viskores::cont::DataSet *dset,
                                                 const int dims,
                                                 bool zero_copy);
 
@@ -161,22 +161,22 @@ private:
                                             const conduit::Node &n_matset,
                                             const std::string &topo_name,
                                             int neles,
-                                            vtkm::cont::DataSet *dset,
+                                            viskores::cont::DataSet *dset,
                                             bool zero_copy);
 
-    static bool VTKmTopologyToBlueprint(conduit::Node &output,
-                                        const vtkm::cont::DataSet &data_set,
+    static bool ViskoresTopologyToBlueprint(conduit::Node &output,
+                                        const viskores::cont::DataSet &data_set,
                                         const std::string &topo_name,
                                         bool zero_copy);
 
-    static void VTKmFieldToBlueprint(conduit::Node &output,
-                                     const vtkm::cont::Field &field,
+    static void ViskoresFieldToBlueprint(conduit::Node &output,
+                                     const viskores::cont::Field &field,
                                      const std::string &topo_name,
                                      bool zero_copy);
 
-    static void VTKmBlueprintShapeMap(conduit::Node &output);
+    static void ViskoresBlueprintShapeMap(conduit::Node &output);
 
-    static bool CheckShapeMapVsVTKmShapeIds(const conduit::Node &shape_map);
+    static bool CheckShapeMapVsViskoresShapeIds(const conduit::Node &shape_map);
 
 
 };

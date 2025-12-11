@@ -2,7 +2,7 @@
 #include <vtkh/filters/CleanGrid.hpp>
 #include <vtkh/Error.hpp>
 
-#include <vtkh/vtkm_filters/vtkmCleanGrid.hpp>
+#include <vtkh/viskores_filters/viskoresCleanGrid.hpp>
 
 namespace vtkh
 {
@@ -34,11 +34,11 @@ CleanGrid::DoExecute()
 
   for(int i = 0; i < num_domains; ++i)
   {
-    vtkm::Id domain_id;
-    vtkm::cont::DataSet dom;
+    viskores::Id domain_id;
+    viskores::cont::DataSet dom;
     this->m_input->GetDomain(i, dom, domain_id);
 
-    vtkh::vtkmCleanGrid cleaner;
+    vtkh::viskoresCleanGrid cleaner;
     if(m_tolerance != -1.)
     {
       cleaner.tolerance(m_tolerance);
@@ -62,7 +62,7 @@ CleanGrid::GetName() const
 }
 
 void
-CleanGrid::Tolerance(const vtkm::Float64 tolerance)
+CleanGrid::Tolerance(const viskores::Float64 tolerance)
 {
   m_tolerance = tolerance;
 }

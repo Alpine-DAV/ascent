@@ -214,26 +214,44 @@ class Ascent(CMakePackage, CudaPackage):
     depends_on("parallelmergetree", when="+babelflow+mpi")
 
     #######################
-    # VTK-m
+    # Viskores
     #######################
     with when("+vtkh"):
-        depends_on("vtk-m +doubleprecision ~64bitids")
-        depends_on("vtk-m@2.1:", when="@0.9.3:")
-        depends_on("vtk-m@2.0:", when="@0.9.2:")
+        # viskores if greater than 0.9.5
+        depends_on("viskores +doubleprecision ~64bitids", when="@0.9.5:")
+        depends_on("viskores@1.0.0:", when="@0.9.5:")
+        depends_on("viskores~tbb", when="@0.9.5:")
+        depends_on("viskores+openmp", when="@0.9.5: +openmp")
+        depends_on("viskores~openmp", when="@0.9.5: ~openmp")
+        depends_on("viskores~cuda", when="@0.9.5: ~cuda")
+        depends_on("viskores+cuda", when="@0.9.5: +cuda")
+        depends_on("viskores+fpic", when="@0.9.5:")
+        depends_on("viskores~shared+fpic", when="@0.9.5: ~shared")
+
+        # Ascent defaults to C++11
+        depends_on("kokkos cxxstd=11", when="@0.9.5: +vtkh ^viskores +kokkos")
+        depends_on("kokkos@3.7.02", when="@0.9.5: +vtkh ^viskores +kokkos")
+
+        # use vtk-m if prior to 0.9.5
+        depends_on("vtk-m +doubleprecision ~64bitids", when="@:0.9.4")
+        depends_on("vtk-m@2.1:", when="@0.9.3:0.9.4")
+        depends_on("vtk-m@2.1:", when="@0.9.3:0.9.4")
+        depends_on("vtk-m@2.0:", when="@0.9.2:0.9.4")
         # 2.1 support needs commit e52b7bb8c9fd131f2fd49edf58037cc5ef77a166
         depends_on("vtk-m@:2.0", when="@:0.9.2")
         depends_on("vtk-m@1.9", when="@0.9.0:0.9.1")
 
-        depends_on("vtk-m~tbb", when="@0.9.0:")
-        depends_on("vtk-m+openmp", when="@0.9.0: +openmp")
-        depends_on("vtk-m~openmp", when="@0.9.0: ~openmp")
-        depends_on("vtk-m~cuda", when="@0.9.0: ~cuda")
-        depends_on("vtk-m+cuda", when="@0.9.0: +cuda")
-        depends_on("vtk-m+fpic", when="@0.8.0:")
-        depends_on("vtk-m~shared+fpic", when="@0.8.0: ~shared")
+        depends_on("vtk-m~tbb", when="@0.9.0:0.9.4")
+        depends_on("vtk-m+openmp", when="@0.9.0:0.9.4 +openmp")
+        depends_on("vtk-m~openmp", when="@0.9.0:0.9.4 ~openmp")
+        depends_on("vtk-m~cuda", when="@0.9.0:0.9.4 ~cuda")
+        depends_on("vtk-m+cuda", when="@0.9.0:0.9.4 +cuda")
+        depends_on("vtk-m+fpic", when="@0.8.0:0.9.4")
+        depends_on("vtk-m~shared+fpic", when="@0.8.0:0.9.4 ~shared")
+        
         # Ascent defaults to C++11
-        depends_on("kokkos cxxstd=11", when="+vtkh ^vtk-m +kokkos")
-        depends_on("kokkos@3.7.02", when="@0.9.3: +vtkh ^vtk-m +kokkos")
+        depends_on("kokkos cxxstd=11", when="@:0.9.4 +vtkh ^vtk-m +kokkos")
+        depends_on("kokkos@3.7.02", when="@0.9.3:0.9.4 +vtkh ^vtk-m +kokkos")
 
         #######################
         # VTK-h
@@ -249,7 +267,7 @@ class Ascent(CMakePackage, CudaPackage):
         depends_on("vtk-h~cuda", when="@:0.8.0 ~cuda")
         depends_on("vtk-h+shared", when="@:0.8.0 +shared")
         depends_on("vtk-h~shared", when="@:0.8.0 ~shared")
-        # When using VTK-h ascent also needs VTK-m
+        # When using VTK-h ascent also needs vtk-m
         depends_on("vtk-m@:1.7", when="@:0.8.0")
         depends_on("vtk-m+testlib", when="@:0.8.0 +test")
 
@@ -267,7 +285,7 @@ class Ascent(CMakePackage, CudaPackage):
     depends_on("occa", when="+occa")
 
     # fides
-    depends_on("fides", when="+fides")
+    depends_on("fides@1.2.1", when="+fides")
 
     #######################
     # Devil Ray
@@ -350,7 +368,7 @@ class Ascent(CMakePackage, CudaPackage):
             cmake_args = [
                 "-DASCENT_DIR={0}".format(install_prefix),
                 "-DCONDUIT_DIR={0}".format(spec["conduit"].prefix),
-                "-DVTKM_DIR={0}".format(spec["vtk-m"].prefix),
+                "-DVISKORES_DIR={0}".format(spec["viskores"].prefix),
                 "-DVTKH_DIR={0}".format(spec["vtk-h"].prefix),
                 example_src_dir,
             ]
@@ -637,14 +655,14 @@ class Ascent(CMakePackage, CudaPackage):
             else:
                 cfg.write(cmake_cache_entry("VTKH_DIR", spec["vtk-h"].prefix))
 
-            cfg.write("# vtk-m from spack\n")
-            cfg.write(cmake_cache_entry("VTKM_DIR", spec["vtk-m"].prefix))
+            cfg.write("# viskores from spack\n")
+            cfg.write(cmake_cache_entry("VISKORES_DIR", spec["viskores"].prefix))
 
             if spec.satisfies("+cuda"):
-                cfg.write(cmake_cache_entry("VTKm_ENABLE_CUDA", "ON"))
+                cfg.write(cmake_cache_entry("Viskores_ENABLE_CUDA", "ON"))
                 cfg.write(cmake_cache_entry("CMAKE_CUDA_HOST_COMPILER", env["SPACK_CXX"]))
             else:
-                cfg.write(cmake_cache_entry("VTKm_ENABLE_CUDA", "OFF"))
+                cfg.write(cmake_cache_entry("Viskores_ENABLE_CUDA", "OFF"))
 
         else:
             if self.spec.satisfies("@0.8.1:"):

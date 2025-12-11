@@ -46,8 +46,8 @@ TEST(ascent_error_handling, test_bad_plot_var_name)
 
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
         ASCENT_INFO("Ascent support disabled, skipping 3D default"
                       "Pipeline test");
@@ -140,8 +140,8 @@ TEST(ascent_error_handling, test_bad_color_table)
 
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
         ASCENT_INFO("Ascent support disabled, skipping 3D default"
                       "Pipeline test");
@@ -217,8 +217,8 @@ TEST(ascent_error_handling, test_emtpy)
 
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
         ASCENT_INFO("Ascent support disabled, skipping 3D default"
                       "Pipeline test");

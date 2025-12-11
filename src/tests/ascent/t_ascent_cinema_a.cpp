@@ -32,11 +32,11 @@ index_t EXAMPLE_MESH_SIDE_DIM = 32;
 //-----------------------------------------------------------------------------
 TEST(ascent_cinema_a, test_cinema_a)
 {
-    // the vtkm runtime is currently our only rendering runtime
+    // the viskores runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
         ASCENT_INFO("Ascent support disabled, skipping test");
         return;
@@ -118,11 +118,11 @@ TEST(ascent_cinema_a, test_cinema_a)
 //-----------------------------------------------------------------------------
 TEST(ascent_cinema_a, test_cinema_a_annotations_off)
 {
-    // the vtkm runtime is currently our only rendering runtime
+    // the viskores runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
         ASCENT_INFO("Ascent support disabled, skipping test");
         return;
@@ -211,11 +211,11 @@ TEST(ascent_cinema_a, test_cinema_a_annotations_off)
 //-----------------------------------------------------------------------------
 TEST(ascent_cinema_a, test_angle_range_1)
 {
-    // the vtkm runtime is currently our only rendering runtime
+    // the viskores runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
         ASCENT_INFO("Ascent support disabled, skipping test");
         return;
@@ -298,11 +298,11 @@ TEST(ascent_cinema_a, test_angle_range_1)
 //-----------------------------------------------------------------------------
 TEST(ascent_cinema_a, test_angle_range_2)
 {
-    // the vtkm runtime is currently our only rendering runtime
+    // the viskores runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
         ASCENT_INFO("Ascent support disabled, skipping test");
         return;
@@ -385,11 +385,11 @@ TEST(ascent_cinema_a, test_angle_range_2)
 //-----------------------------------------------------------------------------
 TEST(ascent_cinema_a, test_angle_values)
 {
-    // the vtkm runtime is currently our only rendering runtime
+    // the viskores runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
         ASCENT_INFO("Ascent support disabled, skipping test");
         return;
@@ -470,11 +470,11 @@ TEST(ascent_cinema_a, test_angle_values)
 //-----------------------------------------------------------------------------
 TEST(ascent_cinema_a, test_phi_theta_positions)
 {
-    // the vtkm runtime is currently our only rendering runtime
+    // the viskores runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
         ASCENT_INFO("Ascent support disabled, skipping test");
         return;
