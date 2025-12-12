@@ -945,7 +945,7 @@ the data set has more than one domain. Without ghost, the averaging will not be 
 Sample
 ~~~~~~~~~~~~~~~~~~~~~
 Sample filter allows the user to re-sample the input mesh into a set of user-defined points, a line, or a box. 
-To apply the sample filter to a list of 2D or 3D points, the user must specify the `x`, `y`, and `z`, as a list of point locations.
+To apply the sample filter to a list of 2D or 3D points, the user must specify the `x`, `y`, or `z`, as a list of point locations.
 
 .. code-block:: c++
 
@@ -955,19 +955,21 @@ To apply the sample filter to a list of 2D or 3D points, the user must specify t
   //points
   double x_points[] = {-9.0, 0.0, 3.0, 0.0, 0.0, 0.0, 3.0, 3.0, -5.0, 7.24, -7.24, 9.0};
   double y_points[] = {-9.0, 0.0, 3.0, 3.0, 0.0, 3.0, 3.0, 0.0, -5.0, -8.34,  8.34, 9.0};
+  //if 3D
   double z_points[] = {-9.0, 0.0, 3.0, 0.0, 3.0, 3.0, 0.0, 3.0, -5.0,  4.78,  4.78, 9.0};
 
   //params
   conduit::Node &params = pipelines["pl1/f1/params"];
   params["field"] = "braid";   //required
-  params["point/x"].set(x_points);
-  params["point/y"].set(y_points);  
-  params["point/z"].set(z_points); 
+  params["point/x"].set(x_points); 
+  params["point/y"].set(y_points);
+  //if 3D
+  params["point/z"].set(z_points);
   //field value for sampled points outside of input mesh
   params["invalid_value"] = -10.0; 
 
 
-To apply the sample filter to a 2D or 3D line, the user must specify the starting location for `x`, `y`, and `z`,
+To apply the sample filter to a 2D or 3D line, the user must specify the starting location for `x`, `y`, or `z`,
 as well as the number of sample points along the line (`num_samples`).  
 
 .. code-block:: c++
@@ -979,18 +981,19 @@ as well as the number of sample points along the line (`num_samples`).
   conduit::Node &params = pipelines["pl1/f1/params"];
   params["field"] = "braid";   //required
   params["line/num_samples"] = 100.0; 
-  params["line/start/x"] = 10.0;  
-  params["line/start/y"] = 10.0;  
-  params["line/start/z"] = 10.0;  
-  params["line/end/x"] = 0.0; 
-  params["line/end/y"] = 0.0;  
-  params["line/end/z"] = 0.0;  
+  params["line/start/x"] = 10.0;
+  params["line/start/y"] = 10.0;
+  params["line/start/z"] = 10.0;
+  params["line/end/x"] = 0.0;
+  params["line/end/y"] = 0.0;
+  params["line/end/z"] = 0.0;
   //field value for sampled points outside of input mesh
   params["invalid_value"] = -10.0; 
 
 To apply the sample filter to a 2D plane or 3D box, the user must specify the number of points 
-to sample along each axis (`dims/i`, `dims/j`, `dims/k`), 
+to sample along each axis to be sampled (`dims/i`, `dims/j`, `dims/k`), 
 as well as the maximum and minimum values for each axis (`max/x`, `max/y`, `max/z`, `min/x`, `min/y`, `min/z`).
+The minimum and maximum values for each axis can either be a double or the strings `min` or `max`. 
 
 For distributed data, the final output of this filter is composited on the root process, and ties for sampled points are handled by taking the average of all valid values.
 
