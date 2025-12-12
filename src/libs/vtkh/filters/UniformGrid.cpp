@@ -37,7 +37,7 @@ namespace vtkh
 namespace detail
 {
 
-
+viskores::cont::Field
 MakeEmptyField(std::string field_name , viskores::Id field_id, Vec3_f64 dims, viskores::cont::Field::Association assoc, viskores::Float64 val)
 {
   int num_values = 0;
