@@ -281,7 +281,7 @@ public:
 #endif
         //loop through field, zero out invalid and unowned values
         Scalar_i32_hnd ah_field = field.GetData().AsArrayHandle<Scalar_i32_hnd>();
-        int *local_field = GetviskoresPointer(ah_field);
+        int *local_field = GetVISKORESPointer(ah_field);
         std::vector<int> global_field(m_num_points,0);
 
         for(int i = 0; i < m_num_points; ++i)
@@ -325,7 +325,7 @@ public:
 #endif
         //loop through field, zero out invalid value
         Scalar_f32_hnd ah_field = field.GetData().AsArrayHandle<Scalar_f32_hnd>();
-        float * local_field = GetviskoresPointer(ah_field);
+        float * local_field = GetVISKORESPointer(ah_field);
         std::vector<float> global_field(m_num_points,0);
 
         for(int i = 0; i < m_num_points; ++i)
@@ -376,7 +376,7 @@ public:
           }
         }
 
-        double * local_field = GetviskoresPointer(ah_field);
+        double * local_field = GetVISKORESPointer(ah_field);
         std::vector<double> global_field(m_num_points,0.0);
         MPI_Reduce(local_field, global_field.data(), m_num_points, MPI_DOUBLE, MPI_SUM, 0, mpi_comm);
 
