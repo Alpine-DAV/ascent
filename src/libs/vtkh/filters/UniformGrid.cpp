@@ -286,7 +286,7 @@ public:
 #endif
         //loop through field, zero out invalid and unowned values
         scalarI ah_field = field.GetData().AsArrayHandle<scalarI>();
-        int *local_field = GetviskoresPointer(ah_field);
+        int *local_field = GetVISKORESPointer(ah_field);
         std::vector<int> global_field(num_points,0);
 
         for(int i = 0; i < num_points; ++i)
@@ -328,7 +328,7 @@ public:
 #endif
         //loop through field, zero out invalid value
         scalarF ah_field = field.GetData().AsArrayHandle<scalarF>();
-        float * local_field = GetviskoresPointer(ah_field);
+        float * local_field = GetVISKORESPointer(ah_field);
         std::vector<float> global_field(num_points,0);
 
         for(int i = 0; i < num_points; ++i)
