@@ -3857,7 +3857,7 @@ VTKHUniformGrid::execute()
     std::string field = field_selection[0];
     std::string topo_name = collection->field_topology(field);
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
-    vtkm::Id global_cells = data.GetGlobalNumberOfCells();
+    viskores::Id global_cells = data.GetGlobalNumberOfCells();
 
     viskores::Bounds d_bounds = data.GetGlobalBounds();
     viskores::Float64 x_extents = d_bounds.X.Length() + 1; //add one b/c we are
@@ -4179,8 +4179,8 @@ VTKHSample::execute()
     else if(params().has_path("box"))
     {
         int dims[3];
-        vtkm::Float64 x_min, x_max, y_min, y_max, z_min, z_max;
-        vtkm::Bounds g_bounds = data.GetGlobalBounds();
+        viskores::Float64 x_min, x_max, y_min, y_max, z_min, z_max;
+        viskores::Bounds g_bounds = data.GetGlobalBounds();
         const Node &dims_b = params()["box/dims"];
         const Node &min_b = params()["box/min"];
         const Node &max_b = params()["box/max"];
