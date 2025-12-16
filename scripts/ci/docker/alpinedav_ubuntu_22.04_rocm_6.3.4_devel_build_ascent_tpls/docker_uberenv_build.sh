@@ -19,7 +19,7 @@ export PATH=$PATH:/${cmake_install_dir}/bin/
 
 # build rocm tpls with helper script
 chmod +x ascent/scripts/build_ascent/build_ascent.sh
-# enable tests is of b/c one of the vtk-m tests fails to link
+# enable tests is of b/c one of the viskores tests fails to link
 env enable_tests=OFF build_ascent=false enable_hip=ON ascent/scripts/build_ascent/build_ascent.sh
 
 ############################

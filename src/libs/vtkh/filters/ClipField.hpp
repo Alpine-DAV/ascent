@@ -14,7 +14,7 @@ public:
   ClipField();
   virtual ~ClipField();
   std::string GetName() const override;
-  void SetClipValue(const vtkm::Float64 clip_value);
+  void SetClipValue(const viskores::Float64 clip_value);
   void SetField(const std::string field_name);
   void SetInvertClip(const bool invert);
 protected:
@@ -22,7 +22,7 @@ protected:
   void PostExecute() override;
   void DoExecute() override;
 
-  vtkm::Float64 m_clip_value;
+  viskores::Float64 m_clip_value;
   std::string   m_field_name;
   bool m_invert;
 };

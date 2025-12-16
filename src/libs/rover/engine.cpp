@@ -4,11 +4,12 @@
 // other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-#include "vtkm_typedefs.hpp"
+#include "viskores_typedefs.hpp"
 #include <engine.hpp>
 #include <rover_exceptions.hpp>
 #include <utils/rover_logging.hpp>
-#include <vtkm/cont/DefaultTypes.h>
+#include <viskores/cont/DefaultTypes.h>
+#include <ascent_logging.hpp>
 
 namespace rover
 {
@@ -16,6 +17,7 @@ namespace rover
 Engine::Engine()
 {
   m_tracer = nullptr;
+  m_field_mismatch_error = false;
 }
 
 Engine::~Engine()
@@ -36,12 +38,12 @@ Engine::validate_tracer()
   // this in 1 or 2 spots and won't need a helper.
   if (!m_tracer)
   {
-    ROVER_ERROR("Error - Engine::validate_tracer: data was not set before tracing");
+    ASCENT_LOG_ERROR("Error - Engine::validate_tracer: data was not set before tracing");
   }
 }
 
 void
-Engine::set_dataset(vtkm::cont::DataSet &dataset)
+Engine::set_dataset(viskores::cont::DataSet &dataset)
 {
   ROVER_INFO("Executing Engine::set_data_set");
   // TODO: Can we initialize the tracer in the constructor?
@@ -56,14 +58,14 @@ Engine::set_dataset(vtkm::cont::DataSet &dataset)
 
 template<typename Precision>
 void
-Engine::init_emission(vtkmRayTracing::Ray<Precision> &rays,
-                      const int num_bins)
+Engine::init_emission(viskoresRayTracing::Ray<Precision> &rays,
+                      const int num_energy_groups)
 {
   if (rover::settings.has_child("emission"))
   {
     const std::string emission = rover::settings["emission"].as_string();
     m_tracer->SetEmissionField(emission);
-    rays.AddBuffer(num_bins, "emission");
+    rays.AddBuffer(num_energy_groups, "emission");
     rays.GetBuffer("emission").InitConst(0.0f);
   }
 }
@@ -83,12 +85,12 @@ void
 Engine::init_rays(Ray32 &rays)
 {
   validate_tracer();
-  const int num_bins = get_num_channels();
-  rays.Buffers.at(0).SetNumChannels(num_bins);
+  const int num_energy_groups = get_num_energy_groups();
+  rays.Buffers.at(0).SetNumChannels(num_energy_groups);
   // TODO: I think this should be init with background intensities
   rays.Buffers.at(0).InitConst(1.0f);
-  init_emission(rays, num_bins);
-  rays.AddBuffer(num_bins, "optical_depths");
+  init_emission(rays, num_energy_groups);
+  rays.AddBuffer(num_energy_groups, "optical_depths");
   rays.GetBuffer("optical_depths").InitConst(0.0f);
 }
 
@@ -96,12 +98,12 @@ void
 Engine::init_rays(Ray64 &rays)
 {
   validate_tracer();
-  const int num_bins = get_num_channels();
-  rays.Buffers.at(0).SetNumChannels(num_bins);
+  const int num_energy_groups = get_num_energy_groups();
+  rays.Buffers.at(0).SetNumChannels(num_energy_groups);
   // TODO: I think this should be init with background intensities
   rays.Buffers.at(0).InitConst(1.0f);
-  init_emission(rays, num_bins);
-  rays.AddBuffer(num_bins, "optical_depths");
+  init_emission(rays, num_energy_groups);
+  rays.AddBuffer(num_energy_groups, "optical_depths");
   rays.GetBuffer("optical_depths").InitConst(0.0f);
 }
 
@@ -117,43 +119,36 @@ Engine::partial_trace(Ray64 &rays, PartialVector64 &partials)
 }
 
 int
-Engine::get_num_channels()
+Engine::get_num_energy_groups()
 {
-  vtkm::Id absorption_size = 0;
-  ArraySizeFunctor functor(&absorption_size);
   const std::string absorption = rover::settings["absorption"].as_string();
-  m_dataset.GetField(absorption).
-                     GetData().
-                     CastAndCallForTypes<vtkm::TypeListAll, VTKM_DEFAULT_STORAGE_LIST>(functor);
-  vtkm::Id num_cells = m_dataset.GetCellSet().GetNumberOfCells();
+  const viskores::cont::Field &absorption_field = m_dataset.GetField(absorption);
+  viskores::Id num_absorption_bins = absorption_field.GetData().GetNumberOfComponentsFlat();
 
-  // TODO: Seemingly redundant assert followed by a check that num_cells == 0
-  assert(num_cells > 0);
-  assert(absorption_size > 0);
-  if (num_cells == 0)
+  // If the emission field is set, verify that it has the same number of energy groups
+  // as the absorption field
+  if (rover::settings.has_child("emission"))
   {
-    ROVER_ERROR("Error - Engine::get_num_channels: num cells is 0"
-                << "\n        num cells " << num_cells
-                << "\n        field size " <<a bsorption_size);
-    m_dataset.PrintSummary(std::cerr);
-    throw RoverException("Failed to detect bins. Num cells cannot be 0\n");
+    const std::string emission = rover::settings["emission"].as_string();
+    const viskores::cont::Field &emission_field = m_dataset.GetField(emission);
+    viskores::Id num_emission_bins = emission_field.GetData().GetNumberOfComponentsFlat();
+
+    if (num_absorption_bins != num_emission_bins)
+    {
+      m_field_mismatch_error = true;
+    }
   }
 
-  vtkm::Id modulo = absorption_size % num_cells;
-  if (modulo != 0)
-  {
-    ROVER_ERROR("Error - Engine::get_num_channels: absorption field size is not evenly divided by num_cells"
-                << "\n       modulo " << modulo
-                << "\n       num cells " << num_cells
-                << "\n       field size " << absorption_size);
-    throw RoverException("absorption field size is not evenly divided by num_cells\n");
-  }
-  vtkm::Id num_bins = absorption_size / num_cells;
-  ROVER_INFO("Engine::get_num_channels: Detected " << num_bins << " bins");
-  return static_cast<int>(num_bins);
+  return static_cast<int>(num_absorption_bins);
 }
 
-vtkmRange
+bool
+Engine::get_field_mismatch_error()
+{
+  return m_field_mismatch_error;
+}
+
+viskoresRange
 Engine::get_primary_range()
 {
   ROVER_INFO("Executing Engine::get_primary_range");
@@ -162,7 +157,7 @@ Engine::get_primary_range()
 }
 
 void
-Engine::set_primary_range(const vtkmRange &range)
+Engine::set_primary_range(const viskoresRange &range)
 {
   ROVER_INFO("Executing Engine::set_primary_range");
   validate_tracer();

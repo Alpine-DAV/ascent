@@ -12,7 +12,7 @@
 #include <vtkh/rendering/RayTracer.hpp>
 #include <vtkh/rendering/Scene.hpp>
 
-#include "t_vtkm_test_utils.hpp"
+#include "t_viskores_test_utils.hpp"
 
 #include <iostream>
 
@@ -21,7 +21,7 @@
 //----------------------------------------------------------------------------
 TEST(vtkh_ghost_stripper, vtkh_ghost_stripper)
 {
-#ifdef VTKM_ENABLE_KOKKOS
+#ifdef VISKORES_ENABLE_KOKKOS
   vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
@@ -37,7 +37,7 @@ TEST(vtkh_ghost_stripper, vtkh_ghost_stripper)
   //
   // chop the data set at the center
   //
-  vtkm::Bounds clip_bounds = data_set.GetGlobalBounds();
+  viskores::Bounds clip_bounds = data_set.GetGlobalBounds();
 
   vtkh::GhostStripper stripper;
 
@@ -48,11 +48,11 @@ TEST(vtkh_ghost_stripper, vtkh_ghost_stripper)
 
   vtkh::DataSet *stripped_output = stripper.GetOutput();
 
-  vtkm::Bounds bounds = stripped_output->GetGlobalBounds();
+  viskores::Bounds bounds = stripped_output->GetGlobalBounds();
 
-  vtkm::rendering::Camera camera;
+  viskores::rendering::Camera camera;
   camera.ResetToBounds(bounds);
-  camera.SetPosition(vtkm::Vec<vtkm::Float64,3>(16,-32,-32));
+  camera.SetPosition(viskores::Vec<viskores::Float64,3>(16,-32,-32));
   float bg_color[4] = { 0.f, 0.f, 0.f, 1.f};
   vtkh::Render render = vtkh::MakeRender(512,
                                          512,
@@ -77,7 +77,7 @@ TEST(vtkh_ghost_stripper, vtkh_ghost_stripper)
 //----------------------------------------------------------------------------
 TEST(vtkh_ghost_stripper, vtkh_ghost_stripper_no_strip)
 {
-#ifdef VTKM_ENABLE_KOKKOS
+#ifdef VISKORES_ENABLE_KOKKOS
   vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
@@ -90,7 +90,7 @@ TEST(vtkh_ghost_stripper, vtkh_ghost_stripper_no_strip)
     data_set.AddDomain(CreateTestData(i, num_blocks, base_size), i);
   }
 
-  vtkm::Id before_cells = data_set.GetNumberOfCells();
+  viskores::Id before_cells = data_set.GetNumberOfCells();
 
   vtkh::GhostStripper stripper;
 
@@ -103,7 +103,7 @@ TEST(vtkh_ghost_stripper, vtkh_ghost_stripper_no_strip)
 
   vtkh::DataSet *stripped_output = stripper.GetOutput();
 
-  vtkm::Id after_cells = stripped_output->GetNumberOfCells();
+  viskores::Id after_cells = stripped_output->GetNumberOfCells();
 
   assert(before_cells == after_cells);
   delete stripped_output;

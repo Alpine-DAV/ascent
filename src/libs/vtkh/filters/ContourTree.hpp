@@ -4,7 +4,7 @@
 #include <vtkh/vtkh.hpp>
 #include <vtkh/filters/Filter.hpp>
 #include <vtkh/DataSet.hpp>
-#include <vtkm/filter/scalar_topology/ContourTreeUniformAugmented.h>
+#include <viskores/filter/scalar_topology/ContourTreeUniformAugmented.h>
 
 namespace vtkh
 {
@@ -26,7 +26,7 @@ protected:
 
 private:
   friend class AnalyzerFunctor;
-  template<typename DataValueType> void analysis(vtkm::filter::scalar_topology::ContourTreeAugmented& filter, bool dataFieldIsSorted, const vtkm::cont::UnknownArrayHandle&  arr);
+  template<typename DataValueType> void analysis(viskores::filter::scalar_topology::ContourTreeAugmented& filter, bool dataFieldIsSorted, const viskores::cont::UnknownArrayHandle&  arr);
 
   std::string m_field_name;
   int m_levels;

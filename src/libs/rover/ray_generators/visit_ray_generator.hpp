@@ -44,8 +44,8 @@
 
 #include "ray_generator.hpp"
 
-#include <vtkm/rendering/raytracing/RayOperations.h>
-#include <vtkm/Version.h>
+#include <viskores/rendering/raytracing/RayOperations.h>
+#include <viskores/Version.h>
 
 #include <rover_exports.h>
 #include <settings.hpp>
@@ -60,10 +60,10 @@ class ROVER_API VisitRayGenerator : public RayGenerator
 public:
   struct VisitParams
   {
-    vtkm::Vec<double, 3> m_normal;
-    vtkm::Vec<double, 3> m_focus;
-    vtkm::Vec<double, 3> m_view_up;
-    vtkm::Vec<double, 2> m_image_pan;
+    viskores::Vec<double, 3> m_normal;
+    viskores::Vec<double, 3> m_focus;
+    viskores::Vec<double, 3> m_view_up;
+    viskores::Vec<double, 2> m_image_pan;
 
     double                 m_view_angle;
     double                 m_parallel_scale;
@@ -115,7 +115,7 @@ protected:
   VisitParams m_params;
 
   template<typename T>
-  void gen_rays(vtkmRayTracing::Ray<T> &rays);
+  void gen_rays(viskoresRayTracing::Ray<T> &rays);
 };
 
 } // namespace rover

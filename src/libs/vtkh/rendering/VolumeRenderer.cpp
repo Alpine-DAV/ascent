@@ -1,10 +1,10 @@
 #include "VolumeRenderer.hpp"
 
-#include <vtkh/utils/vtkm_array_utils.hpp>
+#include <vtkh/utils/viskores_array_utils.hpp>
 #include <vtkh/compositing/Compositor.hpp>
 #include <vtkh/Logger.hpp>
 
-#include <vtkm/rendering/CanvasRayTracer.h>
+#include <viskores/rendering/CanvasRayTracer.h>
 
 #include <memory>
 
@@ -13,12 +13,12 @@
 #endif
 
 
-#include <vtkm/cont/ColorTable.h>
-#include <vtkm/rendering/ConnectivityProxy.h>
+#include <viskores/cont/ColorTable.h>
+#include <viskores/rendering/ConnectivityProxy.h>
 #include <vtkh/compositing/PartialCompositor.hpp>
-#include <vtkm/rendering/raytracing/VolumeRendererStructured.h>
-#include <vtkm/rendering/raytracing/RayOperations.h>
-#include <vtkm/rendering/raytracing/Camera.h>
+#include <viskores/rendering/raytracing/VolumeRendererStructured.h>
+#include <viskores/rendering/raytracing/RayOperations.h>
+#include <viskores/rendering/raytracing/Camera.h>
 
 #include <vtkh/compositing/VolumePartial.hpp>
 
@@ -61,27 +61,27 @@ struct RankOrder
   }
 };
 
-vtkm::cont::ArrayHandle<vtkm::Vec4f_32>
-convert_table(const vtkm::cont::ColorTable& colorTable)
+viskores::cont::ArrayHandle<viskores::Vec4f_32>
+convert_table(const viskores::cont::ColorTable& colorTable)
 {
 
-  constexpr vtkm::Float32 conversionToFloatSpace = (1.0f / 255.0f);
+  constexpr viskores::Float32 conversionToFloatSpace = (1.0f / 255.0f);
 
-  vtkm::cont::ArrayHandle<vtkm::Vec4ui_8> temp;
+  viskores::cont::ArrayHandle<viskores::Vec4ui_8> temp;
 
   {
-    vtkm::cont::ScopedRuntimeDeviceTracker tracker(vtkm::cont::DeviceAdapterTagSerial{});
+    viskores::cont::ScopedRuntimeDeviceTracker tracker(viskores::cont::DeviceAdapterTagSerial{});
     colorTable.Sample(1024, temp);
   }
 
-  vtkm::cont::ArrayHandle<vtkm::Vec4f_32> color_map;
+  viskores::cont::ArrayHandle<viskores::Vec4f_32> color_map;
   color_map.Allocate(1024);
   auto portal = color_map.WritePortal();
   auto colorPortal = temp.ReadPortal();
-  for (vtkm::Id i = 0; i < 1024; ++i)
+  for (viskores::Id i = 0; i < 1024; ++i)
   {
     auto color = colorPortal.Get(i);
-    vtkm::Vec4f_32 t(color[0] * conversionToFloatSpace,
+    viskores::Vec4f_32 t(color[0] * conversionToFloatSpace,
                      color[1] * conversionToFloatSpace,
                      color[2] * conversionToFloatSpace,
                      color[3] * conversionToFloatSpace);
@@ -93,15 +93,15 @@ convert_table(const vtkm::cont::ColorTable& colorTable)
 class VolumeWrapper
 {
 protected:
-  vtkm::cont::DataSet m_data_set;
-  vtkm::Range m_scalar_range;
+  viskores::cont::DataSet m_data_set;
+  viskores::Range m_scalar_range;
   std::string m_field_name;
-  vtkm::Float32 m_sample_dist;
-  vtkm::cont::ArrayHandle<vtkm::Vec4f_32> m_color_map;
+  viskores::Float32 m_sample_dist;
+  viskores::cont::ArrayHandle<viskores::Vec4f_32> m_color_map;
 public:
   VolumeWrapper() = delete;
 
-  VolumeWrapper(vtkm::cont::DataSet &data_set)
+  VolumeWrapper(viskores::cont::DataSet &data_set)
    : m_data_set(data_set)
   {
   }
@@ -111,7 +111,7 @@ public:
 
   }
 
-  void sample_distance(const vtkm::Float32 &distance)
+  void sample_distance(const viskores::Float32 &distance)
   {
     m_sample_dist = distance;
   }
@@ -121,34 +121,34 @@ public:
     m_field_name = field_name;
   }
 
-  void scalar_range(vtkm::Range &range)
+  void scalar_range(viskores::Range &range)
   {
     m_scalar_range = range;
   }
 
-  void color_map(vtkm::cont::ArrayHandle<vtkm::Vec4f_32> &color_map)
+  void color_map(viskores::cont::ArrayHandle<viskores::Vec4f_32> &color_map)
   {
     m_color_map = color_map;
   }
 
   virtual void
-  render(const vtkm::rendering::Camera &camera,
-         vtkm::rendering::CanvasRayTracer &canvas,
+  render(const viskores::rendering::Camera &camera,
+         viskores::rendering::CanvasRayTracer &canvas,
          std::vector<VolumePartial<float>> &partials) = 0;
 
 };
 
-void vtkm_to_partials(vtkm::rendering::PartialVector32 &vtkm_partials,
+void viskores_to_partials(viskores::rendering::PartialVector32 &viskores_partials,
                       std::vector<VolumePartial<float>> &partials)
 {
-  const int num_vecs = vtkm_partials.size();
+  const int num_vecs = viskores_partials.size();
   std::vector<int> offsets;
   offsets.reserve(num_vecs);
 
   int total_size = 0;
   for(int i = 0; i < num_vecs; ++i)
   {
-    const int size = vtkm_partials[i].PixelIds.GetNumberOfValues();
+    const int size = viskores_partials[i].PixelIds.GetNumberOfValues();
     offsets.push_back(total_size);
     total_size += size;
   }
@@ -157,10 +157,10 @@ void vtkm_to_partials(vtkm::rendering::PartialVector32 &vtkm_partials,
 
   for(int i = 0; i < num_vecs; ++i)
   {
-    const int size = vtkm_partials[i].PixelIds.GetNumberOfValues();
-    auto pixel_ids = vtkm_partials[i].PixelIds.ReadPortal();
-    auto distances = vtkm_partials[i].Distances.ReadPortal();
-    auto colors = vtkm_partials[i].Buffer.Buffer.ReadPortal();
+    const int size = viskores_partials[i].PixelIds.GetNumberOfValues();
+    auto pixel_ids = viskores_partials[i].PixelIds.ReadPortal();
+    auto distances = viskores_partials[i].Distances.ReadPortal();
+    auto colors = viskores_partials[i].Buffer.Buffer.ReadPortal();
 
     const int offset = offsets[i];
 #ifdef VTKH_OPENMP_ENABLED
@@ -181,41 +181,41 @@ void vtkm_to_partials(vtkm::rendering::PartialVector32 &vtkm_partials,
 
 class UnstructuredWrapper : public VolumeWrapper
 {
-  vtkm::rendering::ConnectivityProxy m_tracer;
+  viskores::rendering::ConnectivityProxy m_tracer;
 public:
-  UnstructuredWrapper(vtkm::cont::DataSet &data_set)
+  UnstructuredWrapper(viskores::cont::DataSet &data_set)
     : VolumeWrapper(data_set),
       m_tracer(data_set, "")
   {
   }
 
   virtual void
-  render(const vtkm::rendering::Camera &camera,
-         vtkm::rendering::CanvasRayTracer &canvas,
+  render(const viskores::rendering::Camera &camera,
+         viskores::rendering::CanvasRayTracer &canvas,
          std::vector<VolumePartial<float>> &partials) override
   {
-    const vtkm::cont::CoordinateSystem &coords = m_data_set.GetCoordinateSystem();
+    const viskores::cont::CoordinateSystem &coords = m_data_set.GetCoordinateSystem();
 
-    vtkm::rendering::raytracing::Camera rayCamera;
-    vtkm::rendering::raytracing::Ray<vtkm::Float32> rays;
-    vtkm::Int32 width = (vtkm::Int32) canvas.GetWidth();
-    vtkm::Int32 height = (vtkm::Int32) canvas.GetHeight();
+    viskores::rendering::raytracing::Camera rayCamera;
+    viskores::rendering::raytracing::Ray<viskores::Float32> rays;
+    viskores::Int32 width = (viskores::Int32) canvas.GetWidth();
+    viskores::Int32 height = (viskores::Int32) canvas.GetHeight();
 
     rayCamera.SetParameters(camera, width, height);
 
     rayCamera.CreateRays(rays, coords.GetBounds());
     rays.Buffers.at(0).InitConst(0.f);
-    vtkm::rendering::raytracing::RayOperations::MapCanvasToRays(rays, camera, canvas);
+    viskores::rendering::raytracing::RayOperations::MapCanvasToRays(rays, camera, canvas);
 
     m_tracer.SetSampleDistance(m_sample_dist);
     m_tracer.SetColorMap(m_color_map);
     m_tracer.SetScalarField(m_field_name);
     m_tracer.SetScalarRange(m_scalar_range);
 
-    vtkm::rendering::PartialVector32 vtkm_partials;
-    vtkm_partials = m_tracer.PartialTrace(rays);
+    viskores::rendering::PartialVector32 viskores_partials;
+    viskores_partials = m_tracer.PartialTrace(rays);
 
-    vtkm_to_partials(vtkm_partials, partials);
+    viskores_to_partials(viskores_partials, partials);
   }
 
 };
@@ -223,34 +223,34 @@ public:
 class StructuredWrapper : public VolumeWrapper
 {
 public:
-  StructuredWrapper(vtkm::cont::DataSet &data_set)
+  StructuredWrapper(viskores::cont::DataSet &data_set)
     : VolumeWrapper(data_set)
   {
   }
   virtual void
-  render(const vtkm::rendering::Camera &camera,
-         vtkm::rendering::CanvasRayTracer &canvas,
+  render(const viskores::rendering::Camera &camera,
+         viskores::rendering::CanvasRayTracer &canvas,
          std::vector<VolumePartial<float>> &partials) override
   {
-    const vtkm::cont::UnknownCellSet &cellset = m_data_set.GetCellSet();
-    const vtkm::cont::Field &field = m_data_set.GetField(m_field_name);
-    const vtkm::cont::CoordinateSystem &coords = m_data_set.GetCoordinateSystem();
+    const viskores::cont::UnknownCellSet &cellset = m_data_set.GetCellSet();
+    const viskores::cont::Field &field = m_data_set.GetField(m_field_name);
+    const viskores::cont::CoordinateSystem &coords = m_data_set.GetCoordinateSystem();
 
-    vtkm::rendering::raytracing::Camera rayCamera;
-    vtkm::rendering::raytracing::Ray<vtkm::Float32> rays;
-    vtkm::Int32 width = (vtkm::Int32) canvas.GetWidth();
-    vtkm::Int32 height = (vtkm::Int32) canvas.GetHeight();
+    viskores::rendering::raytracing::Camera rayCamera;
+    viskores::rendering::raytracing::Ray<viskores::Float32> rays;
+    viskores::Int32 width = (viskores::Int32) canvas.GetWidth();
+    viskores::Int32 height = (viskores::Int32) canvas.GetHeight();
     rayCamera.SetParameters(camera, width, height);
 
     rayCamera.CreateRays(rays, coords.GetBounds());
     rays.Buffers.at(0).InitConst(0.f);
-    vtkm::rendering::raytracing::RayOperations::MapCanvasToRays(rays, camera, canvas);
+    viskores::rendering::raytracing::RayOperations::MapCanvasToRays(rays, camera, canvas);
 
-    vtkm::rendering::raytracing::VolumeRendererStructured tracer;
+    viskores::rendering::raytracing::VolumeRendererStructured tracer;
     tracer.SetSampleDistance(m_sample_dist);
     tracer.SetData(coords,
                    field,
-                   cellset.AsCellSet<vtkm::cont::CellSetStructured<3>>(),
+                   cellset.AsCellSet<viskores::cont::CellSetStructured<3>>(),
                    m_scalar_range);
     tracer.SetColorMap(m_color_map);
 
@@ -285,49 +285,49 @@ public:
 };
 
 void partials_to_canvas(std::vector<VolumePartial<float>> &partials,
-                        const vtkm::rendering::Camera &camera,
-                        vtkm::rendering::CanvasRayTracer &canvas)
+                        const viskores::rendering::Camera &camera,
+                        viskores::rendering::CanvasRayTracer &canvas)
 {
 
   // partial depths are in world space but the canvas depths
   // are in image space. We have to find the intersection
   // point to project it into image space to get the correct
   // depths for annotations
-  vtkm::Id width = canvas.GetWidth();
-  vtkm::Id height = canvas.GetHeight();
-  vtkm::Matrix<vtkm::Float32, 4, 4> projview =
-    vtkm::MatrixMultiply(camera.CreateProjectionMatrix(width, height),
+  viskores::Id width = canvas.GetWidth();
+  viskores::Id height = canvas.GetHeight();
+  viskores::Matrix<viskores::Float32, 4, 4> projview =
+    viskores::MatrixMultiply(camera.CreateProjectionMatrix(width, height),
                          camera.CreateViewMatrix());
 
-  const vtkm::Vec3f_32 origin = camera.GetPosition();
+  const viskores::Vec3f_32 origin = camera.GetPosition();
 
   float fov_y = camera.GetFieldOfView();
   float fov_x = fov_y;
   if(width != height)
   {
-    vtkm::Float32 fovyRad = fov_y * vtkm::Pi_180f();
-    vtkm::Float32 verticalDistance = vtkm::Tan(0.5f * fovyRad);
-    vtkm::Float32 aspectRatio = vtkm::Float32(width) / vtkm::Float32(height);
-    vtkm::Float32 horizontalDistance = aspectRatio * verticalDistance;
-    vtkm::Float32 fovxRad = 2.0f * vtkm::ATan(horizontalDistance);
-    fov_x = fovxRad / vtkm::Pi_180f();
+    viskores::Float32 fovyRad = fov_y * viskores::Pi_180f();
+    viskores::Float32 verticalDistance = viskores::Tan(0.5f * fovyRad);
+    viskores::Float32 aspectRatio = viskores::Float32(width) / viskores::Float32(height);
+    viskores::Float32 horizontalDistance = aspectRatio * verticalDistance;
+    viskores::Float32 fovxRad = 2.0f * viskores::ATan(horizontalDistance);
+    fov_x = fovxRad / viskores::Pi_180f();
   }
 
-  vtkm::Vec3f_32 look = camera.GetLookAt() - origin;
-  vtkm::Normalize(look);
-  vtkm::Vec3f_32 up = camera.GetViewUp();
+  viskores::Vec3f_32 look = camera.GetLookAt() - origin;
+  viskores::Normalize(look);
+  viskores::Vec3f_32 up = camera.GetViewUp();
 
-  const vtkm::Float32 thx = tanf((fov_x * vtkm::Pi_180f()) * .5f);
-  const vtkm::Float32 thy = tanf((fov_y * vtkm::Pi_180f()) * .5f);
-  vtkm::Vec3f_32 ru = vtkm::Cross(look, up);
+  const viskores::Float32 thx = tanf((fov_x * viskores::Pi_180f()) * .5f);
+  const viskores::Float32 thy = tanf((fov_y * viskores::Pi_180f()) * .5f);
+  viskores::Vec3f_32 ru = viskores::Cross(look, up);
 
-  vtkm::Normalize(ru);
-  vtkm::Vec3f_32 rv = vtkm::Cross(ru, look);
-  vtkm::Normalize(rv);
-  vtkm::Vec3f_32 delta_x = ru * (2 * thx / (float)width);
-  vtkm::Vec3f_32 delta_y = ru * (2 * thy / (float)height);
+  viskores::Normalize(ru);
+  viskores::Vec3f_32 rv = viskores::Cross(ru, look);
+  viskores::Normalize(rv);
+  viskores::Vec3f_32 delta_x = ru * (2 * thx / (float)width);
+  viskores::Vec3f_32 delta_y = ru * (2 * thy / (float)height);
 
-  vtkm::Float32 zoom = camera.GetZoom();
+  viskores::Float32 zoom = camera.GetZoom();
   if(zoom > 0)
   {
     delta_x[0] = delta_x[0] / zoom;
@@ -351,34 +351,34 @@ void partials_to_canvas(std::vector<VolumePartial<float>> &partials,
     const int i = pixel_id % width;
     const int j = pixel_id / width;
 
-    vtkm::Vec3f_32 dir;
+    viskores::Vec3f_32 dir;
     dir = look + delta_x * ((2.f * float(i) - float(width)) / 2.0f) +
       delta_y * ((2.f * float(j) - float(height)) / 2.0f);
-    vtkm::Normalize(dir);
+    viskores::Normalize(dir);
 
     const float world_depth = partials[p].m_depth;
 
-    vtkm::Vec3f_32 pos = origin + world_depth * dir;
-    vtkm::Vec4f_32 point(pos[0], pos[1], pos[2], 1.f);
-    vtkm::Vec4f_32 newpoint;
-    newpoint = vtkm::MatrixMultiply(projview, point);
+    viskores::Vec3f_32 pos = origin + world_depth * dir;
+    viskores::Vec4f_32 point(pos[0], pos[1], pos[2], 1.f);
+    viskores::Vec4f_32 newpoint;
+    newpoint = viskores::MatrixMultiply(projview, point);
 
     // don't push it all the way(.49 instead of .5) so that
     // subtle differences allow bounding box annotations don't
     // draw in front of the back
     const float image_depth = 0.5f*(newpoint[2] / newpoint[3]) + 0.49f;
 
-    vtkm::Vec4f_32 color;
+    viskores::Vec4f_32 color;
     color[0] = partials[p].m_pixel[0];
     color[1] = partials[p].m_pixel[1];
     color[2] = partials[p].m_pixel[2];
     color[3] = partials[p].m_alpha;
 
-    vtkm::Vec4f_32 inColor = colors.Get(pixel_id);
+    viskores::Vec4f_32 inColor = colors.Get(pixel_id);
     // We crafted the rendering so that all new colors are in front
     // of the colors that exist in the canvas
     // if transparency exists, all alphas have been pre-multiplied
-    vtkm::Float32 alpha = (1.f - color[3]);
+    viskores::Float32 alpha = (1.f - color[3]);
     color[0] = color[0] + inColor[0] * alpha;
     color[1] = color[1] + inColor[1] * alpha;
     color[2] = color[2] + inColor[2] * alpha;
@@ -394,7 +394,7 @@ void partials_to_canvas(std::vector<VolumePartial<float>> &partials,
 
 VolumeRenderer::VolumeRenderer()
 {
-  typedef vtkm::rendering::MapperVolume TracerType;
+  typedef viskores::rendering::MapperVolume TracerType;
   m_tracer = std::make_shared<TracerType>();
   this->m_mapper = m_tracer;
   m_tracer->SetCompositeBackground(false);
@@ -440,7 +440,7 @@ VolumeRenderer::Update()
   VTKH_DATA_CLOSE();
 }
 
-void VolumeRenderer::SetColorTable(const vtkm::cont::ColorTable &color_table)
+void VolumeRenderer::SetColorTable(const viskores::cont::ColorTable &color_table)
 {
   m_color_table = color_table;
 }
@@ -451,14 +451,14 @@ void VolumeRenderer::CorrectOpacity()
   float samples = m_num_samples;
 
   float ratio = correction_scalar / samples;
-  vtkm::cont::ColorTable corrected;
+  viskores::cont::ColorTable corrected;
   corrected = m_color_table.MakeDeepCopy();
   int num_points = corrected.GetNumberOfPointsAlpha();
   for(int i = 0; i < num_points; i++)
   {
-    vtkm::Vec<vtkm::Float64,4> point;
+    viskores::Vec<viskores::Float64,4> point;
     corrected.GetPointAlpha(i,point);
-    point[1] = 1. - vtkm::Pow((1. - point[1]), double(ratio));
+    point[1] = 1. - viskores::Pow((1. - point[1]), double(ratio));
     corrected.UpdatePointAlpha(i,point);
   }
 
@@ -498,8 +498,8 @@ VolumeRenderer::RenderOneDomainPerRank()
   }
   for(int dom = 0; dom < num_domains; ++dom)
   {
-    vtkm::cont::DataSet data_set;
-    vtkm::Id domain_id;
+    viskores::cont::DataSet data_set;
+    viskores::Id domain_id;
     m_input->GetDomain(0, data_set, domain_id);
 
     if(!data_set.HasField(m_field_name))
@@ -507,9 +507,9 @@ VolumeRenderer::RenderOneDomainPerRank()
       continue;
     }
 
-    const vtkm::cont::UnknownCellSet &cellset = data_set.GetCellSet();
-    const vtkm::cont::Field &field = data_set.GetField(m_field_name);
-    const vtkm::cont::CoordinateSystem &coords = data_set.GetCoordinateSystem();
+    const viskores::cont::UnknownCellSet &cellset = data_set.GetCellSet();
+    const viskores::cont::Field &field = data_set.GetField(m_field_name);
+    const viskores::cont::CoordinateSystem &coords = data_set.GetCoordinateSystem();
 
     if(cellset.GetNumberOfCells() == 0) continue;
 
@@ -517,8 +517,8 @@ VolumeRenderer::RenderOneDomainPerRank()
     {
       m_mapper->SetActiveColorTable(m_corrected_color_table);
 
-      Render::vtkmCanvas &canvas = m_renders[i].GetCanvas();
-      const vtkmCamera &camera = m_renders[i].GetCamera();
+      Render::viskoresCanvas &canvas = m_renders[i].GetCanvas();
+      const viskoresCamera &camera = m_renders[i].GetCamera();
       m_mapper->SetCanvas(&canvas);
       m_mapper->RenderCells(cellset,
                             coords,
@@ -548,9 +548,9 @@ VolumeRenderer::RenderMultipleDomainsPerRank()
   const int num_domains = m_wrappers.size();
   const int total_renders = static_cast<int>(m_renders.size());
 
-  vtkm::cont::ArrayHandle<vtkm::Vec4f_32> color_map
+  viskores::cont::ArrayHandle<viskores::Vec4f_32> color_map
     = detail::convert_table(this->m_corrected_color_table);
-  vtkm::cont::ArrayHandle<vtkm::Vec4f_32> color_map2
+  viskores::cont::ArrayHandle<viskores::Vec4f_32> color_map2
     = detail::convert_table(this->m_color_table);
 
   // render/domain/result
@@ -571,8 +571,8 @@ VolumeRenderer::RenderMultipleDomainsPerRank()
 
     for(int r = 0; r < total_renders; ++r)
     {
-      Render::vtkmCanvas &canvas = m_renders[r].GetCanvas();
-      const vtkmCamera &camera = m_renders[r].GetCamera();
+      Render::viskoresCanvas &canvas = m_renders[r].GetCanvas();
+      const viskoresCamera &camera = m_renders[r].GetCamera();
       wrapper->render(camera, canvas, render_partials[r][i]);
     }
   }
@@ -603,11 +603,11 @@ VolumeRenderer::PreExecute()
 
   CorrectOpacity();
 
-  vtkm::Vec<vtkm::Float32,3> extent;
-  extent[0] = static_cast<vtkm::Float32>(this->m_bounds.X.Length());
-  extent[1] = static_cast<vtkm::Float32>(this->m_bounds.Y.Length());
-  extent[2] = static_cast<vtkm::Float32>(this->m_bounds.Z.Length());
-  vtkm::Float32 dist = vtkm::Magnitude(extent) / m_num_samples;
+  viskores::Vec<viskores::Float32,3> extent;
+  extent[0] = static_cast<viskores::Float32>(this->m_bounds.X.Length());
+  extent[1] = static_cast<viskores::Float32>(this->m_bounds.Y.Length());
+  extent[2] = static_cast<viskores::Float32>(this->m_bounds.Z.Length());
+  viskores::Float32 dist = viskores::Magnitude(extent) / m_num_samples;
   m_sample_dist = dist;
 }
 
@@ -628,24 +628,24 @@ VolumeRenderer::SetNumberOfSamples(const int num_samples)
   m_num_samples = num_samples;
 }
 
-Renderer::vtkmCanvasPtr
+Renderer::viskoresCanvasPtr
 VolumeRenderer::GetNewCanvas(int width, int height)
 {
-  return std::make_shared<vtkm::rendering::CanvasRayTracer>(width, height);
+  return std::make_shared<viskores::rendering::CanvasRayTracer>(width, height);
 }
 
 float
-VolumeRenderer::FindMinDepth(const vtkm::rendering::Camera &camera,
-                                 const vtkm::Bounds &bounds) const
+VolumeRenderer::FindMinDepth(const viskores::rendering::Camera &camera,
+                                 const viskores::Bounds &bounds) const
 {
 
-  vtkm::Vec<vtkm::Float64,3> center = bounds.Center();
-  vtkm::Vec<vtkm::Float64,3> fcenter;
-  fcenter[0] = static_cast<vtkm::Float32>(center[0]);
-  fcenter[1] = static_cast<vtkm::Float32>(center[1]);
-  fcenter[2] = static_cast<vtkm::Float32>(center[2]);
-  vtkm::Vec<vtkm::Float32,3> pos = camera.GetPosition();
-  vtkm::Float32 dist = vtkm::Magnitude(fcenter - pos);
+  viskores::Vec<viskores::Float64,3> center = bounds.Center();
+  viskores::Vec<viskores::Float64,3> fcenter;
+  fcenter[0] = static_cast<viskores::Float32>(center[0]);
+  fcenter[1] = static_cast<viskores::Float32>(center[1]);
+  fcenter[2] = static_cast<viskores::Float32>(center[2]);
+  viskores::Vec<viskores::Float32,3> pos = camera.GetPosition();
+  viskores::Float32 dist = viskores::Magnitude(fcenter - pos);
   return dist;
 }
 
@@ -661,9 +661,9 @@ VolumeRenderer::Composite(const int &num_images)
   for(int i = 0; i < num_images; ++i)
   {
     float* color_buffer =
-      &GetVTKMPointer(m_renders[i].GetCanvas().GetColorBuffer())[0][0];
+      &GetVISKORESPointer(m_renders[i].GetCanvas().GetColorBuffer())[0][0];
     float* depth_buffer =
-      GetVTKMPointer(m_renders[i].GetCanvas().GetDepthBuffer());
+      GetVISKORESPointer(m_renders[i].GetCanvas().GetDepthBuffer());
     int height = m_renders[i].GetCanvas().GetHeight();
     int width = m_renders[i].GetCanvas().GetWidth();
 
@@ -854,10 +854,10 @@ VolumeRenderer::FindVisibilityOrdering()
 
   for(int i = 0; i < num_cameras; ++i)
   {
-    const vtkm::rendering::Camera &camera = m_renders[i].GetCamera();
+    const viskores::rendering::Camera &camera = m_renders[i].GetCamera();
     for(int dom = 0; dom < num_domains; ++dom)
     {
-      vtkm::Bounds bounds = this->m_input->GetDomainBounds(dom);
+      viskores::Bounds bounds = this->m_input->GetDomainBounds(dom);
       min_depths[dom] = FindMinDepth(camera, bounds);
     }
 
@@ -874,21 +874,21 @@ void VolumeRenderer::SetInput(DataSet *input)
   m_has_unstructured = false;
   for(int dom = 0; dom < num_domains; ++dom)
   {
-    vtkm::cont::DataSet data_set;
-    vtkm::Id domain_id;
+    viskores::cont::DataSet data_set;
+    viskores::Id domain_id;
     m_input->GetDomain(dom, data_set, domain_id);
 
-    const vtkm::cont::UnknownCellSet &cellset = data_set.GetCellSet();
+    const viskores::cont::UnknownCellSet &cellset = data_set.GetCellSet();
     if(cellset.GetNumberOfCells() == 0)
     {
       continue;
     }
 
-    const vtkm::cont::CoordinateSystem &coords = data_set.GetCoordinateSystem();
-    using Uniform = vtkm::cont::ArrayHandleUniformPointCoordinates;
-    using DefaultHandle = vtkm::cont::ArrayHandle<vtkm::FloatDefault>;
+    const viskores::cont::CoordinateSystem &coords = data_set.GetCoordinateSystem();
+    using Uniform = viskores::cont::ArrayHandleUniformPointCoordinates;
+    using DefaultHandle = viskores::cont::ArrayHandle<viskores::FloatDefault>;
     using Rectilinear
-      = vtkm::cont::ArrayHandleCartesianProduct<DefaultHandle,
+      = viskores::cont::ArrayHandleCartesianProduct<DefaultHandle,
                                                 DefaultHandle,
                                                 DefaultHandle>;
     bool structured = coords.GetData().IsType<Uniform>() ||

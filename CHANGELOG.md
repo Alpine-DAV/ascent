@@ -4,8 +4,50 @@ Notable changes to Ascent are documented in this file. This changelog started on
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project aspires to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.9.4] - Released 2025-07-18
+## Unreleased
 ### Preferred dependency versions for ascent@develop
+- cmake@3.23 or newer
+- conduit@0.9.5
+- viskores@1.0.0
+- raja@v2025.09.0
+- umpire@v2025.09.0
+- camp@v2025.09.2
+- kokkos@4.7.00
+- mfem@4.8
+
+### Added
+- Added ability to define cameras for rendering using visit camera view parameters
+
+## [0.9.5] - Released 2025-09-10
+### Preferred dependency versions for ascent@0.9.5
+- cmake@3.23 or newer
+- conduit@0.9.5
+- vtk-m@2.3.0
+- raja@v2025.03.1
+- umpire@v2025.03.0
+- camp@v2025.03.0
+- kokkos@4.7.00
+- mfem@4.8
+
+### Added
+- Added 1D & 2D contour capabilities, but 1D is limited to extracts until a viskroes fix
+- Added support for Absorption-only Rover (XRay Raytracing).
+- Added optical depth compositing for Rover (XRay Raytracing).
+- Added Caliper annotations for outer Ascent interface, Ascent Relay, and Rover (XRay Raytracing).
+- Added caching functionality for the actions, when `cache_actions` option is `true`. When used, actions are only read once.
+- Added El Capitan build script. 
+
+### Changed
+- Fixed issues with MPI use of XRay Raytracing
+- Changed scene bounds calculation to only use topologies plotted, instead of all topologies.
+- Updated to Conduit 0.9.5.
+- Updated to Kokkos 4.7.00.
+
+### Fixed
+- Fixed a bug with foreground and background settings for mesh plots.
+
+## [0.9.4] - Released 2025-07-18
+### Preferred dependency versions for  ascent@0.9.4
 - cmake@3.23 or newer
 - conduit@0.9.4
 - vtk-m@2.3.0

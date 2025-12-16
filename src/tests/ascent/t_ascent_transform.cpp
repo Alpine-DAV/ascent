@@ -33,15 +33,15 @@ index_t EXAMPLE_MESH_SIDE_DIM = 20;
 
 //-----------------------------------------------------------------------------
 bool
-vtkm_avalible()
+viskores_avalible()
 {
-    // the vtkm runtime is currently our only rendering runtime
+    // the viskores runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
         return false;
     }
     return true;
@@ -79,7 +79,7 @@ setup(const std::string &tout_name, Node &data, std::string &output_file)
 //-----------------------------------------------------------------------------
 TEST(ascent_translate, test_translate)
 {
-    if(!vtkm_avalible())
+    if(!viskores_avalible())
     {
         return;
     }
@@ -129,7 +129,7 @@ TEST(ascent_translate, test_translate)
 //-----------------------------------------------------------------------------
 TEST(ascent_translate, test_scale)
 {
-    if(!vtkm_avalible())
+    if(!viskores_avalible())
     {
         return;
     }
@@ -183,7 +183,7 @@ TEST(ascent_translate, test_scale)
 //-----------------------------------------------------------------------------
 TEST(ascent_translate, test_rotate_x)
 {
-    if(!vtkm_avalible())
+    if(!viskores_avalible())
     {
         return;
     }
@@ -237,7 +237,7 @@ TEST(ascent_translate, test_rotate_x)
 //-----------------------------------------------------------------------------
 TEST(ascent_translate, test_rotate_y)
 {
-    if(!vtkm_avalible())
+    if(!viskores_avalible())
     {
         return;
     }
@@ -290,7 +290,7 @@ TEST(ascent_translate, test_rotate_y)
 //-----------------------------------------------------------------------------
 TEST(ascent_translate, test_rotate_z)
 {
-    if(!vtkm_avalible())
+    if(!viskores_avalible())
     {
         return;
     }
@@ -343,7 +343,7 @@ TEST(ascent_translate, test_rotate_z)
 //-----------------------------------------------------------------------------
 TEST(ascent_translate, test_rotate_arb)
 {
-    if(!vtkm_avalible())
+    if(!viskores_avalible())
     {
         return;
     }
@@ -398,7 +398,7 @@ TEST(ascent_translate, test_rotate_arb)
 //-----------------------------------------------------------------------------
 TEST(ascent_translate, test_matrix)
 {
-    if(!vtkm_avalible())
+    if(!viskores_avalible())
     {
         return;
     }
@@ -456,7 +456,7 @@ TEST(ascent_translate, test_matrix)
 //-----------------------------------------------------------------------------
 TEST(ascent_translate, test_bad_params)
 {
-    if(!vtkm_avalible())
+    if(!viskores_avalible())
     {
         return;
     }
@@ -548,7 +548,7 @@ TEST(ascent_translate, test_bad_params)
 //-----------------------------------------------------------------------------
 TEST(ascent_translate, test_reflect_x)
 {
-    if(!vtkm_avalible())
+    if(!viskores_avalible())
     {
         return;
     }
@@ -603,7 +603,7 @@ TEST(ascent_translate, test_reflect_x)
 //-----------------------------------------------------------------------------
 TEST(ascent_translate, test_reflect_arb)
 {
-    if(!vtkm_avalible())
+    if(!viskores_avalible())
     {
         return;
     }
@@ -660,7 +660,7 @@ TEST(ascent_translate, test_reflect_arb)
 //-----------------------------------------------------------------------------
 TEST(ascent_translate, test_reflect_y)
 {
-    if(!vtkm_avalible())
+    if(!viskores_avalible())
     {
         return;
     }

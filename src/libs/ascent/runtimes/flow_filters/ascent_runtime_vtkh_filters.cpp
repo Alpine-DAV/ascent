@@ -41,7 +41,7 @@
 #include <conduit_relay_mpi.hpp>
 #endif
 
-#if defined(ASCENT_VTKM_ENABLED)
+#if defined(ASCENT_VISKORES_ENABLED)
 #include <vtkh/vtkh.hpp>
 #include <vtkh/DataSet.hpp>
 #include <vtkh/rendering/RayTracer.hpp>
@@ -79,10 +79,10 @@
 #include <vtkh/filters/HistSampling.hpp>
 #include <vtkh/filters/PointTransform.hpp>
 #include <vtkh/filters/MIR.hpp>
-#include <vtkm/cont/DataSet.h>
-#include <vtkm/io/VTKDataSetWriter.h>
+#include <viskores/cont/DataSet.h>
+#include <viskores/io/VTKDataSetWriter.h>
 #include <ascent_vtkh_data_adapter.hpp>
-#include <ascent_runtime_conduit_to_vtkm_parsing.hpp>
+#include <ascent_runtime_conduit_to_viskores_parsing.hpp>
 #include <ascent_runtime_vtkh_utils.hpp>
 #include <ascent_expression_eval.hpp>
 
@@ -532,8 +532,8 @@ VTKH3Slice::execute()
 
     slicer.SetInput(&data);
 
-    using Vec3f = vtkm::Vec<vtkm::Float32,3>;
-    vtkm::Bounds bounds = data.GetGlobalBounds();
+    using Vec3f = viskores::Vec<viskores::Float32,3>;
+    viskores::Bounds bounds = data.GetGlobalBounds();
     Vec3f center = bounds.Center();
     Vec3f x_point = center;
     Vec3f y_point = center;
@@ -983,8 +983,8 @@ VTKHSlice::execute()
         const Node &n_point = params()["point"];
         const Node &n_normal = params()["normal"];
 
-        using Vec3f = vtkm::Vec<vtkm::Float32,3>;
-        vtkm::Bounds bounds = data.GetGlobalBounds();
+        using Vec3f = viskores::Vec<viskores::Float32,3>;
+        viskores::Bounds bounds = data.GetGlobalBounds();
         Vec3f point;
 
         const float eps = 1e-5; // ensure that the slice is always inside the data set
@@ -1061,7 +1061,7 @@ VTKHSlice::execute()
         else if(params().has_path("box"))
         {
           const Node &box = params()["box"];
-          vtkm::Bounds bounds;
+          viskores::Bounds bounds;
           bounds.X.Min= get_float64(box["min/x"], data_object);
           bounds.Y.Min= get_float64(box["min/y"], data_object);
           bounds.Z.Min= get_float64(box["min/z"], data_object);
@@ -1164,30 +1164,30 @@ VTKHAutoSliceLevels::verify_params(const conduit::Node &params,
 
 //-----------------------------------------------------------------------------
 
-vtkm::Vec<vtkm::Float32,3>
-GetIntersectionPoint(vtkm::Vec<vtkm::Float32,3> normal)
+viskores::Vec<viskores::Float32,3>
+GetIntersectionPoint(viskores::Vec<viskores::Float32,3> normal)
 {
   //point where normal intersects unit sphere
-  vtkm::Vec<vtkm::Float32,3> point;
+  viskores::Vec<viskores::Float32,3> point;
 
   //reverse normal
   //want camera point in the same dir as normal
-  vtkm::Vec<vtkm::Float32,3> r_normal{((vtkm::Float32)1.0)*normal[0],
-		  			((vtkm::Float32)1.0)*normal[1],
-					((vtkm::Float32)1.0)*normal[2]};
+  viskores::Vec<viskores::Float32,3> r_normal{((viskores::Float32)1.0)*normal[0],
+		  			((viskores::Float32)1.0)*normal[1],
+					((viskores::Float32)1.0)*normal[2]};
 
   //calc discriminant
   //a = dot(normal,normal)
-  vtkm::Float32 r_norm0 = r_normal[0]*r_normal[0];
-  vtkm::Float32 r_norm1 = r_normal[1]*r_normal[1];
-  vtkm::Float32 r_norm2 = r_normal[2]*r_normal[2];
-  vtkm::Float32 a = r_norm0 + r_norm1 + r_norm2;
+  viskores::Float32 r_norm0 = r_normal[0]*r_normal[0];
+  viskores::Float32 r_norm1 = r_normal[1]*r_normal[1];
+  viskores::Float32 r_norm2 = r_normal[2]*r_normal[2];
+  viskores::Float32 a = r_norm0 + r_norm1 + r_norm2;
   //b is 0
   //c is -1
-  vtkm::Float32 discriminant = 4.0*a;
+  viskores::Float32 discriminant = 4.0*a;
 
-  vtkm::Float32 t =  sqrt(discriminant)/(2*a);
-  vtkm::Float32 t2 = -t;
+  viskores::Float32 t =  sqrt(discriminant)/(2*a);
+  viskores::Float32 t2 = -t;
   if(abs(t2) < abs(t)) 
     t = t2;
 
@@ -1200,13 +1200,13 @@ GetIntersectionPoint(vtkm::Vec<vtkm::Float32,3> normal)
 }
 
 void
-SetCamera(vtkm::rendering::Camera *camera, vtkm::Vec<vtkm::Float32,3> normal, vtkm::Float32 radius)
+SetCamera(viskores::rendering::Camera *camera, viskores::Vec<viskores::Float32,3> normal, viskores::Float32 radius)
 {
-  vtkm::Vec<vtkm::Float32,3> i_point = GetIntersectionPoint(normal);
-  vtkm::Vec<vtkm::Float32,3> lookat = camera->GetLookAt();
+  viskores::Vec<viskores::Float32,3> i_point = GetIntersectionPoint(normal);
+  viskores::Vec<viskores::Float32,3> lookat = camera->GetLookAt();
 
-  vtkm::Vec<vtkm::Float32,3> pos;
-  vtkm::Float32 zoom = 3;
+  viskores::Vec<viskores::Float32,3> pos;
+  viskores::Float32 zoom = 3;
   pos[0] = zoom*radius*i_point[0] + lookat[0];
   pos[1] = zoom*radius*i_point[1] + lookat[1];
   pos[2] = zoom*radius*i_point[2] + lookat[2];
@@ -1250,8 +1250,8 @@ VTKHAutoSliceLevels::execute()
     const Node &n_normal = params()["normal"];
     const int n_levels = params()["levels"].to_int32();
 
-    using Vec3f = vtkm::Vec<vtkm::Float32,3>;
-    vtkm::Bounds bounds = data.GetGlobalBounds();
+    using Vec3f = viskores::Vec<viskores::Float32,3>;
+    viskores::Bounds bounds = data.GetGlobalBounds();
 
     Vec3f v_normal;
     v_normal[0] = get_float32(n_normal["x"], data_object);
@@ -1269,22 +1269,22 @@ VTKHAutoSliceLevels::execute()
     //
     //if(!graph().workspace().registry().has_entry("camera"))
     //{
-    //  vtkm::rendering::Camera *cam = new vtkm::rendering::Camera;
-    //  vtkm::Bounds bounds = slicer.GetDataBounds();
+    //  viskores::rendering::Camera *cam = new viskores::rendering::Camera;
+    //  viskores::Bounds bounds = slicer.GetDataBounds();
     //  std::cerr << "In Ascent runtime filters" << std::endl;
     //  std::cerr << "X bounds: " << bounds.X.Min << " " << bounds.X.Max << " ";
     //  std::cerr << "Y bounds: " << bounds.Y.Min << " " << bounds.Y.Max << " ";
     //  std::cerr << "Z bounds: " << bounds.Z.Min << " " << bounds.Z.Max << " ";
     //  std::cerr<<std::endl;
-    //  vtkm::Vec<vtkm::Float32,3> normal = slicer.GetNormal();
+    //  viskores::Vec<viskores::Float32,3> normal = slicer.GetNormal();
     //  std::cerr << "normal: " << normal[0] << " " << normal[1] << " " << normal[2] << std::endl;
-    //  vtkm::Float32 radius = slicer.GetRadius();
+    //  viskores::Float32 radius = slicer.GetRadius();
     //  std::cerr << "radius: " << radius << std::endl;
     //  SetCamera(cam, normal, radius);
     //  std::cerr << "Cam before registry:" << std::endl;
     //  cam->Print();
     //  std::cerr << "Cam after registry:" << std::endl;
-    //  graph().workspace().registry().add<vtkm::rendering::Camera>("camera",cam,1);
+    //  graph().workspace().registry().add<viskores::rendering::Camera>("camera",cam,1);
     //}
 
     // we need to pass through the rest of the topologies, untouched,
@@ -1930,7 +1930,7 @@ VTKHThreshold::execute()
         else if(params().has_path("box"))
         {
           const Node &box = params()["box"];
-          vtkm::Bounds bounds;
+          viskores::Bounds bounds;
           bounds.X.Min= get_float64(box["min/x"], data_object);
           bounds.Y.Min= get_float64(box["min/y"], data_object);
           bounds.Z.Min= get_float64(box["min/z"], data_object);
@@ -2228,7 +2228,7 @@ VTKHClip::execute()
     else if(params().has_path("box"))
     {
       const Node &box = params()["box"];
-      vtkm::Bounds bounds;
+      viskores::Bounds bounds;
       bounds.X.Min= get_float64(box["min/x"], data_object);
       bounds.Y.Min= get_float64(box["min/y"], data_object);
       bounds.Z.Min= get_float64(box["min/z"], data_object);
@@ -2386,7 +2386,7 @@ VTKHClipWithField::execute()
       }
     }
 
-    vtkm::Float64 clip_value = get_float64(params()["clip_value"], data_object);
+    viskores::Float64 clip_value = get_float64(params()["clip_value"], data_object);
 
     clipper.SetField(field_name);
     clipper.SetClipValue(clip_value);
@@ -2490,7 +2490,7 @@ VTKHIsoVolume::execute()
 
     clipper.SetInput(&data);
 
-    vtkm::Range clip_range;
+    viskores::Range clip_range;
     clip_range.Min = get_float64(params()["min_value"], data_object);
     clip_range.Max = get_float64(params()["max_value"], data_object);
 
@@ -3056,11 +3056,11 @@ VTKHRecenter::execute()
 
     if(association == "vertex")
     {
-      recenter.SetResultAssoc(vtkm::cont::Field::Association::Points);
+      recenter.SetResultAssoc(viskores::cont::Field::Association::Points);
     }
     if(association == "element")
     {
-      recenter.SetResultAssoc(vtkm::cont::Field::Association::Cells);
+      recenter.SetResultAssoc(viskores::cont::Field::Association::Cells);
     }
 
     recenter.Update();
@@ -3338,7 +3338,7 @@ VTKHQCriterion::execute()
     vtkh::DataSet *grad_output = grad.GetOutput();
 
     // remove the gradient result (not the q-crit)
-    // since downstream vtk-m filters may not be able to handle
+    // since downstream viskores filters may not be able to handle
     // the "vec of vec" gradient result
     grad_output->RemoveField("__tmp_gradient");
 
@@ -3859,14 +3859,14 @@ VTKHUniformGrid::execute()
     std::string topo_name = collection->field_topology(field);
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
 
-    vtkm::Bounds d_bounds = data.GetGlobalBounds();
-    vtkm::Float64 x_extents = d_bounds.X.Length() + 1; //add one b/c we are
-    vtkm::Float64 y_extents = d_bounds.Y.Length() + 1; //setting num points
-    vtkm::Float64 z_extents = d_bounds.Z.Length() + 1; //(not cells) in each dim
+    viskores::Bounds d_bounds = data.GetGlobalBounds();
+    viskores::Float64 x_extents = d_bounds.X.Length() + 1; //add one b/c we are
+    viskores::Float64 y_extents = d_bounds.Y.Length() + 1; //setting num points
+    viskores::Float64 z_extents = d_bounds.Z.Length() + 1; //(not cells) in each dim
 
-    vtkm::Float64 invalid_value = 0.0;
+    viskores::Float64 invalid_value = 0.0;
     
-    using Vec3f = vtkm::Vec<vtkm::Float64,3>;
+    using Vec3f = viskores::Vec<viskores::Float64,3>;
     Vec3f v_dims    = {x_extents, y_extents, z_extents}; 
     Vec3f v_origin  = {d_bounds.X.Min,d_bounds.Y.Min,d_bounds.Z.Min};
     Vec3f v_spacing = {1.,1.,1.};
@@ -4111,7 +4111,7 @@ VTKHSample::execute()
     }
     else if(params().has_path("points"))
     {
-        vtkm::cont::ArrayHandle<vtkm::Float64> x_hnd, y_hnd, z_hnd;
+        viskores::cont::ArrayHandle<viskores::Float64> x_hnd, y_hnd, z_hnd;
         
         int spatial_dims = 2;
         float64_accessor x_vals, y_vals, z_vals;
@@ -4461,7 +4461,7 @@ VTKHProject2d::execute()
     }
 
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
-    vtkm::Bounds bounds = data.GetGlobalBounds();
+    viskores::Bounds bounds = data.GetGlobalBounds();
 
     if(params().has_path("dataset_bounds"))
     {
@@ -4485,7 +4485,7 @@ VTKHProject2d::execute()
         bounds.Z.Max = d_bounds[5];
     }
 
-    vtkm::rendering::Camera camera;
+    viskores::rendering::Camera camera;
     camera.ResetToBounds(bounds);
 
     std::vector<std::string> field_names;
@@ -5545,11 +5545,11 @@ VTKHParticleAdvection::execute()
     std::random_device device;
     std::default_random_engine generator(0);
     float  zero(0), one(1);
-    std::uniform_real_distribution<vtkm::FloatDefault> distribution(zero, one);
+    std::uniform_real_distribution<viskores::FloatDefault> distribution(zero, one);
 
     conduit::Node n_seeds = params()["seeds"];
     std::string seed_type = n_seeds["type"].as_string();
-    std::vector<vtkm::Particle> seeds;
+    std::vector<viskores::Particle> seeds;
     if(seed_type == "point")
     {
         const Node &n_loc_vals = n_seeds["location"];
@@ -5563,7 +5563,7 @@ VTKHParticleAdvection::execute()
         double y = location[1];
         double z = location[2];
         //std::cerr << "seed point" << ": " << x << " " << y << " " << z << std::endl;
-        seeds.push_back(vtkm::Particle({x,y,z}, 0));
+        seeds.push_back(viskores::Particle({x,y,z}, 0));
     }
     else if(seed_type == "point_list")
     {
@@ -5583,7 +5583,7 @@ VTKHParticleAdvection::execute()
             double y = location[i+1];
             double z = location[i+2];
             //std::cerr << "seed point " << i/3 <<  ": " << x << " " << y << " " << z << std::endl;
-            seeds.push_back(vtkm::Particle({x,y,z}, i/3));
+            seeds.push_back(viskores::Particle({x,y,z}, i/3));
         }
     }
     else if(seed_type == "line")
@@ -5618,7 +5618,7 @@ VTKHParticleAdvection::execute()
                 double y = start[1] + dy*i;
                 double z = start[2] + dz*i;
                 //std::cerr << "seed point" << ": " << x << " " << y << " " << z << std::endl;
-                seeds.push_back(vtkm::Particle({x,y,z}, i));
+                seeds.push_back(viskores::Particle({x,y,z}, i));
             }
         }
         else
@@ -5626,7 +5626,7 @@ VTKHParticleAdvection::execute()
             std::random_device device;
             std::default_random_engine generator(0);
             float  zero(0), one(1);
-            std::uniform_real_distribution<vtkm::FloatDefault> distribution(zero, one);
+            std::uniform_real_distribution<viskores::FloatDefault> distribution(zero, one);
             for(int i = 0; i < num_seeds; ++i)
             {
                 double rand = distribution(generator);
@@ -5634,7 +5634,7 @@ VTKHParticleAdvection::execute()
                 double y = start[1] + dist_y*rand;
                 double z = start[2] + dist_z*rand;
                 //std::cerr << "seed point" << ": " << x << " " << y << " " << z << std::endl;
-                seeds.push_back(vtkm::Particle({x,y,z}, i));
+                seeds.push_back(viskores::Particle({x,y,z}, i));
 	          }
         }
     }
@@ -5669,7 +5669,7 @@ VTKHParticleAdvection::execute()
         }
         else// whole dataset
         {
-            vtkm::Bounds global_bounds = data.GetGlobalBounds();
+            viskores::Bounds global_bounds = data.GetGlobalBounds();
             dist_x = global_bounds.X.Length();
             dist_y = global_bounds.Y.Length();
             dist_z = global_bounds.Z.Length();
@@ -5739,7 +5739,7 @@ VTKHParticleAdvection::execute()
                         {
                             double z = z_min + dz*k;
                             //std::cerr << "seed point" << ": " << x << " " << y << " " << z << std::endl;
-                            seeds.push_back(vtkm::Particle({x,y,z}, i));
+                            seeds.push_back(viskores::Particle({x,y,z}, i));
                         }
                     }
                 }
@@ -5749,7 +5749,7 @@ VTKHParticleAdvection::execute()
                 std::random_device device;
                 std::default_random_engine generator(0);
                 float  zero(0), one(1);
-                std::uniform_real_distribution<vtkm::FloatDefault> distribution(zero, one);
+                std::uniform_real_distribution<viskores::FloatDefault> distribution(zero, one);
                 int num_seeds = n_seeds["num_seeds"].as_int();
                 for(int i = 0; i < num_seeds; ++i)
                 {
@@ -5758,7 +5758,7 @@ VTKHParticleAdvection::execute()
                     double y = y_min + dist_y*distribution(generator);
                     double z = z_min + dist_z*distribution(generator);
                     //std::cerr << "seed point" << ": " << x << " " << y << " " << z << std::endl;
-                    seeds.push_back(vtkm::Particle({x,y,z}, i));
+                    seeds.push_back(viskores::Particle({x,y,z}, i));
                 }
             }
         }
@@ -5814,8 +5814,8 @@ VTKHParticleAdvection::execute()
                          //std::cerr << "seed point" << ": " << x << " " << y_min << " " << z << std::endl;
                          //std::cerr << "seed point" << ": " << x << " " << y_max << " " << z << std::endl;
                         //std::cerr << "seed_count: " << seed_count << std::endl;
-                         seeds.push_back(vtkm::Particle({x,y_min,z}, seed_count++));
-                         seeds.push_back(vtkm::Particle({x,y_max,z}, seed_count++));
+                         seeds.push_back(viskores::Particle({x,y_min,z}, seed_count++));
+                         seeds.push_back(viskores::Particle({x,y_max,z}, seed_count++));
                     }
                 }
                 for(int j = 0; j < num_seeds_y; ++j)
@@ -5827,8 +5827,8 @@ VTKHParticleAdvection::execute()
                          //std::cerr << "seed point" << ": " << x_min << " " << y << " " << z << std::endl;
                          //std::cerr << "seed point" << ": " << x_max << " " << y << " " << z << std::endl;
                          //std::cerr << "seed_count: " << seed_count << std::endl;
-                         seeds.push_back(vtkm::Particle({x_min,y,z}, seed_count++));
-                         seeds.push_back(vtkm::Particle({x_max,y,z}, seed_count++));
+                         seeds.push_back(viskores::Particle({x_min,y,z}, seed_count++));
+                         seeds.push_back(viskores::Particle({x_max,y,z}, seed_count++));
                     }
                 }
             }
@@ -5837,7 +5837,7 @@ VTKHParticleAdvection::execute()
                 std::random_device device;
                 std::default_random_engine generator(0);
                 float  zero(0), one(1);
-                std::uniform_real_distribution<vtkm::FloatDefault> distribution(zero, one);
+                std::uniform_real_distribution<viskores::FloatDefault> distribution(zero, one);
                 int num_seeds = n_seeds["num_seeds"].as_int();
                 for(int i = 0; i < num_seeds; ++i)
                 {
@@ -5847,28 +5847,28 @@ VTKHParticleAdvection::execute()
                     {
                         double y = y_min + dist_y*distribution(generator);
                         double z = z_min + dist_z*distribution(generator);
-                        seeds.push_back(vtkm::Particle({x_max,y,z}, i));
+                        seeds.push_back(viskores::Particle({x_max,y,z}, i));
                         //std::cerr << "seed point" << ": " << x_max << " " << y << " " << z << std::endl;
                     }
                     else if(side == 1) //x_min
                     {
                         double y = y_min + dist_y*distribution(generator);
                         double z = z_min + dist_z*distribution(generator);
-                        seeds.push_back(vtkm::Particle({x_min,y,z}, i));
+                        seeds.push_back(viskores::Particle({x_min,y,z}, i));
                         //std::cerr << "seed point" << ": " << x_min << " " << y << " " << z << std::endl;
                     }
                     else if(side == 2) //y_max
                     {
                         double x = x_min + dist_x*distribution(generator);
                         double z = z_min + dist_z*distribution(generator);
-                        seeds.push_back(vtkm::Particle({x,y_max,z}, i));
+                        seeds.push_back(viskores::Particle({x,y_max,z}, i));
                         //std::cerr << "seed point" << ": " << x << " " << y_max << " " << z << std::endl;
                     }
                     else //y_min
                     {
                         double x = x_min + dist_x*distribution(generator);
                         double z = z_min + dist_z*distribution(generator);
-                        seeds.push_back(vtkm::Particle({x,y_min,z}, i));
+                        seeds.push_back(viskores::Particle({x,y_min,z}, i));
                         //std::cerr << "seed point" << ": " << x << " " << y_min << " " << z << std::endl;
                     }
                 }
@@ -5880,7 +5880,7 @@ VTKHParticleAdvection::execute()
         }
     }
 
-    auto seedArray = vtkm::cont::make_ArrayHandle(seeds, vtkm::CopyFlag::On);
+    auto seedArray = viskores::cont::make_ArrayHandle(seeds, viskores::CopyFlag::On);
     //int numSeeds = get_int32(params()["num_seeds"], data_object);
     
     //tube params
@@ -5910,16 +5910,16 @@ VTKHParticleAdvection::execute()
 
     //Generate seeds
 
-    //std::vector<vtkm::Particle> seeds;
+    //std::vector<viskores::Particle> seeds;
     //for (int i = 0; i < numSeeds; i++)
     //{
     //  float x = seedBBox[0] + dx * distribution(generator);
     //  float y = seedBBox[2] + dy * distribution(generator);
     //  float z = seedBBox[4] + dz * distribution(generator);
     //  std::cerr << "seed " << i << ": " << x << " " << y << " " << z << std::endl;
-    //  seeds.push_back(vtkm::Particle({x,y,z}, i));
+    //  seeds.push_back(viskores::Particle({x,y,z}, i));
     //}
-    //auto seedArray = vtkm::cont::make_ArrayHandle(seeds, vtkm::CopyFlag::On);
+    //auto seedArray = viskores::cont::make_ArrayHandle(seeds, viskores::CopyFlag::On);
 
 
     vtkh::DataSet *output = nullptr;
@@ -6341,25 +6341,25 @@ VTKHVTKFileExtract::execute()
 
     // loop over all local domains and save each to a legacy vtk file.
 
-    vtkm::cont::DataSet vtkm_dset;
-    vtkm::Id            domain_id;
+    viskores::cont::DataSet viskores_dset;
+    viskores::Id            domain_id;
 
-    vtkm::Id num_local_domains  = vtkh_dset.GetNumberOfDomains();
-    vtkm::Id num_global_domains = vtkh_dset.GetGlobalNumberOfDomains();
+    viskores::Id num_local_domains  = vtkh_dset.GetNumberOfDomains();
+    viskores::Id num_global_domains = vtkh_dset.GetGlobalNumberOfDomains();
 
     // keep list of domain ids
     Node n_local_domain_ids(DataType::index_t(num_local_domains));
     index_t_array local_domain_ids = n_local_domain_ids.value();
 
-    for(vtkm::Id idx = 0; idx < num_local_domains; idx++ )
+    for(viskores::Id idx = 0; idx < num_local_domains; idx++ )
     {
         vtkh_dset.GetDomain(idx,
-                            vtkm_dset,
+                            viskores_dset,
                             domain_id);
         local_domain_ids[idx] = domain_id;
-        vtkm::io::VTKDataSetWriter writer(conduit_fmt::format(output_file_pattern,
+        viskores::io::VTKDataSetWriter writer(conduit_fmt::format(output_file_pattern,
                                                               domain_id));
-        writer.WriteDataSet(vtkm_dset);
+        writer.WriteDataSet(viskores_dset);
     }
 
     // create .visit file on rank 0
@@ -6470,6 +6470,7 @@ VTKHMIR::verify_params(const conduit::Node &params,
     info.reset();
 
     bool res = check_string("matset",params, info, true);
+    res &= check_string("output_name", params, info, false);
     res &= check_numeric("error_scaling", params, info, false);
     res &= check_numeric("scaling_decay", params, info, false);
     res &= check_numeric("iterations", params, info, false);
@@ -6477,6 +6478,7 @@ VTKHMIR::verify_params(const conduit::Node &params,
 
     std::vector<std::string> valid_paths;
     valid_paths.push_back("matset");
+    valid_paths.push_back("output_name");
     valid_paths.push_back("error_scaling");
     valid_paths.push_back("scaling_decay");
     valid_paths.push_back("iterations");
@@ -6512,7 +6514,7 @@ VTKHMIR::execute()
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
     std::string matset_name = params()["matset"].as_string();
-    std::string ids_name = "material_ids";//matset_name + "_ids";
+    std::string ids_name = "material_ids"; 
     if(!collection->has_field(ids_name))
     {
       bool throw_error = false;
@@ -6529,6 +6531,7 @@ VTKHMIR::execute()
     double scaling_decay = 0.0; 
     double max_error = 0.00001;
     int iterations = 0;
+    std::string output_name = matset_name;
     if(params().has_path("error_scaling"))
       error_scaling = params()["error_scaling"].to_float64();
     if(params().has_path("scaling_decay"))
@@ -6537,12 +6540,15 @@ VTKHMIR::execute()
       iterations = params()["iterations"].to_int64();
     if(params().has_path("max_error"))
       max_error = params()["max_error"].to_float64();
+    if(params().has_path("output_name"))
+      output_name = params()["output_name"].as_string();
 
     vtkh::MIR mir;
     mir.SetErrorScaling(error_scaling);
     mir.SetScalingDecay(scaling_decay);
     mir.SetIterations(iterations);
     mir.SetMaxError(max_error);
+    mir.SetOutputName(output_name);
     mir.SetMatSet(matset_name);
     mir.SetInput(&data);
     mir.Update();

@@ -3,7 +3,7 @@
 ##############################################################################
 # Demonstrates how to manually build Ascent and its dependencies, including:
 #
-#  hdf5, conduit, vtk-m, mfem, raja, and umpire
+#  hdf5, conduit, viskores, mfem, raja, and umpire
 #
 # usage example:
 #   env enable_mpi=ON enable_openmp=ON ./build_ascent.sh

@@ -9,8 +9,8 @@
 
 #include <rover_config.h>
 #include <vector>
-#include <vtkm/cont/ArrayHandle.h>
-#include <vtkm_typedefs.hpp>
+#include <viskores/cont/ArrayHandle.h>
+#include <viskores_typedefs.hpp>
 #include <partial_image.hpp>
 
 namespace rover
@@ -20,14 +20,14 @@ template<typename FloatType>
 class Image
 {
 public:
-  typedef vtkm::cont::ArrayHandle<FloatType> HandleType;
+  typedef viskores::cont::ArrayHandle<FloatType> HandleType;
 
   Image();
   Image(PartialImage<FloatType> &partial);
 
   HandleType get_intensity(const int &channel_num);
   HandleType get_optical_depth(const int &channel_num);
-  int get_num_channels() const;
+  int get_num_energy_groups() const;
   bool has_intensity(const int &channel_num) const;
   bool has_optical_depth(const int &channel_num) const;
   void normalize_intensity(const int &channel_num);

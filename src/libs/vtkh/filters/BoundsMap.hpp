@@ -18,7 +18,7 @@ public:
     BoundsMap() {}
     BoundsMap(const BoundsMap &_bm) : bm(_bm.bm) {}
 
-    void AddBlock(int id, const vtkm::Bounds &bounds)
+    void AddBlock(int id, const viskores::Bounds &bounds)
     {
         if (bm.find(id) == bm.end())
             bm[id] = bounds;
@@ -47,7 +47,7 @@ public:
             *oit = FindBlock(pit->coords);
     }
 */
-    int FindBlock(const vtkm::Vec<float,3> &pt) const
+    int FindBlock(const viskores::Vec<float,3> &pt) const
     {
         for (auto it = bm.begin(); it != bm.end(); it++)
         {
@@ -64,7 +64,7 @@ public:
         return -1;
     }
 
-    std::map<int, vtkm::Bounds> bm;
+    std::map<int, viskores::Bounds> bm;
 };
 
 #endif

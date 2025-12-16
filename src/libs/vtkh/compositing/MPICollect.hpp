@@ -39,7 +39,7 @@ static void MPICollect(Image &image, MPI_Comm comm)
 
   MPI_Barrier(comm);
   // create the final image
-  vtkm::Bounds final_bounds;
+  viskores::Bounds final_bounds;
   final_bounds.X.Min = 1;
   final_bounds.Y.Min = 1;
   final_bounds.X.Max = 1;
@@ -65,7 +65,7 @@ static void MPICollect(Image &image, MPI_Comm comm)
   {
     for(int i = 1; i < size; ++i)
     {
-      vtkm::Bounds inbound;
+      viskores::Bounds inbound;
       inbound.X.Min = pixel_bounds[i*4 + 0];
       inbound.Y.Min = pixel_bounds[i*4 + 1];
       inbound.X.Max = pixel_bounds[i*4 + 2];

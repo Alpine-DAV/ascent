@@ -39,14 +39,14 @@ struct Redistribute
       {
         vtkhdiy::DiscreteBounds sub_image_bounds;
         m_decomposer.fill_bounds(sub_image_bounds, i);
-        vtkm::Bounds vtkm_sub_bounds = DIYBoundsToVTKM(sub_image_bounds);
+        viskores::Bounds viskores_sub_bounds = DIYBoundsToVISKORES(sub_image_bounds);
 
         vtkhdiy::BlockID dest = proxy.out_link().target(i);
         outgoing[dest].resize(local_images);
 
         for(int img = 0;  img < local_images; ++img)
         {
-          outgoing[dest][img].SubsetFrom(block->m_images[img], vtkm_sub_bounds);
+          outgoing[dest][img].SubsetFrom(block->m_images[img], viskores_sub_bounds);
         }
       } //for
 
@@ -121,7 +121,7 @@ void
 DirectSendCompositor::CompositeVolume(vtkhdiy::mpi::communicator &diy_comm,
                                       std::vector<Image>     &images)
 {
-  vtkhdiy::DiscreteBounds global_bounds = VTKMBoundsToDIY(images.at(0).m_orig_bounds);
+  vtkhdiy::DiscreteBounds global_bounds = VISKORESBoundsToDIY(images.at(0).m_orig_bounds);
 
   const int num_threads = 1;
   const int num_blocks = diy_comm.size();

@@ -25,7 +25,7 @@ MeshConnectivityContainer::MeshConnectivityContainer(){};
 MeshConnectivityContainer::~MeshConnectivityContainer(){};
 
 template <typename T>
-VTKM_CONT void MeshConnectivityContainer::FindEntryImpl(vtkm::rendering::raytracing::Ray<T>& rays)
+VISKORES_CONT void MeshConnectivityContainer::FindEntryImpl(viskores::rendering::raytracing::Ray<T>& rays)
 {
   bool getCellIndex = true;
 
@@ -34,20 +34,20 @@ VTKM_CONT void MeshConnectivityContainer::FindEntryImpl(vtkm::rendering::raytrac
   Intersector.IntersectRays(rays, getCellIndex);
 }
 
-void MeshConnectivityContainer::FindEntry(vtkm::rendering::raytracing::Ray<vtkm::Float32>& rays)
+void MeshConnectivityContainer::FindEntry(viskores::rendering::raytracing::Ray<viskores::Float32>& rays)
 {
   this->FindEntryImpl(rays);
 }
 
-void MeshConnectivityContainer::FindEntry(vtkm::rendering::raytracing::Ray<vtkm::Float64>& rays)
+void MeshConnectivityContainer::FindEntry(viskores::rendering::raytracing::Ray<viskores::Float64>& rays)
 {
   this->FindEntryImpl(rays);
 }
 
-VTKM_CONT
+VISKORES_CONT
 MeshConnectivityContainerUnstructured::MeshConnectivityContainerUnstructured(
-  const vtkm::cont::CellSetExplicit<>& cellset,
-  const vtkm::cont::CoordinateSystem& coords,
+  const viskores::cont::CellSetExplicit<>& cellset,
+  const viskores::cont::CoordinateSystem& coords,
   const IdHandle& faceConn,
   const IdHandle& faceOffsets,
   const Id4Handle& triangles)
@@ -61,21 +61,21 @@ MeshConnectivityContainerUnstructured::MeshConnectivityContainerUnstructured(
   // Grab the cell arrays
   //
   CellConn =
-    Cellset.GetConnectivityArray(vtkm::TopologyElementTagCell(), vtkm::TopologyElementTagPoint());
+    Cellset.GetConnectivityArray(viskores::TopologyElementTagCell(), viskores::TopologyElementTagPoint());
   CellOffsets =
-    Cellset.GetOffsetsArray(vtkm::TopologyElementTagCell(), vtkm::TopologyElementTagPoint());
-  Shapes = Cellset.GetShapesArray(vtkm::TopologyElementTagCell(), vtkm::TopologyElementTagPoint());
+    Cellset.GetOffsetsArray(viskores::TopologyElementTagCell(), viskores::TopologyElementTagPoint());
+  Shapes = Cellset.GetShapesArray(viskores::TopologyElementTagCell(), viskores::TopologyElementTagPoint());
 
   Intersector.SetData(Coords, Triangles);
 }
 
 MeshConnectivityContainerUnstructured::~MeshConnectivityContainerUnstructured(){};
 
-vtkm::rendering::raytracing::MeshConnectivity MeshConnectivityContainerUnstructured::PrepareForExecution(
-  vtkm::cont::DeviceAdapterId deviceId,
-  vtkm::cont::Token& token) const
+viskores::rendering::raytracing::MeshConnectivity MeshConnectivityContainerUnstructured::PrepareForExecution(
+  viskores::cont::DeviceAdapterId deviceId,
+  viskores::cont::Token& token) const
 {
-  return vtkm::rendering::raytracing::MeshConnectivity(this->FaceConnectivity,
+  return viskores::rendering::raytracing::MeshConnectivity(this->FaceConnectivity,
                           this->FaceOffsets,
                           this->CellConn,
                           this->CellOffsets,
@@ -84,10 +84,10 @@ vtkm::rendering::raytracing::MeshConnectivity MeshConnectivityContainerUnstructu
                           token);
 }
 
-VTKM_CONT
+VISKORES_CONT
 MeshConnectivityContainerSingleType::MeshConnectivityContainerSingleType(
-  const vtkm::cont::CellSetSingleType<>& cellset,
-  const vtkm::cont::CoordinateSystem& coords,
+  const viskores::cont::CellSetSingleType<>& cellset,
+  const viskores::cont::CoordinateSystem& coords,
   const IdHandle& faceConn,
   const Id4Handle& triangles)
   : FaceConnectivity(faceConn)
@@ -100,12 +100,12 @@ MeshConnectivityContainerSingleType::MeshConnectivityContainerSingleType(
   this->Intersector.SetUseWaterTight(true);
 
   this->CellConnectivity =
-    Cellset.GetConnectivityArray(vtkm::TopologyElementTagCell(), vtkm::TopologyElementTagPoint());
-  vtkm::cont::ArrayHandleConstant<vtkm::UInt8> shapes =
-    Cellset.GetShapesArray(vtkm::TopologyElementTagCell(), vtkm::TopologyElementTagPoint());
+    Cellset.GetConnectivityArray(viskores::TopologyElementTagCell(), viskores::TopologyElementTagPoint());
+  viskores::cont::ArrayHandleConstant<viskores::UInt8> shapes =
+    Cellset.GetShapesArray(viskores::TopologyElementTagCell(), viskores::TopologyElementTagPoint());
 
   this->ShapeId = shapes.ReadPortal().Get(0);
-  vtkm::rendering::raytracing::CellTables tables;
+  viskores::rendering::raytracing::CellTables tables;
   this->NumIndices = tables.FaceLookUp(tables.CellTypeLookUp(ShapeId), 2);
 
   if (this->NumIndices == 0)
@@ -113,25 +113,25 @@ MeshConnectivityContainerSingleType::MeshConnectivityContainerSingleType(
     std::stringstream message;
     message << "Unstructured Mesh Connecitity Single type Error: unsupported cell type: ";
     message << ShapeId;
-    throw vtkm::cont::ErrorBadValue(message.str());
+    throw viskores::cont::ErrorBadValue(message.str());
   }
-  vtkm::Id start = 0;
+  viskores::Id start = 0;
   this->NumFaces = tables.FaceLookUp(tables.CellTypeLookUp(this->ShapeId), 1);
-  vtkm::Id numCells = this->CellConnectivity.ReadPortal().GetNumberOfValues();
+  viskores::Id numCells = this->CellConnectivity.ReadPortal().GetNumberOfValues();
   this->CellOffsets =
-    vtkm::cont::make_ArrayHandleCounting<vtkm::Id>(start, this->NumIndices, numCells);
+    viskores::cont::make_ArrayHandleCounting<viskores::Id>(start, this->NumIndices, numCells);
 
-  vtkm::rendering::raytracing::Logger* logger = vtkm::rendering::raytracing::Logger::GetInstance();
+  viskores::rendering::raytracing::Logger* logger = viskores::rendering::raytracing::Logger::GetInstance();
   logger->OpenLogEntry("mesh_conn_construction");
 
   this->Intersector.SetData(Coords, Triangles);
 }
 
-vtkm::rendering::raytracing::MeshConnectivity MeshConnectivityContainerSingleType::PrepareForExecution(
-  vtkm::cont::DeviceAdapterId deviceId,
-  vtkm::cont::Token& token) const
+viskores::rendering::raytracing::MeshConnectivity MeshConnectivityContainerSingleType::PrepareForExecution(
+  viskores::cont::DeviceAdapterId deviceId,
+  viskores::cont::Token& token) const
 {
-  return vtkm::rendering::raytracing::MeshConnectivity(this->FaceConnectivity,
+  return viskores::rendering::raytracing::MeshConnectivity(this->FaceConnectivity,
                           this->CellConnectivity,
                           this->CellOffsets,
                           this->ShapeId,
@@ -142,8 +142,8 @@ vtkm::rendering::raytracing::MeshConnectivity MeshConnectivityContainerSingleTyp
 }
 
 MeshConnectivityContainerStructured::MeshConnectivityContainerStructured(
-  const vtkm::cont::CellSetStructured<3>& cellset,
-  const vtkm::cont::CoordinateSystem& coords,
+  const viskores::cont::CellSetStructured<3>& cellset,
+  const viskores::cont::CoordinateSystem& coords,
   const Id4Handle& triangles)
   : Coords(coords)
   , Cellset(cellset)
@@ -158,12 +158,12 @@ MeshConnectivityContainerStructured::MeshConnectivityContainerStructured(
   this->Intersector.SetData(Coords, Triangles);
 }
 
-vtkm::rendering::raytracing::MeshConnectivity MeshConnectivityContainerStructured::PrepareForExecution(
-  vtkm::cont::DeviceAdapterId,
-  vtkm::cont::Token&) const
+viskores::rendering::raytracing::MeshConnectivity MeshConnectivityContainerStructured::PrepareForExecution(
+  viskores::cont::DeviceAdapterId,
+  viskores::cont::Token&) const
 {
-  return vtkm::rendering::raytracing::MeshConnectivity(CellDims, PointDims);
+  return viskores::rendering::raytracing::MeshConnectivity(CellDims, PointDims);
 }
 }
 }
-} //namespace vtkm::rendering::raytracing
+} //namespace viskores::rendering::raytracing

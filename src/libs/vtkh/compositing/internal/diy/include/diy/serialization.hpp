@@ -91,7 +91,7 @@ namespace vtkhdiy
   {
 #if ((defined(__clang__) && !defined(__ppc64__)) && (defined(__clang__) && __clang_major__ > 11)) || \
     (defined(__GNUC__) && __GNUC__ >= 5) 
-    //exempt power-pc clang variants due to: https://gitlab.kitware.com/vtk/vtk-m/issues/201
+    //exempt power-pc clang variants due to: https://gitlab.kitware.com/vtk/viskores/issues/201
     static_assert(std::is_trivially_copyable<T>::value, "Default serialization works only for trivially copyable types");
 #endif
 

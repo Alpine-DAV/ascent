@@ -10,7 +10,7 @@ cmake_minimum_required(VERSION 3.23)
 # Ascent
 ################################
 
-project(ascent VERSION "0.9.4")
+project(ascent VERSION "0.9.5")
 
 ################################
 # Build Options
@@ -116,9 +116,9 @@ include(cmake/SetupBLT.cmake)
 include(cmake/CMakeBasics.cmake)
 
 ##################################
-# Helpers for  VTKm device symbols
+# Helpers for  Viskores device symbols
 ##################################
-include(cmake/VTKmDeviceSymbols.cmake)
+include(cmake/ViskoresDeviceSymbols.cmake)
 
 ################################
 # Setup Fortran Support

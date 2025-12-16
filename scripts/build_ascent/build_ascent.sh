@@ -3,7 +3,7 @@
 ##############################################################################
 # Demonstrates how to manually build Ascent and its dependencies, including:
 #
-#  hdf5, conduit, vtk-m, mfem, raja, and umpire
+#  hdf5, conduit, viskores, mfem, raja, and umpire
 #
 # usage example:
 #   env enable_mpi=ON enable_openmp=ON ./build_ascent.sh
@@ -44,7 +44,7 @@ build_pyvenv="${build_pyvenv:=false}"
 build_caliper="${build_caliper:=false}"
 build_silo="${build_silo:=true}"
 build_conduit="${build_conduit:=true}"
-build_vtkm="${build_vtkm:=true}"
+build_viskores="${build_viskores:=true}"
 build_camp="${build_camp:=true}"
 build_raja="${build_raja:=true}"
 build_umpire="${build_umpire:=true}"
@@ -69,7 +69,7 @@ if [[ "$enable_cuda" == "ON" ]]; then
     FTN="${FTN:=gfortran}"
 
     CUDA_ARCH="${CUDA_ARCH:=80}"
-    CUDA_ARCH_VTKM="${CUDA_ARCH_VTKM:=ampere}"
+    CUDA_ARCH_VISKORES="${CUDA_ARCH_VISKORES:=ampere}"
 fi
 
 # NOTE: this script only builds kokkos when enable_hip=ON or enable_cycl=ON
@@ -210,9 +210,12 @@ zlib_tarball=$(ospath ${source_dir}/zlib-${zlib_version}.tar.gz)
 # build only if install doesn't exist
 if [ ! -d ${zlib_install_dir} ]; then
 if ${build_zlib}; then
-if [ ! -d ${zlib_src_dir} ]; then
+if [ ! -f ${zlib_tarball} ]; then
   echo "**** Downloading ${zlib_tarball}"
   curl -L https://github.com/madler/zlib/releases/download/v${zlib_version}/zlib-${zlib_version}.tar.gz -o ${zlib_tarball}
+fi
+if [ ! -d ${zlib_src_dir} ]; then
+  echo "**** Extracting ${zlib_tarball}"
   tar  ${tar_extra_args} -xzf ${zlib_tarball} -C ${source_dir}
 fi
 
@@ -248,9 +251,12 @@ hdf5_tarball=$(ospath ${source_dir}/hdf5-${hdf5_version}.tar.gz)
 # build only if install doesn't exist
 if [ ! -d ${hdf5_install_dir} ]; then
 if ${build_hdf5}; then
-if [ ! -d ${hdf5_src_dir} ]; then
+if [ ! -f ${hdf5_tarball} ]; then
   echo "**** Downloading ${hdf5_tarball}"
   curl -L https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-${hdf5_short_version}/hdf5-${hdf5_middle_version}/src/hdf5-${hdf5_version}.tar.gz -o ${hdf5_tarball}
+fi
+if [ ! -d ${hdf5_src_dir} ]; then
+  echo "**** Extracting ${hdf5_tarball}"
   tar ${tar_extra_args} -xzf ${hdf5_tarball} -C ${source_dir}
 fi
 
@@ -293,9 +299,12 @@ silo_tarball=$(ospath ${source_dir}/silo-${silo_version}.tar.gz)
 # build only if install doesn't exist
 if [ ! -d ${silo_install_dir} ]; then
 if ${build_silo}; then
-if [ ! -d ${silo_src_dir} ]; then
+if [ ! -f ${silo_tarball} ]; then
   echo "**** Downloading ${silo_tarball}"
   curl -L https://github.com/LLNL/Silo/archive/refs/tags/${silo_version}.tar.gz -o ${silo_tarball}
+fi
+if [ ! -d ${silo_src_dir} ]; then
+  echo "**** Extracting ${silo_tarball}"
   # untar and avoid symlinks (which windows despises)
   tar ${tar_extra_args} -xzf ${silo_tarball} -C ${source_dir} \
       --exclude="Silo-${silo_version}/config-site/*" \
@@ -381,9 +390,12 @@ caliper_tarball=$(ospath ${source_dir}/caliper-${caliper_version}-src-with-blt.t
 # build only if install doesn't exist
 if [ ! -d ${caliper_install_dir} ]; then
 if ${build_caliper}; then
-if [ ! -d ${caliper_src_dir} ]; then
+if [ ! -f ${caliper_tarball} ]; then
   echo "**** Downloading ${caliper_tarball}"
   curl -L https://github.com/LLNL/Caliper/archive/refs/tags/v${caliper_version}.tar.gz -o ${caliper_tarball}
+fi
+if [ ! -d ${caliper_src_dir} ]; then
+  echo "**** Extracting ${caliper_tarball}"
   tar ${tar_extra_args} -xzf ${caliper_tarball} -C ${source_dir}
   # windows specifc patch
   cd  ${caliper_src_dir}
@@ -454,9 +466,12 @@ zfp_tarball=$(ospath ${source_dir}/zfp-${zfp_version}.tar.gz)
 # build only if install doesn't exist
 if [ ! -d ${zfp_install_dir} ]; then
 if ${build_zfp}; then
-if [ ! -d ${zfp_src_dir} ]; then
+if [ ! -f ${zfp_tarball} ]; then
   echo "**** Downloading ${zfp_tarball}"
   curl -L https://github.com/LLNL/zfp/releases/download/1.0.1/zfp-${zfp_version}.tar.gz -o ${zfp_tarball}
+fi
+if [ ! -d ${zfp_src_dir} ]; then
+  echo "**** Extracting ${zfp_tarball}"
   tar ${tar_extra_args} -xzf ${zfp_tarball} -C ${source_dir}
 
   # apply patches
@@ -494,7 +509,7 @@ fi # build_zfp
 ################
 # Conduit
 ################
-conduit_version=v0.9.4
+conduit_version=v0.9.5
 conduit_src_dir=$(ospath ${source_dir}/conduit-${conduit_version})
 conduit_build_dir=$(ospath ${build_dir}/conduit-${conduit_version}/)
 conduit_install_dir=$(ospath ${install_dir}/conduit-${conduit_version}/)
@@ -503,9 +518,12 @@ conduit_tarball=$(ospath ${source_dir}/conduit-${conduit_version}-src-with-blt.t
 # build only if install doesn't exist
 if [ ! -d ${conduit_install_dir} ]; then
 if ${build_conduit}; then
-if [ ! -d ${conduit_src_dir} ]; then
+    if [ ! -f ${conduit_tarball} ]; then
   echo "**** Downloading ${conduit_tarball}"
   curl -L https://github.com/LLNL/conduit/releases/download/${conduit_version}/conduit-${conduit_version}-src-with-blt.tar.gz -o ${conduit_tarball}
+fi
+if [ ! -d ${conduit_src_dir} ]; then
+  echo "**** Extracting ${conduit_tarball}"
   # untar and avoid symlinks (which windows despises)
   tar ${tar_extra_args} -xzf ${conduit_tarball} -C ${source_dir} \
       --exclude="conduit-${conduit_version}/src/tests/relay/data/silo/*"
@@ -563,7 +581,7 @@ fi # build_conduit
 ###############################
 # Kokkos (only for hip or sycl)
 ###############################
-kokkos_version=4.4.01
+kokkos_version=4.7.00
 kokkos_src_dir=$(ospath ${source_dir}/kokkos-${kokkos_version})
 kokkos_build_dir=$(ospath ${build_dir}/kokkos-${kokkos_version})
 kokkos_install_dir=$(ospath ${install_dir}/kokkos-${kokkos_version}/)
@@ -573,9 +591,12 @@ if [[ "$enable_hip" == "ON" ]] || [[ "$enable_sycl" == "ON" ]]; then
 # build only if install doesn't exist
 if [ ! -d ${kokkos_install_dir} ]; then
 if ${build_kokkos}; then
-if [ ! -d ${kokkos_src_dir} ]; then
+if [ ! -f ${kokkos_tarball} ]; then
   echo "**** Downloading ${kokkos_tarball}"
   curl -L https://github.com/kokkos/kokkos/archive/refs/tags/${kokkos_version}.tar.gz -o ${kokkos_tarball}
+fi
+if [ ! -d ${kokkos_src_dir} ]; then
+  echo "**** Extracting ${kokkos_tarball}"
   tar ${tar_extra_args} -xzf ${kokkos_tarball} -C ${source_dir}
 fi
 
@@ -591,17 +612,20 @@ if [[ "$enable_hip" == "ON" ]]; then
   ##
   ## build_ascent specific ROCM_ARCH Map for Kokkos options:
   ##
-  ## TODO: Kokkos 4.5 has MI300A specific option, need to figure out how to
-  ##       map hat in when we update.
+  ## gfx942
   ##
-  ## gfx942 --> Kokkos_ARCH_AMD_GFX942 (MI300A, MI300X)
-  ## (since Kokkos 4.2, since Kokkos 4.5 this should only be used for MI300X)
+  ##  Kokkos 4.5 has MI300A specific option
+  ##    DKokkos_ARCH_AMD_GFX942_APU (MI300A)
+  ##    DKokkos_ARCH_AMD_GFX942 (MI300X)
+  ##
+  ##  We assume MI300A, if we need MI300X, we need a way to differentiate
+  ##  (ROCM_ARCH is gfx942 in both cases)
   ##
   ## gfx90a --> Kokkos_ARCH_AMD_GFX90A (MI200 series)
   ## (since Kokkos 4.2)
   ##
   if [[ "$ROCM_ARCH" == "gfx942" ]]; then
-      kokkos_extra_cmake_args="${kokkos_extra_cmake_args} -DKokkos_ARCH_AMD_GFX942=ON"
+      kokkos_extra_cmake_args="${kokkos_extra_cmake_args} -DKokkos_ARCH_AMD_GFX942_APU=ON"
   fi
 
   if [[ "$ROCM_ARCH" == "gfx90a" ]]; then
@@ -629,7 +653,7 @@ cmake -S ${kokkos_src_dir} -B ${kokkos_build_dir} ${cmake_compiler_settings} \
 
 echo "**** Building Kokkos ${kokkos_version}"
 cmake --build ${kokkos_build_dir} --config ${build_config} -j${build_jobs}
-echo "**** Installing VTK-m ${kokkos_version}"
+echo "**** Installing Kokkos ${kokkos_version}"
 cmake --install ${kokkos_build_dir} --config ${build_config}
 
 fi
@@ -640,86 +664,90 @@ fi # build_kokkos
 fi # if enable_hip || enable_sycl
 
 ################
-# VTK-m
+# Viskores
 ################
-vtkm_version=v2.3.0
-vtkm_src_dir=$(ospath ${source_dir}/vtk-m-${vtkm_version})
-vtkm_build_dir=$(ospath ${build_dir}/vtk-m-${vtkm_version})
-vtkm_install_dir=$(ospath ${install_dir}/vtk-m-${vtkm_version}/)
-vtkm_tarball=$(ospath ${source_dir}/vtk-m-${vtkm_version}.tar.gz)
+viskores_version=1.0.0
+viskores_src_dir=$(ospath ${source_dir}/viskores-${viskores_version})
+viskores_build_dir=$(ospath ${build_dir}/viskores-${viskores_version})
+viskores_install_dir=$(ospath ${install_dir}/viskores-${viskores_version}/)
+viskores_tarball=$(ospath ${source_dir}/v${viskores_version}.tar.gz)
 
 # build only if install doesn't exist
-if [ ! -d ${vtkm_install_dir} ]; then
-if ${build_vtkm}; then
-if [ ! -d ${vtkm_src_dir} ]; then
-  echo "**** Downloading ${vtkm_tarball}"
-  curl -L https://gitlab.kitware.com/vtk/vtk-m/-/archive/${vtkm_version}/vtk-m-${vtkm_version}.tar.gz -o ${vtkm_tarball}
-  tar ${tar_extra_args} -xzf ${vtkm_tarball} -C ${source_dir}
+if [ ! -d ${viskores_install_dir} ]; then
+if ${build_viskores}; then
+if [ ! -f ${viskores_tarball} ]; then
+  echo "**** Downloading ${viskores_tarball}"
+  curl -L https://github.com/Viskores/viskores/archive/refs/tags/v${viskores_version}.tar.gz -o ${viskores_tarball}
+fi
+if [ ! -d ${viskores_src_dir} ]; then
+  echo "**** Extracting ${viskores_tarball}"
+  tar ${tar_extra_args} -xzf ${viskores_tarball} -C ${source_dir}
 
   # apply patches
-  cd ${vtkm_src_dir}
-  patch -p1 < ${script_dir}/2025_06_18_vtkm_z_extents_ray_culling_bugfix_viskores_mr109.patch
+  cd ${viskores_src_dir}
+  echo "**** Applying Patches to ${viskores_tarball}"
+  patch -p1 < ${script_dir}/2025_06_18_viskores_z_extents_ray_culling_bugfix_viskores_mr109.patch
   cd ${root_dir}
 fi
 
 
-vtkm_extra_cmake_args=""
+viskores_extra_cmake_args=""
 if [[ "$enable_cuda" == "ON" ]]; then
-  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DVTKm_ENABLE_CUDA=ON"
-  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DCMAKE_CUDA_HOST_COMPILER=${CXX}"
-  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DCMAKE_CUDA_ARCHITECTURES=${CUDA_ARCH}"
+  viskores_extra_cmake_args="${viskores_extra_cmake_args} -DViskores_ENABLE_CUDA=ON"
+  viskores_extra_cmake_args="${viskores_extra_cmake_args} -DCMAKE_CUDA_HOST_COMPILER=${CXX}"
+  viskores_extra_cmake_args="${viskores_extra_cmake_args} -DCMAKE_CUDA_ARCHITECTURES=${CUDA_ARCH}"
 fi
 
 if [[ "$enable_hip" == "ON" ]]; then
-  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DVTKm_ENABLE_KOKKOS=ON"
-  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DCMAKE_PREFIX_PATH=${kokkos_install_dir}"
-  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DCMAKE_HIP_ARCHITECTURES=${ROCM_ARCH}"
-  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DVTKm_ENABLE_KOKKOS_THRUST=OFF"
+  viskores_extra_cmake_args="${viskores_extra_cmake_args} -DViskores_ENABLE_KOKKOS=ON"
+  viskores_extra_cmake_args="${viskores_extra_cmake_args} -DCMAKE_PREFIX_PATH=${kokkos_install_dir}"
+  viskores_extra_cmake_args="${viskores_extra_cmake_args} -DCMAKE_HIP_ARCHITECTURES=${ROCM_ARCH}"
+  viskores_extra_cmake_args="${viskores_extra_cmake_args} -DViskores_ENABLE_KOKKOS_THRUST=OFF"
 fi
 
 if [[ "$enable_sycl" == "ON" ]]; then
-  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DVTKm_ENABLE_KOKKOS=ON"
-  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DCMAKE_PREFIX_PATH=${kokkos_install_dir}"
-  vtkm_extra_cmake_args="-DCMAKE_CXX_FLAGS=-fPIC -fp-model=precise -Wno-unused-command-line-argument -Wno-deprecated-declarations -fsycl-device-code-split=per_kernel -fsycl-max-parallel-link-jobs=128"
+  viskores_extra_cmake_args="${viskores_extra_cmake_args} -DViskores_ENABLE_KOKKOS=ON"
+  viskores_extra_cmake_args="${viskores_extra_cmake_args} -DCMAKE_PREFIX_PATH=${kokkos_install_dir}"
+  viskores_extra_cmake_args="-DCMAKE_CXX_FLAGS=-fPIC -fp-model=precise -Wno-unused-command-line-argument -Wno-deprecated-declarations -fsycl-device-code-split=per_kernel -fsycl-max-parallel-link-jobs=128"
 fi
 
 
 if [[ "$enable_mpicc" == "ON" ]]; then
-  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DMPI_C_COMPILER=${mpicc_exe}"
-  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DMPI_CXX_COMPILER=${mpicxx_exe}"
+  viskores_extra_cmake_args="${viskores_extra_cmake_args} -DMPI_C_COMPILER=${mpicc_exe}"
+  viskores_extra_cmake_args="${viskores_extra_cmake_args} -DMPI_CXX_COMPILER=${mpicxx_exe}"
 fi
 
-echo "**** Configuring VTK-m ${vtkm_version}"
-cmake -S ${vtkm_src_dir} -B ${vtkm_build_dir} ${cmake_compiler_settings} \
+echo "**** Configuring Viskores v${viskores_version}"
+cmake -S ${viskores_src_dir} -B ${viskores_build_dir} ${cmake_compiler_settings} \
   -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose}\
   -DCMAKE_BUILD_TYPE=${build_config} \
   -DBUILD_SHARED_LIBS=${build_shared_libs} \
-  -DVTKm_USE_64BIT_IDS=ON \
-  -DVTKm_USE_DOUBLE_PRECISION=ON \
-  -DVTKm_USE_DEFAULT_TYPES_FOR_ASCENT=OFF \
-  -DVTKm_ENABLE_MPI=${enable_mpi} \
-  -DVTKm_ENABLE_OPENMP=${enable_openmp}\
-  -DVTKm_ENABLE_RENDERING=ON \
-  -DVTKm_ENABLE_TESTING=OFF\
+  -DViskores_USE_64BIT_IDS=ON \
+  -DViskores_USE_DOUBLE_PRECISION=ON \
+  -DViskores_USE_DEFAULT_TYPES_FOR_ASCENT=ON \
+  -DViskores_ENABLE_MPI=${enable_mpi} \
+  -DViskores_ENABLE_OPENMP=${enable_openmp}\
+  -DViskores_ENABLE_RENDERING=ON \
+  -DViskores_ENABLE_TESTING=OFF\
   -DBUILD_TESTING=OFF \
-  -DVTKm_ENABLE_BENCHMARKS=OFF ${vtkm_extra_cmake_args} \
-  -DCMAKE_INSTALL_PREFIX=${vtkm_install_dir}
+  -DViskores_ENABLE_BENCHMARKS=OFF ${viskores_extra_cmake_args} \
+  -DCMAKE_INSTALL_PREFIX=${viskores_install_dir}
 
-echo "**** Building VTK-m ${vtkm_version}"
-cmake --build ${vtkm_build_dir} --config ${build_config} -j${build_jobs}
-echo "**** Installing VTK-m ${vtkm_version}"
-cmake --install ${vtkm_build_dir}  --config ${build_config}
+echo "**** Building Viskores v${viskores_version}"
+cmake --build ${viskores_build_dir} --config ${build_config} -j${build_jobs}
+echo "**** Installing Viskores v${viskores_version}"
+cmake --install ${viskores_build_dir}  --config ${build_config}
 
 fi
 else
-  echo "**** Skipping VTK-m build, install found at: ${vtkm_install_dir}"
-fi # build_vtkm
+  echo "**** Skipping Viskores build, install found at: ${viskores_install_dir}"
+fi # build_viskores
 
 
 ################
 # Camp
 ################
-camp_version=v2025.03.0
+camp_version=v2025.09.2
 camp_src_dir=$(ospath ${source_dir}/camp-${camp_version})
 camp_build_dir=$(ospath ${build_dir}/camp-${camp_version})
 camp_install_dir=$(ospath ${install_dir}/camp-${camp_version}/)
@@ -729,9 +757,12 @@ camp_tarball=$(ospath ${source_dir}/camp-${camp_version}.tar.gz)
 # build only if install doesn't exist
 if [ ! -d ${camp_install_dir} ]; then
 if ${build_camp}; then
-if [ ! -d ${camp_src_dir} ]; then
+if [ ! -f ${camp_tarball} ]; then
   echo "**** Downloading ${camp_tarball}"
   curl -L https://github.com/LLNL/camp/releases/download/${camp_version}/camp-${camp_version}.tar.gz -o ${camp_tarball}
+fi
+if [ ! -d ${camp_src_dir} ]; then
+  echo "**** Extracting ${camp_tarball}"
   tar ${tar_extra_args} -xzf ${camp_tarball} -C ${source_dir}
 fi
 
@@ -771,7 +802,7 @@ fi # build_camp
 ################
 # RAJA
 ################
-raja_version=v2025.03.2
+raja_version=v2025.09.0
 raja_src_dir=$(ospath ${source_dir}/RAJA-${raja_version})
 raja_build_dir=$(ospath ${build_dir}/raja-${raja_version})
 raja_install_dir=$(ospath ${install_dir}/raja-${raja_version}/)
@@ -781,9 +812,12 @@ raja_enable_vectorization="${raja_enable_vectorization:=ON}"
 # build only if install doesn't exist
 if [ ! -d ${raja_install_dir} ]; then
 if ${build_raja}; then
-if [ ! -d ${raja_src_dir} ]; then
+if [ ! -f ${raja_tarball} ]; then
   echo "**** Downloading ${raja_tarball}"
   curl -L https://github.com/LLNL/RAJA/releases/download/${raja_version}/RAJA-${raja_version}.tar.gz -o ${raja_tarball}
+fi
+if [ ! -d ${raja_src_dir} ]; then
+  echo "**** Extracting ${raja_tarball}"
   tar ${tar_extra_args} -xzf ${raja_tarball} -C ${source_dir}
 fi
 
@@ -827,7 +861,8 @@ fi # build_raja
 ################
 # Umpire
 ################
-umpire_version=2025.03.0
+# note: the release tarball naming scheme for Umpire is different vs RAJA + Camp
+umpire_version=2025.09.0
 umpire_src_dir=$(ospath ${source_dir}/umpire-${umpire_version})
 umpire_build_dir=$(ospath ${build_dir}/umpire-${umpire_version})
 umpire_install_dir=$(ospath ${install_dir}/umpire-${umpire_version}/)
@@ -858,9 +893,12 @@ fi
 # build only if install doesn't exist
 if [ ! -d ${umpire_install_dir} ]; then
 if ${build_umpire}; then
-if [ ! -d ${umpire_src_dir} ]; then
+if [ ! -f ${umpire_tarball} ]; then
   echo "**** Downloading ${umpire_tarball}"
   curl -L https://github.com/LLNL/Umpire/releases/download/v${umpire_version}/umpire-${umpire_version}.tar.gz -o ${umpire_tarball}
+fi
+if [ ! -d ${umpire_src_dir} ]; then
+  echo "**** Extracting ${umpire_tarball}"
   tar ${tar_extra_args} -xzf ${umpire_tarball} -C ${source_dir}
 fi
 
@@ -905,9 +943,12 @@ fi
 # build only if install doesn't exist
 if [ ! -d ${mfem_install_dir} ]; then
 if ${build_mfem}; then
-if [ ! -d ${mfem_src_dir} ]; then
+if [ ! -f ${mfem_tarball} ]; then
   echo "**** Downloading ${mfem_tarball}"
   curl -L https://github.com/mfem/mfem/archive/refs/tags/v${mfem_version}.tar.gz -o ${mfem_tarball}
+fi
+if [ ! -d ${mfem_src_dir} ]; then
+  echo "**** Extracting ${mfem_tarball}"
   tar ${tar_extra_args} -xzf ${mfem_tarball} -C ${source_dir}
 fi
 
@@ -949,9 +990,12 @@ catalyst_tarball=$(ospath ${source_dir}/catalyst-v${catalyst_version}.tar.gz)
 # build only if install doesn't exist
 if [ ! -d ${catalyst_install_dir} ]; then
 if ${build_catalyst}; then
-if [ ! -d ${catalyst_src_dir} ]; then
+if [ ! -f ${catalyst_tarball} ]; then
   echo "**** Downloading ${catalyst_tarball}"
   curl -L https://gitlab.kitware.com/paraview/catalyst/-/archive/v${catalyst_version}/catalyst-v${catalyst_version}.tar.gz -o ${catalyst_tarball}
+fi
+if [ ! -d ${catalyst_src_dir} ]; then
+  echo "**** Extracting ${catalyst_tarball}"
   tar ${tar_extra_args} -xzf ${catalyst_tarball} -C ${source_dir}
 fi
 
@@ -1047,7 +1091,7 @@ if ${build_caliper}; then
   echo 'set(CALIPER_DIR ' ${caliper_install_dir} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
 fi
 echo 'set(CONDUIT_DIR ' ${conduit_install_dir} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
-echo 'set(VTKM_DIR ' ${vtkm_install_dir} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
+echo 'set(VISKORES_DIR ' ${viskores_install_dir} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
 echo 'set(CAMP_DIR ' ${camp_install_dir} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
 echo 'set(RAJA_DIR ' ${raja_install_dir} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
 echo 'set(UMPIRE_DIR ' ${umpire_install_dir} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
@@ -1068,7 +1112,6 @@ fi
 
 if [[ "$enable_hip" == "ON" ]]; then
     echo 'set(ENABLE_HIP ON CACHE BOOL "")' >> ${root_dir}/ascent-config.cmake
-    echo 'set(BLT_CXX_STD c++17 CACHE STRING "")' >> ${root_dir}/ascent-config.cmake
     echo 'set(CMAKE_HIP_COMPILER ' ${CXX} ' CACHE STRING "")' >> ${root_dir}/ascent-config.cmake
     echo 'set(CMAKE_HIP_ARCHITECTURES ' ${ROCM_ARCH} ' CACHE STRING "")' >> ${root_dir}/ascent-config.cmake
     echo 'set(ROCM_PATH ' ${ROCM_PATH} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake

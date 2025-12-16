@@ -9,8 +9,8 @@
 #include <mpi.h>
 #include <vtkh/vtkh.hpp>
 #include <vtkh/DataSet.hpp>
-#include <vtkm/cont/DataSetBuilderExplicit.h>
-#include "t_vtkm_test_utils.hpp"
+#include <viskores/cont/DataSetBuilderExplicit.h>
+#include "t_viskores_test_utils.hpp"
 
 #include <iostream>
 #include <mpi.h>
@@ -18,7 +18,7 @@
 //-----------------------------------------------------------------------------
 TEST(vtkh_dataset_par, vtkh_range_par)
 {
-#ifdef VTKM_ENABLE_KOKKOS
+#ifdef VISKORES_ENABLE_KOKKOS
   vtkh::InitializeKokkos();
 #endif
   MPI_Init(NULL, NULL);
@@ -39,7 +39,7 @@ TEST(vtkh_dataset_par, vtkh_range_par)
     data_set.AddDomain(CreateTestData(domain_id, num_blocks, base_size), domain_id);
   }
 
-  vtkm::Bounds data_bounds = data_set.GetGlobalBounds();
+  viskores::Bounds data_bounds = data_set.GetGlobalBounds();
 
   const double max_val = base_size * num_blocks;
   const double min_val = 0.;
@@ -54,13 +54,13 @@ TEST(vtkh_dataset_par, vtkh_range_par)
 
   std::cout<<data_bounds<<"\n";
 
-  vtkm::cont::ArrayHandle<vtkm::Range> vec_range;
+  viskores::cont::ArrayHandle<viskores::Range> vec_range;
 
   vec_range = data_set.GetGlobalRange("vector_data_Float64");
 
   EXPECT_EQ(3, vec_range.GetNumberOfValues());
 
-  vtkm::cont::ArrayHandle<vtkm::Range> scalar_range;
+  viskores::cont::ArrayHandle<viskores::Range> scalar_range;
   scalar_range = data_set.GetGlobalRange("point_data_Float64");
   EXPECT_EQ(1, scalar_range.GetNumberOfValues());
 
@@ -70,23 +70,23 @@ TEST(vtkh_dataset_par, vtkh_range_par)
 
   if(rank ==0)
   {
-    vtkm::cont::DataSet unstructured;
+    viskores::cont::DataSet unstructured;
 
-    std::vector<vtkm::Vec<vtkm::Float32,3>> coords;
-    coords.push_back(vtkm::Vec<vtkm::Float32,3>(0.f, 0.f, 0.f));
-    coords.push_back(vtkm::Vec<vtkm::Float32,3>(1.f, 0.f, 0.f));
-    coords.push_back(vtkm::Vec<vtkm::Float32,3>(0.f, 0.f, 1.f));
+    std::vector<viskores::Vec<viskores::Float32,3>> coords;
+    coords.push_back(viskores::Vec<viskores::Float32,3>(0.f, 0.f, 0.f));
+    coords.push_back(viskores::Vec<viskores::Float32,3>(1.f, 0.f, 0.f));
+    coords.push_back(viskores::Vec<viskores::Float32,3>(0.f, 0.f, 1.f));
 
-    std::vector<vtkm::UInt8> shapes;
+    std::vector<viskores::UInt8> shapes;
     shapes.push_back(5);
-    std::vector<vtkm::IdComponent> num_indices;
+    std::vector<viskores::IdComponent> num_indices;
     num_indices.push_back(3);
-    std::vector<vtkm::Id> conn;
+    std::vector<viskores::Id> conn;
     conn.push_back(0);
     conn.push_back(1);
     conn.push_back(2);
 
-    vtkm::cont::DataSetBuilderExplicit builder;
+    viskores::cont::DataSetBuilderExplicit builder;
     unstructured = builder.Create(coords, shapes, num_indices, conn, "coordinates");
     data_set.AddDomain(unstructured, -1);
   }

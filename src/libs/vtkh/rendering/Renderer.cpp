@@ -2,9 +2,15 @@
 #include <vtkh/compositing/Compositor.hpp>
 
 #include <vtkh/Logger.hpp>
-#include <vtkh/utils/vtkm_array_utils.hpp>
-#include <vtkh/utils/vtkm_dataset_info.hpp>
-#include <vtkm/rendering/raytracing/Logger.h>
+#include <vtkh/utils/viskores_array_utils.hpp>
+#include <vtkh/utils/viskores_dataset_info.hpp>
+#include <viskores/rendering/raytracing/Logger.h>
+#include <viskores/rendering/MapperCylinder.h>
+#include <viskores/rendering/MapperPoint.h>
+#include <viskores/rendering/MapperWireframer.h>
+
+
+#include <png_utils/ascent_png_encoder.hpp>
 
 namespace vtkh {
 
@@ -67,6 +73,18 @@ Renderer::IsDiscrete() const
   return m_is_discrete;
 }
 
+bool
+Renderer::IsMeshRenderer() const
+{
+  bool is_mesh = false;
+
+  if(std::dynamic_pointer_cast<viskores::rendering::MapperWireframer>(m_mapper) != nullptr)
+  {
+    is_mesh = true;
+  }
+  return is_mesh;
+}
+
 void
 Renderer::SetDoComposite(bool do_composite)
 {
@@ -97,12 +115,12 @@ Renderer::ClearRenders()
   m_renders.clear();
 }
 
-void Renderer::SetColorTable(const vtkm::cont::ColorTable &color_table)
+void Renderer::SetColorTable(const viskores::cont::ColorTable &color_table)
 {
   m_color_table = color_table;
 }
 
-vtkm::cont::ColorTable Renderer::GetColorTable() const
+viskores::cont::ColorTable Renderer::GetColorTable() const
 {
   return m_color_table;
 }
@@ -114,8 +132,8 @@ Renderer::Composite(const int &num_images)
   m_compositor->SetCompositeMode(Compositor::Z_BUFFER_SURFACE);
   for(int i = 0; i < num_images; ++i)
   {
-    float* color_buffer = &GetVTKMPointer(m_renders[i].GetCanvas().GetColorBuffer())[0][0];
-    float* depth_buffer = GetVTKMPointer(m_renders[i].GetCanvas().GetDepthBuffer());
+    float* color_buffer = &GetVISKORESPointer(m_renders[i].GetCanvas().GetColorBuffer())[0][0];
+    float* depth_buffer = GetVISKORESPointer(m_renders[i].GetCanvas().GetDepthBuffer());
 
     int height = m_renders[i].GetCanvas().GetHeight();
     int width = m_renders[i].GetCanvas().GetWidth();
@@ -149,10 +167,10 @@ Renderer::PreExecute()
   if(!range_set)
   {
     // we have not been given a range, so ask the data set
-    vtkm::cont::ArrayHandle<vtkm::Range> ranges = m_input->GetGlobalRange(m_field_name);
+    viskores::cont::ArrayHandle<viskores::Range> ranges = m_input->GetGlobalRange(m_field_name);
     int num_components = ranges.GetNumberOfValues();
     //
-    // current vtkm renderers only supports single component scalar fields
+    // current viskores renderers only supports single component scalar fields
     //
     if(num_components != 1)
     {
@@ -162,14 +180,14 @@ Renderer::PreExecute()
       throw Error(msg.str());
     }
 
-    vtkm::Range global_range = ranges.ReadPortal().Get(0);
+    viskores::Range global_range = ranges.ReadPortal().Get(0);
     // a min or max may be been set by the user, check to see
-    if(m_range.Min == vtkm::Infinity64())
+    if(m_range.Min == viskores::Infinity64())
     {
       m_range.Min = global_range.Min;
     }
 
-    if(m_range.Max == vtkm::NegativeInfinity64())
+    if(m_range.Max == viskores::NegativeInfinity64())
     {
       m_range.Max = global_range.Max;
     }
@@ -211,22 +229,35 @@ Renderer::DoExecute()
     throw Error(msg);
   }
 
-  int total_renders = static_cast<int>(m_renders.size());
+  bool is_lines = m_input->IsLineMesh();
+  //TODO: 
+  //deal with 1D lines when viskores updated: https://github.com/Viskores/viskores/issues/164
+  if(is_lines && !IsMeshRenderer())
+  { 
+    typedef viskores::rendering::MapperCylinder TracerType;
+    auto mapper = std::make_shared<TracerType>();
+    viskores::Bounds bounds = m_input->GetBounds();
+    viskores::FloatDefault diagonal = viskores::Magnitude(bounds.MaxCorner() - bounds.MinCorner());
+    //TODO: user input radius?
+    mapper->SetRadius(0.001 * diagonal);
+    this->m_mapper = mapper;
+  }
 
+  int total_renders = static_cast<int>(m_renders.size());
   int num_domains = static_cast<int>(m_input->GetNumberOfDomains());
   for(int dom = 0; dom < num_domains; ++dom)
   {
-    vtkm::cont::DataSet data_set;
-    vtkm::Id domain_id;
+    viskores::cont::DataSet data_set;
+    viskores::Id domain_id;
     m_input->GetDomain(dom, data_set, domain_id);
     if(!data_set.HasField(m_field_name))
     {
       continue;
     }
 
-    const vtkm::cont::UnknownCellSet &cellset = data_set.GetCellSet();
-    const vtkm::cont::Field &field = data_set.GetField(m_field_name);
-    const vtkm::cont::CoordinateSystem &coords = data_set.GetCoordinateSystem();
+    const viskores::cont::UnknownCellSet &cellset = data_set.GetCellSet();
+    const viskores::cont::Field &field = data_set.GetField(m_field_name);
+    const viskores::cont::CoordinateSystem &coords = data_set.GetCoordinateSystem();
 
     if(cellset.GetNumberOfCells() == 0)
     {
@@ -246,8 +277,8 @@ Renderer::DoExecute()
 
       m_mapper->SetActiveColorTable(m_color_table);
 
-      Render::vtkmCanvas &canvas = m_renders[i].GetCanvas();
-      const vtkmCamera &camera = m_renders[i].GetCamera();
+      Render::viskoresCanvas &canvas = m_renders[i].GetCanvas();
+      const viskoresCamera &camera = m_renders[i].GetCamera();
       m_mapper->SetCanvas(&canvas);
       m_mapper->RenderCells(cellset,
                             coords,
@@ -262,13 +293,13 @@ Renderer::DoExecute()
 }
 
 void
-Renderer::ImageToCanvas(Image &image, vtkm::rendering::Canvas &canvas, bool get_depth)
+Renderer::ImageToCanvas(Image &image, viskores::rendering::Canvas &canvas, bool get_depth)
 {
   const int width = canvas.GetWidth();
   const int height = canvas.GetHeight();
   const int size = width * height;
   const int color_size = size * 4;
-  float* color_buffer = &GetVTKMPointer(canvas.GetColorBuffer())[0][0];
+  float* color_buffer = &GetVISKORESPointer(canvas.GetColorBuffer())[0][0];
   float one_over_255 = 1.f / 255.f;
 #ifdef VTKH_OPENMP_ENABLED
   #pragma omp parallel for
@@ -278,7 +309,7 @@ Renderer::ImageToCanvas(Image &image, vtkm::rendering::Canvas &canvas, bool get_
     color_buffer[i] = static_cast<float>(image.m_pixels[i]) * one_over_255;
   }
 
-  float* depth_buffer = GetVTKMPointer(canvas.GetDepthBuffer());
+  float* depth_buffer = GetVISKORESPointer(canvas.GetDepthBuffer());
   if(get_depth) memcpy(depth_buffer, &image.m_depths[0], sizeof(float) * size);
 }
 
@@ -294,14 +325,14 @@ Renderer::GetInput()
   return m_input;
 }
 
-vtkm::Range
+viskores::Range
 Renderer::GetRange() const
 {
   return m_range;
 }
 
 void
-Renderer::SetRange(const vtkm::Range &range)
+Renderer::SetRange(const viskores::Range &range)
 {
   m_range = range;
 }

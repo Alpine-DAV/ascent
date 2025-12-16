@@ -29,7 +29,7 @@ env enable_python=ON \
 cd /install/ascent-checkout/share/ascent/ascent_jupyter_bridge/ && \
     /install/python-venv/bin/python3 -m ipykernel install
 
-vtkm_lib_path=`ls -d /install/vtk-m-*/lib`
+viskores_lib_path=`ls -d /install/viskores-*/lib`
 echo "export PATH=/install/python-venv/bin/:$PATH" >> /ascent_docker_setup_env.sh
-echo "export LD_LIBRARY_PATH=${vtkm_lib_path}" >> /ascent_docker_setup_env.sh
+echo "export LD_LIBRARY_PATH=${viskores_lib_path}" >> /ascent_docker_setup_env.sh
 

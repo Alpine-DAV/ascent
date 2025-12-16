@@ -4,10 +4,10 @@
 #include <vtkh/vtkh.hpp>
 
 #include <vtkh/Logger.hpp>
-#include <vtkh/utils/vtkm_array_utils.hpp>
-#include <vtkh/utils/vtkm_dataset_info.hpp>
-#include <vtkm/rendering/raytracing/Logger.h>
-#include <vtkm/rendering/ScalarRenderer.h>
+#include <vtkh/utils/viskores_array_utils.hpp>
+#include <vtkh/utils/viskores_dataset_info.hpp>
+#include <viskores/rendering/raytracing/Logger.h>
+#include <viskores/rendering/ScalarRenderer.h>
 
 #ifdef VTKH_PARALLEL
   #include <mpi.h>
@@ -23,31 +23,31 @@ namespace vtkh
 
 namespace detail
 {
-vtkm::cont::DataSet
-filter_scalar_fields(vtkm::cont::DataSet &dataset,
+viskores::cont::DataSet
+filter_scalar_fields(viskores::cont::DataSet &dataset,
                      const std::vector<std::string> &field_names)
 {
   // we will also screen field names if passed vector is non empty
   bool skip_field_names = field_names.empty();
-  vtkm::cont::DataSet res;
-  const vtkm::Id num_coords = dataset.GetNumberOfCoordinateSystems();
-  for(vtkm::Id i = 0; i < num_coords; ++i)
+  viskores::cont::DataSet res;
+  const viskores::Id num_coords = dataset.GetNumberOfCoordinateSystems();
+  for(viskores::Id i = 0; i < num_coords; ++i)
   {
     res.AddCoordinateSystem(dataset.GetCoordinateSystem(i));
   }
   res.SetCellSet(dataset.GetCellSet());
 
-  const vtkm::Id num_fields = dataset.GetNumberOfFields();
-  for(vtkm::Id i = 0; i < num_fields; ++i)
+  const viskores::Id num_fields = dataset.GetNumberOfFields();
+  for(viskores::Id i = 0; i < num_fields; ++i)
   {
-    vtkm::cont::Field field = dataset.GetField(i);
+    viskores::cont::Field field = dataset.GetField(i);
     if(field.GetData().GetNumberOfComponentsFlat() == 1)
     {
       if(skip_field_names || 
          std::find(field_names.begin(), field_names.end(), field.GetName()) != field_names.end() )
       {
-          if(field.GetData().IsValueType<vtkm::Float32>() ||
-             field.GetData().IsValueType<vtkm::Float64>())
+          if(field.GetData().IsValueType<viskores::Float32>() ||
+             field.GetData().IsValueType<viskores::Float64>())
           {
             res.AddField(field);
           }
@@ -78,7 +78,7 @@ ScalarRenderer::GetName() const
 }
 
 void
-ScalarRenderer::SetCamera(vtkmCamera &camera)
+ScalarRenderer::SetCamera(viskoresCamera &camera)
 {
   m_camera = camera;
 }
@@ -132,16 +132,16 @@ ScalarRenderer::DoExecute()
   // once and composite after every image (todo: batch images
   // in groups of X).
   //
-  std::vector<vtkm::rendering::ScalarRenderer> renderers;
-  std::vector<vtkm::Id> cell_counts;
+  std::vector<viskores::rendering::ScalarRenderer> renderers;
+  std::vector<viskores::Id> cell_counts;
   renderers.resize(num_domains);
   cell_counts.resize(num_domains);
   for(int dom = 0; dom < num_domains; ++dom)
   {
-    vtkm::cont::DataSet data_set;
-    vtkm::Id domain_id;
+    viskores::cont::DataSet data_set;
+    viskores::Id domain_id;
     m_input->GetDomain(dom, data_set, domain_id);
-    vtkm::cont::DataSet filtered = detail::filter_scalar_fields(data_set,
+    viskores::cont::DataSet filtered = detail::filter_scalar_fields(data_set,
                                                                 m_field_names);
     renderers[dom].SetInput(filtered);
     renderers[dom].SetWidth(m_width);
@@ -168,8 +168,8 @@ ScalarRenderer::DoExecute()
   float bounds[6] = {0.f, 0.f, 0.f, 0.f, 0.f, 0.f};;
   for(int dom = 0; dom < num_domains; ++dom)
   {
-    vtkm::cont::DataSet data_set;
-    vtkm::Id domain_id;
+    viskores::cont::DataSet data_set;
+    viskores::Id domain_id;
     m_input->GetDomain(dom, data_set, domain_id);
     num_cells = data_set.GetCellSet().GetNumberOfCells();
 
@@ -264,7 +264,7 @@ ScalarRenderer::DoExecute()
   {
     if(num_cells == 0)
     {
-      vtkm::Bounds b(bounds);
+      viskores::Bounds b(bounds);
       PayloadImage p(b, max_p);
       int size = p.m_depths.size();
       std::vector<float> depths(size);
@@ -285,7 +285,7 @@ ScalarRenderer::DoExecute()
       Result final_result = Convert(final_image, field_names);
       if(final_result.Scalars.size() != 0)
       {
-        vtkm::cont::DataSet dset = final_result.ToDataSet();
+        viskores::cont::DataSet dset = final_result.ToDataSet();
         const int domain_id = 0;
         this->m_output->AddDomain(dset, domain_id);
       }
@@ -311,10 +311,10 @@ ScalarRenderer::Convert(PayloadImage &image, std::vector<std::string> &names)
   std::vector<float*> buffers;
   for(int i = 0; i < num_fields; ++i)
   {
-    vtkm::cont::ArrayHandle<vtkm::Float32> array;
+    viskores::cont::ArrayHandle<viskores::Float32> array;
     array.Allocate(size);
     result.Scalars.push_back(array);
-    float* buffer = GetVTKMPointer(result.Scalars[i]);
+    float* buffer = GetVISKORESPointer(result.Scalars[i]);
     buffers.push_back(buffer);
   }
 
@@ -332,7 +332,7 @@ ScalarRenderer::Convert(PayloadImage &image, std::vector<std::string> &names)
 
   //
   result.Depths.Allocate(size);
-  float* dbuffer = GetVTKMPointer(result.Depths);
+  float* dbuffer = GetVISKORESPointer(result.Depths);
   memcpy(dbuffer, &image.m_depths[0], sizeof(float) * size);
 
   return result;
@@ -342,7 +342,7 @@ PayloadImage * ScalarRenderer::Convert(Result &result)
 {
   const int num_fields = result.Scalars.size();
   const int payload_size = num_fields * sizeof(float);
-  vtkm::Bounds bounds;
+  viskores::Bounds bounds;
   bounds.X.Min = 1;
   bounds.Y.Min = 1;
   bounds.X.Max = result.Width;
@@ -353,14 +353,14 @@ PayloadImage * ScalarRenderer::Convert(Result &result)
   PayloadImage *image = new PayloadImage(bounds, payload_size);
   unsigned char *loads = &image->m_payloads[0];
 
-  float* dbuffer = GetVTKMPointer(result.Depths);
+  float* dbuffer = GetVISKORESPointer(result.Depths);
   memcpy(&image->m_depths[0], dbuffer, sizeof(float) * size);
   // copy scalars into payload
   std::vector<float*> buffers;
   for(int i = 0; i < num_fields; ++i)
   {
-    vtkm::cont::ArrayHandle<vtkm::Float32> scalar = result.Scalars[i];
-    float* buffer = GetVTKMPointer(scalar);
+    viskores::cont::ArrayHandle<viskores::Float32> scalar = result.Scalars[i];
+    float* buffer = GetVISKORESPointer(scalar);
     buffers.push_back(buffer);
   }
 #ifdef VTKH_OPENMP_ENABLED

@@ -16,11 +16,11 @@
 #include <vtkh/rendering/RayTracer.hpp>
 #include <vtkh/rendering/MeshRenderer.hpp>
 #include <vtkh/rendering/Scene.hpp>
-#include <vtkm/io/VTKDataSetWriter.h>
-#include <vtkm/io/VTKDataSetReader.h>
-#include <vtkm/cont/DataSet.h>
-#include <vtkm/cont/CellSetSingleType.h>
-#include "t_vtkm_test_utils.hpp"
+#include <viskores/io/VTKDataSetWriter.h>
+#include <viskores/io/VTKDataSetReader.h>
+#include <viskores/cont/DataSet.h>
+#include <viskores/cont/CellSetSingleType.h>
+#include "t_viskores_test_utils.hpp"
 #include <iostream>
 #include <mpi.h>
 
@@ -43,7 +43,7 @@ void checkValidity(vtkh::DataSet *data, const int maxSteps, bool isSL)
     }
     else
     {
-      if (!cs.IsType<vtkm::cont::CellSetSingleType<>>())
+      if (!cs.IsType<viskores::cont::CellSetSingleType<>>())
         EXPECT_TRUE(false);
     }
   }
@@ -57,19 +57,19 @@ void writeDataSet(vtkh::DataSet *data, std::string fName, int rank)
   {
     char fileNm[1024];
     snprintf(fileNm, 1024, "%s.rank%d.domain%d.vtk", fName.c_str(), rank, i);
-    vtkm::io::VTKDataSetWriter write(fileNm);
+    viskores::io::VTKDataSetWriter write(fileNm);
     write.WriteDataSet(data->GetDomain(i));
   }
 }
 
-static inline vtkm::FloatDefault
+static inline viskores::FloatDefault
 rand01()
 {
-  return (vtkm::FloatDefault)rand() / (RAND_MAX+1.0f);
+  return (viskores::FloatDefault)rand() / (RAND_MAX+1.0f);
 }
 
-static inline vtkm::FloatDefault
-randRange(const vtkm::FloatDefault &a, const vtkm::FloatDefault &b)
+static inline viskores::FloatDefault
+randRange(const viskores::FloatDefault &a, const viskores::FloatDefault &b)
 {
     return a + (b-a)*rand01();
 }
@@ -79,7 +79,7 @@ template <typename FilterType>
 vtkh::DataSet *
 RunFilter(vtkh::DataSet& input,
           const std::string& fieldName,
-          const std::vector<vtkm::Particle>& seeds,
+          const std::vector<viskores::Particle>& seeds,
           int maxAdvSteps,
           double stepSize)
 {
@@ -120,7 +120,7 @@ RunWFilter(vtkh::DataSet& input,
 //----------------------------------------------------------------------------
 TEST(vtkh_warpx_streamlines_par, vtkh_warpx_streamlines_par)
 {
-#ifdef VTKM_ENABLE_KOKKOS
+#ifdef VISKORES_ENABLE_KOKKOS
   vtkh::InitializeKokkos();
 #endif
   const int maxAdvSteps = 1000;
@@ -138,29 +138,29 @@ TEST(vtkh_warpx_streamlines_par, vtkh_warpx_streamlines_par)
   std::string warpxParticlesFile = test_data_file("warpXparticles.vtk");
   std::string warpxFieldsFile = test_data_file("warpXfields.vtk");
 
-  vtkm::io::VTKDataSetReader seedsReader(warpxParticlesFile);
-  vtkm::cont::DataSet seedsData = seedsReader.ReadDataSet();
-  vtkm::io::VTKDataSetReader fieldsReader(warpxFieldsFile);
-  vtkm::cont::DataSet fieldsData = fieldsReader.ReadDataSet();
+  viskores::io::VTKDataSetReader seedsReader(warpxParticlesFile);
+  viskores::cont::DataSet seedsData = seedsReader.ReadDataSet();
+  viskores::io::VTKDataSetReader fieldsReader(warpxFieldsFile);
+  viskores::cont::DataSet fieldsData = fieldsReader.ReadDataSet();
   warpx_data_set.AddDomain(seedsData,0);
   warpx_data_set.AddDomain(fieldsData,1);
-  vtkm::cont::UnknownCellSet cells = fieldsData.GetCellSet();
-  vtkm::cont::CoordinateSystem coords = fieldsData.GetCoordinateSystem();
+  viskores::cont::UnknownCellSet cells = fieldsData.GetCellSet();
+  viskores::cont::CoordinateSystem coords = fieldsData.GetCoordinateSystem();
 
   auto w_bounds = coords.GetBounds();
-  using Structured3DType = vtkm::cont::CellSetStructured<3>;
+  using Structured3DType = viskores::cont::CellSetStructured<3>;
   Structured3DType castedCells;
   cells.AsCellSet(castedCells);
-  auto dims = castedCells.GetSchedulingRange(vtkm::TopologyElementTagPoint());
-  vtkm::Vec3f spacing = { static_cast<vtkm::FloatDefault>(w_bounds.X.Length()) / (dims[0] - 1),
-                          static_cast<vtkm::FloatDefault>(w_bounds.Y.Length()) / (dims[1] - 1),
-                          static_cast<vtkm::FloatDefault>(w_bounds.Z.Length()) / (dims[2] - 1) };
-  constexpr static vtkm::FloatDefault SPEED_OF_LIGHT =
-    static_cast<vtkm::FloatDefault>(2.99792458e8);
+  auto dims = castedCells.GetSchedulingRange(viskores::TopologyElementTagPoint());
+  viskores::Vec3f spacing = { static_cast<viskores::FloatDefault>(w_bounds.X.Length()) / (dims[0] - 1),
+                          static_cast<viskores::FloatDefault>(w_bounds.Y.Length()) / (dims[1] - 1),
+                          static_cast<viskores::FloatDefault>(w_bounds.Z.Length()) / (dims[2] - 1) };
+  constexpr static viskores::FloatDefault SPEED_OF_LIGHT =
+    static_cast<viskores::FloatDefault>(2.99792458e8);
   spacing = spacing * spacing;
 
-  vtkm::FloatDefault length = static_cast<vtkm::FloatDefault>(
-    1.0 / (SPEED_OF_LIGHT * vtkm::Sqrt(1. / spacing[0] + 1. / spacing[1] + 1. / spacing[2])));
+  viskores::FloatDefault length = static_cast<viskores::FloatDefault>(
+    1.0 / (SPEED_OF_LIGHT * viskores::Sqrt(1. / spacing[0] + 1. / spacing[1] + 1. / spacing[2])));
   std::cout << "CFL length : " << length << std::endl;
 
   vtkh::DataSet *outWSL=NULL;
@@ -179,7 +179,7 @@ TEST(vtkh_warpx_streamlines_par, vtkh_warpx_streamlines_par)
 
   checkValidity(outWSL, maxAdvSteps+1, true);
   writeDataSet(outWSL, "warpx_streamline", rank);
-  vtkm::Bounds tBounds = outWSL->GetGlobalBounds();
+  viskores::Bounds tBounds = outWSL->GetGlobalBounds();
 
   //unneeded at the moment, but keeping
   //vtkh::PointTransform transformer;
@@ -188,11 +188,11 @@ TEST(vtkh_warpx_streamlines_par, vtkh_warpx_streamlines_par)
 
   //transformer.Update();
   //vtkh::DataSet *scaled_output = transformer.GetOutput();
-  //vtkm::Bounds tBounds = scaled_output->GetGlobalBounds();
-  ////vtkm::Bounds tBounds = outWSL->GetGlobalBounds();
+  //viskores::Bounds tBounds = scaled_output->GetGlobalBounds();
+  ////viskores::Bounds tBounds = outWSL->GetGlobalBounds();
 
-  vtkm::rendering::Camera camera;
-  camera.SetPosition(vtkm::Vec<vtkm::Float64,3>(-16, -16, -16));
+  viskores::rendering::Camera camera;
+  camera.SetPosition(viskores::Vec<viskores::Float64,3>(-16, -16, -16));
   camera.Zoom(1.0);
   camera.ResetToBounds(tBounds);
   vtkh::Render render = vtkh::MakeRender(1024,

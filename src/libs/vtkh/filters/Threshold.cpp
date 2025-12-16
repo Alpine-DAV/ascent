@@ -1,9 +1,9 @@
 #include "Threshold.hpp"
 #include <vtkh/Error.hpp>
-#include <vtkm/filter/entity_extraction/Threshold.h>
-#include <vtkm/filter/entity_extraction/ExtractGeometry.h>
+#include <viskores/filter/entity_extraction/Threshold.h>
+#include <viskores/filter/entity_extraction/ExtractGeometry.h>
 #include <vtkh/filters/CleanGrid.hpp>
-#include <vtkm/ImplicitFunction.h>
+#include <viskores/ImplicitFunction.h>
 
 
 //---------------------------------------------------------------------------//
@@ -33,10 +33,10 @@ Threshold::Internals
   bool m_boundary;
 
   // field case
-  vtkm::Range m_field_range;
+  viskores::Range m_field_range;
   std::string m_field_name;
 
-  vtkm::ImplicitFunctionGeneral m_thresh_func;
+  viskores::ImplicitFunctionGeneral m_thresh_func;
 
   Internals():
   m_mode(Threshold::Internals::Mode::UNKNOWN),
@@ -153,10 +153,10 @@ Threshold::SetBoundaryThreshold(bool boundary)
 
 //---------------------------------------------------------------------------//
 void
-Threshold::SetBoxThreshold(const vtkm::Bounds &box_bounds)
+Threshold::SetBoxThreshold(const viskores::Bounds &box_bounds)
 {
   m_internals->m_mode = Threshold::Internals::Mode::BOX;
-  auto box = vtkm::Box({ box_bounds.X.Min,
+  auto box = viskores::Box({ box_bounds.X.Min,
                          box_bounds.Y.Min,
                          box_bounds.Z.Min},
                        { box_bounds.X.Max,
@@ -177,17 +177,17 @@ Threshold::SetPlaneThreshold(const double plane_origin[3],
                              const double plane_normal[3])
 {
   m_internals->m_mode = Threshold::Internals::Mode::PLANE;
-  vtkm::Vec<vtkm::FloatDefault,3> vec_origin;
+  viskores::Vec<viskores::FloatDefault,3> vec_origin;
   vec_origin[0] = plane_origin[0];
   vec_origin[1] = plane_origin[1];
   vec_origin[2] = plane_origin[2];
 
-  vtkm::Vec<vtkm::FloatDefault,3> vec_normal;
+  viskores::Vec<viskores::FloatDefault,3> vec_normal;
   vec_normal[0] = plane_normal[0];
   vec_normal[1] = plane_normal[1];
   vec_normal[2] = plane_normal[2];
 
-  auto plane = vtkm::Plane(vec_origin, vec_normal);
+  auto plane = viskores::Plane(vec_origin, vec_normal);
   m_internals->m_thresh_func = plane;
 }
 
@@ -202,19 +202,19 @@ Threshold::SetCylinderThreshold(const double cylinder_center[3],
                                 const double cylinder_radius)
 {
   m_internals->m_mode = Threshold::Internals::Mode::CYLINDER;
-  vtkm::Vec<vtkm::FloatDefault,3> vec_center;
+  viskores::Vec<viskores::FloatDefault,3> vec_center;
   vec_center[0] = cylinder_center[0];
   vec_center[1] = cylinder_center[1];
   vec_center[2] = cylinder_center[2];
 
-  vtkm::Vec<vtkm::FloatDefault,3> vec_axis;
+  viskores::Vec<viskores::FloatDefault,3> vec_axis;
   vec_axis[0] = cylinder_axis[0];
   vec_axis[1] = cylinder_axis[1];
   vec_axis[2] = cylinder_axis[2];
 
-  vtkm::FloatDefault r = cylinder_radius;
+  viskores::FloatDefault r = cylinder_radius;
 
-  auto cylinder = vtkm::Cylinder(vec_center, vec_axis, r);
+  auto cylinder = viskores::Cylinder(vec_center, vec_axis, r);
   m_internals->m_thresh_func = cylinder;
 }
 
@@ -229,13 +229,13 @@ Threshold::SetSphereThreshold(const double sphere_center[3],
 
 {
   m_internals->m_mode = Threshold::Internals::Mode::SPHERE;
-  vtkm::Vec<vtkm::FloatDefault,3> vec_center;
+  viskores::Vec<viskores::FloatDefault,3> vec_center;
   vec_center[0] = sphere_center[0];
   vec_center[1] = sphere_center[1];
   vec_center[2] = sphere_center[2];
-  vtkm::FloatDefault r = sphere_radius;
+  viskores::FloatDefault r = sphere_radius;
 
-  auto sphere = vtkm::Sphere(vec_center, r);
+  auto sphere = viskores::Sphere(vec_center, r);
   m_internals->m_thresh_func = sphere;
 }
 
@@ -274,8 +274,8 @@ Threshold::DoExecute()
 
   for(int i = 0; i < num_domains; ++i)
   {
-    vtkm::Id domain_id;
-    vtkm::cont::DataSet dom;
+    viskores::Id domain_id;
+    viskores::cont::DataSet dom;
     this->m_input->GetDomain(i, dom, domain_id);
 
     // field case
@@ -286,7 +286,7 @@ Threshold::DoExecute()
         continue;
       }
 
-      vtkm::filter::entity_extraction::Threshold thresholder;
+      viskores::filter::entity_extraction::Threshold thresholder;
       
       if(m_internals->m_invert)
       {
@@ -308,7 +308,7 @@ Threshold::DoExecute()
     else
     {
       // use implicit function w/ entity extractor
-      vtkm::filter::entity_extraction::ExtractGeometry extractor;
+      viskores::filter::entity_extraction::ExtractGeometry extractor;
       if(m_internals->m_invert)
       {
         extractor.SetExtractInside(false);

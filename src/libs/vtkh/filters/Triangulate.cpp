@@ -1,5 +1,5 @@
 #include <vtkh/filters/Triangulate.hpp>
-#include <vtkh/vtkm_filters/vtkmTriangulate.hpp>
+#include <vtkh/viskores_filters/viskoresTriangulate.hpp>
 
 namespace vtkh
 {
@@ -31,10 +31,10 @@ void Triangulate::DoExecute()
 
   for(int i = 0; i < num_domains; ++i)
   {
-    vtkm::Id domain_id;
-    vtkm::cont::DataSet dom;
+    viskores::Id domain_id;
+    viskores::cont::DataSet dom;
     this->m_input->GetDomain(i, dom, domain_id);
-    vtkmTriangulate tetter;
+    viskoresTriangulate tetter;
     // insert interesting stuff
     auto dataset = tetter.Run(dom, this->GetFieldSelection());
 

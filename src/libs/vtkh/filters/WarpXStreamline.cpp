@@ -3,23 +3,23 @@
 #include <vtkh/Error.hpp>
 #include <vtkh/filters/WarpXStreamline.hpp>
 #include <vtkh/filters/PointTransform.hpp>
-#include <vtkm/filter/flow/WarpXStreamline.h>
-#include <vtkm/cont/EnvironmentTracker.h>
-#include <vtkm/filter/geometry_refinement/Tube.h>
+#include <viskores/filter/flow/WarpXStreamline.h>
+#include <viskores/cont/EnvironmentTracker.h>
+#include <viskores/filter/geometry_refinement/Tube.h>
 
 #if VTKH_PARALLEL
-#include <vtkm/thirdparty/diy/diy.h>
-#include <vtkm/thirdparty/diy/mpi-cast.h>
+#include <viskores/thirdparty/diy/diy.h>
+#include <viskores/thirdparty/diy/mpi-cast.h>
 #include <mpi.h>
 #endif
 
 
-#include <vtkm/rendering/Actor.h>
-#include <vtkm/rendering/CanvasRayTracer.h>
-#include <vtkm/rendering/MapperWireframer.h>
-#include <vtkm/rendering/MapperRayTracer.h>
-#include <vtkm/rendering/Scene.h>
-#include <vtkm/rendering/View3D.h>
+#include <viskores/rendering/Actor.h>
+#include <viskores/rendering/CanvasRayTracer.h>
+#include <viskores/rendering/MapperWireframer.h>
+#include <viskores/rendering/MapperRayTracer.h>
+#include <viskores/rendering/Scene.h>
+#include <viskores/rendering/View3D.h>
 
 
 
@@ -29,12 +29,12 @@ namespace vtkh
 namespace detail
 {
 
-void GenerateChargedParticles(const vtkm::cont::ArrayHandle<vtkm::Vec3f>& pos,
-                              const vtkm::cont::ArrayHandle<vtkm::Vec3f>& mom,
-                              const vtkm::cont::ArrayHandle<vtkm::Float64>& mass,
-                              const vtkm::cont::ArrayHandle<vtkm::Float64>& charge,
-                              const vtkm::cont::ArrayHandle<vtkm::Float64>& weight,
-                              vtkm::cont::ArrayHandle<vtkm::ChargedParticle>& seeds,
+void GenerateChargedParticles(const viskores::cont::ArrayHandle<viskores::Vec3f>& pos,
+                              const viskores::cont::ArrayHandle<viskores::Vec3f>& mom,
+                              const viskores::cont::ArrayHandle<viskores::Float64>& mass,
+                              const viskores::cont::ArrayHandle<viskores::Float64>& charge,
+                              const viskores::cont::ArrayHandle<viskores::Float64>& weight,
+                              viskores::cont::ArrayHandle<viskores::ChargedParticle>& seeds,
 			      const int id_offset)
 {
   auto pPortal = pos.ReadPortal();
@@ -48,9 +48,9 @@ void GenerateChargedParticles(const vtkm::cont::ArrayHandle<vtkm::Vec3f>& pos,
   seeds.Allocate(numValues);
   auto sPortal = seeds.WritePortal();
 
-  for (vtkm::Id i = 0; i < numValues; i++)
+  for (viskores::Id i = 0; i < numValues; i++)
   {
-    vtkm::ChargedParticle electron(
+    viskores::ChargedParticle electron(
       pPortal.Get(i), i, mPortal.Get(i), qPortal.Get(i), wPortal.Get(i), uPortal.Get(i));
     sPortal.Set(i + id_offset, electron);
   }
@@ -103,12 +103,12 @@ void WarpXStreamline::DoExecute()
 {
     this->m_output = new DataSet();
 
-#ifndef VTKH_BYPASS_VTKM_BIH
+#ifndef VTKH_BYPASS_VISKORES_BIH
 
 #ifdef VTKH_PARALLEL
-    // Setup VTK-h and VTK-m comm.
+    // Setup VTK-h and Viskores comm.
     MPI_Comm mpi_comm = MPI_Comm_f2c(vtkh::GetMPICommHandle());
-    vtkm::cont::EnvironmentTracker::SetCommunicator(vtkmdiy::mpi::communicator(vtkmdiy::mpi::make_DIY_MPI_Comm(mpi_comm)));
+    viskores::cont::EnvironmentTracker::SetCommunicator(viskoresdiy::mpi::communicator(viskoresdiy::mpi::make_DIY_MPI_Comm(mpi_comm)));
 #endif
 
     //Make sure that the E field exists on any domain.
@@ -122,9 +122,9 @@ void WarpXStreamline::DoExecute()
         throw Error("Domain does not contain specified B vector field for WarpXStreamline analysis.");
     }
 
-    vtkm::cont::PartitionedDataSet inputs;
+    viskores::cont::PartitionedDataSet inputs;
 
-    vtkm::cont::ArrayHandle<vtkm::ChargedParticle> seeds;
+    viskores::cont::ArrayHandle<viskores::ChargedParticle> seeds;
     //Create charged particles for all domains with the particle spec fields.
     //TODO: user specified momentum,mass,charge,weighting?
     if (this->m_input->FieldExists(m_momentum_field_name))
@@ -133,13 +133,13 @@ void WarpXStreamline::DoExecute()
         int id_offset = 0;
         for (int i = 0; i < num_domains; i++)
         {
-            vtkm::Id domain_id;
-            vtkm::cont::DataSet dom;
+            viskores::Id domain_id;
+            viskores::cont::DataSet dom;
             this->m_input->GetDomain(i, dom, domain_id);
             if(dom.HasField(m_momentum_field_name))
             {
-                vtkm::cont::ArrayHandle<vtkm::Vec3f> pos, mom;
-                vtkm::cont::ArrayHandle<vtkm::Float64> mass, charge, w;
+                viskores::cont::ArrayHandle<viskores::Vec3f> pos, mom;
+                viskores::cont::ArrayHandle<viskores::Float64> mass, charge, w;
                 dom.GetCoordinateSystem().GetData().AsArrayHandle(pos);
                 dom.GetField(m_momentum_field_name).GetData().AsArrayHandle(mom);
                 dom.GetField(m_mass_field_name).GetData().AsArrayHandle(mass);
@@ -183,9 +183,9 @@ void WarpXStreamline::DoExecute()
         throw Error("Vector field type does not match a supportable type.");
     }
 
-    //Everything is valid. Call the VTKm filter.
+    //Everything is valid. Call the Viskores filter.
 
-    vtkm::filter::flow::WarpXStreamline warpxStreamlineFilter;
+    viskores::filter::flow::WarpXStreamline warpxStreamlineFilter;
     //std::cerr << "intputs OUTTTT" << std::endl;
     //inputs.PrintSummary(std::cerr);
 
@@ -206,16 +206,16 @@ void WarpXStreamline::DoExecute()
     {
         if(!m_radius_set)
         {
-            vtkm::Float32 radius = 0.0;
-            vtkm::Bounds coordBounds = out.GetPartition(0).GetCoordinateSystem().GetBounds();
+            viskores::Float32 radius = 0.0;
+            viskores::Bounds coordBounds = out.GetPartition(0).GetCoordinateSystem().GetBounds();
             // set a default radius
-            vtkm::Float64 lx = coordBounds.X.Length();
-            vtkm::Float64 ly = coordBounds.Y.Length();
-            vtkm::Float64 lz = coordBounds.Z.Length();
-            vtkm::Float64 mag = vtkm::Sqrt(lx * lx + ly * ly + lz * lz);
+            viskores::Float64 lx = coordBounds.X.Length();
+            viskores::Float64 ly = coordBounds.Y.Length();
+            viskores::Float64 lz = coordBounds.Z.Length();
+            viskores::Float64 mag = viskores::Sqrt(lx * lx + ly * ly + lz * lz);
             // same as used in vtk ospray
-            constexpr vtkm::Float64 heuristic = 1000.;
-            radius = static_cast<vtkm::Float32>(mag / heuristic);
+            constexpr viskores::Float64 heuristic = 1000.;
+            radius = static_cast<viskores::Float32>(mag / heuristic);
             m_tube_size = radius;
         }
 
@@ -225,14 +225,14 @@ void WarpXStreamline::DoExecute()
         {
             //std::cerr << "tube size too small" << std::endl;
             int num_domains = out.GetNumberOfPartitions();
-            for (vtkm::Id i = 0; i < num_domains; i++)
+            for (viskores::Id i = 0; i < num_domains; i++)
             {
               this->m_output->AddDomain(out.GetPartition(i), i);
             }
             return;
         }
 
-        vtkm::filter::geometry_refinement::Tube tubeFilter;
+        viskores::filter::geometry_refinement::Tube tubeFilter;
         tubeFilter.SetCapping(m_tube_capping);
         //tubeFilter.SetNumberOfSides(m_tube_sides);
         tubeFilter.SetNumberOfSides(4);
@@ -241,7 +241,7 @@ void WarpXStreamline::DoExecute()
         auto tubeOut = tubeFilter.Execute(out);
       
         int num_domains = tubeOut.GetNumberOfPartitions();
-        for (vtkm::Id i = 0; i < num_domains; i++)
+        for (viskores::Id i = 0; i < num_domains; i++)
         {
           this->m_output->AddDomain(tubeOut.GetPartition(i), i);
         }
@@ -254,7 +254,7 @@ void WarpXStreamline::DoExecute()
     else
     {
       int num_domains = out.GetNumberOfPartitions();
-      for (vtkm::Id i = 0; i < num_domains; i++)
+      for (viskores::Id i = 0; i < num_domains; i++)
       {
         this->m_output->AddDomain(out.GetPartition(i), i);
       }

@@ -8,6 +8,7 @@
         type: "mir"
         params: 
           matset: "matset"
+          output_name: "cellMat"
           error_scaling: 0.0
           scaling_decay: 0.0
           iterations: 0

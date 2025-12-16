@@ -4,14 +4,17 @@
 // other details. No copyright assignment is required to contribute to Ascent.
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-#include <logging/ascent_annotations.hpp>
+#include <ascent_annotations.hpp>
+#include <ascent_logging.hpp>
+
 #include <typed_scheduler.hpp>
 #include <rover.hpp>
 #include <rover_exceptions.hpp>
-#include <vtkm_typedefs.hpp>
+#include <viskores_typedefs.hpp>
 #include <iostream>
 #include <utils/rover_logging.hpp>
 #include <settings.hpp>
+
 
 #ifdef ROVER_PARALLEL
 #include <mpi.h>
@@ -130,18 +133,18 @@ Rover::create_scheduler()
   const std::string precision = rover::settings["precision"].as_string();
   if ("double" == precision)
   {
-    m_scheduler = new TypedScheduler<vtkm::Float64>();
+    m_scheduler = new TypedScheduler<viskores::Float64>();
   }
   else // ("single" == precision)
   {
-    m_scheduler = new TypedScheduler<vtkm::Float32>();
+    m_scheduler = new TypedScheduler<viskores::Float32>();
   }
 
 #ifdef ROVER_PARALLEL
   // Check to see if we have been initialized
   if(-1 == m_rank)
   {
-    ROVER_ERROR("Error - Rover::create_scheduler: MPI was not initialized");
+    ASCENT_LOG_ERROR("Error - Rover::create_scheduler: MPI was not initialized");
   }
   m_scheduler->set_comm_handle(m_comm_handle);
 #endif
@@ -182,7 +185,7 @@ Rover::update_camera()
   if (camera_params.has_child("position"))
   {
     const float64_accessor vec3 = camera_params["position"].value();
-    const vtkmVec3f position(vec3[0], vec3[1], vec3[2]);
+    const viskoresVec3f position(vec3[0], vec3[1], vec3[2]);
     m_camera.SetPosition(position);
   }
 
@@ -207,14 +210,14 @@ Rover::update_camera()
   if (camera_params.has_child("look_at"))
   {
     const float64_accessor vec3 = camera_params["look_at"].value();
-    const vtkmVec3f look_at(vec3[0], vec3[1], vec3[2]);
+    const viskoresVec3f look_at(vec3[0], vec3[1], vec3[2]);
     m_camera.SetLookAt(look_at);
   }
   
   if (camera_params.has_child("up"))
   {
     const float64_accessor vec3 = camera_params["up"].value();
-    const vtkmVec3f up(vec3[0], vec3[1], vec3[2]);
+    const viskoresVec3f up(vec3[0], vec3[1], vec3[2]);
     m_camera.SetViewUp(up);
   }
   
@@ -229,7 +232,7 @@ Rover::update_camera()
 
   if (has_xpan || has_ypan)
   {
-    const vtkmVec2f pan = m_camera.GetPan();
+    const viskoresVec2f pan = m_camera.GetPan();
     float64 xpan = pan[0];
     float64 ypan = pan[1];
 
@@ -251,7 +254,7 @@ Rover::update_camera()
 
   if (has_near_plane || has_far_plane)
   {
-    vtkm::Range clipping_range = m_camera.GetClippingRange();
+    viskores::Range clipping_range = m_camera.GetClippingRange();
 
     if (has_near_plane)
     {
@@ -285,7 +288,7 @@ Rover::execute()
   // but a developer would prefer to be made aware.
   if (!m_scheduler)
   {
-    ROVER_ERROR("Error - Rover::execute: Execute called before adding a dataset");
+    ASCENT_LOG_ERROR("Error - Rover::execute: Execute called before adding a dataset");
   }
 
   // Applies the user-supplied parameters and then begins the ray trace

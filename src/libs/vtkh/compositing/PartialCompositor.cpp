@@ -540,7 +540,7 @@ PartialCompositor<PartialType>::composite(std::vector<std::vector<PartialType>> 
 
 template<typename PartialType>
 void
-PartialCompositor<PartialType>::set_background(std::vector<vtkm::Float32> &background_values)
+PartialCompositor<PartialType>::set_background(std::vector<viskores::Float32> &background_values)
 {
   const size_t size = background_values.size();
   m_background_values.resize(size);
@@ -552,7 +552,7 @@ PartialCompositor<PartialType>::set_background(std::vector<vtkm::Float32> &backg
 
 template<typename PartialType>
 void
-PartialCompositor<PartialType>::set_background(std::vector<vtkm::Float64> &background_values)
+PartialCompositor<PartialType>::set_background(std::vector<viskores::Float64> &background_values)
 {
   const size_t size = background_values.size();
   m_background_values.resize(size);
@@ -570,14 +570,14 @@ PartialCompositor<PartialType>::set_comm_handle(int mpi_comm_id)
 }
 
 //Explicit function instantiations
-template class VTKH_API PartialCompositor<VolumePartial<vtkm::Float32>>;
-template class VTKH_API PartialCompositor<VolumePartial<vtkm::Float64>>;
+template class VTKH_API PartialCompositor<VolumePartial<viskores::Float32>>;
+template class VTKH_API PartialCompositor<VolumePartial<viskores::Float64>>;
 
-template class VTKH_API PartialCompositor<AbsorptionPartial<vtkm::Float32>>;
-template class VTKH_API PartialCompositor<AbsorptionPartial<vtkm::Float64>>;
+template class VTKH_API PartialCompositor<AbsorptionPartial<viskores::Float32>>;
+template class VTKH_API PartialCompositor<AbsorptionPartial<viskores::Float64>>;
 
-template class VTKH_API PartialCompositor<EmissionPartial<vtkm::Float32>>;
-template class VTKH_API PartialCompositor<EmissionPartial<vtkm::Float64>>;
+template class VTKH_API PartialCompositor<EmissionPartial<viskores::Float32>>;
+template class VTKH_API PartialCompositor<EmissionPartial<viskores::Float64>>;
 
 
 } // namespace vtkh

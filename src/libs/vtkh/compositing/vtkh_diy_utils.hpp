@@ -2,28 +2,28 @@
 #define VTKH_DIY_UTILS_HPP
 
 #include <diy/decomposition.hpp>
-#include <vtkm/Bounds.h>
+#include <viskores/Bounds.h>
 
 namespace vtkh
 {
 
 static
-vtkm::Bounds DIYBoundsToVTKM(const vtkhdiy::DiscreteBounds &bounds)
+viskores::Bounds DIYBoundsToVISKORES(const vtkhdiy::DiscreteBounds &bounds)
 {
-  vtkm::Bounds vtkm_bounds;
+  viskores::Bounds viskores_bounds;
 
-  vtkm_bounds.X.Min = bounds.min[0];
-  vtkm_bounds.Y.Min = bounds.min[1];
-  vtkm_bounds.Z.Min = bounds.min[2];
+  viskores_bounds.X.Min = bounds.min[0];
+  viskores_bounds.Y.Min = bounds.min[1];
+  viskores_bounds.Z.Min = bounds.min[2];
 
-  vtkm_bounds.X.Max = bounds.max[0];
-  vtkm_bounds.Y.Max = bounds.max[1];
-  vtkm_bounds.Z.Max = bounds.max[2];
-  return vtkm_bounds;
+  viskores_bounds.X.Max = bounds.max[0];
+  viskores_bounds.Y.Max = bounds.max[1];
+  viskores_bounds.Z.Max = bounds.max[2];
+  return viskores_bounds;
 }
 
 static
-vtkhdiy::DiscreteBounds VTKMBoundsToDIY(const vtkm::Bounds &bounds)
+vtkhdiy::DiscreteBounds VISKORESBoundsToDIY(const viskores::Bounds &bounds)
 {
   vtkhdiy::DiscreteBounds diy_bounds;
 

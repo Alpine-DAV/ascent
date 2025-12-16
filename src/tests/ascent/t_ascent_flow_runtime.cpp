@@ -287,7 +287,7 @@ TEST(ascent_flow_runtime, test_flow_runtime_blueprint_verify)
 }
 
 //-----------------------------------------------------------------------------
-TEST(ascent_flow_runtime, test_flow_vtkm)
+TEST(ascent_flow_runtime, test_flow_viskores)
 {
     Node actions;
 
@@ -299,8 +299,8 @@ TEST(ascent_flow_runtime, test_flow_vtkm)
 
     actions.append();
     actions[1]["action"] = "add_filter";
-    actions[1]["type_name"]  = "ensure_vtkm";
-    actions[1]["name"] = "vtkm_data";
+    actions[1]["type_name"]  = "ensure_viskores";
+    actions[1]["name"] = "viskores_data";
 
     actions.append();
     actions[2]["action"] = "connect";
@@ -310,7 +310,7 @@ TEST(ascent_flow_runtime, test_flow_vtkm)
     actions.append();
     actions[3]["action"] = "connect";
     actions[3]["src"]  = "verify";
-    actions[3]["dest"] = "vtkm_data";
+    actions[3]["dest"] = "viskores_data";
 
 
     actions.append()["action"] = "execute";
@@ -336,8 +336,8 @@ TEST(ascent_flow_runtime, test_flow_vtkm)
     Node n;
     ascent::about(n);
 
-    // expect an error if we don't have vtkm support
-    if(n["runtimes/vtkm/status"].as_string() == "disabled")
+    // expect an error if we don't have viskores support
+    if(n["runtimes/viskores/status"].as_string() == "disabled")
     {
         EXPECT_THROW(ascent.execute(actions),conduit::Error);
     }
@@ -358,8 +358,8 @@ TEST(ascent_flow_runtime, test_flow_vtkh_render)
     Node n;
     ascent::about(n);
 
-    // vtk-h requires vtk-m, don't run this test if we don't have vtk-m support
-    if(n["runtimes/vtkm/status"].as_string() == "disabled")
+    // vtk-h requires viskores, don't run this test if we don't have viskores support
+    if(n["runtimes/viskores/status"].as_string() == "disabled")
     {
 
         return;
@@ -446,8 +446,8 @@ TEST(ascent_flow_runtime, test_flow_vtkh_filter)
     Node n;
     ascent::about(n);
 
-    // vtk-h requires vtk-m, don't run this test if we don't have vtk-m support
-    if(n["runtimes/vtkm/status"].as_string() == "disabled")
+    // vtk-h requires viskores, don't run this test if we don't have viskores support
+    if(n["runtimes/viskores/status"].as_string() == "disabled")
     {
 
         return;

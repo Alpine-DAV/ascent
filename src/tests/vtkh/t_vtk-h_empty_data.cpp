@@ -15,16 +15,16 @@
 #include <vtkh/rendering/RayTracer.hpp>
 #include <vtkh/rendering/Scene.hpp>
 
-#include "t_vtkm_test_utils.hpp"
+#include "t_viskores_test_utils.hpp"
 
 #include <iostream>
 
 
 
 //----------------------------------------------------------------------------
-TEST(vtkh_emtpy_data, vtkh_empty_vtkm)
+TEST(vtkh_emtpy_data, vtkh_empty_viskores)
 {
-#ifdef VTKM_ENABLE_KOKKOS
+#ifdef VISKORES_ENABLE_KOKKOS
   vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
@@ -40,7 +40,7 @@ TEST(vtkh_emtpy_data, vtkh_empty_vtkm)
   vtkh::IsoVolume iso;
 
   // create a range that does not exist
-  vtkm::Range iso_range;
+  viskores::Range iso_range;
   iso_range.Min = -100.;
   iso_range.Max = -10.;
   iso.SetRange(iso_range);
@@ -68,8 +68,8 @@ TEST(vtkh_emtpy_data, vtkh_empty_vtkm)
 
   vtkh::Clip clipper;
 
-  vtkm::Bounds clip_bounds = contour_output->GetGlobalBounds();
-  vtkm::Vec<vtkm::Float64, 3> center = clip_bounds.Center();
+  viskores::Bounds clip_bounds = contour_output->GetGlobalBounds();
+  viskores::Vec<viskores::Float64, 3> center = clip_bounds.Center();
   clip_bounds.X.Max = center[0] + .5;
   clip_bounds.Y.Max = center[1] + .5;
   clip_bounds.Z.Max = center[2] + .5;
@@ -92,17 +92,17 @@ TEST(vtkh_emtpy_data, vtkh_empty_vtkm)
   thresher.Update();
   vtkh::DataSet *thresh_output = thresher.GetOutput();
 
-  vtkm::Bounds bounds = thresh_output->GetGlobalBounds();
+  viskores::Bounds bounds = thresh_output->GetGlobalBounds();
 
-  vtkm::rendering::Camera camera;
+  viskores::rendering::Camera camera;
   camera.ResetToBounds(bounds);
-  camera.SetPosition(vtkm::Vec<vtkm::Float64,3>(16,-32,-32));
+  camera.SetPosition(viskores::Vec<viskores::Float64,3>(16,-32,-32));
   float bg_color[4] = { 0.f, 0.f, 0.f, 1.f};
   vtkh::Render render = vtkh::MakeRender(512,
                                          512,
                                          camera,
                                          *thresh_output,
-                                         "empty_vtkm",
+                                         "empty_viskores",
                                          bg_color);
 
   vtkh::Scene scene;
@@ -124,7 +124,7 @@ TEST(vtkh_emtpy_data, vtkh_empty_vtkm)
 //----------------------------------------------------------------------------
 TEST(vtkh_emtpy_data, vtkh_empty_vtkh)
 {
-#ifdef VTKM_ENABLE_KOKKOS
+#ifdef VISKORES_ENABLE_KOKKOS
   vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
@@ -132,7 +132,7 @@ TEST(vtkh_emtpy_data, vtkh_empty_vtkh)
   vtkh::IsoVolume iso;
 
   // create a range that does not exist
-  vtkm::Range iso_range;
+  viskores::Range iso_range;
   iso_range.Min = -100.;
   iso_range.Max = -10.;
   iso.SetRange(iso_range);

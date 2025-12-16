@@ -14,7 +14,7 @@ public:
   Clip();
   virtual ~Clip();
   std::string GetName() const override;
-  void SetBoxClip(const vtkm::Bounds &clipping_bounds);
+  void SetBoxClip(const viskores::Bounds &clipping_bounds);
   void SetSphereClip(const double center[3], const double radius);
   void SetCylinderClip(const double center[3],
                        const double axis[3],
@@ -33,7 +33,7 @@ public:
                      const double origin3[3],
                      const double normal3[3]);
 
-  void SetCellSetIndex(vtkm::Id index);
+  void SetCellSetIndex(viskores::Id index);
   void SetInvertClip(bool invert);
 protected:
   void PreExecute() override;

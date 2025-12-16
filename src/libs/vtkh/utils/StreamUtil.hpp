@@ -6,7 +6,7 @@
 #include <map>
 #include <iostream>
 #include <deque>
-#include <vtkm/cont/DataSet.h>
+#include <viskores/cont/DataSet.h>
 
 namespace vtkh
 {
@@ -66,7 +66,7 @@ inline std::ostream &operator<<(std::ostream &os, const std::map<T1,T2> &m)
     return os;
 }
 
-inline std::ostream &operator<<(std::ostream &os, const vtkm::cont::DataSet &ds)
+inline std::ostream &operator<<(std::ostream &os, const viskores::cont::DataSet &ds)
 {
     ds.PrintSummary(os);
     return os;

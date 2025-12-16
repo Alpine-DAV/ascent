@@ -3,17 +3,17 @@
 #include <vtkh/Error.hpp>
 #include <vtkh/Logger.hpp>
 
-// FIXME:UDA: vtkm_dataset_info depends on vtkm::rendering
-#include <vtkh/utils/vtkm_dataset_info.hpp>
+// FIXME:UDA: viskores_dataset_info depends on viskores::rendering
+#include <vtkh/utils/viskores_dataset_info.hpp>
 // std includes
 #include <limits>
 #include <sstream>
-//vtkm includes
-#include <vtkm/cont/Error.h>
-#include <vtkm/cont/ArrayHandleConstant.h>
-#include <vtkm/cont/TryExecute.h>
-#include <vtkm/worklet/WorkletMapField.h>
-#include <vtkm/worklet/DispatcherMapField.h>
+//viskores includes
+#include <viskores/cont/Error.h>
+#include <viskores/cont/ArrayHandleConstant.h>
+#include <viskores/cont/TryExecute.h>
+#include <viskores/worklet/WorkletMapField.h>
+#include <viskores/worklet/DispatcherMapField.h>
 #ifdef VTKH_PARALLEL
   #include <mpi.h>
 #endif
@@ -68,12 +68,12 @@ bool GlobalSomeoneAgrees(bool local)
 }
 
 template<typename T>
-class MemSetWorklet : public vtkm::worklet::WorkletMapField
+class MemSetWorklet : public viskores::worklet::WorkletMapField
 {
 protected:
   T Value;
 public:
-  VTKM_CONT
+  VISKORES_CONT
   MemSetWorklet(const T value)
     : Value(value)
   {
@@ -82,7 +82,7 @@ public:
   typedef void ControlSignature(FieldOut);
   typedef void ExecutionSignature(_1);
 
-  VTKM_EXEC
+  VISKORES_EXEC
   void operator()(T &value) const
   {
     value = Value;
@@ -90,10 +90,10 @@ public:
 }; //class MemSetWorklet
 
 template<typename T>
-void MemSet(vtkm::cont::ArrayHandle<T> &array, const T value, const vtkm::Id num_values)
+void MemSet(viskores::cont::ArrayHandle<T> &array, const T value, const viskores::Id num_values)
 {
   array.Allocate(num_values);
-  vtkm::worklet::DispatcherMapField<MemSetWorklet<T>>(MemSetWorklet<T>(value))
+  viskores::worklet::DispatcherMapField<MemSetWorklet<T>>(MemSetWorklet<T>(value))
     .Invoke(array);
 }
 
@@ -107,7 +107,7 @@ DataSet::OneDomainPerRank() const
 }
 
 void
-DataSet::AddDomain(vtkm::cont::DataSet data_set, vtkm::Id domain_id)
+DataSet::AddDomain(viskores::cont::DataSet data_set, viskores::Id domain_id)
 {
   if(m_domains.size() != 0)
   {
@@ -120,8 +120,8 @@ DataSet::AddDomain(vtkm::cont::DataSet data_set, vtkm::Id domain_id)
   m_domain_ids.push_back(domain_id);
 }
 
-vtkm::cont::Field
-DataSet::GetField(const std::string &field_name, const vtkm::Id domain_index)
+viskores::cont::Field
+DataSet::GetField(const std::string &field_name, const viskores::Id domain_index)
 {
   assert(domain_index >= 0);
   assert(domain_index < m_domains.size());
@@ -129,8 +129,8 @@ DataSet::GetField(const std::string &field_name, const vtkm::Id domain_index)
   return m_domains[domain_index].GetField(field_name);
 }
 
-vtkm::cont::DataSet&
-DataSet::GetDomain(const vtkm::Id index)
+viskores::cont::DataSet&
+DataSet::GetDomain(const viskores::Id index)
 {
   const size_t num_domains = m_domains.size();
 
@@ -146,16 +146,16 @@ DataSet::GetDomain(const vtkm::Id index)
 
 }
 
-std::vector<vtkm::Id>
+std::vector<viskores::Id>
 DataSet::GetDomainIds() const
 {
   return m_domain_ids;
 }
 
 void
-DataSet::GetDomain(const vtkm::Id index,
-                   vtkm::cont::DataSet &data_set,
-                   vtkm::Id &domain_id)
+DataSet::GetDomain(const viskores::Id index,
+                   viskores::cont::DataSet &data_set,
+                   viskores::Id &domain_id)
 {
   const size_t num_domains = m_domains.size();
 
@@ -172,16 +172,16 @@ DataSet::GetDomain(const vtkm::Id index,
 
 }
 
-vtkm::Id
+viskores::Id
 DataSet::GetNumberOfDomains() const
 {
-  return static_cast<vtkm::Id>(m_domains.size());
+  return static_cast<viskores::Id>(m_domains.size());
 }
 
-vtkm::Id
+viskores::Id
 DataSet::GetNumberOfCells() const
 {
-  vtkm::Id num_cells = 0;
+  viskores::Id num_cells = 0;
   const size_t num_domains = m_domains.size();
   for(size_t i = 0; i < num_domains; ++i)
   {
@@ -190,10 +190,10 @@ DataSet::GetNumberOfCells() const
   return num_cells;
 }
 
-vtkm::Id
+viskores::Id
 DataSet::GetGlobalNumberOfCells() const
 {
-  vtkm::Id num_cells = GetNumberOfCells();;
+  viskores::Id num_cells = GetNumberOfCells();;
 #ifdef VTKH_PARALLEL
   MPI_Comm mpi_comm = MPI_Comm_f2c(vtkh::GetMPICommHandle());
   long long int local_cells = static_cast<long long int>(num_cells);
@@ -211,10 +211,10 @@ DataSet::GetGlobalNumberOfCells() const
 
 
 
-vtkm::Id
+viskores::Id
 DataSet::GetGlobalNumberOfDomains() const
 {
-  vtkm::Id domains = this->GetNumberOfDomains();
+  viskores::Id domains = this->GetNumberOfDomains();
 #ifdef VTKH_PARALLEL
   MPI_Comm mpi_comm = MPI_Comm_f2c(vtkh::GetMPICommHandle());
   int local_doms = static_cast<int>(domains);
@@ -230,22 +230,22 @@ DataSet::GetGlobalNumberOfDomains() const
   return domains;
 }
 
-vtkm::Bounds
+viskores::Bounds
 DataSet::GetDomainBounds(const int &domain_index,
-                         vtkm::Id coordinate_system_index) const
+                         viskores::Id coordinate_system_index) const
 {
-  const vtkm::Id index = coordinate_system_index;
-  vtkm::cont::CoordinateSystem coords;
+  const viskores::Id index = coordinate_system_index;
+  viskores::cont::CoordinateSystem coords;
   try
   {
     coords = m_domains[domain_index].GetCoordinateSystem(index);
   }
-  catch (const vtkm::cont::Error &error)
+  catch (const viskores::cont::Error &error)
   {
     std::stringstream msg;
-    msg<<"GetBounds call failed. vtk-m error was encountered while "
+    msg<<"GetBounds call failed. viskores error was encountered while "
        <<"attempting to get coordinate system "<<index<<" from "
-       <<"domaim "<<domain_index<<". vtkm error message: "<<error.GetMessage();
+       <<"domaim "<<domain_index<<". viskores error message: "<<error.GetMessage();
     throw Error(msg.str());
   }
 
@@ -253,45 +253,45 @@ DataSet::GetDomainBounds(const int &domain_index,
 }
 
 
-vtkm::Bounds
-DataSet::GetBounds(vtkm::Id coordinate_system_index) const
+viskores::Bounds
+DataSet::GetBounds(viskores::Id coordinate_system_index) const
 {
-  const vtkm::Id index = coordinate_system_index;
+  const viskores::Id index = coordinate_system_index;
   const size_t num_domains = m_domains.size();
 
-  vtkm::Bounds bounds;
+  viskores::Bounds bounds;
 
   for(size_t i = 0; i < num_domains; ++i)
   {
-    vtkm::Bounds dom_bounds = GetDomainBounds(i, index);
+    viskores::Bounds dom_bounds = GetDomainBounds(i, index);
     bounds.Include(dom_bounds);
   }
 
   return bounds;
 }
 
-vtkm::Bounds
-DataSet::GetGlobalBounds(vtkm::Id coordinate_system_index) const
+viskores::Bounds
+DataSet::GetGlobalBounds(viskores::Id coordinate_system_index) const
 {
   VTKH_DATA_OPEN("GetGlobalBounds");
-  vtkm::Bounds bounds;
+  viskores::Bounds bounds;
   bounds = GetBounds(coordinate_system_index);
 
 #ifdef VTKH_PARALLEL
   MPI_Comm mpi_comm = MPI_Comm_f2c(vtkh::GetMPICommHandle());
 
-  vtkm::Float64 x_min = bounds.X.Min;
-  vtkm::Float64 x_max = bounds.X.Max;
-  vtkm::Float64 y_min = bounds.Y.Min;
-  vtkm::Float64 y_max = bounds.Y.Max;
-  vtkm::Float64 z_min = bounds.Z.Min;
-  vtkm::Float64 z_max = bounds.Z.Max;
-  vtkm::Float64 global_x_min = 0;
-  vtkm::Float64 global_x_max = 0;
-  vtkm::Float64 global_y_min = 0;
-  vtkm::Float64 global_y_max = 0;
-  vtkm::Float64 global_z_min = 0;
-  vtkm::Float64 global_z_max = 0;
+  viskores::Float64 x_min = bounds.X.Min;
+  viskores::Float64 x_max = bounds.X.Max;
+  viskores::Float64 y_min = bounds.Y.Min;
+  viskores::Float64 y_max = bounds.Y.Max;
+  viskores::Float64 z_min = bounds.Z.Min;
+  viskores::Float64 z_max = bounds.Z.Max;
+  viskores::Float64 global_x_min = 0;
+  viskores::Float64 global_x_max = 0;
+  viskores::Float64 global_y_min = 0;
+  viskores::Float64 global_y_max = 0;
+  viskores::Float64 global_z_min = 0;
+  viskores::Float64 global_z_max = 0;
 
   MPI_Allreduce((void *)(&x_min),
                 (void *)(&global_x_min),
@@ -346,13 +346,13 @@ DataSet::GetGlobalBounds(vtkm::Id coordinate_system_index) const
   return bounds;
 }
 
-vtkm::cont::ArrayHandle<vtkm::Range>
+viskores::cont::ArrayHandle<viskores::Range>
 DataSet::GetRange(const std::string &field_name) const
 {
   const size_t num_domains = m_domains.size();
 
-  vtkm::cont::ArrayHandle<vtkm::Range> range;
-  vtkm::Id num_components = 0;
+  viskores::cont::ArrayHandle<viskores::Range> range;
+  viskores::Id num_components = 0;
 
   for(size_t i = 0; i < num_domains; ++i)
   {
@@ -361,11 +361,11 @@ DataSet::GetRange(const std::string &field_name) const
       continue;
     }
 
-    const vtkm::cont::Field &field = m_domains[i].GetField(field_name);
-    vtkm::cont::ArrayHandle<vtkm::Range> sub_range;
+    const viskores::cont::Field &field = m_domains[i].GetField(field_name);
+    viskores::cont::ArrayHandle<viskores::Range> sub_range;
     sub_range = field.GetRange();
 
-    vtkm::Id components = sub_range.ReadPortal().GetNumberOfValues();
+    viskores::Id components = sub_range.ReadPortal().GetNumberOfValues();
 
     // first range with data. Set range and keep looking
     if(num_components == 0)
@@ -386,10 +386,10 @@ DataSet::GetRange(const std::string &field_name) const
       throw Error(msg.str());
     }
 
-    for(vtkm::Id c = 0; c < components; ++c)
+    for(viskores::Id c = 0; c < components; ++c)
     {
-      vtkm::Range s_range = sub_range.ReadPortal().Get(c);
-      vtkm::Range c_range = range.ReadPortal().Get(c);
+      viskores::Range s_range = sub_range.ReadPortal().Get(c);
+      viskores::Range c_range = range.ReadPortal().Get(c);
       c_range.Include(s_range);
       range.WritePortal().Set(c, c_range);
     }
@@ -397,15 +397,15 @@ DataSet::GetRange(const std::string &field_name) const
   return range;
 }
 
-vtkm::cont::ArrayHandle<vtkm::Range>
+viskores::cont::ArrayHandle<viskores::Range>
 DataSet::GetGlobalRange(const std::string &field_name) const
 {
   VTKH_DATA_OPEN("GetGlobalRange");
-  vtkm::cont::ArrayHandle<vtkm::Range> range;
+  viskores::cont::ArrayHandle<viskores::Range> range;
   range = GetRange(field_name);
 
 #ifdef VTKH_PARALLEL
-  vtkm::Id num_components = range.GetNumberOfValues();
+  viskores::Id num_components = range.GetNumberOfValues();
   MPI_Comm mpi_comm = MPI_Comm_f2c(vtkh::GetMPICommHandle());
   //
   // it is possible to have an empty dataset at one of the ranks
@@ -454,10 +454,10 @@ DataSet::GetGlobalRange(const std::string &field_name) const
     for(int i = 0; i < components; ++i)
     {
 
-      vtkm::Range c_range = range.ReadPortal().Get(i);
+      viskores::Range c_range = range.ReadPortal().Get(i);
 
-      vtkm::Float64 local_min;
-      vtkm::Float64 local_max;
+      viskores::Float64 local_min;
+      viskores::Float64 local_max;
 
       if(num_components != 0)
       {
@@ -466,12 +466,12 @@ DataSet::GetGlobalRange(const std::string &field_name) const
       }
       else
       {
-        local_min = std::numeric_limits<vtkm::Float64>::max();
-        local_max = std::numeric_limits<vtkm::Float64>::lowest();
+        local_min = std::numeric_limits<viskores::Float64>::max();
+        local_max = std::numeric_limits<viskores::Float64>::lowest();
       }
 
-      vtkm::Float64 global_min = 0;
-      vtkm::Float64 global_max = 0;
+      viskores::Float64 global_min = 0;
+      viskores::Float64 global_max = 0;
 
       MPI_Allreduce((void *)(&local_min),
                     (void *)(&global_min),
@@ -546,9 +546,9 @@ DataSet::IsPointMesh() const
   const size_t num_domains = m_domains.size();
   for(size_t i = 0; i < num_domains; ++i)
   {
-    const vtkm::cont::DataSet &dom = m_domains[i];
-    vtkm::UInt8 shape_type;
-    bool single_type = VTKMDataSetInfo::IsSingleCellShape(dom.GetCellSet(), shape_type);
+    const viskores::cont::DataSet &dom = m_domains[i];
+    viskores::UInt8 shape_type;
+    bool single_type = VISKORESDataSetInfo::IsSingleCellShape(dom.GetCellSet(), shape_type);
 
     if(dom.GetCellSet().GetNumberOfCells() > 0)
     {
@@ -561,15 +561,41 @@ DataSet::IsPointMesh() const
 }
 
 bool
+DataSet::IsLineMesh() const
+{
+  const bool is_empty = GlobalIsEmpty();
+  if(is_empty) return false;
+
+  // since we are not empty, start with the affirmative is_lines.
+  // if someone is not lines, the we will figure it out here
+  bool is_lines = true;
+  const size_t num_domains = m_domains.size();
+  for(size_t i = 0; i < num_domains; ++i)
+  {
+    const viskores::cont::DataSet &dom = m_domains[i];
+    viskores::UInt8 shape_type;
+    bool single_type = VISKORESDataSetInfo::IsSingleCellShape(dom.GetCellSet(), shape_type);
+
+    if(dom.GetCellSet().GetNumberOfCells() > 0)
+    {
+      is_lines = (single_type && (shape_type == 3)) && is_lines;
+    }
+  }
+
+  is_lines = detail::GlobalAgreement(is_lines);
+  return is_lines;
+}
+
+bool
 DataSet::IsUnstructured() const
 {
   bool is_unstructured = true;
   const size_t num_domains = m_domains.size();
   for(size_t i = 0; i < num_domains; ++i)
   {
-    const vtkm::cont::DataSet &dom = m_domains[i];
+    const viskores::cont::DataSet &dom = m_domains[i];
     int dims;
-    is_unstructured = !VTKMDataSetInfo::IsStructured(dom, dims) && is_unstructured;
+    is_unstructured = !VISKORESDataSetInfo::IsStructured(dom, dims) && is_unstructured;
 
     (void) dims;
 
@@ -592,9 +618,9 @@ DataSet::IsStructured(int &topological_dims) const
   const size_t num_domains = m_domains.size();
   for(size_t i = 0; i < num_domains; ++i)
   {
-    const vtkm::cont::DataSet &dom = m_domains[i];
+    const viskores::cont::DataSet &dom = m_domains[i];
     int dims;
-    is_structured = VTKMDataSetInfo::IsStructured(dom, dims) && is_structured;
+    is_structured = VISKORESDataSetInfo::IsStructured(dom, dims) && is_structured;
 
     if(i == 0)
     {
@@ -618,12 +644,12 @@ DataSet::IsStructured(int &topological_dims) const
 }
 
 void
-DataSet::SetCycle(const vtkm::UInt64 cycle)
+DataSet::SetCycle(const viskores::UInt64 cycle)
 {
   m_cycle = cycle;
 }
 
-vtkm::UInt64
+viskores::UInt64
 DataSet::GetCycle() const
 {
   return m_cycle;
@@ -650,8 +676,8 @@ DataSet::~DataSet()
 {
 }
 
-vtkm::cont::DataSet&
-DataSet::GetDomainById(const vtkm::Id domain_id)
+viskores::cont::DataSet&
+DataSet::GetDomainById(const viskores::Id domain_id)
 {
   const size_t size = m_domain_ids.size();
 
@@ -665,7 +691,7 @@ DataSet::GetDomainById(const vtkm::Id domain_id)
   throw Error(msg.str());
 }
 
-bool DataSet::HasDomainId(const vtkm::Id &domain_id) const
+bool DataSet::HasDomainId(const viskores::Id &domain_id) const
 {
   const size_t size = m_domain_ids.size();
 
@@ -678,48 +704,48 @@ bool DataSet::HasDomainId(const vtkm::Id &domain_id) const
 }
 
 void
-DataSet::AddConstantCellField(const vtkm::Float32 value, const std::string &fieldname)
+DataSet::AddConstantCellField(const viskores::Float32 value, const std::string &fieldname)
 {
   const size_t size = m_domain_ids.size();
 
   for(size_t i = 0; i < size; ++i)
   {
-    vtkm::Id num_cells = m_domains[i].GetNumberOfCells();
-    vtkm::cont::ArrayHandle<vtkm::Float32> array;
+    viskores::Id num_cells = m_domains[i].GetNumberOfCells();
+    viskores::cont::ArrayHandle<viskores::Float32> array;
     detail::MemSet(array, value, num_cells);
-    vtkm::cont::Field field(fieldname, vtkm::cont::Field::Association::Cells, array);
+    viskores::cont::Field field(fieldname, viskores::cont::Field::Association::Cells, array);
     m_domains[i].AddField(field);
   }
 }
 
 void
-DataSet::AddConstantPointField(const vtkm::Float32 value, const std::string &fieldname)
+DataSet::AddConstantPointField(const viskores::Float32 value, const std::string &fieldname)
 {
   const size_t size = m_domain_ids.size();
 
   for(size_t i = 0; i < size; ++i)
   {
-    vtkm::Id num_points = m_domains[i].GetCoordinateSystem().GetData().GetNumberOfValues();
-    vtkm::cont::ArrayHandle<vtkm::Float32> array;
+    viskores::Id num_points = m_domains[i].GetCoordinateSystem().GetData().GetNumberOfValues();
+    viskores::cont::ArrayHandle<viskores::Float32> array;
     detail::MemSet(array, value, num_points);
-    vtkm::cont::Field field(fieldname, vtkm::cont::Field::Association::Points, array);
+    viskores::cont::Field field(fieldname, viskores::cont::Field::Association::Points, array);
     m_domains[i].AddField(field);
   }
 }
 
 void
-DataSet::AddLinearPointField(const vtkm::Float32 value, const std::string &fieldname)
+DataSet::AddLinearPointField(const viskores::Float32 value, const std::string &fieldname)
 {
   const size_t size = m_domain_ids.size();
 
   for(size_t i = 0; i < size; ++i)
   {
-    vtkm::Id num_points = m_domains[i].GetCoordinateSystem().GetData().GetNumberOfValues();
-    vtkm::cont::ArrayHandle<vtkm::Float32> array;
+    viskores::Id num_points = m_domains[i].GetCoordinateSystem().GetData().GetNumberOfValues();
+    viskores::cont::ArrayHandle<viskores::Float32> array;
     detail::MemSet(array, value, num_points);
     for(int j = 0; j < num_points; ++j)
       array.WritePortal().Set(j,j);
-    vtkm::cont::Field field(fieldname, vtkm::cont::Field::Association::Points, array);
+    viskores::cont::Field field(fieldname, viskores::cont::Field::Association::Points, array);
     m_domains[i].AddField(field);
   }
 }
@@ -731,11 +757,11 @@ DataSet::AddDomainIdField(const std::string &fieldname)
 
   for(size_t i = 0; i < size; ++i)
   {
-    vtkm::Id domain_id = m_domain_ids[i];
-    vtkm::Id num_cells = m_domains[i].GetNumberOfCells();
-    vtkm::cont::ArrayHandle<vtkm::Float32> array;
-    detail::MemSet(array, (vtkm::Float32)domain_id, num_cells);
-    vtkm::cont::Field field(fieldname, vtkm::cont::Field::Association::Cells, array);
+    viskores::Id domain_id = m_domain_ids[i];
+    viskores::Id num_cells = m_domains[i].GetNumberOfCells();
+    viskores::cont::ArrayHandle<viskores::Float32> array;
+    detail::MemSet(array, (viskores::Float32)domain_id, num_cells);
+    viskores::cont::Field field(fieldname, viskores::cont::Field::Association::Cells, array);
     m_domains[i].AddField(field);
   }
 }
@@ -767,15 +793,15 @@ DataSet::RemoveField(const std::string &field_name)
     if(m_domains[i].HasField(field_name))
     {
         // to remove, one must first clone
-        vtkm::cont::DataSet domain_new;
+        viskores::cont::DataSet domain_new;
         domain_new.CopyStructure(m_domains[i]);
 
         // loop over fields and all add except for the
         // one we want to remove
-        vtkm::IdComponent nfields = m_domains[i].GetNumberOfFields();
-                for(vtkm::IdComponent f_idx = 0; f_idx < nfields; f_idx++)
+        viskores::IdComponent nfields = m_domains[i].GetNumberOfFields();
+                for(viskores::IdComponent f_idx = 0; f_idx < nfields; f_idx++)
         {
-            vtkm::cont::Field &field = m_domains[i].GetField(f_idx);
+            viskores::cont::Field &field = m_domains[i].GetField(f_idx);
             if(field.GetName() != field_name)
             {
                 domain_new.AddField(field);
@@ -817,42 +843,42 @@ DataSet::GlobalFieldExists(const std::string &field_name) const
   return exists;
 }
 
-vtkm::cont::Field::Association
+viskores::cont::Field::Association
 DataSet::GetFieldAssociation(const std::string &field_name, bool &valid_field) const
 {
   valid_field = true;
   if(!this->GlobalFieldExists(field_name))
   {
     valid_field = false;
-    return vtkm::cont::Field::Association::Any;
+    return viskores::cont::Field::Association::Any;
   }
 
   int assoc_id = -1;
   if(this->FieldExists(field_name))
   {
     const size_t num_domains = m_domains.size();
-    vtkm::Bounds bounds;
+    viskores::Bounds bounds;
 
-    vtkm::cont::Field::Association local_assoc;
+    viskores::cont::Field::Association local_assoc;
     for(size_t i = 0; i < num_domains; ++i)
     {
-      vtkm::cont::DataSet dom = m_domains[i];
+      viskores::cont::DataSet dom = m_domains[i];
       if(dom.HasField(field_name))
       {
         local_assoc = dom.GetField(field_name).GetAssociation();
-        if(local_assoc == vtkm::cont::Field::Association::Any)
+        if(local_assoc == viskores::cont::Field::Association::Any)
         {
           assoc_id = 0;
         }
-        else if ( local_assoc == vtkm::cont::Field::Association::WholeDataSet)
+        else if ( local_assoc == viskores::cont::Field::Association::WholeDataSet)
         {
           assoc_id = 1;
         }
-        else if ( local_assoc == vtkm::cont::Field::Association::Points)
+        else if ( local_assoc == viskores::cont::Field::Association::Points)
         {
           assoc_id = 2;
         }
-        else if ( local_assoc == vtkm::cont::Field::Association::Cells)
+        else if ( local_assoc == viskores::cont::Field::Association::Cells)
         {
           assoc_id = 3;
         }
@@ -899,23 +925,23 @@ DataSet::GetFieldAssociation(const std::string &field_name, bool &valid_field) c
   delete[] global_assocs;
 #endif
 
-  vtkm::cont::Field::Association assoc;
+  viskores::cont::Field::Association assoc;
 
   if(assoc_id == 0)
   {
-    assoc = vtkm::cont::Field::Association::Any;
+    assoc = viskores::cont::Field::Association::Any;
   }
   else if ( assoc_id == 1)
   {
-    assoc = vtkm::cont::Field::Association::WholeDataSet;
+    assoc = viskores::cont::Field::Association::WholeDataSet;
   }
   else if ( assoc_id == 2)
   {
-    assoc = vtkm::cont::Field::Association::Points;
+    assoc = viskores::cont::Field::Association::Points;
   }
   else if ( assoc_id == 3)
   {
-    assoc = vtkm::cont::Field::Association::Cells;
+    assoc = viskores::cont::Field::Association::Cells;
   }
   else
   {
@@ -924,7 +950,7 @@ DataSet::GetFieldAssociation(const std::string &field_name, bool &valid_field) c
   return assoc;
 }
 
-vtkm::Id
+viskores::Id
 DataSet::GetFieldType(const std::string &field_name, bool &valid_field) const
 {
   valid_field = true;
@@ -934,27 +960,27 @@ DataSet::GetFieldType(const std::string &field_name, bool &valid_field) const
     return -1;
   }
 
-  using scalarI = vtkm::cont::ArrayHandle<vtkm::Int32>;
-  using scalarF = vtkm::cont::ArrayHandle<vtkm::Float32>;
-  using scalarD = vtkm::cont::ArrayHandle<vtkm::Float64>;
-  using vec2F   = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32,2>>; 
-  using vec2D   = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,2>>; 
-  using vec3F   = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32,3>>; 
-  using vec3D   = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,3>>; 
+  using scalarI = viskores::cont::ArrayHandle<viskores::Int32>;
+  using scalarF = viskores::cont::ArrayHandle<viskores::Float32>;
+  using scalarD = viskores::cont::ArrayHandle<viskores::Float64>;
+  using vec2F   = viskores::cont::ArrayHandle<viskores::Vec<viskores::Float32,2>>; 
+  using vec2D   = viskores::cont::ArrayHandle<viskores::Vec<viskores::Float64,2>>; 
+  using vec3F   = viskores::cont::ArrayHandle<viskores::Vec<viskores::Float32,3>>; 
+  using vec3D   = viskores::cont::ArrayHandle<viskores::Vec<viskores::Float64,3>>; 
 
   int field_id = -1;
   if(this->FieldExists(field_name))
   {
     const size_t num_domains = m_domains.size();
-    vtkm::Bounds bounds;
+    viskores::Bounds bounds;
 
-    vtkm::cont::Field::Association local_assoc;
+    viskores::cont::Field::Association local_assoc;
     for(size_t i = 0; i < num_domains; ++i)
     {
-      vtkm::cont::DataSet dom = m_domains[i];
+      viskores::cont::DataSet dom = m_domains[i];
       if(dom.HasField(field_name))
       {
-	vtkm::cont::Field local_field = dom.GetField(field_name);
+	viskores::cont::Field local_field = dom.GetField(field_name);
         if(local_field.GetData().IsType<scalarI>())
         {
           field_id = 0;
@@ -1029,7 +1055,7 @@ DataSet::GetFieldType(const std::string &field_name, bool &valid_field) const
   return field_id;
 }
 
-vtkm::Id DataSet::NumberOfComponents(const std::string &field_name) const
+viskores::Id DataSet::NumberOfComponents(const std::string &field_name) const
 {
   int num_components = 0;
 

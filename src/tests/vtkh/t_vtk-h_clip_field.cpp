@@ -13,7 +13,7 @@
 #include <vtkh/rendering/RayTracer.hpp>
 #include <vtkh/rendering/Scene.hpp>
 
-#include "t_vtkm_test_utils.hpp"
+#include "t_viskores_test_utils.hpp"
 
 #include <iostream>
 
@@ -22,7 +22,7 @@
 //----------------------------------------------------------------------------
 TEST(vtkh_clip_field, vtkh_clip)
 {
-#ifdef VTKM_ENABLE_KOKKOS
+#ifdef VISKORES_ENABLE_KOKKOS
   vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
@@ -44,11 +44,11 @@ TEST(vtkh_clip_field, vtkh_clip)
 
   vtkh::DataSet *clip_output = clipper.GetOutput();
 
-  vtkm::Bounds bounds = clip_output->GetGlobalBounds();
+  viskores::Bounds bounds = clip_output->GetGlobalBounds();
 
-  vtkm::rendering::Camera camera;
+  viskores::rendering::Camera camera;
   camera.ResetToBounds(bounds);
-  camera.SetPosition(vtkm::Vec<vtkm::Float64,3>(16,-32,-32));
+  camera.SetPosition(viskores::Vec<viskores::Float64,3>(16,-32,-32));
   float bg_color[4] = { 0.f, 0.f, 0.f, 1.f};
   vtkh::Render render = vtkh::MakeRender(512,
                                          512,
@@ -73,7 +73,7 @@ TEST(vtkh_clip_field, vtkh_clip)
 //----------------------------------------------------------------------------
 TEST(vtkh_clip_field, vtkh_clip_cell_centered)
 {
-#ifdef VTKM_ENABLE_KOKKOS
+#ifdef VISKORES_ENABLE_KOKKOS
   vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
@@ -95,11 +95,11 @@ TEST(vtkh_clip_field, vtkh_clip_cell_centered)
 
   vtkh::DataSet *clip_output = clipper.GetOutput();
 
-  vtkm::Bounds bounds = clip_output->GetGlobalBounds();
+  viskores::Bounds bounds = clip_output->GetGlobalBounds();
 
-  vtkm::rendering::Camera camera;
+  viskores::rendering::Camera camera;
   camera.ResetToBounds(bounds);
-  camera.SetPosition(vtkm::Vec<vtkm::Float64,3>(16,-32,-32));
+  camera.SetPosition(viskores::Vec<viskores::Float64,3>(16,-32,-32));
   float bg_color[4] = { 0.f, 0.f, 0.f, 1.f};
   vtkh::Render render = vtkh::MakeRender(512,
                                          512,

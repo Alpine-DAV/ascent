@@ -9,7 +9,7 @@
 
 // tpl includes
 #include <conduit.hpp>
-#include <vtkm_typedefs.hpp>
+#include <viskores_typedefs.hpp>
 #include <vtkh/DataSet.hpp>
 
 // mpi include
@@ -56,7 +56,7 @@ public:
   void to_blueprint(conduit::Node &dataset);
   void save_bov(const std::string &filename);
 private:
-  vtkmCamera m_camera;
+  viskoresCamera m_camera;
   RayGenerator m_ray_generator;
   Scheduler *m_scheduler;
 
