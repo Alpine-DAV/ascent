@@ -725,7 +725,7 @@ cmake -S ${viskores_src_dir} -B ${viskores_build_dir} ${cmake_compiler_settings}
   -DBUILD_SHARED_LIBS=${build_shared_libs} \
   -DViskores_USE_64BIT_IDS=${enable_64bit_ids} \
   -DViskores_USE_DOUBLE_PRECISION=ON \
-  -DViskores_USE_DEFAULT_TYPES_FOR_ASCENT=ON \
+  -DViskores_USE_DEFAULT_TYPES_FOR_ASCENT=OFF \
   -DViskores_ENABLE_MPI=${enable_mpi} \
   -DViskores_ENABLE_OPENMP=${enable_openmp}\
   -DViskores_ENABLE_RENDERING=ON \
