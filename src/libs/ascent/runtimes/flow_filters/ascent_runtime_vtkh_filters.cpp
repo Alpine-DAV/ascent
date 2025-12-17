@@ -4221,9 +4221,9 @@ VTKHSample::execute()
             x_min = min_b["x"].as_float64();
           }
         }
-        else //not set; default (max-min)/2
+        else //not set; default min
         {
-          x_min = (g_bounds.X.Max - g_bounds.X.Min)/2.0;
+          x_min = g_bounds.X.Min;
         }
 
         if(min_b.has_child("y"))
@@ -4239,9 +4239,9 @@ VTKHSample::execute()
             y_min = min_b["y"].as_float64();
           }
         }
-        else //not set; default (max-min)/2
+        else //not set; default min
         {
-          y_min = (g_bounds.Y.Max - g_bounds.Y.Min)/2.0;
+          y_min = g_bounds.Y.Min;
         }
 
         if(min_b.has_child("z"))
@@ -4257,9 +4257,9 @@ VTKHSample::execute()
             z_min = min_b["z"].as_float64();
           }
         }
-        else //not set; default (max-min)/2
+        else //not set; default min
         {
-          z_min = (g_bounds.Z.Max - g_bounds.Z.Min)/2.0;
+          z_min = g_bounds.Z.Min;
         }
 
         //Grab Maxes
@@ -4276,9 +4276,9 @@ VTKHSample::execute()
             x_max = max_b["x"].as_float64();
           }
         }
-        else //not set; default (max-min)/2
+        else //not set; default max
         {
-          x_max = (g_bounds.X.Max - g_bounds.X.Min)/2.0;
+          x_max = g_bounds.X.Max;
         }
 
         if(max_b.has_child("y"))
@@ -4294,9 +4294,9 @@ VTKHSample::execute()
             y_max = max_b["y"].as_float64();
           }
         }
-        else //not set; default (max-min)/2
+        else //not set; default max
         {
-          y_max = (g_bounds.Y.Max - g_bounds.Y.Min)/2.0;
+          y_max = g_bounds.Y.Max;
         }
 
         if(max_b.has_child("z"))
@@ -4312,9 +4312,9 @@ VTKHSample::execute()
             z_max = max_b["z"].as_float64();
           }
         }
-        else //not set; default (max-min)/2
+        else //not set; default max
         {
-          z_max = (g_bounds.Z.Max - g_bounds.Z.Min)/2.0;
+          z_max = g_bounds.Z.Max;
         }
 
         

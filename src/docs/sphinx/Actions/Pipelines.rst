@@ -1008,12 +1008,12 @@ For distributed data, the final output of this filter is composited on the root 
   params["box/dims/i"] = 10.0; //default: 1.0 
   params["box/dims/j"] = 10.0; //default: 1.0 
   params["box/dims/k"] = 10.0; //default: 1.0 
-  params["box/min/x"]  = 0.0;  //default: (x_max - x_min)/2.0 
-  params["box/min/y"]  = 0.0;  //default: (y_max - y_min)/2.0 
-  params["box/min/z"]  = 0.0;  //default: (z_max - z_min)/2.0 
-  params["box/max/x"]  = 0.0;  //default: (x_max - x_min)/2.0 
-  params["box/max/y"]  = 0.0;  //default: (y_max - y_min)/2.0 
-  params["box/max/z"]  = 0.0;  //default: (z_max - z_min)/2.0 
+  params["box/min/x"]  = "min"; //default: x_min 
+  params["box/min/y"]  = 0.0;   //default: y_min 
+  params["box/min/z"]  = "min"; //default: z_min 
+  params["box/max/x"]  = "max"; //default: x_max  
+  params["box/max/y"]  = 10.0;  //default: y_max 
+  params["box/max/z"]  = "max"; //default: z_max 
   //field value for sampled points outside of input mesh
   params["invalid_value"] = -100.0; //default: 0.0
 
