@@ -10,10 +10,10 @@ jobs:
     runs-on: windows-2025
     steps:
     - name: Setup MPI
-      uses: mpi4py/setup-mpi@v1
+      uses: mpi4py/setup-mpi@d0a3bf17a182b37921ff27a6737f9009ec76d3b6 # v1
     - name: Setup Python Env
       run: python3 -m pip install --upgrade pip numpy mpi4py wheel
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       with: 
         submodules: 'recursive'
     - name: Build TPLs
@@ -43,7 +43,7 @@ jobs:
         cmake -E env CTEST_OUTPUT_ON_FAILURE=1 cmake --build build --config Release --target RUN_TESTS
     - name: Upload Ascent Unit Test Artifacts
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
       with:
         name: test-results
         path: build/tests/_output/
