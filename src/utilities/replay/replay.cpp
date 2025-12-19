@@ -19,7 +19,6 @@
 #include <vector>
 #include <algorithm>
 #include <cmath>
-#include <sys/stat.h>
 
 #if defined(ASCENT_REPLAY_MPI)
 #include <mpi.h>
@@ -112,22 +111,21 @@ struct Options
     }
 
     if(!m_cycles_file.empty())
-    {
-      struct stat st;
-      if(stat(m_cycles_file.c_str(), &st) != 0)
-      {
-        std::cerr<<"The '--cycles' path '" << m_cycles_file
-                 << "' does not exist or cannot be accessed. Bailing...\n";
-        usage();
-        exit(1);
-      }
-
-      if(S_ISDIR(st.st_mode))
+    { 
+      if(conduit::utils::is_directory(m_cycles_file))
       {
         std::cerr<<"The '--cycles' path '" << m_cycles_file
                  << "' is a directory, but a file is required."
                  << " Please create a text file containing a list of root files, one per line."
                  << " Bailing...\n";
+        usage();
+        exit(1);
+      }
+
+      if(!conduit::utils::is_file(m_cycles_file))
+      {
+        std::cerr<<"The '--cycles' path '" << m_cycles_file
+                 << "' does not exist or cannot be accessed. Bailing...\n";
         usage();
         exit(1);
       }
