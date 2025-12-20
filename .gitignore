@@ -20,3 +20,5 @@ spack-libs
 spack.lock
 AZEMU-LAUNCH-*.sh
 AZEMU-SCRIPT-*.sh
+GACTEMU-LAUNCH-*.sh
+GACTEMU-SCRIPT-*.sh

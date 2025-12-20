@@ -6,7 +6,7 @@
 """
 gactemu.py (Generally Awesome Emu Wrangler)
 
-Digests .github/workflows/ specs and generates scripts to run steps 
+Digests .github/workflows/ specs and generates scripts to run steps
 locally using docker.
 
 
@@ -31,19 +31,19 @@ class CTX:
             self.txt  = ctx.txt
             self.container = ctx.container
             self.cwd = ctx.cwd
-    
+
     def set_name(self,name):
         self.name = name
-    
+
     def set_container(self,container):
         self.container = container
-    
+
     def set_cwd(self,cwd):
         self.cwd = cwd
-    
+
     def print(self,txt):
         self.txt += txt + "\n"
-    
+
     def print_esc(self,txt, tag = None):
         res = ""
         if not tag is None:
@@ -133,6 +133,8 @@ def map_gact_runners(runner,config):
     if runner in config["runners"]:
         return config["runners"][runner]
     else:
+        if runner.count(":"):
+            return runner
         print("# unsupported runner:" + runner)
         return "UNSUPPORTED"
 
@@ -141,8 +143,10 @@ def proc_jobs(tree, config):
         job_ctx = CTX()
         job_full_name = config["root_name"] + "-" + job_name
         job_ctx.print_esc(tag = "job", txt =job_full_name )
-        if "runs-on" in job.keys():
-             job_ctx.set_container(map_gact_runners(job["runs-on"],config))
+        if "container" in job.keys():
+            job_ctx.set_container(map_gact_runners(job["container"],config))
+        elif "runs-on" in job.keys():
+            job_ctx.set_container(map_gact_runners(job["runs-on"],config))
         else:
             job_ctx.set_container(config["default_container"])
         job_ctx.set_name(job_full_name)
@@ -153,9 +157,9 @@ def proc_jobs(tree, config):
         steps = job["steps"]
         proc_steps(steps,config, job_ctx)
         job_ctx.finish()
-        ## fancier cases (matrix specs) not yet supported 
+        ## fancier cases (matrix specs) not yet supported
 
-def proc_matrix_entry(steps, 
+def proc_matrix_entry(steps,
                       config,
                       matrix_entry_name,
                       env_vars,
@@ -249,4 +253,4 @@ def main():
 
 if __name__ == "__main__":
     main()
- 
+

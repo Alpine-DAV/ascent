@@ -5,12 +5,55 @@ on:
     branches: [ develop ]
 
 jobs:
-  build_cuda:
-    name: Build Ascent CUDA
+  build_cuda_11_8:
+    name: Build Ascent CUDA 11.8
     runs-on: ubuntu-latest
     container: alpinedav/ascent-ci:ubuntu-22.04-cuda-11.8.0-devel
     env:
       CMAKE_VERSION: 3.24.4
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        submodules: 'recursive'
+    - name: Install CMake
+      run: |
+        curl -L https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-linux-x86_64.tar.gz -o cmake-${CMAKE_VERSION}-linux-x86_64.tar.gz
+        tar -xzf cmake-${CMAKE_VERSION}-linux-x86_64.tar.gz
+        cmake-${CMAKE_VERSION}-linux-x86_64/bin/cmake --version
+    - name: Build TPLs
+      run: |
+        export PATH=$PATH:cmake-${CMAKE_VERSION}-linux-x86_64/bin/
+        env enable_cuda=ON \
+            enable_mpi=OFF \
+            enable_fortran=OFF \
+            enable_tests=OFF \
+            build_ascent=OFF \
+            enable_verbose=OFF \
+            build_jobs=2 \
+            ./scripts/build_ascent/build_ascent.sh
+    - name: Configure Ascent
+      run: |
+        export PATH=$PATH:cmake-${CMAKE_VERSION}-linux-x86_64/bin/
+        cmake --version
+        echo "**** Configuring Ascent"
+        cmake -S src -B build -C ascent-config.cmake -DCMAKE_INSTALL_PREFIX=install
+    - name: Build Ascent
+      run: |
+        export PATH=$PATH:cmake-${CMAKE_VERSION}-linux-x86_64/bin/
+        echo "**** Building Ascent"
+        cmake --build  build -j2 --config Release
+    - name: Install Ascent
+      run: |
+        export PATH=$PATH:cmake-${CMAKE_VERSION}-linux-x86_64/bin/
+        echo "**** Installing Ascent"
+        cmake --install  build --config Release
+  build_cuda_12_9:
+    name: Build Ascent CUDA 12.9
+    runs-on: ubuntu-latest
+    container: alpinedav/ascent-devel:ubuntu-24.04-cuda-12.9.1-x86_64
+    env:
+      CMAKE_VERSION: 3.31.10
     steps:
     - name: Checkout
       uses: actions/checkout@v4
