@@ -1,5 +1,5 @@
---- a/viskores-1.0.0/viskores/rendering/raytracing/Camera.cxx	2025-04-15 15:11:05.000000000 -0700
-+++ b/viskores-1.0.0/viskores/rendering/raytracing/Camera.cxx	2026-01-02 14:45:17.185319000 -0800
+--- a/viskores/rendering/raytracing/Camera.cxx	2025-04-15 15:11:05.000000000 -0700
++++ b/viskores/rendering/raytracing/Camera.cxx	2026-01-02 14:45:17.185319000 -0800
 @@ -334,6 +334,8 @@
  public:
    viskores::Int32 w;
