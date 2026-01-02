@@ -64,8 +64,8 @@
                                this->SubsetWidth,
                                this->SubsetMinX,
 
---- a/viskores-1.0.0/viskores/rendering/raytracing/Camera.h	2025-12-17 10:34:36.479392000 -0800
-+++ b/viskores-1.0.0/viskores/rendering/raytracing/Camera.h	2025-12-17 11:42:32.349910000 -0800
+--- a/viskores/rendering/raytracing/Camera.h	2025-12-17 10:34:36.479392000 -0800
++++ b/viskores/rendering/raytracing/Camera.h	2025-12-17 11:42:32.349910000 -0800
 @@ -40,6 +40,8 @@
    viskores::Int32 SubsetMinY = 0;
    viskores::Float32 FovX = 30.f;
