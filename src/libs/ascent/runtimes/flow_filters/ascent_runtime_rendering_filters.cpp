@@ -186,6 +186,8 @@ check_renders_surprises(const conduit::Node &renders_node)
   r_valid_paths.push_back("auto_camera/height");
   r_valid_paths.push_back("auto_camera/width");
   r_valid_paths.push_back("color_bar_position");
+  r_valid_paths.push_back("tile_image");
+  r_valid_paths.push_back("tile_width");
 
   std::vector<std::string> r_ignore_paths;
   r_ignore_paths.push_back("phi_theta_positions");
@@ -623,6 +625,25 @@ vtkh::Render parse_render(const conduit::Node &render_node,
     }
     render.SetColorBarPosition(cb_position);
 
+  }
+
+  if(render_node.has_path("tile_image"))
+  {
+    if(!render_node["tile_image"].dtype().is_string())
+    {
+      ASCENT_ERROR("render/tile_image node must be a string value");
+    }
+    const std::string tile_image = render_node["tile_image"].as_string();
+    // default is always tile image
+    if(tile_image == "false")
+    {
+      render.SetTileImage(false);
+    }
+  }
+
+  if(render_node.has_path("tile_width"))
+  {
+    render.SetTileWidth(render_node["tile_width"].to_int32());
   }
 
   return render;

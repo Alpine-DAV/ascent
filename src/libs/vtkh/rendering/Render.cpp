@@ -17,7 +17,9 @@ Render::Render()
     m_render_screen_annotations(true),
     m_render_background(true),
     m_shading(true),
-    m_canvas(m_width, m_height)
+    m_canvas(m_width, m_height),
+    m_tile_image(true),
+    m_tile_width(1024)
 {
   m_world_annotation_scale[0] = 1.f;
   m_world_annotation_scale[1] = 1.f;
@@ -170,6 +172,20 @@ Render::SetForegroundColor(float fg_color[4])
   m_canvas.SetForegroundColor(m_fg_color);
 }
 
+void
+Render::SetTileImage(bool on)
+{
+  m_tile_image = on;
+}
+
+void
+Render::SetTileWidth(const viskores::Int32 tile_width)
+{
+  if(tile_width == m_tile_width) return;
+  if(tile_width <= 0) return;
+  m_tile_width = tile_width;
+}
+
 std::string
 Render::GetImageName() const
 {
@@ -192,6 +208,18 @@ viskores::rendering::Color
 Render::GetForegroundColor() const
 {
   return m_fg_color;
+}
+
+bool
+Render::GetTileImage() const
+{
+  return m_tile_image;
+}
+
+viskores::Int32
+Render::GetTileWidth() const
+{
+  return m_tile_width;
 }
 
 void

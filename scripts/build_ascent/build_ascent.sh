@@ -50,7 +50,7 @@ build_raja="${build_raja:=true}"
 build_umpire="${build_umpire:=true}"
 build_mfem="${build_mfem:=true}"
 build_catalyst="${build_catalyst:=false}"
-build_zfp="${build_zfp:=true}"
+build_zfp="${build_zfp:=false}"
 
 # ascent options
 build_ascent="${build_ascent:=true}"
@@ -687,6 +687,7 @@ if [ ! -d ${viskores_src_dir} ]; then
   cd ${viskores_src_dir}
   echo "**** Applying Patches to ${viskores_tarball}"
   patch -p1 < ${script_dir}/2025_06_18_viskores_z_extents_ray_culling_bugfix_viskores_mr109.patch
+  patch -p1 < ${script_dir}/2026_01_02_viskores_implent_pan_raytracing.patch
   cd ${root_dir}
 fi
 

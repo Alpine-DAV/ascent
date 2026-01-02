@@ -1,0 +1,103 @@
+--- a/viskores-1.0.0/viskores/rendering/raytracing/Camera.cxx	2025-04-15 15:11:05.000000000 -0700
++++ b/viskores-1.0.0/viskores/rendering/raytracing/Camera.cxx	2026-01-02 14:45:17.185319000 -0800
+@@ -334,6 +334,8 @@
+ public:
+   viskores::Int32 w;
+   viskores::Int32 h;
++  viskores::Float32 panX;
++  viskores::Float32 panY;
+   viskores::Int32 Minx;
+   viskores::Int32 Miny;
+   viskores::Int32 SubsetWidth;
+@@ -347,12 +349,16 @@
+                     viskores::Float32 fovY,
+                     viskores::Vec3f_32 look,
+                     viskores::Vec3f_32 up,
++                    viskores::Float32 panx,
++                    viskores::Float32 pany,
+                     viskores::Float32 _zoom,
+                     viskores::Int32 subsetWidth,
+                     viskores::Int32 minx,
+                     viskores::Int32 miny)
+     : w(width)
+     , h(height)
++    , panX(panx)
++    , panY(pany)
+     , Minx(minx)
+     , Miny(miny)
+     , SubsetWidth(subsetWidth)
+@@ -377,6 +383,8 @@
+       delta_y[0] = delta_y[0] / _zoom;
+       delta_y[1] = delta_y[1] / _zoom;
+       delta_y[2] = delta_y[2] / _zoom;
++      panX *= _zoom;
++      panY *= _zoom;
+     }
+ 
+     nlook = look;
+@@ -401,8 +409,8 @@
+     pixelIndex = static_cast<viskores::Id>(j * w + i);
+ 
+     viskores::Vec<Precision, 3> ray_dir = nlook +
+-      delta_x * ((2.f * Precision(i) - Precision(w)) / 2.0f) +
+-      delta_y * ((2.f * Precision(j) - Precision(h)) / 2.0f);
++      delta_x * ((2.f * Precision(i) - panX * Precision(w) - Precision(w)) / 2.0f) +
++      delta_y * ((2.f * Precision(j) - panY * Precision(h) - Precision(h)) / 2.0f);
+     // avoid some numerical issues
+     for (viskores::Int32 d = 0; d < 3; ++d)
+     {
+@@ -456,6 +464,7 @@
+   this->SetUp(camera.GetViewUp());
+   this->SetLookAt(camera.GetLookAt());
+   this->SetPosition(camera.GetPosition());
++  this->SetPan(camera.GetPan());
+   this->SetZoom(camera.GetZoom());
+   this->SetFieldOfView(camera.GetFieldOfView());
+   this->SetHeight(height);
+@@ -763,6 +772,8 @@
+                               this->FovY,
+                               this->Look,
+                               this->Up,
++                              this->XPan,
++                              this->YPan,
+                               this->Zoom,
+                               this->SubsetWidth,
+                               this->SubsetMinX,
+
+--- a/viskores-1.0.0/viskores/rendering/raytracing/Camera.h	2025-12-17 10:34:36.479392000 -0800
++++ b/viskores-1.0.0/viskores/rendering/raytracing/Camera.h	2025-12-17 11:42:32.349910000 -0800
+@@ -40,6 +40,8 @@
+   viskores::Int32 SubsetMinY = 0;
+   viskores::Float32 FovX = 30.f;
+   viskores::Float32 FovY = 30.f;
++  viskores::Float32 XPan = 0.f;
++  viskores::Float32 YPan = 0.f;
+   viskores::Float32 Zoom = 1.f;
+   bool IsViewDirty = true;
+ 
+@@ -78,6 +80,25 @@
+   viskores::Int32 GetSubsetHeight() const;
+ 
+   VISKORES_CONT
++  void SetPan(const viskores::Float32& xpan, const viskores::Float32& ypan)
++  {
++    this->XPan = xpan;
++    this->YPan = ypan;
++  }
++
++  VISKORES_CONT
++  void SetPan(viskores::Vec2f_32 pan) { this->SetPan(pan[0], pan[1]); }
++
++  VISKORES_CONT
++  viskores::Vec2f_32 GetPan() const
++  {
++    viskores::Vec2f_32 pan;
++    pan[0] = this->XPan;
++    pan[1] = this->YPan;
++    return pan;
++  }
++
++  VISKORES_CONT
+   void SetZoom(const viskores::Float32& zoom);
+ 
+   VISKORES_CONT

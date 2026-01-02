@@ -279,13 +279,37 @@ Renderer::DoExecute()
 
       Render::viskoresCanvas &canvas = m_renders[i].GetCanvas();
       const viskoresCamera &camera = m_renders[i].GetCamera();
-      m_mapper->SetCanvas(&canvas);
-      m_mapper->RenderCells(cellset,
-                            coords,
-                            field,
-                            m_color_table,
-                            camera,
-                            m_range);
+      bool tile_image = false;
+      if (m_renders[i].GetTileImage())
+      {
+        if (canvas.GetWidth() > m_renders[i].GetTileWidth() ||
+            canvas.GetHeight() > m_renders[i].GetTileWidth())
+        {
+          tile_image = true;
+        }
+      }
+      if (tile_image)
+      {
+        std::cerr << "Calling RenderTiled" << std::endl;
+        RenderTiled(canvas,
+                    camera,
+                    cellset,
+                    field,
+                    coords,
+                    data_set,
+		    m_renders[i].GetTileWidth());
+      }
+      else
+      {
+        std::cerr << "Calling RenderCells" << std::endl;
+        m_mapper->SetCanvas(&canvas);
+        m_mapper->RenderCells(cellset,
+                              coords,
+                              field,
+                              m_color_table,
+                              camera,
+                              m_range);
+      }
     }
   }
 
@@ -311,6 +335,122 @@ Renderer::ImageToCanvas(Image &image, viskores::rendering::Canvas &canvas, bool 
 
   float* depth_buffer = GetVISKORESPointer(canvas.GetDepthBuffer());
   if(get_depth) memcpy(depth_buffer, &image.m_depths[0], sizeof(float) * size);
+}
+
+void
+Renderer::RenderTiled(Render::viskoresCanvas &canvas,
+                      const viskoresCamera &camera,
+                      const viskores::cont::UnknownCellSet &cellset,
+                      const viskores::cont::Field &field,
+                      const viskores::cont::CoordinateSystem &coords,
+                      viskores::cont::DataSet &data_set,
+		      const viskores::Int32 tile_width)
+{
+  // Calculate the tiling parameters.
+  const int x_tile_size = tile_width;
+  const int y_tile_size = tile_width;
+  const int nx_canvas = canvas.GetWidth();
+  const int ny_canvas = canvas.GetHeight();
+  const int nx_tiles = int(double(nx_canvas - 1) / double(x_tile_size)) + 1;
+  const int ny_tiles = int(double(ny_canvas - 1) / double(y_tile_size)) + 1;
+  std::cerr << "nx_tiles=" << nx_tiles << ",ny_tiles=" << ny_tiles << std::endl;
+
+  // Create a canvas for doing the tiling.
+  Render::viskoresCanvas *tile_canvas = new viskores::rendering::CanvasRayTracer;
+  tile_canvas->SetBackgroundColor(canvas.GetBackgroundColor());
+  tile_canvas->SetForegroundColor(canvas.GetForegroundColor());
+  tile_canvas->ResizeBuffers(x_tile_size, y_tile_size);
+  m_mapper->SetCanvas(tile_canvas);
+
+  viskoresCamera tile_camera = camera;
+  std::cerr << "tile_camera.GetZoom()=" << tile_camera.GetZoom() << std::endl;
+  std::cerr << "tile_camera.GetPan()=" << tile_camera.GetPan()[0] << "," << tile_camera.GetPan()[1] << std::endl;
+  viskores::Float64 zoom_user = tile_camera.GetZoom();
+  viskores::Float64 xpan_user = tile_camera.GetPan()[0];
+  viskores::Float64 ypan_user = tile_camera.GetPan()[1];
+
+  // Calculate the tile zoom factor and the zoom factor for viskores.
+  const double raw_zoom = double(ny_canvas) / double(y_tile_size);
+  std::cerr << "raw_zoom=" << raw_zoom << std::endl;
+  const double tile_zoom = double(ny_canvas) / double(y_tile_size);
+  viskores::Float64 zoom = log(tile_camera.GetZoom() * raw_zoom) / log(4.);
+  std::cerr << "zoom=" << zoom << std::endl;
+
+  // Calculate the fraction of the last tile that is each direction.
+  const double nx_extra = double((nx_tiles * x_tile_size) - nx_canvas) / double(x_tile_size);
+  const double ny_extra= double((ny_tiles * y_tile_size) - ny_canvas) / double(y_tile_size);
+  std::cerr << "nx_extra=" << nx_extra << ",ny_extra=" << ny_extra << std::endl;
+
+  const double xpan_init  = xpan_user + double(nx_tiles - 1 - nx_extra) / (double(raw_zoom) * tile_camera.GetZoom());
+  const double ypan_init  = ypan_user + double(ny_tiles - 1 - ny_extra) / (double(raw_zoom) * tile_camera.GetZoom());
+  const double xpan_delta = 2. / (tile_camera.GetZoom() * double(raw_zoom));
+  const double ypan_delta = 2. / (tile_camera.GetZoom() * double(raw_zoom));
+  std::cerr << "xpan_init=" << xpan_init << ",ypan_init=" << ypan_init << ",xpan_delta=" << xpan_delta << ",ypan_delta=" << ypan_delta << std::endl;
+
+  float* color_buffer = &GetVISKORESPointer(canvas.GetColorBuffer())[0][0];
+  float* depth_buffer = GetVISKORESPointer(canvas.GetDepthBuffer());
+
+  int remaining_ny_canvas = ny_canvas;
+  viskores::Float64 ypan = ypan_init;
+  for(int j = 0; j < ny_tiles; ++j)
+  {
+    int remaining_nx_canvas = nx_canvas;
+    viskores::Float64 xpan = xpan_init;
+    for(int i = 0; i < nx_tiles; ++i)
+    {
+      // Pan and Zoom in viskores are relative to the current values.
+      // These 2 command set zoom = 1. and pan = (0., 0.).
+      tile_camera.Zoom(log(1. / tile_camera.GetZoom()) / log(4.));
+      tile_camera.Pan(-tile_camera.GetPan()[0], -tile_camera.GetPan()[1]);
+
+      // Now we have the pan and zoom set to the default, we can set it.
+      tile_camera.Zoom(zoom);
+      tile_camera.Pan(xpan, ypan);
+      std::cerr << "2: camera zoom=" << tile_camera.GetZoom() << std::endl;
+      std::cerr << "2: camera pan=" << tile_camera.GetPan()[0] << "," << tile_camera.GetPan()[1] << std::endl;
+
+      // Render the tile.
+      tile_canvas->Clear();
+      m_mapper->RenderCells(cellset,
+                            coords,
+                            field,
+                            m_color_table,
+                            tile_camera,
+                            m_range);
+
+      // Copy the image from the tile into the output buffer. Note that
+      // the last tile in each row and all the tiles in the last row may
+      // be larger than necessary, so we only copy part we need.
+      const float* tile_color_buffer = &GetVISKORESPointer(tile_canvas->GetColorBuffer())[0][0];
+      const float* tile_depth_buffer = GetVISKORESPointer(tile_canvas->GetDepthBuffer());
+      const int x_max = std::min(x_tile_size, remaining_nx_canvas);
+      const int y_max = std::min(y_tile_size, remaining_ny_canvas);
+      for(int jj = 0; jj < y_max; ++jj)
+      {
+        int ll  = jj * x_tile_size * 4;
+        int ll2 = jj * x_tile_size;
+        int kk  = ((j * y_tile_size + jj) * nx_canvas + i * x_tile_size) * 4;
+        int kk2 = (j * y_tile_size + jj) * nx_canvas + i * x_tile_size;
+
+        for(int ii = 0; ii < x_max; ++ii)
+        {
+          color_buffer[kk]   = tile_color_buffer[ll];
+          color_buffer[kk+1] = tile_color_buffer[ll+1];
+          color_buffer[kk+2] = tile_color_buffer[ll+2];
+          color_buffer[kk+3] = tile_color_buffer[ll+3];
+          depth_buffer[kk2] = tile_depth_buffer[ll2];
+          kk  += 4;
+          kk2 += 1;
+          ll  += 4;
+          ll2 += 1;
+        }
+      }
+      xpan -= xpan_delta;
+      remaining_nx_canvas -= x_tile_size;
+    }
+    ypan -= ypan_delta;
+    remaining_ny_canvas -= y_tile_size;
+  }
 }
 
 std::vector<Render>
