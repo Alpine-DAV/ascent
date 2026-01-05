@@ -378,7 +378,7 @@ Renderer::RenderTiled(Render::viskoresCanvas &canvas,
   const double nx_extra = double((nx_tiles * x_tile_size) - nx_canvas) / double(x_tile_size);
   const double ny_extra= double((ny_tiles * y_tile_size) - ny_canvas) / double(y_tile_size);
 
-  const double xpan_init  = xpan_user * double(nx_canvas) / double(ny_canvas) + double(nx_tiles - 1 - nx_extra) / (double(tile_zoom) * tile_camera.GetZoom());
+  const double xpan_init  = xpan_user * (double(nx_canvas) / double(ny_canvas)) * (double(y_tile_size) / double(x_tile_size)) + double(nx_tiles - 1 - nx_extra) / (double(tile_zoom) * tile_camera.GetZoom());
   const double ypan_init  = ypan_user + double(ny_tiles - 1 - ny_extra) / (double(tile_zoom) * tile_camera.GetZoom());
   const double xpan_delta = 2. / (tile_camera.GetZoom() * double(tile_zoom));
   const double ypan_delta = 2. / (tile_camera.GetZoom() * double(tile_zoom));
