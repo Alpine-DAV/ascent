@@ -479,6 +479,17 @@ parameters:
 - ``color_bar_position`` : controls the position of 1 or more color bars. A valid value for positioning a single color bar is an array of four floats ([xMin,xMax,yMin,yMax]). A valid value for positioning N color bars is an array of 4*N floats ([xMin1_0,xMax1_0,yMin1_0,yMax1_0,...,xMin_n,xMax_n,yMin_n,yMax_n]). This repositioning is performed in Screen Space, so valid minimum and maximum values are limited to the range [-1,1] (i.e. the origin (0,0) is in the center of the image, (-1,-1) is the bottom-left corner, and (1,1) is the top-right corner). Note: Ascent does not check for correctness of user positioned color bars.
 
 
+Tiled Rendering
+---------------
+
+The renderer supports tiled rendering where the image is divided into a regular grid and each section of the grid, or tile, is rendered separately.
+The advantage of tiled rendering is that it requires fewer resources than rendering the entire image at once.
+Tiled rendering is on by default and uses 1024 by 1024 tiles.
+Below is a list of the parameters that control tiled rendering:
+
+- ``image_tiling`` : controls if tiled rendering is enabled. Valid values are ``"true"`` and ``"false"``. The default is ``"true"``.
+- ``tile_width`` : The width of a tile. The width is also used for the height of a tile. The default is ``1024``.
+
 Automatic Camera
 ----------------
 
