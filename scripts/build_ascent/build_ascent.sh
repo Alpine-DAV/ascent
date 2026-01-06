@@ -50,7 +50,7 @@ build_raja="${build_raja:=true}"
 build_umpire="${build_umpire:=true}"
 build_mfem="${build_mfem:=true}"
 build_catalyst="${build_catalyst:=false}"
-build_zfp="${build_zfp:=false}"
+build_zfp="${build_zfp:=true}"
 
 # ascent options
 build_ascent="${build_ascent:=true}"
