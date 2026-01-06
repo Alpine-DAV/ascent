@@ -39,6 +39,7 @@
 #include <viskores/cont/ArrayHandleExtractComponent.h>
 #include <viskores/cont/CoordinateSystem.h>
 #include <viskores/cont/Invoker.h>
+#include <viskores/filter/field_transform/CylindricalCoordinateTransform.h>
 #include <vtkh/DataSet.hpp>
 
 // other ascent includes
@@ -304,6 +305,110 @@ GetExplicitCoordinateSystem(const conduit::Node &n_coords,
                                                             y_coords_handle,
                                                             z_coords_handle));
 
+}
+
+template<typename T>
+viskores::cont::CoordinateSystem
+GetRZCoordinateSystem(const conduit::Node &n_coords,
+                            const std::string &name,
+                            int &ndims,
+                            index_t &r_element_stride,
+                            index_t &z_element_stride,
+                            index_t &theta_element_stride,
+                            bool zero_copy)
+{
+    viskores::CopyFlag copy = viskores::CopyFlag::On;
+    if(zero_copy)
+    {
+      copy = viskores::CopyFlag::Off;
+    }
+      
+    int nverts = n_coords["values/r"].dtype().number_of_elements();
+
+    viskores::cont::ArrayHandle<T> r_coords_handle;
+    viskores::cont::ArrayHandle<T> z_coords_handle;
+    viskores::cont::ArrayHandle<T> theta_coords_handle;
+
+    ndims = 2;
+
+    if(r_element_stride == 1)
+    {
+      const T *r_verts_ptr = n_coords["values/r"].value();
+      detail::CopyArray(r_coords_handle, r_verts_ptr, nverts, zero_copy);
+    }
+    else
+    {
+      int r_verts_expanded = (nverts - 1) * r_element_stride + 1;
+      const T *r_verts_ptr = n_coords["values/r"].value();
+      viskores::cont::ArrayHandle<T> r_source_array = viskores::cont::make_ArrayHandle<T>(r_verts_ptr,
+                                                                                  r_verts_expanded,
+                                                                                  copy);
+      viskores::cont::ArrayHandleStride<T> r_stride_handle(r_source_array,
+                                                       nverts,
+                                                       r_element_stride,
+                                                       0); // offset
+
+      viskores::cont::Algorithm::Copy(r_stride_handle, r_coords_handle);
+    }
+
+    if(z_element_stride == 1)
+    {
+      const T *z_verts_ptr = n_coords["values/z"].value();
+      detail::CopyArray(z_coords_handle, z_verts_ptr, nverts, zero_copy);
+    }
+    else
+    {
+      int z_verts_expanded = (nverts - 1) * z_element_stride + 1;
+      const T *z_verts_ptr = n_coords["values/z"].value();
+      viskores::cont::ArrayHandle<T> z_source_array = viskores::cont::make_ArrayHandle<T>(z_verts_ptr,
+                                                                                  z_verts_expanded,
+                                                                                  copy);
+      viskores::cont::ArrayHandleStride<T> z_stride_handle(z_source_array,
+                                                       nverts,
+                                                       z_element_stride,
+                                                       0); // offset
+
+      viskores::cont::Algorithm::Copy(z_stride_handle, z_coords_handle);
+    }
+
+    if(theta_element_stride == 0)
+    {
+      theta_coords_handle.AllocateAndFill(nverts,0.0);
+    }
+    else if(theta_element_stride == 1)
+    {
+      ndims = 3;
+      const T *theta_verts_ptr = n_coords["values/theta"].value();
+      detail::CopyArray(theta_coords_handle, theta_verts_ptr, nverts, zero_copy);
+    }
+    else
+    {
+      ndims = 3;
+      int theta_verts_expanded = (nverts - 1) * theta_element_stride + 1;
+      const T *theta_verts_ptr = n_coords["values/theta"].value();
+      viskores::cont::ArrayHandle<T> theta_source_array = viskores::cont::make_ArrayHandle<T>(theta_verts_ptr,
+                                                                                  theta_verts_expanded,
+                                                                                  copy);
+      viskores::cont::ArrayHandleStride<T> theta_stride_handle(theta_source_array,
+                                                       nverts,
+                                                       theta_element_stride,
+                                                       0); // offset
+
+      viskores::cont::Algorithm::Copy(theta_stride_handle, theta_coords_handle);
+    }
+
+    if (ndims == 2)
+    {
+        return viskores::cont::CoordinateSystem(name,
+                                        make_ArrayHandleSOA(z_coords_handle,
+                                                            r_coords_handle,
+                                                            theta_coords_handle));
+    }
+
+    return viskores::cont::CoordinateSystem(name,
+                                        make_ArrayHandleSOA(r_coords_handle,
+                                                            theta_coords_handle,
+                                                            z_coords_handle));
 }
 
 
@@ -1234,35 +1339,78 @@ VTKHDataAdapter::UniformBlueprintToViskoresDataSet
         is_2d = false;
     }
 
-
-
     float64 origin_x = 0.0;
     float64 origin_y = 0.0;
     float64 origin_z = 0.0;
-
 
     float64 spacing_x = 1.0;
     float64 spacing_y = 1.0;
     float64 spacing_z = 1.0;
 
+    const bool is_rz = (n_coords.has_child("origin") && (n_coords["origin"].has_child("r") || n_coords["origin"].has_child("theta"))) ||
+                 (n_coords.has_child("spacing") && (n_coords["spacing"].has_child("dr") || n_coords["spacing"].has_child("dtheta")));
+    const bool is_rectilinear = (n_coords.has_child("origin") && (n_coords["origin"].has_child("x") || n_coords["origin"].has_child("y"))) ||
+                          (n_coords.has_child("spacing") && (n_coords["spacing"].has_child("dx") || n_coords["spacing"].has_child("dy"))) ||
+                          !is_rz;
+
+    if (is_rz && is_rectilinear) {
+        ASCENT_ERROR("Unsupported coordset: expected rectilinear {x,y,(z)} or cylindrical {r,z,(theta)} but got parameters for both.")
+    }
+    
+    if (!is_rz && !is_rectilinear)
+    {
+        ASCENT_ERROR("Unsupported coordset: expected rectilinear {x,y,(z)} or cylindrical {r,z,(theta)} but got neither.")
+    }
 
     if(n_coords.has_child("origin"))
     {
         const Node &n_origin = n_coords["origin"];
 
-        if(n_origin.has_child("x"))
+        if (is_rectilinear)
         {
-            origin_x = n_origin["x"].to_float64();
-        }
+            if(n_origin.has_child("x"))
+            {
+                origin_x = n_origin["x"].to_float64();
+            }
 
-        if(n_origin.has_child("y"))
-        {
-            origin_y = n_origin["y"].to_float64();
-        }
+            if(n_origin.has_child("y"))
+            {
+                origin_y = n_origin["y"].to_float64();
+            }
 
-        if(n_origin.has_child("z"))
+            if(n_origin.has_child("z"))
+            {
+                origin_z = n_origin["z"].to_float64();
+            }
+        }
+        else if (is_rz && is_2d)
         {
-            origin_z = n_origin["z"].to_float64();
+            if(n_origin.has_child("z"))
+            {
+                origin_x = n_origin["z"].to_float64();
+            }
+
+            if(n_origin.has_child("r"))
+            {
+                origin_y = n_origin["r"].to_float64();
+            }
+        }
+        else if (is_rz && !is_2d)
+        {
+            if(n_origin.has_child("r"))
+            {
+                origin_x = n_origin["r"].to_float64();
+            }
+
+            if(n_origin.has_child("theta"))
+            {
+                origin_y = n_origin["theta"].to_float64();
+            }
+
+            if(n_origin.has_child("z"))
+            {
+                origin_z = n_origin["z"].to_float64();
+            }
         }
     }
 
@@ -1270,19 +1418,51 @@ VTKHDataAdapter::UniformBlueprintToViskoresDataSet
     {
         const Node &n_spacing = n_coords["spacing"];
 
-        if(n_spacing.has_path("dx"))
+        if (is_rectilinear)
         {
-            spacing_x = n_spacing["dx"].to_float64();
-        }
+            if(n_spacing.has_path("dx"))
+            {
+                spacing_x = n_spacing["dx"].to_float64();
+            }
 
-        if(n_spacing.has_path("dy"))
-        {
-            spacing_y = n_spacing["dy"].to_float64();
-        }
+            if(n_spacing.has_path("dy"))
+            {
+                spacing_y = n_spacing["dy"].to_float64();
+            }
 
-        if(n_spacing.has_path("dz"))
+            if(n_spacing.has_path("dz"))
+            {
+                spacing_z = n_spacing["dz"].to_float64();
+            }
+        }
+        else if (is_rz && is_2d)
         {
-            spacing_z = n_spacing["dz"].to_float64();
+            if(n_spacing.has_path("dz"))
+            {
+                spacing_x = n_spacing["dz"].to_float64();
+            }
+
+            if(n_spacing.has_path("dr"))
+            {
+                spacing_y = n_spacing["dr"].to_float64();
+            }
+        }
+        else if (is_rz && !is_2d)
+        {
+            if(n_spacing.has_path("dr"))
+            {
+                spacing_x = n_spacing["dr"].to_float64();
+            }
+
+            if(n_spacing.has_path("dtheta"))
+            {
+                spacing_y = n_spacing["dtheta"].to_float64();
+            }
+
+            if(n_spacing.has_path("dz"))
+            {
+                spacing_z = n_spacing["dz"].to_float64();
+            }
         }
     }
 
@@ -1296,15 +1476,42 @@ VTKHDataAdapter::UniformBlueprintToViskoresDataSet
                                        spacing_y,
                                        spacing_z);
 
-    viskores::Id3 dims(dims_i,
-                   dims_j,
-                   dims_k);
+    viskores::Id3 dims;
+    if(is_2d && is_rz)
+    {
+        dims = viskores::Id3(dims_j,
+                    dims_i,
+                    dims_k);
+    }
+    else if(!is_2d && is_rz)
+    {
+        dims = viskores::Id3(dims_i,
+                    dims_k,
+                    dims_j);
+    }
+    else
+    {
+        dims = viskores::Id3(dims_i,
+                    dims_j,
+                    dims_k);
+    }
 
     // todo, use actually coordset and topo names?
     result->AddCoordinateSystem( viskores::cont::CoordinateSystem(coords_name.c_str(),
                                                               dims,
                                                               origin,
                                                               spacing));
+
+    if(!is_2d && is_rz)
+    {
+        viskores::filter::field_transform::CylindricalCoordinateTransform xform;
+        xform.SetUseCoordinateSystemAsField(true);
+        xform.SetActiveCoordinateSystem(0); 
+        xform.SetCylindricalToCartesian();
+        viskores::cont::DataSet out = xform.Execute(*result);
+        *result = std::move(out);
+    }
+
     viskores::Id3 topo_origin = detail::topo_origin(n_topo);
     if(is_2d)
     {
@@ -1353,60 +1560,200 @@ VTKHDataAdapter::RectilinearBlueprintToViskoresDataSet
 {
     viskores::cont::DataSet *result = new viskores::cont::DataSet();
 
-    int x_npts = n_coords["values/x"].dtype().number_of_elements();
-    int y_npts = n_coords["values/y"].dtype().number_of_elements();
-    int z_npts = 0;
+    const bool is_rz = n_coords["values"].has_child("r") && n_coords["values"].has_child("z");
+    const bool is_rectilinear = n_coords["values"].has_child("x") && n_coords["values"].has_child("y");
 
-    int32 ndims = 2;
-
-    if (zero_copy && 
-        (!n_coords["values/x"].dtype().is_float64() || 
-         !n_coords["values/y"].dtype().is_float64()))
+    if (is_rz && is_rectilinear)
     {
-        ASCENT_INFO("Zero-copy requested, but either x or y coordinate data is not float64." <<
-                    "x type: " << n_coords["values/x"].dtype().name() << 
-                    ", y type: " << n_coords["values/y"].dtype().name() << 
-                    ". Turning zero-copy off.");
-        zero_copy = false;
-    }
-
-    const float64 *x_coords_ptr;
-    Node temp_x;
-    if (n_coords["values/x"].dtype().is_float64())
-    {
-        x_coords_ptr = n_coords["values/x"].as_float64_ptr();
-    }
-    else
-    {
-        n_coords["values/x"].to_float64_array(temp_x);
-        x_coords_ptr = temp_x.value();
+        ASCENT_ERROR("Unsupported coordset: expected rectilinear {x,y,(z)} or cylindrical {r,z,(theta)} but got parameters for both.")
     }
     
-    const float64 *y_coords_ptr;
-    Node temp_y;
-    if (n_coords["values/y"].dtype().is_float64())
+    if (!is_rz && !is_rectilinear)
     {
-        y_coords_ptr = n_coords["values/y"].as_float64_ptr();
+        ASCENT_ERROR("Unsupported coordset: expected rectilinear {x,y,(z)} or cylindrical {r,z,(theta)} but got neither.")
+    }
+
+    if (is_rectilinear)
+    {
+        if (zero_copy &&
+            (!n_coords["values/x"].dtype().is_float64() || 
+             !n_coords["values/y"].dtype().is_float64()))
+        {
+            ASCENT_INFO("Zero-copy requested, but either x or y coordinate data is not float64." <<
+                        "x type: " << n_coords["values/x"].dtype().name() << 
+                        ", y type: " << n_coords["values/y"].dtype().name() << 
+                        ". Turning zero-copy off.");
+            zero_copy = false;
+        }
+
+        int x_npts = n_coords["values/x"].dtype().number_of_elements();
+        int y_npts = n_coords["values/y"].dtype().number_of_elements();
+        int z_npts = 0;
+
+        const float64 *x_coords_ptr;
+        Node temp_x;
+        if (n_coords["values/x"].dtype().is_float64())
+        {
+            x_coords_ptr = n_coords["values/x"].as_float64_ptr();
+        }
+        else
+        {
+            n_coords["values/x"].to_float64_array(temp_x);
+            x_coords_ptr = temp_x.value();
+        }
+        
+        const float64 *y_coords_ptr;
+        Node temp_y;
+        if (n_coords["values/y"].dtype().is_float64())
+        {
+            y_coords_ptr = n_coords["values/y"].as_float64_ptr();
+        }
+        else
+        {
+            n_coords["values/y"].to_float64_array(temp_y);
+            y_coords_ptr = temp_y.value();
+        }
+
+        int32 ndims = 2;
+        const float64 *z_coords_ptr = NULL;
+        Node temp_z;
+        if(n_coords.has_path("values/z"))
+        {
+            if (zero_copy && !n_coords["values/z"].dtype().is_float64())
+            {
+                ASCENT_INFO("Zero-copy requested, but z coordinate data is " <<
+                            n_coords["values/z"].dtype().name() <<
+                            " not float64. Turning zero-copy off.");
+                zero_copy = false;
+            }
+            ndims = 3;
+            z_npts = n_coords["values/z"].dtype().number_of_elements();
+            if (n_coords["values/z"].dtype().is_float64())
+            {
+                z_coords_ptr = n_coords["values/z"].as_float64_ptr();
+            }
+            else
+            {
+                n_coords["values/z"].to_float64_array(temp_z);
+                z_coords_ptr = temp_z.value();
+            }
+        }
+
+        viskores::cont::ArrayHandle<viskores::Float64> x_coords_handle;
+        viskores::cont::ArrayHandle<viskores::Float64> y_coords_handle;
+        viskores::cont::ArrayHandle<viskores::Float64> z_coords_handle;
+
+        if(zero_copy)
+        {
+            x_coords_handle = viskores::cont::make_ArrayHandle(x_coords_ptr, x_npts, viskores::CopyFlag::Off);
+            y_coords_handle = viskores::cont::make_ArrayHandle(y_coords_ptr, y_npts, viskores::CopyFlag::Off);
+        }
+        else
+        {
+            x_coords_handle.Allocate(x_npts);
+            y_coords_handle.Allocate(y_npts);
+
+            viskores::Float64 *x = vtkh::GetVISKORESPointer(x_coords_handle);
+            memcpy(x, x_coords_ptr, sizeof(float64) * x_npts);
+            viskores::Float64 *y = vtkh::GetVISKORESPointer(y_coords_handle);
+            memcpy(y, y_coords_ptr, sizeof(float64) * y_npts);
+        }
+
+        if(ndims == 3)
+        {
+            if(zero_copy)
+            {
+                z_coords_handle = viskores::cont::make_ArrayHandle(z_coords_ptr, z_npts, viskores::CopyFlag::Off);
+            }
+            else
+            {
+                z_coords_handle.Allocate(z_npts);
+                viskores::Float64 *z = vtkh::GetVISKORESPointer(z_coords_handle);
+                memcpy(z, z_coords_ptr, sizeof(float64) * z_npts);
+            }
+        }
+        else
+        {
+            z_coords_handle.Allocate(1);
+            z_coords_handle.WritePortal().Set(0, 0.0);
+        }
+
+        static_assert(std::is_same<viskores::FloatDefault, double>::value,
+                    "Viskores needs to be configured with 'Viskores_USE_DOUBLE_PRECISION=ON'");
+        viskores::cont::ArrayHandleCartesianProduct<
+            viskores::cont::ArrayHandle<viskores::FloatDefault>,
+            viskores::cont::ArrayHandle<viskores::FloatDefault>,
+            viskores::cont::ArrayHandle<viskores::FloatDefault> > coords;
+
+        coords = viskores::cont::make_ArrayHandleCartesianProduct(x_coords_handle,
+                                                            y_coords_handle,
+                                                            z_coords_handle);
+
+        viskores::cont::CoordinateSystem coordinate_system(coords_name.c_str(), coords);
+        result->AddCoordinateSystem(coordinate_system);
+
+        viskores::Id3 topo_origin = detail::topo_origin(n_topo);
+
+        if (ndims == 2)
+        {
+            viskores::cont::CellSetStructured<2> cell_set;
+            cell_set.SetPointDimensions(viskores::make_Vec(x_npts,
+                                                        y_npts));
+            viskores::Id2 origin2(topo_origin[0], topo_origin[1]);
+            cell_set.SetGlobalPointIndexStart(origin2);
+            result->SetCellSet(cell_set);
+        }
+        else
+        {
+            viskores::cont::CellSetStructured<3> cell_set;
+            cell_set.SetPointDimensions(viskores::make_Vec(x_npts,
+                                                        y_npts,
+                                                        z_npts));
+            cell_set.SetGlobalPointIndexStart(topo_origin);
+            result->SetCellSet(cell_set);
+        }
+
+        nverts = x_npts * y_npts;
+        neles = (x_npts - 1) * (y_npts - 1);
+        if(ndims > 2)
+        {
+            nverts *= z_npts;
+            neles *= (z_npts - 1);
+        }
+
+        return result;
     }
     else
     {
-        n_coords["values/y"].to_float64_array(temp_y);
-        y_coords_ptr = temp_y.value();
-    }
-
-    const float64 *z_coords_ptr = NULL;
-    Node temp_z;
-    if(n_coords.has_path("values/z"))
-    {
-        if (zero_copy && !n_coords["values/z"].dtype().is_float64())
+        if (zero_copy &&
+            (!n_coords["values/r"].dtype().is_float64() || 
+            !n_coords["values/z"].dtype().is_float64()))
         {
-            ASCENT_INFO("Zero-copy requested, but z coordinate data is " <<
-                        n_coords["values/z"].dtype().name() <<
-                        " not float64. Turning zero-copy off.");
+            ASCENT_INFO("Zero-copy requested, but either r or z coordinate data is not float64." <<
+                        "r type: " << n_coords["values/r"].dtype().name() << 
+                        ", z type: " << n_coords["values/z"].dtype().name() << 
+                        ". Turning zero-copy off.");
             zero_copy = false;
         }
-        ndims = 3;
-        z_npts = n_coords["values/z"].dtype().number_of_elements();
+
+        int r_npts = n_coords["values/r"].dtype().number_of_elements();
+        int z_npts = n_coords["values/z"].dtype().number_of_elements();
+        int theta_npts = 0;
+
+        const float64 *r_coords_ptr;
+        Node temp_r;
+        if (n_coords["values/r"].dtype().is_float64())
+        {
+            r_coords_ptr = n_coords["values/r"].as_float64_ptr();
+        }
+        else
+        {
+            n_coords["values/r"].to_float64_array(temp_r);
+            r_coords_ptr = temp_r.value();
+        }
+        
+        const float64 *z_coords_ptr;
+        Node temp_z;
         if (n_coords["values/z"].dtype().is_float64())
         {
             z_coords_ptr = n_coords["values/z"].as_float64_ptr();
@@ -1416,92 +1763,137 @@ VTKHDataAdapter::RectilinearBlueprintToViskoresDataSet
             n_coords["values/z"].to_float64_array(temp_z);
             z_coords_ptr = temp_z.value();
         }
+
+        int32 ndims = 2;
+        const float64 *theta_coords_ptr = NULL;
+        Node temp_theta;
+        if(n_coords.has_path("values/theta"))
+        {
+            if (zero_copy && !n_coords["values/theta"].dtype().is_float64())
+            {
+                ASCENT_INFO("Zero-copy requested, but theta coordinate data is " <<
+                            n_coords["values/theta"].dtype().name() <<
+                            " not float64. Turning zero-copy off.");
+                zero_copy = false;
+            }
+            ndims = 3;
+            theta_npts = n_coords["values/theta"].dtype().number_of_elements();
+            if (n_coords["values/theta"].dtype().is_float64())
+            {
+                theta_coords_ptr = n_coords["values/theta"].as_float64_ptr();
+            }
+            else
+            {
+                n_coords["values/theta"].to_float64_array(temp_theta);
+                theta_coords_ptr = temp_theta.value();
+            }
+        }
+
+        viskores::cont::ArrayHandle<viskores::Float64> r_coords_handle;
+        viskores::cont::ArrayHandle<viskores::Float64> z_coords_handle;
+        viskores::cont::ArrayHandle<viskores::Float64> theta_coords_handle;
+
+        if(zero_copy)
+        {
+            r_coords_handle = viskores::cont::make_ArrayHandle(r_coords_ptr, r_npts, viskores::CopyFlag::Off);
+            z_coords_handle = viskores::cont::make_ArrayHandle(z_coords_ptr, z_npts, viskores::CopyFlag::Off);
+        }
+        else
+        {
+            r_coords_handle.Allocate(r_npts);
+            z_coords_handle.Allocate(z_npts);
+
+            viskores::Float64 *r = vtkh::GetVISKORESPointer(r_coords_handle);
+            memcpy(r, r_coords_ptr, sizeof(float64) * r_npts);
+            viskores::Float64 *z = vtkh::GetVISKORESPointer(z_coords_handle);
+            memcpy(z, z_coords_ptr, sizeof(float64) * z_npts);
+        }
+
+        if(ndims == 3)
+        {
+            if(zero_copy)
+            {
+                theta_coords_handle = viskores::cont::make_ArrayHandle(theta_coords_ptr, theta_npts, viskores::CopyFlag::Off);
+            }
+            else
+            {
+                theta_coords_handle.Allocate(theta_npts);
+                viskores::Float64 *theta = vtkh::GetVISKORESPointer(theta_coords_handle);
+                memcpy(theta, theta_coords_ptr, sizeof(float64) * theta_npts);
+            }
+        }
+        else
+        {
+            theta_coords_handle.Allocate(1);
+            theta_coords_handle.WritePortal().Set(0, 0.0);
+        }
+
+        static_assert(std::is_same<viskores::FloatDefault, double>::value,
+                    "Viskores needs to be configured with 'Viskores_USE_DOUBLE_PRECISION=ON'");
+
+        viskores::cont::ArrayHandleCartesianProduct<
+            viskores::cont::ArrayHandle<viskores::FloatDefault>,
+            viskores::cont::ArrayHandle<viskores::FloatDefault>,
+            viskores::cont::ArrayHandle<viskores::FloatDefault> > coords;
+
+        if (ndims == 2)
+        {
+            coords = viskores::cont::make_ArrayHandleCartesianProduct(z_coords_handle,
+                                                                      r_coords_handle,
+                                                                      theta_coords_handle);
+        }
+        else
+        {
+            coords = viskores::cont::make_ArrayHandleCartesianProduct(r_coords_handle,
+                                                                      theta_coords_handle,
+                                                                      z_coords_handle);
+        }
+
+        viskores::cont::CoordinateSystem coordinate_system(coords_name.c_str(), coords);
+
+        result->AddCoordinateSystem(coordinate_system);
+
+        if(ndims>2)
+        {
+            viskores::filter::field_transform::CylindricalCoordinateTransform xform;
+            xform.SetUseCoordinateSystemAsField(true);
+            xform.SetActiveCoordinateSystem(0); 
+            xform.SetCylindricalToCartesian();
+            viskores::cont::DataSet out = xform.Execute(*result);
+            *result = std::move(out);
+        }
+
+        viskores::Id3 topo_origin = detail::topo_origin(n_topo);
+
+        if (ndims == 2)
+        {
+            viskores::cont::CellSetStructured<2> cell_set;
+            cell_set.SetPointDimensions(viskores::make_Vec(z_npts,
+                                                        r_npts));
+            viskores::Id2 origin2(topo_origin[0], topo_origin[1]);
+            cell_set.SetGlobalPointIndexStart(origin2);
+            result->SetCellSet(cell_set);
+        }
+        else
+        {
+            viskores::cont::CellSetStructured<3> cell_set;
+            cell_set.SetPointDimensions(viskores::make_Vec(r_npts,
+                                                        theta_npts,
+                                                        z_npts));
+            cell_set.SetGlobalPointIndexStart(topo_origin);
+            result->SetCellSet(cell_set);
+        }
+
+        nverts = r_npts * z_npts;
+        neles = (r_npts - 1) * (z_npts - 1);
+        if(ndims > 2)
+        {
+            nverts *= theta_npts;
+            neles *= (theta_npts - 1);
+        }
+
+        return result;
     }
-
-    viskores::cont::ArrayHandle<viskores::Float64> x_coords_handle;
-    viskores::cont::ArrayHandle<viskores::Float64> y_coords_handle;
-    viskores::cont::ArrayHandle<viskores::Float64> z_coords_handle;
-
-    if(zero_copy)
-    {
-      x_coords_handle = viskores::cont::make_ArrayHandle(x_coords_ptr, x_npts, viskores::CopyFlag::Off);
-      y_coords_handle = viskores::cont::make_ArrayHandle(y_coords_ptr, y_npts, viskores::CopyFlag::Off);
-    }
-    else
-    {
-      x_coords_handle.Allocate(x_npts);
-      y_coords_handle.Allocate(y_npts);
-
-      viskores::Float64 *x = vtkh::GetVISKORESPointer(x_coords_handle);
-      memcpy(x, x_coords_ptr, sizeof(float64) * x_npts);
-      viskores::Float64 *y = vtkh::GetVISKORESPointer(y_coords_handle);
-      memcpy(y, y_coords_ptr, sizeof(float64) * y_npts);
-    }
-
-    if(ndims == 3)
-    {
-      if(zero_copy)
-      {
-        z_coords_handle = viskores::cont::make_ArrayHandle(z_coords_ptr, z_npts, viskores::CopyFlag::Off);
-      }
-      else
-      {
-        z_coords_handle.Allocate(z_npts);
-        viskores::Float64 *z = vtkh::GetVISKORESPointer(z_coords_handle);
-        memcpy(z, z_coords_ptr, sizeof(float64) * z_npts);
-      }
-    }
-    else
-    {
-        z_coords_handle.Allocate(1);
-        z_coords_handle.WritePortal().Set(0, 0.0);
-    }
-
-    static_assert(std::is_same<viskores::FloatDefault, double>::value,
-                  "Viskores needs to be configured with 'Viskores_USE_DOUBLE_PRECISION=ON'");
-    viskores::cont::ArrayHandleCartesianProduct<
-        viskores::cont::ArrayHandle<viskores::FloatDefault>,
-        viskores::cont::ArrayHandle<viskores::FloatDefault>,
-        viskores::cont::ArrayHandle<viskores::FloatDefault> > coords;
-
-    coords = viskores::cont::make_ArrayHandleCartesianProduct(x_coords_handle,
-                                                          y_coords_handle,
-                                                          z_coords_handle);
-
-    viskores::cont::CoordinateSystem coordinate_system(coords_name.c_str(),
-                                                  coords);
-    result->AddCoordinateSystem(coordinate_system);
-
-    viskores::Id3 topo_origin = detail::topo_origin(n_topo);
-
-    if (ndims == 2)
-    {
-      viskores::cont::CellSetStructured<2> cell_set;
-      cell_set.SetPointDimensions(viskores::make_Vec(x_npts,
-                                                 y_npts));
-      viskores::Id2 origin2(topo_origin[0], topo_origin[1]);
-      cell_set.SetGlobalPointIndexStart(origin2);
-      result->SetCellSet(cell_set);
-    }
-    else
-    {
-      viskores::cont::CellSetStructured<3> cell_set;
-      cell_set.SetPointDimensions(viskores::make_Vec(x_npts,
-                                                 y_npts,
-                                                 z_npts));
-      cell_set.SetGlobalPointIndexStart(topo_origin);
-      result->SetCellSet(cell_set);
-    }
-
-    nverts = x_npts * y_npts;
-    neles = (x_npts - 1) * (y_npts - 1);
-    if(ndims > 2)
-    {
-        nverts *= z_npts;
-        neles *= (z_npts - 1);
-    }
-
-    return result;
 }
 
 //-----------------------------------------------------------------------------
@@ -1519,61 +1911,143 @@ VTKHDataAdapter::StructuredBlueprintToViskoresDataSet
     viskores::cont::DataSet *result = new viskores::cont::DataSet();
 
     string coords_type = n_coords["type"].as_string();
-    nverts = n_coords["values/x"].dtype().number_of_elements();
+    viskores::cont::CoordinateSystem coords;
     int ndims = 0;
 
-    viskores::cont::CoordinateSystem coords;
-    if(n_coords["values/x"].dtype().is_float64())
-    {
-      index_t x_stride = n_coords["values/x"].dtype().stride();
-      index_t x_element_stride = x_stride / sizeof(float64);
-      index_t y_stride = n_coords["values/y"].dtype().stride();
-      index_t y_element_stride = y_stride / sizeof(float64);
-      index_t z_element_stride = 0;
-      if(n_coords.has_path("values/z"))
-      {
-        index_t z_stride = n_coords["values/z"].dtype().stride();
-        z_element_stride = z_stride / sizeof(float64);
-      }
+    const bool is_rz = n_coords["values"].has_child("r") && n_coords["values"].has_child("z");
+    const bool is_rectilinear = n_coords["values"].has_child("x") && n_coords["values"].has_child("y");
 
-      coords = detail::GetExplicitCoordinateSystem<float64>(n_coords,
-                                                            coords_name,
-                                                            ndims,
-                                                            x_element_stride,
-                                                            y_element_stride,
-                                                            z_element_stride,
-                                                            zero_copy);
+    if (is_rz && is_rectilinear)
+    {
+        ASCENT_ERROR("Unsupported coordset: expected rectilinear {x,y,(z)} or cylindrical {r,z,(theta)} but got parameters for both.")
     }
-    else if(n_coords["values/x"].dtype().is_float32())
+    
+    if (!is_rz && !is_rectilinear)
     {
-      index_t x_stride = n_coords["values/x"].dtype().stride();
-      index_t x_element_stride = x_stride / sizeof(float32);
-      index_t y_stride = n_coords["values/y"].dtype().stride();
-      index_t y_element_stride = y_stride / sizeof(float32);
-      index_t z_element_stride = 0;
-      if(n_coords.has_path("values/z"))
-      {
-        index_t z_stride = n_coords["values/z"].dtype().stride();
-        z_element_stride = z_stride / sizeof(float32);
-      }
+        ASCENT_ERROR("Unsupported coordset: expected rectilinear {x,y,(z)} or cylindrical {r,z,(theta)} but got neither.")
+    }
 
-      coords = detail::GetExplicitCoordinateSystem<float32>(n_coords,
-                                                            coords_name,
-                                                            ndims,
-                                                            x_element_stride,
-                                                            y_element_stride,
-                                                            z_element_stride,
-                                                            zero_copy);
+    if (is_rectilinear)
+    {
+        nverts = n_coords["values/x"].dtype().number_of_elements();
+        if(n_coords["values/x"].dtype().is_float64())
+        {
+            index_t x_stride = n_coords["values/x"].dtype().stride();
+            index_t x_element_stride = x_stride / sizeof(float64);
+            index_t y_stride = n_coords["values/y"].dtype().stride();
+            index_t y_element_stride = y_stride / sizeof(float64);
+            index_t z_element_stride = 0;
+            if(n_coords.has_path("values/z"))
+            {
+                index_t z_stride = n_coords["values/z"].dtype().stride();
+                z_element_stride = z_stride / sizeof(float64);
+            }
+
+            coords = detail::GetExplicitCoordinateSystem<float64>(n_coords,
+                                                                    coords_name,
+                                                                    ndims,
+                                                                    x_element_stride,
+                                                                    y_element_stride,
+                                                                    z_element_stride,
+                                                                    zero_copy);
+        }
+        else if(n_coords["values/x"].dtype().is_float32())
+        {
+            index_t x_stride = n_coords["values/x"].dtype().stride();
+            index_t x_element_stride = x_stride / sizeof(float32);
+            index_t y_stride = n_coords["values/y"].dtype().stride();
+            index_t y_element_stride = y_stride / sizeof(float32);
+            index_t z_element_stride = 0;
+            if(n_coords.has_path("values/z"))
+            {
+                index_t z_stride = n_coords["values/z"].dtype().stride();
+                z_element_stride = z_stride / sizeof(float32);
+            }
+
+            coords = detail::GetExplicitCoordinateSystem<float32>(n_coords,
+                                                                    coords_name,
+                                                                    ndims,
+                                                                    x_element_stride,
+                                                                    y_element_stride,
+                                                                    z_element_stride,
+                                                                    zero_copy);
+        }
+        else
+        {
+            ASCENT_ERROR("Coordinate system must be floating point values");
+        }
+
+        result->AddCoordinateSystem(coords);
+    }
+    else if (n_coords["values"].has_child("r") && n_coords["values"].has_child("z"))
+    {
+        nverts = n_coords["values/r"].dtype().number_of_elements();
+        if(n_coords["values/r"].dtype().is_float64())
+        {
+            index_t r_stride = n_coords["values/r"].dtype().stride();
+            index_t r_element_stride = r_stride / sizeof(float64);
+            index_t z_stride = n_coords["values/z"].dtype().stride();
+            index_t z_element_stride = z_stride / sizeof(float64);
+            index_t theta_element_stride = 0;
+            if(n_coords.has_path("values/theta"))
+            {
+                index_t theta_stride = n_coords["values/theta"].dtype().stride();
+                theta_element_stride = theta_stride / sizeof(float64);
+            }
+            
+            coords = detail::GetRZCoordinateSystem<float64>(n_coords,
+                                                                coords_name,
+                                                                ndims,
+                                                                r_element_stride,
+                                                                z_element_stride,
+                                                                theta_element_stride,
+                                                                zero_copy);
+        }
+        else if(n_coords["values/r"].dtype().is_float32())
+        {
+            index_t r_stride = n_coords["values/r"].dtype().stride();
+            index_t r_element_stride = r_stride / sizeof(float32);
+            index_t z_stride = n_coords["values/z"].dtype().stride();
+            index_t z_element_stride = z_stride / sizeof(float32);
+            index_t theta_element_stride = 0;
+            if(n_coords.has_path("values/theta"))
+            {
+                index_t theta_stride = n_coords["values/theta"].dtype().stride();
+                theta_element_stride = theta_stride / sizeof(float32);
+            }
+
+            coords = detail::GetRZCoordinateSystem<float32>(n_coords,
+                                                                coords_name,
+                                                                ndims,
+                                                                r_element_stride,
+                                                                z_element_stride,
+                                                                theta_element_stride,
+                                                                zero_copy);
+        }
+        else
+        {
+            ASCENT_ERROR("Coordinate system must be floating point values");
+        }
+
+        result->AddCoordinateSystem(coords);
+
+        if(ndims>2)
+        {
+            viskores::filter::field_transform::CylindricalCoordinateTransform xform;
+            xform.SetUseCoordinateSystemAsField(true);
+            xform.SetActiveCoordinateSystem(0); 
+            xform.SetCylindricalToCartesian();
+            viskores::cont::DataSet out = xform.Execute(*result);
+            *result = std::move(out);
+        }
     }
     else
     {
-      ASCENT_ERROR("Coordinate system must be floating point values");
+        ASCENT_ERROR("Unsupported coordset: expected rectilinear {x,y,(z)} or cylindrical {r,z,(theta)}");
     }
 
-    result->AddCoordinateSystem(coords);
-
-    int32 x_elems = n_topo["elements/dims/i"].to_int();
-    int32 y_elems = n_topo["elements/dims/j"].to_int();
+    int32 i_elems = n_topo["elements/dims/i"].to_int();
+    int32 j_elems = n_topo["elements/dims/j"].to_int();
 
     viskores::Id3 topo_origin = detail::topo_origin(n_topo);
 
@@ -1581,9 +2055,9 @@ VTKHDataAdapter::StructuredBlueprintToViskoresDataSet
     {
       if(ndims == 2)
       {
-        viskores::Id x_verts = x_elems + 1;
-        viskores::Id y_verts = y_elems + 1;
-        neles = x_elems * y_elems;
+        viskores::Id x_verts = i_elems + 1;
+        viskores::Id y_verts = j_elems + 1;
+        neles = i_elems * j_elems;
         nverts = (x_verts) * (y_verts);
         
         std::string ele_shape = "quad";
@@ -1595,21 +2069,44 @@ VTKHDataAdapter::StructuredBlueprintToViskoresDataSet
         auto conn_portal = connectivity.WritePortal();
         int offset = 0;
         // Build Connectivity 
-        for (viskores::Id i = 0; i < x_elems; ++i) 
+
+        if (is_rz)
         {
-          for (viskores::Id j = 0; j < y_elems; ++j) 
-          {
-            viskores::Id v0 = j * x_verts + i;
-            viskores::Id v1 = v0 + 1;
-            viskores::Id v2 = v0 + x_verts;
-            viskores::Id v3 = v0 + x_verts + 1;
-            
-            conn_portal.Set(offset, v0);// bottom left
-            conn_portal.Set(offset+1, v1); //bottom right
-            conn_portal.Set(offset+2, v3); //top right
-            conn_portal.Set(offset+3, v2); //top left 
-            offset = offset + 4;
-          }
+            for (viskores::Id j = 0; j < j_elems; ++j) 
+            {
+                for (viskores::Id i = 0; i < i_elems; ++i) 
+                {
+                    viskores::Id v0 = j * x_verts + i;
+                    viskores::Id v1 = v0 + 1;
+                    viskores::Id v2 = v0 + x_verts;
+                    viskores::Id v3 = v0 + x_verts + 1;
+                    
+                    conn_portal.Set(offset, v0);// bottom left
+                    conn_portal.Set(offset+1, v1); //bottom right
+                    conn_portal.Set(offset+2, v3); //top right
+                    conn_portal.Set(offset+3, v2); //top left 
+                    offset = offset + 4;
+                }
+            }
+        }
+        else
+        {
+            for (viskores::Id i = 0; i < i_elems; ++i) 
+            {
+                for (viskores::Id j = 0; j < j_elems; ++j) 
+                {
+                    viskores::Id v0 = j * x_verts + i;
+                    viskores::Id v1 = v0 + 1;
+                    viskores::Id v2 = v0 + x_verts;
+                    viskores::Id v3 = v0 + x_verts + 1;
+                    
+                    conn_portal.Set(offset, v0);// bottom left
+                    conn_portal.Set(offset+1, v1); //bottom right
+                    conn_portal.Set(offset+2, v3); //top right
+                    conn_portal.Set(offset+3, v2); //top left 
+                    offset = offset + 4;
+                }
+            }
         }
         viskores::cont::CellSetSingleType<> cell_set;
         cell_set.Fill(nverts, shape_id, indices_per, connectivity);
@@ -1618,12 +2115,12 @@ VTKHDataAdapter::StructuredBlueprintToViskoresDataSet
       }
       else
       {
-        int32 z_elems = n_topo["elements/dims/k"].to_int();
+        int32 k_elems = n_topo["elements/dims/k"].to_int();
 
-        viskores::Id x_verts = x_elems + 1;
-        viskores::Id y_verts = y_elems + 1;
-        viskores::Id z_verts = z_elems + 1;
-        neles = x_elems * y_elems * z_elems;
+        viskores::Id x_verts = i_elems + 1;
+        viskores::Id y_verts = j_elems + 1;
+        viskores::Id z_verts = k_elems + 1;
+        neles = i_elems * j_elems * k_elems;
         nverts = (x_verts) * (y_verts) * (z_verts);
         
         std::string ele_shape = "hex";
@@ -1635,11 +2132,11 @@ VTKHDataAdapter::StructuredBlueprintToViskoresDataSet
         auto conn_portal = connectivity.WritePortal();
         int offset = 0;
         // Build Connectivity (Polyhedral cells)
-        for (viskores::Id i = 0; i < x_elems; ++i) 
+        for (viskores::Id i = 0; i < i_elems; ++i) 
         {
-          for (viskores::Id j = 0; j < y_elems; ++j) 
+          for (viskores::Id j = 0; j < j_elems; ++j) 
           {
-            for (viskores::Id k = 0; k < z_elems; ++k) 
+            for (viskores::Id k = 0; k < k_elems; ++k) 
             {
               viskores::Id v0 = k * y_verts * x_verts + j * x_verts + i;
               viskores::Id v1 = v0 + 1;
@@ -1674,23 +2171,23 @@ VTKHDataAdapter::StructuredBlueprintToViskoresDataSet
       if (ndims == 2)
       {
         viskores::cont::CellSetStructured<2> cell_set;
-        cell_set.SetPointDimensions(viskores::make_Vec(x_elems+1,
-                                                   y_elems+1));
+        cell_set.SetPointDimensions(viskores::make_Vec(i_elems+1,
+                                                   j_elems+1));
         viskores::Id2 origin2(topo_origin[0], topo_origin[1]);
         cell_set.SetGlobalPointIndexStart(origin2);
         result->SetCellSet(cell_set);
-        neles = x_elems * y_elems;
+        neles = i_elems * j_elems;
       }
       else
       {
-        int32 z_elems = n_topo["elements/dims/k"].to_int();
+        int32 k_elems = n_topo["elements/dims/k"].to_int();
         viskores::cont::CellSetStructured<3> cell_set;
-        cell_set.SetPointDimensions(viskores::make_Vec(x_elems+1,
-                                                   y_elems+1,
-                                                   z_elems+1));
+        cell_set.SetPointDimensions(viskores::make_Vec(i_elems+1,
+                                                   j_elems+1,
+                                                   k_elems+1));
         cell_set.SetGlobalPointIndexStart(topo_origin);
         result->SetCellSet(cell_set);
-        neles = x_elems * y_elems * z_elems;
+        neles = i_elems * j_elems * k_elems;
       }
     }    
     return result;
@@ -1792,73 +2289,151 @@ VTKHDataAdapter::UnstructuredBlueprintToViskoresDataSet
      int &nverts,                    // output, number of verts
      bool zero_copy)                 // attempt to zero copy
 {
-
     viskores::cont::DataSet *result = new viskores::cont::DataSet();
 
-    nverts = n_coords["values/x"].dtype().number_of_elements();
-
-    int32 ndims;
     viskores::cont::CoordinateSystem coords;
-    if(n_coords["values/x"].dtype().is_float64())
-    {
-      index_t x_stride = n_coords["values/x"].dtype().stride();
-      index_t x_element_stride = x_stride / sizeof(float64);
-      index_t y_stride = n_coords["values/y"].dtype().stride();
-      index_t y_element_stride = y_stride / sizeof(float64);
-      index_t z_element_stride = 0;
-      if(n_coords.has_path("values/z"))
-      {
-        index_t z_stride = n_coords["values/z"].dtype().stride();
-        z_element_stride = z_stride / sizeof(float64);
-      }
+    int32 ndims;
 
-      //TODO:
-      //can we assume all by checking one? 
-      //or check ystride & zstride % float64 == 0? 
-      if(x_stride % sizeof(float64) == 0)
-      {
-        coords = detail::GetExplicitCoordinateSystem<float64>(n_coords,
-                                                              coords_name,
-                                                              ndims,
-                                                              x_element_stride,
-                                                              y_element_stride,
-                                                              z_element_stride,
-                                                              zero_copy);
-      }
+    if (n_coords["values"].has_child("x") && n_coords["values"].has_child("y"))
+    {
+        nverts = n_coords["values/x"].dtype().number_of_elements();
+        if(n_coords["values/x"].dtype().is_float64())
+        {
+            index_t x_stride = n_coords["values/x"].dtype().stride();
+            index_t x_element_stride = x_stride / sizeof(float64);
+            index_t y_stride = n_coords["values/y"].dtype().stride();
+            index_t y_element_stride = y_stride / sizeof(float64);
+            index_t z_element_stride = 0;
+            
+            if(n_coords.has_path("values/z"))
+            {
+                index_t z_stride = n_coords["values/z"].dtype().stride();
+                z_element_stride = z_stride / sizeof(float64);
+            }
+
+            if(x_stride % sizeof(float64) == 0)
+            {
+                coords = detail::GetExplicitCoordinateSystem<float64>(n_coords,
+                                                                    coords_name,
+                                                                    ndims,
+                                                                    x_element_stride,
+                                                                    y_element_stride,
+                                                                    z_element_stride,
+                                                                    zero_copy);
+            }
+        }
+        else if(n_coords["values/x"].dtype().is_float32())
+        {
+            index_t x_stride = n_coords["values/x"].dtype().stride();
+            index_t x_element_stride = x_stride / sizeof(float32);
+            index_t y_stride = n_coords["values/y"].dtype().stride();
+            index_t y_element_stride = y_stride / sizeof(float32);
+            index_t z_element_stride = 0;
+            if(n_coords.has_path("values/z"))
+            {
+                index_t z_stride = n_coords["values/z"].dtype().stride();
+                z_element_stride = z_stride / sizeof(float32);
+            }
+
+            //TODO:
+            //can we assume all by checking one? 
+            //or check ystride & zstride % float64 == 0? 
+            if(x_stride % sizeof(float32) == 0)
+            {
+                coords = detail::GetExplicitCoordinateSystem<float32>(n_coords,
+                                                                    coords_name,
+                                                                    ndims,
+                                                                    x_element_stride,
+                                                                    y_element_stride,
+                                                                    z_element_stride,
+                                                                    zero_copy);
+            }
+        }
+        else
+        {
+            ASCENT_ERROR("Coordinate system must be floating point values");
+        }
+
+        result->AddCoordinateSystem(coords);
     }
-    else if(n_coords["values/x"].dtype().is_float32())
+    else if (n_coords["values"].has_child("r") && n_coords["values"].has_child("z"))
     {
-      index_t x_stride = n_coords["values/x"].dtype().stride();
-      index_t x_element_stride = x_stride / sizeof(float32);
-      index_t y_stride = n_coords["values/y"].dtype().stride();
-      index_t y_element_stride = y_stride / sizeof(float32);
-      index_t z_element_stride = 0;
-      if(n_coords.has_path("values/z"))
-      {
-        index_t z_stride = n_coords["values/z"].dtype().stride();
-        z_element_stride = z_stride / sizeof(float32);
-      }
+        nverts = n_coords["values/r"].dtype().number_of_elements();
+        if(n_coords["values/r"].dtype().is_float64())
+        {
+            index_t r_stride = n_coords["values/r"].dtype().stride();
+            index_t r_element_stride = r_stride / sizeof(float64);
+            index_t z_stride = n_coords["values/z"].dtype().stride();
+            index_t z_element_stride = z_stride / sizeof(float64);
+            index_t theta_element_stride = 0;
+            if(n_coords.has_path("values/theta"))
+            {
+                index_t theta_stride = n_coords["values/theta"].dtype().stride();
+                theta_element_stride = theta_stride / sizeof(float64);
+            }
 
-      //TODO:
-      //can we assume all by checking one? 
-      //or check ystride & zstride % float64 == 0? 
-      if(x_stride % sizeof(float32) == 0)
-      {
-        coords = detail::GetExplicitCoordinateSystem<float32>(n_coords,
-                                                              coords_name,
-                                                              ndims,
-                                                              x_element_stride,
-                                                              y_element_stride,
-                                                              z_element_stride,
-                                                              zero_copy);
-      }
+            //TODO:
+            //can we assume all by checking one? 
+            //or check theta_stride & z_stride % float64 == 0? 
+            if(r_stride % sizeof(float64) == 0)
+            {
+                coords = detail::GetRZCoordinateSystem<float64>(n_coords,
+                                                                    coords_name,
+                                                                    ndims,
+                                                                    r_element_stride,
+                                                                    z_element_stride,
+                                                                    theta_element_stride,
+                                                                    zero_copy);
+            }
+        }
+        else if(n_coords["values/r"].dtype().is_float32())
+        {
+            index_t r_stride = n_coords["values/r"].dtype().stride();
+            index_t r_element_stride = r_stride / sizeof(float32);
+            index_t z_stride = n_coords["values/z"].dtype().stride();
+            index_t z_element_stride = z_stride / sizeof(float32);
+            index_t theta_element_stride = 0;
+            if(n_coords.has_path("values/theta"))
+            {
+                index_t theta_stride = n_coords["values/theta"].dtype().stride();
+                theta_element_stride = theta_stride / sizeof(float32);
+            }
+
+            //TODO:
+            //can we assume all by checking one? 
+            //or check theta_stride & z_stride % float64 == 0? 
+            if(r_stride % sizeof(float64) == 0)
+            {
+                coords = detail::GetRZCoordinateSystem<float32>(n_coords,
+                                                                    coords_name,
+                                                                    ndims,
+                                                                    r_element_stride,
+                                                                    z_element_stride,
+                                                                    theta_element_stride,
+                                                                    zero_copy);
+            }
+        }
+        else
+        {
+            ASCENT_ERROR("Coordinate system must be floating point values");
+        }
+
+        result->AddCoordinateSystem(coords);
+
+        if(ndims>2)
+        {
+            viskores::filter::field_transform::CylindricalCoordinateTransform xform;
+            xform.SetUseCoordinateSystemAsField(true);
+            xform.SetActiveCoordinateSystem(0); 
+            xform.SetCylindricalToCartesian();
+            viskores::cont::DataSet out = xform.Execute(*result);
+            *result = std::move(out);
+        }
     }
     else
     {
-      ASCENT_ERROR("Coordinate system must be floating point values");
+        ASCENT_ERROR("Unsupported coordset: expected rectilinear {x,y,(z)} or cylindrical {r,z,(theta)}");
     }
-
-    result->AddCoordinateSystem(coords);
 
     // shapes, number of indices, and connectivity.
     // Will have to do something different if this is a "zoo"
