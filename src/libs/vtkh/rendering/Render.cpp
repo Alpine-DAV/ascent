@@ -19,7 +19,7 @@ Render::Render()
     m_shading(true),
     m_canvas(m_width, m_height),
     m_tiled_rendering(true),
-    m_tiled_rendering_type(TiledRenderingType::SquareTiles),
+    m_tiled_rendering_type(TiledRenderingType::OptimizedTiles),
     m_tile_width(1024),
     m_tile_height(1024)
 {
