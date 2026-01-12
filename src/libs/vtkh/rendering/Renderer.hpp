@@ -76,7 +76,8 @@ protected:
                    const viskores::cont::Field &field,
                    const viskores::cont::CoordinateSystem &coords,
                    viskores::cont::DataSet &data_set,
-		   const viskores::Int32 tile_width);
+		   const viskores::Int32 tile_width,
+		   const viskores::Int32 tile_height);
 };
 
 } // namespace vtkh

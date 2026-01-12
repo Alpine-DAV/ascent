@@ -280,12 +280,66 @@ Renderer::DoExecute()
       Render::viskoresCanvas &canvas = m_renders[i].GetCanvas();
       const viskoresCamera &camera = m_renders[i].GetCamera();
       bool tile_image = false;
-      if (m_renders[i].GetTileImage())
+      viskores::Int32 tile_width = 0;
+      viskores::Int32 tile_height = 0;
+      if (m_renders[i].GetTiledRendering())
       {
-        if (canvas.GetWidth() > m_renders[i].GetTileWidth() ||
-            canvas.GetHeight() > m_renders[i].GetTileWidth())
+        switch(m_renders[i].GetTiledRenderingType()) 
         {
-          tile_image = true;
+          case Render::TiledRenderingType::SquareTiles:
+            if (canvas.GetWidth() > m_renders[i].GetTileWidth() ||
+                canvas.GetHeight() > m_renders[i].GetTileWidth())
+            {
+              tile_image = true;
+              tile_width = m_renders[i].GetTileWidth();
+              tile_height = m_renders[i].GetTileWidth();
+	      std::cerr << "Square tiles: width=" << tile_width << ",height=" << tile_height << std::endl;
+            }
+            break;
+	  case Render::TiledRenderingType::RectangularTiles:
+            if (canvas.GetWidth() > m_renders[i].GetTileWidth() ||
+                canvas.GetHeight() > m_renders[i].GetTileHeight())
+            {
+              tile_image = true;
+              tile_width = m_renders[i].GetTileWidth();
+              tile_height = m_renders[i].GetTileHeight();
+	      std::cerr << "Rectanglar tiles: width=" << tile_width << ",height=" << tile_height << std::endl;
+            }
+            break;
+	  case Render::TiledRenderingType::HorizontalStrips:
+            if (canvas.GetHeight() > m_renders[i].GetTileHeight())
+            {
+              tile_image = true;
+              tile_width = canvas.GetWidth();
+              tile_height = m_renders[i].GetTileHeight();
+	      std::cerr << "Horizontal strips: width=" << tile_width << ",height=" << tile_height << std::endl;
+            }
+            break;
+	  case Render::TiledRenderingType::VerticalStrips:
+            if (canvas.GetWidth() > m_renders[i].GetTileWidth())
+            {
+              tile_image = true;
+              tile_width = m_renders[i].GetTileWidth();
+              tile_height = canvas.GetHeight();
+	      std::cerr << "Vertical strips: width=" << tile_width << ",height=" << tile_height << std::endl;
+            }
+            break;
+	  case Render::TiledRenderingType::OptimizedTiles:
+            if (canvas.GetWidth() > m_renders[i].GetTileWidth() ||
+                canvas.GetHeight() > m_renders[i].GetTileHeight())
+            {
+              tile_image = true;
+	      int x_tile_size = m_renders[i].GetTileWidth();
+              int y_tile_size = m_renders[i].GetTileHeight();
+              int nx_canvas = canvas.GetWidth();
+              int ny_canvas = canvas.GetHeight();
+              int nx_tiles = int(double(nx_canvas - 1) / double(x_tile_size)) + 1;
+              int ny_tiles = int(double(ny_canvas - 1) / double(y_tile_size)) + 1;
+	      tile_width = std::ceil(double(nx_canvas) / double(nx_tiles));
+	      tile_height = std::ceil(double(ny_canvas) / double(ny_tiles));
+	      std::cerr << "Optimized tiles: width=" << tile_width << ",height=" << tile_height << std::endl;
+            }
+            break;
         }
       }
       if (tile_image)
@@ -297,7 +351,8 @@ Renderer::DoExecute()
                     field,
                     coords,
                     data_set,
-		    m_renders[i].GetTileWidth());
+		    tile_width,
+		    tile_height);
       }
       else
       {
@@ -344,11 +399,12 @@ Renderer::RenderTiled(Render::viskoresCanvas &canvas,
                       const viskores::cont::Field &field,
                       const viskores::cont::CoordinateSystem &coords,
                       viskores::cont::DataSet &data_set,
-		      const viskores::Int32 tile_width)
+                      const viskores::Int32 tile_width,
+                      const viskores::Int32 tile_height)
 {
   // Calculate the tiling parameters.
   const int x_tile_size = tile_width;
-  const int y_tile_size = tile_width;
+  const int y_tile_size = tile_height;
   const int nx_canvas = canvas.GetWidth();
   const int ny_canvas = canvas.GetHeight();
   const int nx_tiles = int(double(nx_canvas - 1) / double(x_tile_size)) + 1;
