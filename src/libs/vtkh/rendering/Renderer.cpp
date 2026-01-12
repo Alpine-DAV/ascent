@@ -293,7 +293,7 @@ Renderer::DoExecute()
               tile_image = true;
               tile_width = m_renders[i].GetTileWidth();
               tile_height = m_renders[i].GetTileWidth();
-	      std::cerr << "Square tiles: width=" << tile_width << ",height=" << tile_height << std::endl;
+	      //std::cerr << "Square tiles: width=" << tile_width << ",height=" << tile_height << std::endl;
             }
             break;
 	  case Render::TiledRenderingType::RectangularTiles:
@@ -303,7 +303,7 @@ Renderer::DoExecute()
               tile_image = true;
               tile_width = m_renders[i].GetTileWidth();
               tile_height = m_renders[i].GetTileHeight();
-	      std::cerr << "Rectanglar tiles: width=" << tile_width << ",height=" << tile_height << std::endl;
+	      //std::cerr << "Rectanglar tiles: width=" << tile_width << ",height=" << tile_height << std::endl;
             }
             break;
 	  case Render::TiledRenderingType::HorizontalStrips:
@@ -312,7 +312,7 @@ Renderer::DoExecute()
               tile_image = true;
               tile_width = canvas.GetWidth();
               tile_height = m_renders[i].GetTileHeight();
-	      std::cerr << "Horizontal strips: width=" << tile_width << ",height=" << tile_height << std::endl;
+	      //std::cerr << "Horizontal strips: width=" << tile_width << ",height=" << tile_height << std::endl;
             }
             break;
 	  case Render::TiledRenderingType::VerticalStrips:
@@ -321,7 +321,7 @@ Renderer::DoExecute()
               tile_image = true;
               tile_width = m_renders[i].GetTileWidth();
               tile_height = canvas.GetHeight();
-	      std::cerr << "Vertical strips: width=" << tile_width << ",height=" << tile_height << std::endl;
+	      //std::cerr << "Vertical strips: width=" << tile_width << ",height=" << tile_height << std::endl;
             }
             break;
 	  case Render::TiledRenderingType::OptimizedTiles:
@@ -337,14 +337,14 @@ Renderer::DoExecute()
               int ny_tiles = int(double(ny_canvas - 1) / double(y_tile_size)) + 1;
 	      tile_width = std::ceil(double(nx_canvas) / double(nx_tiles));
 	      tile_height = std::ceil(double(ny_canvas) / double(ny_tiles));
-	      std::cerr << "Optimized tiles: width=" << tile_width << ",height=" << tile_height << std::endl;
+	      //std::cerr << "Optimized tiles: width=" << tile_width << ",height=" << tile_height << std::endl;
             }
             break;
         }
       }
       if (tile_image)
       {
-        std::cerr << "Calling RenderTiled" << std::endl;
+        //std::cerr << "Calling RenderTiled" << std::endl;
         RenderTiled(canvas,
                     camera,
                     cellset,
@@ -356,7 +356,7 @@ Renderer::DoExecute()
       }
       else
       {
-        std::cerr << "Calling RenderCells" << std::endl;
+        //std::cerr << "Calling RenderCells" << std::endl;
         m_mapper->SetCanvas(&canvas);
         m_mapper->RenderCells(cellset,
                               coords,
@@ -409,7 +409,7 @@ Renderer::RenderTiled(Render::viskoresCanvas &canvas,
   const int ny_canvas = canvas.GetHeight();
   const int nx_tiles = int(double(nx_canvas - 1) / double(x_tile_size)) + 1;
   const int ny_tiles = int(double(ny_canvas - 1) / double(y_tile_size)) + 1;
-  std::cerr << "nx_tiles=" << nx_tiles << ",ny_tiles=" << ny_tiles << std::endl;
+  //std::cerr << "nx_tiles=" << nx_tiles << ",ny_tiles=" << ny_tiles << std::endl;
 
   // Create a canvas for doing the tiling.
   Render::viskoresCanvas *tile_canvas = new viskores::rendering::CanvasRayTracer;
@@ -419,8 +419,8 @@ Renderer::RenderTiled(Render::viskoresCanvas &canvas,
   m_mapper->SetCanvas(tile_canvas);
 
   viskoresCamera tile_camera = camera;
-  std::cerr << "tile_camera.GetZoom()=" << tile_camera.GetZoom() << std::endl;
-  std::cerr << "tile_camera.GetPan()=" << tile_camera.GetPan()[0] << "," << tile_camera.GetPan()[1] << std::endl;
+  //std::cerr << "tile_camera.GetZoom()=" << tile_camera.GetZoom() << std::endl;
+  //std::cerr << "tile_camera.GetPan()=" << tile_camera.GetPan()[0] << "," << tile_camera.GetPan()[1] << std::endl;
   viskores::Float64 zoom_user = tile_camera.GetZoom();
   viskores::Float64 xpan_user = tile_camera.GetPan()[0];
   viskores::Float64 ypan_user = tile_camera.GetPan()[1];
@@ -428,7 +428,7 @@ Renderer::RenderTiled(Render::viskoresCanvas &canvas,
   // Calculate the tile zoom factor and the zoom factor for viskores.
   const double tile_zoom = double(ny_canvas) / double(y_tile_size);
   viskores::Float64 zoom = log(tile_camera.GetZoom() * tile_zoom) / log(4.);
-  std::cerr << "tile_zoom=" << tile_zoom << ",zoom=" << zoom << std::endl;
+  //std::cerr << "tile_zoom=" << tile_zoom << ",zoom=" << zoom << std::endl;
 
   // Calculate the fraction of the last tile that is each direction.
   const double nx_extra = double((nx_tiles * x_tile_size) - nx_canvas) / double(x_tile_size);
@@ -438,7 +438,7 @@ Renderer::RenderTiled(Render::viskoresCanvas &canvas,
   const double ypan_init  = ypan_user + double(ny_tiles - 1 - ny_extra) / (double(tile_zoom) * tile_camera.GetZoom());
   const double xpan_delta = 2. / (tile_camera.GetZoom() * double(tile_zoom));
   const double ypan_delta = 2. / (tile_camera.GetZoom() * double(tile_zoom));
-  std::cerr << "xpan_init=" << xpan_init << ",ypan_init=" << ypan_init << ",xpan_delta=" << xpan_delta << ",ypan_delta=" << ypan_delta << std::endl;
+  //std::cerr << "xpan_init=" << xpan_init << ",ypan_init=" << ypan_init << ",xpan_delta=" << xpan_delta << ",ypan_delta=" << ypan_delta << std::endl;
 
   float* color_buffer = &GetVISKORESPointer(canvas.GetColorBuffer())[0][0];
   float* depth_buffer = GetVISKORESPointer(canvas.GetDepthBuffer());
@@ -459,8 +459,8 @@ Renderer::RenderTiled(Render::viskoresCanvas &canvas,
       // Now we have the pan and zoom set to the default, we can set it.
       tile_camera.Zoom(zoom);
       tile_camera.Pan(xpan, ypan);
-      std::cerr << "2: camera zoom=" << tile_camera.GetZoom() << std::endl;
-      std::cerr << "2: camera pan=" << tile_camera.GetPan()[0] << "," << tile_camera.GetPan()[1] << std::endl;
+      //std::cerr << "  camera zoom=" << tile_camera.GetZoom() << std::endl;
+      //std::cerr << "  camera pan=" << tile_camera.GetPan()[0] << "," << tile_camera.GetPan()[1] << std::endl;
 
       // Render the tile.
       tile_canvas->Clear();
