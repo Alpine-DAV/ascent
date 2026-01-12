@@ -89,7 +89,7 @@ TEST(ascent_tiling, test_tiling)
 
 
     string output_path = prepare_output_dir();
-    string output_file = conduit::utils::join_file_path(output_path,"tout_tiling");
+    string output_file = conduit::utils::join_file_path(output_path,"tout_tiled_rendering");
 
     //
     // Create the actions.
@@ -107,6 +107,7 @@ TEST(ascent_tiling, test_tiling)
 
     scenes["s1/renders/r1/image_width"] = "600";
     scenes["s1/renders/r1/image_height"] = "600";
+    scenes["s1/renders/r1/tiled_rendering"] = "false";
     scenes["s1/renders/r1/tile_width"] = "200";
     float64 look_at_vals[3] = {0.0, 0.0, 0.0};
     Node look_at;
@@ -143,11 +144,14 @@ TEST(ascent_tiling, test_tiling)
 
     //
     // Loop over several image width, image height and tile size
-    // combinations.
+    // combinations with square tiles.
     //
+    output_file = conduit::utils::join_file_path(output_path,"tout_tiled_rendering_square");
+    scenes["s1/renders/r1/image_prefix"] = output_file;
     vector<string> image_widths  = {"600", "600", "400", "600"};
     vector<string> image_heights = {"600", "400", "600", "400"};
     vector<string> tile_widths   = {"200", "200", "200", "256"};
+    scenes["s1/renders/r1/tiled_rendering_type"] = "square_tiles";
     for (int i = 0; i < image_widths.size(); ++i)
     {
         // remove the old image before rendering
@@ -161,7 +165,119 @@ TEST(ascent_tiling, test_tiling)
 
         // check the image we created
         EXPECT_TRUE(check_test_image(output_file, 0.001f, i));
-        std::string msg = "Tiling an image.";
+        std::string msg = "Tiled rendering with square tiles.";
+        ASCENT_ACTIONS_DUMP_CYCLE(actions,output_file, msg, i);
+    }
+
+    //
+    // Loop over several image width, image height and tile size
+    // combinations with rectangular tiles.
+    //
+    output_file = conduit::utils::join_file_path(output_path,"tout_tiled_rendering_rectangular");
+    scenes["s1/renders/r1/image_prefix"] = output_file;
+    vector<string> image_widths2  = {"600", "600", "400", "600"};
+    vector<string> image_heights2 = {"600", "400", "600", "400"};
+    vector<string> tile_widths2   = {"300", "300", "200", "320"};
+    vector<string> tile_heights2  = {"200", "200", "300", "220"};
+    scenes["s1/renders/r1/tiled_rendering_type"] = "rectangular_tiles";
+    for (int i = 0; i < image_widths2.size(); ++i)
+    {
+        // remove the old image before rendering
+        remove_test_image(output_file, i);
+
+	// render the image
+        scenes["s1/renders/r1/image_width"] = image_widths2[i];
+        scenes["s1/renders/r1/image_height"] = image_heights2[i];
+        scenes["s1/renders/r1/tile_width"] = tile_widths2[i];
+        scenes["s1/renders/r1/tile_height"] = tile_heights2[i];
+        ascent.execute(actions);
+
+        // check the image we created
+        EXPECT_TRUE(check_test_image(output_file, 0.001f, i));
+        std::string msg = "Tiled rendering with rectangular tiles.";
+        ASCENT_ACTIONS_DUMP_CYCLE(actions,output_file, msg, i);
+    }
+
+    //
+    // Loop over several image width, image height and tile size
+    // combinations with horizontal strips.
+    //
+    output_file = conduit::utils::join_file_path(output_path,"tout_tiled_rendering_horizontal");
+    scenes["s1/renders/r1/image_prefix"] = output_file;
+    vector<string> image_widths3  = {"600", "600", "400", "600"};
+    vector<string> image_heights3 = {"600", "400", "600", "400"};
+    vector<string> tile_heights3  = {"100", "100", "100", "128"};
+    scenes["s1/renders/r1/tiled_rendering_type"] = "horizontal_strips";
+    for (int i = 0; i < image_widths3.size(); ++i)
+    {
+        // remove the old image before rendering
+        remove_test_image(output_file, i);
+
+	// render the image
+        scenes["s1/renders/r1/image_width"] = image_widths3[i];
+        scenes["s1/renders/r1/image_height"] = image_heights3[i];
+        scenes["s1/renders/r1/tile_height"] = tile_heights3[i];
+        ascent.execute(actions);
+
+        // check the image we created
+        EXPECT_TRUE(check_test_image(output_file, 0.001f, i));
+        std::string msg = "Tiled rendering with horizontal strips.";
+        ASCENT_ACTIONS_DUMP_CYCLE(actions,output_file, msg, i);
+    }
+
+    //
+    // Loop over several image width, image height and tile size
+    // combinations with vertical strips.
+    //
+    output_file = conduit::utils::join_file_path(output_path,"tout_tiled_rendering_vertical");
+    scenes["s1/renders/r1/image_prefix"] = output_file;
+    vector<string> image_widths4  = {"600", "600", "400", "600"};
+    vector<string> image_heights4 = {"600", "400", "600", "400"};
+    vector<string> tile_widths4   = {"100", "100", "100", "128"};
+    scenes["s1/renders/r1/tiled_rendering_type"] = "vertical_strips";
+    for (int i = 0; i < image_widths4.size(); ++i)
+    {
+        // remove the old image before rendering
+        remove_test_image(output_file, i);
+
+	// render the image
+        scenes["s1/renders/r1/image_width"] = image_widths4[i];
+        scenes["s1/renders/r1/image_height"] = image_heights4[i];
+        scenes["s1/renders/r1/tile_width"] = tile_widths4[i];
+        ascent.execute(actions);
+
+        // check the image we created
+        EXPECT_TRUE(check_test_image(output_file, 0.001f, i));
+        std::string msg = "Tiled rendering with vertical strips.";
+        ASCENT_ACTIONS_DUMP_CYCLE(actions,output_file, msg, i);
+    }
+
+    //
+    // Loop over several image width, image height and tile size
+    // combinations with optimized tiles.
+    //
+    output_file = conduit::utils::join_file_path(output_path,"tout_tiled_rendering_optimized");
+    scenes["s1/renders/r1/image_prefix"] = output_file;
+    vector<string> image_widths5  = {"600", "600", "400", "600"};
+    vector<string> image_heights5 = {"600", "400", "600", "400"};
+    vector<string> tile_widths5   = {"320", "320", "300", "90"};
+    vector<string> tile_heights5  = {"220", "220", "200", "128"};
+    scenes["s1/renders/r1/tiled_rendering_type"] = "optimized_tiles";
+    for (int i = 0; i < image_widths5.size(); ++i)
+    {
+        // remove the old image before rendering
+        remove_test_image(output_file, i);
+
+	// render the image
+        scenes["s1/renders/r1/image_width"] = image_widths5[i];
+        scenes["s1/renders/r1/image_height"] = image_heights5[i];
+        scenes["s1/renders/r1/tile_width"] = tile_widths5[i];
+        scenes["s1/renders/r1/tile_height"] = tile_heights5[i];
+        ascent.execute(actions);
+
+        // check the image we created
+        EXPECT_TRUE(check_test_image(output_file, 0.001f, i));
+        std::string msg = "Tiled rendering with optimized tiles.";
         ASCENT_ACTIONS_DUMP_CYCLE(actions,output_file, msg, i);
     }
 
