@@ -314,7 +314,6 @@ GetRZCoordinateSystem(const conduit::Node &n_coords,
                             int &ndims,
                             index_t &r_element_stride,
                             index_t &z_element_stride,
-                            index_t &theta_element_stride,
                             bool zero_copy)
 {
     viskores::CopyFlag copy = viskores::CopyFlag::On;
@@ -371,44 +370,12 @@ GetRZCoordinateSystem(const conduit::Node &n_coords,
       viskores::cont::Algorithm::Copy(z_stride_handle, z_coords_handle);
     }
 
-    if(theta_element_stride == 0)
-    {
-      theta_coords_handle.AllocateAndFill(nverts,0.0);
-    }
-    else if(theta_element_stride == 1)
-    {
-      ndims = 3;
-      const T *theta_verts_ptr = n_coords["values/theta"].value();
-      detail::CopyArray(theta_coords_handle, theta_verts_ptr, nverts, zero_copy);
-    }
-    else
-    {
-      ndims = 3;
-      int theta_verts_expanded = (nverts - 1) * theta_element_stride + 1;
-      const T *theta_verts_ptr = n_coords["values/theta"].value();
-      viskores::cont::ArrayHandle<T> theta_source_array = viskores::cont::make_ArrayHandle<T>(theta_verts_ptr,
-                                                                                  theta_verts_expanded,
-                                                                                  copy);
-      viskores::cont::ArrayHandleStride<T> theta_stride_handle(theta_source_array,
-                                                       nverts,
-                                                       theta_element_stride,
-                                                       0); // offset
-
-      viskores::cont::Algorithm::Copy(theta_stride_handle, theta_coords_handle);
-    }
-
-    if (ndims == 2)
-    {
-        return viskores::cont::CoordinateSystem(name,
-                                        make_ArrayHandleSOA(z_coords_handle,
-                                                            r_coords_handle,
-                                                            theta_coords_handle));
-    }
+    theta_coords_handle.AllocateAndFill(nverts,0.0);
 
     return viskores::cont::CoordinateSystem(name,
-                                        make_ArrayHandleSOA(r_coords_handle,
-                                                            theta_coords_handle,
-                                                            z_coords_handle));
+                                    make_ArrayHandleSOA(z_coords_handle,
+                                                        r_coords_handle,
+                                                        theta_coords_handle));
 }
 
 
@@ -1347,19 +1314,19 @@ VTKHDataAdapter::UniformBlueprintToViskoresDataSet
     float64 spacing_y = 1.0;
     float64 spacing_z = 1.0;
 
-    const bool is_rz = (n_coords.has_child("origin") && (n_coords["origin"].has_child("r") || n_coords["origin"].has_child("theta"))) ||
-                 (n_coords.has_child("spacing") && (n_coords["spacing"].has_child("dr") || n_coords["spacing"].has_child("dtheta")));
+    const bool is_rz = (n_coords.has_child("origin") && (n_coords["origin"].has_child("r") || (n_coords["origin"].has_child("z") && is_2d))) ||
+                 (n_coords.has_child("spacing") && (n_coords["spacing"].has_child("dr") || (n_coords["spacing"].has_child("dz") && is_2d)));
     const bool is_rectilinear = (n_coords.has_child("origin") && (n_coords["origin"].has_child("x") || n_coords["origin"].has_child("y"))) ||
                           (n_coords.has_child("spacing") && (n_coords["spacing"].has_child("dx") || n_coords["spacing"].has_child("dy"))) ||
                           !is_rz;
 
     if (is_rz && is_rectilinear) {
-        ASCENT_ERROR("Unsupported coordset: expected rectilinear {x,y,(z)} or cylindrical {r,z,(theta)} but got parameters for both.")
+        ASCENT_ERROR("Unsupported coordset: expected rectilinear {x,y,(z)} or cylindrical {r,z} but got parameters for both.")
     }
     
     if (!is_rz && !is_rectilinear)
     {
-        ASCENT_ERROR("Unsupported coordset: expected rectilinear {x,y,(z)} or cylindrical {r,z,(theta)} but got neither.")
+        ASCENT_ERROR("Unsupported coordset: expected rectilinear {x,y,(z)} or cylindrical {r,z} but got neither.")
     }
 
     if(n_coords.has_child("origin"))
@@ -1397,20 +1364,7 @@ VTKHDataAdapter::UniformBlueprintToViskoresDataSet
         }
         else if (is_rz && !is_2d)
         {
-            if(n_origin.has_child("r"))
-            {
-                origin_x = n_origin["r"].to_float64();
-            }
-
-            if(n_origin.has_child("theta"))
-            {
-                origin_y = n_origin["theta"].to_float64();
-            }
-
-            if(n_origin.has_child("z"))
-            {
-                origin_z = n_origin["z"].to_float64();
-            }
+            ASCENT_ERROR("Unsupported coordset: cylindrical {r,z} coordinates only supported in 2d.")
         }
     }
 
@@ -1449,20 +1403,7 @@ VTKHDataAdapter::UniformBlueprintToViskoresDataSet
         }
         else if (is_rz && !is_2d)
         {
-            if(n_spacing.has_path("dr"))
-            {
-                spacing_x = n_spacing["dr"].to_float64();
-            }
-
-            if(n_spacing.has_path("dtheta"))
-            {
-                spacing_y = n_spacing["dtheta"].to_float64();
-            }
-
-            if(n_spacing.has_path("dz"))
-            {
-                spacing_z = n_spacing["dz"].to_float64();
-            }
+            ASCENT_ERROR("Unsupported coordset: cylindrical {r,z} coordinates only supported in 2d.")
         }
     }
 
@@ -1565,12 +1506,12 @@ VTKHDataAdapter::RectilinearBlueprintToViskoresDataSet
 
     if (is_rz && is_rectilinear)
     {
-        ASCENT_ERROR("Unsupported coordset: expected rectilinear {x,y,(z)} or cylindrical {r,z,(theta)} but got parameters for both.")
+        ASCENT_ERROR("Unsupported coordset: expected rectilinear {x,y,(z)} or cylindrical {r,z} but got parameters for both.")
     }
     
     if (!is_rz && !is_rectilinear)
     {
-        ASCENT_ERROR("Unsupported coordset: expected rectilinear {x,y,(z)} or cylindrical {r,z,(theta)} but got neither.")
+        ASCENT_ERROR("Unsupported coordset: expected rectilinear {x,y,(z)} or cylindrical {r,z} but got neither.")
     }
 
     if (is_rectilinear)
@@ -1738,7 +1679,6 @@ VTKHDataAdapter::RectilinearBlueprintToViskoresDataSet
 
         int r_npts = n_coords["values/r"].dtype().number_of_elements();
         int z_npts = n_coords["values/z"].dtype().number_of_elements();
-        int theta_npts = 0;
 
         const float64 *r_coords_ptr;
         Node temp_r;
@@ -1764,31 +1704,6 @@ VTKHDataAdapter::RectilinearBlueprintToViskoresDataSet
             z_coords_ptr = temp_z.value();
         }
 
-        int32 ndims = 2;
-        const float64 *theta_coords_ptr = NULL;
-        Node temp_theta;
-        if(n_coords.has_path("values/theta"))
-        {
-            if (zero_copy && !n_coords["values/theta"].dtype().is_float64())
-            {
-                ASCENT_INFO("Zero-copy requested, but theta coordinate data is " <<
-                            n_coords["values/theta"].dtype().name() <<
-                            " not float64. Turning zero-copy off.");
-                zero_copy = false;
-            }
-            ndims = 3;
-            theta_npts = n_coords["values/theta"].dtype().number_of_elements();
-            if (n_coords["values/theta"].dtype().is_float64())
-            {
-                theta_coords_ptr = n_coords["values/theta"].as_float64_ptr();
-            }
-            else
-            {
-                n_coords["values/theta"].to_float64_array(temp_theta);
-                theta_coords_ptr = temp_theta.value();
-            }
-        }
-
         viskores::cont::ArrayHandle<viskores::Float64> r_coords_handle;
         viskores::cont::ArrayHandle<viskores::Float64> z_coords_handle;
         viskores::cont::ArrayHandle<viskores::Float64> theta_coords_handle;
@@ -1809,24 +1724,8 @@ VTKHDataAdapter::RectilinearBlueprintToViskoresDataSet
             memcpy(z, z_coords_ptr, sizeof(float64) * z_npts);
         }
 
-        if(ndims == 3)
-        {
-            if(zero_copy)
-            {
-                theta_coords_handle = viskores::cont::make_ArrayHandle(theta_coords_ptr, theta_npts, viskores::CopyFlag::Off);
-            }
-            else
-            {
-                theta_coords_handle.Allocate(theta_npts);
-                viskores::Float64 *theta = vtkh::GetVISKORESPointer(theta_coords_handle);
-                memcpy(theta, theta_coords_ptr, sizeof(float64) * theta_npts);
-            }
-        }
-        else
-        {
-            theta_coords_handle.Allocate(1);
-            theta_coords_handle.WritePortal().Set(0, 0.0);
-        }
+        theta_coords_handle.Allocate(1);
+        theta_coords_handle.WritePortal().Set(0, 0.0);
 
         static_assert(std::is_same<viskores::FloatDefault, double>::value,
                     "Viskores needs to be configured with 'Viskores_USE_DOUBLE_PRECISION=ON'");
@@ -1836,61 +1735,25 @@ VTKHDataAdapter::RectilinearBlueprintToViskoresDataSet
             viskores::cont::ArrayHandle<viskores::FloatDefault>,
             viskores::cont::ArrayHandle<viskores::FloatDefault> > coords;
 
-        if (ndims == 2)
-        {
-            coords = viskores::cont::make_ArrayHandleCartesianProduct(z_coords_handle,
-                                                                      r_coords_handle,
-                                                                      theta_coords_handle);
-        }
-        else
-        {
-            coords = viskores::cont::make_ArrayHandleCartesianProduct(r_coords_handle,
-                                                                      theta_coords_handle,
-                                                                      z_coords_handle);
-        }
+        coords = viskores::cont::make_ArrayHandleCartesianProduct(z_coords_handle,
+                                                                    r_coords_handle,
+                                                                    theta_coords_handle);
 
         viskores::cont::CoordinateSystem coordinate_system(coords_name.c_str(), coords);
 
         result->AddCoordinateSystem(coordinate_system);
 
-        if(ndims>2)
-        {
-            viskores::filter::field_transform::CylindricalCoordinateTransform xform;
-            xform.SetUseCoordinateSystemAsField(true);
-            xform.SetActiveCoordinateSystem(0); 
-            xform.SetCylindricalToCartesian();
-            viskores::cont::DataSet out = xform.Execute(*result);
-            *result = std::move(out);
-        }
-
         viskores::Id3 topo_origin = detail::topo_origin(n_topo);
 
-        if (ndims == 2)
-        {
-            viskores::cont::CellSetStructured<2> cell_set;
-            cell_set.SetPointDimensions(viskores::make_Vec(z_npts,
-                                                        r_npts));
-            viskores::Id2 origin2(topo_origin[0], topo_origin[1]);
-            cell_set.SetGlobalPointIndexStart(origin2);
-            result->SetCellSet(cell_set);
-        }
-        else
-        {
-            viskores::cont::CellSetStructured<3> cell_set;
-            cell_set.SetPointDimensions(viskores::make_Vec(r_npts,
-                                                        theta_npts,
-                                                        z_npts));
-            cell_set.SetGlobalPointIndexStart(topo_origin);
-            result->SetCellSet(cell_set);
-        }
+        viskores::cont::CellSetStructured<2> cell_set;
+        cell_set.SetPointDimensions(viskores::make_Vec(z_npts,
+                                                    r_npts));
+        viskores::Id2 origin2(topo_origin[0], topo_origin[1]);
+        cell_set.SetGlobalPointIndexStart(origin2);
+        result->SetCellSet(cell_set);
 
         nverts = r_npts * z_npts;
         neles = (r_npts - 1) * (z_npts - 1);
-        if(ndims > 2)
-        {
-            nverts *= theta_npts;
-            neles *= (theta_npts - 1);
-        }
 
         return result;
     }
@@ -1919,12 +1782,12 @@ VTKHDataAdapter::StructuredBlueprintToViskoresDataSet
 
     if (is_rz && is_rectilinear)
     {
-        ASCENT_ERROR("Unsupported coordset: expected rectilinear {x,y,(z)} or cylindrical {r,z,(theta)} but got parameters for both.")
+        ASCENT_ERROR("Unsupported coordset: expected rectilinear {x,y,(z)} or cylindrical {r,z} but got parameters for both.")
     }
     
     if (!is_rz && !is_rectilinear)
     {
-        ASCENT_ERROR("Unsupported coordset: expected rectilinear {x,y,(z)} or cylindrical {r,z,(theta)} but got neither.")
+        ASCENT_ERROR("Unsupported coordset: expected rectilinear {x,y,(z)} or cylindrical {r,z} but got neither.")
     }
 
     if (is_rectilinear)
@@ -1976,8 +1839,6 @@ VTKHDataAdapter::StructuredBlueprintToViskoresDataSet
         {
             ASCENT_ERROR("Coordinate system must be floating point values");
         }
-
-        result->AddCoordinateSystem(coords);
     }
     else if (n_coords["values"].has_child("r") && n_coords["values"].has_child("z"))
     {
@@ -1988,19 +1849,12 @@ VTKHDataAdapter::StructuredBlueprintToViskoresDataSet
             index_t r_element_stride = r_stride / sizeof(float64);
             index_t z_stride = n_coords["values/z"].dtype().stride();
             index_t z_element_stride = z_stride / sizeof(float64);
-            index_t theta_element_stride = 0;
-            if(n_coords.has_path("values/theta"))
-            {
-                index_t theta_stride = n_coords["values/theta"].dtype().stride();
-                theta_element_stride = theta_stride / sizeof(float64);
-            }
             
             coords = detail::GetRZCoordinateSystem<float64>(n_coords,
                                                                 coords_name,
                                                                 ndims,
                                                                 r_element_stride,
                                                                 z_element_stride,
-                                                                theta_element_stride,
                                                                 zero_copy);
         }
         else if(n_coords["values/r"].dtype().is_float32())
@@ -2009,42 +1863,25 @@ VTKHDataAdapter::StructuredBlueprintToViskoresDataSet
             index_t r_element_stride = r_stride / sizeof(float32);
             index_t z_stride = n_coords["values/z"].dtype().stride();
             index_t z_element_stride = z_stride / sizeof(float32);
-            index_t theta_element_stride = 0;
-            if(n_coords.has_path("values/theta"))
-            {
-                index_t theta_stride = n_coords["values/theta"].dtype().stride();
-                theta_element_stride = theta_stride / sizeof(float32);
-            }
 
             coords = detail::GetRZCoordinateSystem<float32>(n_coords,
                                                                 coords_name,
                                                                 ndims,
                                                                 r_element_stride,
                                                                 z_element_stride,
-                                                                theta_element_stride,
                                                                 zero_copy);
         }
         else
         {
             ASCENT_ERROR("Coordinate system must be floating point values");
         }
-
-        result->AddCoordinateSystem(coords);
-
-        if(ndims>2)
-        {
-            viskores::filter::field_transform::CylindricalCoordinateTransform xform;
-            xform.SetUseCoordinateSystemAsField(true);
-            xform.SetActiveCoordinateSystem(0); 
-            xform.SetCylindricalToCartesian();
-            viskores::cont::DataSet out = xform.Execute(*result);
-            *result = std::move(out);
-        }
     }
     else
     {
-        ASCENT_ERROR("Unsupported coordset: expected rectilinear {x,y,(z)} or cylindrical {r,z,(theta)}");
+        ASCENT_ERROR("Unsupported coordset: expected rectilinear {x,y,(z)} or cylindrical {r,z}");
     }
+
+    result->AddCoordinateSystem(coords);
 
     int32 i_elems = n_topo["elements/dims/i"].to_int();
     int32 j_elems = n_topo["elements/dims/j"].to_int();
@@ -2353,8 +2190,6 @@ VTKHDataAdapter::UnstructuredBlueprintToViskoresDataSet
         {
             ASCENT_ERROR("Coordinate system must be floating point values");
         }
-
-        result->AddCoordinateSystem(coords);
     }
     else if (n_coords["values"].has_child("r") && n_coords["values"].has_child("z"))
     {
@@ -2365,25 +2200,15 @@ VTKHDataAdapter::UnstructuredBlueprintToViskoresDataSet
             index_t r_element_stride = r_stride / sizeof(float64);
             index_t z_stride = n_coords["values/z"].dtype().stride();
             index_t z_element_stride = z_stride / sizeof(float64);
-            index_t theta_element_stride = 0;
-            if(n_coords.has_path("values/theta"))
-            {
-                index_t theta_stride = n_coords["values/theta"].dtype().stride();
-                theta_element_stride = theta_stride / sizeof(float64);
-            }
 
-            //TODO:
-            //can we assume all by checking one? 
-            //or check theta_stride & z_stride % float64 == 0? 
             if(r_stride % sizeof(float64) == 0)
             {
                 coords = detail::GetRZCoordinateSystem<float64>(n_coords,
-                                                                    coords_name,
-                                                                    ndims,
-                                                                    r_element_stride,
-                                                                    z_element_stride,
-                                                                    theta_element_stride,
-                                                                    zero_copy);
+                                                                coords_name,
+                                                                ndims,
+                                                                r_element_stride,
+                                                                z_element_stride,
+                                                                zero_copy);
             }
         }
         else if(n_coords["values/r"].dtype().is_float32())
@@ -2392,48 +2217,28 @@ VTKHDataAdapter::UnstructuredBlueprintToViskoresDataSet
             index_t r_element_stride = r_stride / sizeof(float32);
             index_t z_stride = n_coords["values/z"].dtype().stride();
             index_t z_element_stride = z_stride / sizeof(float32);
-            index_t theta_element_stride = 0;
-            if(n_coords.has_path("values/theta"))
-            {
-                index_t theta_stride = n_coords["values/theta"].dtype().stride();
-                theta_element_stride = theta_stride / sizeof(float32);
-            }
 
-            //TODO:
-            //can we assume all by checking one? 
-            //or check theta_stride & z_stride % float64 == 0? 
             if(r_stride % sizeof(float64) == 0)
             {
                 coords = detail::GetRZCoordinateSystem<float32>(n_coords,
-                                                                    coords_name,
-                                                                    ndims,
-                                                                    r_element_stride,
-                                                                    z_element_stride,
-                                                                    theta_element_stride,
-                                                                    zero_copy);
+                                                                coords_name,
+                                                                ndims,
+                                                                r_element_stride,
+                                                                z_element_stride,
+                                                                zero_copy);
             }
         }
         else
         {
             ASCENT_ERROR("Coordinate system must be floating point values");
         }
-
-        result->AddCoordinateSystem(coords);
-
-        if(ndims>2)
-        {
-            viskores::filter::field_transform::CylindricalCoordinateTransform xform;
-            xform.SetUseCoordinateSystemAsField(true);
-            xform.SetActiveCoordinateSystem(0); 
-            xform.SetCylindricalToCartesian();
-            viskores::cont::DataSet out = xform.Execute(*result);
-            *result = std::move(out);
-        }
     }
     else
     {
-        ASCENT_ERROR("Unsupported coordset: expected rectilinear {x,y,(z)} or cylindrical {r,z,(theta)}");
+        ASCENT_ERROR("Unsupported coordset: expected rectilinear {x,y,(z)} or cylindrical {r,z}");
     }
+
+    result->AddCoordinateSystem(coords);
 
     // shapes, number of indices, and connectivity.
     // Will have to do something different if this is a "zoo"
