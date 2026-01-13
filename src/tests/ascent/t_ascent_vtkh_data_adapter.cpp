@@ -437,6 +437,7 @@ TEST(ascent_data_adapter, rz_mesh_structured)
                                                     10,
                                                     10,
                                                     mesh);
+    mesh["state/cycle"] = 100;
     EXPECT_TRUE(conduit::blueprint::mesh::verify(mesh,verify_info));
 
     string output_path = prepare_output_dir();
@@ -480,7 +481,7 @@ TEST(ascent_data_adapter, rz_mesh_structured)
     ascent.execute(actions);
     ascent.close();
 
-    EXPECT_TRUE(check_test_image(output_file, 0.001f, "_000000"));
+    EXPECT_TRUE(check_test_image(output_file, 0.001f));
 }
 
 //-----------------------------------------------------------------------------
@@ -501,6 +502,7 @@ TEST(ascent_data_adapter, rz_mesh_unstructured)
                                                     10,
                                                     10,
                                                     mesh);
+    mesh["state/cycle"] = 100;
     EXPECT_TRUE(conduit::blueprint::mesh::verify(mesh,verify_info));
 
     string output_path = prepare_output_dir();
@@ -544,7 +546,7 @@ TEST(ascent_data_adapter, rz_mesh_unstructured)
     ascent.execute(actions);
     ascent.close();
 
-    EXPECT_TRUE(check_test_image(output_file, 0.001f, "_000000"));
+    EXPECT_TRUE(check_test_image(output_file, 0.001f));
 }
 
 //-----------------------------------------------------------------------------
@@ -565,6 +567,7 @@ TEST(ascent_data_adapter, rz_mesh_uniform)
                                                     10,
                                                     10,
                                                     mesh);
+    mesh["state/cycle"] = 100;
     EXPECT_TRUE(conduit::blueprint::mesh::verify(mesh,verify_info));
 
     string output_path = prepare_output_dir();
@@ -608,7 +611,7 @@ TEST(ascent_data_adapter, rz_mesh_uniform)
     ascent.execute(actions);
     ascent.close();
 
-    EXPECT_TRUE(check_test_image(output_file, 0.001f, "_000000"));
+    EXPECT_TRUE(check_test_image(output_file, 0.001f));
 }
 
 //-----------------------------------------------------------------------------
@@ -629,6 +632,7 @@ TEST(ascent_data_adapter, rz_mesh_rectilinear)
                                                     10,
                                                     10,
                                                     mesh);
+    mesh["state/cycle"] = 100;
     EXPECT_TRUE(conduit::blueprint::mesh::verify(mesh,verify_info));
 
     string output_path = prepare_output_dir();
@@ -672,7 +676,7 @@ TEST(ascent_data_adapter, rz_mesh_rectilinear)
     ascent.execute(actions);
     ascent.close();
 
-    EXPECT_TRUE(check_test_image(output_file, 0.001f, "_000000"));
+    EXPECT_TRUE(check_test_image(output_file, 0.001f));
 }
 
 //-----------------------------------------------------------------------------
