@@ -17,6 +17,10 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ### Added
 - Added ability to define cameras for rendering using visit camera view parameters
+- Added ability to do tiled rendering, where tiles covering an image are rendered seperately to form the final image. The default is to do tiled rendering with 1024 by 1024 tiles.
+
+### Fixed
+- Fixed issue where the plot did not align with the 3d axes when the camera was panned (`camera/xpan` and `camera/ypan`).
 
 ## [0.9.5] - Released 2025-09-10
 ### Preferred dependency versions for ascent@0.9.5
