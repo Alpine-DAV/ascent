@@ -1316,24 +1316,24 @@ VTKHDataAdapter::UniformBlueprintToViskoresDataSet
 
     const bool is_rz = (n_coords.has_child("origin") && (n_coords["origin"].has_child("r") || (n_coords["origin"].has_child("z") && is_2d))) ||
                  (n_coords.has_child("spacing") && (n_coords["spacing"].has_child("dr") || (n_coords["spacing"].has_child("dz") && is_2d)));
-    const bool is_rectilinear = (n_coords.has_child("origin") && (n_coords["origin"].has_child("x") || n_coords["origin"].has_child("y"))) ||
+    const bool is_cartesian = (n_coords.has_child("origin") && (n_coords["origin"].has_child("x") || n_coords["origin"].has_child("y"))) ||
                           (n_coords.has_child("spacing") && (n_coords["spacing"].has_child("dx") || n_coords["spacing"].has_child("dy"))) ||
                           !is_rz;
 
-    if (is_rz && is_rectilinear) {
-        ASCENT_ERROR("Unsupported coordset: expected rectilinear {x,y,(z)} or cylindrical {r,z} but got parameters for both.")
+    if (is_rz && is_cartesian) {
+        ASCENT_ERROR("Unsupported coordset: expected cartesian {x,y,(z)} or cylindrical {r,z} but got parameters for both.")
     }
     
-    if (!is_rz && !is_rectilinear)
+    if (!is_rz && !is_cartesian)
     {
-        ASCENT_ERROR("Unsupported coordset: expected rectilinear {x,y,(z)} or cylindrical {r,z} but got neither.")
+        ASCENT_ERROR("Unsupported coordset: expected cartesian {x,y,(z)} or cylindrical {r,z} but got neither.")
     }
 
     if(n_coords.has_child("origin"))
     {
         const Node &n_origin = n_coords["origin"];
 
-        if (is_rectilinear)
+        if (is_cartesian)
         {
             if(n_origin.has_child("x"))
             {
@@ -1372,7 +1372,7 @@ VTKHDataAdapter::UniformBlueprintToViskoresDataSet
     {
         const Node &n_spacing = n_coords["spacing"];
 
-        if (is_rectilinear)
+        if (is_cartesian)
         {
             if(n_spacing.has_path("dx"))
             {
@@ -1502,19 +1502,19 @@ VTKHDataAdapter::RectilinearBlueprintToViskoresDataSet
     viskores::cont::DataSet *result = new viskores::cont::DataSet();
 
     const bool is_rz = n_coords["values"].has_child("r") && n_coords["values"].has_child("z");
-    const bool is_rectilinear = n_coords["values"].has_child("x") && n_coords["values"].has_child("y");
+    const bool is_cartesian = n_coords["values"].has_child("x") && n_coords["values"].has_child("y");
 
-    if (is_rz && is_rectilinear)
+    if (is_rz && is_cartesian)
     {
-        ASCENT_ERROR("Unsupported coordset: expected rectilinear {x,y,(z)} or cylindrical {r,z} but got parameters for both.")
+        ASCENT_ERROR("Unsupported coordset: expected cartesian {x,y,(z)} or cylindrical {r,z} but got parameters for both.")
     }
     
-    if (!is_rz && !is_rectilinear)
+    if (!is_rz && !is_cartesian)
     {
-        ASCENT_ERROR("Unsupported coordset: expected rectilinear {x,y,(z)} or cylindrical {r,z} but got neither.")
+        ASCENT_ERROR("Unsupported coordset: expected cartesian {x,y,(z)} or cylindrical {r,z} but got neither.")
     }
 
-    if (is_rectilinear)
+    if (is_cartesian)
     {
         if (zero_copy &&
             (!n_coords["values/x"].dtype().is_float64() || 
@@ -1778,19 +1778,19 @@ VTKHDataAdapter::StructuredBlueprintToViskoresDataSet
     int ndims = 0;
 
     const bool is_rz = n_coords["values"].has_child("r") && n_coords["values"].has_child("z");
-    const bool is_rectilinear = n_coords["values"].has_child("x") && n_coords["values"].has_child("y");
+    const bool is_cartesian = n_coords["values"].has_child("x") && n_coords["values"].has_child("y");
 
-    if (is_rz && is_rectilinear)
+    if (is_rz && is_cartesian)
     {
-        ASCENT_ERROR("Unsupported coordset: expected rectilinear {x,y,(z)} or cylindrical {r,z} but got parameters for both.")
+        ASCENT_ERROR("Unsupported coordset: expected cartesian {x,y,(z)} or cylindrical {r,z} but got parameters for both.")
     }
     
-    if (!is_rz && !is_rectilinear)
+    if (!is_rz && !is_cartesian)
     {
-        ASCENT_ERROR("Unsupported coordset: expected rectilinear {x,y,(z)} or cylindrical {r,z} but got neither.")
+        ASCENT_ERROR("Unsupported coordset: expected cartesian {x,y,(z)} or cylindrical {r,z} but got neither.")
     }
 
-    if (is_rectilinear)
+    if (is_cartesian)
     {
         nverts = n_coords["values/x"].dtype().number_of_elements();
         if(n_coords["values/x"].dtype().is_float64())
@@ -1878,7 +1878,7 @@ VTKHDataAdapter::StructuredBlueprintToViskoresDataSet
     }
     else
     {
-        ASCENT_ERROR("Unsupported coordset: expected rectilinear {x,y,(z)} or cylindrical {r,z}");
+        ASCENT_ERROR("Unsupported coordset: expected cartesian {x,y,(z)} or cylindrical {r,z}");
     }
 
     result->AddCoordinateSystem(coords);
@@ -2235,7 +2235,7 @@ VTKHDataAdapter::UnstructuredBlueprintToViskoresDataSet
     }
     else
     {
-        ASCENT_ERROR("Unsupported coordset: expected rectilinear {x,y,(z)} or cylindrical {r,z}");
+        ASCENT_ERROR("Unsupported coordset: expected cartesian {x,y,(z)} or cylindrical {r,z}");
     }
 
     result->AddCoordinateSystem(coords);
