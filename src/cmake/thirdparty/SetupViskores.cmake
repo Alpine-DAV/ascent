@@ -22,11 +22,6 @@ endif()
 
 find_package(Viskores REQUIRED QUIET)
 
-#viskores default type check
-if(NOT Viskores_USE_DEFAULT_TYPES_FOR_ASCENT)
-  message(FATAL_ERROR "Ascent requires Viskores to be built with default types (Viskores_USE_DEFAULT_TYPES_FOR_ASCENT=ON)")
-endif()
-
 if(ENABLE_CUDA AND NOT Viskores_ENABLE_CUDA)
    message(FATAL_ERROR "VTK-h CUDA support requires Viskores with CUDA support (ENABLE_CUDA == TRUE, however Viskores_ENABLE_CUDA == FALSE")
 endif()

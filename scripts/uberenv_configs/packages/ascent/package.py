@@ -218,7 +218,7 @@ class Ascent(CMakePackage, CudaPackage):
     #######################
     with when("+vtkh"):
         # viskores if greater than 0.9.5
-        depends_on("viskores +doubleprecision ~64bitids", when="@0.9.5:")
+        depends_on("viskores +doubleprecision", when="@0.9.5:")
         depends_on("viskores@1.0.0:", when="@0.9.5:")
         depends_on("viskores~tbb", when="@0.9.5:")
         depends_on("viskores+openmp", when="@0.9.5: +openmp")
@@ -233,7 +233,7 @@ class Ascent(CMakePackage, CudaPackage):
         depends_on("kokkos@3.7.02", when="@0.9.5: +vtkh ^viskores +kokkos")
 
         # use vtk-m if prior to 0.9.5
-        depends_on("vtk-m +doubleprecision ~64bitids", when="@:0.9.4")
+        depends_on("vtk-m +doubleprecision", when="@:0.9.4")
         depends_on("vtk-m@2.1:", when="@0.9.3:0.9.4")
         depends_on("vtk-m@2.1:", when="@0.9.3:0.9.4")
         depends_on("vtk-m@2.0:", when="@0.9.2:0.9.4")

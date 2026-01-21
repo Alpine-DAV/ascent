@@ -160,7 +160,7 @@ class Viskores(CMakePackage, CudaPackage, ROCmPackage):
                 self.define_from_variant("Viskores_USE_64BIT_IDS", "64bitids"),
                 self.define_from_variant("Viskores_USE_DOUBLE_PRECISION", "doubleprecision"),
                 self.define(
-                    "Viskores_USE_DEFAULT_TYPES_FOR_ASCENT", "~64bitids +doubleprecision" in spec
+                    "Viskores_USE_DEFAULT_TYPES_FOR_ASCENT", "+doubleprecision" in spec
                 ),
             ]
 
