@@ -2702,8 +2702,7 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
     auto add_index_field_as_Id = [&](const conduit::Node &src, const std::string &name, const std::string &assoc)
     {
         const index_t n = static_cast<index_t>(src.dtype().number_of_elements());
-        const bool want64 = use64BitIds;
-        const bool type_ok = ( want64 && src.dtype().is_int64() ) || (!want64 && src.dtype().is_int32());
+        const bool type_ok = ( use64BitIds && src.dtype().is_int64() ) || (!use64BitIds && src.dtype().is_int32());
 
         if (type_ok)
         {
@@ -2719,7 +2718,7 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
 
         conduit::Node tmp;
 
-        if (want64 && src.dtype().is_int32())
+        if (use64BitIds && src.dtype().is_int32())
         {
             // 32 -> 64
             tmp.set(conduit::DataType::int64(n));
@@ -2732,7 +2731,7 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
                 p64[i] = static_cast<conduit::int64>(p32[i]);
             }
         }
-        else if (!want64 && src.dtype().is_int64())
+        else if (!use64BitIds && src.dtype().is_int64())
         {
             // 64 -> 32
             tmp.set(conduit::DataType::int32(n));
@@ -2796,7 +2795,7 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
                         conduit::int32 *mutable_ids = tmp_ids.as_int32_ptr();
                         for (index_t i = 0; i < num_vals; ++i)
                         {
-                            mutable_ids[i] += 1.0;
+                            mutable_ids[i] += 1;
                         }
                         ids_src = &tmp_ids;
                     }
@@ -2812,7 +2811,7 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
                         conduit::int64 *mutable_ids = tmp_ids.as_int64_ptr();
                         for (index_t i = 0; i < num_vals; ++i)
                         {
-                            mutable_ids[i] += 1.0;
+                            mutable_ids[i] += 1;
                         }
                         ids_src = &tmp_ids;
                     }
@@ -3057,7 +3056,7 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
 
                     for (index_t i = 0; i < num_vals; ++i)
                     {
-                        tmp_vec_ids[i] += 1.0;
+                        tmp_vec_ids[i] += 1;
                     }
 
                     viskores::cont::Field field_copy = detail::GetField<int32>(n_mat_ids,
@@ -3092,7 +3091,7 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
 
                     for (index_t i = 0; i < num_vals; ++i)
                     {
-                        tmp_vec_ids[i] += 1.0;
+                        tmp_vec_ids[i] += 1;
                     }
 
                     viskores::cont::Field field_copy = detail::GetField<int64>(n_mat_ids,
