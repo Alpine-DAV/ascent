@@ -17,7 +17,11 @@ Render::Render()
     m_render_screen_annotations(true),
     m_render_background(true),
     m_shading(true),
-    m_canvas(m_width, m_height)
+    m_canvas(m_width, m_height),
+    m_tiled_rendering(true),
+    m_tiled_rendering_type(TiledRenderingType::OptimizedTiles),
+    m_tile_width(1024),
+    m_tile_height(1024)
 {
   m_world_annotation_scale[0] = 1.f;
   m_world_annotation_scale[1] = 1.f;
@@ -170,6 +174,32 @@ Render::SetForegroundColor(float fg_color[4])
   m_canvas.SetForegroundColor(m_fg_color);
 }
 
+void
+Render::SetTiledRendering(bool on)
+{
+  m_tiled_rendering = on;
+}
+
+void
+Render::SetTiledRenderingType(TiledRenderingType type)
+{
+  m_tiled_rendering_type = type;
+}
+
+void
+Render::SetTileWidth(const viskores::Int32 width)
+{
+  if(width <= 0) return;
+  m_tile_width = width;
+}
+
+void
+Render::SetTileHeight(const viskores::Int32 height)
+{
+  if(height <= 0) return;
+  m_tile_height = height;
+}
+
 std::string
 Render::GetImageName() const
 {
@@ -192,6 +222,30 @@ viskores::rendering::Color
 Render::GetForegroundColor() const
 {
   return m_fg_color;
+}
+
+bool
+Render::GetTiledRendering() const
+{
+  return m_tiled_rendering;
+}
+
+Render::TiledRenderingType
+Render::GetTiledRenderingType() const
+{
+  return m_tiled_rendering_type;
+}
+
+viskores::Int32
+Render::GetTileWidth() const
+{
+  return m_tile_width;
+}
+
+viskores::Int32
+Render::GetTileHeight() const
+{
+  return m_tile_height;
 }
 
 void

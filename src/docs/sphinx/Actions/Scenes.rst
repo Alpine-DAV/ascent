@@ -479,6 +479,25 @@ parameters:
 - ``color_bar_position`` : controls the position of 1 or more color bars. A valid value for positioning a single color bar is an array of four floats ([xMin,xMax,yMin,yMax]). A valid value for positioning N color bars is an array of 4*N floats ([xMin1_0,xMax1_0,yMin1_0,yMax1_0,...,xMin_n,xMax_n,yMin_n,yMax_n]). This repositioning is performed in Screen Space, so valid minimum and maximum values are limited to the range [-1,1] (i.e. the origin (0,0) is in the center of the image, (-1,-1) is the bottom-left corner, and (1,1) is the top-right corner). Note: Ascent does not check for correctness of user positioned color bars.
 
 
+Tiled Rendering
+---------------
+
+The renderer supports tiled rendering where the image is divided into a regular grid and each section of the grid, or tile, is rendered separately.
+The advantage of tiled rendering is that it requires fewer resources than rendering the entire image at once.
+Tiled rendering supports five ``tiled_rendering_type``'s - ``square_tiles``, ``rectangular_tiles``, ``horizontal_strips``, ``vertical_strips`` and ``optimized_tiles``.
+When the ``tiled_rendering_type`` is ``square_tiles``, the tiles are square where the width and height are given by the ``tile_width``.
+When the ``tiled_rendering_type`` is ``rectangular_tiles``, the tiles are rectangular where the width and height are given by the ``tile_width`` and ``tile_height``.
+When the ``tiled_rendering_type`` is ``horizontal_strips``, the tiles are horizontal strips that are the width of the image with a height of ``tile_height``.
+When the ``tiled_rendering_type`` is ``vertical_strips``, the tiles are vertical strips that are the height of the image with a width of ``tile_width``.
+When the ``tiled_rendering_type`` is ``optimized_tiles``, the tiles are rectangular with a maximum width and height of ``tile_width`` and ``tile_height`` such that the extra pixels in the rows and columns is minimized.
+Tiled rendering is on by default, with optimized_tiles and 1024 by 1024 tiles.
+Below is a list of the parameters that control tiled rendering:
+
+- ``tiled_rendering`` : controls if tiled rendering is enabled. Valid values are ``"true"`` and ``"false"``. The default is ``"true"``.
+- ``tiled_rendering_type`` : controls the tiled rendering type. Valid values are ``"square_tiles"``, ``"rectangular_tiles"``, ``"horizontal_strips"``, ``"vertical_strips"`` and ``"optimized_tiles"``. The default is ``"optimized_tiles"``.
+- ``tile_width`` : The width of a tile. The default is ``1024``.
+- ``tile_height`` : The height of a tile. The default is ``1024``.
+
 Automatic Camera
 ----------------
 

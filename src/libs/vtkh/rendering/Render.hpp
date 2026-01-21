@@ -25,6 +25,15 @@ class VTKH_API Render
 public:
   typedef viskores::rendering::CanvasRayTracer viskoresCanvas;
 
+  enum class TiledRenderingType
+  {
+    SquareTiles,
+    RectangularTiles,
+    HorizontalStrips,
+    VerticalStrips,
+    OptimizedTiles
+  };
+
   Render();
   ~Render();
   Render                          Copy() const;
@@ -38,6 +47,10 @@ public:
   viskores::rendering::Color          GetBackgroundColor() const;
   viskores::rendering::Color          GetForegroundColor() const;
   bool                            GetShadingOn() const;
+  bool                            GetTiledRendering() const;
+  TiledRenderingType              GetTiledRenderingType() const;
+  viskores::Int32                 GetTileWidth() const;
+  viskores::Int32                 GetTileHeight() const;
   void                            Print() const;
 
   void                            DoRenderAnnotations(bool on);
@@ -55,6 +68,10 @@ public:
   void                            SetBackgroundColor(float bg_color[4]);
   void                            SetForegroundColor(float fg_color[4]);
   void                            SetShadingOn(bool on);
+  void                            SetTiledRendering(bool on);
+  void                            SetTiledRenderingType(TiledRenderingType type);
+  void                            SetTileWidth(const viskores::Int32 width);
+  void                            SetTileHeight(const viskores::Int32 width);
   void                            RenderWorldAnnotations();
   void                            RenderBackground();
   void                            RenderScreenAnnotations(const std::vector<std::string> &field_names,
@@ -80,6 +97,10 @@ protected:
   bool                         m_shading;
   viskoresCanvas                   m_canvas;
   viskores::Vec<float,3>           m_world_annotation_scale;
+  bool                             m_tiled_rendering;
+  TiledRenderingType               m_tiled_rendering_type;
+  viskores::Int32                  m_tile_width;
+  viskores::Int32                  m_tile_height;
 };
 
 static float vtkh_default_bg_color[4] = {0.f, 0.f, 0.f, 1.f};
