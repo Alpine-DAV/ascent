@@ -39,7 +39,6 @@
 #include <viskores/cont/ArrayHandleExtractComponent.h>
 #include <viskores/cont/CoordinateSystem.h>
 #include <viskores/cont/Invoker.h>
-#include <viskores/filter/field_transform/CylindricalCoordinateTransform.h>
 #include <vtkh/DataSet.hpp>
 
 // other ascent includes
@@ -1418,17 +1417,11 @@ VTKHDataAdapter::UniformBlueprintToViskoresDataSet
                                        spacing_z);
 
     viskores::Id3 dims;
-    if(is_2d && is_rz)
+    if(is_rz)
     {
         dims = viskores::Id3(dims_j,
                     dims_i,
                     dims_k);
-    }
-    else if(!is_2d && is_rz)
-    {
-        dims = viskores::Id3(dims_i,
-                    dims_k,
-                    dims_j);
     }
     else
     {
@@ -1442,16 +1435,6 @@ VTKHDataAdapter::UniformBlueprintToViskoresDataSet
                                                               dims,
                                                               origin,
                                                               spacing));
-
-    if(!is_2d && is_rz)
-    {
-        viskores::filter::field_transform::CylindricalCoordinateTransform xform;
-        xform.SetUseCoordinateSystemAsField(true);
-        xform.SetActiveCoordinateSystem(0); 
-        xform.SetCylindricalToCartesian();
-        viskores::cont::DataSet out = xform.Execute(*result);
-        *result = std::move(out);
-    }
 
     viskores::Id3 topo_origin = detail::topo_origin(n_topo);
     if(is_2d)
