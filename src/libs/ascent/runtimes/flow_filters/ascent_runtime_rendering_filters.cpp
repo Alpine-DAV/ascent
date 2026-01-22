@@ -186,6 +186,10 @@ check_renders_surprises(const conduit::Node &renders_node)
   r_valid_paths.push_back("auto_camera/height");
   r_valid_paths.push_back("auto_camera/width");
   r_valid_paths.push_back("color_bar_position");
+  r_valid_paths.push_back("tiled_rendering");
+  r_valid_paths.push_back("tiled_rendering_type");
+  r_valid_paths.push_back("tile_width");
+  r_valid_paths.push_back("tile_height");
 
   std::vector<std::string> r_ignore_paths;
   r_ignore_paths.push_back("phi_theta_positions");
@@ -623,6 +627,63 @@ vtkh::Render parse_render(const conduit::Node &render_node,
     }
     render.SetColorBarPosition(cb_position);
 
+  }
+
+  if(render_node.has_path("tiled_rendering"))
+  {
+    if(!render_node["tiled_rendering"].dtype().is_string())
+    {
+      ASCENT_ERROR("render/tiled_rendering node must be a string value");
+    }
+    const std::string tiled_rendering = render_node["tiled_rendering"].as_string();
+    // default is always tiled rendering
+    if(tiled_rendering == "false")
+    {
+      render.SetTiledRendering(false);
+    }
+  }
+
+  if(render_node.has_path("tiled_rendering_type"))
+  {
+    if(!render_node["tiled_rendering_type"].dtype().is_string())
+    {
+      ASCENT_ERROR("render/tiled_rendering_type node must be a string value");
+    }
+    const std::string tiled_rendering_type = render_node["tiled_rendering_type"].as_string();
+    if(tiled_rendering_type == "square_tiles")
+    {
+      render.SetTiledRenderingType(vtkh::Render::TiledRenderingType::SquareTiles);
+    }
+    else if(tiled_rendering_type == "rectangular_tiles")
+    {
+      render.SetTiledRenderingType(vtkh::Render::TiledRenderingType::RectangularTiles);
+    }
+    else if(tiled_rendering_type == "horizontal_strips")
+    {
+      render.SetTiledRenderingType(vtkh::Render::TiledRenderingType::HorizontalStrips);
+    }
+    else if(tiled_rendering_type == "vertical_strips")
+    {
+      render.SetTiledRenderingType(vtkh::Render::TiledRenderingType::VerticalStrips);
+    }
+    else if(tiled_rendering_type == "optimized_tiles")
+    {
+      render.SetTiledRenderingType(vtkh::Render::TiledRenderingType::OptimizedTiles);
+    }
+    else
+    {
+      ASCENT_ERROR("invalid type for render/tiled_rendering_type");
+    }
+  }
+
+  if(render_node.has_path("tile_width"))
+  {
+    render.SetTileWidth(render_node["tile_width"].to_int32());
+  }
+
+  if(render_node.has_path("tile_height"))
+  {
+    render.SetTileHeight(render_node["tile_height"].to_int32());
   }
 
   return render;

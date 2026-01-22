@@ -2610,125 +2610,515 @@ VTKHDataAdapter::AddVectorField(const std::string &field_name,
 
 }
 
+template <typename Id_T, typename Float_T>
+void AddMatSetFieldsCommon(const conduit::Node &matset,
+                           const std::string &length_name,
+                           const std::string &offsets_name,
+                           const std::string &ids_name,
+                           const std::string &vfs_name,
+                           const std::string &topo_name,
+                           int neles,
+                           viskores::cont::DataSet *dset)
+{
+    viskores::cont::Field length, offsets, ids, vfs;
+
+    detail::GetMatSetFields<Id_T, Float_T>(
+        matset,
+        length_name,
+        offsets_name,
+        ids_name,
+        vfs_name,
+        topo_name,
+        neles,
+        length,
+        offsets,
+        ids,
+        vfs);
+
+    dset->AddField(length);
+    dset->AddField(offsets);
+    dset->AddField(ids);
+    dset->AddField(vfs);
+}
+
+const conduit::Node &
+GetSparseByMaterialVfsSample(const conduit::Node &matset,
+                             const std::string   &matset_name)
+{
+    const conduit::Node &elem_ids = matset["element_ids"];
+    const conduit::Node &vf_group = matset["volume_fractions"];
+
+    const int num_ids       = elem_ids.number_of_children();
+    const int num_materials = vf_group.number_of_children();
+
+    if (num_ids == 0)
+    {
+        ASCENT_ERROR("No element ids were defined for matset: " << matset_name);
+    }
+
+    if (num_materials == 0)
+    {
+        ASCENT_ERROR("No volume fractions were defined for matset: " << matset_name);
+    }
+
+    if (num_materials != num_ids)
+    {
+        ASCENT_ERROR("Number of materials (" << num_materials
+                     << ") does not match number of element IDs ("
+                     << num_ids << ") defined for matset: " << matset_name);
+    }
+
+    const conduit::Node &first_child = vf_group.child(0);
+    const int            child_count = first_child.number_of_children();
+
+    return (child_count != 0)
+           ? *first_child.child_ptr(0)
+           : *vf_group.child_ptr(0);
+}
+
 void
 VTKHDataAdapter::AddMatSets(const std::string &matset_name,
-                            const Node &n_matset,
+                            const conduit::Node &n_matset,
                             const std::string &topo_name,
                             int neles,
                             viskores::cont::DataSet *dset,
-                            bool zero_copy)                 // attempt to zero copy
+                            bool zero_copy)
 {
-
-    if(!n_matset.has_child("volume_fractions"))
-        ASCENT_ERROR("No volume fractions were defined for matset: " << matset_name);
-    //TODO: zero_copy = true segfaulting in viskores mir filter
-    //zero_copy = false;
-    
-    
-    std::string assoc_str = "element";
-    //fields required from Viskores MIR filter
-    //std::string length_name, offsets_name, ids_name, vfs_name;
-    std::string length_name = "sizes";//matset_name + "_lengths";
-    std::string offsets_name = "offsets";//matset_name + "_offsets";
-    std::string ids_name = "material_ids";//matset_name + "_ids";
-    std::string vfs_name = "volume_fractions";//matset_name + "_vfs";
-    //matset is "sparse_by_element"
-    if(n_matset.has_child("material_map"))
+    // Common precondition: all matsets must have volume fractions.
+    if (!n_matset.has_child("volume_fractions"))
     {
-        try
+        ASCENT_ERROR("No volume fractions were defined for matset: " << matset_name);
+    }
+
+    const bool use64BitIds = (sizeof(viskores::Id) == 8);
+
+    const std::string assoc_str = "element";
+    const std::string length_name = "sizes";
+    const std::string offsets_name = "offsets";
+    const std::string ids_name = "material_ids";
+    const std::string vfs_name = "volume_fractions";
+
+    // Helper: add an integer Node as a viskores::Id field, converting width if needed.
+    auto add_index_field_as_Id = [&](const conduit::Node &src, const std::string &name, const std::string &assoc)
+    {
+        const index_t n = static_cast<index_t>(src.dtype().number_of_elements());
+        const bool type_ok = ( use64BitIds && src.dtype().is_int64() ) || (!use64BitIds && src.dtype().is_int32());
+
+        if (type_ok)
         {
-            bool supported_type = false;
+            dset->AddField(
+                detail::GetField<viskores::Id>(src,
+                                               name,
+                                               assoc,
+                                               topo_name,
+                                               index_t(1),
+                                               zero_copy));
+            return;
+        }
 
-            // we compile vtk-h with fp types
-            if(n_matset["volume_fractions"].dtype().is_float32())
+        conduit::Node tmp;
+
+        if (use64BitIds && src.dtype().is_int32())
+        {
+            // 32 -> 64
+            tmp.set(conduit::DataType::int64(n));
+
+            const conduit::int32 *p32 = src.as_int32_ptr();
+            conduit::int64 *p64 = tmp.as_int64_ptr();
+
+            for (index_t i = 0; i < n; ++i)
             {
-                //add materials directly
-                const conduit::Node &n_length = n_matset["sizes"];
-                dset->AddField(detail::GetField<int>(n_length,
-                                                     length_name,
-                                                     assoc_str,
-                                                     topo_name,
-                                                     index_t(1),
-                                                     zero_copy));
-                const conduit::Node &n_offsets = n_matset["offsets"];
-                dset->AddField(detail::GetField<int>(n_offsets,
-                                                     offsets_name,
-                                                     assoc_str,
-                                                     topo_name,
-                                                     index_t(1),
-                                                     zero_copy));
-                const conduit::Node &n_material_ids = n_matset["material_ids"];
-                int num_vals = n_material_ids.dtype().number_of_elements();
-                if(n_material_ids.dtype().is_int32())
-                {
-                    const conduit::int32 *n_ids = n_material_ids.value();
-                    const vector<conduit::int32> vec_ids(n_ids, n_ids + num_vals);
-                    bool zeroes = std::any_of(vec_ids.begin(), vec_ids.end(), [](int value) { return value<=0; });
-                    if(zeroes) //need to make a copy and increment all material ids
-                    {
-                        conduit::Node n_mat_ids = n_matset["material_ids"];
-                        conduit::int32 *tmp_vec_ids = n_mat_ids.value();
-                        for(index_t i = 0; i < num_vals; ++i)
-                        {
-                            tmp_vec_ids[i] += 1.0; 
-                        }
-                        viskores::cont::Field field_copy = detail::GetField<int32>(n_mat_ids,
-                                                                               ids_name,
-                                                                               "whole",
-                                                                               topo_name,
-                                                                               index_t(1),
-                                                                               false);
-                        dset->AddField(field_copy);
-                    }
-                    else //can zero copy the material ids
-                    {
-                        viskores::cont::Field field_copy = detail::GetField<int32>(n_material_ids,
-                                                                               ids_name,
-                                                                               "whole",
-                                                                               topo_name,
-                                                                               index_t(1),
-                                                                               zero_copy);
+                p64[i] = static_cast<conduit::int64>(p32[i]);
+            }
+        }
+        else if (!use64BitIds && src.dtype().is_int64())
+        {
+            // 64 -> 32
+            tmp.set(conduit::DataType::int32(n));
 
-                        dset->AddField(field_copy);
+            const conduit::int64 *p64 = src.as_int64_ptr();
+            conduit::int32 *p32 = tmp.as_int32_ptr();
+
+            for (index_t i = 0; i < n; ++i)
+            {
+                p32[i] = static_cast<conduit::int32>(p64[i]);
+            }
+        }
+        else
+        {
+            ASCENT_ERROR("Unsupported integer type for index field '" << name << "'");
+        }
+
+        dset->AddField(detail::GetField<viskores::Id>(tmp,
+                                                      name,
+                                                      assoc,
+                                                      topo_name,
+                                                      index_t(1),
+                                                      false));
+    };
+
+    // ------------------------------------------------------------------------
+    // 64-bit ID path
+    // ------------------------------------------------------------------------
+    if (use64BitIds)
+    {
+        // --------------------------------------------------------------------
+        // Case 1: "sparse_by_element" / material_map
+        // --------------------------------------------------------------------
+        if (n_matset.has_child("material_map"))
+        {
+            try
+            {
+                // sizes and offsets as Id-type fields
+                const conduit::Node &n_sizes = n_matset["sizes"];
+                const conduit::Node &n_offsets = n_matset["offsets"];
+
+                add_index_field_as_Id(n_sizes, length_name, assoc_str);
+                add_index_field_as_Id(n_offsets, offsets_name, assoc_str);
+
+                // Material IDs: allow int32 or int64 in input, ensure > 0, then adapt to Id type
+                const conduit::Node &n_material_ids = n_matset["material_ids"];
+                const auto &id_dtype = n_material_ids.dtype();
+                const index_t num_vals = static_cast<index_t>(id_dtype.number_of_elements());
+
+                conduit::Node tmp_ids;
+                const conduit::Node *ids_src = &n_material_ids;
+
+                if (id_dtype.is_int32())
+                {
+                    const conduit::int32 *ids = n_material_ids.as_int32_ptr();
+                    const bool has_non_positive = std::any_of(ids, ids + num_vals, [](conduit::int32 v) { return v <= 0; });
+
+                    if (has_non_positive)
+                    {
+                        tmp_ids.set(n_material_ids);
+                        conduit::int32 *mutable_ids = tmp_ids.as_int32_ptr();
+                        for (index_t i = 0; i < num_vals; ++i)
+                        {
+                            mutable_ids[i] += 1;
+                        }
+                        ids_src = &tmp_ids;
                     }
                 }
-                else if(n_material_ids.dtype().is_int64())
+                else if (id_dtype.is_int64())
                 {
-                    const conduit::int64 *n_ids = n_material_ids.value();
-                    const vector<conduit::int64> vec_ids(n_ids, n_ids + num_vals);
-                    bool zeroes = std::any_of(vec_ids.begin(), vec_ids.end(), [](int value) { return value<=0; });
-                    if(zeroes) //need to make a copy and increment all material ids
-                    {
-                        conduit::Node n_mat_ids = n_matset["material_ids"];
-                        conduit::int64 *tmp_vec_ids = n_mat_ids.value();
-                        for(index_t i = 0; i < num_vals; ++i)
-                        {
-                            tmp_vec_ids[i] += 1.0; 
-                        }
-                        viskores::cont::Field field_copy = detail::GetField<int64>(n_mat_ids,
-                                                                               ids_name,
-                                                                               "whole",
-                                                                               topo_name,
-                                                                               index_t(1),
-                                                                               false);
-                        dset->AddField(field_copy);
-                    }
-                    else //can zero copy the material ids
-                    {
-                        viskores::cont::Field field_copy = detail::GetField<int64>(n_material_ids,
-                                                                               ids_name,
-                                                                               "whole",
-                                                                               topo_name,
-                                                                               index_t(1),
-                                                                               zero_copy);
+                    const conduit::int64 *ids = n_material_ids.as_int64_ptr();
+                    const bool has_non_positive = std::any_of(ids, ids + num_vals, [](conduit::int64 v) { return v <= 0; });
 
-                        dset->AddField(field_copy);
+                    if (has_non_positive)
+                    {
+                        tmp_ids.set(n_material_ids);
+                        conduit::int64 *mutable_ids = tmp_ids.as_int64_ptr();
+                        for (index_t i = 0; i < num_vals; ++i)
+                        {
+                            mutable_ids[i] += 1;
+                        }
+                        ids_src = &tmp_ids;
                     }
                 }
                 else
                 {
-                    ASCENT_ERROR("Unsupported integer type for material IDs");
+                    ASCENT_ERROR("Unsupported integer type for material IDs in matset: "
+                                 << matset_name);
                 }
+
+                // Now adapt material_ids (possibly shifted) to viskores::Id
+                add_index_field_as_Id(*ids_src, ids_name, "whole");
+
+                // Volume fractions: must be float32 or float64
+                const conduit::Node &n_vfs = n_matset["volume_fractions"];
+
+                if (n_vfs.dtype().is_float32())
+                {
+                    dset->AddField(detail::GetField<float32>(n_vfs,
+                                                            vfs_name,
+                                                            "whole",
+                                                            topo_name,
+                                                            index_t(1),
+                                                            zero_copy));
+                }
+                else if (n_vfs.dtype().is_float64())
+                {
+                    dset->AddField(detail::GetField<float64>(n_vfs,
+                                                            vfs_name,
+                                                            "whole",
+                                                            topo_name,
+                                                            index_t(1),
+                                                            zero_copy));
+                }
+                else
+                {
+                    ASCENT_ERROR("Unsupported floating-point type for volume_fractions in matset: "
+                                 << matset_name);
+                }
+            }
+            catch (const viskores::cont::Error &error)
+            {
+                ASCENT_ERROR("Viskores exception: " << error.GetMessage());
+            }
+        }
+        
+        // --------------------------------------------------------------------
+        // Case 2: "sparse_by_material" (element_ids)
+        // --------------------------------------------------------------------
+        else if (n_matset.has_child("element_ids"))
+        {
+            const conduit::Node &sample_vfs = GetSparseByMaterialVfsSample(n_matset, matset_name);
+
+            try
+            {
+                // Prepare matset with element_ids widened to int64 if needed
+                const conduit::Node *matset_for_fields = &n_matset;
+                conduit::Node matset_converted;
+
+                const conduit::Node &elem_ids_src = n_matset["element_ids"];
+
+                bool need_conversion = false;
+                const int num_elem_children = elem_ids_src.number_of_children();
+                for (int i = 0; i < num_elem_children; ++i)
+                {
+                    const conduit::Node &child = elem_ids_src.child(i);
+                    if (child.dtype().is_int32())
+                    {
+                        need_conversion = true;
+                        break;
+                    }
+                }
+
+                if (need_conversion)
+                {
+                    matset_converted.set(n_matset);
+                    conduit::Node &elem_ids_dst = matset_converted["element_ids"];
+
+                    for (int i = 0; i < elem_ids_dst.number_of_children(); ++i)
+                    {
+                        conduit::Node &child = elem_ids_dst.child(i);
+                        if (child.dtype().is_int32())
+                        {
+                            const index_t n = static_cast<index_t>(child.dtype().number_of_elements());
+
+                            conduit::Node tmp64;
+                            tmp64.set(conduit::DataType::int64(n));
+
+                            const conduit::int32 *src_ptr = child.as_int32_ptr();
+                            conduit::int64 *dst_ptr = tmp64.as_int64_ptr();
+
+                            for (index_t j = 0; j < n; ++j)
+                            {
+                                dst_ptr[j] = static_cast<conduit::int64>(src_ptr[j]);
+                            }
+
+                            // Replace the child array with the 64-bit version
+                            child.set(tmp64);
+                        }
+                    }
+
+                    matset_for_fields = &matset_converted;
+                }
+
+                if (sample_vfs.dtype().is_float32())
+                {
+                    AddMatSetFieldsCommon<viskores::Id, float32>(
+                        *matset_for_fields,
+                        length_name,
+                        offsets_name,
+                        ids_name,
+                        vfs_name,
+                        topo_name,
+                        neles,
+                        dset);
+                }
+                else if (sample_vfs.dtype().is_float64())
+                {
+                    AddMatSetFieldsCommon<viskores::Id, float64>(
+                        *matset_for_fields,
+                        length_name,
+                        offsets_name,
+                        ids_name,
+                        vfs_name,
+                        topo_name,
+                        neles,
+                        dset);
+                }
+                else
+                {
+                    ASCENT_ERROR("Unsupported floating-point type for sparse_by_material "
+                                 "volume_fractions in matset: " << matset_name);
+                }
+            }
+            catch (const viskores::cont::Error &error)
+            {
+                ASCENT_ERROR("Viskores exception: " << error.GetMessage());
+            }
+        }
+
+        // --------------------------------------------------------------------
+        // Case 3: "full" matset
+        // --------------------------------------------------------------------
+        else
+        {
+            const conduit::Node &vf_group = n_matset["volume_fractions"];
+            const int num_materials = vf_group.number_of_children();
+
+            if (num_materials == 0)
+            {
+                ASCENT_ERROR("No volume fractions were defined for matset: " << matset_name);
+            }
+
+            const conduit::Node &first_material = vf_group.child(0);
+            const std::string material_name = first_material.name();
+            const index_t num_vals = static_cast<index_t>(first_material.dtype().number_of_elements());
+
+            if (num_vals != static_cast<index_t>(neles))
+            {
+                ASCENT_ERROR("Number of vf values "
+                             << num_vals
+                             << " for material "
+                             << material_name
+                             << " does not equal number of cells "
+                             << neles);
+            }
+
+            try
+            {
+                if (first_material.dtype().is_float32())
+                {
+                    AddMatSetFieldsCommon<viskores::Id, float32>(
+                        n_matset,
+                        length_name,
+                        offsets_name,
+                        ids_name,
+                        vfs_name,
+                        topo_name,
+                        neles,
+                        dset);
+                }
+                else if (first_material.dtype().is_float64())
+                {
+                    AddMatSetFieldsCommon<viskores::Id, float64>(
+                        n_matset,
+                        length_name,
+                        offsets_name,
+                        ids_name,
+                        vfs_name,
+                        topo_name,
+                        neles,
+                        dset);
+                }
+                else
+                {
+                    ASCENT_ERROR("Unsupported floating-point type for full matset "
+                                 "volume_fractions in matset: " << matset_name);
+                }
+            }
+            catch (const viskores::cont::Error &error)
+            {
+                ASCENT_ERROR("Viskores exception: " << error.GetMessage());
+            }
+        }
+
+        return;
+    }
+
+    // ------------------------------------------------------------------------
+    // 32-bit ID path
+    // ------------------------------------------------------------------------
+
+    //TODO: zero_copy = true segfaulting in viskores mir filter
+    //zero_copy = false;
+
+    // --------------------------------------------------------------------
+    // Case 1: "sparse_by_element" (material_map)
+    // --------------------------------------------------------------------
+    if (n_matset.has_child("material_map"))
+    {
+        try
+        {
+            // Add materials directly
+            const conduit::Node &n_length = n_matset["sizes"];
+            const conduit::Node &n_offsets = n_matset["offsets"];
+
+            add_index_field_as_Id(n_length, length_name, assoc_str);
+            add_index_field_as_Id(n_offsets, offsets_name, assoc_str);
+
+            const conduit::Node &n_material_ids = n_matset["material_ids"];
+            const int num_vals = n_material_ids.dtype().number_of_elements();
+
+            if (n_material_ids.dtype().is_int32())
+            {
+                const conduit::int32 *ids = n_material_ids.value();
+                const bool has_non_positive = std::any_of(ids, ids + num_vals, [](conduit::int32 v) { return v <= 0; });
+
+                if (has_non_positive) // need to make a copy and increment all material ids
+                {
+                    conduit::Node n_mat_ids = n_matset["material_ids"];
+                    conduit::int32 *tmp_vec_ids = n_mat_ids.value();
+
+                    for (index_t i = 0; i < num_vals; ++i)
+                    {
+                        tmp_vec_ids[i] += 1;
+                    }
+
+                    viskores::cont::Field field_copy = detail::GetField<int32>(n_mat_ids,
+                                                                               ids_name,
+                                                                               "whole",
+                                                                               topo_name,
+                                                                               index_t(1),
+                                                                               false);
+                    dset->AddField(field_copy);
+                }
+                else // can zero copy the material ids
+                {
+                    viskores::cont::Field field_copy = detail::GetField<int32>(n_material_ids,
+                                                                               ids_name,
+                                                                               "whole",
+                                                                               topo_name,
+                                                                               index_t(1),
+                                                                               zero_copy);
+
+                    dset->AddField(field_copy);
+                }
+            }
+            else if (n_material_ids.dtype().is_int64())
+            {
+                const conduit::int64 *ids = n_material_ids.value();
+                const bool has_non_positive = std::any_of(ids, ids + num_vals, [](conduit::int64 v) { return v <= 0; });
+
+                if (has_non_positive) // need to make a copy and increment all material ids
+                {
+                    conduit::Node n_mat_ids = n_matset["material_ids"];
+                    conduit::int64 *tmp_vec_ids = n_mat_ids.value();
+
+                    for (index_t i = 0; i < num_vals; ++i)
+                    {
+                        tmp_vec_ids[i] += 1;
+                    }
+
+                    viskores::cont::Field field_copy = detail::GetField<int64>(n_mat_ids,
+                                                                               ids_name,
+                                                                               "whole",
+                                                                               topo_name,
+                                                                               index_t(1),
+                                                                               false);
+                    dset->AddField(field_copy);
+                }
+                else // can zero copy the material ids
+                {
+                    dset->AddField(detail::GetField<int64>(n_material_ids,
+                                                           ids_name,
+                                                           "whole",
+                                                           topo_name,
+                                                           index_t(1),
+                                                           zero_copy));
+                }
+            }
+            else
+            {
+                ASCENT_ERROR("Unsupported integer type for material IDs");
+            }
+
+            if (n_matset["volume_fractions"].dtype().is_float32())
+            {
                 const conduit::Node &n_volume_fractions = n_matset["volume_fractions"];
                 dset->AddField(detail::GetField<float32>(n_volume_fractions,
                                                          vfs_name,
@@ -2736,97 +3126,9 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
                                                          topo_name,
                                                          index_t(1),
                                                          zero_copy));
-                supported_type = true;
             }
-            else if(n_matset["volume_fractions"].dtype().is_float64())
+            else if (n_matset["volume_fractions"].dtype().is_float64())
             {
-                //add materials directly
-                const Node &n_length = n_matset["sizes"];
-                dset->AddField(detail::GetField<int>(n_length,
-                                                     length_name,
-                                                     assoc_str,
-                                                     topo_name,
-                                                     index_t(1),
-                                                     zero_copy));
-                const conduit::Node &n_offsets = n_matset["offsets"];
-                dset->AddField(detail::GetField<int>(n_offsets,
-                                                     offsets_name,
-                                                     assoc_str,
-                                                     topo_name,
-                                                     index_t(1),
-                                                     zero_copy));
-                const conduit::Node &n_material_ids = n_matset["material_ids"];
-                int num_vals = n_material_ids.dtype().number_of_elements(); 
-                if(n_material_ids.dtype().is_int32())
-                {
-                    const conduit::int32 *n_ids = n_material_ids.value();
-                    const vector<conduit::int32> vec_ids(n_ids, n_ids + num_vals);
-                    bool zeroes = std::any_of(vec_ids.begin(), vec_ids.end(), [](int value) { return value<=0; });
-                    if(zeroes) //need to make a copy and increment all material ids
-                    {
-                        conduit::Node n_mat_ids = n_matset["material_ids"];
-                        conduit::int32 *tmp_vec_ids = n_mat_ids.value();
-                        for(index_t i = 0; i < num_vals; ++i)
-                        {
-                            tmp_vec_ids[i] += 1.0; 
-                        }
-                        viskores::cont::Field field_copy = detail::GetField<int32>(n_mat_ids,
-                                                                               ids_name,
-                                                                               "whole",
-                                                                               topo_name,
-                                                                               index_t(1),
-                                                                               false);
-                        dset->AddField(field_copy);
-                    }
-                    else //can zero copy the material ids
-                    {
-                        viskores::cont::Field field_copy = detail::GetField<int32>(n_material_ids,
-                                                                               ids_name,
-                                                                               "whole",
-                                                                               topo_name,
-                                                                               index_t(1),
-                                                                               zero_copy);
-
-                        dset->AddField(field_copy);
-                    }
-                }
-                else if(n_material_ids.dtype().is_int64())
-                {
-                    const conduit::int64 *n_ids = n_material_ids.value();
-                    const vector<conduit::int64> vec_ids(n_ids, n_ids + num_vals);
-                    bool zeroes = std::any_of(vec_ids.begin(), vec_ids.end(), [](int value) { return value<=0; });
-                    if(zeroes) //need to make a copy and increment all material ids
-                    {
-                      conduit::Node n_mat_ids = n_matset["material_ids"];
-                      conduit::int64 *tmp_vec_ids = n_mat_ids.value();
-                      for(index_t i = 0; i < num_vals; ++i)
-                      {
-                        tmp_vec_ids[i] += 1.0; 
-                      }
-                      viskores::cont::Field field_copy = detail::GetField<int64>(n_mat_ids,
-                                                                             ids_name,
-                                                                             "whole",
-                                                                             topo_name,
-                                                                             index_t(1),
-                                                                             false);
-                      dset->AddField(field_copy);
-                    }
-                    else //can zero copy the material ids
-                    {
-                      viskores::cont::Field field_copy = detail::GetField<int64>(n_material_ids,
-                                                                             ids_name,
-                                                                             "whole",
-                                                                             topo_name,
-                                                                             index_t(1),
-                                                                             zero_copy);
-
-                      dset->AddField(field_copy);
-                    }
-                }
-                else
-                {
-                    ASCENT_ERROR("Unsupported integer type for material IDs");
-                }
                 const conduit::Node &n_volume_fractions = n_matset["volume_fractions"];
                 dset->AddField(detail::GetField<float64>(n_volume_fractions,
                                                          vfs_name,
@@ -2834,178 +3136,111 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
                                                          topo_name,
                                                          index_t(1),
                                                          zero_copy));
-                supported_type = true;
             }
         }
-        catch (viskores::cont::Error error)
+        catch (const viskores::cont::Error &error)
         {
             ASCENT_ERROR("Viskores exception:" << error.GetMessage());
         }
-
     }
-    else if(n_matset.has_child("element_ids"))//matset is "sparse_by_material"
-    {
-        int num_ids = n_matset["element_ids"].number_of_children();
-        if(num_ids == 0)
-        {
-            ASCENT_ERROR("No element ids were defined for matset: " << matset_name);
-        }
 
-        int num_materials = n_matset["volume_fractions"].number_of_children();
-        if(num_materials == 0)
-        {
-            ASCENT_ERROR("No volume fractions were defined for matset: " << matset_name);
-        }
-        
-        if(num_materials != num_ids)
-        {
-            ASCENT_ERROR("Number of materials (" << num_materials << 
-                         ") does not match number of elment IDs(" << num_ids << 
-                         " defined for matset: " << matset_name);
-        }
+    // --------------------------------------------------------------------
+    // Case 2: "sparse_by_material" (element_ids)
+    // --------------------------------------------------------------------
+    else if (n_matset.has_child("element_ids"))
+    {
+        const conduit::Node &sample_vfs = GetSparseByMaterialVfsSample(n_matset, matset_name);
 
         try
         {
-            bool supported_type = false;
-
-            const conduit::Node *n_vfs; //= n_matset["volume_fractions"].child(0);
-            const conduit::Node &tmp_vfs = n_matset["volume_fractions"].child(0);
-            int num_children = tmp_vfs.number_of_children();
-
-            if(num_children != 0) //of == 1?  
+            if (sample_vfs.dtype().is_float32())
             {
-              n_vfs = tmp_vfs.child_ptr(0);
+                AddMatSetFieldsCommon<int, float32>(
+                    n_matset,
+                    length_name,
+                    offsets_name,
+                    ids_name,
+                    vfs_name,
+                    topo_name,
+                    neles,
+                    dset);
             }
-            else
+            else if (sample_vfs.dtype().is_float64())
             {
-              n_vfs = n_matset["volume_fractions"].child_ptr(0);
-
-            }
-
-            // we compile vtk-h with fp types
-            if(n_vfs->dtype().is_float32())
-            {
-                supported_type = true;
-                //add calculated material fields for viskores
-                viskores::cont::Field length, offsets, ids, vfs;
-                detail::GetMatSetFields<int,float32>(n_matset, 
-                                                     length_name, 
-                                                     offsets_name, 
-                                                     ids_name,
-                                                     vfs_name,
-                                                     topo_name, 
-                                                     neles, 
-                                                     length, 
-                                                     offsets,
-                                                     ids,
-                                                     vfs);
-                dset->AddField(length);
-                dset->AddField(offsets);
-                dset->AddField(ids);
-                dset->AddField(vfs);
-            }
-            else if(n_vfs->dtype().is_float64())
-            {
-                supported_type = true;
-                //add calculated material fields for viskores
-                viskores::cont::Field length, offsets, ids, vfs;
-                detail::GetMatSetFields<int,float64>(n_matset, 
-                                                     length_name, 
-                                                     offsets_name, 
-                                                     ids_name,
-                                                     vfs_name,
-                                                     topo_name, 
-                                                     neles, 
-                                                     length, 
-                                                     offsets,
-                                                     ids,
-                                                     vfs);
-                dset->AddField(length);
-                dset->AddField(offsets);
-                dset->AddField(ids);
-                dset->AddField(vfs);
+                AddMatSetFieldsCommon<int, float64>(
+                    n_matset,
+                    length_name,
+                    offsets_name,
+                    ids_name,
+                    vfs_name,
+                    topo_name,
+                    neles,
+                    dset);
             }
         }
-        catch (viskores::cont::Error error)
+        catch (const viskores::cont::Error &error)
         {
             ASCENT_ERROR("Viskores exception:" << error.GetMessage());
         }
     }
-    else //matset is "full"
+
+    // --------------------------------------------------------------------
+    // Case 3: "full" matset
+    // --------------------------------------------------------------------
+    else
     {
         int num_materials = n_matset["volume_fractions"].number_of_children();
-        if(num_materials == 0)
+        if (num_materials == 0)
+        {
             ASCENT_ERROR("No volume fractions were defined for matset: " << matset_name);
+        }
 
-        const Node n_material = n_matset["volume_fractions"].child(0);
+        const conduit::Node &n_material = n_matset["volume_fractions"].child(0);
         std::string material_name = n_material.name();
-
         int num_vals = n_material.dtype().number_of_elements();
 
-        if(num_vals != neles )
+        if (num_vals != neles)
         {
-            ASCENT_ERROR("Number of vf values " 
-                          << num_vals 
-                          << " for material " 
-                          << material_name 
-                          << " does not equal number of cells "
-                          << neles);
+            ASCENT_ERROR("Number of vf values "
+                         << num_vals
+                         << " for material "
+                         << material_name
+                         << " does not equal number of cells "
+                         << neles);
         }
+
         try
         {
-            bool supported_type = false;
-
-            // we compile vtk-h with fp types
-            if(n_material.dtype().is_float32())
+            if (n_material.dtype().is_float32())
             {
-                supported_type = true;
-                //add calculated material fields for viskores
-                int total;
-                viskores::cont::Field length, offsets, ids, vfs;
-                detail::GetMatSetFields<int,float32>(n_matset, 
-                                                     length_name, 
-                                                     offsets_name, 
-                                                     ids_name,
-                                                     vfs_name,
-                                                     topo_name, 
-                                                     neles, 
-                                                     length, 
-                                                     offsets,
-                                                     ids,
-                                                     vfs);
-                dset->AddField(length);
-                dset->AddField(offsets);
-                dset->AddField(ids);
-                dset->AddField(vfs);
+                AddMatSetFieldsCommon<int, float32>(
+                    n_matset,
+                    length_name,
+                    offsets_name,
+                    ids_name,
+                    vfs_name,
+                    topo_name,
+                    neles,
+                    dset);
             }
-            else if(n_material.dtype().is_float64())
+            else if (n_material.dtype().is_float64())
             {
-                supported_type = true;
-                //add calculated material fields for viskores
-                int total;
-                viskores::cont::Field length, offsets, ids, vfs;
-                detail::GetMatSetFields<int,float64>(n_matset, 
-                                                     length_name, 
-                                                     offsets_name, 
-                                                     ids_name,
-                                                     vfs_name,
-                                                     topo_name, 
-                                                     neles, 
-                                                     length, 
-                                                     offsets,
-                                                     ids,
-                                                     vfs);
-                dset->AddField(length);
-                dset->AddField(offsets);
-                dset->AddField(ids);
-                dset->AddField(vfs);
+                AddMatSetFieldsCommon<int, float64>(
+                    n_matset,
+                    length_name,
+                    offsets_name,
+                    ids_name,
+                    vfs_name,
+                    topo_name,
+                    neles,
+                    dset);
             }
         }
-        catch (viskores::cont::Error error)
+        catch (const viskores::cont::Error &error)
         {
             ASCENT_ERROR("Viskores exception:" << error.GetMessage());
         }
-    }   
+    }
 }
 
 std::string

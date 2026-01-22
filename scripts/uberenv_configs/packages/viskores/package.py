@@ -118,6 +118,9 @@ class Viskores(CMakePackage, CudaPackage, ROCmPackage):
     conflicts("+cuda~cuda_native~kokkos", msg="Cannot have +cuda without a cuda device")
     conflicts("+cuda", when="cuda_arch=none", msg="viskores +cuda requires that cuda_arch be set")
 
+    # pan and zoom patch for viskores needed for ascent tiled rendering
+    patch("2026_01_02_viskores_implent_pan_raytracing.patch")
+
     def flag_handler(self, name, flags):
         return (flags, None, None)
 
@@ -157,7 +160,7 @@ class Viskores(CMakePackage, CudaPackage, ROCmPackage):
                 self.define_from_variant("Viskores_USE_64BIT_IDS", "64bitids"),
                 self.define_from_variant("Viskores_USE_DOUBLE_PRECISION", "doubleprecision"),
                 self.define(
-                    "Viskores_USE_DEFAULT_TYPES_FOR_ASCENT", "~64bitids +doubleprecision" in spec
+                    "Viskores_USE_DEFAULT_TYPES_FOR_ASCENT", "+doubleprecision" in spec
                 ),
             ]
 

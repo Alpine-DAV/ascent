@@ -69,6 +69,15 @@ protected:
 
   virtual void Composite(const int &num_images);
   void ImageToCanvas(Image &image, viskores::rendering::Canvas &canvas, bool get_depth);
+
+  void RenderTiled(Render::viskoresCanvas &canvas,
+                   const viskoresCamera &camera,
+                   const viskores::cont::UnknownCellSet &cellset,
+                   const viskores::cont::Field &field,
+                   const viskores::cont::CoordinateSystem &coords,
+                   viskores::cont::DataSet &data_set,
+		   const viskores::Int32 tile_width,
+		   const viskores::Int32 tile_height);
 };
 
 } // namespace vtkh

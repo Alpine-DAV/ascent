@@ -163,7 +163,7 @@ parse_camera(const conduit::Node camera_node, viskores::rendering::Camera &camer
       viskores::Float64 xpan = 0.;
       viskores::Float64 ypan = 0.;
       if(camera_node.has_child("xpan")) xpan = camera_node["xpan"].to_float64();
-      if(camera_node.has_child("ypan")) xpan = camera_node["ypan"].to_float64();
+      if(camera_node.has_child("ypan")) ypan = camera_node["ypan"].to_float64();
       camera.Pan(xpan, ypan);
   }
 
@@ -172,6 +172,7 @@ parse_camera(const conduit::Node camera_node, viskores::rendering::Camera &camer
       double zoom = camera_node["zoom"].to_float64();
       camera.Zoom(zoom_to_viskores_zoom(zoom));
   }
+
   //
   // With a new potential camera position. We need to reset the
   // clipping plane as not to cut out part of the data set
@@ -197,6 +198,7 @@ parse_camera(const conduit::Node camera_node, viskores::rendering::Camera &camer
       viskores::Float64 azimuth = camera_node["azimuth"].to_float64();
       camera.Azimuth(azimuth);
   }
+
   if(camera_node.has_child("elevation"))
   {
       viskores::Float64 elevation = camera_node["elevation"].to_float64();

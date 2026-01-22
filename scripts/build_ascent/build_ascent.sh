@@ -33,6 +33,7 @@ enable_mpicc="${enable_mpicc:=OFF}"
 enable_find_mpi="${enable_find_mpi:=ON}"
 enable_tests="${enable_tests:=OFF}"
 enable_verbose="${enable_verbose:=ON}"
+enable_64bit_ids="${enable_64bit_ids:=OFF}"
 build_jobs="${build_jobs:=6}"
 build_config="${build_config:=Release}"
 build_shared_libs="${build_shared_libs:=ON}"
@@ -687,6 +688,7 @@ if [ ! -d ${viskores_src_dir} ]; then
   cd ${viskores_src_dir}
   echo "**** Applying Patches to ${viskores_tarball}"
   patch -p1 < ${script_dir}/2025_06_18_viskores_z_extents_ray_culling_bugfix_viskores_mr109.patch
+  patch -p1 < ${script_dir}/2026_01_02_viskores_implent_pan_raytracing.patch
   cd ${root_dir}
 fi
 
@@ -722,9 +724,9 @@ cmake -S ${viskores_src_dir} -B ${viskores_build_dir} ${cmake_compiler_settings}
   -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose}\
   -DCMAKE_BUILD_TYPE=${build_config} \
   -DBUILD_SHARED_LIBS=${build_shared_libs} \
-  -DViskores_USE_64BIT_IDS=OFF \
+  -DViskores_USE_64BIT_IDS=${enable_64bit_ids} \
   -DViskores_USE_DOUBLE_PRECISION=ON \
-  -DViskores_USE_DEFAULT_TYPES_FOR_ASCENT=ON \
+  -DViskores_USE_DEFAULT_TYPES_FOR_ASCENT=OFF \
   -DViskores_ENABLE_MPI=${enable_mpi} \
   -DViskores_ENABLE_OPENMP=${enable_openmp}\
   -DViskores_ENABLE_RENDERING=ON \
