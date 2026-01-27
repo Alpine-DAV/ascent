@@ -420,6 +420,266 @@ TEST(ascent_multi_topo, adapter_test)
 }
 
 //-----------------------------------------------------------------------------
+
+TEST(ascent_data_adapter, rz_mesh_structured)
+{
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
+        return;
+    }
+
+    Node mesh, verify_info;
+    conduit::blueprint::mesh::examples::rz_cylinder("structured",
+                                                    10,
+                                                    10,
+                                                    mesh);
+    mesh["state/cycle"] = 100;
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(mesh,verify_info));
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path, "tout_vtkh_data_adapter_rz_structured");
+
+    //
+    // Create the actions.
+    //
+
+    conduit::Node scenes;
+    scenes["s1/plots/p1/type"] = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "cyl";
+    scenes["s1/image_prefix"] = output_file;
+    scenes["s1/renders/r1/image_prefix"]   = output_file;
+
+    // conduit::Node extracts;
+    // extracts["e1/type"] = "relay";
+    // extracts["e1/params/path"] = conduit::utils::join_file_path(output_path, "tout_vtkh_data_adapter_rz_structured_export");;
+    // extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
+
+    conduit::Node actions;
+    conduit::Node &add_plots = actions.append();
+    add_plots["action"] = "add_scenes";
+    add_plots["scenes"] = scenes;
+
+    // conduit::Node &add_extracts = actions.append();
+    // add_extracts["action"] = "add_extracts";
+    // add_extracts["extracts"] = extracts;
+
+    //
+    // Publish to Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent_opts["exceptions"] = "forward";
+    ascent.open(ascent_opts);
+    ascent.publish(mesh);
+    ascent.execute(actions);
+    ascent.close();
+
+    EXPECT_TRUE(check_test_image(output_file, 0.001f));
+}
+
+//-----------------------------------------------------------------------------
+
+TEST(ascent_data_adapter, rz_mesh_unstructured)
+{
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
+        return;
+    }
+
+    Node mesh, verify_info;
+    conduit::blueprint::mesh::examples::rz_cylinder("unstructured",
+                                                    10,
+                                                    10,
+                                                    mesh);
+    mesh["state/cycle"] = 100;
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(mesh,verify_info));
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path, "tout_vtkh_data_adapter_rz_unstructured");
+
+    //
+    // Create the actions. 
+    //
+
+    conduit::Node scenes;
+    scenes["s1/plots/p1/type"] = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "cyl";
+    scenes["s1/image_prefix"] = output_file;
+    scenes["s1/renders/r1/image_prefix"]   = output_file;
+
+    // conduit::Node extracts;
+    // extracts["e1/type"] = "relay";
+    // extracts["e1/params/path"] = conduit::utils::join_file_path(output_path, "tout_vtkh_data_adapter_rz_unstructured_export");;
+    // extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
+
+    conduit::Node actions;
+    conduit::Node &add_plots = actions.append();
+    add_plots["action"] = "add_scenes";
+    add_plots["scenes"] = scenes;
+
+    // conduit::Node &add_extracts = actions.append();
+    // add_extracts["action"] = "add_extracts";
+    // add_extracts["extracts"] = extracts;
+
+    //
+    // Publish to Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent_opts["exceptions"] = "forward";
+    ascent.open(ascent_opts);
+    ascent.publish(mesh);
+    ascent.execute(actions);
+    ascent.close();
+
+    EXPECT_TRUE(check_test_image(output_file, 0.001f));
+}
+
+//-----------------------------------------------------------------------------
+
+TEST(ascent_data_adapter, rz_mesh_uniform)
+{
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
+        return;
+    }
+
+    Node mesh, verify_info;
+    conduit::blueprint::mesh::examples::rz_cylinder("uniform",
+                                                    10,
+                                                    10,
+                                                    mesh);
+    mesh["state/cycle"] = 100;
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(mesh,verify_info));
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path, "tout_vtkh_data_adapter_rz_uniform");
+
+    //
+    // Create the actions. 
+    //
+
+    conduit::Node scenes;
+    scenes["s1/plots/p1/type"] = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "cyl";
+    scenes["s1/image_prefix"] = output_file;
+    scenes["s1/renders/r1/image_prefix"]   = output_file;
+
+    // conduit::Node extracts;
+    // extracts["e1/type"] = "relay";
+    // extracts["e1/params/path"] = conduit::utils::join_file_path(output_path, "tout_vtkh_data_adapter_rz_uniform_export");;
+    // extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
+
+    conduit::Node actions;
+    conduit::Node &add_plots = actions.append();
+    add_plots["action"] = "add_scenes";
+    add_plots["scenes"] = scenes;
+
+    // conduit::Node &add_extracts = actions.append();
+    // add_extracts["action"] = "add_extracts";
+    // add_extracts["extracts"] = extracts;
+
+    //
+    // Publish to Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent_opts["exceptions"] = "forward";
+    ascent.open(ascent_opts);
+    ascent.publish(mesh);
+    ascent.execute(actions);
+    ascent.close();
+
+    EXPECT_TRUE(check_test_image(output_file, 0.001f));
+}
+
+//-----------------------------------------------------------------------------
+
+TEST(ascent_data_adapter, rz_mesh_rectilinear)
+{
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
+        return;
+    }
+
+    Node mesh, verify_info;
+    conduit::blueprint::mesh::examples::rz_cylinder("rectilinear",
+                                                    10,
+                                                    10,
+                                                    mesh);
+    mesh["state/cycle"] = 100;
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(mesh,verify_info));
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path, "tout_vtkh_data_adapter_rz_rectilinear");
+
+    //
+    // Create the actions. 
+    //
+
+    conduit::Node scenes;
+    scenes["s1/plots/p1/type"] = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "cyl";
+    scenes["s1/image_prefix"] = output_file;
+    scenes["s1/renders/r1/image_prefix"]   = output_file;
+
+    // conduit::Node extracts;
+    // extracts["e1/type"] = "relay";
+    // extracts["e1/params/path"] = conduit::utils::join_file_path(output_path, "tout_vtkh_data_adapter_rz_rectilinear_export");;
+    // extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
+
+    conduit::Node actions;
+    conduit::Node &add_plots = actions.append();
+    add_plots["action"] = "add_scenes";
+    add_plots["scenes"] = scenes;
+    
+    // conduit::Node &add_extracts = actions.append();
+    // add_extracts["action"] = "add_extracts";
+    // add_extracts["extracts"] = extracts;
+
+    //
+    // Publish to Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent_opts["exceptions"] = "forward";
+    ascent.open(ascent_opts);
+    ascent.publish(mesh);
+    ascent.execute(actions);
+    ascent.close();
+
+    EXPECT_TRUE(check_test_image(output_file, 0.001f));
+}
+
+//-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {
     int result = 0;
