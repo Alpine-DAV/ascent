@@ -357,6 +357,1538 @@ TEST(ascent_sample, points_3d)
 }
 
 //-----------------------------------------------------------------------------
+
+TEST(ascent_sample, test_uniform_grid_slice_along_y)
+{
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
+        return;
+    }
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing sampling a smaller regular grid of hexahedron input");
+
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_uniform_sample_in_y");
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+    data["state/cycle"] = 100;
+    //
+    // Create the actions.
+    //
+    std::string acts_str = R"xyzxyz(
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "sample"
+        params: 
+          fields: ["braid"]
+          uniform_grid:
+            dims:
+              i: 10
+              j: 0
+              k: 10
+          invalid_value: -10.0
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "braid"
+          pipeline: "pl1"
+      renders: 
+        r1: 
+          camera: 
+            elevation: 30
+)xyzxyz";
+    conduit::Node actions;
+    actions.parse(acts_str,"yaml");
+    actions[1]["scenes/s1/renders/r1/image_prefix"] = output_file;
+    //actions.print();
+
+    //
+    // Run Ascent
+    //
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example of using the sample filter with the uniform grid parameter sampling along y (y=0).";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+}
+//-----------------------------------------------------------------------------
+TEST(ascent_sample, test_uniform_grid_sample_along_x)
+{
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
+        return;
+    }
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing sampling a smaller regular grid of hexahedron input");
+
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_uniform_sample_in_x");
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+    data["state/cycle"] = 100;
+    //
+    // Create the actions.
+    //
+
+    std::string acts_str = R"xyzxyz(
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "sample"
+        params: 
+          fields: ["braid"]
+          uniform_grid:
+            dims:
+              i: 0
+              j: 10
+              k: 10
+          invalid_value: -10.0
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "braid"
+          pipeline: "pl1"
+      renders: 
+        r1: 
+          camera: 
+            azimuth: 90
+)xyzxyz";
+    conduit::Node actions;
+    actions.parse(acts_str,"yaml");
+    actions[1]["scenes/s1/renders/r1/image_prefix"] = output_file;
+    //actions.print();
+
+    //
+    // Run Ascent
+    //
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example of using the sample filter with the uniform grid parameter sampling along x (x=0).";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+}
+//-----------------------------------------------------------------------------
+TEST(ascent_sample, test_uniform_grid_smaller_in_i)
+{
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
+        return;
+    }
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing sampling a smaller regular grid of hexahedron input");
+
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_uniform_smaller_in_i");
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+    data["state/cycle"] = 100;
+    //
+    // Create the actions.
+    //
+
+    std::string acts_str = R"xyzxyz(
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "sample"
+        params: 
+          fields: ["braid"]
+          uniform_grid:
+            dims:
+              i: 10
+          invalid_value: -10.0
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "braid"
+          pipeline: "pl1"
+)xyzxyz";
+    conduit::Node actions;
+    actions.parse(acts_str,"yaml");
+    actions[1]["scenes/s1/image_prefix"] = output_file;
+    //actions.print();
+
+    //
+    // Run Ascent
+    //
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example of using the sample filter with the uniform grid parameter with a smaller x dim.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+}
+//-----------------------------------------------------------------------------
+TEST(ascent_sample, test_uniform_grid_smaller_in_j)
+{
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
+        return;
+    }
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing sampling a smaller regular grid of hexahedron input");
+
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_uniform_smaller_in_j");
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+    data["state/cycle"] = 100;
+    //
+    // Create the actions.
+    //
+
+    std::string acts_str = R"xyzxyz(
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "sample"
+        params: 
+          fields: ["braid"]
+          uniform_grid:
+            dims:
+              i: 10
+          invalid_value: -10.0
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "braid"
+          pipeline: "pl1"
+)xyzxyz";
+    conduit::Node actions;
+    actions.parse(acts_str,"yaml");
+    actions[1]["scenes/s1/image_prefix"] = output_file;
+    //actions.print();
+
+    //
+    // Run Ascent
+    //
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example of using the sample filter with the uniform grid parameter with a smaller j.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+}
+//-----------------------------------------------------------------------------
+TEST(ascent_sample, test_uniform_grid_smaller_in_k)
+{
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
+        return;
+    }
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing sampling a smaller regular grid of hexahedron input");
+
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_uniform_smaller_in_k");
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+    data["state/cycle"] = 100;
+    //
+    // Create the actions.
+    //
+
+    std::string acts_str = R"xyzxyz(
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "sample"
+        params: 
+          field: "braid"
+          uniform_grid:
+            dims:
+              k: 10
+          invalid_value: -10.0
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "braid"
+          pipeline: "pl1"
+      renders: 
+        r1: 
+          camera: 
+            azimuth: 90
+)xyzxyz";
+    conduit::Node actions;
+    actions.parse(acts_str,"yaml");
+    actions[1]["scenes/s1/renders/r1/image_prefix"] = output_file;
+    //actions.print();
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example of using the sample filter with the uniform grid parameter with a smaller k.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+}
+//-----------------------------------------------------------------------------
+TEST(ascent_sample, test_uniform_grid_smaller_by10_than_input)
+{
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
+        return;
+    }
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing sampling a smaller regular grid of hexahedron input");
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_uniform_smaller_by10_grid");
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+    data["state/cycle"] = 100;
+    //
+    // Create the actions.
+    //
+
+    std::string acts_str = R"xyzxyz(
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "sample"
+        params: 
+          fields: ["braid"]
+          uniform_grid:
+            dims:
+              i: 10
+              j: 10
+              k: 10
+          invalid_value: -10.0
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "braid"
+          pipeline: "pl1"
+)xyzxyz";
+    conduit::Node actions;
+    actions.parse(acts_str,"yaml");
+    actions[1]["scenes/s1/renders/r1/image_prefix"] = output_file;
+    //actions.print();
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example of using the sample filter with the uniform grid parameter with smaller dims.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+}
+//-----------------------------------------------------------------------------
+TEST(ascent_sample, test_uniform_grid_equal_size_input)
+{
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
+        return;
+    }
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing sampling a grid of equal size of hexahedron intput");
+
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_uniform_equal_grid");
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+    data["state/cycle"] = 100;
+    //
+    // Create the actions.
+    //
+
+    std::string acts_str = R"xyzxyz(
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "sample"
+        params: 
+          fields: ["braid"]
+          uniform_grid:
+            dims:
+              i: 20
+              j: 20
+              k: 20
+          invalid_value: -10.0
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "braid"
+          pipeline: "pl1"
+)xyzxyz";
+    conduit::Node actions;
+    actions.parse(acts_str,"yaml");
+    actions[1]["scenes/s1/renders/r1/image_prefix"] = output_file;
+    //actions.print();
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example of using the sample filter with the uniform grid parameter with dims equal to the input dims.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+}
+//-----------------------------------------------------------------------------
+TEST(ascent_sample, test_uniform_grid_equal_size_input_increased_spacing)
+{
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
+        return;
+    }
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing sampling a grid of equal size of hexahedron intput");
+
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_uniform_grid_equal_dims_increase_spacing");
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+    data["state/cycle"] = 100;
+    //
+    // Create the actions.
+    //
+
+    std::string acts_str = R"xyzxyz(
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "sample"
+        params: 
+          fields: ["braid"]
+          uniform_grid:
+            spacing:
+              x: 2.0
+              y: 2.0
+              z: 2.0
+          invalid_value: -10.0
+      f2: 
+        type: "slice"
+        params: 
+          point: 
+            x: 0.0
+            y: 0.0
+            z: 0.0
+          normal: 
+            x: 0.0
+            y: 0.0
+            z: 1.0
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "braid"
+          pipeline: "pl1"
+)xyzxyz";
+    conduit::Node actions;
+    actions.parse(acts_str,"yaml");
+    actions[1]["scenes/s1/renders/r1/image_prefix"] = output_file;
+    //actions.print();
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example of using the sample filter with the uniform grid parameter with increased spacing.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+}
+//-----------------------------------------------------------------------------
+TEST(ascent_sample, test_uniform_grid_equal_size_input_decreased_spacing)
+{
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
+        return;
+    }
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing sampling a grid of equal size of hexahedron intput");
+
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_uniform_grid_equal_dims_decrease_spacing");
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+    data["state/cycle"] = 100;
+    //
+    // Create the actions.
+    //
+
+    std::string acts_str = R"xyzxyz(
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "sample"
+        params: 
+          fields: ["braid"]
+          uniform_grid:
+            spacing:
+              x: 0.5
+              y: 0.5
+              z: 0.5
+          invalid_value: -10.0
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "braid"
+          pipeline: "pl1"
+)xyzxyz";
+    conduit::Node actions;
+    actions.parse(acts_str,"yaml");
+    actions[1]["scenes/s1/renders/r1/image_prefix"] = output_file;
+    //actions.print();
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example of using the sample filter with the uniform grid parameter with decreased spacing.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_sample, test_uniform_grid_equal_size_input_shift_origin)
+{
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
+        return;
+    }
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing sampling a grid of equal size of hexahedron intput");
+
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_uniform_grid_shift_origin");
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+    data["state/cycle"] = 100;
+    //
+    // Create the actions.
+    //
+
+    std::string acts_str = R"xyzxyz(
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "sample"
+        params: 
+          fields: ["braid"]
+          uniform_grid:
+            origin:
+              x: -5.0
+              y: -5.0
+              z: -5.0
+          invalid_value: -10.0
+      f2: 
+        type: "slice"
+        params: 
+          point: 
+            x: 0.0
+            y: 0.0
+            z: 0.0
+          normal: 
+            x: 0.0
+            y: 0.0
+            z: 1.0
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "braid"
+          pipeline: "pl1"
+)xyzxyz";
+    conduit::Node actions;
+    actions.parse(acts_str,"yaml");
+    actions[1]["scenes/s1/renders/r1/image_prefix"] = output_file;
+    //actions.print();
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example of using the sample filter with the uniform grid parameter with an origin shift.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+}
+//-----------------------------------------------------------------------------
+TEST(ascent_sample, test_uniform_grid_equal_size_input_shift_origin_x)
+{
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
+        return;
+    }
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing sampling a grid of equal size of hexahedron intput");
+
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_uniform_grid_shift_origin_x");
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+    data["state/cycle"] = 100;
+    //
+    // Create the actions.
+    //
+
+    std::string acts_str = R"xyzxyz(
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "sample"
+        params: 
+          fields: ["braid"]
+          uniform_grid:
+            origin:
+              x: 0.0
+          invalid_value: -10.0
+      f2: 
+        type: "slice"
+        params: 
+          point: 
+            x: 0.0
+            y: 0.0
+            z: 0.0
+          normal: 
+            x: 0.0
+            y: 0.0
+            z: 1.0
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "braid"
+          pipeline: "pl1"
+)xyzxyz";
+    conduit::Node actions;
+    actions.parse(acts_str,"yaml");
+    actions[1]["scenes/s1/renders/r1/image_prefix"] = output_file;
+    //actions.print();
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example of using the sample filter with the uniform grid parameter shifting the origin along x.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+}
+//-----------------------------------------------------------------------------
+TEST(ascent_sample, test_uniform_grid_equal_size_input_shift_origin_y)
+{
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
+        return;
+    }
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing sampling a grid of equal size of hexahedron intput");
+
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_uniform_grid_shift_origin_y");
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+    data["state/cycle"] = 100;
+    //
+    // Create the actions.
+    //
+
+    std::string acts_str = R"xyzxyz(
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "sample"
+        params: 
+          fields: ["braid"]
+          uniform_grid:
+            origin:
+              y: 0.0
+          invalid_value: -10.0
+      f2: 
+        type: "slice"
+        params: 
+          point: 
+            x: 0.0
+            y: 0.0
+            z: 0.0
+          normal: 
+            x: 0.0
+            y: 0.0
+            z: 1.0
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "braid"
+          pipeline: "pl1"
+)xyzxyz";
+    conduit::Node actions;
+    actions.parse(acts_str,"yaml");
+    actions[1]["scenes/s1/renders/r1/image_prefix"] = output_file;
+    //actions.print();
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example of using the sample filter with the uniform grid parameter shifting the origin along y.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+}
+//-----------------------------------------------------------------------------
+TEST(ascent_sample, test_uniform_grid_equal_size_input_shift_origin_z)
+{
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
+        return;
+    }
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing sampling a grid of equal size of hexahedron intput");
+
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_uniform_grid_shift_origin_z");
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+    data["state/cycle"] = 100;
+    //
+    // Create the actions.
+    //
+
+    std::string acts_str = R"xyzxyz(
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "sample"
+        params: 
+          fields: ["braid"]
+          uniform_grid:
+            origin:
+              z: 0.0
+          invalid_value: -10.0
+      f2: 
+        type: "slice"
+        params: 
+          point: 
+            x: 0.0
+            y: 0.0
+            z: 0.0
+          normal: 
+            x: 0.0
+            y: 0.0
+            z: 1.0
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "braid"
+          pipeline: "pl1"
+)xyzxyz";
+    conduit::Node actions;
+    actions.parse(acts_str,"yaml");
+    actions[1]["scenes/s1/renders/r1/image_prefix"] = output_file;
+    //actions.print();
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example of using the sample filter with the uniform grid parameter shifting the origin along z.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+}
+//-----------------------------------------------------------------------------
+TEST(ascent_sample, test_uniform_grid_larger_by5_than_input)
+{
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
+        return;
+    }
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing sampling a larger regular grid of hexahedron intput");
+
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_uniform_larger_by5_grid");
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+    data["state/cycle"] = 100;
+    //
+    // Create the actions.
+    //
+
+    std::string acts_str = R"xyzxyz(
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "sample"
+        params: 
+          fields: ["braid"]
+          uniform_grid:
+            dims:
+              i: 25
+              j: 25
+              k: 25
+          invalid_value: -10.0
+      f2: 
+        type: "slice"
+        params: 
+          point: 
+            x: 0.0
+            y: 0.0
+            z: 0.0
+          normal: 
+            x: 0.0
+            y: 0.0
+            z: 1.0
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "braid"
+          pipeline: "pl1"
+)xyzxyz";
+    conduit::Node actions;
+    actions.parse(acts_str,"yaml");
+    actions[1]["scenes/s1/renders/r1/image_prefix"] = output_file;
+    //actions.print();
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example of using the sample filter with the uniform grid parameter with larger dimensions.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+}
+//-----------------------------------------------------------------------------
+TEST(ascent_sample, test_uniform_grid_larger_by5_than_input_large_invalid_value)
+{
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
+        return;
+    }
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing sampling a larger regular grid of hexahedron intput");
+
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_uniform_larger_by5_grid_with_invalid_value");
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+    data["state/cycle"] = 100;
+    //
+    // Create the actions.
+    //
+
+    std::string acts_str = R"xyzxyz(
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "sample"
+        params: 
+          fields: ["braid"]
+          uniform_grid:
+            dims:
+              i: 25
+              j: 25
+              k: 25
+          invalid_value: -100.0
+      f2: 
+        type: "slice"
+        params: 
+          point: 
+            x: 0.0
+            y: 0.0
+            z: 0.0
+          normal: 
+            x: 0.0
+            y: 0.0
+            z: 1.0
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "braid"
+          pipeline: "pl1"
+)xyzxyz";
+    conduit::Node actions;
+    actions.parse(acts_str,"yaml");
+    actions[1]["scenes/s1/renders/r1/image_prefix"] = output_file;
+    //actions.print();
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example of using the sample filter with the uniform grid parameter and sampling past the
+                      mesh dimensions with a large invalid_value.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+}
+//-----------------------------------------------------------------------------
+TEST(ascent_sample, test_uniform_grid_default_values)
+{
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
+        return;
+    }
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing sampling a grid of equal size of hexahedron intput");
+
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_uniform_grid_default_values");
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+    data["state/cycle"] = 100;
+    //
+    // Create the actions.
+    //
+
+    std::string acts_str = R"xyzxyz(
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "sample"
+        params: 
+          fields: ["braid"]
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "braid"
+          pipeline: "pl1"
+)xyzxyz";
+    conduit::Node actions;
+    actions.parse(acts_str,"yaml");
+    actions[1]["scenes/s1/renders/r1/image_prefix"] = output_file;
+    //actions.print();
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example of using the sample filter with the uniform grid parameter with default values.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_sample, test_uniform_grid_multiple_fields)
+{
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
+        return;
+    }
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing sampling a smaller regular grid of hexahedron input");
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_uniform_grid_sample_multiple_fields");
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+    data["state/cycle"] = 100;
+    //
+    // Create the actions.
+    //
+
+    std::string acts_str = R"xyzxyz(
+-
+  action: "add_pipelines"
+  pipelines:
+    pl1:
+      f1:
+        type: "sample"
+        params:
+          fields: ["braid","radial"]
+          uniform_grid:
+            dims:
+              i: 10
+              j: 10
+              k: 10
+          invalid_value: -10.0
+-
+  action: "add_extracts"
+  extracts:
+    esrc:
+      type: relay
+      params:
+        protocol: hdf5
+    eres:
+      type: relay
+      pipeline: "pl1"
+      params:
+        protocol: hdf5
+
+-
+  action: "add_scenes"
+  scenes:
+    s1:
+      plots:
+        p1:
+          type: "pseudocolor"
+          field: "radial"
+          pipeline: "pl1"
+)xyzxyz";
+
+    conduit::Node actions;
+    actions.parse(acts_str,"yaml");
+    actions[1]["extracts/esrc/params/path"] = output_file + "_src";
+    actions[1]["extracts/eres/params/path"] = output_file + "_result";
+    actions[2]["scenes/s1/renders/r1/image_prefix"] = output_file;
+    //actions.print();
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example of using the sample filter with the uniform grid parameter and multiple fields.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+}
+
+
+
+//-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {
     int result = 0;
