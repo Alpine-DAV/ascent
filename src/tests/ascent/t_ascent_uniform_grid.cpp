@@ -34,427 +34,7 @@ using namespace ascent;
 index_t EXAMPLE_MESH_SIDE_DIM = 20;
 
 //-----------------------------------------------------------------------------
-TEST(ascent_sample, line_2d)
-{
-    Node n;
-    ascent::about(n);
-    // only run this test if ascent was built with viskores support
-    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
-    {
-        ASCENT_INFO("Ascent viskores support disabled, skipping test");
-        return;
-    }
-
-    //
-    // Create an example mesh.
-    //
-    Node data, verify_info;
-    conduit::blueprint::mesh::examples::braid("quads",
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              0,
-                                              data);
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-
-    ASCENT_INFO("Testing sampling a 3d line of points");
-
-    string output_path = prepare_output_dir();
-    string output_file = conduit::utils::join_file_path(output_path,"tout_sample_line_2d");
-
-    // remove old images before rendering
-    remove_test_image(output_file);
-
-    data["state/cycle"] = 100;
-    //
-    // Create the actions.
-    //
-    std::string acts_str = R"xyzxyz(
-- 
-  action: "add_pipelines"
-  pipelines: 
-    pl1: 
-      f1: 
-        type: "sample"
-        params: 
-          fields: ["braid"]
-          line:
-            num_samples: 100
-            start:
-              x: 1.0
-              y: 1.0
-            end:
-              x: 0.0
-              y: 0.0
-          invalid_value: -10.0
-- 
-  action: "add_extracts"
-  extracts: 
-    e1:
-      pipeline: pl1
-      type: "relay"
-      params:
-        protocol: "hdf5"
-)xyzxyz";
-    conduit::Node actions;
-    actions.parse(acts_str,"yaml");
-    actions[1]["extracts/e1/params/path"] = output_file;
-    //actions.print();
-
-    //
-    // Run Ascent
-    //
-    Ascent ascent;
-    ascent.open();
-    ascent.publish(data);
-    ascent.execute(actions);
-    ascent.close();
-
-    // // check that we created an image
-    // EXPECT_TRUE(check_test_image(output_file));
-    std::string msg = "An example of using the sample filter to sample points along a 2d line.";
-    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
-}
-
-
-//-----------------------------------------------------------------------------
-TEST(ascent_sample, line_3d)
-{
-    Node n;
-    ascent::about(n);
-    // only run this test if ascent was built with viskores support
-    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
-    {
-        ASCENT_INFO("Ascent viskores support disabled, skipping test");
-        return;
-    }
-
-    //
-    // Create an example mesh.
-    //
-    Node data, verify_info;
-    conduit::blueprint::mesh::examples::braid("hexs",
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              data);
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-
-    ASCENT_INFO("Testing sampling a 3d line of points");
-
-    string output_path = prepare_output_dir();
-    string output_file = conduit::utils::join_file_path(output_path,"tout_sample_line_3d");
-
-    // remove old images before rendering
-    remove_test_image(output_file);
-
-    data["state/cycle"] = 100;
-    //
-    // Create the actions.
-    //
-    std::string acts_str = R"xyzxyz(
-- 
-  action: "add_pipelines"
-  pipelines: 
-    pl1: 
-      f1: 
-        type: "sample"
-        params: 
-          fields: ["braid"]
-          line:
-            num_samples: 100
-            start:
-              x: 1.0
-              y: 1.0
-              z: 1.0
-            end:
-              x: 0.0
-              y: 0.0
-              z: 0.0
-          invalid_value: -10.0
-- 
-  action: "add_extracts"
-  extracts: 
-    e1:
-      pipeline: pl1
-      type: "relay"
-      params:
-        protocol: "hdf5"
-)xyzxyz";
-    conduit::Node actions;
-    actions.parse(acts_str,"yaml");
-    actions[1]["extracts/e1/params/path"] = output_file;
-    //actions.print();
-
-    //
-    // Run Ascent
-    //
-    Ascent ascent;
-    ascent.open();
-    ascent.publish(data);
-    ascent.execute(actions);
-    ascent.close();
-
-    // // check that we created an image
-    // EXPECT_TRUE(check_test_image(output_file));
-    std::string msg = "An example of using the sample filter to sample points along a 3d line.";
-    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
-}
-
-
-//-----------------------------------------------------------------------------
-TEST(ascent_sample, points_2d)
-{
-    Node n;
-    ascent::about(n);
-    // only run this test if ascent was built with viskores support
-    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
-    {
-        ASCENT_INFO("Ascent viskores support disabled, skipping test");
-        return;
-    }
-
-    //
-    // Create an example mesh.
-    //
-    Node data, verify_info;
-    conduit::blueprint::mesh::examples::braid("hexs",
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              data);
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-
-    ASCENT_INFO("Testing sampling at a list of 2d points");
-
-    string output_path = prepare_output_dir();
-    string output_file = conduit::utils::join_file_path(output_path,"tout_sample_pts_2d");
-
-    // remove old images before rendering
-    remove_test_image(output_file);
-
-    data["state/cycle"] = 100;
-    //
-    // Create the actions.
-    //
-    std::string acts_str = R"xyzxyz(
-- 
-  action: "add_pipelines"
-  pipelines: 
-    pl1: 
-      f1: 
-        type: "sample"
-        params: 
-          fields: ["braid","radial"]
-          points:
-            x: [-9.0, 0.0, 3.0, 0.0, 3.0, -5.0, 7.24, -7.24, 9.0]
-            y: [-9.0, 0.0, 3.0, 3.0, 0.0, -5.0, -8.34, 8.34, 9.0]
-          invalid_value: -10.0
-- 
-  action: "add_extracts"
-  extracts: 
-    e1:
-      pipeline: pl1
-      type: "relay"
-      params:
-        protocol: "hdf5"
-)xyzxyz";
-    conduit::Node actions;
-    actions.parse(acts_str,"yaml");
-    actions[1]["extracts/e1/params/path"] = output_file;
-    //actions.print();
-
-    //
-    // Run Ascent
-    //
-    Ascent ascent;
-    ascent.open();
-    ascent.publish(data);
-    ascent.execute(actions);
-    ascent.close();
-
-    // // check that we created an image
-    // EXPECT_TRUE(check_test_image(output_file));
-    std::string msg = "An example of using the sample filter to sample a list of 2d points.";
-    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
-}
-
-//-----------------------------------------------------------------------------
-TEST(ascent_sample, points_3d)
-{
-    Node n;
-    ascent::about(n);
-    // only run this test if ascent was built with viskores support
-    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
-    {
-        ASCENT_INFO("Ascent viskores support disabled, skipping test");
-        return;
-    }
-
-    //
-    // Create an example mesh.
-    //
-    Node data, verify_info;
-    conduit::blueprint::mesh::examples::braid("hexs",
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              data);
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-
-    ASCENT_INFO("Testing sampling at a list of 3d points");
-
-    string output_path = prepare_output_dir();
-    string output_file = conduit::utils::join_file_path(output_path,"tout_sample_pts_3d");
-
-    // remove old images before rendering
-    remove_test_image(output_file);
-
-    data["state/cycle"] = 100;
-    //
-    // Create the actions.
-    //
-    std::string acts_str = R"xyzxyz(
-- 
-  action: "add_pipelines"
-  pipelines: 
-    pl1: 
-      f1: 
-        type: "sample"
-        params: 
-          fields: ["braid","radial"]
-          points:
-            x: [-9.0, 0.0, 3.0, 0.0, 0.0, 0.0, 3.0, 3.0, -5.0, 7.24, -7.24, 9.0]
-            y: [-9.0, 0.0, 3.0, 3.0, 0.0, 3.0, 3.0, 0.0, -5.0, -8.34, 8.34, 9.0]
-            z: [-9.0, 0.0, 3.0, 0.0, 3.0, 3.0, 0.0, 3.0, -5.0, 4.78,  4.78, 9.0]
-          invalid_value: -10.0
-- 
-  action: "add_extracts"
-  extracts: 
-    e1:
-      pipeline: pl1
-      type: "relay"
-      params:
-        protocol: "hdf5"
-)xyzxyz";
-    conduit::Node actions;
-    actions.parse(acts_str,"yaml");
-    actions[1]["extracts/e1/params/path"] = output_file;
-    //actions.print();
-
-    //
-    // Run Ascent
-    //
-    Ascent ascent;
-    ascent.open();
-    ascent.publish(data);
-    ascent.execute(actions);
-    ascent.close();
-
-    // // check that we created an image
-    // EXPECT_TRUE(check_test_image(output_file));
-    std::string msg = "An example of using the sample filter to sample a list of 3d points.";
-    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
-}
-//-----------------------------------------------------------------------------
-TEST(ascent_sample, box_3d)
-{
-    Node n;
-    ascent::about(n);
-    // only run this test if ascent was built with viskores support
-    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
-    {
-        ASCENT_INFO("Ascent viskores support disabled, skipping test");
-        return;
-    }
-
-    //
-    // Create an example mesh.
-    //
-    Node data, verify_info;
-    conduit::blueprint::mesh::examples::braid("hexs",
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              EXAMPLE_MESH_SIDE_DIM,
-                                              data);
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
-
-    ASCENT_INFO("Testing sampling a 3D box");
-
-    string output_path = prepare_output_dir();
-    string output_file = conduit::utils::join_file_path(output_path,"tout_sample_box_3d");
-
-    // remove old images before rendering
-    remove_test_image(output_file);
-
-    data["state/cycle"] = 100;
-    //
-    // Create the actions.
-    //
-    std::string acts_str = R"xyzxyz(
-- 
-  action: "add_pipelines"
-  pipelines: 
-    pl1: 
-      f1: 
-        type: "sample"
-        params: 
-          fields: ["braid"]
-          box:
-            dims:
-              i: 5.0
-              j: 5.0
-              k: 5.0
-            max:
-              x: max 
-              y: max 
-              z: max 
-            min:
-              x: 0.0
-              y: 0.0
-              z: 0.0
-          invalid_value: -10.0
-- 
-  action: "add_scenes"
-  scenes: 
-    s1:
-      plots:
-        p1:
-          type: "pseudocolor"
-          field: "braid"
-          pipeline: pl1
-- 
-  action: "add_extracts"
-  extracts: 
-    e1:
-      pipeline: pl1
-      type: "relay"
-      params:
-        protocol: "hdf5"
-)xyzxyz";
-    conduit::Node actions;
-    actions.parse(acts_str,"yaml");
-    actions[1]["scenes/s1/image_prefix"] = output_file;
-    actions[2]["extracts/e1/params/path"] = output_file;
-    //actions.print();
-
-    //
-    // Run Ascent
-    //
-    Ascent ascent;
-    ascent.open();
-    ascent.publish(data);
-    ascent.execute(actions);
-    ascent.close();
-
-    // // check that we created an image
-    // EXPECT_TRUE(check_test_image(output_file));
-    std::string msg = "An example of using the sample filter to sample points 3d box.";
-    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
-}
-
-//-----------------------------------------------------------------------------
-
-TEST(ascent_sample, test_uniform_grid_slice_along_y)
+TEST(ascent_uniform_regular_grid, test_uniform_grid_slice_along_y)
 {
     Node n;
     ascent::about(n);
@@ -495,14 +75,21 @@ TEST(ascent_sample, test_uniform_grid_slice_along_y)
   pipelines: 
     pl1: 
       f1: 
-        type: "sample"
+        type: "uniform_grid"
         params: 
           fields: ["braid"]
-          uniform_grid:
-            dims:
-              i: 10
-              j: 0
-              k: 10
+          dims: 
+            i: 10
+            j: 0
+            k: 10
+          origin: 
+            x: -10 
+            y: -10 
+            z: -10 
+          spacing:
+            dx: 1
+            dy: 1
+            dz: 1
           invalid_value: -10.0
 - 
   action: "add_scenes"
@@ -537,11 +124,11 @@ TEST(ascent_sample, test_uniform_grid_slice_along_y)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
-    std::string msg = "An example of using the sample filter with the uniform grid parameter sampling along y (y=0).";
+    std::string msg = "An example of using the uniform grid filter.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 //-----------------------------------------------------------------------------
-TEST(ascent_sample, test_uniform_grid_sample_along_x)
+TEST(ascent_uniform_regular_grid, test_uniform_grid_sample_along_x)
 {
     Node n;
     ascent::about(n);
@@ -583,14 +170,21 @@ TEST(ascent_sample, test_uniform_grid_sample_along_x)
   pipelines: 
     pl1: 
       f1: 
-        type: "sample"
+        type: "uniform_grid"
         params: 
           fields: ["braid"]
-          uniform_grid:
-            dims:
-              i: 0
-              j: 10
-              k: 10
+          dims: 
+            i: 0
+            j: 10 
+            k: 10 
+          origin: 
+            x: -10 
+            y: -10 
+            z: -10 
+          spacing:
+            dx: 1
+            dy: 1
+            dz: 1
           invalid_value: -10.0
 - 
   action: "add_scenes"
@@ -625,11 +219,11 @@ TEST(ascent_sample, test_uniform_grid_sample_along_x)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
-    std::string msg = "An example of using the sample filter with the uniform grid parameter sampling along x (x=0).";
+    std::string msg = "An example of using the uniform grid filter.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 //-----------------------------------------------------------------------------
-TEST(ascent_sample, test_uniform_grid_smaller_in_i)
+TEST(ascent_uniform_regular_grid, test_uniform_grid_smaller_in_i)
 {
     Node n;
     ascent::about(n);
@@ -671,12 +265,13 @@ TEST(ascent_sample, test_uniform_grid_smaller_in_i)
   pipelines: 
     pl1: 
       f1: 
-        type: "sample"
+        type: "uniform_grid"
         params: 
           fields: ["braid"]
-          uniform_grid:
-            dims:
-              i: 10
+          dims: 
+            i: 10 
+          spacing:
+            dx: 1
           invalid_value: -10.0
 - 
   action: "add_scenes"
@@ -707,11 +302,11 @@ TEST(ascent_sample, test_uniform_grid_smaller_in_i)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
-    std::string msg = "An example of using the sample filter with the uniform grid parameter with a smaller x dim.";
+    std::string msg = "An example of using the uniform grid filter.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 //-----------------------------------------------------------------------------
-TEST(ascent_sample, test_uniform_grid_smaller_in_j)
+TEST(ascent_uniform_regular_grid, test_uniform_grid_smaller_in_j)
 {
     Node n;
     ascent::about(n);
@@ -753,12 +348,13 @@ TEST(ascent_sample, test_uniform_grid_smaller_in_j)
   pipelines: 
     pl1: 
       f1: 
-        type: "sample"
+        type: "uniform_grid"
         params: 
           fields: ["braid"]
-          uniform_grid:
-            dims:
-              i: 10
+          dims: 
+            j: 10 
+          spacing:
+            dy: 1
           invalid_value: -10.0
 - 
   action: "add_scenes"
@@ -789,11 +385,11 @@ TEST(ascent_sample, test_uniform_grid_smaller_in_j)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
-    std::string msg = "An example of using the sample filter with the uniform grid parameter with a smaller j.";
+    std::string msg = "An example of using the uniform grid filter.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 //-----------------------------------------------------------------------------
-TEST(ascent_sample, test_uniform_grid_smaller_in_k)
+TEST(ascent_uniform_regular_grid, test_uniform_grid_smaller_in_k)
 {
     Node n;
     ascent::about(n);
@@ -835,12 +431,13 @@ TEST(ascent_sample, test_uniform_grid_smaller_in_k)
   pipelines: 
     pl1: 
       f1: 
-        type: "sample"
+        type: "uniform_grid"
         params: 
           field: "braid"
-          uniform_grid:
-            dims:
-              k: 10
+          dims: 
+            k: 10 
+          spacing:
+            dz: 1
           invalid_value: -10.0
 - 
   action: "add_scenes"
@@ -876,11 +473,11 @@ TEST(ascent_sample, test_uniform_grid_smaller_in_k)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
-    std::string msg = "An example of using the sample filter with the uniform grid parameter with a smaller k.";
+    std::string msg = "An example of using the uniform grid filter.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 //-----------------------------------------------------------------------------
-TEST(ascent_sample, test_uniform_grid_smaller_by10_than_input)
+TEST(ascent_uniform_regular_grid, test_uniform_grid_smaller_by10_than_input)
 {
     Node n;
     ascent::about(n);
@@ -921,14 +518,21 @@ TEST(ascent_sample, test_uniform_grid_smaller_by10_than_input)
   pipelines: 
     pl1: 
       f1: 
-        type: "sample"
+        type: "uniform_grid"
         params: 
           fields: ["braid"]
-          uniform_grid:
-            dims:
-              i: 10
-              j: 10
-              k: 10
+          dims: 
+            i: 10
+            j: 10
+            k: 10
+          origin: 
+            x: -10 
+            y: -10 
+            z: -10 
+          spacing:
+            dx: 1
+            dy: 1
+            dz: 1
           invalid_value: -10.0
 - 
   action: "add_scenes"
@@ -960,11 +564,11 @@ TEST(ascent_sample, test_uniform_grid_smaller_by10_than_input)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
-    std::string msg = "An example of using the sample filter with the uniform grid parameter with smaller dims.";
+    std::string msg = "An example of using the uniform grid filter.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 //-----------------------------------------------------------------------------
-TEST(ascent_sample, test_uniform_grid_equal_size_input)
+TEST(ascent_uniform_regular_grid, test_uniform_grid_equal_size_input)
 {
     Node n;
     ascent::about(n);
@@ -1006,14 +610,21 @@ TEST(ascent_sample, test_uniform_grid_equal_size_input)
   pipelines: 
     pl1: 
       f1: 
-        type: "sample"
+        type: "uniform_grid"
         params: 
           fields: ["braid"]
-          uniform_grid:
-            dims:
-              i: 20
-              j: 20
-              k: 20
+          dims: 
+            i: 20
+            j: 20
+            k: 20
+          origin: 
+            x: -10 
+            y: -10 
+            z: -10 
+          spacing:
+            dx: 1
+            dy: 1
+            dz: 1
           invalid_value: -10.0
 - 
   action: "add_scenes"
@@ -1045,11 +656,11 @@ TEST(ascent_sample, test_uniform_grid_equal_size_input)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
-    std::string msg = "An example of using the sample filter with the uniform grid parameter with dims equal to the input dims.";
+    std::string msg = "An example of using the uniform grid filter.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 //-----------------------------------------------------------------------------
-TEST(ascent_sample, test_uniform_grid_equal_size_input_increased_spacing)
+TEST(ascent_uniform_regular_grid, test_uniform_grid_equal_size_input_increased_spacing)
 {
     Node n;
     ascent::about(n);
@@ -1091,14 +702,13 @@ TEST(ascent_sample, test_uniform_grid_equal_size_input_increased_spacing)
   pipelines: 
     pl1: 
       f1: 
-        type: "sample"
+        type: "uniform_grid"
         params: 
           fields: ["braid"]
-          uniform_grid:
-            spacing:
-              x: 2.0
-              y: 2.0
-              z: 2.0
+          spacing: 
+            dx: 2.0
+            dy: 2.0
+            dz: 2.0
           invalid_value: -10.0
       f2: 
         type: "slice"
@@ -1141,11 +751,11 @@ TEST(ascent_sample, test_uniform_grid_equal_size_input_increased_spacing)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
-    std::string msg = "An example of using the sample filter with the uniform grid parameter with increased spacing.";
+    std::string msg = "An example of using the uniform grid filter.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 //-----------------------------------------------------------------------------
-TEST(ascent_sample, test_uniform_grid_equal_size_input_decreased_spacing)
+TEST(ascent_uniform_regular_grid, test_uniform_grid_equal_size_input_decreased_spacing)
 {
     Node n;
     ascent::about(n);
@@ -1187,14 +797,13 @@ TEST(ascent_sample, test_uniform_grid_equal_size_input_decreased_spacing)
   pipelines: 
     pl1: 
       f1: 
-        type: "sample"
+        type: "uniform_grid"
         params: 
           fields: ["braid"]
-          uniform_grid:
-            spacing:
-              x: 0.5
-              y: 0.5
-              z: 0.5
+          spacing: 
+            dx: 0.5
+            dy: 0.5
+            dz: 0.5
           invalid_value: -10.0
 - 
   action: "add_scenes"
@@ -1226,12 +835,12 @@ TEST(ascent_sample, test_uniform_grid_equal_size_input_decreased_spacing)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
-    std::string msg = "An example of using the sample filter with the uniform grid parameter with decreased spacing.";
+    std::string msg = "An example of using the uniform grid filter.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
 //-----------------------------------------------------------------------------
-TEST(ascent_sample, test_uniform_grid_equal_size_input_shift_origin)
+TEST(ascent_uniform_regular_grid, test_uniform_grid_equal_size_input_shift_origin)
 {
     Node n;
     ascent::about(n);
@@ -1273,14 +882,13 @@ TEST(ascent_sample, test_uniform_grid_equal_size_input_shift_origin)
   pipelines: 
     pl1: 
       f1: 
-        type: "sample"
+        type: "uniform_grid"
         params: 
           fields: ["braid"]
-          uniform_grid:
-            origin:
-              x: -5.0
-              y: -5.0
-              z: -5.0
+          origin: 
+            x: -5.0
+            y: -5.0
+            z: -5.0
           invalid_value: -10.0
       f2: 
         type: "slice"
@@ -1323,11 +931,11 @@ TEST(ascent_sample, test_uniform_grid_equal_size_input_shift_origin)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
-    std::string msg = "An example of using the sample filter with the uniform grid parameter with an origin shift.";
+    std::string msg = "An example of using the uniform grid filter.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 //-----------------------------------------------------------------------------
-TEST(ascent_sample, test_uniform_grid_equal_size_input_shift_origin_x)
+TEST(ascent_uniform_regular_grid, test_uniform_grid_equal_size_input_shift_origin_x)
 {
     Node n;
     ascent::about(n);
@@ -1369,12 +977,11 @@ TEST(ascent_sample, test_uniform_grid_equal_size_input_shift_origin_x)
   pipelines: 
     pl1: 
       f1: 
-        type: "sample"
+        type: "uniform_grid"
         params: 
           fields: ["braid"]
-          uniform_grid:
-            origin:
-              x: 0.0
+          origin: 
+            x: 0.0
           invalid_value: -10.0
       f2: 
         type: "slice"
@@ -1417,11 +1024,11 @@ TEST(ascent_sample, test_uniform_grid_equal_size_input_shift_origin_x)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
-    std::string msg = "An example of using the sample filter with the uniform grid parameter shifting the origin along x.";
+    std::string msg = "An example of using the uniform grid filter.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 //-----------------------------------------------------------------------------
-TEST(ascent_sample, test_uniform_grid_equal_size_input_shift_origin_y)
+TEST(ascent_uniform_regular_grid, test_uniform_grid_equal_size_input_shift_origin_y)
 {
     Node n;
     ascent::about(n);
@@ -1463,12 +1070,11 @@ TEST(ascent_sample, test_uniform_grid_equal_size_input_shift_origin_y)
   pipelines: 
     pl1: 
       f1: 
-        type: "sample"
+        type: "uniform_grid"
         params: 
           fields: ["braid"]
-          uniform_grid:
-            origin:
-              y: 0.0
+          origin: 
+            y: 0.0
           invalid_value: -10.0
       f2: 
         type: "slice"
@@ -1511,11 +1117,11 @@ TEST(ascent_sample, test_uniform_grid_equal_size_input_shift_origin_y)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
-    std::string msg = "An example of using the sample filter with the uniform grid parameter shifting the origin along y.";
+    std::string msg = "An example of using the uniform grid filter.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 //-----------------------------------------------------------------------------
-TEST(ascent_sample, test_uniform_grid_equal_size_input_shift_origin_z)
+TEST(ascent_uniform_regular_grid, test_uniform_grid_equal_size_input_shift_origin_z)
 {
     Node n;
     ascent::about(n);
@@ -1557,12 +1163,11 @@ TEST(ascent_sample, test_uniform_grid_equal_size_input_shift_origin_z)
   pipelines: 
     pl1: 
       f1: 
-        type: "sample"
+        type: "uniform_grid"
         params: 
           fields: ["braid"]
-          uniform_grid:
-            origin:
-              z: 0.0
+          origin: 
+            z: 0.0
           invalid_value: -10.0
       f2: 
         type: "slice"
@@ -1605,11 +1210,11 @@ TEST(ascent_sample, test_uniform_grid_equal_size_input_shift_origin_z)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
-    std::string msg = "An example of using the sample filter with the uniform grid parameter shifting the origin along z.";
+    std::string msg = "An example of using the uniform grid filter.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 //-----------------------------------------------------------------------------
-TEST(ascent_sample, test_uniform_grid_larger_by5_than_input)
+TEST(ascent_uniform_regular_grid, test_uniform_grid_larger_by5_than_input)
 {
     Node n;
     ascent::about(n);
@@ -1651,14 +1256,21 @@ TEST(ascent_sample, test_uniform_grid_larger_by5_than_input)
   pipelines: 
     pl1: 
       f1: 
-        type: "sample"
+        type: "uniform_grid"
         params: 
           fields: ["braid"]
-          uniform_grid:
-            dims:
-              i: 25
-              j: 25
-              k: 25
+          dims: 
+            i: 25
+            j: 25
+            k: 25
+          origin: 
+            x: -10 
+            y: -10 
+            z: -10 
+          spacing:
+            dx: 1
+            dy: 1
+            dz: 1
           invalid_value: -10.0
       f2: 
         type: "slice"
@@ -1701,11 +1313,11 @@ TEST(ascent_sample, test_uniform_grid_larger_by5_than_input)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
-    std::string msg = "An example of using the sample filter with the uniform grid parameter with larger dimensions.";
+    std::string msg = "An example of using the uniform grid filter.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 //-----------------------------------------------------------------------------
-TEST(ascent_sample, test_uniform_grid_larger_by5_than_input_large_invalid_value)
+TEST(ascent_uniform_regular_grid, test_uniform_grid_larger_by5_than_input_large_invalid_value)
 {
     Node n;
     ascent::about(n);
@@ -1747,14 +1359,21 @@ TEST(ascent_sample, test_uniform_grid_larger_by5_than_input_large_invalid_value)
   pipelines: 
     pl1: 
       f1: 
-        type: "sample"
+        type: "uniform_grid"
         params: 
           fields: ["braid"]
-          uniform_grid:
-            dims:
-              i: 25
-              j: 25
-              k: 25
+          dims: 
+            i: 25
+            j: 25
+            k: 25
+          origin: 
+            x: -10 
+            y: -10 
+            z: -10 
+          spacing:
+            dx: 1
+            dy: 1
+            dz: 1
           invalid_value: -100.0
       f2: 
         type: "slice"
@@ -1797,12 +1416,11 @@ TEST(ascent_sample, test_uniform_grid_larger_by5_than_input_large_invalid_value)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
-    std::string msg = "An example of using the sample filter with the uniform grid parameter and sampling past the
-                      mesh dimensions with a large invalid_value.";
+    std::string msg = "An example of using the uniform grid filter.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 //-----------------------------------------------------------------------------
-TEST(ascent_sample, test_uniform_grid_default_values)
+TEST(ascent_uniform_regular_grid, test_uniform_grid_default_values)
 {
     Node n;
     ascent::about(n);
@@ -1844,7 +1462,7 @@ TEST(ascent_sample, test_uniform_grid_default_values)
   pipelines: 
     pl1: 
       f1: 
-        type: "sample"
+        type: "uniform_grid"
         params: 
           fields: ["braid"]
 - 
@@ -1877,12 +1495,12 @@ TEST(ascent_sample, test_uniform_grid_default_values)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
-    std::string msg = "An example of using the sample filter with the uniform grid parameter with default values.";
+    std::string msg = "An example of using the uniform grid filter.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
 //-----------------------------------------------------------------------------
-TEST(ascent_sample, test_uniform_grid_multiple_fields)
+TEST(ascent_uniform_regular_grid, test_uniform_multiple_fields)
 {
     Node n;
     ascent::about(n);
@@ -1907,7 +1525,7 @@ TEST(ascent_sample, test_uniform_grid_multiple_fields)
     ASCENT_INFO("Testing sampling a smaller regular grid of hexahedron input");
 
     string output_path = prepare_output_dir();
-    string output_file = conduit::utils::join_file_path(output_path,"tout_uniform_grid_sample_multiple_fields");
+    string output_file = conduit::utils::join_file_path(output_path,"tout_uniform_multiple_fields");
 
     // remove old images before rendering
     remove_test_image(output_file);
@@ -1923,14 +1541,13 @@ TEST(ascent_sample, test_uniform_grid_multiple_fields)
   pipelines:
     pl1:
       f1:
-        type: "sample"
+        type: "uniform_grid"
         params:
           fields: ["braid","radial"]
-          uniform_grid:
-            dims:
-              i: 10
-              j: 10
-              k: 10
+          dims:
+            i: 10
+            j: 10
+            k: 10
           invalid_value: -10.0
 -
   action: "add_extracts"
@@ -1978,10 +1595,9 @@ TEST(ascent_sample, test_uniform_grid_multiple_fields)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
-    std::string msg = "An example of using the sample filter with the uniform grid parameter and multiple fields.";
+    std::string msg = "An example of using the uniform grid filter.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
-
 
 
 //-----------------------------------------------------------------------------

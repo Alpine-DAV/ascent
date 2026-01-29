@@ -103,7 +103,7 @@ viskoresProbe::Run(viskores::cont::DataSet &input)
           ds_probe.AddCoordinateSystem(viskores::cont::CoordinateSystem("coords",
                                        make_ArrayHandleSOA(m_points_xs,
                                                            m_points_ys,
-                                                           m_points_xs)));
+                                                           m_points_zs)));
       }
       else if(spatial_dims == 2)
       {

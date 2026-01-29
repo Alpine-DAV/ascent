@@ -3762,6 +3762,22 @@ VTKHSample::verify_params(const conduit::Node &params,
     res &= check_numeric("uniform_grid/spacing/dy",params, info, false);
     res &= check_numeric("uniform_grid/spacing/dz",params, info, false);
 
+    res &= check_numeric("box/dims/x",params, info, false);
+    res &= check_numeric("box/dims/y",params, info, false);
+    res &= check_numeric("box/dims/z",params, info, false);
+    res &= (check_numeric("box/min/x",params, info, false) 
+           || check_string("box/min/x",params, info, false));
+    res &= (check_numeric("box/min/y",params, info, false) 
+           || check_string("box/min/y",params, info, false));
+    res &= (check_numeric("box/min/z",params, info, false) 
+           || check_string("box/min/z",params, info, false));
+    res &= (check_numeric("box/max/x",params, info, false) 
+           || check_string("box/max/x",params, info, false));
+    res &= (check_numeric("box/max/y",params, info, false) 
+           || check_string("box/max/y",params, info, false));
+    res &= (check_numeric("box/max/z",params, info, false) 
+           || check_string("box/max/z",params, info, false));
+
     if(!params.has_child("field") && !params.has_child("fields"))
     {
       res = false;
@@ -3800,6 +3816,16 @@ VTKHSample::verify_params(const conduit::Node &params,
     valid_paths.push_back("uniform_grid/spacing/dx");
     valid_paths.push_back("uniform_grid/spacing/dy");
     valid_paths.push_back("uniform_grid/spacing/dz");
+
+    valid_paths.push_back("box/dims/i");
+    valid_paths.push_back("box/dims/j");
+    valid_paths.push_back("box/dims/k");
+    valid_paths.push_back("box/min/x");
+    valid_paths.push_back("box/min/y");
+    valid_paths.push_back("box/min/z");
+    valid_paths.push_back("box/max/x");
+    valid_paths.push_back("box/max/y");
+    valid_paths.push_back("box/max/z");
 
     std::string surprises = "";
 
@@ -3985,14 +4011,155 @@ VTKHSample::execute()
       }
       sampler.UniformGrid(v_dims, v_origin, v_spacing)
     }
+    else if(params().has_path("box"))
+    {
+      int dims[3];
+      viskores::Float64 x_min, x_max, y_min, y_max, z_min, z_max;
+      viskores::Bounds g_bounds = data.GetGlobalBounds();
+      const Node &dims_b = params()["box/dims"];
+      const Node &min_b = params()["box/min"];
+      const Node &max_b = params()["box/max"];
+
+      //Grab Dims
+      if(dims_b.has_child("i"))
+      {
+        dims[0] = dims_b["i"].to_int();
+      }
+      else
+        dims[0] = 1;
+
+      if(dims_b.has_child("j"))
+      {
+        dims[1] = dims_b["j"].to_int();
+      }
+      else
+        dims[1] = 1;
+
+      if(dims_b.has_child("k"))
+      {
+        dims[2] = dims_b["k"].to_int();
+      }
+      else
+        dims[2] = 1;
+      
+      //Grab Mins
+      if(min_b.has_child("x"))
+      {
+        if(min_b["x"].dtype().is_string())
+        {
+          if(min_b["x"].as_string() != "min")
+            ASCENT_ERROR("minimum value for x must be the string `min` or a scalar double");
+          x_min = g_bounds.X.Min;
+        }
+        else
+        {
+          x_min = min_b["x"].as_float64();
+        }
+      }
+      else //not set; default min
+      {
+        x_min = g_bounds.X.Min;
+      }
+
+      if(min_b.has_child("y"))
+      {
+        if(min_b["y"].dtype().is_string())
+        {
+          if(min_b["y"].as_string() != "min")
+            ASCENT_ERROR("minimum value for y must be the string `min` or a scalar double");
+          y_min = g_bounds.Y.Min;
+        }
+        else
+        {
+          y_min = min_b["y"].as_float64();
+        }
+      }
+      else //not set; default min
+      {
+        y_min = g_bounds.Y.Min;
+      }
+
+      if(min_b.has_child("z"))
+      {
+        if(min_b["z"].dtype().is_string())
+        {
+          if(min_b["z"].as_string() != "min")
+            ASCENT_ERROR("minimum value for z must be the string `min` or a scalar double");
+          z_min = g_bounds.Z.Min;
+        }
+        else
+        {
+          z_min = min_b["z"].as_float64();
+        }
+      }
+      else //not set; default min
+      {
+        z_min = g_bounds.Z.Min;
+      }
+
+      //Grab Maxes
+      if(max_b.has_child("x"))
+      {
+        if(max_b["x"].dtype().is_string())
+        {
+          if(max_b["x"].as_string() != "max")
+            ASCENT_ERROR("maximum value for x must be the string `max` or a scalar double");
+          x_max = g_bounds.X.Max;
+        }
+        else
+        {
+          x_max = max_b["x"].as_float64();
+        }
+      }
+      else //not set; default max
+      {
+        x_max = g_bounds.X.Max;
+      }
+
+      if(max_b.has_child("y"))
+      {
+        if(max_b["y"].dtype().is_string())
+        {
+          if(max_b["y"].as_string() != "max")
+            ASCENT_ERROR("maximum value for y must be the string `max` or a scalar double");
+          y_max = g_bounds.Y.Max;
+        }
+        else
+        {
+          y_max = max_b["y"].as_float64();
+        }
+      }
+      else //not set; default max
+      {
+        y_max = g_bounds.Y.Max;
+      }
+
+      if(max_b.has_child("z"))
+      {
+        if(max_b["z"].dtype().is_string())
+        {
+          if(max_b["z"].as_string() != "max")
+            ASCENT_ERROR("maximum value for z must be the string `max` or a scalar double");
+          z_max = g_bounds.Z.Max;
+        }
+        else
+        {
+          z_max = max_b["z"].as_float64();
+        }
+      }
+      else //not set; default max
+      {
+        z_max = g_bounds.Z.Max;
+      }
+
+      sampler.Box(dims, x_min, y_min, z_min, x_max, y_max, z_max);
+    }
 
     double invalid_value = 0.0;
     if(params().has_path("invalid_value"))
     {
       invalid_value = params()["invalid_value"].as_float64();
     }
-
-
 
     sampler.InvalidValue(invalid_value);
     sampler.Fields(field_selection);

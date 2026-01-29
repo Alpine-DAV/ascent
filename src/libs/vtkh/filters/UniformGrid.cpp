@@ -37,8 +37,8 @@ namespace vtkh
 namespace detail
 {
 
-viskores::cont::Field 
-MakeEmptyField(std::string field_name , viskores::Id field_id, Vec3f dims, viskores::cont::Field::Association assoc)
+viskores::cont::Field
+MakeEmptyField(std::string field_name , viskores::Id field_id, Vec3_f64 dims, viskores::cont::Field::Association assoc, viskores::Float64 val)
 {
   int num_values = 0;
   if(assoc == viskores::cont::Field::Association::Cells) //cell centered field
@@ -60,7 +60,7 @@ MakeEmptyField(std::string field_name , viskores::Id field_id, Vec3f dims, visko
 
   if(field_id == 0)
   {
-    std::vector<int> v_empty(num_values, 0.0);
+    std::vector<int> v_empty(num_values, (int) val);
     scalarI ah_empty = viskores::cont::make_ArrayHandle(v_empty.data(),num_values,viskores::CopyFlag::On);
     viskores::cont::Field f_empty(field_name,
                               assoc,
@@ -69,27 +69,27 @@ MakeEmptyField(std::string field_name , viskores::Id field_id, Vec3f dims, visko
   }
   else if(field_id == 1)
   {
-    std::vector<float> v_empty(num_values, 0.0);
+    std::vector<float> v_empty(num_values, (float) val);
     scalarF ah_empty = viskores::cont::make_ArrayHandle(v_empty.data(),num_values,viskores::CopyFlag::On);
     viskores::cont::Field f_empty(field_name,
-                              assoc,
-                              ah_empty);
+                                 assoc,
+                                 ah_empty);
     return f_empty;
   }
   else if(field_id == 2)
   {
-    std::vector<double> v_empty(num_values, 0.0);
+    std::vector<double> v_empty(num_values, (double) val);
     scalarD ah_empty = viskores::cont::make_ArrayHandle(v_empty.data(),num_values,viskores::CopyFlag::On);
     viskores::cont::Field f_empty(field_name,
-                              assoc,
-                              ah_empty);
+                                  assoc,
+                                  ah_empty);
     return f_empty;
   }
   else if(field_id == 3)
   {
     vec2_32 ah_empty = viskores::cont::ArrayHandle<viskores::Vec<viskores::Float32,2>>();
     // note Vec2f was declared as float64 in the viskoresProbe filter ...
-    viskores::Vec<viskores::Float32,2> empty_vec = viskores::make_Vec(0.0,0.0);
+    viskores::Vec<viskores::Float32,2> empty_vec = viskores::make_Vec((float) val, (float) val);
     for(int i = 0; i < num_values; ++i)
     {
 
@@ -103,7 +103,7 @@ MakeEmptyField(std::string field_name , viskores::Id field_id, Vec3f dims, visko
   else if(field_id == 4)
   {
     vec2_64 ah_empty = viskores::cont::ArrayHandle<viskores::Vec<viskores::Float64,2>>();
-    viskores::Vec<viskores::Float32,2> empty_vec = viskores::make_Vec(0.0,0.0);
+    viskores::Vec<viskores::Float64,2> empty_vec = viskores::make_Vec(val, val);
     for(int i = 0; i < num_values; ++i)
     {
       ah_empty.WritePortal().Set(i,empty_vec);
@@ -116,7 +116,7 @@ MakeEmptyField(std::string field_name , viskores::Id field_id, Vec3f dims, visko
   else if(field_id == 5)
   {
     vec3_32 ah_empty = viskores::cont::ArrayHandle<viskores::Vec<viskores::Float32,3>>();
-    viskores::Vec<viskores::Float32,3> empty_vec = viskores::make_Vec(0.0,0.0,0.0);
+    viskores::Vec<viskores::Float32,3> empty_vec = viskores::make_Vec((float) val, (float) val, (float) val);
     for(int i = 0; i < num_values; ++i)
     {
       ah_empty.WritePortal().Set(i,empty_vec);
@@ -131,7 +131,7 @@ MakeEmptyField(std::string field_name , viskores::Id field_id, Vec3f dims, visko
     vec3_64 ah_empty = viskores::cont::ArrayHandle<viskores::Vec<viskores::Float64,3>>();
     for(int i = 0; i < num_values; ++i)
     {
-      Vec3d empty_vec = viskores::make_Vec(0.0,0.0,0.0);
+      Vec3d empty_vec = viskores::make_Vec(val, val, val);
       ah_empty.WritePortal().Set(i,empty_vec);
     }
     viskores::cont::Field f_empty(field_name,
@@ -148,51 +148,64 @@ class GlobalReduceField
 {
   const viskores::cont::DataSet &m_dataset;
   const std::string         m_field;
-  viskores::Float64             m_invalid_value;
+  const viskores::Float64       m_invalid_value;
+  const Vec3_f64               &m_dims;
+  const viskores::Id            m_field_id;
+  viskores::cont::DataSet       &m_result;
 
 public:
-  GlobalReduceField(const viskores::cont::DataSet &dataset, const std::string &field, viskores::Float64 &invalid_value)
+  GlobalReduceField(const viskores::cont::DataSet &dataset, 
+                    const std::string &field, 
+                    const viskores::Float64 &invalid_value, 
+                    const Vec3_f64 &dims,
+                    const viskores::Id &field_id,
+                    viskores::cont::DataSet &result)
     : m_dataset(dataset),
+      m_result(result),
       m_field(field),
+      m_dims(dims),
+      m_field_id(field_id),
       m_invalid_value(invalid_value)
   {}
   ~GlobalReduceField()
   {}
 
-  viskores::cont::DataSet Reduce()
+  void Reduce()
   {
-    viskores::cont::DataSet res;
-    res.CopyStructure(m_dataset);
-    viskores::cont::Field field = m_dataset.GetField(m_field);
-    ReduceField r_field(field, m_dataset, m_invalid_value);
-    viskores::cont::Field res_field = r_field.reduce();
-    res.AddField(res_field);
+    m_result.CopyStructure(m_dataset);
+    ReduceField r_field(m_field, m_dataset, m_invalid_value, m_dims, m_field_id, m_result);
+    r_field.reduce();
 
-    return res;
+    return;
   }
 
   struct ReduceField
   {
-    viskores::cont::Field &m_input_field;
+    const std::string &m_field_name;
     const viskores::cont::DataSet &m_data_set;
-    viskores::Float64 &m_invalid_value;
+    const viskores::Float64 &m_invalid_value;
+    const Vec3_f64 &m_dims;
+    const viskores::Id &m_field_id;
+    viskores::cont::DataSet &m_result;
   
-    ReduceField(viskores::cont::Field &input_field,
+    ReduceField(const std::string &field_name,
                 const viskores::cont::DataSet &data_set, 
-                viskores::Float64 &invalid_value)
-      : m_input_field(input_field),
+                const viskores::Float64 &invalid_value,
+                const Vec3_f64 &dims, 
+                const viskores::Id &field_id, 
+                viskores::cont::DataSet &result)
+      : m_field_name(field_name),
         m_data_set(data_set),
+        m_dims(dims),
+        m_field_id(field_id),
+        m_result(result),
         m_invalid_value(invalid_value)
     {}
 
-    viskores::cont::Field reduce()
+    void 
+    reduce()
     {
-      if(m_input_field.GetName() == "HIDDEN")
-      {
-        return m_input_field;
-      }
 
-      viskores::cont::Field res;
       MPI_Comm mpi_comm = MPI_Comm_f2c(vtkh::GetMPICommHandle());
       viskores::cont::EnvironmentTracker::SetCommunicator(viskoresdiy::mpi::communicator(viskoresdiy::mpi::make_DIY_MPI_Comm(mpi_comm)));
       int par_rank;
@@ -200,19 +213,46 @@ public:
       MPI_Comm_rank(mpi_comm, &par_rank);
       MPI_Comm_size(mpi_comm, &par_size);
 
-      viskores::cont::UnknownArrayHandle uah_field = m_input_field.GetData();
+      viskores::cont::Field res;
+      viskores::cont::Field field;
 
-      viskores::cont::ArrayHandle<unsigned char> ah_mask;
-      if(m_input_field.IsPointField())
+      bool is_empty = false;
+      int num_points = m_dims[0]*m_dims[1];
+      if(m_dims[2] != 0)
+        num_points *= m_dims[2];
+
+      if(m_data_set.HasField(m_field_name))
       {
+        is_empty = false;
+        field = m_data_set.GetField(m_field_name);
+      }
+      else
+      {
+        is_empty = true;
+        field = detail::MakeEmptyField(m_field_name,  m_field_id, m_dims, viskores::cont::Field::Association::Points, m_invalid_value); 
+      }
+
+      if(m_field_name == "HIDDEN")
+      {
+        //TODO: rename this field as "valid_mask" (? "invalid_mask" ?)
+        //TODO: Figure out how HIDDEN works again so we can name it
+        m_result.AddField(field);
+        return;
+      }
+
+      viskores::cont::UnknownArrayHandle uah_field;
+      viskores::cont::ArrayHandle<unsigned char> ah_mask;
+      if (!is_empty)
+      {
+        uah_field = field.GetData();
         m_data_set.GetPointField("HIDDEN").GetData().AsArrayHandle(ah_mask);
       }
       else
       {
-        m_data_set.GetCellField("HIDDEN").GetData().AsArrayHandle(ah_mask);
+        ah_mask.AllocateAndFill(num_points, 2);
       }
       auto mask_portal = ah_mask.ReadPortal();
-      int num_points = mask_portal.GetNumberOfValues();
+
 #if _DEBUG 
       std::cerr << "NUM_POINTS: " << num_points << std::endl;
 #endif
@@ -227,6 +267,7 @@ public:
       //if a valid/owned point, declare your rank
       for(int j = 0; j < num_points; ++j)
       {
+
         if(mask_portal.Get(j) == 0)
 	      {
           l_rank_mask[j] = par_rank;
@@ -238,13 +279,13 @@ public:
 
       //combine fields
       ////send to root process
-      if(uah_field.CanConvert<scalarI>())
+      if(m_field_id == 0)
       {
 #if _DEBUG 
-        std::cerr << "In scalar int global reduce for field: " << m_input_field.GetName() << std::endl;
+        std::cerr << "In scalar int global reduce for field: " << field.GetName() << std::endl;
 #endif
         //loop through field, zero out invalid and unowned values
-        scalarI ah_field = m_input_field.GetData().AsArrayHandle<scalarI>();
+        scalarI ah_field = field.GetData().AsArrayHandle<scalarI>();
         int *local_field = GetVISKORESPointer(ah_field);
         std::vector<int> global_field(num_points,0);
 
@@ -270,23 +311,23 @@ public:
           }
           
           scalarI ah_out = viskores::cont::make_ArrayHandle(global_field.data(),num_points,viskores::CopyFlag::On);
-          viskores::cont::Field out_field(m_input_field.GetName(),
-                                      m_input_field.GetAssociation(),
-                                      ah_out);
+          viskores::cont::Field out_field(m_field_name,
+                                          viskores::cont::Field::Association::Points,
+                                          ah_out);
           res = out_field;
         }
         else
         {
-          res = m_input_field;
+          res = field;
         }
       }//end scalarI
-      else if(uah_field.CanConvert<scalarF>())
+      else if(m_field_id == 1)
       {
 #if _DEBUG 
-        std::cerr << "In scalar float global reduce for field: " << m_input_field.GetName() << std::endl;
+        std::cerr << "In scalar float global reduce for field: " << field.GetName() << std::endl;
 #endif
         //loop through field, zero out invalid value
-        scalarF ah_field = m_input_field.GetData().AsArrayHandle<scalarF>();
+        scalarF ah_field = field.GetData().AsArrayHandle<scalarF>();
         float * local_field = GetVISKORESPointer(ah_field);
         std::vector<float> global_field(num_points,0);
 
@@ -311,24 +352,27 @@ public:
             }
           }
           scalarF ah_out = viskores::cont::make_ArrayHandle(global_field.data(),num_points,viskores::CopyFlag::On);
-          viskores::cont::Field out_field(m_input_field.GetName(),
-
-                                      m_input_field.GetAssociation(),
-                                      ah_out);
+          viskores::cont::Field out_field(m_field_name,
+                                          viskores::cont::Field::Association::Points,
+                                          ah_out);
 
           res = out_field;
         }
         else
         {
-          res = m_input_field;
+          res = field;
         }
       }//end scalarF
-      else if(uah_field.CanConvert<scalarD>())
+      else if(m_field_id == 2)
       {
 #if _DEBUG 
-        std::cerr << "In scalar double global reduce for field: " << m_input_field.GetName() << std::endl;
+        std::cerr << "In scalar double global reduce for field: " << field.GetName() << std::endl;
 #endif
-        scalarD ah_field = uah_field.AsArrayHandle<scalarD>();
+        scalarD ah_field; 
+        if(is_empty)
+          ah_field.AllocateAndFill(num_points, 0.0);
+        else
+          ah_field = field.GetData().AsArrayHandle<scalarD>();
         //loop through field, zero out invalid value
         for(int i = 0; i < num_points; ++i)
         {
@@ -342,6 +386,14 @@ public:
         std::vector<double> global_field(num_points,0.0);
         MPI_Reduce(local_field, global_field.data(), num_points, MPI_DOUBLE, MPI_SUM, 0, mpi_comm);
 
+          auto assoc = field.GetAssociation();
+          const char* assoc_str = "Unknown";
+          switch (assoc) {
+            case viskores::cont::Field::Association::Points:       assoc_str = "Points"; break;
+            case viskores::cont::Field::Association::Cells:        assoc_str = "Cells"; break;
+            case viskores::cont::Field::Association::WholeDataSet: assoc_str = "WholeDataSet"; break;
+            case viskores::cont::Field::Association::Any:         assoc_str = "Any"; break; // if present in your VTK-m
+          }
         if(par_rank == 0)
         {
           for(int i = 0; i < num_points; ++i)
@@ -353,26 +405,24 @@ public:
           }
           
           scalarD ah_out = viskores::cont::make_ArrayHandle(global_field.data(),num_points,viskores::CopyFlag::On);
-          viskores::cont::Field out_field(m_input_field.GetName(),
-                                      m_input_field.GetAssociation(),
-                                      ah_out);
+          viskores::cont::Field out_field(m_field_name,
+                                          viskores::cont::Field::Association::Points,
+                                          ah_out);
           res = out_field;
         }
         else
         {
-          res = m_input_field;
+          res = field;
         }
       } //end scalarD
-      else if(uah_field.CanConvert<vec2_32>())
+      else if(m_field_id == 3)
       {
         //loop through field, zero out invalid value
-        vec2_32 ah_field = m_input_field.GetData().AsArrayHandle<vec2_32>();
+        vec2_32 ah_field = field.GetData().AsArrayHandle<vec2_32>();
         std::vector<float> local_x_points(num_points,(float)0.0);
         std::vector<float> local_y_points(num_points,(float)0.0);
         std::vector<float> global_x_points(num_points,(float)0.0);
         std::vector<float> global_y_points(num_points,(float)0.0);
-
-	      //std::cerr <<  	ah_field.ReadPortal().Get(i) << ": " << ah_field.ReadPortal().Get(i)[0] << " " << ah_field.ReadPortal().Get(i)[1] << " | ";
 
         for(int i = 0; i < num_points; ++i)
         {
@@ -404,26 +454,24 @@ public:
               ah_out.WritePortal().Set(i,points_vec);
             }
 
-            viskores::cont::Field out_field(m_input_field.GetName(),
-                                        m_input_field.GetAssociation(),
-                                        ah_out);
+            viskores::cont::Field out_field(m_field_name,
+                                            viskores::cont::Field::Association::Points,
+                                            ah_out);
             res = out_field;
         }
         else
         {
-          res = m_input_field;
+          res = field;
         }
       }//end vec2_32
-      else if(uah_field.CanConvert<vec2_64>())
+      else if(m_field_id == 4)
       {
         //loop through field, zero out invalid value
-        vec2_64 ah_field = m_input_field.GetData().AsArrayHandle<vec2_64>();
+        vec2_64 ah_field = field.GetData().AsArrayHandle<vec2_64>();
         std::vector<double> local_x_points(num_points,(double)0.0);
         std::vector<double> local_y_points(num_points,(double)0.0);
         std::vector<double> global_x_points(num_points,(double)0.0);
         std::vector<double> global_y_points(num_points,(double)0.0);
-
-	      //std::cerr <<  	ah_field.ReadPortal().Get(i) << ": " << ah_field.ReadPortal().Get(i)[0] << " " << ah_field.ReadPortal().Get(i)[1] << " | ";
 
         for(int i = 0; i < num_points; ++i)
         {
@@ -453,26 +501,26 @@ public:
             viskores::Vec<viskores::Float64,2> points_vec = viskores::make_Vec(global_x_points[i],global_y_points[i]);
             ah_out.WritePortal().Set(i,points_vec);
           }
-          viskores::cont::Field out_field(m_input_field.GetName(),
-                                      m_input_field.GetAssociation(),
-                                      ah_out);
+          viskores::cont::Field out_field(m_field_name,
+                                          viskores::cont::Field::Association::Points,
+                                          ah_out);
 			      
           res = out_field;
         }
         else
-          res = m_input_field;
+          res = field;
       }//end vec2_64
-      else if(uah_field.CanConvert<vec3_32>())
+      else if(m_field_id == 5)
       {
         //loop through field, zero out invalid value
-        vec3_32 ah_field = m_input_field.GetData().AsArrayHandle<vec3_32>();
+        vec3_32 ah_field = field.GetData().AsArrayHandle<vec3_32>();
         std::vector<float> local_x_points(num_points,0);
         std::vector<float> local_y_points(num_points,0);
         std::vector<float> local_z_points(num_points,0);
         std::vector<float> global_x_points(num_points,0);
         std::vector<float> global_y_points(num_points,0);
         std::vector<float> global_z_points(num_points,0);
-	      //std::cerr << ah_field.ReadPortal().Get(i) << ": " << ah_field.ReadPortal().Get(i)[0] << " " << ah_field.ReadPortal().Get(i)[1] << " | ";
+
         for(int i = 0; i < num_points; ++i)
         {
           //if we do not own the point, set it to zero
@@ -508,29 +556,27 @@ public:
             ah_out.WritePortal().Set(i,points_vec);
           }
         
-          viskores::cont::Field out_field(m_input_field.GetName(),
-                                      m_input_field.GetAssociation(),
-                                      ah_out);
+          viskores::cont::Field out_field(m_field_name,
+                                          viskores::cont::Field::Association::Points,
+                                          ah_out);
 
           res = out_field;
         }
         else
         {
-          res = m_input_field;
+          res = field;
         }
       }//end vec3_32
-      else if(uah_field.CanConvert<vec3_64>())
+      else if(m_field_id == 6)
       {
         //loop through field, zero out invalid value
-        vec3_64 ah_field = m_input_field.GetData().AsArrayHandle<vec3_64>();
+        vec3_64 ah_field = field.GetData().AsArrayHandle<vec3_64>();
         std::vector<double> local_x_points(num_points,0);
         std::vector<double> local_y_points(num_points,0);
         std::vector<double> local_z_points(num_points,0);
         std::vector<double> global_x_points(num_points,0);
         std::vector<double> global_y_points(num_points,0);
         std::vector<double> global_z_points(num_points,0);
-
-      	//std::cerr <<  	ah_field.ReadPortal().Get(i) << ": " << ah_field.ReadPortal().Get(i)[0] << " " << ah_field.ReadPortal().Get(i)[1] << " | ";
 
         for(int i = 0; i < num_points; ++i)
         {
@@ -566,23 +612,25 @@ public:
                                                                    global_z_points[i]);
             ah_out.WritePortal().Set(i,points_vec);
           }
-          viskores::cont::Field out_field(m_input_field.GetName(),
-                                      m_input_field.GetAssociation(),
+          viskores::cont::Field out_field(m_field_name,
+                                      viskores::cont::Field::Association::Points,
                                       ah_out);
 
           res = out_field;
         }
         else
         {
-          res = m_input_field;
+          res = field;
         }
       }//end vec3_64
       else
       {
-          return m_input_field;
+        m_result.AddField(field);
+        return;
       }
 
-      return res;
+      m_result.AddField(res);
+      return;
     }
   }; //struct reduceFields
 
@@ -690,7 +738,7 @@ public:
         //tie breaker will be higher domain number 
 	      //which we loop through as we ViskoresProbe/sample
         if((tmp_mask_portal.Get(i) == 0)) //incoming domain
-        {
+                {
           local_field[i] = tmp_field[i];
           local_data.WritePortal().Set(i,tmp_field[i]);
           w_local_mask_portal.Set(i,0);
@@ -853,7 +901,8 @@ UniformGrid::DoExecute()
 #endif
 
   std::vector<viskores::Id> domain_ids = this->m_input->GetDomainIds(); 
-  const int num_domains = domain_ids.size();
+  int num_domains = domain_ids.size();
+  bool is_empty = this->m_input->IsEmpty();
 
 #if _DEBUG 
   std::cerr << "m_dims: " << m_dims[0] << " " << m_dims[1] << " " << m_dims[2] << std::endl;
@@ -869,7 +918,6 @@ UniformGrid::DoExecute()
   for(int i = 0; i < num_domains; ++i)
   {
     viskores::cont::DataSet dom;
-    
     if(this->m_input->HasDomainId(domain_ids[i]))
     {
       dom = this->m_input->GetDomainById(domain_ids[i]);
@@ -934,8 +982,11 @@ UniformGrid::DoExecute()
   
   for(const auto &field_name : m_fields)
   {
-    vtkh::detail::GlobalReduceField g_reducefield(local_res, field_name, m_invalid_value);
-    viskores::cont::DataSet reduced = g_reducefield.Reduce();
+    viskores::cont::DataSet reduced;
+    bool valid_field;
+    viskores::Id field_id = this->m_input->GetFieldType(field_name, valid_field);
+    vtkh::detail::GlobalReduceField g_reducefield(local_res, field_name, m_invalid_value, m_dims, field_id, reduced);
+    g_reducefield.Reduce();
     viskores::cont::Field reduced_field = reduced.GetField(field_name);
     reduced_output.AddField(reduced_field);
   }
@@ -955,7 +1006,6 @@ UniformGrid::DoExecute()
       this->m_output->PrintSummary(std::cerr); 
       std::cerr << "FINAL OUTPUT END---------------------" << std::endl;
     }
-    std::cerr <<" PAR RANK " << par_rank << " at the very end" << std::endl;
 #endif //end _DEBUG
 #else //serial
   this->m_output->AddDomain(local_res,0);
@@ -975,19 +1025,19 @@ UniformGrid::GetName() const
 }
 
 void
-UniformGrid::Dims(const Vec3f dims)
+UniformGrid::Dims(const Vec3_f64 dims)
 {
   m_dims = dims;
 }
 
 void
-UniformGrid::Origin(const Vec3f origin)
+UniformGrid::Origin(const Vec3_f64 origin)
 {
   m_origin = origin;
 }
 
 void
-UniformGrid::Spacing(const Vec3f spacing)
+UniformGrid::Spacing(const Vec3_f64 spacing)
 {
   m_spacing = spacing;
 }
