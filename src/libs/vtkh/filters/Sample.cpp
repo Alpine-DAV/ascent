@@ -19,6 +19,8 @@
 #include <viskores/worklet/WorkletMapField.h>
 #include <viskores/worklet/DispatcherMapField.h>
 
+/*
+reminder:
 using Scalar_i32_hnd = viskores::cont::ArrayHandle<viskores::Int32>;
 using Scalar_f32_hnd = viskores::cont::ArrayHandle<viskores::Float32>;
 using Scalar_f64_hnd = viskores::cont::ArrayHandle<viskores::Float64>;
@@ -34,7 +36,7 @@ using Vec3_f32    = viskores::Vec<viskores::Float32, 3>;
 
 using Vec2_f64    = viskores::Vec<viskores::Float64, 2>;
 using Vec3_f64    = viskores::Vec<viskores::Float64, 3>;
-
+*/
 
 #define _DEBUG 0
 
@@ -853,7 +855,8 @@ public:
 
 //---------------------------------------------------------------------------//
 Sample::Sample()
-	: m_invalid_value(std::numeric_limits<double>::min())
+	: m_invalid_value(std::numeric_limits<double>::min()),
+    m_is_points(false)
 {
 
 }
@@ -918,9 +921,17 @@ Sample::DoExecute()
       dom = this->m_input->GetDomainById(domain_ids[i]);
       for(const auto &field_name : m_fields)
       {
-        //Uniform Grid Sample
         vtkh::viskoresProbe probe;
-        probe.setPoints(m_points_xs,m_points_ys,m_points_zs);
+        if(m_is_points)
+        {
+          probe.setPoints(m_points_xs,m_points_ys,m_points_zs);
+        }
+        else
+        {
+          probe.setBoxDims(m_dims);
+          probe.setBoxOrigin(m_origin);
+          probe.setBoxSpacing(m_spacing);
+        }
         probe.setInvalidValue(m_invalid_value);
         auto dataset = probe.Run(dom);
         viskores::cont::Field tmp_field = dataset.GetField(field_name);
@@ -1033,6 +1044,7 @@ Sample::Line(int num_samples,
              double z_end)
 
 {
+    m_is_points = true;
     m_num_samples = num_samples;
 
     int line_spatial_num_points = 3;
@@ -1085,6 +1097,7 @@ Sample::Box(int *num_points,
             double z_end)
 
 {
+  m_is_points = true;
   int m_num_samples = num_points[0]*num_points[1]*num_points[2];
 
   // alloc array handles to hold num_samples
@@ -1142,10 +1155,24 @@ Sample::Points(viskores::cont::ArrayHandle<viskores::Float64> xs,
                viskores::cont::ArrayHandle<viskores::Float64> ys,
                viskores::cont::ArrayHandle<viskores::Float64> zs)
 {
+  m_is_points = true;
   m_num_samples = xs.GetNumberOfValues();
   m_points_xs = xs;
   m_points_ys = ys;
   m_points_zs = zs;
+}
+
+//---------------------------------------------------------------------------//
+void
+Sample::UniformGrid(const Vec3_f64 dims,
+                    const Vec3_f64 origin,
+                    const Vec3_f64 spacing)
+{
+  m_is_points = false; 
+  m_dims = dims;
+  m_origin = origin;
+  m_spacing = spacing;
+
 }
 
 //---------------------------------------------------------------------------//

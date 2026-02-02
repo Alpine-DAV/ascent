@@ -3807,6 +3807,7 @@ VTKHSample::verify_params(const conduit::Node &params,
     valid_paths.push_back("points/y");
     valid_paths.push_back("points/z");
 
+    valid_paths.push_back("uniform_grid");
     valid_paths.push_back("uniform_grid/dims/i");
     valid_paths.push_back("uniform_grid/dims/j");
     valid_paths.push_back("uniform_grid/dims/k");
@@ -3970,14 +3971,14 @@ VTKHSample::execute()
       viskores::Float64 y_extents = d_bounds.Y.Length() + 1; //setting num points
       viskores::Float64 z_extents = d_bounds.Z.Length() + 1; //(not cells) in each dim
   
-      using Vec3f = viskores::Vec<viskores::Float64,3>;
-      Vec3f v_dims    = {x_extents, y_extents, z_extents}; 
-      Vec3f v_origin  = {d_bounds.X.Min,d_bounds.Y.Min,d_bounds.Z.Min};
-      Vec3f v_spacing = {1.,1.,1.};
+      using Vec3_f64 = viskores::Vec<viskores::Float64,3>;
+      Vec3_f64 v_dims    = {x_extents, y_extents, z_extents}; 
+      Vec3_f64 v_origin  = {d_bounds.X.Min,d_bounds.Y.Min,d_bounds.Z.Min};
+      Vec3_f64 v_spacing = {1.,1.,1.};
   
-      if(params().has_path("dims"))
+      if(params().has_path("uniform_grid/dims"))
       {
-        const Node &n_dims = params()["dims"];
+        const Node &n_dims = params()["uniform_grid/dims"];
         if(n_dims.has_path("i"))
           v_dims[0] = get_float64(n_dims["i"], data_object);
         if(n_dims.has_path("j"))
@@ -3988,10 +3989,14 @@ VTKHSample::execute()
         v_dims[0] = (v_dims[0] > 0) ? (v_dims[0]) : 1;
         v_dims[1] = (v_dims[1] > 0) ? (v_dims[1]) : 1;
         v_dims[2] = (v_dims[2] > 0) ? (v_dims[2]) : 1;
+
+        v_spacing[0] = x_extents/v_dims[0];
+        v_spacing[1] = y_extents/v_dims[1];
+        v_spacing[2] = z_extents/v_dims[2];
       }
-      if(params().has_path("origin"))
+      if(params().has_path("uniform_grid/origin"))
       {
-        const Node &n_origin = params()["origin"];
+        const Node &n_origin = params()["uniform_grid/origin"];
         if(n_origin.has_path("x"))
           v_origin[0] = get_float64(n_origin["x"], data_object);
         if(n_origin.has_path("y"))
@@ -3999,17 +4004,21 @@ VTKHSample::execute()
         if(n_origin.has_path("z"))
           v_origin[2] = get_float64(n_origin["z"], data_object);
       }
-      if(params().has_path("spacing"))
+      if(params().has_path("uniform_grid/spacing"))
       {
-        const Node &n_spacing = params()["spacing"];
+        const Node &n_spacing = params()["uniform_grid/spacing"];
         if(n_spacing.has_path("dx"))
           v_spacing[0] = get_float64(n_spacing["dx"], data_object);
         if(n_spacing.has_path("dy"))
           v_spacing[1] = get_float64(n_spacing["dy"], data_object);
         if(n_spacing.has_path("dz"))
           v_spacing[2] = get_float64(n_spacing["dz"], data_object);
+
+        v_spacing[0] = (v_spacing[0] > 0) ? (v_spacing[0]) : 1;
+        v_spacing[1] = (v_spacing[1] > 0) ? (v_spacing[1]) : 1;
+        v_spacing[2] = (v_spacing[2] > 0) ? (v_spacing[2]) : 1;
       }
-      sampler.UniformGrid(v_dims, v_origin, v_spacing)
+      sampler.UniformGrid(v_dims, v_origin, v_spacing);
     }
     else if(params().has_path("box"))
     {
