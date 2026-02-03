@@ -228,10 +228,8 @@ public:
         field = detail::MakeEmptyField(m_field_name,  m_field_id, m_num_points, viskores::cont::Field::Association::Points, m_invalid_value); 
       }
 
-      if(m_field_name == "HIDDEN")
+      if(m_field_name == "valid_mask")
       {
-        //TODO: rename this field as "valid_mask" (? "invalid_mask" ?)
-        //TODO: Figure out how HIDDEN works again so we can name it
         m_result.AddField(field);
         return;
       }
@@ -241,7 +239,7 @@ public:
       if (!is_empty)
       {
         uah_field = field.GetData();
-        m_data_set.GetPointField("HIDDEN").GetData().AsArrayHandle(ah_mask);
+        m_data_set.GetPointField("valid_mask").GetData().AsArrayHandle(ah_mask);
       }
       else
       {
@@ -957,7 +955,7 @@ Sample::DoExecute()
         if(!local_res.HasCoordinateSystem(cs_name))
         {
           local_res.CopyStructure(dataset);
-          local_res.AddField(valid_field);
+          local_res.AddField("valid_mask", valid_field.GetAssociation(), valid_field.GetData());
         }
         if(!local_res.HasField(field_name))
         {
