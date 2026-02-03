@@ -1,0 +1,48 @@
+#An example of using the sample filter with the uniform grid parameter and sampling past the                       mesh dimensions with a large invalid_value.
+
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "sample"
+        params: 
+          fields: 
+            - "braid"
+          uniform_grid: 
+            dims: 
+              i: 25
+              j: 25
+              k: 25
+            origin: 
+              x: -10
+              y: -10
+              z: -10
+            spacing: 
+              dx: 1
+              dy: 1
+              dz: 1
+          invalid_value: -100.0
+      f2: 
+        type: "slice"
+        params: 
+          point: 
+            x: 0.0
+            y: 0.0
+            z: 0.0
+          normal: 
+            x: 0.0
+            y: 0.0
+            z: 1.0
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "braid"
+          pipeline: "pl1"
+      renders: 
+        r1: 
+          image_prefix: "/home/user/sandbox/ascent/scripts/build_ascent/build/ascent-checkout/tests/_output/tout_uniform_larger_by5_grid_with_invalid_value"

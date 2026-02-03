@@ -1,0 +1,30 @@
+#An example of using the sample filter with the uniform grid parameter with a smaller k.
+
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "sample"
+        params: 
+          field: "braid"
+          uniform_grid: 
+            dims: 
+              k: 10
+            spacing: 
+              dz: 1
+          invalid_value: -10.0
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "braid"
+          pipeline: "pl1"
+      renders: 
+        r1: 
+          camera: 
+            azimuth: 90
+          image_prefix: "/home/user/sandbox/ascent/scripts/build_ascent/build/ascent-checkout/tests/_output/tout_uniform_smaller_in_k"
