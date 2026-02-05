@@ -111,6 +111,10 @@ Filter::init(Graph *g,
         n_iface["port_names"] = DataType::empty();
     }
 
+    if( !n_iface.has_child("param_schema") )
+    {
+        n_iface["param_schema"] = DataType::empty();
+    }
 
     params().update(default_params());
     params().update(p);
@@ -135,6 +139,13 @@ const Node &
 Filter::default_params() const
 {
     return properties()["interface/default_params"];
+}
+
+//-----------------------------------------------------------------------------
+const Node &
+Filter::param_schema() const
+{
+    return properties()["interface/param_schema"];
 }
 
 //-----------------------------------------------------------------------------
@@ -209,10 +220,25 @@ Filter::params()
 
 //-----------------------------------------------------------------------------
 bool
-Filter::verify_params(const Node &, // unused: params,
+Filter::verify_params(const Node &params,
                       Node &info)
 {
     info.reset();
+
+    std::cout << "\nSlice Properties!!" << std::endl;
+    param_schema().print();
+
+    std::cout << "\nParams!!" << std::endl;
+    params.print();
+
+    std::string surprises = "";// surprise_check(param_schema(), params);
+
+    if(surprises != "")
+    {
+      info["errors"].append() = surprises;
+      return false;
+    }
+
     return true;
 }
 

@@ -58,6 +58,42 @@ bool is_valid_expression(const std::string expr, std::string &err_msg)
   return res;
 }
 
+conduit::Node number_schema()
+{
+  conduit::Node n;
+  n["type"] = "number";
+  return n;
+}
+
+conduit::Node string_schema()
+{
+  conduit::Node n;
+  n["type"] = "string";
+  return n;
+}
+
+conduit::Node vec3_schema(const std::string var1, const std::string var2, const std::string var3)
+{
+  conduit::Node n;
+  n["type"] = "object";
+  n["additionalProperties"] = false;
+
+  n["properties/" + var1].set(number_schema());
+  n["properties/" + var2].set(number_schema());
+  n["properties/" + var3].set(number_schema());
+
+  n["required"].append() = var1;
+  n["required"].append() = var2;
+  n["required"].append() = var3;
+
+  return n;
+}
+
+conduit::Node vec3_schema()
+{
+  return vec3_schema("x", "y", "z");
+}
+
 //-----------------------------------------------------------------------------
 bool
 check_numeric(const std::string path,
@@ -318,6 +354,44 @@ surprise_check(const std::vector<std::string> &valid_paths,
       ss<<"Surprise parameter '"<<paths[i]<<"'\n";
     }
   }
+
+  return ss.str();
+}
+
+//-----------------------------------------------------------------------------
+std::string
+surprise_check(const conduit::Node &properties,
+               const conduit::Node &params)
+{
+  // only children can surprise us
+  if(params.number_of_children() == 0)
+  {
+      return "";
+  }
+
+  std::stringstream ss;
+//   std::vector<std::string> paths;
+//   path_helper(paths, params);
+//   const int num_paths = static_cast<int>(paths.size());
+// //   const int num_valid_paths = static_cast<int>(properties.size());
+//   std::string curr_path = params.path() == "" ? "" :params.path() + "/";
+//   for(int i = 0; i < num_paths; ++i)
+//   {
+//     bool found = false;
+//     for(int f = 0; f < num_valid_paths; ++f)
+//     {
+//       if(curr_path + valid_paths[f] == paths[i])
+//       {
+//         found = true;
+//         break;
+//       }
+//     }
+
+//     if(!found)
+//     {
+//       ss<<"Surprise parameter '"<<paths[i]<<"'\n";
+//     }
+//   }
 
   return ss.str();
 }

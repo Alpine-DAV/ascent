@@ -41,6 +41,16 @@ namespace runtime
 namespace filters
 {
 
+conduit::Node ASCENT_API number_schema();
+
+conduit::Node ASCENT_API string_schema();
+
+conduit::Node ASCENT_API vec3_schema();
+
+conduit::Node ASCENT_API vec3_schema(const std::string var1,
+                                     const std::string var2,
+                                     const std::string var3);
+
 bool ASCENT_API check_numeric(const std::string path,
                               const conduit::Node &params,
                               conduit::Node &info,
@@ -76,6 +86,9 @@ void ASCENT_API path_helper(std::vector<std::string> &paths,
                             const std::string path_prefix);
 
 std::string ASCENT_API surprise_check(const std::vector<std::string> &valid_paths,
+                                      const conduit::Node &node);
+
+std::string ASCENT_API surprise_check(const conduit::Node &properties,
                                       const conduit::Node &node);
 //
 // Ignore paths only ignores top level paths, differing lower level

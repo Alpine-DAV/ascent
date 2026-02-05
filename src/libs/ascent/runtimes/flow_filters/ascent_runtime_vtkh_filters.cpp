@@ -806,6 +806,102 @@ VTKHSlice::declare_interface(Node &i)
     i["type_name"]   = "vtkh_slice";
     i["port_names"].append() = "in";
     i["output_port"] = "true";
+
+    // ----------- Define Param Schema -----------
+    conduit::Node vtkhslice_schema;
+    vtkhslice_schema["type"] = "object";
+    vtkhslice_schema["additionalProperties"] = false;
+    vtkhslice_schema["constraints/exclusiveChildren"].append() = "sphere";
+    vtkhslice_schema["constraints/exclusiveChildren"].append() = "cylinder";
+    vtkhslice_schema["constraints/exclusiveChildren"].append() = "box";
+    vtkhslice_schema["constraints/exclusiveChildren"].append() = "plane";
+    vtkhslice_schema["constraints/exclusiveChildren"].append() = "point";
+    vtkhslice_schema["constraints/allowNoneInExclusiveGroup"] = false;
+
+    // optional
+    vtkhslice_schema["properties/topology"].set(string_schema());
+
+    // --- sphere ---
+    conduit::Node sphere_schema;
+    sphere_schema["type"] = "object";
+    sphere_schema["additionalProperties"] = false;
+    sphere_schema["properties/center"].set(vec3_schema());
+    sphere_schema["properties/radius"].set(number_schema());
+    sphere_schema["required"].append() = "center";
+    sphere_schema["required"].append() = "radius";
+    vtkhslice_schema["properties/sphere"].set(sphere_schema);
+
+    // --- cylinder ---
+    conduit::Node cylinder_schema;
+    cylinder_schema["type"] = "object";
+    cylinder_schema["additionalProperties"] = false;
+    cylinder_schema["properties/center"].set(vec3_schema());
+    cylinder_schema["properties/axis"].set(vec3_schema());
+    cylinder_schema["properties/radius"].set(number_schema());
+    cylinder_schema["required"].append() = "center";
+    cylinder_schema["required"].append() = "axis";
+    cylinder_schema["required"].append() = "radius";
+    vtkhslice_schema["properties/cylinder"].set(cylinder_schema);
+
+    // --- box ---
+    conduit::Node box_schema;
+    box_schema["type"] = "object";
+    box_schema["additionalProperties"] = false;
+    box_schema["properties/min"].set(vec3_schema());
+    box_schema["properties/max"].set(vec3_schema());
+    box_schema["required"].append() = "min";
+    box_schema["required"].append() = "max";
+    vtkhslice_schema["properties/box"].set(box_schema);
+
+    // --- plane ---
+    conduit::Node plane_schema;
+    plane_schema["type"] = "object";
+    plane_schema["additionalProperties"] = false;
+    plane_schema["properties/point"].set(vec3_schema());
+    plane_schema["properties/normal"].set(vec3_schema());
+    plane_schema["required"].append() = "point";
+    plane_schema["required"].append() = "normal";
+    vtkhslice_schema["properties/plane"].set(plane_schema);
+
+    // --- old point style
+    conduit::Node point_schema;
+    point_schema["type"] = "object";
+    point_schema["additionalProperties"] = false;
+
+    point_schema["properties/x"].set(number_schema());
+    point_schema["properties/y"].set(number_schema());
+    point_schema["properties/z"].set(number_schema());
+    point_schema["properties/x_offset"].set(number_schema());
+    point_schema["properties/y_offset"].set(number_schema());
+    point_schema["properties/z_offset"].set(number_schema());
+
+    // Option A: explicit
+    conduit::Node option_1_explicit;
+    option_1_explicit["type"] = "object";
+    option_1_explicit["required"].append() = "x";
+    option_1_explicit["required"].append() = "y";
+    option_1_explicit["required"].append() = "z";
+    option_1_explicit["constraints/forbid"].append() = "x_offset";
+    option_1_explicit["constraints/forbid"].append() = "y_offset";
+    option_1_explicit["constraints/forbid"].append() = "z_offset";
+    point_schema["oneOf"].append().set(option_1_explicit);
+
+    // Option B: offset
+    conduit::Node option_2_offset;
+    option_2_offset["type"] = "object";
+    option_2_offset["required"].append() = "x_offset";
+    option_2_offset["required"].append() = "y_offset";
+    option_2_offset["required"].append() = "z_offset";
+    option_2_offset["constraints/forbid"].append() = "x";
+    option_2_offset["constraints/forbid"].append() = "y";
+    option_2_offset["constraints/forbid"].append() = "z";
+    point_schema["oneOf"].append().set(option_2_offset);
+
+    vtkhslice_schema["properties/point"].set(point_schema);
+    vtkhslice_schema["properties/normal"].set(vec3_schema());
+    vtkhslice_schema["constraints/dependencies/normal"].append() = "point";
+    
+    i["param_schema"].set(vtkhslice_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -815,129 +911,21 @@ VTKHSlice::verify_params(const conduit::Node &params,
 {
     info.reset();
 
-    bool res = true;
+    std::cout << "\nSlice Properties!!" << std::endl;
+    param_schema().print();
 
-    res &= check_string("topology",params, info, false);
-    if(params.has_child("sphere"))
-    {
-        res = check_numeric("sphere/center/x",params, info, true, true) && res;
-        res = check_numeric("sphere/center/y",params, info, true, true) && res;
-        res = check_numeric("sphere/center/z",params, info, true, true) && res;
-        res = check_numeric("sphere/radius",params, info, true, true) && res;
-    }
-    else if(params.has_child("cylinder"))
-    {
-        res = check_numeric("cylinder/center/x",params, info, true, true) && res;
-        res = check_numeric("cylinder/center/y",params, info, true, true) && res;
-        res = check_numeric("cylinder/center/z",params, info, true, true) && res;
-        res = check_numeric("cylinder/axis/x",params, info, true, true) && res;
-        res = check_numeric("cylinder/axis/y",params, info, true, true) && res;
-        res = check_numeric("cylinder/axis/z",params, info, true, true) && res;
-        res = check_numeric("cylinder/radius",params, info, true, true) && res;
-    }
-    else if(params.has_child("box"))
-    {
-        res = check_numeric("box/min/x",params, info, true, true) && res;
-        res = check_numeric("box/min/y",params, info, true, true) && res;
-        res = check_numeric("box/min/z",params, info, true, true) && res;
-        res = check_numeric("box/max/x",params, info, true, true) && res;
-        res = check_numeric("box/max/y",params, info, true, true) && res;
-        res = check_numeric("box/max/z",params, info, true, true) && res;
-    }
-    else if(params.has_child("plane"))
-    {
-        res = check_numeric("plane/point/x",params, info, true, true) && res;
-        res = check_numeric("plane/point/y",params, info, true, true) && res;
-        res = check_numeric("plane/point/z",params, info, true, true) && res;
-        res = check_numeric("plane/normal/x",params, info, true, true) && res;
-        res = check_numeric("plane/normal/y",params, info, true, true) && res;
-        res = check_numeric("plane/normal/z",params, info, true, true) && res;
-    }
+    std::cout << "\nParams!!" << std::endl;
+    params.print();
 
-    // old style plane
-    if(params.has_path("point/x_offset") && params.has_path("point/x"))
-    {
-      info["errors"]
-        .append() = "Cannot specify the plane point as both an offset and explicit point";
-      res = false;
-    }
-
-    if(params.has_path("point/x"))
-    {
-      res &= check_numeric("point/x",params, info, true, true);
-      res = check_numeric("point/y",params, info, true, true) && res;
-      res = check_numeric("point/z",params, info, true, true) && res;
-    }
-    else if(params.has_path("point/x_offset"))
-    {
-      res &= check_numeric("point/x_offset",params, info, true, true);
-      res = check_numeric("point/y_offset",params, info, true, true) && res;
-      res = check_numeric("point/z_offset",params, info, true, true) && res;
-    }
-    // else
-    // {
-    //   info["errors"]
-    //     .append() = "Slice must specify a point for the plane.";
-    //   res = false;
-    // }
-    if(params.has_path("normal/x"))
-    {
-        res = check_numeric("normal/x",params, info, true, true) && res;
-        res = check_numeric("normal/y",params, info, true, true) && res;
-        res = check_numeric("normal/z",params, info, true, true) && res;
-    }
-
-    std::vector<std::string> valid_paths;
-    // old style plane
-    valid_paths.push_back("point/x");
-    valid_paths.push_back("point/y");
-    valid_paths.push_back("point/z");
-    valid_paths.push_back("point/x_offset");
-    valid_paths.push_back("point/y_offset");
-    valid_paths.push_back("point/z_offset");
-    valid_paths.push_back("normal/x");
-    valid_paths.push_back("normal/y");
-    valid_paths.push_back("normal/z");
-    valid_paths.push_back("topology");
-
-    // sphere
-    valid_paths.push_back("sphere/center/x");
-    valid_paths.push_back("sphere/center/y");
-    valid_paths.push_back("sphere/center/z");
-    valid_paths.push_back("sphere/radius");
-    // cylinder
-    valid_paths.push_back("cylinder/center/x");
-    valid_paths.push_back("cylinder/center/y");
-    valid_paths.push_back("cylinder/center/z");
-    valid_paths.push_back("cylinder/axis/x");
-    valid_paths.push_back("cylinder/axis/y");
-    valid_paths.push_back("cylinder/axis/z");
-    valid_paths.push_back("cylinder/radius");
-    // box
-    valid_paths.push_back("box/min/x");
-    valid_paths.push_back("box/min/y");
-    valid_paths.push_back("box/min/z");
-    valid_paths.push_back("box/max/x");
-    valid_paths.push_back("box/max/y");
-    valid_paths.push_back("box/max/z");
-    // new style plane
-    valid_paths.push_back("plane/point/x");
-    valid_paths.push_back("plane/point/y");
-    valid_paths.push_back("plane/point/z");
-    valid_paths.push_back("plane/normal/x");
-    valid_paths.push_back("plane/normal/y");
-    valid_paths.push_back("plane/normal/z");
-
-
-    std::string surprises = surprise_check(valid_paths, params);
+    std::string surprises = surprise_check(param_schema(), params);
 
     if(surprises != "")
     {
-      res = false;
       info["errors"].append() = surprises;
+      return false;
     }
 
-    return res;
+    return true;
 }
 
 //-----------------------------------------------------------------------------
