@@ -905,30 +905,6 @@ VTKHSlice::declare_interface(Node &i)
 }
 
 //-----------------------------------------------------------------------------
-bool
-VTKHSlice::verify_params(const conduit::Node &params,
-                         conduit::Node &info)
-{
-    info.reset();
-
-    std::cout << "\nSlice Properties!!" << std::endl;
-    param_schema().print();
-
-    std::cout << "\nParams!!" << std::endl;
-    params.print();
-
-    std::string surprises = surprise_check(param_schema(), params);
-
-    if(surprises != "")
-    {
-      info["errors"].append() = surprises;
-      return false;
-    }
-
-    return true;
-}
-
-//-----------------------------------------------------------------------------
 void
 VTKHSlice::execute()
 {
