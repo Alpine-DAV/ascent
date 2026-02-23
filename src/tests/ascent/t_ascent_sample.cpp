@@ -139,7 +139,7 @@ TEST(ascent_sample, line_3d)
                                               data);
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
 
-    ASCENT_INFO("Testing sampling a 2d line of points");
+    ASCENT_INFO("Testing sampling a 3d line of points");
 
     string output_path = prepare_output_dir();
     string output_file = conduit::utils::join_file_path(output_path,"tout_sample_line_3d");
@@ -224,7 +224,7 @@ TEST(ascent_sample, points_2d)
                                               data);
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
 
-    ASCENT_INFO("Testing sampling at a list of 3d points");
+    ASCENT_INFO("Testing sampling at a list of 2d points");
 
     string output_path = prepare_output_dir();
     string output_file = conduit::utils::join_file_path(output_path,"tout_sample_pts_2d");
@@ -353,6 +353,102 @@ TEST(ascent_sample, points_3d)
     // // check that we created an image
     // EXPECT_TRUE(check_test_image(output_file));
     std::string msg = "An example of using the sample filter to sample a list of 3d points.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+}
+//-----------------------------------------------------------------------------
+TEST(ascent_sample, box_3d)
+{
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
+        return;
+    }
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing sampling a 3D box");
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_sample_box_3d");
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+    data["state/cycle"] = 100;
+    //
+    // Create the actions.
+    //
+    std::string acts_str = R"xyzxyz(
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "sample"
+        params: 
+          fields: ["braid"]
+          box:
+            dims:
+              i: 5.0
+              j: 5.0
+              k: 5.0
+            max:
+              x: max 
+              y: max 
+              z: max 
+            min:
+              x: 0.0
+              y: 0.0
+              z: 0.0
+          invalid_value: -10.0
+- 
+  action: "add_scenes"
+  scenes: 
+    s1:
+      plots:
+        p1:
+          type: "pseudocolor"
+          field: "braid"
+          pipeline: pl1
+- 
+  action: "add_extracts"
+  extracts: 
+    e1:
+      pipeline: pl1
+      type: "relay"
+      params:
+        protocol: "hdf5"
+)xyzxyz";
+    conduit::Node actions;
+    actions.parse(acts_str,"yaml");
+    actions[1]["scenes/s1/image_prefix"] = output_file;
+    actions[2]["extracts/e1/params/path"] = output_file;
+    //actions.print();
+
+    //
+    // Run Ascent
+    //
+    Ascent ascent;
+    ascent.open();
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // // check that we created an image
+    // EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example of using the sample filter to sample points 3d box.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 

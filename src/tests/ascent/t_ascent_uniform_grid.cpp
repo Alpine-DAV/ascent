@@ -82,6 +82,14 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_slice_along_y)
             i: 10
             j: 0
             k: 10
+          origin: 
+            x: -10 
+            y: -10 
+            z: -10 
+          spacing:
+            dx: 1
+            dy: 1
+            dz: 1
           invalid_value: -10.0
 - 
   action: "add_scenes"
@@ -169,6 +177,14 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_sample_along_x)
             i: 0
             j: 10 
             k: 10 
+          origin: 
+            x: -10 
+            y: -10 
+            z: -10 
+          spacing:
+            dx: 1
+            dy: 1
+            dz: 1
           invalid_value: -10.0
 - 
   action: "add_scenes"
@@ -254,6 +270,8 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_smaller_in_i)
           fields: ["braid"]
           dims: 
             i: 10 
+          spacing:
+            dx: 1
           invalid_value: -10.0
 - 
   action: "add_scenes"
@@ -335,6 +353,8 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_smaller_in_j)
           fields: ["braid"]
           dims: 
             j: 10 
+          spacing:
+            dy: 1
           invalid_value: -10.0
 - 
   action: "add_scenes"
@@ -416,6 +436,8 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_smaller_in_k)
           field: "braid"
           dims: 
             k: 10 
+          spacing:
+            dz: 1
           invalid_value: -10.0
 - 
   action: "add_scenes"
@@ -503,6 +525,14 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_smaller_by10_than_input)
             i: 10
             j: 10
             k: 10
+          origin: 
+            x: -10 
+            y: -10 
+            z: -10 
+          spacing:
+            dx: 1
+            dy: 1
+            dz: 1
           invalid_value: -10.0
 - 
   action: "add_scenes"
@@ -587,6 +617,14 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_equal_size_input)
             i: 20
             j: 20
             k: 20
+          origin: 
+            x: -10 
+            y: -10 
+            z: -10 
+          spacing:
+            dx: 1
+            dy: 1
+            dz: 1
           invalid_value: -10.0
 - 
   action: "add_scenes"
@@ -1225,6 +1263,14 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_larger_by5_than_input)
             i: 25
             j: 25
             k: 25
+          origin: 
+            x: -10 
+            y: -10 
+            z: -10 
+          spacing:
+            dx: 1
+            dy: 1
+            dz: 1
           invalid_value: -10.0
       f2: 
         type: "slice"
@@ -1320,6 +1366,14 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_larger_by5_than_input_large_
             i: 25
             j: 25
             k: 25
+          origin: 
+            x: -10 
+            y: -10 
+            z: -10 
+          spacing:
+            dx: 1
+            dy: 1
+            dz: 1
           invalid_value: -100.0
       f2: 
         type: "slice"

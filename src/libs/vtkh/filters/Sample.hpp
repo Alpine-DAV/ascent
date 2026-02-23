@@ -27,6 +27,14 @@ public:
             double y_end,
             double z_end);
 
+  void Box(int * dims,
+           double x_start,
+           double y_start,
+           double z_start,
+           double x_end,
+           double y_end,
+           double z_end);
+
   void Points(viskores::cont::ArrayHandle<viskores::Float64> xs,
               viskores::cont::ArrayHandle<viskores::Float64> ys,
               viskores::cont::ArrayHandle<viskores::Float64> zs);
@@ -47,6 +55,7 @@ protected:
 
   std::vector<std::string> m_fields;
   viskores::Float64 m_invalid_value;
+  int m_num_samples;
 };
 
 } //namespace vtkh
