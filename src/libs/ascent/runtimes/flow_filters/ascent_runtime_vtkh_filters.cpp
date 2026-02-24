@@ -708,32 +708,16 @@ VTKHCleanGrid::declare_interface(Node &i)
     i["type_name"]   = "vtkh_clean";
     i["port_names"].append() = "in";
     i["output_port"] = "true";
-}
 
-//-----------------------------------------------------------------------------
-bool
-VTKHCleanGrid::verify_params(const conduit::Node &params,
-                         conduit::Node &info)
-{
-    info.reset();
+    // ----------- Define Param Schema -----------
+    conduit::Node param_schema;
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
-    bool res = true;
-
-    res = check_string("topology",params, info, false) && res;
-
-    std::vector<std::string> valid_paths;
-    valid_paths.push_back("topology");
-
-
-    std::string surprises = surprise_check(valid_paths, params);
-
-    if(surprises != "")
-    {
-      res = false;
-      info["errors"].append() = surprises;
-    }
-
-    return res;
+    // optional
+    param_schema["properties/topology"].set(string_schema());
+    
+    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -808,18 +792,18 @@ VTKHSlice::declare_interface(Node &i)
     i["output_port"] = "true";
 
     // ----------- Define Param Schema -----------
-    conduit::Node vtkhslice_schema;
-    vtkhslice_schema["type"] = "object";
-    vtkhslice_schema["additionalProperties"] = false;
-    vtkhslice_schema["constraints/exclusiveChildren"].append() = "sphere";
-    vtkhslice_schema["constraints/exclusiveChildren"].append() = "cylinder";
-    vtkhslice_schema["constraints/exclusiveChildren"].append() = "box";
-    vtkhslice_schema["constraints/exclusiveChildren"].append() = "plane";
-    vtkhslice_schema["constraints/exclusiveChildren"].append() = "point";
-    vtkhslice_schema["constraints/allowNoneInExclusiveGroup"] = false;
+    conduit::Node param_schema;
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
+    param_schema["constraints/exclusiveChildren"].append() = "sphere";
+    param_schema["constraints/exclusiveChildren"].append() = "cylinder";
+    param_schema["constraints/exclusiveChildren"].append() = "box";
+    param_schema["constraints/exclusiveChildren"].append() = "plane";
+    param_schema["constraints/exclusiveChildren"].append() = "point";
+    param_schema["constraints/allowNoneInExclusiveGroup"] = false;
 
     // optional
-    vtkhslice_schema["properties/topology"].set(string_schema());
+    param_schema["properties/topology"].set(string_schema());
 
     // --- sphere ---
     conduit::Node sphere_schema;
@@ -829,7 +813,7 @@ VTKHSlice::declare_interface(Node &i)
     sphere_schema["properties/radius"].set(number_schema());
     sphere_schema["required"].append() = "center";
     sphere_schema["required"].append() = "radius";
-    vtkhslice_schema["properties/sphere"].set(sphere_schema);
+    param_schema["properties/sphere"].set(sphere_schema);
 
     // --- cylinder ---
     conduit::Node cylinder_schema;
@@ -841,7 +825,7 @@ VTKHSlice::declare_interface(Node &i)
     cylinder_schema["required"].append() = "center";
     cylinder_schema["required"].append() = "axis";
     cylinder_schema["required"].append() = "radius";
-    vtkhslice_schema["properties/cylinder"].set(cylinder_schema);
+    param_schema["properties/cylinder"].set(cylinder_schema);
 
     // --- box ---
     conduit::Node box_schema;
@@ -851,7 +835,7 @@ VTKHSlice::declare_interface(Node &i)
     box_schema["properties/max"].set(vec3_schema());
     box_schema["required"].append() = "min";
     box_schema["required"].append() = "max";
-    vtkhslice_schema["properties/box"].set(box_schema);
+    param_schema["properties/box"].set(box_schema);
 
     // --- plane ---
     conduit::Node plane_schema;
@@ -861,7 +845,7 @@ VTKHSlice::declare_interface(Node &i)
     plane_schema["properties/normal"].set(vec3_schema());
     plane_schema["required"].append() = "point";
     plane_schema["required"].append() = "normal";
-    vtkhslice_schema["properties/plane"].set(plane_schema);
+    param_schema["properties/plane"].set(plane_schema);
 
     // --- old point style
     conduit::Node point_schema;
@@ -897,11 +881,11 @@ VTKHSlice::declare_interface(Node &i)
     option_2_offset["constraints/forbid"].append() = "z";
     point_schema["oneOf"].append().set(option_2_offset);
 
-    vtkhslice_schema["properties/point"].set(point_schema);
-    vtkhslice_schema["properties/normal"].set(vec3_schema());
-    vtkhslice_schema["constraints/dependencies/normal"].append() = "point";
+    param_schema["properties/point"].set(point_schema);
+    param_schema["properties/normal"].set(vec3_schema());
+    param_schema["constraints/dependencies/normal"].append() = "point";
     
-    i["param_schema"].set(vtkhslice_schema);
+    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -1082,48 +1066,21 @@ VTKHAutoSliceLevels::declare_interface(Node &i)
     i["type_name"]   = "vtkh_autoslicelevels";
     i["port_names"].append() = "in";
     i["output_port"] = "true";
-}
 
-//-----------------------------------------------------------------------------
-bool
-VTKHAutoSliceLevels::verify_params(const conduit::Node &params,
-                         conduit::Node &info)
-{
-    info.reset();
+    // ----------- Define Param Schema -----------
+    conduit::Node param_schema;
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
-    bool res = check_string("field",params, info, true);
+    param_schema["properties/field"].set(string_schema());
+    param_schema["properties/normal"].set(vec3_schema());
+    param_schema["properties/levels"].set(number_schema());
 
-    if(!params.has_path("levels"))
-    {
-      info["errors"]
-        .append() = "AutoSliceLevels must specify number of slices to consider via 'levels'.";
-      res = false;
-    }
-
-
-    res = check_numeric("normal/x",params, info, true, true) && res;
-    res = check_numeric("normal/y",params, info, true, true) && res;
-    res = check_numeric("normal/z",params, info, true, true) && res;
-
-    res = check_numeric("levels",params, info, true, true) && res;
-
-    std::vector<std::string> valid_paths;
-    valid_paths.push_back("levels");
-    valid_paths.push_back("field");
-    valid_paths.push_back("normal/x");
-    valid_paths.push_back("normal/y");
-    valid_paths.push_back("normal/z");
-
-
-    std::string surprises = surprise_check(valid_paths, params);
-
-    if(surprises != "")
-    {
-      res = false;
-      info["errors"].append() = surprises;
-    }
-
-    return res;
+    param_schema["required"].append() = "field";
+    param_schema["required"].append() = "normal";
+    param_schema["required"].append() = "levels";
+    
+    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -1283,33 +1240,21 @@ VTKHGhostStripper::declare_interface(Node &i)
     i["type_name"]   = "vtkh_ghost_stripper";
     i["port_names"].append() = "in";
     i["output_port"] = "true";
-}
 
-//-----------------------------------------------------------------------------
-bool
-VTKHGhostStripper::verify_params(const conduit::Node &params,
-                             conduit::Node &info)
-{
-    info.reset();
+    // ----------- Define Param Schema -----------
+    conduit::Node param_schema;
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
-    bool res = check_string("field",params, info, true);
+    param_schema["properties/field"].set(string_schema());
+    param_schema["properties/min_value"].set(number_schema());
+    param_schema["properties/max_value"].set(number_schema());
 
-    res = check_numeric("min_value",params, info, true, true) && res;
-    res = check_numeric("max_value",params, info, true, true) && res;
-
-    std::vector<std::string> valid_paths;
-    valid_paths.push_back("field");
-    valid_paths.push_back("min_value");
-    valid_paths.push_back("max_value");
-    std::string surprises = surprise_check(valid_paths, params);
-
-    if(surprises != "")
-    {
-      res = false;
-      info["errors"].append() = surprises;
-    }
-
-    return res;
+    param_schema["required"].append() = "field";
+    param_schema["required"].append() = "min_value";
+    param_schema["required"].append() = "max_value";
+    
+    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -1396,31 +1341,17 @@ VTKHAddRanks::declare_interface(Node &i)
     i["type_name"]   = "vtkh_add_mpi_ranks";
     i["port_names"].append() = "in";
     i["output_port"] = "true";
-}
 
-//-----------------------------------------------------------------------------
-bool
-VTKHAddRanks::verify_params(const conduit::Node &params,
-                             conduit::Node &info)
-{
-    info.reset();
+    // ----------- Define Param Schema -----------
+    conduit::Node param_schema;
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
-    bool res = check_string("topology",params, info, false);
-    res = check_string("output",params, info, false);
-
-    std::vector<std::string> valid_paths;
-    valid_paths.push_back("output");
-    valid_paths.push_back("topology");
-
-    std::string surprises = surprise_check(valid_paths, params);
-
-    if(surprises != "")
-    {
-      res = false;
-      info["errors"].append() = surprises;
-    }
-
-    return res;
+    // optional
+    param_schema["properties/topology"].set(string_schema());
+    param_schema["properties/output"].set(string_schema());
+    
+    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -1505,31 +1436,17 @@ VTKHAddDomains::declare_interface(Node &i)
     i["type_name"]   = "vtkh_add_domain_ids";
     i["port_names"].append() = "in";
     i["output_port"] = "true";
-}
 
-//-----------------------------------------------------------------------------
-bool
-VTKHAddDomains::verify_params(const conduit::Node &params,
-                             conduit::Node &info)
-{
-    info.reset();
+    // ----------- Define Param Schema -----------
+    conduit::Node param_schema;
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
-    bool res = check_string("topology",params, info, false);
-    res = check_string("output",params, info, false);
-
-    std::vector<std::string> valid_paths;
-    valid_paths.push_back("output");
-    valid_paths.push_back("topology");
-
-    std::string surprises = surprise_check(valid_paths, params);
-
-    if(surprises != "")
-    {
-      res = false;
-      info["errors"].append() = surprises;
-    }
-
-    return res;
+    // optional
+    param_schema["properties/topology"].set(string_schema());
+    param_schema["properties/output"].set(string_schema());
+    
+    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -1609,176 +1526,85 @@ VTKHThreshold::declare_interface(Node &i)
     i["type_name"]   = "vtkh_threshold";
     i["port_names"].append() = "in";
     i["output_port"] = "true";
+
+    // ----------- Define Param Schema -----------
+    conduit::Node param_schema;
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
+    param_schema["constraints/exclusiveChildren"].append() = "field";
+    param_schema["constraints/exclusiveChildren"].append() = "sphere";
+    param_schema["constraints/exclusiveChildren"].append() = "cylinder";
+    param_schema["constraints/exclusiveChildren"].append() = "box";
+    param_schema["constraints/exclusiveChildren"].append() = "plane";
+    param_schema["constraints/exclusiveChildren"].append() = "multi_plane";
+    param_schema["constraints/allowNoneInExclusiveGroup"] = false;
+
+    // optional
+    param_schema["properties/field"].set(string_schema());
+    param_schema["properties/topology"].set(string_schema());
+    param_schema["properties/min_value"].set(number_schema());
+    param_schema["properties/max_value"].set(number_schema());
+    param_schema["properties/invert"].set(string_schema());
+    param_schema["properties/extract"].set(string_schema());
+
+    // --- sphere ---
+    conduit::Node sphere_schema;
+    sphere_schema["type"] = "object";
+    sphere_schema["additionalProperties"] = false;
+    sphere_schema["properties/center"].set(vec3_schema());
+    sphere_schema["properties/radius"].set(number_schema());
+    sphere_schema["required"].append() = "center";
+    sphere_schema["required"].append() = "radius";
+    param_schema["properties/sphere"].set(sphere_schema);
+
+    // --- cylinder ---
+    conduit::Node cylinder_schema;
+    cylinder_schema["type"] = "object";
+    cylinder_schema["additionalProperties"] = false;
+    cylinder_schema["properties/center"].set(vec3_schema());
+    cylinder_schema["properties/axis"].set(vec3_schema());
+    cylinder_schema["properties/radius"].set(number_schema());
+    cylinder_schema["required"].append() = "center";
+    cylinder_schema["required"].append() = "axis";
+    cylinder_schema["required"].append() = "radius";
+    param_schema["properties/cylinder"].set(cylinder_schema);
+
+    // --- box ---
+    conduit::Node box_schema;
+    box_schema["type"] = "object";
+    box_schema["additionalProperties"] = false;
+    box_schema["properties/min"].set(vec3_schema());
+    box_schema["properties/max"].set(vec3_schema());
+    box_schema["required"].append() = "min";
+    box_schema["required"].append() = "max";
+    param_schema["properties/box"].set(box_schema);
+
+    // --- plane ---
+    conduit::Node plane_schema;
+    plane_schema["type"] = "object";
+    plane_schema["additionalProperties"] = false;
+    plane_schema["properties/point"].set(vec3_schema());
+    plane_schema["properties/normal"].set(vec3_schema());
+    plane_schema["required"].append() = "point";
+    plane_schema["required"].append() = "normal";
+    param_schema["properties/plane"].set(plane_schema);
+
+    // --- multi plane ---
+    conduit::Node multi_plane_schema;
+    multi_plane_schema["type"] = "object";
+    multi_plane_schema["additionalProperties"] = false;
+    multi_plane_schema["properties/point1"].set(vec3_schema());
+    multi_plane_schema["properties/point2"].set(vec3_schema());
+    multi_plane_schema["properties/normal1"].set(vec3_schema());
+    multi_plane_schema["properties/normal2"].set(vec3_schema());
+    multi_plane_schema["required"].append() = "point1";
+    multi_plane_schema["required"].append() = "point2";
+    multi_plane_schema["required"].append() = "normal1";
+    multi_plane_schema["required"].append() = "normal2";
+    param_schema["properties/multi_plane"].set(multi_plane_schema);
+    
+    i["param_schema"].set(param_schema);
 }
-
-//-----------------------------------------------------------------------------
-bool
-VTKHThreshold::verify_params(const conduit::Node &params,
-                             conduit::Node &info)
-{
-    info.reset();
-    bool res = true;
-
-    bool type_present = false;
-
-    if(params.has_child("field"))
-    {
-      type_present = true;
-    }
-    else if(params.has_child("sphere"))
-    {
-      type_present = true;
-    }
-    else if(params.has_child("cylinder"))
-    {
-      type_present = true;
-    }
-    else if(params.has_child("box"))
-    {
-      type_present = true;
-    }
-    else if(params.has_child("plane"))
-    {
-      type_present = true;
-    }
-    else if(params.has_child("multi_plane"))
-    {
-      type_present = true;
-    }
-
-    if(!type_present)
-    {
-        info["errors"].append() = "Missing required parameter. Threshold must specify 'field', 'sphere', 'cylinder', 'box', or 'plane'";
-        res = false;
-    }
-    else
-    {
-      if(params.has_child("sphere"))
-      {
-         res = check_numeric("sphere/center/x",params, info, true, true) && res;
-         res = check_numeric("sphere/center/y",params, info, true, true) && res;
-         res = check_numeric("sphere/center/z",params, info, true, true) && res;
-         res = check_numeric("sphere/radius",params, info, true, true) && res;
-      }
-      else if(params.has_child("cylinder"))
-      {
-         res = check_numeric("cylinder/center/x",params, info, true, true) && res;
-         res = check_numeric("cylinder/center/y",params, info, true, true) && res;
-         res = check_numeric("cylinder/center/z",params, info, true, true) && res;
-         res = check_numeric("cylinder/axis/x",params, info, true, true) && res;
-         res = check_numeric("cylinder/axis/y",params, info, true, true) && res;
-         res = check_numeric("cylinder/axis/z",params, info, true, true) && res;
-         res = check_numeric("cylinder/radius",params, info, true, true) && res;
-      }
-      else if(params.has_child("box"))
-      {
-         res = check_numeric("box/min/x",params, info, true, true) && res;
-         res = check_numeric("box/min/y",params, info, true, true) && res;
-         res = check_numeric("box/min/z",params, info, true, true) && res;
-         res = check_numeric("box/max/x",params, info, true, true) && res;
-         res = check_numeric("box/max/y",params, info, true, true) && res;
-         res = check_numeric("box/max/z",params, info, true, true) && res;
-      }
-      else if(params.has_child("plane"))
-      {
-         res = check_numeric("plane/point/x",params, info, true, true) && res;
-         res = check_numeric("plane/point/y",params, info, true, true) && res;
-         res = check_numeric("plane/point/z",params, info, true, true) && res;
-         res = check_numeric("plane/normal/x",params, info, true, true) && res;
-         res = check_numeric("plane/normal/y",params, info, true, true) && res;
-         res = check_numeric("plane/normal/z",params, info, true, true) && res;
-      }
-      else if(params.has_child("multi_plane"))
-      {
-         res = check_numeric("multi_plane/point1/x",params, info, true, true) && res;
-         res = check_numeric("multi_plane/point1/y",params, info, true, true) && res;
-         res = check_numeric("multi_plane/point1/z",params, info, true, true) && res;
-         res = check_numeric("multi_plane/normal1/x",params, info, true, true) && res;
-         res = check_numeric("multi_plane/normal1/y",params, info, true, true) && res;
-         res = check_numeric("multi_plane/normal1/z",params, info, true, true) && res;
-
-         res = check_numeric("multi_plane/point2/x",params, info, true, true) && res;
-         res = check_numeric("multi_plane/point2/y",params, info, true, true) && res;
-         res = check_numeric("multi_plane/point2/z",params, info, true, true) && res;
-         res = check_numeric("multi_plane/normal2/x",params, info, true, true) && res;
-         res = check_numeric("multi_plane/normal2/y",params, info, true, true) && res;
-         res = check_numeric("multi_plane/normal2/z",params, info, true, true) && res;
-      }
-    }
-
-    // we either need 'field` or `topology`
-    if(!params.has_child("field")) 
-    {
-      res &= check_string("topology",params, info, false);
-    }
-
-    // field case
-    res = check_string("field",params, info, false);
-    res = check_numeric("min_value",params, info, false, true) && res;
-    res = check_numeric("max_value",params, info, false, true) && res;
-
-    res = check_string("invert",params, info, false) && res;
-
-    std::vector<std::string> valid_paths;
-    valid_paths.push_back("invert");
-    valid_paths.push_back("field");
-    valid_paths.push_back("min_value");
-    valid_paths.push_back("max_value");
-
-    valid_paths.push_back("topology");
-    valid_paths.push_back("extract");
-
-    valid_paths.push_back("sphere/center/x");
-    valid_paths.push_back("sphere/center/y");
-    valid_paths.push_back("sphere/center/z");
-    valid_paths.push_back("sphere/radius");
-
-    valid_paths.push_back("cylinder/center/x");
-    valid_paths.push_back("cylinder/center/y");
-    valid_paths.push_back("cylinder/center/z");
-    valid_paths.push_back("cylinder/axis/x");
-    valid_paths.push_back("cylinder/axis/y");
-    valid_paths.push_back("cylinder/axis/z");
-    valid_paths.push_back("cylinder/radius");
-
-    valid_paths.push_back("box/min/x");
-    valid_paths.push_back("box/min/y");
-    valid_paths.push_back("box/min/z");
-    valid_paths.push_back("box/max/x");
-    valid_paths.push_back("box/max/y");
-    valid_paths.push_back("box/max/z");
-
-    valid_paths.push_back("plane/point/x");
-    valid_paths.push_back("plane/point/y");
-    valid_paths.push_back("plane/point/z");
-    valid_paths.push_back("plane/normal/x");
-    valid_paths.push_back("plane/normal/y");
-    valid_paths.push_back("plane/normal/z");
-
-    valid_paths.push_back("multi_plane/point1/x");
-    valid_paths.push_back("multi_plane/point1/y");
-    valid_paths.push_back("multi_plane/point1/z");
-    valid_paths.push_back("multi_plane/normal1/x");
-    valid_paths.push_back("multi_plane/normal1/y");
-    valid_paths.push_back("multi_plane/normal1/z");
-
-    valid_paths.push_back("multi_plane/point2/x");
-    valid_paths.push_back("multi_plane/point2/y");
-    valid_paths.push_back("multi_plane/point2/z");
-    valid_paths.push_back("multi_plane/normal2/x");
-    valid_paths.push_back("multi_plane/normal2/y");
-    valid_paths.push_back("multi_plane/normal2/z");
-    std::string surprises = surprise_check(valid_paths, params);
-
-    if(surprises != "")
-    {
-      res = false;
-      info["errors"].append() = surprises;
-    }
-
-    return res;
-}
-
 
 //-----------------------------------------------------------------------------
 void
@@ -1971,159 +1797,80 @@ VTKHClip::declare_interface(Node &i)
     i["type_name"] = "vtkh_clip";
     i["port_names"].append() = "in";
     i["output_port"] = "true";
+
+    // ----------- Define Param Schema -----------
+    conduit::Node param_schema;
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
+    param_schema["constraints/exclusiveChildren"].append() = "sphere";
+    param_schema["constraints/exclusiveChildren"].append() = "cylinder";
+    param_schema["constraints/exclusiveChildren"].append() = "box";
+    param_schema["constraints/exclusiveChildren"].append() = "plane";
+    param_schema["constraints/exclusiveChildren"].append() = "multi_plane";
+    param_schema["constraints/allowNoneInExclusiveGroup"] = false;
+
+    // optional
+    param_schema["properties/topology"].set(string_schema());
+    param_schema["properties/invert"].set(string_schema());
+
+    // --- sphere ---
+    conduit::Node sphere_schema;
+    sphere_schema["type"] = "object";
+    sphere_schema["additionalProperties"] = false;
+    sphere_schema["properties/center"].set(vec3_schema());
+    sphere_schema["properties/radius"].set(number_schema());
+    sphere_schema["required"].append() = "center";
+    sphere_schema["required"].append() = "radius";
+    param_schema["properties/sphere"].set(sphere_schema);
+
+    // --- cylinder ---
+    conduit::Node cylinder_schema;
+    cylinder_schema["type"] = "object";
+    cylinder_schema["additionalProperties"] = false;
+    cylinder_schema["properties/center"].set(vec3_schema());
+    cylinder_schema["properties/axis"].set(vec3_schema());
+    cylinder_schema["properties/radius"].set(number_schema());
+    cylinder_schema["required"].append() = "center";
+    cylinder_schema["required"].append() = "axis";
+    cylinder_schema["required"].append() = "radius";
+    param_schema["properties/cylinder"].set(cylinder_schema);
+
+    // --- box ---
+    conduit::Node box_schema;
+    box_schema["type"] = "object";
+    box_schema["additionalProperties"] = false;
+    box_schema["properties/min"].set(vec3_schema());
+    box_schema["properties/max"].set(vec3_schema());
+    box_schema["required"].append() = "min";
+    box_schema["required"].append() = "max";
+    param_schema["properties/box"].set(box_schema);
+
+    // --- plane ---
+    conduit::Node plane_schema;
+    plane_schema["type"] = "object";
+    plane_schema["additionalProperties"] = false;
+    plane_schema["properties/point"].set(vec3_schema());
+    plane_schema["properties/normal"].set(vec3_schema());
+    plane_schema["required"].append() = "point";
+    plane_schema["required"].append() = "normal";
+    param_schema["properties/plane"].set(plane_schema);
+
+    // --- multi plane ---
+    conduit::Node multi_plane_schema;
+    multi_plane_schema["type"] = "object";
+    multi_plane_schema["additionalProperties"] = false;
+    multi_plane_schema["properties/point1"].set(vec3_schema());
+    multi_plane_schema["properties/point2"].set(vec3_schema());
+    multi_plane_schema["properties/normal1"].set(vec3_schema());
+    multi_plane_schema["properties/normal2"].set(vec3_schema());
+    multi_plane_schema["required"].append() = "point1";
+    multi_plane_schema["required"].append() = "point2";
+    multi_plane_schema["required"].append() = "normal1";
+    multi_plane_schema["required"].append() = "normal2";
+    param_schema["properties/multi_plane"].set(multi_plane_schema);
+    
+    i["param_schema"].set(param_schema);
 }
-
-//-----------------------------------------------------------------------------
-bool
-VTKHClip::verify_params(const conduit::Node &params,
-                             conduit::Node &info)
-{
-    info.reset();
-    bool res = true;
-
-    bool type_present = false;
-
-    if(params.has_child("sphere"))
-    {
-      type_present = true;
-    }
-    else if(params.has_child("cylinder"))
-    {
-      type_present = true;
-    }
-    else if(params.has_child("box"))
-    {
-      type_present = true;
-    }
-    else if(params.has_child("plane"))
-    {
-      type_present = true;
-    }
-    else if(params.has_child("multi_plane"))
-    {
-      type_present = true;
-    }
-
-    if(!type_present)
-    {
-        info["errors"].append() = "Missing required parameter. Clip must specify a 'sphere', 'cylinder', 'box', 'plane', or 'mulit_plane'";
-        res = false;
-    }
-    else
-    {
-
-      res &= check_string("topology",params, info, false);
-      if(params.has_child("sphere"))
-      {
-         res = check_numeric("sphere/center/x",params, info, true, true) && res;
-         res = check_numeric("sphere/center/y",params, info, true, true) && res;
-         res = check_numeric("sphere/center/z",params, info, true, true) && res;
-         res = check_numeric("sphere/radius",params, info, true, true) && res;
-      }
-      else if(params.has_child("cylinder"))
-      {
-         res = check_numeric("cylinder/center/x",params, info, true, true) && res;
-         res = check_numeric("cylinder/center/y",params, info, true, true) && res;
-         res = check_numeric("cylinder/center/z",params, info, true, true) && res;
-         res = check_numeric("cylinder/axis/x",params, info, true, true) && res;
-         res = check_numeric("cylinder/axis/y",params, info, true, true) && res;
-         res = check_numeric("cylinder/axis/z",params, info, true, true) && res;
-         res = check_numeric("cylinder/radius",params, info, true, true) && res;
-      }
-      else if(params.has_child("box"))
-      {
-         res = check_numeric("box/min/x",params, info, true, true) && res;
-         res = check_numeric("box/min/y",params, info, true, true) && res;
-         res = check_numeric("box/min/z",params, info, true, true) && res;
-         res = check_numeric("box/max/x",params, info, true, true) && res;
-         res = check_numeric("box/max/y",params, info, true, true) && res;
-         res = check_numeric("box/max/z",params, info, true, true) && res;
-      }
-      else if(params.has_child("plane"))
-      {
-         res = check_numeric("plane/point/x",params, info, true, true) && res;
-         res = check_numeric("plane/point/y",params, info, true, true) && res;
-         res = check_numeric("plane/point/z",params, info, true, true) && res;
-         res = check_numeric("plane/normal/x",params, info, true, true) && res;
-         res = check_numeric("plane/normal/y",params, info, true, true) && res;
-         res = check_numeric("plane/normal/z",params, info, true, true) && res;
-      }
-      else if(params.has_child("multi_plane"))
-      {
-         res = check_numeric("multi_plane/point1/x",params, info, true, true) && res;
-         res = check_numeric("multi_plane/point1/y",params, info, true, true) && res;
-         res = check_numeric("multi_plane/point1/z",params, info, true, true) && res;
-         res = check_numeric("multi_plane/normal1/x",params, info, true, true) && res;
-         res = check_numeric("multi_plane/normal1/y",params, info, true, true) && res;
-         res = check_numeric("multi_plane/normal1/z",params, info, true, true) && res;
-
-         res = check_numeric("multi_plane/point2/x",params, info, true, true) && res;
-         res = check_numeric("multi_plane/point2/y",params, info, true, true) && res;
-         res = check_numeric("multi_plane/point2/z",params, info, true, true) && res;
-         res = check_numeric("multi_plane/normal2/x",params, info, true, true) && res;
-         res = check_numeric("multi_plane/normal2/y",params, info, true, true) && res;
-         res = check_numeric("multi_plane/normal2/z",params, info, true, true) && res;
-      }
-    }
-
-    res = check_string("invert",params, info, false) && res;
-    res = check_string("topology",params, info, false) && res;
-
-    std::vector<std::string> valid_paths;
-    valid_paths.push_back("topology");
-    valid_paths.push_back("invert");
-
-    valid_paths.push_back("sphere/center/x");
-    valid_paths.push_back("sphere/center/y");
-    valid_paths.push_back("sphere/center/z");
-    valid_paths.push_back("sphere/radius");
-
-    valid_paths.push_back("cylinder/center/x");
-    valid_paths.push_back("cylinder/center/y");
-    valid_paths.push_back("cylinder/center/z");
-    valid_paths.push_back("cylinder/axis/x");
-    valid_paths.push_back("cylinder/axis/y");
-    valid_paths.push_back("cylinder/axis/z");
-    valid_paths.push_back("cylinder/radius");
-
-    valid_paths.push_back("box/min/x");
-    valid_paths.push_back("box/min/y");
-    valid_paths.push_back("box/min/z");
-    valid_paths.push_back("box/max/x");
-    valid_paths.push_back("box/max/y");
-    valid_paths.push_back("box/max/z");
-
-    valid_paths.push_back("plane/point/x");
-    valid_paths.push_back("plane/point/y");
-    valid_paths.push_back("plane/point/z");
-    valid_paths.push_back("plane/normal/x");
-    valid_paths.push_back("plane/normal/y");
-    valid_paths.push_back("plane/normal/z");
-
-    valid_paths.push_back("multi_plane/point1/x");
-    valid_paths.push_back("multi_plane/point1/y");
-    valid_paths.push_back("multi_plane/point1/z");
-    valid_paths.push_back("multi_plane/normal1/x");
-    valid_paths.push_back("multi_plane/normal1/y");
-    valid_paths.push_back("multi_plane/normal1/z");
-
-    valid_paths.push_back("multi_plane/point2/x");
-    valid_paths.push_back("multi_plane/point2/y");
-    valid_paths.push_back("multi_plane/point2/z");
-    valid_paths.push_back("multi_plane/normal2/x");
-    valid_paths.push_back("multi_plane/normal2/y");
-    valid_paths.push_back("multi_plane/normal2/z");
-    std::string surprises = surprise_check(valid_paths, params);
-
-    if(surprises != "")
-    {
-      res = false;
-      info["errors"].append() = surprises;
-    }
-
-    return res;
-}
-
 
 //-----------------------------------------------------------------------------
 void
