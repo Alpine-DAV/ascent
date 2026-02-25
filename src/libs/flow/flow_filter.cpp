@@ -26,6 +26,7 @@
 #include <flow_registry.hpp>
 #include <flow_graph.hpp>
 #include <flow_workspace.hpp>
+#include <flow_schema_validator.hpp>
 
 
 using namespace conduit;
@@ -225,18 +226,15 @@ Filter::verify_params(const Node &params,
 {
     info.reset();
 
-    std::cout << "\nSlice Properties!!" << std::endl;
-    param_schema().print();
-
-    std::cout << "\nParams!!" << std::endl;
-    params.print();
-
-    std::string surprises = "";// surprise_check(param_schema(), params);
-
-    if(surprises != "")
+    if (!param_schema().dtype().is_empty() && !(param_schema().dtype().is_object() && param_schema().number_of_children() == 0))
     {
-      info["errors"].append() = surprises;
-      return false;
+        // std::cout << "\nSlice Properties!!" << std::endl;
+        // param_schema().print();
+
+        // std::cout << "\nParams!!" << std::endl;
+        // params.print();
+
+        return flow::schema::validate(param_schema(), params, info);
     }
 
     return true;
