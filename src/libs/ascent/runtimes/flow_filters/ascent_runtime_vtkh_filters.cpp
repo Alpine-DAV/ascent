@@ -79,6 +79,7 @@
 #include <vtkh/filters/HistSampling.hpp>
 #include <vtkh/filters/PointTransform.hpp>
 #include <vtkh/filters/MIR.hpp>
+#include <viskores/Bounds.h>
 #include <viskores/cont/DataSet.h>
 #include <viskores/io/VTKDataSetWriter.h>
 #include <ascent_vtkh_data_adapter.hpp>
@@ -5127,9 +5128,12 @@ VTKHTransform::verify_params(const conduit::Node &params,
             res = false;
             info["errors"].append() = "reflect transform requires: reflect/x, reflect/y, and/or reflect/z";
         }
-        res &= check_numeric("x", p_vals, info, false, true);
-        res &= check_numeric("y", p_vals, info, false, true);
-        res &= check_numeric("z", p_vals, info, false, true);
+        res &= (check_numeric("x", p_vals, info, false, true) || 
+                check_string("x", p_vals, info, true));
+        res &= (check_numeric("y", p_vals, info, false, true) || 
+                check_string("y", p_vals, info, true));
+        res &= (check_numeric("z", p_vals, info, false, true) || 
+                check_string("z", p_vals, info, true));
     }
 
     if(params.has_child("matrix"))
@@ -5209,6 +5213,7 @@ VTKHTransform::execute()
                                0.0, 0.0, 0.0, 0.0,
                                0.0, 0.0, 0.0, 0.0,
                                0.0, 0.0, 0.0, 0.0};
+    ParamSpec reflect_param[3];
 
     if(params().has_child("scale"))
     {
@@ -5280,17 +5285,17 @@ VTKHTransform::execute()
         const Node &p_vals = params()["reflect"];
         if(p_vals.has_child("x"))
         {
-            t_reflect[0] = get_float64(p_vals["x"],data_object);
+            reflect_param[0] = assign_param_spec(p_vals["x"],data_object);
         }
 
         if(p_vals.has_child("y"))
         {
-            t_reflect[1] = get_float64(p_vals["y"],data_object);
+            reflect_param[1] = assign_param_spec(p_vals["y"],data_object);
         }
 
         if(p_vals.has_child("z"))
         {
-            t_reflect[2] = get_float64(p_vals["z"],data_object);
+            reflect_param[2] = assign_param_spec(p_vals["z"],data_object);
         }
     }
 
@@ -5342,6 +5347,82 @@ VTKHTransform::execute()
 
       if(use_reflect)
       {
+          viskores::Bounds bounds = data.GetGlobalBounds();
+
+          //if the axis is being used 
+          bool relevant[3] = {false, false, false};
+          // -1 for min, +1 for max
+          int  sign[3]     = {0, 0, 0}; 
+
+          double axis_length[3] = {bounds.X.Length(), bounds.Y.Length(), bounds.Z.Length()};
+          double bounds_min[3] = {bounds.X.Min, bounds.Y.Min, bounds.Z.Min};
+          //adjust relevant axes by an epsilon based on bounds
+          auto epsilon = [&](int axis) -> double
+          {
+            const double rel = 1e-6 * max(axis_length[axis],1.0);
+            return std::max(1e-12, rel);
+          };
+          
+          //resolve the ParamSpec types now that we have bounds 
+          auto resolve = [&](int axis) -> double
+          {
+            switch(reflect_param[axis].mode)
+            {
+              case ParamVal::Unset:     
+                return 0.0;//default
+
+              case ParamVal::Value:     
+                relevant[axis] = true;
+                if(reflect_param[axis].value == bounds_min[axis])
+                  sign[axis] = -1;
+                else
+                  sign[axis] = 1;
+                return reflect_param[axis].value;
+
+              case ParamVal::BoundsMin:       
+                relevant[axis] = true;
+                sign[axis] = -1; 
+                switch(axis)
+                {
+                  case 0: return bounds.X.Min;
+                  case 1: return bounds.Y.Min;
+                  case 2: return bounds.Z.Min;
+                }
+                break;
+
+              case ParamVal::BoundsMax:
+                relevant[axis] = true;
+                sign[axis] = 1; 
+                switch(axis)
+                {
+                  case 0: return bounds.X.Max;
+                  case 1: return bounds.Y.Max;
+                  case 2: return bounds.Z.Max;
+                }
+                break;
+            }
+            return 0.0;
+          };
+
+          t_reflect[0] = resolve(0);
+          t_reflect[1] = resolve(1);
+          t_reflect[2] = resolve(2);
+          
+          //we have a problem with (0,0,0)
+          //+/- epsilon to relevant axis
+          if(t_reflect[0] == 0.0 &&
+             t_reflect[1] == 0.0 &&
+             t_reflect[2] == 0.0)
+          {
+            for(int axis = 0; axis < 3; ++axis)
+            {
+              if(relevant[axis])
+              {
+                t_reflect[axis] += sign[axis] * epsilon(axis);
+              }
+            }
+          }
+
           transform.SetReflect(t_reflect[0],
                                t_reflect[1],
                                t_reflect[2]);
