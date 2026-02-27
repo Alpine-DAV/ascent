@@ -51,6 +51,18 @@ conduit::Node ASCENT_API vec3_schema(const std::string var1,
                                      const std::string var2,
                                      const std::string var3);
 
+conduit::Node ASCENT_API vec3_schema_anyOf();
+
+conduit::Node ASCENT_API vec3_schema_anyOf(const std::string var1,
+                                           const std::string var2,
+                                           const std::string var3);
+
+conduit::Node ASCENT_API array_schema();
+
+conduit::Node ASCENT_API array_schema(const conduit::Node &item_schema);
+
+conduit::Node ASCENT_API ignore_schema();
+
 bool ASCENT_API check_numeric(const std::string path,
                               const conduit::Node &params,
                               conduit::Node &info,

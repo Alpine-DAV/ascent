@@ -72,6 +72,39 @@ conduit::Node string_schema()
   return n;
 }
 
+conduit::Node vec3_schema_anyOf(const std::string var1, const std::string var2, const std::string var3)
+{
+  conduit::Node n;
+  n["type"] = "object";
+  n["additionalProperties"] = false;
+
+  n["properties/" + var1].set(number_schema());
+  n["properties/" + var2].set(number_schema());
+  n["properties/" + var3].set(number_schema());
+
+  conduit::Node var1_required;
+  var1_required["type"] = "object";
+  var1_required["required"] = var1;
+  n["anyOf"].append().set(var1_required);
+
+  conduit::Node var2_required;
+  var2_required["type"] = "object";
+  var2_required["required"] = var1;
+  n["anyOf"].append().set(var2_required);
+
+  conduit::Node var3_required;
+  var3_required["type"] = "object";
+  var3_required["required"] = var1;
+  n["anyOf"].append().set(var3_required);
+
+  return n;
+}
+
+conduit::Node vec3_schema_anyOf()
+{
+  return vec3_schema_anyOf("x", "y", "z");
+}
+
 conduit::Node vec3_schema(const std::string var1, const std::string var2, const std::string var3)
 {
   conduit::Node n;
@@ -92,6 +125,29 @@ conduit::Node vec3_schema(const std::string var1, const std::string var2, const 
 conduit::Node vec3_schema()
 {
   return vec3_schema("x", "y", "z");
+}
+
+conduit::Node array_schema(const conduit::Node &item_schema)
+{
+  conduit::Node n;
+  n["type"] = "array";
+  n["items"].set(item_schema);
+  return n;
+}
+
+conduit::Node array_schema()
+{
+  conduit::Node n;
+  n["type"] = "array";
+  return n;
+}
+
+conduit::Node ignore_schema()
+{
+    conduit::Node n;
+    n["type"] = "object";
+    n["constraints/skip"] = true;
+    return n;
 }
 
 //-----------------------------------------------------------------------------

@@ -62,6 +62,7 @@ static bool check_type(const conduit::Node &input,
     if(schema_defined_type == "object") ok = data_type.is_object();
     else if(schema_defined_type == "string") ok = data_type.is_string();
     else if(schema_defined_type == "number") ok = data_type.is_number();
+    else if(schema_defined_type == "array") ok = (data_type.is_list() || (data_type.is_number() && data_type.number_of_elements() >= 1));
     else
     {
         add_error(info, "At '" + (path.empty() ? std::string("<root>") : path) +
@@ -118,6 +119,59 @@ static bool validate_forbid(const conduit::Node &schema,
         {
             add_error(info, "Field '" + conduit::utils::join_file_path(path, k) + "' is forbidden by schema");
             ok = false;
+        }
+    }
+    return ok;
+}
+
+static bool validate_const(const conduit::Node &schema,
+                           const conduit::Node &input,
+                           conduit::Node &info,
+                           const std::string &path)
+{
+    if(!schema.has_path("constraints/const")) return true;
+
+    const conduit::Node &c = schema["constraints/const"];
+    // Only implement string const for now (that’s all we used above)
+    if(input.dtype().is_string() && c.dtype().is_string())
+    {
+        const std::string got = input.as_string();
+        const std::string expect = c.as_string();
+        if(got != expect)
+        {
+            add_error(info, "Value mismatch at '" + (path.empty() ? std::string("<root>") : path) +
+                            "': expected '" + expect + "', got '" + got + "'");
+            return false;
+        }
+    }
+    return true;
+}
+
+static bool validate_not_const_fields(const conduit::Node &schema,
+                                      const conduit::Node &input,
+                                      conduit::Node &info,
+                                      const std::string &path)
+{
+    if(!schema.has_path("constraints/not_const")) return true;
+    if(!input.dtype().is_object()) return true;
+
+    bool ok = true;
+    const conduit::Node &nc = schema["constraints/not_const"];
+    for(conduit::index_t i = 0; i < nc.number_of_children(); ++i)
+    {
+        const std::string field = nc[i].name();
+        const conduit::Node &forbidden_val = nc[field];
+
+        if(input.has_child(field) && input[field].dtype().is_string() && forbidden_val.dtype().is_string())  
+        {
+            const std::string got = input[field].as_string();
+            const std::string bad = forbidden_val.as_string();
+            if(got == bad)
+            {
+                add_error(info, "Value forbidden at '" + conduit::utils::join_file_path(path, field) +
+                                "': must not be '" + bad + "'");
+                ok = false;
+            }
         }
     }
     return ok;
@@ -331,6 +385,56 @@ static bool validate_one_of(const conduit::Node &schema,
     return false;
 }
 
+static bool validate_any_of(const conduit::Node &schema,
+                            const conduit::Node &input,
+                            conduit::Node &info,
+                            const std::string &path)
+{
+    if(!schema.has_child("anyOf")) return true;
+
+    const conduit::Node &opts = schema["anyOf"];
+    int matches = 0;
+
+    // collect a couple representative failures for hints
+    std::vector<std::string> option_msgs;
+
+    for(conduit::index_t i = 0; i < opts.number_of_children(); ++i)
+    {
+        const conduit::Node &opt = opts.child(i);
+
+        conduit::Node tmp;
+        tmp.reset();
+
+        bool ok = true;
+        ok = check_type(input, opt, tmp, path) && ok;
+        ok = validate_required(opt, input, tmp, path) && ok;
+        ok = validate_forbid(opt, input, tmp, path) && ok;
+        ok = validate_dependencies(opt, input, tmp, path) && ok;
+        ok = validate_exclusive_children(opt, input, tmp, path) && ok;
+
+        if(ok)
+        {
+            matches++;
+        }
+        else if(tmp.has_child("errors") && tmp["errors"].number_of_children() > 0)
+        {
+            option_msgs.push_back(tmp["errors"].child(0).as_string());
+        }
+    }
+
+    if(matches >= 1) return true;
+
+    add_error(info, "anyOf violation at '" + (path.empty() ? std::string("<root>") : path) +
+                    "': input did not match any option");
+
+    for(size_t i = 0; i < option_msgs.size() && i < 2; ++i)
+    {
+        add_error(info, std::string("  hint: ") + option_msgs[i]);
+    }
+
+    return false;
+}
+
 static bool validate_object(const conduit::Node &schema,
                             const conduit::Node &input,
                             conduit::Node &info,
@@ -341,6 +445,7 @@ static bool validate_object(const conduit::Node &schema,
     // Base checks first
     ok = validate_required(schema, input, info, path) && ok;
     ok = validate_forbid(schema, input, info, path) && ok;
+    ok = validate_not_const_fields(schema, input, info, path) && ok;
     ok = validate_dependencies(schema, input, info, path) && ok;
     ok = validate_exclusive_children(schema, input, info, path) && ok;
 
@@ -352,7 +457,60 @@ static bool validate_object(const conduit::Node &schema,
 
     // Finally, enforce oneOf (treating options as extra constraints on this same object)
     ok = validate_one_of(schema, input, info, path) && ok;
+    ok = validate_any_of(schema, input, info, path) && ok;
 
+    return ok;
+}
+
+static bool validate_array(const conduit::Node &schema,
+                           const conduit::Node &input,
+                           conduit::Node &info,
+                           const std::string &path)
+{
+    bool ok = true;
+
+    const auto data_type = input.dtype();
+    const conduit::index_t count = data_type.is_list() ? input.number_of_children() : data_type.number_of_elements();
+
+    // Json Schema uses min/max bounds for array length.
+    if(schema.has_child("minItems"))
+    {
+        const conduit::index_t min_items = (conduit::index_t)schema["minItems"].to_int();
+        if(count < min_items)
+        {
+            add_error(info,
+                      "Array at '" + (path.empty() ? std::string("<root>") : path) +
+                      "' has too few items: expected at least " +
+                      std::to_string((long long)min_items) + ", got " +
+                      std::to_string((long long)count));
+            ok = false;
+        }
+    }
+
+    if(schema.has_child("maxItems"))
+    {
+        const conduit::index_t max_items = (conduit::index_t)schema["maxItems"].to_int();
+        if(count > max_items)
+        {
+            add_error(info,
+                      "Array at '" + (path.empty() ? std::string("<root>") : path) +
+                      "' has too many items: expected at most " +
+                      std::to_string((long long)max_items) + ", got " +
+                      std::to_string((long long)count));
+            ok = false;
+        }
+    }
+
+    if(!schema.has_child("items")) return true; // unconstrained items
+
+    const conduit::Node &item_schema = schema["items"];
+    if(data_type.is_list()) {
+        for(conduit::index_t i = 0; i < count; ++i)
+        {
+            ok = validate_node(item_schema, input.child(i), info,
+                            path + "[" + std::to_string((int)i) + "]") && ok;
+        }
+    }
     return ok;
 }
 
@@ -361,18 +519,44 @@ static bool validate_node(const conduit::Node &schema,
                           conduit::Node &info,
                           const std::string &path)
 {
+    if (schema.has_path("constraints/skip") && schema["constraints/skip"].to_int() != 0)
+    {
+        return true;
+    }
+
+    const std::string schema_defined_type = get_type_string(schema);
+    if(schema_defined_type == "object" && input.dtype().is_empty())
+    {
+        conduit::Node empty_obj;
+        empty_obj.set(conduit::DataType::object());
+        return validate_object(schema, empty_obj, info, path);
+    }
+    if(schema_defined_type == "array" && input.dtype().is_empty())
+    {
+        conduit::Node empty_list;
+        empty_list.set(conduit::DataType::list());
+        return validate_array(schema, empty_list, info, path);
+    }
+    
     bool ok = true;
 
     ok = check_type(input, schema, info, path) && ok;
+    ok = validate_const(schema, input, info, path) && ok;
     if(!ok) return false; // type mismatch stops recursion
 
-    const std::string schema_defined_type = get_type_string(schema);
+    
+
     if(schema_defined_type == "object")
     {
         return validate_object(schema, input, info, path);
     }
+    if (schema_defined_type == "array")
+    {
+        return validate_array(schema, input, info, path);
+    }
 
     ok = validate_one_of(schema, input, info, path) && ok;
+    ok = validate_any_of(schema, input, info, path) && ok;
 
     return ok;
 }
