@@ -637,7 +637,7 @@ Reflect Example:
           type: "transform"
           params:
             reflect:
-              x: 1.0
+              x: 1.0 #also accepts the strings "min" or "max"
 
 Rotate Example:
 
