@@ -749,6 +749,7 @@ TEST(ascent_translate, test_reflect_x_max)
     // and orig
     scenes["s1/plots/p2/type"]  = "pseudocolor";
     scenes["s1/plots/p2/field"] = "braid";
+    scenes["s1/plots/p2/pipeline"] = "pl0";
 
     scenes["s1/image_prefix"] = output_file;
 
@@ -766,6 +767,61 @@ TEST(ascent_translate, test_reflect_x_max)
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
+//-----------------------------------------------------------------------------
+TEST(ascent_translate, test_reflect_y_min)
+{
+    if(!viskores_avalible())
+    {
+        return;
+    }
+
+    std::string output_file;
+    conduit::Node data;
+    setup("tout_transform_reflect_y_min",data,output_file);
+
+    conduit::Node actions;
+    conduit::Node &add_pipelines = actions.append();
+    add_pipelines["action"] = "add_pipelines";
+    conduit::Node &pipelines = add_pipelines["pipelines"];
+
+    pipelines["pl0/f1/type"] = "transform";
+    pipelines["pl0/f1/params/translate/x"]= 10.0;
+    pipelines["pl0/f1/params/translate/y"]= 10.0;
+
+    // filter knobs
+    pipelines["pl1/f1/type"] = "transform";
+    pipelines["pl1/f1/params/reflect/y"]= "min";
+    pipelines["pl1/pipeline"] = "pl0";
+
+
+    conduit::Node &add_scenes = actions.append();
+    add_scenes["action"] = "add_scenes";
+    conduit::Node &scenes = add_scenes["scenes"];
+
+    // render transformed
+    scenes["s1/plots/p1/type"]  = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "braid";
+    scenes["s1/plots/p1/pipeline"] = "pl1";
+    // and orig
+    scenes["s1/plots/p2/type"]  = "pseudocolor";
+    scenes["s1/plots/p2/field"] = "braid";
+    scenes["s1/plots/p2/pipeline"] = "pl0";
+
+    scenes["s1/image_prefix"] = output_file;
+
+    std::cout << actions.to_yaml() << std::endl;
+
+    Ascent ascent;
+    ascent.open();
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example transform filter using reflect across x axis.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+}
 
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])

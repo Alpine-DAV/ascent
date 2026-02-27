@@ -1,0 +1,23 @@
+#An example transform filter rotating around an arbitrary axis.
+
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "transform"
+        params: 
+          matrix: [2.0, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 50.0, 0.0, 0.0, 2.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "braid"
+          pipeline: "pl1"
+        p2: 
+          type: "pseudocolor"
+          field: "radial"
+      image_prefix: "/home/user/sandbox/ascent/scripts/build_ascent/build/ascent-checkout/tests/_output/tout_transform_matrix"

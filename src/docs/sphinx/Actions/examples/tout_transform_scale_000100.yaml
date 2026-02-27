@@ -1,0 +1,31 @@
+#An example transform filter using scale.
+
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "transform"
+        params: 
+          scale: 
+            x: 2.0
+            y: 0.5
+            z: 2.0
+      f2: 
+        type: "transform"
+        params: 
+          translate: 
+            y: 50.0
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "braid"
+          pipeline: "pl1"
+        p2: 
+          type: "pseudocolor"
+          field: "radial"
+      image_prefix: "/home/user/sandbox/ascent/scripts/build_ascent/build/ascent-checkout/tests/_output/tout_transform_scale"

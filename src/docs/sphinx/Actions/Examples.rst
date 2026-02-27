@@ -881,6 +881,126 @@ Resulting image:
 
 .. image:: examples/tout_streamline_render100.png
 
+An example of using the transform filter with a matrix 
+--------------------------------------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_transform_matrix_000100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_transform_matrix_000100.png
+
+An example of using the transform filter to reflect over a specified point 
+--------------------------------------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_transform_reflect_arb_000100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_transform_reflect_arb_000100.png
+
+An example of using the transform filter to reflect over a point along the x axis
+--------------------------------------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_transform_reflect_x_000100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_transform_reflect_x_000100.png
+
+An example of using the transform filter to reflect over the x axis' max bounds 
+--------------------------------------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_transform_reflect_x_max_000100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_transform_reflect_x_max_000100.png
+
+An example of using the transform filter to reflect over the y axis' min bounds 
+--------------------------------------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_transform_reflect_y_min_000100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_transform_reflect_y_min_000100.png
+
+An example of using the transform filter to rotate around a specified point 
+--------------------------------------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_transform_rotate_arb_000100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_transform_rotate_arb_000100.png
+
+An example of using the transform filter to rotate around a point on the x axis 
+--------------------------------------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_transform_rotate_x_000100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_transform_rotate_x_000100.png
+
+An example of using the transform filter to rotate around a point on the y axis
+--------------------------------------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_transform_rotate_y_000100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_transform_rotate_y_000100.png
+
+An example of using the transform filter to rotate around a point on the z axis
+--------------------------------------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_transform_rotate_z_000100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_transform_rotate_z_000100.png
+
+An example of using the transform filter to scale the data
+--------------------------------------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_transform_scale_000100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_transform_scale_000100.png
+
+An example of using the transform filter to translate the data
+--------------------------------------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_transform_translate_000100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_transform_translate_000100.png
 
 
 An example of using the xray extract.

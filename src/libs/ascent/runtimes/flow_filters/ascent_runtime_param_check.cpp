@@ -41,46 +41,6 @@ namespace filters
 {
 
 //-----------------------------------------------------------------------------
-//this is for filters that have params that
-//can accept either a double value
-//or the strings "min" and "max"
-
-enum class ParamVal
-{
-  Unset,
-  Value,
-  BoundsMin,
-  BoundsMax
-};
-
-struct ParamSpec
-{
-  ParamVal mode = ParamVal::Unset;
-  double value = 0.0;
-};
-
-//Parse the ParamSpec struct
-ParamSpec 
-parse_param_spec(const conduit::Node &n, DataObject *data_object)
-{
-  ParamSpec spec;
-
-  // If it's a string: "min" / "max"
-  if(n.dtype().is_string())
-  {
-    std::string s = n.as_string();
-    if(s == "min") spec.mode = ReflectMode::BoundsMin;
-    else if(s == "max") spec.mode = ReflectMode::BoundsMax;
-    else ASCENT_ERROR("reflect axis must be a number or 'min'/'max' (got '" << s << "')");
-    return spec;
-  }
-
-  // Otherwise treat it as numeric / expression supported by get_float64
-  spec.mode  = ParamVal::Value;
-  spec.value = get_float64(n, data_object);
-  return spec;
-}
-//-----------------------------------------------------------------------------
 // this detects if the syntax is valid, not
 // whether the expression will actually work
 bool is_valid_expression(const std::string expr, std::string &err_msg)
@@ -505,6 +465,28 @@ float get_float32(const conduit::Node &node, DataObject *dataset)
 int get_int32(const conduit::Node &node, DataObject *dataset)
 {
   return get_value<int>(node, dataset);
+}
+//-----------------------------------------------------------------------------
+//Parse the ParamSpec struct
+ParamSpec 
+assign_param_spec(const conduit::Node &n, DataObject *data_object)
+{
+  ParamSpec spec;
+
+  // If it's a string: "min" / "max"
+  if(n.dtype().is_string())
+  {
+    std::string s = n.as_string();
+    if(s == "min") spec.mode = ParamVal::BoundsMin;
+    else if(s == "max") spec.mode = ParamVal::BoundsMax;
+    else ASCENT_ERROR("reflect axis must be a number or 'min'/'max' (got '" << s << "')");
+    return spec;
+  }
+
+  // Otherwise treat it as numeric / expression supported by get_float64
+  spec.mode  = ParamVal::Value;
+  spec.value = get_float64(n, data_object);
+  return spec;
 }
 //-----------------------------------------------------------------------------
 };

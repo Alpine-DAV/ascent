@@ -5423,6 +5423,7 @@ VTKHTransform::execute()
             }
           }
 
+          std::cerr <<" reflect :" << t_reflect[0] << " " << t_reflect[1] << " " << t_reflect[2] << std::endl;
           transform.SetReflect(t_reflect[0],
                                t_reflect[1],
                                t_reflect[2]);
