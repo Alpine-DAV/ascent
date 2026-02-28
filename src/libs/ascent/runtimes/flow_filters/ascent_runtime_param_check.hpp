@@ -100,8 +100,6 @@ void ASCENT_API path_helper(std::vector<std::string> &paths,
 std::string ASCENT_API surprise_check(const std::vector<std::string> &valid_paths,
                                       const conduit::Node &node);
 
-std::string ASCENT_API surprise_check(const conduit::Node &properties,
-                                      const conduit::Node &node);
 //
 // Ignore paths only ignores top level paths, differing lower level
 // paths to another surprise check.
