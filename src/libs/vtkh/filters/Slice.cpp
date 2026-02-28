@@ -253,17 +253,27 @@ public:
   template<typename U>
   struct CopyFunctor
   {
-    viskores::cont::ArrayHandle<viskores::Vec<U,3>> output;
+    viskores::cont::ArrayHandle<viskores::Vec<U,3>> &output;
     viskores::Id offset;
 
+    CopyFunctor(viskores::cont::ArrayHandle<viskores::Vec<U,3>> &out,
+                viskores::Id o)
+    : output(out), offset(o) {}
+
     template<typename Type, typename S>
-    void operator()(viskores::cont::ArrayHandle<Type,S> &input)
+    void operator()(const viskores::cont::ArrayHandle<Type,S> &input) const
     {
-      viskores::Id copy_size = input.GetNumberOfValues();
-      viskores::Id start = 0;
-      viskores::cont::Algorithm::CopySubRange(input, start, copy_size, output, offset);
+      // Only copy if the dispatched type matches the output type
+      // avoid compiler error with cast and call for cuda 12.9.1
+      if constexpr (std::is_same<Type, viskores::Vec<U,3>>::value)
+      {
+        viskores::Id copy_size = input.GetNumberOfValues();
+        viskores::cont::Algorithm::CopySubRange(
+            input, 0, copy_size, output, offset);
+      }
     }
   };
+
   template<typename T, typename S, typename U>
   void CopyCoords(viskores::cont::UncertainArrayHandle<T,S> &input,
                   viskores::cont::ArrayHandle<viskores::Vec<U,3>> &output,
