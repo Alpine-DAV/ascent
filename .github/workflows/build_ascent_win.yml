@@ -13,7 +13,7 @@ jobs:
     runs-on: windows-2025
     steps:
     - name: Setup MPI
-      uses: mpi4py/setup-mpi@8ac56ec7ab12f2dffdcf55ffaf50f1920ebcc004 # v1
+      uses: mpi4py/setup-mpi@dbbb80b116bea57fc1788daf7dbbf7ab3df3a0f1 # v1
     - name: Setup Python Env
       run: python3 -m pip install --upgrade pip numpy mpi4py wheel
     - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v4
