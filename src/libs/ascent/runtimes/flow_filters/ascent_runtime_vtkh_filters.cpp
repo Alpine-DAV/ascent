@@ -3708,6 +3708,234 @@ VTKHGradient::execute()
 }
 
 //-----------------------------------------------------------------------------
+VTKHUniformGrid::VTKHUniformGrid()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHUniformGrid::~VTKHUniformGrid()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHUniformGrid::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_uniform_grid";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+}
+
+//-----------------------------------------------------------------------------
+bool
+VTKHUniformGrid::verify_params(const conduit::Node &params,
+                         conduit::Node &info)
+{
+    info.reset();
+
+    bool res = true;
+    res &= check_string("field",params, info, false);
+    res &= check_numeric("dims/i",params, info, false);
+    res &= check_numeric("dims/j",params, info, false);
+    res &= check_numeric("dims/k",params, info, false);
+    res &= check_numeric("origin/x",params, info, false);
+    res &= check_numeric("origin/y",params, info, false);
+    res &= check_numeric("origin/z",params, info, false);
+    res &= check_numeric("spacing/dx",params, info, false);
+    res &= check_numeric("spacing/dy",params, info, false);
+    res &= check_numeric("spacing/dz",params, info, false);
+    res &= check_numeric("invalid_value",params, info, false);
+
+    if(!params.has_child("field") && !params.has_child("fields"))
+    {
+      res = false;
+      info["errors"].append() = "Uniform Grid Sampling requires 'field' or 'fields'";
+    }
+
+    if(params.has_child("fields") && !params["fields"].dtype().is_list())
+    {
+      res = false;
+      info["errors"].append() = "'fields' is not a list";
+    }
+
+    std::vector<std::string> valid_paths;
+    valid_paths.push_back("field");
+    valid_paths.push_back("fields");
+    valid_paths.push_back("dims/i");
+    valid_paths.push_back("dims/j");
+    valid_paths.push_back("dims/k");
+    valid_paths.push_back("origin/x");
+    valid_paths.push_back("origin/y");
+    valid_paths.push_back("origin/z");
+    valid_paths.push_back("spacing/dx");
+    valid_paths.push_back("spacing/dy");
+    valid_paths.push_back("spacing/dz");
+    valid_paths.push_back("invalid_value");
+
+    std::string surprises = "";
+
+    std::vector<std::string> ignore_paths;
+    ignore_paths.push_back("fields");
+
+    if(params.number_of_children() != 0)
+      std::string surprises = surprise_check(valid_paths, ignore_paths, params);
+
+    if(surprises != "")
+    {
+      res = false;
+      info["errors"].append() = surprises;
+    }
+
+    return res;
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHUniformGrid::execute()
+{
+
+    if(!input(0).check_type<DataObject>())
+    {
+        ASCENT_ERROR("vtkh_uniform_grid input must be a data object");
+    }
+
+    DataObject *data_object = input<DataObject>(0);
+    if(!data_object->is_valid())
+    {
+      set_output<DataObject>(data_object);
+      return;
+    }
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
+
+    std::vector<std::string> field_selection;
+    if(params().has_path("field"))
+    {
+      std::string field = params()["field"].as_string();
+
+      field_selection.push_back(field);
+    }
+    else if(params().has_path("fields"))
+    {
+      const conduit::Node &flist = params()["fields"];
+      const int num_fields = flist.number_of_children();
+      if(num_fields == 0)
+      {
+        ASCENT_ERROR("vtkh_uniform_grid fields selection list must be non-empty");
+      }
+      for(int i = 0; i < num_fields; ++i)
+      {
+        const conduit::Node &f = flist.child(i);
+        if(!f.dtype().is_string())
+        {
+           ASCENT_ERROR("vtkh_uniform_grid fields selection list values must be a string");
+        }
+        field_selection.push_back(f.as_string());
+      }
+    }
+    else
+    {
+      ASCENT_ERROR("vtkh_uniform_grid must specify a 'field' string or 'fields' list of strings");
+    }
+
+    int num_fields = field_selection.size(); 
+    for(int i = 0; i < num_fields; ++i)
+    {
+      if(!collection->has_field(field_selection[i]))
+      {
+        bool throw_error = false;
+        detail::field_error(field_selection[i], this->name(), collection, throw_error);
+        // this creates a data object with an invalid soource
+        set_output<DataObject>(new DataObject());
+        return;
+      }
+    }
+
+    std::string field = field_selection[0];
+    std::string topo_name = collection->field_topology(field);
+    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+    viskores::Id global_cells = data.GetGlobalNumberOfCells();
+
+    viskores::Bounds d_bounds = data.GetGlobalBounds();
+    viskores::Float64 x_extents = d_bounds.X.Length() + 1; //add one b/c we are
+    viskores::Float64 y_extents = d_bounds.Y.Length() + 1; //setting num points
+    viskores::Float64 z_extents = d_bounds.Z.Length() + 1; //(not cells) in each dim
+
+    viskores::Float64 invalid_value = 0.0;
+    
+    using Vec3f = viskores::Vec<viskores::Float64,3>;
+    Vec3f v_dims    = {x_extents, y_extents, z_extents}; 
+    Vec3f v_origin  = {d_bounds.X.Min,d_bounds.Y.Min,d_bounds.Z.Min};
+    Vec3f v_spacing = {1.,1.,1.};
+
+    if(params().has_path("dims"))
+    {
+      const Node &n_dims = params()["dims"];
+      if(n_dims.has_path("i"))
+        v_dims[0] = get_float64(n_dims["i"], data_object);
+      if(n_dims.has_path("j"))
+        v_dims[1] = get_float64(n_dims["j"], data_object);
+      if(n_dims.has_path("k"))
+        v_dims[2] = get_float64(n_dims["k"], data_object);
+
+      v_dims[0] = (v_dims[0] > 0) ? (v_dims[0]) : 1;
+      v_dims[1] = (v_dims[1] > 0) ? (v_dims[1]) : 1;
+      v_dims[2] = (v_dims[2] > 0) ? (v_dims[2]) : 1;
+      v_spacing[0] = x_extents/v_dims[0];
+      v_spacing[1] = y_extents/v_dims[1];
+      v_spacing[2] = z_extents/v_dims[2];
+    }
+    if(params().has_path("origin"))
+    {
+      const Node &n_origin = params()["origin"];
+      if(n_origin.has_path("x"))
+        v_origin[0] = get_float64(n_origin["x"], data_object);
+      if(n_origin.has_path("y"))
+        v_origin[1] = get_float64(n_origin["y"], data_object);
+      if(n_origin.has_path("z"))
+        v_origin[2] = get_float64(n_origin["z"], data_object);
+    }
+    if(params().has_path("spacing"))
+    {
+      const Node &n_spacing = params()["spacing"];
+      if(n_spacing.has_path("dx"))
+        v_spacing[0] = get_float64(n_spacing["dx"], data_object);
+      if(n_spacing.has_path("dy"))
+        v_spacing[1] = get_float64(n_spacing["dy"], data_object);
+      if(n_spacing.has_path("dz"))
+        v_spacing[2] = get_float64(n_spacing["dz"], data_object);
+
+      v_spacing[0] = (v_spacing[0] > 0) ? (v_spacing[0]) : 1;
+      v_spacing[1] = (v_spacing[1] > 0) ? (v_spacing[1]) : 1;
+      v_spacing[2] = (v_spacing[2] > 0) ? (v_spacing[2]) : 1;
+    }
+    if(params().has_path("invalid_value"))
+    {
+      invalid_value = params()["invalid_value"].as_float64();
+    }
+
+    vtkh::Sample sampler;
+
+    sampler.UniformGrid(v_dims, v_origin, v_spacing);
+    sampler.InvalidValue(invalid_value);
+    sampler.Fields(field_selection);
+    sampler.SetInput(&data);
+
+    sampler.Update();
+
+    vtkh::DataSet *grid_output = sampler.GetOutput();
+
+    VTKHCollection *new_coll = new VTKHCollection();
+    new_coll->add(*grid_output, topo_name);
+    // re wrap in data object
+    DataObject *res =  new DataObject(new_coll);
+    delete grid_output;
+    set_output<DataObject>(res);
+}
+
+//-----------------------------------------------------------------------------
 VTKHSample::VTKHSample()
 :Filter()
 {
