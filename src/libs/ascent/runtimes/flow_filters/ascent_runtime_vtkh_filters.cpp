@@ -3980,16 +3980,6 @@ VTKHSample::verify_params(const conduit::Node &params,
     res &= check_numeric("points/y",params, info, false);
     res &= check_numeric("points/z",params, info, false);
 
-    res &= check_numeric("uniform_grid/dims/i",params, info, false);
-    res &= check_numeric("uniform_grid/dims/j",params, info, false);
-    res &= check_numeric("uniform_grid/dims/k",params, info, false);
-    res &= check_numeric("uniform_grid/origin/x",params, info, false);
-    res &= check_numeric("uniform_grid/origin/y",params, info, false);
-    res &= check_numeric("uniform_grid/origin/z",params, info, false);
-    res &= check_numeric("uniform_grid/spacing/dx",params, info, false);
-    res &= check_numeric("uniform_grid/spacing/dy",params, info, false);
-    res &= check_numeric("uniform_grid/spacing/dz",params, info, false);
-
     res &= check_numeric("box/dims/x",params, info, false);
     res &= check_numeric("box/dims/y",params, info, false);
     res &= check_numeric("box/dims/z",params, info, false);
