@@ -29,8 +29,14 @@ namespace flow
 namespace schema
 {
 
+//-----------------------------------------------------------------------------
+// -- begin flow::schema::detail --
+//-----------------------------------------------------------------------------
+namespace detail
+{
+
 // ---------- General Helpers ----------
-static void add_error(conduit::Node &info, const std::string &msg)
+void add_error(conduit::Node &info, const std::string &msg)
 {
     if(!info.has_child("errors"))
     {
@@ -39,7 +45,7 @@ static void add_error(conduit::Node &info, const std::string &msg)
     info["errors"].append() = msg;
 }
 
-static std::string get_type_string(const conduit::Node &schema)
+std::string get_type_string(const conduit::Node &schema)
 {
     if(schema.has_child("type") && schema["type"].dtype().is_string())
     {
@@ -48,10 +54,10 @@ static std::string get_type_string(const conduit::Node &schema)
     return "";
 }
 
-static bool check_type(const conduit::Node &input,
-                       const conduit::Node &schema,
-                       conduit::Node &info,
-                       const std::string &path)
+bool check_type(const conduit::Node &input,
+                const conduit::Node &schema,
+                conduit::Node &info,
+                const std::string &path)
 {
     const std::string schema_defined_type = get_type_string(schema);
     if(schema_defined_type.empty()) return true; // schema didn't specify; treat as "accept anything"
@@ -80,10 +86,17 @@ static bool check_type(const conduit::Node &input,
 }
 
 // ---------- Object-Specific Validation Helpers ----------
-static bool validate_required(const conduit::Node &schema,
-                              const conduit::Node &input,
-                              conduit::Node &info,
-                              const std::string &path)
+
+// Earlier declaration so validate node can be refrenced by helpers.
+bool validate_node(const conduit::Node &schema,
+                   const conduit::Node &input,
+                   conduit::Node &info,
+                   const std::string &path);
+
+bool validate_required(const conduit::Node &schema,
+                       const conduit::Node &input,
+                       conduit::Node &info,
+                       const std::string &path)
 {
     if(!schema.has_child("required")) return true;
     if(!input.dtype().is_object()) return true; // type error handled elsewhere
@@ -102,10 +115,10 @@ static bool validate_required(const conduit::Node &schema,
     return ok;
 }
 
-static bool validate_forbid(const conduit::Node &schema,
-                            const conduit::Node &input,
-                            conduit::Node &info,
-                            const std::string &path)
+bool validate_forbid(const conduit::Node &schema,
+                     const conduit::Node &input,
+                     conduit::Node &info,
+                     const std::string &path)
 {
     if(!schema.has_path("constraints/forbid")) return true;
     if(!input.dtype().is_object()) return true;
@@ -124,10 +137,10 @@ static bool validate_forbid(const conduit::Node &schema,
     return ok;
 }
 
-static bool validate_const(const conduit::Node &schema,
-                           const conduit::Node &input,
-                           conduit::Node &info,
-                           const std::string &path)
+bool validate_const(const conduit::Node &schema,
+                    const conduit::Node &input,
+                    conduit::Node &info,
+                    const std::string &path)
 {
     if(!schema.has_path("constraints/const")) return true;
 
@@ -147,10 +160,10 @@ static bool validate_const(const conduit::Node &schema,
     return true;
 }
 
-static bool validate_not_const_fields(const conduit::Node &schema,
-                                      const conduit::Node &input,
-                                      conduit::Node &info,
-                                      const std::string &path)
+bool validate_not_const_fields(const conduit::Node &schema,
+                               const conduit::Node &input,
+                               conduit::Node &info,
+                               const std::string &path)
 {
     if(!schema.has_path("constraints/not_const")) return true;
     if(!input.dtype().is_object()) return true;
@@ -177,10 +190,10 @@ static bool validate_not_const_fields(const conduit::Node &schema,
     return ok;
 }
 
-static bool validate_properties(const conduit::Node &schema,
-                                const conduit::Node &input,
-                                conduit::Node &info,
-                                const std::string &path)
+bool validate_properties(const conduit::Node &schema,
+                         const conduit::Node &input,
+                         conduit::Node &info,
+                         const std::string &path)
 {
     if(!schema.has_child("properties")) return true;
     if(!input.dtype().is_object()) return true;
@@ -198,10 +211,10 @@ static bool validate_properties(const conduit::Node &schema,
     return ok;
 }
 
-static bool validate_additional_properties(const conduit::Node &schema,
-                                           const conduit::Node &input,
-                                           conduit::Node &info,
-                                           const std::string &path)
+bool validate_additional_properties(const conduit::Node &schema,
+                                    const conduit::Node &input,
+                                    conduit::Node &info,
+                                    const std::string &path)
 {
     if(!input.dtype().is_object()) return true;
 
@@ -231,10 +244,10 @@ static bool validate_additional_properties(const conduit::Node &schema,
     return ok;
 }
 
-static bool validate_dependencies(const conduit::Node &schema,
-                                  const conduit::Node &input,
-                                  conduit::Node &info,
-                                  const std::string &path)
+bool validate_dependencies(const conduit::Node &schema,
+                           const conduit::Node &input,
+                           conduit::Node &info,
+                           const std::string &path)
 {
     if(!schema.has_path("constraints/dependencies")) return true;
     if(!input.dtype().is_object()) return true;
@@ -264,10 +277,10 @@ static bool validate_dependencies(const conduit::Node &schema,
     return ok;
 }
 
-static bool validate_exclusive_children(const conduit::Node &schema,
-                                        const conduit::Node &input,
-                                        conduit::Node &info,
-                                        const std::string &path)
+bool validate_exclusive_children(const conduit::Node &schema,
+                                 const conduit::Node &input,
+                                 conduit::Node &info,
+                                 const std::string &path)
 {
     if(!schema.has_path("constraints/exclusiveChildren")) return true;
     if(!input.dtype().is_object()) return true;
@@ -323,10 +336,10 @@ static bool validate_exclusive_children(const conduit::Node &schema,
     return false;
 }
 
-static bool validate_one_of(const conduit::Node &schema,
-                            const conduit::Node &input,
-                            conduit::Node &info,
-                            const std::string &path)
+bool validate_one_of(const conduit::Node &schema,
+                     const conduit::Node &input,
+                     conduit::Node &info,
+                     const std::string &path)
 {
     if(!schema.has_child("oneOf")) return true;
 
@@ -385,10 +398,10 @@ static bool validate_one_of(const conduit::Node &schema,
     return false;
 }
 
-static bool validate_any_of(const conduit::Node &schema,
-                            const conduit::Node &input,
-                            conduit::Node &info,
-                            const std::string &path)
+bool validate_any_of(const conduit::Node &schema,
+                     const conduit::Node &input,
+                     conduit::Node &info,
+                     const std::string &path)
 {
     if(!schema.has_child("anyOf")) return true;
 
@@ -435,10 +448,10 @@ static bool validate_any_of(const conduit::Node &schema,
     return false;
 }
 
-static bool validate_object(const conduit::Node &schema,
-                            const conduit::Node &input,
-                            conduit::Node &info,
-                            const std::string &path)
+bool validate_object(const conduit::Node &schema,
+                     const conduit::Node &input,
+                     conduit::Node &info,
+                     const std::string &path)
 {
     bool ok = true;
 
@@ -462,10 +475,10 @@ static bool validate_object(const conduit::Node &schema,
     return ok;
 }
 
-static bool validate_array(const conduit::Node &schema,
-                           const conduit::Node &input,
-                           conduit::Node &info,
-                           const std::string &path)
+bool validate_array(const conduit::Node &schema,
+                    const conduit::Node &input,
+                    conduit::Node &info,
+                    const std::string &path)
 {
     bool ok = true;
 
@@ -514,10 +527,10 @@ static bool validate_array(const conduit::Node &schema,
     return ok;
 }
 
-static bool validate_node(const conduit::Node &schema,
-                          const conduit::Node &input,
-                          conduit::Node &info,
-                          const std::string &path)
+bool validate_node(const conduit::Node &schema,
+                   const conduit::Node &input,
+                   conduit::Node &info,
+                   const std::string &path)
 {
     if (schema.has_path("constraints/skip") && schema["constraints/skip"].to_int() != 0)
     {
@@ -561,13 +574,18 @@ static bool validate_node(const conduit::Node &schema,
     return ok;
 }
 
+};
+//-----------------------------------------------------------------------------
+// -- end flow::schema::detail --
+//-----------------------------------------------------------------------------
+
 // ---------- Schema Validation Entry-Point ----------
 bool validate(const conduit::Node &schema,
               const conduit::Node &input,
               conduit::Node &info)
 {
     info.reset();
-    bool ok = validate_node(schema, input, info, "");
+    bool ok = detail::validate_node(schema, input, info, "");
 
     if(!ok && !info.has_child("errors"))
     {

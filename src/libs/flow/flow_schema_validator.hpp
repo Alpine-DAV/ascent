@@ -35,61 +35,6 @@ bool FLOW_API validate(const conduit::Node &schema,
                        const conduit::Node &input,
                        conduit::Node &info);
 
-
-static bool validate_node(const conduit::Node &schema,
-                          const conduit::Node &input,
-                          conduit::Node &info,
-                          const std::string &path);
-
-static bool validate_object(const conduit::Node &schema,
-                            const conduit::Node &input,
-                            conduit::Node &info,
-                            const std::string &path);
-
-static bool validate_one_of(const conduit::Node &schema,
-                            const conduit::Node &input,
-                            conduit::Node &info,
-                            const std::string &path);
-
-static bool validate_exclusive_children(const conduit::Node &schema,
-                                        const conduit::Node &input,
-                                        conduit::Node &info,
-                                        const std::string &path);
-
-static bool validate_dependencies(const conduit::Node &schema,
-                                  const conduit::Node &input,
-                                  conduit::Node &info,
-                                  const std::string &path);
-
-static bool validate_properties(const conduit::Node &schema,
-                                const conduit::Node &input,
-                                conduit::Node &info,
-                                const std::string &path);
-
-static bool validate_additional_properties(const conduit::Node &schema,
-                                           const conduit::Node &input,
-                                           conduit::Node &info,
-                                           const std::string &path);
-
-static bool validate_required(const conduit::Node &schema,
-                              const conduit::Node &input,
-                              conduit::Node &info,
-                              const std::string &path);
-
-static bool validate_forbid(const conduit::Node &schema,
-                            const conduit::Node &input,
-                            conduit::Node &info,
-                            const std::string &path);
-
-static bool check_type(const conduit::Node &input,
-                       const conduit::Node &schema,
-                       conduit::Node &info,
-                       const std::string &path);
-
-static std::string get_type_string(const conduit::Node &schema);
-
-static void add_error(conduit::Node &info, const std::string &msg);
-
 };
 //-----------------------------------------------------------------------------
 // -- end flow::schema --
