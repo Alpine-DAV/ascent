@@ -4692,30 +4692,30 @@ VTKHParticleAdvection::declare_interface(Node &i)
     param_schema["properties/step_size"].set(number_schema());
 
     // --- seed ---
-    conduit::Node seed_schema;
-    seed_schema["type"] = "object";
-    seed_schema["additionalProperties"] = false;
-    seed_schema["properties/type"].set(string_schema());
-    seed_schema["properties/location"].set(number_schema());
-    seed_schema["properties/start"].set(number_schema());
-    seed_schema["properties/end"].set(number_schema());
-    seed_schema["properties/num_seeds"].set(number_schema());
-    seed_schema["properties/num_seeds_x"].set(number_schema());
-    seed_schema["properties/num_seeds_y"].set(number_schema());
-    seed_schema["properties/num_seeds_z"].set(number_schema());
-    seed_schema["properties/extents_x"].set(number_schema());
-    seed_schema["properties/extents_y"].set(number_schema());
-    seed_schema["properties/extents_z"].set(number_schema());
-    seed_schema["properties/sampling_type"].set(string_schema());
-    seed_schema["properties/sampling_space"].set(string_schema());
-    seed_schema["required"].append() = "type";
+    conduit::Node seeds_schema;
+    seeds_schema["type"] = "object";
+    seeds_schema["additionalProperties"] = false;
+    seeds_schema["properties/type"].set(string_schema());
+    seeds_schema["properties/location"].set(number_schema());
+    seeds_schema["properties/start"].set(number_schema());
+    seeds_schema["properties/end"].set(number_schema());
+    seeds_schema["properties/num_seeds"].set(number_schema());
+    seeds_schema["properties/num_seeds_x"].set(number_schema());
+    seeds_schema["properties/num_seeds_y"].set(number_schema());
+    seeds_schema["properties/num_seeds_z"].set(number_schema());
+    seeds_schema["properties/extents_x"].set(number_schema());
+    seeds_schema["properties/extents_y"].set(number_schema());
+    seeds_schema["properties/extents_z"].set(number_schema());
+    seeds_schema["properties/sampling_type"].set(string_schema());
+    seeds_schema["properties/sampling_space"].set(string_schema());
+    seeds_schema["required"].append() = "type";
 
-    seed_schema["constraints/dependencies/extents_x"].append() = "extents_y";
-    seed_schema["constraints/dependencies/extents_x"].append() = "extents_z";
-    seed_schema["constraints/dependencies/extents_y"].append() = "extents_x";
-    seed_schema["constraints/dependencies/extents_y"].append() = "extents_z";
-    seed_schema["constraints/dependencies/extents_z"].append() = "extents_x";
-    seed_schema["constraints/dependencies/extents_z"].append() = "extents_y";
+    seeds_schema["constraints/dependencies/extents_x"].append() = "extents_y";
+    seeds_schema["constraints/dependencies/extents_x"].append() = "extents_z";
+    seeds_schema["constraints/dependencies/extents_y"].append() = "extents_x";
+    seeds_schema["constraints/dependencies/extents_y"].append() = "extents_z";
+    seeds_schema["constraints/dependencies/extents_z"].append() = "extents_x";
+    seeds_schema["constraints/dependencies/extents_z"].append() = "extents_y";
 
     // type == point
     conduit::Node point_option;
@@ -4724,7 +4724,7 @@ VTKHParticleAdvection::declare_interface(Node &i)
     point_option["properties/type/constraints/const"] = "point";
     point_option["required"].append() = "type";
     point_option["required"].append() = "location";
-    seed_schema["oneOf"].append().set(point_option);
+    seeds_schema["oneOf"].append().set(point_option);
 
     // type == point_list
     conduit::Node point_list_option;
@@ -4733,7 +4733,7 @@ VTKHParticleAdvection::declare_interface(Node &i)
     point_list_option["properties/type/constraints/const"] = "point_list";
     point_list_option["required"].append() = "type";
     point_list_option["required"].append() = "location";
-    seed_schema["oneOf"].append().set(point_list_option);
+    seeds_schema["oneOf"].append().set(point_list_option);
 
     // type == line
     conduit::Node line_option;
@@ -4745,7 +4745,7 @@ VTKHParticleAdvection::declare_interface(Node &i)
     line_option["required"].append() = "end";
     line_option["required"].append() = "num_seeds";
     line_option["required"].append() = "sampling_type";
-    seed_schema["oneOf"].append().set(line_option);
+    seeds_schema["oneOf"].append().set(line_option);
 
     // type == box
     conduit::Node box_option;
@@ -4774,9 +4774,9 @@ VTKHParticleAdvection::declare_interface(Node &i)
         box_option_non_uniform["constraints/not_const/sampling_type"] = "uniform";
         box_option["oneOf"].append().set(box_option_non_uniform);
     }
-    seed_schema["oneOf"].append().set(box_option);
+    seeds_schema["oneOf"].append().set(box_option);
 
-    param_schema["properties/seed"].set(seed_schema);
+    param_schema["properties/seeds"].set(seeds_schema);
 
     // --- rendering ---
     conduit::Node rendering_schema;
@@ -4793,7 +4793,7 @@ VTKHParticleAdvection::declare_interface(Node &i)
     param_schema["required"].append() = "field";
     param_schema["required"].append() = "num_steps";
     param_schema["required"].append() = "step_size";
-    param_schema["required"].append() = "seed";
+    param_schema["required"].append() = "seeds";
 
     i["param_schema"].set(param_schema);
 }
