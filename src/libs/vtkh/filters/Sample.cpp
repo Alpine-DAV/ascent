@@ -140,9 +140,9 @@ MakeEmptyField(std::string field_name , viskores::Id field_id, int num_values, v
 class GlobalReduceField
 {
   const viskores::cont::DataSet &m_dataset;
-  std::string               m_field;
+  std::string                   m_field;
   viskores::Float64             m_invalid_value;
-  const int                 m_num_points;
+  const int                     m_num_points;
   const viskores::Id            m_field_id;
   viskores::cont::DataSet       &m_result;
 
@@ -150,9 +150,9 @@ public:
   //-------------------------------------------------------------------------//
   GlobalReduceField(const viskores::cont::DataSet &dataset,
                     const std::string field,
+                    const viskores::Float64 invalid_value,
                     const int num_points,
                     const viskores::Id field_id,
-                    const viskores::Float64 invalid_value,
                     viskores::cont::DataSet &result)
     : m_dataset(dataset),
       m_field(field),
@@ -170,8 +170,7 @@ public:
   void
   Reduce()
   {
-    viskores::cont::DataSet res;
-    res.CopyStructure(m_dataset);
+    m_result.CopyStructure(m_dataset);
     ReduceField r_field(m_field, m_dataset, m_invalid_value, m_num_points, m_field_id, m_result);
     r_field.reduce();
     return;
@@ -219,6 +218,7 @@ public:
       bool is_empty = false;
       if(m_data_set.HasField(m_field_name))
       {
+
         is_empty = false;
         field = m_data_set.GetField(m_field_name);
       }
@@ -667,11 +667,11 @@ public:
     viskores::cont::ArrayHandle<unsigned char> local_mask;
     if(m_field.IsPointField())
     {
-      m_dataset.GetPointField("HIDDEN").GetData().AsArrayHandle(local_mask);
+      m_dataset.GetPointField("valid_mask").GetData().AsArrayHandle(local_mask);
     }
     else
     {
-      m_dataset.GetCellField("HIDDEN").GetData().AsArrayHandle(local_mask);
+      m_dataset.GetCellField("valid_mask").GetData().AsArrayHandle(local_mask);
     }
 
     auto tmp_mask_portal = tmp_mask.ReadPortal();
@@ -957,6 +957,7 @@ Sample::DoExecute()
           local_res.CopyStructure(dataset);
           local_res.AddField("valid_mask", valid_field.GetAssociation(), valid_field.GetData());
         }
+
         if(!local_res.HasField(field_name))
         {
           local_res.AddField(tmp_field);
@@ -992,6 +993,7 @@ Sample::DoExecute()
     bool valid_field;
     viskores::Id field_id = this->m_input->GetFieldType(field_name, valid_field);
     vtkh::detail::GlobalReduceField g_reducefield(local_res, field_name, m_invalid_value, m_num_samples, field_id, reduced);
+    g_reducefield.Reduce();
     viskores::cont::Field reduced_field = reduced.GetField(field_name);
     reduced_output.AddField(reduced_field);
   }
@@ -1170,6 +1172,9 @@ Sample::UniformGrid(const Vec3_f64 dims,
   m_dims = dims;
   m_origin = origin;
   m_spacing = spacing;
+  m_num_samples = (m_dims[0] > 0) ? m_dims[0] : 1; 
+  m_num_samples = (m_dims[1] > 0) ? m_num_samples*m_dims[1] : m_num_samples; 
+  m_num_samples = (m_dims[2] > 0) ? m_num_samples*m_dims[2] : m_num_samples; 
 
 }
 
