@@ -29,6 +29,7 @@
 #include <ascent_config.h>
 #include <ascent_logging.hpp>
 #include <ascent_data_object.hpp>
+#include <ascent_runtime_param_check.hpp>
 #include <utils/ascent_mpi_utils.hpp>
 #include <flow_graph.hpp>
 #include <flow_timer.hpp>
@@ -944,20 +945,16 @@ ExprBoolean::declare_interface(Node &i)
   i["type_name"] = "expr_bool";
   i["port_names"] = DataType::empty();
   i["output_port"] = "true";
-}
 
-//-----------------------------------------------------------------------------
-bool
-ExprBoolean::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  if(!params.has_path("value"))
-  {
-    info["errors"].append() = "Missing required numeric parameter 'value'";
-    res = false;
-  }
-  return res;
+  // ----------- Define Param Schema -----------
+    conduit::Node param_schema;
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
+
+    param_schema["properties/value"].set(filters::number_schema());
+    param_schema["required"].append() = "value";
+    
+    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -993,20 +990,16 @@ ExprInteger::declare_interface(Node &i)
   i["type_name"] = "expr_integer";
   i["port_names"] = DataType::empty();
   i["output_port"] = "true";
-}
 
-//-----------------------------------------------------------------------------
-bool
-ExprInteger::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  if(!params.has_path("value"))
-  {
-    info["errors"].append() = "Missing required numeric parameter 'value'";
-    res = false;
-  }
-  return res;
+  // ----------- Define Param Schema -----------
+    conduit::Node param_schema;
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
+
+    param_schema["properties/value"].set(filters::number_schema());
+    param_schema["required"].append() = "value";
+    
+    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -1043,20 +1036,16 @@ ExprDouble::declare_interface(Node &i)
   i["type_name"] = "expr_double";
   i["port_names"] = DataType::empty();
   i["output_port"] = "true";
-}
 
-//-----------------------------------------------------------------------------
-bool
-ExprDouble::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  if(!params.has_path("value"))
-  {
-    info["errors"].append() = "Missing required numeric parameter 'value'";
-    res = false;
-  }
-  return res;
+  // ----------- Define Param Schema -----------
+    conduit::Node param_schema;
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
+
+    param_schema["properties/value"].set(filters::number_schema());
+    param_schema["required"].append() = "value";
+    
+    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -1094,20 +1083,16 @@ ExprString::declare_interface(Node &i)
   i["type_name"] = "expr_string";
   i["port_names"] = DataType::empty();
   i["output_port"] = "true";
-}
 
-//-----------------------------------------------------------------------------
-bool
-ExprString::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  if(!params.has_path("value"))
-  {
-    info["errors"].append() = "Missing required string parameter 'value'";
-    res = false;
-  }
-  return res;
+  // ----------- Define Param Schema -----------
+    conduit::Node param_schema;
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
+
+    param_schema["properties/value"].set(filters::string_schema());
+    param_schema["required"].append() = "value";
+    
+    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -1144,15 +1129,6 @@ ExprNan::declare_interface(Node &i)
   i["type_name"] = "expr_nan";
   i["port_names"] = DataType::empty();
   i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-ExprNan::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
 }
 
 //-----------------------------------------------------------------------------
@@ -1193,15 +1169,6 @@ ExprNull::declare_interface(Node &i)
 }
 
 //-----------------------------------------------------------------------------
-bool
-ExprNull::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
-}
-
-//-----------------------------------------------------------------------------
 void
 ExprNull::execute()
 {
@@ -1233,20 +1200,16 @@ ExprIdentifier::declare_interface(Node &i)
   i["type_name"] = "expr_identifier";
   i["port_names"] = DataType::empty();
   i["output_port"] = "true";
-}
 
-//-----------------------------------------------------------------------------
-bool
-ExprIdentifier::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  if(!params.has_path("value"))
-  {
-    info["errors"].append() = "Missing required string parameter 'value'";
-    res = false;
-  }
-  return res;
+  // ----------- Define Param Schema -----------
+  conduit::Node param_schema;
+  param_schema["type"] = "object";
+  param_schema["additionalProperties"] = false;
+
+  param_schema["properties/value"].set(filters::string_schema());
+  param_schema["required"].append() = "value";
+
+  i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -1301,20 +1264,16 @@ ExprObjectDotAccess::declare_interface(Node &i)
   i["type_name"] = "expr_dot";
   i["port_names"].append() = "obj";
   i["output_port"] = "true";
-}
 
-//-----------------------------------------------------------------------------
-bool
-ExprObjectDotAccess::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  if(!params.has_path("name"))
-  {
-    info["errors"].append() = "DotAccess: Missing required parameter 'name'";
-    res = false;
-  }
-  return res;
+  // ----------- Define Param Schema -----------
+    conduit::Node param_schema;
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
+
+    param_schema["properties/name"].set(filters::string_schema());
+    param_schema["required"].append() = "name";
+    
+    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -1391,15 +1350,6 @@ ExprIf::declare_interface(Node &i)
 }
 
 //-----------------------------------------------------------------------------
-bool
-ExprIf::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
-}
-
-//-----------------------------------------------------------------------------
 void
 ExprIf::execute()
 {
@@ -1447,20 +1397,16 @@ ExprBinaryOp::declare_interface(Node &i)
   i["port_names"].append() = "lhs";
   i["port_names"].append() = "rhs";
   i["output_port"] = "true";
-}
 
-//-----------------------------------------------------------------------------
-bool
-ExprBinaryOp::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  if(!params.has_path("op_string"))
-  {
-    info["errors"].append() = "Missing required string parameter 'op_string'";
-    res = false;
-  }
-  return res;
+  // ----------- Define Param Schema -----------
+    conduit::Node param_schema;
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
+
+    param_schema["properties/op_string"].set(filters::string_schema());
+    param_schema["required"].append() = "op_string";
+    
+    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -1576,15 +1522,6 @@ ExprScalarMin::declare_interface(Node &i)
 }
 
 //-----------------------------------------------------------------------------
-bool
-ExprScalarMin::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
-}
-
-//-----------------------------------------------------------------------------
 void
 ExprScalarMin::execute()
 {
@@ -1637,15 +1574,6 @@ ExprScalarMax::declare_interface(Node &i)
   i["port_names"].append() = "arg1";
   i["port_names"].append() = "arg2";
   i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-ExprScalarMax::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
 }
 
 //-----------------------------------------------------------------------------
@@ -1702,15 +1630,6 @@ ExprScalarAbs::declare_interface(Node &i)
   i["type_name"] = "expr_scalar_abs";
   i["port_names"].append() = "arg1";
   i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-ExprScalarAbs::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
 }
 
 //-----------------------------------------------------------------------------
@@ -1771,15 +1690,6 @@ ExprScalarExp::declare_interface(Node &i)
 }
 
 //-----------------------------------------------------------------------------
-bool
-ExprScalarExp::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
-}
-
-//-----------------------------------------------------------------------------
 void
 ExprScalarExp::execute()
 {
@@ -1822,15 +1732,6 @@ ExprScalarLog::declare_interface(Node &i)
 }
 
 //-----------------------------------------------------------------------------
-bool
-ExprScalarLog::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
-}
-
-//-----------------------------------------------------------------------------
 void
 ExprScalarLog::execute()
 {
@@ -1870,15 +1771,6 @@ ExprScalarPow::declare_interface(Node &i)
   i["port_names"].append() = "arg1";
   i["port_names"].append() = "arg2";
   i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-ExprScalarPow::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
 }
 
 //-----------------------------------------------------------------------------
@@ -1938,15 +1830,6 @@ ExprVector::declare_interface(Node &i)
 }
 
 //-----------------------------------------------------------------------------
-bool
-ExprVector::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
-}
-
-//-----------------------------------------------------------------------------
 void
 ExprVector::execute()
 {
@@ -1991,16 +1874,6 @@ ExprVectorMagnitude::declare_interface(Node &i)
   i["type_name"] = "expr_vector_magnitude";
   i["port_names"].append() = "arg1";
   i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-ExprVectorMagnitude::verify_params(const conduit::Node &params,
-                                   conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
 }
 
 //-----------------------------------------------------------------------------
@@ -2057,15 +1930,6 @@ ExprArrayAccess::declare_interface(Node &i)
 }
 
 //-----------------------------------------------------------------------------
-bool
-ExprArrayAccess::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
-}
-
-//-----------------------------------------------------------------------------
 void
 ExprArrayAccess::execute()
 {
@@ -2116,15 +1980,6 @@ ExprArrayReplace::declare_interface(Node &i)
   i["port_names"].append() = "find";
   i["port_names"].append() = "replace";
   i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-ExprArrayReplace::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
 }
 
 //-----------------------------------------------------------------------------
@@ -2219,15 +2074,6 @@ ExprArrayReductionMin::declare_interface(Node &i)
 }
 
 //-----------------------------------------------------------------------------
-bool
-ExprArrayReductionMin::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
-}
-
-//-----------------------------------------------------------------------------
 void
 ExprArrayReductionMin::execute()
 {
@@ -2264,15 +2110,6 @@ ExprArrayReductionMax::declare_interface(Node &i)
   i["type_name"] = "expr_array_reduction_max";
   i["port_names"].append() = "arg1";
   i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-ExprArrayReductionMax::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
 }
 
 //-----------------------------------------------------------------------------
@@ -2315,15 +2152,6 @@ ExprArrayReductionAvg::declare_interface(Node &i)
 }
 
 //-----------------------------------------------------------------------------
-bool
-ExprArrayReductionAvg::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
-}
-
-//-----------------------------------------------------------------------------
 void
 ExprArrayReductionAvg::execute()
 {
@@ -2360,15 +2188,6 @@ ExprArrayReductionSum::declare_interface(Node &i)
   i["type_name"] = "expr_array_reduction_sum";
   i["port_names"].append() = "arg1";
   i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-ExprArrayReductionSum::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
 }
 
 //-----------------------------------------------------------------------------
@@ -2419,15 +2238,6 @@ ExprHistory::declare_interface(Node &i)
   i["port_names"].append() = "absolute_index";
   i["port_names"].append() = "relative_index";
   i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-ExprHistory::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
 }
 
 //-----------------------------------------------------------------------------
@@ -2539,16 +2349,6 @@ ExprHistoryRange::declare_interface(Node &i)
 }
 
 //-----------------------------------------------------------------------------
-bool
-ExprHistoryRange::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
-}
-
-
-//-----------------------------------------------------------------------------
 void
 ExprHistoryRange::execute()
 {
@@ -2613,15 +2413,6 @@ ExprHistoryGradient::declare_interface(Node &i)
   i["port_names"].append() = "window_length";
   i["port_names"].append() = "window_length_unit";
   i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-ExprHistoryGradient::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
 }
 
 //-----------------------------------------------------------------------------
@@ -2824,16 +2615,6 @@ ExprHistoryGradientRange::declare_interface(Node &i)
 }
 
 //-----------------------------------------------------------------------------
-bool
-ExprHistoryGradientRange::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
-}
-
-
-//-----------------------------------------------------------------------------
 void
 ExprHistoryGradientRange::execute()
 {
@@ -2928,15 +2709,6 @@ ExprHistogram::declare_interface(Node &i)
   i["port_names"].append() = "min_val";
   i["port_names"].append() = "max_val";
   i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-ExprHistogram::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
 }
 
 //-----------------------------------------------------------------------------
@@ -3042,15 +2814,6 @@ ExprHistogramEntropy::declare_interface(Node &i)
 }
 
 //-----------------------------------------------------------------------------
-bool
-ExprHistogramEntropy::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
-}
-
-//-----------------------------------------------------------------------------
 void
 ExprHistogramEntropy::execute()
 {
@@ -3092,15 +2855,6 @@ ExprHistogramPDF::declare_interface(Node &i)
   i["type_name"] = "expr_histogram_pdf";
   i["port_names"].append() = "hist";
   i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-ExprHistogramPDF::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
 }
 
 //-----------------------------------------------------------------------------
@@ -3147,15 +2901,6 @@ ExprHistogramCDF::declare_interface(Node &i)
 }
 
 //-----------------------------------------------------------------------------
-bool
-ExprHistogramCDF::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
-}
-
-//-----------------------------------------------------------------------------
 void
 ExprHistogramCDF::execute()
 {
@@ -3199,15 +2944,6 @@ ExprHistogramCDFQuantile::declare_interface(Node &i)
   i["port_names"].append() = "q";
   i["port_names"].append() = "interpolation";
   i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-ExprHistogramCDFQuantile::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
 }
 
 //-----------------------------------------------------------------------------
@@ -3277,15 +3013,6 @@ ExprHistogramBinByIndex::declare_interface(Node &i)
 }
 
 //-----------------------------------------------------------------------------
-bool
-ExprHistogramBinByIndex::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
-}
-
-//-----------------------------------------------------------------------------
 void
 ExprHistogramBinByIndex::execute()
 {
@@ -3335,16 +3062,6 @@ ExprHistogramBinByValue::declare_interface(Node &i)
   i["port_names"].append() = "hist";
   i["port_names"].append() = "val";
   i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-ExprHistogramBinByValue::verify_params(const conduit::Node &params,
-                                       conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
 }
 
 //-----------------------------------------------------------------------------
@@ -3414,15 +3131,6 @@ ExprMeshCycle::declare_interface(Node &i)
 }
 
 //-----------------------------------------------------------------------------
-bool
-ExprMeshCycle::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
-}
-
-//-----------------------------------------------------------------------------
 void
 ExprMeshCycle::execute()
 {
@@ -3469,15 +3177,6 @@ ExprMeshTime::declare_interface(Node &i)
   i["type_name"] = "expr_mesh_time";
   i["port_names"] = DataType::empty();
   i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-ExprMeshTime::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
 }
 
 //-----------------------------------------------------------------------------
@@ -3529,15 +3228,6 @@ ExprMeshField::declare_interface(Node &i)
   i["port_names"].append() = "field_name";
   i["port_names"].append() = "component";
   i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-ExprMeshField::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
 }
 
 //-----------------------------------------------------------------------------
@@ -3654,15 +3344,6 @@ ExprMeshTopology::declare_interface(Node &i)
 }
 
 //-----------------------------------------------------------------------------
-bool
-ExprMeshTopology::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
-}
-
-//-----------------------------------------------------------------------------
 void
 ExprMeshTopology::execute()
 {
@@ -3724,15 +3405,6 @@ ExprMeshBounds::declare_interface(Node &i)
   i["type_name"] = "expr_mesh_bounds";
   i["port_names"].append() = "topology";
   i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-ExprMeshBounds::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
 }
 
 //-----------------------------------------------------------------------------
@@ -3822,15 +3494,6 @@ ExprMeshLineout::declare_interface(Node &i)
   i["port_names"].append() = "fields";
   i["port_names"].append() = "empty_val";
   i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-ExprMeshLineout::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
 }
 
 //-----------------------------------------------------------------------------
@@ -3995,15 +3658,6 @@ ExprMeshFieldReductionMin::declare_interface(Node &i)
 }
 
 //-----------------------------------------------------------------------------
-bool
-ExprMeshFieldReductionMin::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
-}
-
-//-----------------------------------------------------------------------------
 void
 ExprMeshFieldReductionMin::execute()
 {
@@ -4065,15 +3719,6 @@ ExprMeshFieldReductionMax::declare_interface(Node &i)
   i["type_name"] = "expr_mesh_field_reduction_max";
   i["port_names"].append() = "arg1";
   i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-ExprMeshFieldReductionMax::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
 }
 
 //-----------------------------------------------------------------------------
@@ -4139,15 +3784,6 @@ ExprMeshFieldReductionAvg::declare_interface(Node &i)
 }
 
 //-----------------------------------------------------------------------------
-bool
-ExprMeshFieldReductionAvg::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
-}
-
-//-----------------------------------------------------------------------------
 void
 ExprMeshFieldReductionAvg::execute()
 {
@@ -4201,15 +3837,6 @@ ExprMeshFieldReductionSum::declare_interface(Node &i)
 }
 
 //-----------------------------------------------------------------------------
-bool
-ExprMeshFieldReductionSum::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
-}
-
-//-----------------------------------------------------------------------------
 void
 ExprMeshFieldReductionSum::execute()
 {
@@ -4250,15 +3877,6 @@ ExprMeshFieldReductionNanCount::declare_interface(Node &i)
   i["type_name"] = "expr_mesh_field_reduction_nan_count";
   i["port_names"].append() = "arg1";
   i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-ExprMeshFieldReductionNanCount::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
 }
 
 //-----------------------------------------------------------------------------
@@ -4303,15 +3921,6 @@ ExprMeshFieldReductionInfCount::declare_interface(Node &i)
   i["type_name"] = "expr_mesh_field_reduction_inf_count";
   i["port_names"].append() = "arg1";
   i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-ExprMeshFieldReductionInfCount::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
 }
 
 //-----------------------------------------------------------------------------
@@ -4370,15 +3979,6 @@ ExprMeshBinning::declare_interface(Node &i)
   i["port_names"].append() = "empty_bin_val";
   i["port_names"].append() = "component";
   i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-ExprMeshBinning::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
 }
 
 //-----------------------------------------------------------------------------
@@ -4459,16 +4059,6 @@ ExprMeshBinningAxis::declare_interface(Node &i)
   i["port_names"].append() = "bins";
   i["port_names"].append() = "clamp";
   i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-ExprMeshBinningAxis::verify_params(const conduit::Node &params,
-                                   conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
 }
 
 //-----------------------------------------------------------------------------
@@ -4642,16 +4232,6 @@ ExprMeshBinningBinByIndex::declare_interface(Node &i)
 }
 
 //-----------------------------------------------------------------------------
-bool
-ExprMeshBinningBinByIndex::verify_params(const conduit::Node &params,
-                                         conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
-}
-
-//-----------------------------------------------------------------------------
 void
 ExprMeshBinningBinByIndex::execute()
 {
@@ -4733,16 +4313,6 @@ ExprMeshBinningPointAndAxis::declare_interface(Node &i)
   i["port_names"].append() = "miss_value";
   i["port_names"].append() = "direction";
   i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-ExprMeshBinningPointAndAxis::verify_params(const conduit::Node &params,
-                                           conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
 }
 
 //-----------------------------------------------------------------------------
@@ -4870,16 +4440,6 @@ ExprMeshBinningMaxFromPoint::declare_interface(Node &i)
   i["port_names"].append() = "axis";
   i["port_names"].append() = "point";
   i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-ExprMeshBinningMaxFromPoint::verify_params(const conduit::Node &params,
-                                           conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
 }
 
 //-----------------------------------------------------------------------------
