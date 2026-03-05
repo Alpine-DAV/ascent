@@ -58,6 +58,20 @@ bool is_valid_expression(const std::string expr, std::string &err_msg)
   return res;
 }
 
+conduit::Node string_schema()
+{
+  conduit::Node n;
+  n["type"] = "string";
+  return n;
+}
+
+conduit::Node expression_schema()
+{
+  conduit::Node n = string_schema();
+  n["format"] = "expression";
+  return n;
+}
+
 conduit::Node number_schema()
 {
   conduit::Node n;
@@ -65,10 +79,11 @@ conduit::Node number_schema()
   return n;
 }
 
-conduit::Node string_schema()
+conduit::Node number_or_expression_schema()
 {
   conduit::Node n;
-  n["type"] = "string";
+  n["anyOf"].append().set(number_schema());
+  n["anyOf"].append().set(expression_schema());
   return n;
 }
 

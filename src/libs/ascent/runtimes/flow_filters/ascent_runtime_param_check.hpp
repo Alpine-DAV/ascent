@@ -41,9 +41,13 @@ namespace runtime
 namespace filters
 {
 
+conduit::Node ASCENT_API string_schema();
+
+conduit::Node ASCENT_API expression_schema();
+
 conduit::Node ASCENT_API number_schema();
 
-conduit::Node ASCENT_API string_schema();
+conduit::Node ASCENT_API number_or_expression_schema();
 
 conduit::Node ASCENT_API vec3_schema();
 

@@ -31,9 +31,17 @@ namespace flow
 namespace schema
 {
 
+using ExpressionCheckFunc = bool (*)(const std::string &expr, std::string &err_msg);
+
+struct Hooks
+{
+  ExpressionCheckFunc is_valid_expression = nullptr;
+};
+
 bool FLOW_API validate(const conduit::Node &schema,
                        const conduit::Node &input,
-                       conduit::Node &info);
+                       conduit::Node &info,
+                       const Hooks *hooks = nullptr);
 
 };
 //-----------------------------------------------------------------------------

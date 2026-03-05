@@ -475,6 +475,35 @@ bool validate_object(const conduit::Node &schema,
     return ok;
 }
 
+static bool validate_format(const conduit::Node &schema,
+                            const conduit::Node &input,
+                            conduit::Node &info,
+                            const std::string &path,
+                            const flow::schema::Hooks *hooks)
+{
+    if(!schema.has_child("format")) return true;
+    if(!schema["format"].dtype().is_string()) return true;
+
+    const std::string fmt = schema["format"].as_string();
+    if(fmt != "expression") return true;
+    if(!input.dtype().is_string()) return true;
+
+    // If no is_valid_expression hook then move on
+    if(hooks == nullptr || hooks->is_valid_expression == nullptr)
+    {
+        return true;
+    }
+
+    std::string err;
+    bool ok = hooks->is_valid_expression(input.as_string(), err);
+    if(!ok)
+    {
+        add_error(info,
+        "Invalid expression at '" + (path.empty() ? std::string("<root>") : path) + "': " + err);
+    }
+    return ok;
+}
+
 bool validate_array(const conduit::Node &schema,
                     const conduit::Node &input,
                     conduit::Node &info,
@@ -530,7 +559,8 @@ bool validate_array(const conduit::Node &schema,
 bool validate_node(const conduit::Node &schema,
                    const conduit::Node &input,
                    conduit::Node &info,
-                   const std::string &path)
+                   const std::string &path,
+                   const Hooks *hooks = nullptr)
 {
     if (schema.has_path("constraints/skip") && schema["constraints/skip"].to_int() != 0)
     {
@@ -557,8 +587,6 @@ bool validate_node(const conduit::Node &schema,
     ok = validate_const(schema, input, info, path) && ok;
     if(!ok) return false; // type mismatch stops recursion
 
-    
-
     if(schema_defined_type == "object")
     {
         return validate_object(schema, input, info, path);
@@ -570,6 +598,7 @@ bool validate_node(const conduit::Node &schema,
 
     ok = validate_one_of(schema, input, info, path) && ok;
     ok = validate_any_of(schema, input, info, path) && ok;
+    ok = validate_format(input, schema, info, path, hooks) && ok;
 
     return ok;
 }
@@ -582,10 +611,11 @@ bool validate_node(const conduit::Node &schema,
 // ---------- Schema Validation Entry-Point ----------
 bool validate(const conduit::Node &schema,
               const conduit::Node &input,
-              conduit::Node &info)
+              conduit::Node &info,
+              const Hooks *hooks = nullptr)
 {
     info.reset();
-    bool ok = detail::validate_node(schema, input, info, "");
+    bool ok = detail::validate_node(schema, input, info, "", hooks);
 
     if(!ok && !info.has_child("errors"))
     {
