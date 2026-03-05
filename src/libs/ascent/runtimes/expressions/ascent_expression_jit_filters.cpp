@@ -140,31 +140,25 @@ ExprJitFilter::declare_interface(Node &i)
     i["port_names"].append() = ss.str();
   }
   i["output_port"] = "true";
-}
 
-//-----------------------------------------------------------------------------
-bool
-ExprJitFilter::verify_params(const conduit::Node &params,
-                             conduit::Node &info)
-{
-  info.reset();
-  bool res = filters::check_string("func", params, info, true);
-  res &= filters::check_string("filter_name", params, info, true);
-  if(!params.has_path("inputs"))
-  {
-    info["errors"].append() = "Missing required parameter 'inputs'";
-    res = false;
-  }
-  else if(params["inputs"].number_of_children() != num_inputs)
-  {
-    stringstream ss;
-    ss << "Expected parameter 'inputs' to have " << num_inputs
-       << " inputs but it has " << params["inputs"].number_of_children()
-       << " inputs.";
-    info["errors"].append() = ss.str();
-    res = false;
-  }
-  return res;
+  // ----------- Define Param Schema -----------
+  conduit::Node param_schema;
+  param_schema["type"] = "object";
+  param_schema["additionalProperties"] = false;
+
+  param_schema["properties/func"].set(filters::string_schema());
+  param_schema["properties/filter_name"].set(filters::string_schema());
+
+  conduit::Node inputs_schema = filters::array_schema(filters::number_schema());
+  inputs_schema["minItems"] = num_inputs;
+  inputs_schema["miaxItems"] = num_inputs;
+  param_schema["properties/inputs"].set(inputs_schema);
+
+  param_schema["required"].append() = "func";
+  param_schema["required"].append() = "filter_name";
+  param_schema["required"].append() = "inputs";
+
+  i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -782,15 +776,6 @@ ExprExpressionList::declare_interface(Node &i)
     i["port_names"].append() = ss.str();
   }
   i["output_port"] = "true";
-}
-
-//-----------------------------------------------------------------------------
-bool
-ExprExpressionList::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
-  bool res = true;
-  return res;
 }
 
 //-----------------------------------------------------------------------------
