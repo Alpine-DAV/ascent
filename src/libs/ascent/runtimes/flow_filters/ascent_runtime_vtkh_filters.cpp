@@ -3913,7 +3913,7 @@ VTKHUniformGrid::execute()
     }
     if(params().has_path("invalid_value"))
     {
-      invalid_value = params()["invalid_value"].as_float64();
+      invalid_value = params()["invalid_value"].to_float64();
     }
 
     vtkh::Sample sampler;
@@ -4280,7 +4280,7 @@ VTKHSample::execute()
         }
         else
         {
-          x_min = min_b["x"].as_float64();
+          x_min = min_b["x"].to_float64();
         }
       }
       else //not set; default min
@@ -4298,7 +4298,7 @@ VTKHSample::execute()
         }
         else
         {
-          y_min = min_b["y"].as_float64();
+          y_min = min_b["y"].to_float64();
         }
       }
       else //not set; default min
@@ -4316,7 +4316,7 @@ VTKHSample::execute()
         }
         else
         {
-          z_min = min_b["z"].as_float64();
+          z_min = min_b["z"].to_float64();
         }
       }
       else //not set; default min
@@ -4335,7 +4335,7 @@ VTKHSample::execute()
         }
         else
         {
-          x_max = max_b["x"].as_float64();
+          x_max = max_b["x"].to_float64();
         }
       }
       else //not set; default max
@@ -4353,7 +4353,7 @@ VTKHSample::execute()
         }
         else
         {
-          y_max = max_b["y"].as_float64();
+          y_max = max_b["y"].to_float64();
         }
       }
       else //not set; default max
@@ -4371,7 +4371,7 @@ VTKHSample::execute()
         }
         else
         {
-          z_max = max_b["z"].as_float64();
+          z_max = max_b["z"].to_float64();
         }
       }
       else //not set; default max
@@ -4385,7 +4385,7 @@ VTKHSample::execute()
     double invalid_value = 0.0;
     if(params().has_path("invalid_value"))
     {
-      invalid_value = params()["invalid_value"].as_float64();
+      invalid_value = params()["invalid_value"].to_float64();
     }
 
     sampler.InvalidValue(invalid_value);
@@ -5827,7 +5827,7 @@ VTKHParticleAdvection::execute()
         const Node &n_start_vals = n_seeds["start"];
         const Node &n_end_vals = n_seeds["end"];
         std::string sampling = n_seeds["sampling_type"].as_string();
-        int num_seeds = n_seeds["num_seeds"].as_int();
+        int num_seeds = n_seeds["num_seeds"].to_int();
 
 
         //convert to contig doubles
@@ -5927,9 +5927,9 @@ VTKHParticleAdvection::execute()
         {
             if(sampling_type == "uniform")
             {
-                int num_seeds_x = n_seeds["num_seeds_x"].as_int();
-                int num_seeds_y = n_seeds["num_seeds_y"].as_int();
-                int num_seeds_z = n_seeds["num_seeds_z"].as_int();
+                int num_seeds_x = n_seeds["num_seeds_x"].to_int();
+                int num_seeds_y = n_seeds["num_seeds_y"].to_int();
+                int num_seeds_z = n_seeds["num_seeds_z"].to_int();
                 
                 double dx = 1, dy = 1, dz = 1;
                 if(num_seeds_x != 0)
@@ -5986,7 +5986,7 @@ VTKHParticleAdvection::execute()
                 std::default_random_engine generator(0);
                 float  zero(0), one(1);
                 std::uniform_real_distribution<viskores::FloatDefault> distribution(zero, one);
-                int num_seeds = n_seeds["num_seeds"].as_int();
+                int num_seeds = n_seeds["num_seeds"].to_int();
                 for(int i = 0; i < num_seeds; ++i)
                 {
                     double rand = distribution(generator);
@@ -6002,9 +6002,9 @@ VTKHParticleAdvection::execute()
         {
             if(sampling_type == "uniform")
             {
-                int num_seeds_x = n_seeds["num_seeds_x"].as_int();
-                int num_seeds_y = n_seeds["num_seeds_y"].as_int();
-                int num_seeds_z = n_seeds["num_seeds_z"].as_int();
+                int num_seeds_x = n_seeds["num_seeds_x"].to_int();
+                int num_seeds_y = n_seeds["num_seeds_y"].to_int();
+                int num_seeds_z = n_seeds["num_seeds_z"].to_int();
 
                 double dx = 1, dy = 1, dz = 1;
                 if(num_seeds_x != 0)
@@ -6074,7 +6074,7 @@ VTKHParticleAdvection::execute()
                 std::default_random_engine generator(0);
                 float  zero(0), one(1);
                 std::uniform_real_distribution<viskores::FloatDefault> distribution(zero, one);
-                int num_seeds = n_seeds["num_seeds"].as_int();
+                int num_seeds = n_seeds["num_seeds"].to_int();
                 for(int i = 0; i < num_seeds; ++i)
                 {
                     int side = std::rand()%4;
@@ -6181,17 +6181,17 @@ VTKHParticleAdvection::execute()
             }
             if(params().has_path("rendering/tube_value")) 
             {
-                double tube_value = params()["rendering/tube_value"].as_float64();
+                double tube_value = params()["rendering/tube_value"].to_float64();
                 sl.SetTubeValue(tube_value);
             }
             if(params().has_path("rendering/tube_size")) 
             {
-                double tube_size = params()["rendering/tube_size"].as_float64();
+                double tube_size = params()["rendering/tube_size"].to_float64();
                 sl.SetTubeSize(tube_size);
             }
             if(params().has_path("rendering/tube_sides")) 
             {
-                int tube_sides = params()["rendering/tube_sides"].as_int32();
+                int tube_sides = params()["rendering/tube_sides"].to_int32();
                 sl.SetTubeSides(tube_sides);
             }
             if(params().has_path("rendering/tube_capping"))
@@ -6422,17 +6422,17 @@ VTKHWarpXStreamline::execute()
         }
         if(params().has_path("tube_value")) 
         {
-            double tube_value = params()["rendering/tube_value"].as_float64();
+            double tube_value = params()["rendering/tube_value"].to_float64();
             sl.SetTubeValue(tube_value);
         }
         if(params().has_path("tube_size")) 
         {
-            double tube_size = params()["rendering/tube_size"].as_float64();
+            double tube_size = params()["rendering/tube_size"].to_float64();
             sl.SetTubeSize(tube_size);
         }
         if(params().has_path("tube_sides")) 
         {
-            int tube_sides = params()["rendering/tube_sides"].as_int32();
+            int tube_sides = params()["rendering/tube_sides"].to_int32();
             sl.SetTubeSides(tube_sides);
         }
         if(params().has_path("tube_capping"))
