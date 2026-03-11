@@ -57,7 +57,8 @@ Here is an example of an ascent actions yaml file using ``save_info``:
 
   -
     action: "save_info"
-    filename: "info_output.yaml" #optional
+    filename: "info_output.yaml" # optional
+    flow_graph_html_filename: "info_flow_graph.html" # optional
 
 
 A full example of actions files populated from Ascent's test suite can be found in :ref:`yaml-examples`.
