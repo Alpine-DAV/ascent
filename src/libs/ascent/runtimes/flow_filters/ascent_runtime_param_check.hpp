@@ -45,23 +45,21 @@ bool ASCENT_API is_valid_expression(const std::string &expr, std::string &err_ms
 
 conduit::Node ASCENT_API string_schema();
 
-conduit::Node ASCENT_API expression_schema();
+conduit::Node ASCENT_API number_schema(bool supports_expressions = false);
 
-conduit::Node ASCENT_API number_schema();
-
-conduit::Node ASCENT_API number_or_expression_schema();
-
-conduit::Node ASCENT_API vec3_schema();
+conduit::Node ASCENT_API vec3_schema(bool supports_expressions = false);
 
 conduit::Node ASCENT_API vec3_schema(const std::string var1,
                                      const std::string var2,
-                                     const std::string var3);
+                                     const std::string var3,
+                                     bool supports_expressions = false);
 
-conduit::Node ASCENT_API vec3_schema_anyOf();
+conduit::Node ASCENT_API vec3_schema_anyOf(bool supports_expressions = false);
 
 conduit::Node ASCENT_API vec3_schema_anyOf(const std::string var1,
                                            const std::string var2,
-                                           const std::string var3);
+                                           const std::string var3,
+                                           bool supports_expressions = false);
 
 conduit::Node ASCENT_API array_schema();
 

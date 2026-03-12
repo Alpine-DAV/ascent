@@ -78,30 +78,33 @@ conduit::Node expression_schema()
   return n;
 }
 
-conduit::Node number_schema()
+conduit::Node number_schema(bool supports_expressions)
 {
   conduit::Node n;
-  n["type"] = "number";
+  if (supports_expressions)
+  {
+    n["oneOf"].append().set(number_schema());
+    n["oneOf"].append().set(expression_schema());
+  }
+  else
+  {
+    n["type"] = "number";
+  }
   return n;
 }
 
-conduit::Node number_or_expression_schema()
-{
-  conduit::Node n;
-  n["oneOf"].append().set(number_schema());
-  n["oneOf"].append().set(expression_schema());
-  return n;
-}
-
-conduit::Node vec3_schema(const std::string var1, const std::string var2, const std::string var3)
+conduit::Node vec3_schema(const std::string var1,
+                          const std::string var2,
+                          const std::string var3,
+                          bool supports_expressions)
 {
   conduit::Node n;
   n["type"] = "object";
   n["additionalProperties"] = false;
 
-  n["properties/" + var1].set(number_schema());
-  n["properties/" + var2].set(number_schema());
-  n["properties/" + var3].set(number_schema());
+  n["properties/" + var1].set(number_schema(supports_expressions));
+  n["properties/" + var2].set(number_schema(supports_expressions));
+  n["properties/" + var3].set(number_schema(supports_expressions));
 
   n["required"].append() = var1;
   n["required"].append() = var2;
@@ -110,20 +113,23 @@ conduit::Node vec3_schema(const std::string var1, const std::string var2, const 
   return n;
 }
 
-conduit::Node vec3_schema()
+conduit::Node vec3_schema(bool supports_expressions)
 {
-  return vec3_schema("x", "y", "z");
+  return vec3_schema("x", "y", "z", supports_expressions);
 }
 
-conduit::Node vec3_schema_anyOf(const std::string var1, const std::string var2, const std::string var3)
+conduit::Node vec3_schema_anyOf(const std::string var1,
+                                const std::string var2,
+                                const std::string var3,
+                                bool supports_expressions)
 {
   conduit::Node n;
   n["type"] = "object";
   n["additionalProperties"] = false;
 
-  n["properties/" + var1].set(number_schema());
-  n["properties/" + var2].set(number_schema());
-  n["properties/" + var3].set(number_schema());
+  n["properties/" + var1].set(number_schema(supports_expressions));
+  n["properties/" + var2].set(number_schema(supports_expressions));
+  n["properties/" + var3].set(number_schema(supports_expressions));
 
   conduit::Node var1_required;
   var1_required["type"] = "object";
@@ -143,9 +149,9 @@ conduit::Node vec3_schema_anyOf(const std::string var1, const std::string var2, 
   return n;
 }
 
-conduit::Node vec3_schema_anyOf()
+conduit::Node vec3_schema_anyOf(bool supports_expressions)
 {
-  return vec3_schema_anyOf("x", "y", "z");
+  return vec3_schema_anyOf("x", "y", "z", supports_expressions);
 }
 
 conduit::Node array_schema(const conduit::Node &item_schema)
