@@ -17,6 +17,7 @@
 #include "expressions/ascent_expressions_tokens.hpp"
 #include "expressions/ascent_expressions_parser.hpp"
 #include <ascent_logging.hpp>
+#include <flow_schema_validator.hpp>
 
 #include <algorithm>
 
@@ -43,7 +44,7 @@ namespace filters
 //-----------------------------------------------------------------------------
 // this detects if the syntax is valid, not
 // whether the expression will actually work
-bool is_valid_expression(const std::string expr, std::string &err_msg)
+bool is_valid_expression(const std::string &expr, std::string &err_msg)
 {
   bool res = true;
   try
@@ -56,6 +57,11 @@ bool is_valid_expression(const std::string expr, std::string &err_msg)
     res = false;
   }
   return res;
+}
+
+void ascent_register_flow_schema_hooks()
+{
+    flow::schema::set_expression_checker(&is_valid_expression);
 }
 
 conduit::Node string_schema()

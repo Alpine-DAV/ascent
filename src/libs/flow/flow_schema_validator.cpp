@@ -36,6 +36,12 @@ namespace detail
 {
 
 // ---------- General Helpers ----------
+ExpressionCheckFn &expr_checker()
+{
+    static ExpressionCheckFn fn = nullptr;
+    return fn;
+}
+
 void add_error(conduit::Node &info, const std::string &msg)
 {
     if(!info.has_child("errors"))
@@ -478,8 +484,7 @@ bool validate_object(const conduit::Node &schema,
 static bool validate_format(const conduit::Node &schema,
                             const conduit::Node &input,
                             conduit::Node &info,
-                            const std::string &path,
-                            const flow::schema::Hooks *hooks)
+                            const std::string &path)
 {
     if(!schema.has_child("format")) return true;
     if(!schema["format"].dtype().is_string()) return true;
@@ -489,17 +494,14 @@ static bool validate_format(const conduit::Node &schema,
     if(!input.dtype().is_string()) return true;
 
     // If no is_valid_expression hook then move on
-    if(hooks == nullptr || hooks->is_valid_expression == nullptr)
-    {
-        return true;
-    }
+    auto expr_fn = expr_checker();
+    if(expr_fn == nullptr) return true;
 
     std::string err;
-    bool ok = hooks->is_valid_expression(input.as_string(), err);
+    bool ok = expr_fn(input.as_string(), err);
     if(!ok)
     {
-        add_error(info,
-        "Invalid expression at '" + (path.empty() ? std::string("<root>") : path) + "': " + err);
+        add_error(info, "Invalid expression at '" + (path.empty() ? std::string("<root>") : path) + "': " + err);
     }
     return ok;
 }
@@ -559,8 +561,7 @@ bool validate_array(const conduit::Node &schema,
 bool validate_node(const conduit::Node &schema,
                    const conduit::Node &input,
                    conduit::Node &info,
-                   const std::string &path,
-                   const Hooks *hooks = nullptr)
+                   const std::string &path)
 {
     if (schema.has_path("constraints/skip") && schema["constraints/skip"].to_int() != 0)
     {
@@ -598,7 +599,7 @@ bool validate_node(const conduit::Node &schema,
 
     ok = validate_one_of(schema, input, info, path) && ok;
     ok = validate_any_of(schema, input, info, path) && ok;
-    ok = validate_format(input, schema, info, path, hooks) && ok;
+    ok = validate_format(schema, input, info, path) && ok;
 
     return ok;
 }
@@ -608,14 +609,18 @@ bool validate_node(const conduit::Node &schema,
 // -- end flow::schema::detail --
 //-----------------------------------------------------------------------------
 
+void set_expression_checker(ExpressionCheckFn fn)
+{
+    detail::expr_checker() = fn;
+}
+
 // ---------- Schema Validation Entry-Point ----------
 bool validate(const conduit::Node &schema,
               const conduit::Node &input,
-              conduit::Node &info,
-              const Hooks *hooks = nullptr)
+              conduit::Node &info)
 {
     info.reset();
-    bool ok = detail::validate_node(schema, input, info, "", hooks);
+    bool ok = detail::validate_node(schema, input, info, "");
 
     if(!ok && !info.has_child("errors"))
     {
