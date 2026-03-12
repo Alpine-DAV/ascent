@@ -88,8 +88,8 @@ conduit::Node number_schema()
 conduit::Node number_or_expression_schema()
 {
   conduit::Node n;
-  n["anyOf"].append().set(number_schema());
-  n["anyOf"].append().set(expression_schema());
+  n["oneOf"].append().set(number_schema());
+  n["oneOf"].append().set(expression_schema());
   return n;
 }
 

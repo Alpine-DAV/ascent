@@ -357,17 +357,10 @@ bool validate_one_of(const conduit::Node &schema,
 
     for(conduit::index_t i = 0; i < opts.number_of_children(); ++i)
     {
-        const conduit::Node &opt = opts.child(i);
-
         conduit::Node tmp;
         tmp.reset();
 
-        bool ok = true;
-        ok = check_type(input, opt, tmp, path) && ok;
-        ok = validate_required(opt, input, tmp, path) && ok;
-        ok = validate_forbid(opt, input, tmp, path) && ok;
-        ok = validate_dependencies(opt, input, tmp, path) && ok;
-        ok = validate_exclusive_children(opt, input, tmp, path) && ok;
+        bool ok = validate_node(opts.child(i), input, tmp, path);
 
         if(ok)
         {
@@ -419,17 +412,10 @@ bool validate_any_of(const conduit::Node &schema,
 
     for(conduit::index_t i = 0; i < opts.number_of_children(); ++i)
     {
-        const conduit::Node &opt = opts.child(i);
-
         conduit::Node tmp;
         tmp.reset();
 
-        bool ok = true;
-        ok = check_type(input, opt, tmp, path) && ok;
-        ok = validate_required(opt, input, tmp, path) && ok;
-        ok = validate_forbid(opt, input, tmp, path) && ok;
-        ok = validate_dependencies(opt, input, tmp, path) && ok;
-        ok = validate_exclusive_children(opt, input, tmp, path) && ok;
+        bool ok = validate_node(opts.child(i), input, tmp, path);
 
         if(ok)
         {
@@ -481,7 +467,7 @@ bool validate_object(const conduit::Node &schema,
     return ok;
 }
 
-static bool validate_format(const conduit::Node &schema,
+bool validate_format(const conduit::Node &schema,
                             const conduit::Node &input,
                             conduit::Node &info,
                             const std::string &path)
@@ -493,7 +479,6 @@ static bool validate_format(const conduit::Node &schema,
     if(fmt != "expression") return true;
     if(!input.dtype().is_string()) return true;
 
-    // If no is_valid_expression hook then move on
     auto expr_fn = expr_checker();
     if(expr_fn == nullptr) return true;
 

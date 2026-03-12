@@ -41,6 +41,8 @@ namespace runtime
 namespace filters
 {
 
+bool ASCENT_API is_valid_expression(const std::string &expr, std::string &err_msg);
+
 conduit::Node ASCENT_API string_schema();
 
 conduit::Node ASCENT_API expression_schema();

@@ -1460,8 +1460,8 @@ VTKHThreshold::declare_interface(Node &i)
     // optional
     param_schema["properties/field"].set(string_schema());
     param_schema["properties/topology"].set(string_schema());
-    param_schema["properties/min_value"].set(number_schema());
-    param_schema["properties/max_value"].set(number_schema());
+    param_schema["properties/min_value"].set(number_or_expression_schema());
+    param_schema["properties/max_value"].set(number_or_expression_schema());
     param_schema["properties/invert"].set(string_schema());
     param_schema["properties/extract"].set(string_schema());
 
