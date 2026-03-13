@@ -1925,17 +1925,20 @@ CreatePlot::execute()
     std::string type = params()["type"].as_string();
     std::string topo_name;
     //if empty field name and not mesh plot
-    if(field_name == "" && type != "mesh")
+    if(field_name == "")
     {
-      bool throw_error = false;
-      topo_name = detail::resolve_topology(params(),
-                                           this->name(),
-                                           collection,
-                                           throw_error);
-      // don't crash everything, just warn the user and continue
-      detail::RendererContainer *container = new detail::RendererContainer();
-      set_output<detail::RendererContainer>(container);
-      return;
+      if(type != "mesh")
+      {
+        bool throw_error = false;
+        topo_name = detail::resolve_topology(params(),
+                                             this->name(),
+                                             collection,
+                                             throw_error);
+        // don't crash everything, just warn the user and continue
+        detail::RendererContainer *container = new detail::RendererContainer();
+        set_output<detail::RendererContainer>(container);
+        return;
+      }
     }
     else
     {
