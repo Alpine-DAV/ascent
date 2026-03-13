@@ -144,12 +144,12 @@ ExprJitFilter::declare_interface(Node &i)
   // ----------- Define Param Schema -----------
   conduit::Node param_schema;
   param_schema["type"] = "object";
-  param_schema["additionalProperties"] = false;
+  param_schema["additionalProperties"] = true;
 
   param_schema["properties/func"].set(filters::string_schema());
   param_schema["properties/filter_name"].set(filters::string_schema());
 
-  conduit::Node inputs_schema = filters::array_schema(filters::number_schema());
+  conduit::Node inputs_schema = filters::array_schema(filters::ignore_schema());
   inputs_schema["minItems"] = num_inputs;
   inputs_schema["miaxItems"] = num_inputs;
   param_schema["properties/inputs"].set(inputs_schema);

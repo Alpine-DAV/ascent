@@ -74,7 +74,7 @@ bool check_type(const conduit::Node &input,
     if(schema_defined_type == "object") ok = data_type.is_object();
     else if(schema_defined_type == "string") ok = data_type.is_string();
     else if(schema_defined_type == "number") ok = data_type.is_number();
-    else if(schema_defined_type == "array") ok = (data_type.is_list() || (data_type.is_number() && data_type.number_of_elements() >= 1));
+    else if(schema_defined_type == "array") ok = (data_type.is_list() || (data_type.is_number() && data_type.number_of_elements() >= 1) || data_type.is_object());
     else
     {
         add_error(info, "At '" + (path.empty() ? std::string("<root>") : path) +
@@ -499,7 +499,7 @@ bool validate_array(const conduit::Node &schema,
     bool ok = true;
 
     const auto data_type = input.dtype();
-    const conduit::index_t count = data_type.is_list() ? input.number_of_children() : data_type.number_of_elements();
+    const conduit::index_t count = (data_type.is_list() || data_type.is_object()) ? input.number_of_children() : data_type.number_of_elements();
 
     // Json Schema uses min/max bounds for array length.
     if(schema.has_child("minItems"))
