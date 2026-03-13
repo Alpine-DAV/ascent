@@ -5321,6 +5321,7 @@ VTKHTransform::execute()
     for(auto &topo : topo_names)
     {
       vtkh::DataSet &data = collection->dataset_by_topology(topo);
+      std::cerr <<" num domains: " << data.GetGlobalNumberOfDomains() << std::endl;
       vtkh::PointTransform transform;
 
       if(use_scale)

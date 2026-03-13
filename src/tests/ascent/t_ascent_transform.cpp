@@ -112,8 +112,6 @@ TEST(ascent_translate, test_translate)
 
     scenes["s1/image_prefix"] = output_file;
 
-    std::cout << actions.to_yaml() << std::endl;
-
     Ascent ascent;
     ascent.open();
     ascent.publish(data);
@@ -166,8 +164,6 @@ TEST(ascent_translate, test_scale)
 
     scenes["s1/image_prefix"] = output_file;
 
-    std::cout << actions.to_yaml() << std::endl;
-
     Ascent ascent;
     ascent.open();
     ascent.publish(data);
@@ -218,8 +214,6 @@ TEST(ascent_translate, test_rotate_x)
     scenes["s1/plots/p2/field"] = "radial";
 
     scenes["s1/image_prefix"] = output_file;
-
-    std::cout << actions.to_yaml() << std::endl;
 
     Ascent ascent;
     ascent.open();
@@ -273,8 +267,6 @@ TEST(ascent_translate, test_rotate_y)
 
     scenes["s1/image_prefix"] = output_file;
 
-    std::cout << actions.to_yaml() << std::endl;
-
     Ascent ascent;
     ascent.open();
     ascent.publish(data);
@@ -325,8 +317,6 @@ TEST(ascent_translate, test_rotate_z)
     scenes["s1/plots/p2/field"] = "radial";
 
     scenes["s1/image_prefix"] = output_file;
-
-    std::cout << actions.to_yaml() << std::endl;
 
     Ascent ascent;
     ascent.open();
@@ -379,8 +369,6 @@ TEST(ascent_translate, test_rotate_arb)
     scenes["s1/plots/p2/field"] = "radial";
 
     scenes["s1/image_prefix"] = output_file;
-
-    std::cout << actions.to_yaml() << std::endl;
 
     Ascent ascent;
     ascent.open();
@@ -438,8 +426,6 @@ TEST(ascent_translate, test_matrix)
     scenes["s1/plots/p2/field"] = "radial";
 
     scenes["s1/image_prefix"] = output_file;
-
-    std::cout << actions.to_yaml() << std::endl;
 
     Ascent ascent;
     ascent.open();
@@ -586,8 +572,6 @@ TEST(ascent_translate, test_reflect_x)
 
     scenes["s1/image_prefix"] = output_file;
 
-    std::cout << actions.to_yaml() << std::endl;
-
     Ascent ascent;
     ascent.open();
     ascent.publish(data);
@@ -641,8 +625,6 @@ TEST(ascent_translate, test_reflect_arb)
     scenes["s1/plots/p2/pipeline"] = "pl0";
 
     scenes["s1/image_prefix"] = output_file;
-
-    std::cout << actions.to_yaml() << std::endl;
 
     Ascent ascent;
     ascent.open();
@@ -698,8 +680,6 @@ TEST(ascent_translate, test_reflect_y)
 
     scenes["s1/image_prefix"] = output_file;
 
-    std::cout << actions.to_yaml() << std::endl;
-
     Ascent ascent;
     ascent.open();
     ascent.publish(data);
@@ -753,8 +733,6 @@ TEST(ascent_translate, test_reflect_x_max)
 
     scenes["s1/image_prefix"] = output_file;
 
-    std::cout << actions.to_yaml() << std::endl;
-
     Ascent ascent;
     ascent.open();
     ascent.publish(data);
@@ -768,7 +746,7 @@ TEST(ascent_translate, test_reflect_x_max)
 }
 
 //-----------------------------------------------------------------------------
-TEST(ascent_translate, test_reflect_y_min)
+TEST(ascent_translate, test_reflect_y_min_2d)
 {
     if(!viskores_avalible())
     {
@@ -777,7 +755,7 @@ TEST(ascent_translate, test_reflect_y_min)
 
     std::string output_file;
     conduit::Node data;
-    setup("tout_transform_reflect_y_min",data,output_file);
+    setup("tout_transform_reflect_y_min_2d",data,output_file);
 
     conduit::Node actions;
     conduit::Node &add_pipelines = actions.append();
@@ -788,10 +766,19 @@ TEST(ascent_translate, test_reflect_y_min)
     pipelines["pl0/f1/params/translate/x"]= 10.0;
     pipelines["pl0/f1/params/translate/y"]= 10.0;
 
+    pipelines["pl1/f1/type"] = "slice";
+    pipelines["pl1/f1/params/point/x"]= 0.0;
+    pipelines["pl1/f1/params/point/y"]= 0.0;
+    pipelines["pl1/f1/params/point/z"]= 0.0;
+
+    pipelines["pl1/f1/params/normal/x"]= 0.0;
+    pipelines["pl1/f1/params/normal/y"]= 0.0;
+    pipelines["pl1/f1/params/normal/z"]= 1.0;
+    //pipelines["pl1/pipeline"] = "pl0";
     // filter knobs
-    pipelines["pl1/f1/type"] = "transform";
-    pipelines["pl1/f1/params/reflect/y"]= "min";
-    pipelines["pl1/pipeline"] = "pl0";
+    pipelines["pl2/f1/type"] = "transform";
+    pipelines["pl2/f1/params/reflect/y"]= "min";
+    pipelines["pl2/pipeline"] = "pl1";
 
 
     conduit::Node &add_scenes = actions.append();
@@ -801,15 +788,14 @@ TEST(ascent_translate, test_reflect_y_min)
     // render transformed
     scenes["s1/plots/p1/type"]  = "pseudocolor";
     scenes["s1/plots/p1/field"] = "braid";
-    scenes["s1/plots/p1/pipeline"] = "pl1";
+    scenes["s1/plots/p1/pipeline"] = "pl2";
     // and orig
     scenes["s1/plots/p2/type"]  = "pseudocolor";
-    scenes["s1/plots/p2/field"] = "braid";
-    scenes["s1/plots/p2/pipeline"] = "pl0";
+    scenes["s1/plots/p2/field"] = "radial";
+    scenes["s1/plots/p2/pipeline"] = "pl1";
 
     scenes["s1/image_prefix"] = output_file;
 
-    std::cout << actions.to_yaml() << std::endl;
 
     Ascent ascent;
     ascent.open();
