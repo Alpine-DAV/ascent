@@ -1921,8 +1921,11 @@ CreatePlot::execute()
     {
       field_name = plot_params["field"].as_string();
     }
+
+    std::string type = params()["type"].as_string();
     std::string topo_name;
-    if(field_name == "")
+    //if empty field name and not mesh plot
+    if(field_name == "" && type != "mesh")
     {
       bool throw_error = false;
       topo_name = detail::resolve_topology(params(),
@@ -1932,6 +1935,7 @@ CreatePlot::execute()
       // don't crash everything, just warn the user and continue
       detail::RendererContainer *container = new detail::RendererContainer();
       set_output<detail::RendererContainer>(container);
+      return;
     }
     else
     {
@@ -1946,12 +1950,9 @@ CreatePlot::execute()
         return;
       }
     }
-
     // we now have the topo_name
-
+    
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
-
-    std::string type = params()["type"].as_string();
 
     if(data.GlobalIsEmpty())
     {
