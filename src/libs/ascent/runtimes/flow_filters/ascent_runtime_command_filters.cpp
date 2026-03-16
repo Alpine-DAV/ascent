@@ -102,11 +102,11 @@ Command::verify_params(const conduit::Node &params,
     }
     else if(has_callback && !params["callback"].dtype().is_string())
     {
-        info["errors"].append() = "Callbacks must be a string";  
+        info["errors"].append() = "Callbacks must be a string";
     }
     else if(has_shell_command && !params["shell_command"].dtype().is_string())
     {
-        info["errors"].append() = "Shell commands must be a string";  
+        info["errors"].append() = "Shell commands must be a string";
     }
     else
     {
@@ -118,7 +118,7 @@ Command::verify_params(const conduit::Node &params,
     valid_paths.push_back("shell_command");
     valid_paths.push_back("mpi_behavior");
 
-    std::vector<std::string> ignore_paths;
+    std::vector<std::string> ignore_paths = {"arguments"};
 
     std::string surprises = surprise_check(valid_paths, ignore_paths, params);
 
@@ -153,6 +153,13 @@ Command::execute()
         commands.push_back(command);
     }
 
+    conduit::Node command_args;
+
+    if(params().has_path("arguments"))
+    {
+        command_args.set_external(params()["arguments"]);
+    }
+
     #ifdef ASCENT_MPI_ENABLED
     bool has_mpi_behavior = params().has_path("mpi_behavior");
     if (has_mpi_behavior)
@@ -165,28 +172,28 @@ Command::execute()
             MPI_Comm_rank(MPI_Comm_f2c(comm), &rank);
             if (rank == 0)
             {
-                execute_command_list(commands, command_type);
+                execute_command_list(commands, command_type, command_args);
             }
             return;
         }
     }
     #endif
 
-    execute_command_list(commands, command_type);
+    execute_command_list(commands, command_type, command_args);
 }
 
 //-----------------------------------------------------------------------------
 void
-Command::execute_command_list(const std::vector<std::string> commands,
-                              const std::string &command_type)
+Command::execute_command_list(const std::vector<std::string> &commands,
+                              const std::string &command_type,
+                              conduit::Node &args)
 {
     if (command_type == "callback")
     {
-        conduit::Node params;
         conduit::Node output;
         for (int i = 0; i < commands.size(); i++)
         {
-            ascent::execute_callback(commands.at(i), params, output);
+            ascent::execute_callback(commands.at(i), args, output);
         }
     } else if (command_type == "shell_command")
     {

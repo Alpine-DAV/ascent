@@ -52,8 +52,9 @@ public:
                                conduit::Node &info);
     virtual void execute();
 
-    void static  execute_command_list(const std::vector<std::string> commands,
-                                      const std::string &command_type);
+    void static  execute_command_list(const std::vector<std::string> &commands,
+                                      const std::string &command_type,
+                                      conduit::Node &command_args);
 };
 
 };
