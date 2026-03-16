@@ -1,0 +1,26 @@
+#An example of using the sample filter to sample a list of 3d points.
+
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "sample"
+        params: 
+          fields: 
+            - "braid"
+            - "radial"
+          points: 
+            x: [-9.0, 0.0, 3.0, 0.0, 0.0, 0.0, 3.0, 3.0, -5.0, 7.24, -7.24, 9.0]
+            y: [-9.0, 0.0, 3.0, 3.0, 0.0, 3.0, 3.0, 0.0, -5.0, -8.34, 8.34, 9.0]
+            z: [-9.0, 0.0, 3.0, 0.0, 3.0, 3.0, 0.0, 3.0, -5.0, 4.78, 4.78, 9.0]
+          invalid_value: -10.0
+- 
+  action: "add_extracts"
+  extracts: 
+    e1: 
+      pipeline: "pl1"
+      type: "relay"
+      params: 
+        protocol: "hdf5"
+        path: "/home/user/sandbox/ascent/scripts/build_ascent/build/ascent-checkout/tests/_output/tout_sample_pts_3d"

@@ -1,0 +1,44 @@
+#An example of using the sample filter to sample points 3d box.
+
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "sample"
+        params: 
+          fields: 
+            - "braid"
+          box: 
+            dims: 
+              i: 5.0
+              j: 5.0
+              k: 5.0
+            max: 
+              x: "max"
+              y: "max"
+              z: "max"
+            min: 
+              x: 0.0
+              y: 0.0
+              z: 0.0
+          invalid_value: -10.0
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "braid"
+          pipeline: "pl1"
+      image_prefix: "/home/user/sandbox/ascent/scripts/build_ascent/build/ascent-checkout/tests/_output/tout_sample_box_3d"
+- 
+  action: "add_extracts"
+  extracts: 
+    e1: 
+      pipeline: "pl1"
+      type: "relay"
+      params: 
+        protocol: "hdf5"
+        path: "/home/user/sandbox/ascent/scripts/build_ascent/build/ascent-checkout/tests/_output/tout_sample_box_3d"

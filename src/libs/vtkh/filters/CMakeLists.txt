@@ -32,7 +32,6 @@ set(vtkh_filters_headers
     Slice.hpp
     Statistics.hpp
     Streamline.hpp
-    UniformGrid.hpp
     Sample.hpp
     VectorComponent.hpp
     VectorMagnitude.hpp
@@ -73,7 +72,6 @@ set(vtkh_filters_sources
     Slice.cpp
     Statistics.cpp
     Streamline.cpp
-    UniformGrid.cpp
     Sample.cpp
     VectorComponent.cpp
     VectorMagnitude.cpp
