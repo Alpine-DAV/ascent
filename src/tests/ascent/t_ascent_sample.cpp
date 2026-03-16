@@ -93,7 +93,7 @@ TEST(ascent_sample, line_2d)
       pipeline: pl1
       type: "relay"
       params:
-        protocol: "hdf5"
+        protocol: "blueprint/mesh/yaml"
 )xyzxyz";
     conduit::Node actions;
     actions.parse(acts_str,"yaml");
