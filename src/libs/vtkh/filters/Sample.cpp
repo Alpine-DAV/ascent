@@ -19,6 +19,8 @@
 #include <viskores/worklet/WorkletMapField.h>
 #include <viskores/worklet/DispatcherMapField.h>
 
+/*
+reminder:
 using Scalar_i32_hnd = viskores::cont::ArrayHandle<viskores::Int32>;
 using Scalar_f32_hnd = viskores::cont::ArrayHandle<viskores::Float32>;
 using Scalar_f64_hnd = viskores::cont::ArrayHandle<viskores::Float64>;
@@ -34,7 +36,7 @@ using Vec3_f32    = viskores::Vec<viskores::Float32, 3>;
 
 using Vec2_f64    = viskores::Vec<viskores::Float64, 2>;
 using Vec3_f64    = viskores::Vec<viskores::Float64, 3>;
-
+*/
 
 #define _DEBUG 0
 
@@ -138,9 +140,9 @@ MakeEmptyField(std::string field_name , viskores::Id field_id, int num_values, v
 class GlobalReduceField
 {
   const viskores::cont::DataSet &m_dataset;
-  std::string               m_field;
+  std::string                   m_field;
   viskores::Float64             m_invalid_value;
-  const int                 m_num_points;
+  const int                     m_num_points;
   const viskores::Id            m_field_id;
   viskores::cont::DataSet       &m_result;
 
@@ -148,9 +150,9 @@ public:
   //-------------------------------------------------------------------------//
   GlobalReduceField(const viskores::cont::DataSet &dataset,
                     const std::string field,
+                    const viskores::Float64 invalid_value,
                     const int num_points,
                     const viskores::Id field_id,
-                    const viskores::Float64 invalid_value,
                     viskores::cont::DataSet &result)
     : m_dataset(dataset),
       m_field(field),
@@ -168,8 +170,7 @@ public:
   void
   Reduce()
   {
-    viskores::cont::DataSet res;
-    res.CopyStructure(m_dataset);
+    m_result.CopyStructure(m_dataset);
     ReduceField r_field(m_field, m_dataset, m_invalid_value, m_num_points, m_field_id, m_result);
     r_field.reduce();
     return;
@@ -217,6 +218,7 @@ public:
       bool is_empty = false;
       if(m_data_set.HasField(m_field_name))
       {
+
         is_empty = false;
         field = m_data_set.GetField(m_field_name);
       }
@@ -226,10 +228,8 @@ public:
         field = detail::MakeEmptyField(m_field_name,  m_field_id, m_num_points, viskores::cont::Field::Association::Points, m_invalid_value); 
       }
 
-      if(m_field_name == "HIDDEN")
+      if(m_field_name == "valid_mask")
       {
-        //TODO: rename this field as "valid_mask" (? "invalid_mask" ?)
-        //TODO: Figure out how HIDDEN works again so we can name it
         m_result.AddField(field);
         return;
       }
@@ -239,7 +239,7 @@ public:
       if (!is_empty)
       {
         uah_field = field.GetData();
-        m_data_set.GetPointField("HIDDEN").GetData().AsArrayHandle(ah_mask);
+        m_data_set.GetPointField("valid_mask").GetData().AsArrayHandle(ah_mask);
       }
       else
       {
@@ -667,11 +667,11 @@ public:
     viskores::cont::ArrayHandle<unsigned char> local_mask;
     if(m_field.IsPointField())
     {
-      m_dataset.GetPointField("HIDDEN").GetData().AsArrayHandle(local_mask);
+      m_dataset.GetPointField("valid_mask").GetData().AsArrayHandle(local_mask);
     }
     else
     {
-      m_dataset.GetCellField("HIDDEN").GetData().AsArrayHandle(local_mask);
+      m_dataset.GetCellField("valid_mask").GetData().AsArrayHandle(local_mask);
     }
 
     auto tmp_mask_portal = tmp_mask.ReadPortal();
@@ -853,7 +853,8 @@ public:
 
 //---------------------------------------------------------------------------//
 Sample::Sample()
-	: m_invalid_value(std::numeric_limits<double>::min())
+	: m_invalid_value(std::numeric_limits<double>::min()),
+    m_is_points(false)
 {
 
 }
@@ -918,9 +919,17 @@ Sample::DoExecute()
       dom = this->m_input->GetDomainById(domain_ids[i]);
       for(const auto &field_name : m_fields)
       {
-        //Uniform Grid Sample
         vtkh::viskoresProbe probe;
-        probe.setPoints(m_points_xs,m_points_ys,m_points_zs);
+        if(m_is_points)
+        {
+          probe.setPoints(m_points_xs,m_points_ys,m_points_zs);
+        }
+        else
+        {
+          probe.setBoxDims(m_dims);
+          probe.setBoxOrigin(m_origin);
+          probe.setBoxSpacing(m_spacing);
+        }
         probe.setInvalidValue(m_invalid_value);
         auto dataset = probe.Run(dom);
         viskores::cont::Field tmp_field = dataset.GetField(field_name);
@@ -946,8 +955,9 @@ Sample::DoExecute()
         if(!local_res.HasCoordinateSystem(cs_name))
         {
           local_res.CopyStructure(dataset);
-          local_res.AddField(valid_field);
+          local_res.AddField("valid_mask", valid_field.GetAssociation(), valid_field.GetData());
         }
+
         if(!local_res.HasField(field_name))
         {
           local_res.AddField(tmp_field);
@@ -983,6 +993,7 @@ Sample::DoExecute()
     bool valid_field;
     viskores::Id field_id = this->m_input->GetFieldType(field_name, valid_field);
     vtkh::detail::GlobalReduceField g_reducefield(local_res, field_name, m_invalid_value, m_num_samples, field_id, reduced);
+    g_reducefield.Reduce();
     viskores::cont::Field reduced_field = reduced.GetField(field_name);
     reduced_output.AddField(reduced_field);
   }
@@ -1033,6 +1044,7 @@ Sample::Line(int num_samples,
              double z_end)
 
 {
+    m_is_points = true;
     m_num_samples = num_samples;
 
     int line_spatial_num_points = 3;
@@ -1085,6 +1097,7 @@ Sample::Box(int *num_points,
             double z_end)
 
 {
+  m_is_points = true;
   int m_num_samples = num_points[0]*num_points[1]*num_points[2];
 
   // alloc array handles to hold num_samples
@@ -1142,10 +1155,27 @@ Sample::Points(viskores::cont::ArrayHandle<viskores::Float64> xs,
                viskores::cont::ArrayHandle<viskores::Float64> ys,
                viskores::cont::ArrayHandle<viskores::Float64> zs)
 {
+  m_is_points = true;
   m_num_samples = xs.GetNumberOfValues();
   m_points_xs = xs;
   m_points_ys = ys;
   m_points_zs = zs;
+}
+
+//---------------------------------------------------------------------------//
+void
+Sample::UniformGrid(const Vec3_f64 dims,
+                    const Vec3_f64 origin,
+                    const Vec3_f64 spacing)
+{
+  m_is_points = false; 
+  m_dims = dims;
+  m_origin = origin;
+  m_spacing = spacing;
+  m_num_samples = (m_dims[0] > 0) ? m_dims[0] : 1; 
+  m_num_samples = (m_dims[1] > 0) ? m_num_samples*m_dims[1] : m_num_samples; 
+  m_num_samples = (m_dims[2] > 0) ? m_num_samples*m_dims[2] : m_num_samples; 
+
 }
 
 //---------------------------------------------------------------------------//

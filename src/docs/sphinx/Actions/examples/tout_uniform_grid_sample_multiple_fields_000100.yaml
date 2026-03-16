@@ -1,0 +1,44 @@
+#An example of using the sample filter with the uniform grid parameter and multiple fields.
+
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "sample"
+        params: 
+          fields: 
+            - "braid"
+            - "radial"
+          uniform_grid: 
+            dims: 
+              i: 10
+              j: 10
+              k: 10
+          invalid_value: -10.0
+- 
+  action: "add_extracts"
+  extracts: 
+    esrc: 
+      type: "relay"
+      params: 
+        protocol: "hdf5"
+        path: "/home/user/sandbox/ascent/scripts/build_ascent/build/ascent-checkout/tests/_output/tout_uniform_grid_sample_multiple_fields_src"
+    eres: 
+      type: "relay"
+      pipeline: "pl1"
+      params: 
+        protocol: "hdf5"
+        path: "/home/user/sandbox/ascent/scripts/build_ascent/build/ascent-checkout/tests/_output/tout_uniform_grid_sample_multiple_fields_result"
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "radial"
+          pipeline: "pl1"
+      renders: 
+        r1: 
+          image_prefix: "/home/user/sandbox/ascent/scripts/build_ascent/build/ascent-checkout/tests/_output/tout_uniform_grid_sample_multiple_fields"

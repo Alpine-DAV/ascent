@@ -10,6 +10,21 @@
 namespace vtkh
 {
 
+using Scalar_i32_hnd = viskores::cont::ArrayHandle<viskores::Int32>;
+using Scalar_f32_hnd = viskores::cont::ArrayHandle<viskores::Float32>;
+using Scalar_f64_hnd = viskores::cont::ArrayHandle<viskores::Float64>;
+
+using Vec2_f32_hnd  = viskores::cont::ArrayHandle<viskores::Vec<viskores::Float32,2>>;
+using Vec2_f64_hnd  = viskores::cont::ArrayHandle<viskores::Vec<viskores::Float64,2>>;
+
+using Vec3_f32_hnd  = viskores::cont::ArrayHandle<viskores::Vec<viskores::Float32,3>>;
+using Vec3_f64_hnd  = viskores::cont::ArrayHandle<viskores::Vec<viskores::Float64,3>>;
+
+using Vec2_f32    = viskores::Vec<viskores::Float32, 2>;
+using Vec3_f32    = viskores::Vec<viskores::Float32, 3>;
+
+using Vec2_f64    = viskores::Vec<viskores::Float64, 2>;
+using Vec3_f64    = viskores::Vec<viskores::Float64, 3>;
 
 
 class VTKH_API Sample : public Filter
@@ -39,7 +54,9 @@ public:
               viskores::cont::ArrayHandle<viskores::Float64> ys,
               viskores::cont::ArrayHandle<viskores::Float64> zs);
 
-  // TODO: expand to uniform grid case (box)
+  void UniformGrid(const Vec3_f64 dims,
+                   const Vec3_f64 origin,
+                   const Vec3_f64 spacing);
 
   void Fields(const std::vector<std::string> fields);
   void InvalidValue(const viskores::Float64 invalid_value);
@@ -55,7 +72,11 @@ protected:
 
   std::vector<std::string> m_fields;
   viskores::Float64 m_invalid_value;
+  Vec3_f64 m_dims;
+  Vec3_f64 m_origin;
+  Vec3_f64 m_spacing;
   int m_num_samples;
+  bool m_is_points;
 };
 
 } //namespace vtkh

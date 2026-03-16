@@ -2585,7 +2585,7 @@ AscentRuntime::SaveInfo()
             // default
             std::string filename = "out_ascent_info.yaml";
             // default, if we have cycle  out_ascent_info_cycle_000zzz.yaml
-            if(Metadata::n_metadata.has_path("cycle"))
+            if(Metadata::n_metadata.has_child("cycle"))
             {
                 int cycle = Metadata::n_metadata["cycle"].to_int64();
                 filename = conduit_fmt::format("out_ascent_info_{:06d}.yaml",
@@ -2593,15 +2593,32 @@ AscentRuntime::SaveInfo()
             }
 
             // also allow explicit name
-            if(action.has_path("file_name"))
+            if(action.has_child("filename"))
             {
-                if(!action["file_name"].dtype().is_string())
+                if(!action["filename"].dtype().is_string())
                 {
                     ASCENT_ERROR("save_info filename must be a string");
                 }
-                filename = action["file_name"].as_string();
+                filename = action["filename"].as_string();
             }
             m_info.save(filename);
+
+            // save the html view of the flow graph if asked for
+            if(action.has_child("flow_graph_html_filename"))
+            {
+                if(!action["flow_graph_html_filename"].dtype().is_string())
+                {
+                    ASCENT_ERROR("save_info flow_graph_html_filename must be a string");
+                }
+
+                std::string html_fname = action["flow_graph_html_filename"].as_string();
+                std::ofstream ofs(html_fname);
+                if (!ofs.is_open())
+                {
+                    ASCENT_ERROR("save_info failed to open flow_graph_html_filename: " << html_fname << " to write");
+                }
+                ofs << m_info["flow_graph_dot_html"].as_string();
+            }
         }
     }
 }

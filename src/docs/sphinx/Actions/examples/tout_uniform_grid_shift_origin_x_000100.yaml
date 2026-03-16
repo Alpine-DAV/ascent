@@ -1,0 +1,38 @@
+#An example of using the sample filter with the uniform grid parameter shifting the origin along x.
+
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "sample"
+        params: 
+          fields: 
+            - "braid"
+          uniform_grid: 
+            origin: 
+              x: 0.0
+          invalid_value: -10.0
+      f2: 
+        type: "slice"
+        params: 
+          point: 
+            x: 0.0
+            y: 0.0
+            z: 0.0
+          normal: 
+            x: 0.0
+            y: 0.0
+            z: 1.0
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "braid"
+          pipeline: "pl1"
+      renders: 
+        r1: 
+          image_prefix: "/home/user/sandbox/ascent/scripts/build_ascent/build/ascent-checkout/tests/_output/tout_uniform_grid_shift_origin_x"
