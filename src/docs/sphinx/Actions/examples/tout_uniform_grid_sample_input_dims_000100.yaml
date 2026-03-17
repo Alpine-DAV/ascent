@@ -1,0 +1,37 @@
+#An example of using the sample filter with the uniform grid parameter with dims equal to the input dims.
+
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "sample"
+        params: 
+          fields: 
+            - "braid"
+          uniform_grid: 
+            dims: 
+              i: 20
+              j: 20
+              k: 20
+            origin: 
+              x: -10
+              y: -10
+              z: -10
+            spacing: 
+              dx: 1
+              dy: 1
+              dz: 1
+          invalid_value: -10.0
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "braid"
+          pipeline: "pl1"
+      renders: 
+        r1: 
+          image_prefix: "/home/user/sandbox/ascent/scripts/build_ascent/build/ascent-checkout/tests/_output/tout_uniform_grid_sample_input_dims"

@@ -116,18 +116,6 @@ TEST(ascent_mpi_uniform_uniform_grid, test_mpi_uniform_grid)
 
     conduit::Node pipelines;
     conduit::Node actions;
-//    conduit::Node extracts;
-//
-//    extracts["e1/type"]  = "relay";
-//    extracts["e1/params/path"] = output_file;
-//    extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
-//    conduit::Node &add_ext= actions.append();
-//    add_ext["action"] = "add_extracts";
-//    add_ext["extracts"] = extracts;
-//          dims: 
-//            i: 10
-//            j: 10
-//            k: 0
 
     std::string acts_str = R"xyzxyz(
 - 

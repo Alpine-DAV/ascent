@@ -103,3 +103,85 @@ TEST(ascent_info, info_save)
 
 
 
+//-----------------------------------------------------------------------------
+TEST(ascent_info, info_save_with_options)
+{
+    // the viskores runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
+        return;
+    }
+
+    //
+    // Create example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("quads",
+                                               20,
+                                               20,
+                                               0,
+                                               data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,
+                                             "tout_render_info_test");
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+    // remove expected file
+    conduit::utils::remove_path_if_exists("info_output.yaml");
+    conduit::utils::remove_path_if_exists("info_flow_graph.html");
+
+    // setup actions
+    Node actions;
+    conduit::Node &add_scenes = actions.append();
+    add_scenes["action"] = "add_scenes";
+    add_scenes["scenes/scene1/plots/plt1/type"]  = "pseudocolor";
+    add_scenes["scenes/scene1/plots/plt1/field"] = "braid";
+    add_scenes["scenes/scene1/image_prefix"] = output_file;
+    Node & sinfo_act = actions.append();
+    sinfo_act["action"] = "save_info";
+    sinfo_act["filename"] = "info_output.yaml";
+    sinfo_act["flow_graph_html_filename"] = "info_flow_graph.html";
+
+    //
+    // Run Ascent
+    //
+    Ascent ascent;
+    ascent.open();
+    ascent.publish(data);
+    ascent.execute(actions);
+
+    Node ascent_info;
+    ascent.info(ascent_info);
+
+    ascent.close();
+
+    EXPECT_TRUE(conduit::utils::is_file("info_output.yaml"));
+    EXPECT_TRUE(conduit::utils::is_file("info_flow_graph.html"));
+
+    //compare info with info saved to file
+    std::cout << ascent_info.to_yaml() << std::endl;
+    conduit::Node info_load;
+    info_load.load("info_output.yaml");
+
+    EXPECT_TRUE(info_load.has_path("runtime/version"));
+    EXPECT_TRUE(info_load.has_path("runtime/git_sha1"));
+    EXPECT_TRUE(info_load.has_path("runtime/git_tag"));
+
+    std::cout << info_load.to_yaml() << std::endl;
+    // NOTE: some things won't be quite the same due to order of exec
+
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example saving info via `save_info` action with options";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+}
+
+
+
