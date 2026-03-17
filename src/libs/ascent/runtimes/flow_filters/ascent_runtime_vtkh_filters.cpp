@@ -65,7 +65,6 @@
 #include <vtkh/filters/Log.hpp>
 #include <vtkh/filters/ParticleAdvection.hpp>
 #include <vtkh/filters/Recenter.hpp>
-#include <vtkh/filters/UniformGrid.hpp>
 #include <vtkh/filters/Sample.hpp>
 #include <vtkh/filters/Slice.hpp>
 #include <vtkh/filters/Statistics.hpp>
@@ -3342,21 +3341,19 @@ VTKHUniformGrid::execute()
     }
     if(params().has_path("invalid_value"))
     {
-      invalid_value = params()["invalid_value"].as_float64();
+      invalid_value = params()["invalid_value"].to_float64();
     }
 
-    vtkh::UniformGrid grid_probe;
+    vtkh::Sample sampler;
 
-    grid_probe.InvalidValue(invalid_value);
-    grid_probe.Dims(v_dims);
-    grid_probe.Origin(v_origin);
-    grid_probe.Spacing(v_spacing);
-    grid_probe.Fields(field_selection);
-    grid_probe.SetInput(&data);
+    sampler.UniformGrid(v_dims, v_origin, v_spacing);
+    sampler.InvalidValue(invalid_value);
+    sampler.Fields(field_selection);
+    sampler.SetInput(&data);
 
-    grid_probe.Update();
+    sampler.Update();
 
-    vtkh::DataSet *grid_output = grid_probe.GetOutput();
+    vtkh::DataSet *grid_output = sampler.GetOutput();
 
     VTKHCollection *new_coll = new VTKHCollection();
     new_coll->add(*grid_output, topo_name);
@@ -3365,7 +3362,6 @@ VTKHUniformGrid::execute()
     delete grid_output;
     set_output<DataObject>(res);
 }
-
 
 //-----------------------------------------------------------------------------
 VTKHSample::VTKHSample()
@@ -3417,6 +3413,15 @@ VTKHSample::declare_interface(Node &i)
     box_schema["properties/min"].set(vec3_schema_anyOf());
     box_schema["properties/max"].set(vec3_schema_anyOf());
     param_schema["properties/box"].set(box_schema);
+
+    // --- Uniform Grid ---
+    conduit::Node uniform_grid_schema;
+    uniform_grid_schema["type"] = "object";
+    uniform_grid_schema["additionalProperties"] = false;
+    uniform_grid_schema["properties/dims"].set(vec3_schema_anyOf("i", "j", "k"));
+    uniform_grid_schema["properties/origin"].set(vec3_schema_anyOf());
+    uniform_grid_schema["properties/spacing"].set(vec3_schema_anyOf("dx", "dy", "dz"));
+    param_schema["properties/uniform_grid"].set(uniform_grid_schema);
 
     param_schema["anyOf"].append() = "field";
     param_schema["anyOf"].append() = "fields";
@@ -3541,159 +3546,211 @@ VTKHSample::execute()
         sampler.Points(x_hnd, y_hnd, z_hnd);
 
     }
+    else if(params().has_path("uniform_grid"))
+    {
+      viskores::Bounds d_bounds = data.GetGlobalBounds();
+      viskores::Float64 x_extents = d_bounds.X.Length() + 1; //add one b/c we are
+      viskores::Float64 y_extents = d_bounds.Y.Length() + 1; //setting num points
+      viskores::Float64 z_extents = d_bounds.Z.Length() + 1; //(not cells) in each dim
+  
+      using Vec3_f64 = viskores::Vec<viskores::Float64,3>;
+      Vec3_f64 v_dims    = {x_extents, y_extents, z_extents}; 
+      Vec3_f64 v_origin  = {d_bounds.X.Min,d_bounds.Y.Min,d_bounds.Z.Min};
+      Vec3_f64 v_spacing = {1.,1.,1.};
+  
+      if(params().has_path("uniform_grid/dims"))
+      {
+        const Node &n_dims = params()["uniform_grid/dims"];
+        if(n_dims.has_path("i"))
+          v_dims[0] = get_float64(n_dims["i"], data_object);
+        if(n_dims.has_path("j"))
+          v_dims[1] = get_float64(n_dims["j"], data_object);
+        if(n_dims.has_path("k"))
+          v_dims[2] = get_float64(n_dims["k"], data_object);
+  
+        v_dims[0] = (v_dims[0] > 0) ? (v_dims[0]) : 1;
+        v_dims[1] = (v_dims[1] > 0) ? (v_dims[1]) : 1;
+        v_dims[2] = (v_dims[2] > 0) ? (v_dims[2]) : 1;
+
+        v_spacing[0] = x_extents/v_dims[0];
+        v_spacing[1] = y_extents/v_dims[1];
+        v_spacing[2] = z_extents/v_dims[2];
+      }
+      if(params().has_path("uniform_grid/origin"))
+      {
+        const Node &n_origin = params()["uniform_grid/origin"];
+        if(n_origin.has_path("x"))
+          v_origin[0] = get_float64(n_origin["x"], data_object);
+        if(n_origin.has_path("y"))
+          v_origin[1] = get_float64(n_origin["y"], data_object);
+        if(n_origin.has_path("z"))
+          v_origin[2] = get_float64(n_origin["z"], data_object);
+      }
+      if(params().has_path("uniform_grid/spacing"))
+      {
+        const Node &n_spacing = params()["uniform_grid/spacing"];
+        if(n_spacing.has_path("dx"))
+          v_spacing[0] = get_float64(n_spacing["dx"], data_object);
+        if(n_spacing.has_path("dy"))
+          v_spacing[1] = get_float64(n_spacing["dy"], data_object);
+        if(n_spacing.has_path("dz"))
+          v_spacing[2] = get_float64(n_spacing["dz"], data_object);
+
+        v_spacing[0] = (v_spacing[0] > 0) ? (v_spacing[0]) : 1;
+        v_spacing[1] = (v_spacing[1] > 0) ? (v_spacing[1]) : 1;
+        v_spacing[2] = (v_spacing[2] > 0) ? (v_spacing[2]) : 1;
+      }
+      sampler.UniformGrid(v_dims, v_origin, v_spacing);
+    }
     else if(params().has_path("box"))
     {
-        int dims[3];
-        viskores::Float64 x_min, x_max, y_min, y_max, z_min, z_max;
-        viskores::Bounds g_bounds = data.GetGlobalBounds();
-        const Node &dims_b = params()["box/dims"];
-        const Node &min_b = params()["box/min"];
-        const Node &max_b = params()["box/max"];
+      int dims[3];
+      viskores::Float64 x_min, x_max, y_min, y_max, z_min, z_max;
+      viskores::Bounds g_bounds = data.GetGlobalBounds();
+      const Node &dims_b = params()["box/dims"];
+      const Node &min_b = params()["box/min"];
+      const Node &max_b = params()["box/max"];
 
-        //Grab Dims
-        if(dims_b.has_child("i"))
-        {
-          dims[0] = dims_b["i"].to_int();
-        }
-        else
-          dims[0] = 1;
+      //Grab Dims
+      if(dims_b.has_child("i"))
+      {
+        dims[0] = dims_b["i"].to_int();
+      }
+      else
+        dims[0] = 1;
 
-        if(dims_b.has_child("j"))
-        {
-          dims[1] = dims_b["j"].to_int();
-        }
-        else
-          dims[1] = 1;
+      if(dims_b.has_child("j"))
+      {
+        dims[1] = dims_b["j"].to_int();
+      }
+      else
+        dims[1] = 1;
 
-        if(dims_b.has_child("k"))
+      if(dims_b.has_child("k"))
+      {
+        dims[2] = dims_b["k"].to_int();
+      }
+      else
+        dims[2] = 1;
+      
+      //Grab Mins
+      if(min_b.has_child("x"))
+      {
+        if(min_b["x"].dtype().is_string())
         {
-          dims[2] = dims_b["k"].to_int();
-        }
-        else
-          dims[2] = 1;
-        
-        //Grab Mins
-        if(min_b.has_child("x"))
-        {
-          if(min_b["x"].dtype().is_string())
-          {
-            if(min_b["x"].as_string() != "min")
-              ASCENT_ERROR("minimum value for x must be the string `min` or a scalar double");
-            x_min = g_bounds.X.Min;
-          }
-          else
-          {
-            x_min = min_b["x"].as_float64();
-          }
-        }
-        else //not set; default min
-        {
+          if(min_b["x"].as_string() != "min")
+            ASCENT_ERROR("minimum value for x must be the string `min` or a scalar double");
           x_min = g_bounds.X.Min;
         }
-
-        if(min_b.has_child("y"))
+        else
         {
-          if(min_b["y"].dtype().is_string())
-          {
-            if(min_b["y"].as_string() != "min")
-              ASCENT_ERROR("minimum value for y must be the string `min` or a scalar double");
-            y_min = g_bounds.Y.Min;
-          }
-          else
-          {
-            y_min = min_b["y"].as_float64();
-          }
+          x_min = min_b["x"].to_float64();
         }
-        else //not set; default min
+      }
+      else //not set; default min
+      {
+        x_min = g_bounds.X.Min;
+      }
+
+      if(min_b.has_child("y"))
+      {
+        if(min_b["y"].dtype().is_string())
         {
+          if(min_b["y"].as_string() != "min")
+            ASCENT_ERROR("minimum value for y must be the string `min` or a scalar double");
           y_min = g_bounds.Y.Min;
         }
-
-        if(min_b.has_child("z"))
+        else
         {
-          if(min_b["z"].dtype().is_string())
-          {
-            if(min_b["z"].as_string() != "min")
-              ASCENT_ERROR("minimum value for z must be the string `min` or a scalar double");
-            z_min = g_bounds.Z.Min;
-          }
-          else
-          {
-            z_min = min_b["z"].as_float64();
-          }
+          y_min = min_b["y"].to_float64();
         }
-        else //not set; default min
+      }
+      else //not set; default min
+      {
+        y_min = g_bounds.Y.Min;
+      }
+
+      if(min_b.has_child("z"))
+      {
+        if(min_b["z"].dtype().is_string())
         {
+          if(min_b["z"].as_string() != "min")
+            ASCENT_ERROR("minimum value for z must be the string `min` or a scalar double");
           z_min = g_bounds.Z.Min;
         }
-
-        //Grab Maxes
-        if(max_b.has_child("x"))
+        else
         {
-          if(max_b["x"].dtype().is_string())
-          {
-            if(max_b["x"].as_string() != "max")
-              ASCENT_ERROR("maximum value for x must be the string `max` or a scalar double");
-            x_max = g_bounds.X.Max;
-          }
-          else
-          {
-            x_max = max_b["x"].as_float64();
-          }
+          z_min = min_b["z"].to_float64();
         }
-        else //not set; default max
+      }
+      else //not set; default min
+      {
+        z_min = g_bounds.Z.Min;
+      }
+
+      //Grab Maxes
+      if(max_b.has_child("x"))
+      {
+        if(max_b["x"].dtype().is_string())
         {
+          if(max_b["x"].as_string() != "max")
+            ASCENT_ERROR("maximum value for x must be the string `max` or a scalar double");
           x_max = g_bounds.X.Max;
         }
-
-        if(max_b.has_child("y"))
+        else
         {
-          if(max_b["y"].dtype().is_string())
-          {
-            if(max_b["y"].as_string() != "max")
-              ASCENT_ERROR("maximum value for y must be the string `max` or a scalar double");
-            y_max = g_bounds.Y.Max;
-          }
-          else
-          {
-            y_max = max_b["y"].as_float64();
-          }
+          x_max = max_b["x"].to_float64();
         }
-        else //not set; default max
+      }
+      else //not set; default max
+      {
+        x_max = g_bounds.X.Max;
+      }
+
+      if(max_b.has_child("y"))
+      {
+        if(max_b["y"].dtype().is_string())
         {
+          if(max_b["y"].as_string() != "max")
+            ASCENT_ERROR("maximum value for y must be the string `max` or a scalar double");
           y_max = g_bounds.Y.Max;
         }
-
-        if(max_b.has_child("z"))
+        else
         {
-          if(max_b["z"].dtype().is_string())
-          {
-            if(max_b["z"].as_string() != "max")
-              ASCENT_ERROR("maximum value for z must be the string `max` or a scalar double");
-            z_max = g_bounds.Z.Max;
-          }
-          else
-          {
-            z_max = max_b["z"].as_float64();
-          }
+          y_max = max_b["y"].to_float64();
         }
-        else //not set; default max
+      }
+      else //not set; default max
+      {
+        y_max = g_bounds.Y.Max;
+      }
+
+      if(max_b.has_child("z"))
+      {
+        if(max_b["z"].dtype().is_string())
         {
+          if(max_b["z"].as_string() != "max")
+            ASCENT_ERROR("maximum value for z must be the string `max` or a scalar double");
           z_max = g_bounds.Z.Max;
         }
+        else
+        {
+          z_max = max_b["z"].to_float64();
+        }
+      }
+      else //not set; default max
+      {
+        z_max = g_bounds.Z.Max;
+      }
 
-        
-        sampler.Box(dims, x_min, y_min, z_min, x_max, y_max, z_max);
-
+      sampler.Box(dims, x_min, y_min, z_min, x_max, y_max, z_max);
     }
 
     double invalid_value = 0.0;
     if(params().has_path("invalid_value"))
     {
-      invalid_value = params()["invalid_value"].as_float64();
+      invalid_value = params()["invalid_value"].to_float64();
     }
-
-
 
     sampler.InvalidValue(invalid_value);
     sampler.Fields(field_selection);
@@ -4885,7 +4942,7 @@ VTKHParticleAdvection::execute()
         const Node &n_start_vals = n_seeds["start"];
         const Node &n_end_vals = n_seeds["end"];
         std::string sampling = n_seeds["sampling_type"].as_string();
-        int num_seeds = n_seeds["num_seeds"].as_int();
+        int num_seeds = n_seeds["num_seeds"].to_int();
 
 
         //convert to contig doubles
@@ -4985,9 +5042,9 @@ VTKHParticleAdvection::execute()
         {
             if(sampling_type == "uniform")
             {
-                int num_seeds_x = n_seeds["num_seeds_x"].as_int();
-                int num_seeds_y = n_seeds["num_seeds_y"].as_int();
-                int num_seeds_z = n_seeds["num_seeds_z"].as_int();
+                int num_seeds_x = n_seeds["num_seeds_x"].to_int();
+                int num_seeds_y = n_seeds["num_seeds_y"].to_int();
+                int num_seeds_z = n_seeds["num_seeds_z"].to_int();
                 
                 double dx = 1, dy = 1, dz = 1;
                 if(num_seeds_x != 0)
@@ -5044,7 +5101,7 @@ VTKHParticleAdvection::execute()
                 std::default_random_engine generator(0);
                 float  zero(0), one(1);
                 std::uniform_real_distribution<viskores::FloatDefault> distribution(zero, one);
-                int num_seeds = n_seeds["num_seeds"].as_int();
+                int num_seeds = n_seeds["num_seeds"].to_int();
                 for(int i = 0; i < num_seeds; ++i)
                 {
                     double rand = distribution(generator);
@@ -5060,9 +5117,9 @@ VTKHParticleAdvection::execute()
         {
             if(sampling_type == "uniform")
             {
-                int num_seeds_x = n_seeds["num_seeds_x"].as_int();
-                int num_seeds_y = n_seeds["num_seeds_y"].as_int();
-                int num_seeds_z = n_seeds["num_seeds_z"].as_int();
+                int num_seeds_x = n_seeds["num_seeds_x"].to_int();
+                int num_seeds_y = n_seeds["num_seeds_y"].to_int();
+                int num_seeds_z = n_seeds["num_seeds_z"].to_int();
 
                 double dx = 1, dy = 1, dz = 1;
                 if(num_seeds_x != 0)
@@ -5132,7 +5189,7 @@ VTKHParticleAdvection::execute()
                 std::default_random_engine generator(0);
                 float  zero(0), one(1);
                 std::uniform_real_distribution<viskores::FloatDefault> distribution(zero, one);
-                int num_seeds = n_seeds["num_seeds"].as_int();
+                int num_seeds = n_seeds["num_seeds"].to_int();
                 for(int i = 0; i < num_seeds; ++i)
                 {
                     int side = std::rand()%4;
@@ -5239,17 +5296,17 @@ VTKHParticleAdvection::execute()
             }
             if(params().has_path("rendering/tube_value")) 
             {
-                double tube_value = params()["rendering/tube_value"].as_float64();
+                double tube_value = params()["rendering/tube_value"].to_float64();
                 sl.SetTubeValue(tube_value);
             }
             if(params().has_path("rendering/tube_size")) 
             {
-                double tube_size = params()["rendering/tube_size"].as_float64();
+                double tube_size = params()["rendering/tube_size"].to_float64();
                 sl.SetTubeSize(tube_size);
             }
             if(params().has_path("rendering/tube_sides")) 
             {
-                int tube_sides = params()["rendering/tube_sides"].as_int32();
+                int tube_sides = params()["rendering/tube_sides"].to_int32();
                 sl.SetTubeSides(tube_sides);
             }
             if(params().has_path("rendering/tube_capping"))
@@ -5460,17 +5517,17 @@ VTKHWarpXStreamline::execute()
         }
         if(params().has_path("tube_value")) 
         {
-            double tube_value = params()["rendering/tube_value"].as_float64();
+            double tube_value = params()["rendering/tube_value"].to_float64();
             sl.SetTubeValue(tube_value);
         }
         if(params().has_path("tube_size")) 
         {
-            double tube_size = params()["rendering/tube_size"].as_float64();
+            double tube_size = params()["rendering/tube_size"].to_float64();
             sl.SetTubeSize(tube_size);
         }
         if(params().has_path("tube_sides")) 
         {
-            int tube_sides = params()["rendering/tube_sides"].as_int32();
+            int tube_sides = params()["rendering/tube_sides"].to_int32();
             sl.SetTubeSides(tube_sides);
         }
         if(params().has_path("tube_capping"))
