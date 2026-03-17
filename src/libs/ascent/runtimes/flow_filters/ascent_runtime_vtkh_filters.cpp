@@ -1465,8 +1465,8 @@ VTKHThreshold::declare_interface(Node &i)
     param_schema["properties/invert"].set(string_schema());
     param_schema["properties/extract"].set(string_schema());
 
-    // param_schema["oneOf"].append("field");
-    // param_schema["oneOf"].append("topology")
+    param_schema["anyOf"].append() = "field";
+    param_schema["anyOf"].append() = "topology";
 
     // --- sphere ---
     conduit::Node sphere_schema;
