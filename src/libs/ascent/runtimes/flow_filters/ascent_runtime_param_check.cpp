@@ -467,28 +467,6 @@ int get_int32(const conduit::Node &node, DataObject *dataset)
   return get_value<int>(node, dataset);
 }
 //-----------------------------------------------------------------------------
-//Parse the ParamSpec struct
-ParamSpec 
-assign_param_spec(const conduit::Node &n, DataObject *data_object)
-{
-  ParamSpec spec;
-
-  // If it's a string: "min" / "max"
-  if(n.dtype().is_string())
-  {
-    std::string s = n.as_string();
-    if(s == "min") spec.mode = ParamVal::BoundsMin;
-    else if(s == "max") spec.mode = ParamVal::BoundsMax;
-    else ASCENT_ERROR("reflect axis must be a number or 'min'/'max' (got '" << s << "')");
-    return spec;
-  }
-
-  // Otherwise treat it as numeric / expression supported by get_float64
-  spec.mode  = ParamVal::Value;
-  spec.value = get_float64(n, data_object);
-  return spec;
-}
-//-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------
 // -- end ascent::runtime::filters --
