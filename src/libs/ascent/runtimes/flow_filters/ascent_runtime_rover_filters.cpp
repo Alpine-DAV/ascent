@@ -97,346 +97,65 @@ RoverXRay::declare_interface(Node &i)
   i["type_name"] = "xray";
   i["port_names"].append() = "in";
   i["output_port"] = "false";
-}
 
-//-----------------------------------------------------------------------------
-bool
-RoverXRay::verify_params(const conduit::Node &params,
-                               conduit::Node &info)
-{
-  // TODO: We want to be more rigorous about param checking at some point, so
-  // that rover can safely assume its inputs are valid
-  info.reset();
+  // ----------- Define Param Schema -----------
+  conduit::Node param_schema;
+  param_schema["type"] = "object";
+  param_schema["additionalProperties"] = false;
 
-  // Early return if none of the rover params were passed
-  if (!params.has_child("rover"))
-  {
-    info["errors"].append() = "Missing required string parameters: 'rover/absorption', 'rover/filename'";
-    return false;
-  }
+  param_schema["properties/condition"].set(string_schema());
+  param_schema["properties/callback"].set(string_schema());
+  param_schema["properties/actions_file"].set(string_schema());
+  param_schema["properties/actions_files"].set(array_schema(ignore_schema()));
+  param_schema["properties/actions"].set(array_schema(ignore_schema()));
 
-  const conduit::Node &n_rover = params["rover"];
-  bool res = true;
+  // --- Rover ---
+  conduit::Node rover_schema;
+  rover_schema["properties/absorption"].set(string_schema(1));
+  rover_schema["properties/filename"].set(string_schema(1));
+  rover_schema["properties/background_intensity"].set(number_schema(false, 0));
+  rover_schema["properties/divide_emis_by_absorb"].set(bool_schema());
+  rover_schema["properties/emission"].set(string_schema(1));
+  rover_schema["properties/enable_rays_mesh"].set(bool_schema());
+  rover_schema["properties/height"].set(integer_schema(false, std::nullopt, std::nullopt, 0));
+  rover_schema["properties/width"].set(integer_schema(false, std::nullopt, std::nullopt, 0));
+  rover_schema["properties/output_type"].set(string_enum_schema({"hdf5", "yaml", "json", "png", "bov"}));
+  rover_schema["properties/precision"].set(string_enum_schema({"single", "double"}));
+  rover_schema["properties/unit_scalar"].set(number_schema(false, std::nullopt, std::nullopt, 0));
 
-  //
-  // Required rover parameters
-  //
+  rover_schema["constraints/dependencies/height"].append() = "width";
+  rover_schema["constraints/dependencies/width"].append() = "height";
 
-  if (!n_rover.has_child("absorption"))
-  {
-    info["errors"].append() = "Missing required string parameter 'rover/absorption'";
-    res = false;
-  }
-  else if (!n_rover["absorption"].dtype().is_string())
-  {
-    info["errors"].append() = "Expected string parameter 'rover/absorption' is not a string";
-    res = false;
-  }
-  else // (n_rover.has_child("absorption") && n_rover["absorption"].dtype().is_string())
-  {
-    const std::string absorption = n_rover["absorption"].as_string();
-    if (absorption.empty())
-    {
-      info["errors"].append() = "Expected string parameter 'rover/absorption' cannot be an empty string";
-      res = false;
-    }
-  }
+  rover_schema["required"].append() = "absorption";
+  rover_schema["required"].append() = "filename";
 
-  // This can either be a "filename" or a "/path/to/filename"
-  if (!n_rover.has_child("filename"))
-  {
-    info["errors"].append() = "Missing required string parameter 'rover/filename'";
-    res = false;
-  }
-  else if (!n_rover["filename"].dtype().is_string())
-  {
-    info["errors"].append() = "Expected string parameter 'rover/filename' is not a string";
-    res = false;
-  }
-  else // (n_rover.has_child("filename") && n_rover["filename"].dtype().is_string())
-  {
-    const std::string filename = n_rover["filename"].as_string();
-    if (filename.empty())
-    {
-      info["errors"].append() = "Expected string parameter 'rover/filename' cannot be an empty string";
-      res = false;
-    }
-  }
+  param_schema["properties/rover"].set(rover_schema);
 
-  //
-  // Optional rover parameters
-  //
+  // --- Image ---
+  conduit::Node image_schema;
+  image_schema["properties/log_scale"].set(bool_schema());
+  image_schema["properties/min_value"].set(number_schema());
+  image_schema["properties/max_value"].set(number_schema());
+  param_schema["properties/image_params"].set(image_schema);
 
-  if (n_rover.has_child("background_intensity"))
-  {
-    if (!n_rover["background_intensity"].dtype().is_number())
-    {
-      info["errors"].append() = "Optional numeric parameter 'rover/background_intensity' is not numeric";
-      res = false;
-    }
-    else // (n_rover["background_intensity"].dtype().is_number())
-    {
-      const float64 background_intensity = n_rover["background_intensity"].to_float64();
-      if (background_intensity < 0)
-      {
-        info["errors"].append() = "Optional numeric parameter 'rover/unit_scalar' must be positive";
-        res = false;
-      }
-    }
-  }
+  // --- Camera ---
+  conduit::Node camera_schema;
+  camera_schema["properties/azimuth"].set(ignore_schema());
+  camera_schema["properties/elevation"].set(ignore_schema());
+  camera_schema["properties/far_plane"].set(ignore_schema());
+  camera_schema["properties/near_plane"].set(ignore_schema());
+  camera_schema["properties/fov"].set(ignore_schema());
+  camera_schema["properties/look_at"].set(ignore_schema());
+  camera_schema["properties/position"].set(ignore_schema());
+  camera_schema["properties/up"].set(ignore_schema());
+  camera_schema["properties/xpan"].set(ignore_schema());
+  camera_schema["properties/ypan"].set(ignore_schema());
+  camera_schema["properties/zoom"].set(ignore_schema());
+  param_schema["properties/camera"].set(camera_schema);
 
-  if (n_rover.has_child("divide_emis_by_absorb"))
-  {
-    if (!n_rover["divide_emis_by_absorb"].dtype().is_string())
-    {
-      info["errors"].append() = "Optional bool string parameter 'rover/divide_emis_by_absorb' is not a string";
-      res = false;
-    }
-    else // (n_rover["divide_emis_by_absorb"].dtype().is_string())
-    {
-      const std::string divide_emis_by_absorb = n_rover["divide_emis_by_absorb"].as_string();
-      if ("true" != divide_emis_by_absorb && "false" != divide_emis_by_absorb)
-      {
-        info["errors"].append() = "Optional bool string parameter 'rover/divide_emis_by_absorb' must be 'true' or 'false'";
-        res = false;
-      }
-    }
-  }
-
-  if (n_rover.has_child("emission"))
-  {
-    if (!n_rover["emission"].dtype().is_string())
-    {
-      info["errors"].append() = "Optional string parameter 'rover/emission' is not a string";
-      res = false;
-    }
-    else // (n_rover["emission"].dtype().is_string())
-    {
-      const std::string emission = n_rover["emission"].as_string();
-      if (emission.empty())
-      {
-        info["errors"].append() = "Optional string parameter 'rover/emission' cannot be an empty string";
-        res = false;
-      }
-    }
-  }
-
-  if (n_rover.has_child("enable_rays_mesh"))
-  {
-    if (!n_rover["enable_rays_mesh"].dtype().is_string())
-    {
-      info["errors"].append() = "Optional bool string parameter 'rover/enable_rays_mesh' is not a string";
-      res = false;
-    }
-    else // (n_rover["enable_rays_mesh"].dtype().is_string())
-    {
-      const std::string enable_rays_mesh = n_rover["enable_rays_mesh"].as_string();
-      if ("true" != enable_rays_mesh && "false" != enable_rays_mesh)
-      {
-        info["errors"].append() = "Optional bool string parameter 'rover/enable_rays_mesh' must be 'true' or 'false'";
-        res = false;
-      }
-    }
-  }
-
-  const bool has_height = n_rover.has_child("height");
-  if (has_height)
-  {
-    if (!n_rover["height"].dtype().is_integer())
-    {
-      info["errors"].append() = "Optional integer parameter 'rover/height' is not an integer";
-      res = false;
-    }
-    else // (n_rover["height"].dtype().is_integer())
-    {
-      const int64 height = n_rover["height"].to_int64();
-      if (height <= 0)
-      {
-        info["errors"].append() = "Optional integer parameter 'rover/height' must be greater than 0";
-        res = false;
-      }
-    }
-  }
-
-  if (n_rover.has_child("output_type"))
-  {
-    if (!n_rover["output_type"].dtype().is_string())
-    {
-      info["errors"].append() = "Optional string parameter 'rover/output_type' is not a string";
-      res = false;
-    }
-    else // (n_rover["output_type"].dtype().is_string())
-    {
-      const std::string output_type = n_rover["output_type"].as_string();
-      const std::string valid_types[] = {"hdf5", "yaml", "json", "png", "bov"};
-  
-      if (std::find(std::begin(valid_types), std::end(valid_types), output_type) == std::end(valid_types))
-      {
-        info["errors"].append() = "Optional string parameter 'rover/output_type' must be 'hdf5' or 'yaml' or 'json' or 'png' or 'bov'";
-        res = false;
-      }
-    }
-  }
-
-  if (n_rover.has_child("precision"))
-  {
-    if (!n_rover["precision"].dtype().is_string())
-    {
-      info["errors"].append() = "Optional string parameter 'rover/precision' is not a string";
-      res = false;
-    }
-    else // (n_rover["precision"].dtype().is_string())
-    {
-      const std::string precision = n_rover["precision"].as_string();
-      if ("single" != precision && "double" != precision)
-      {
-        info["errors"].append() = "Optional string parameter 'rover/precision' must be 'single' or 'double'";
-        res = false;
-      }
-    }
-  }
-
-  const bool has_width = n_rover.has_child("width");
-  if (has_width)
-  {
-    if (!n_rover["width"].dtype().is_integer())
-    {
-      info["errors"].append() = "Optional integer parameter 'rover/width' is not an integer";
-      res = false;
-    }
-    else // (n_rover["width"].dtype().is_integer())
-    {
-      const int64 width = n_rover["width"].to_int64();
-      if (width <= 0)
-      {
-        info["errors"].append() = "Optional integer parameter 'rover/width' must be greater than 0";
-        res = false;
-      }
-    }
-  }
-
-  // If either 'rover/width' or 'rover/height' are set, they must both be set
-  if (has_width && !has_height)
-  {
-    info["errors"].append() = "Optional integer parameter 'rover/width' requires 'rover/height' to also be set";
-    res = false;
-  }
-  else if (!has_width && has_height)
-  {
-    info["errors"].append() = "Optional integer parameter 'rover/height' requires 'rover/width' to also be set";
-    res = false;
-  }
-
-  if (n_rover.has_child("unit_scalar"))
-  {
-    if (!n_rover["unit_scalar"].dtype().is_number())
-    {
-      info["errors"].append() = "Optional numeric parameter 'rover/unit_scalar' is not numeric";
-      res = false;
-    }
-    else // (n_rover["unit_scalar"].dtype().is_number()
-    {
-      const float64 unit_scalar = n_rover["unit_scalar"].to_float64();
-      if (unit_scalar <= 0)
-      {
-        info["errors"].append() = "Optional numeric parameter 'rover/unit_scalar' must be greater than 0";
-        res = false;
-      }
-    }
-  }
-
-  //
-  // Optional image parameters
-  //
-
-  if (params.has_child("image_params"))
-  {
-    // If any 'image_params' parameters are set, they must all be set
-    const conduit::Node &n_image = params["image_params"];
-
-    if (!n_image.has_child("log_scale"))
-    {
-      info["errors"].append() = "Missing bool string parameter 'image_params/log_scale'";
-      res = false;
-    }
-    else if (!n_image["log_scale"].dtype().is_string())
-    {
-      info["errors"].append() = "Optional bool string parameter 'image_params/log_scale' is not a string";
-      res = false;
-    }
-    else // (n_image.has_child("log_scale") && n_image["log_scale"].dtype().is_string())
-    {
-      const std::string log_scale = n_image["log_scale"].as_string();
-      if ("true" != log_scale && "false" != log_scale)
-      {
-        info["errors"].append() = "Optional bool string parameter 'image_params/log_scale' must be 'true' or 'false'";
-        res = false;
-      }
-    }
-
-    if (!n_image.has_child("min_value"))
-    {
-      info["errors"].append() = "Missing numeric parameter 'image_params/min_value'";
-      res = false;
-    }
-    else if (!n_image["min_value"].dtype().is_number())
-    {
-      info["errors"].append() = "Expected numeric parameter 'image_params/min_value' is not numeric";
-      res = false;
-    }
-
-    if (!n_image.has_child("max_value"))
-    {
-      info["errors"].append() = "Missing numeric parameter 'image_params/max_value'";
-      res = false;
-    }
-    else if (!n_image["max_value"].dtype().is_number())
-    {
-      info["errors"].append() = "Expected numeric parameter 'image_params/max_value' is not numeric";
-      res = false;
-    }
-  }
-
-  //
-  // Surprise check
-  //
-  
-  const std::vector<std::string> valid_paths = {
-    "camera/azimuth",
-    "camera/elevation",
-    "camera/far_plane",
-    "camera/fov",
-    "camera/look_at",
-    "camera/near_plane",
-    "camera/position",
-    "camera/up",
-    "camera/xpan",
-    "camera/ypan",
-    "camera/zoom",
-    "image_params/log_scale",
-    "image_params/max_value",
-    "image_params/min_value",
-    "rover/absorption",
-    "rover/background_intensity",
-    "rover/divide_emis_by_absorb",
-    "rover/emission",
-    "rover/enable_rays_mesh",
-    "rover/filename",
-    "rover/height",
-    "rover/output_type",
-    "rover/precision",
-    "rover/width",
-    "rover/unit_scalar"
-  };
-
-  const std::string surprises = surprise_check(valid_paths, params);
-  if (!surprises.empty())
-  {
-    info["errors"].append() = surprises;
-    res = false;
-  }
-
-  return res;
+  param_schema["required"].append() = "rover";
+    
+  i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -587,43 +306,20 @@ RoverVolume::declare_interface(Node &i)
     i["type_name"]   = "rover_volume";
     i["port_names"].append() = "in";
     i["output_port"] = "false";
-}
 
-//-----------------------------------------------------------------------------
-bool
-RoverVolume::verify_params(const conduit::Node &params,
-                                 conduit::Node &info)
-{
-    info.reset();
-    bool res = true;
+    // ----------- Define Param Schema -----------
+    conduit::Node param_schema;
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
-    if(! params.has_child("field") ||
-       ! params["field"].dtype().is_string() )
-    {
-        info["errors"].append() = "Missing required string parameter 'field'";
-        res = false;
-    }
+    param_schema["properties/field"].set(string_schema());
+    param_schema["properties/filename"].set(string_schema());
+    param_schema["properties/precision"].set(string_enum_schema({"single", "double"}));
 
-    if(! params.has_child("filename") ||
-       ! params["filename"].dtype().is_string() )
-    {
-        info["errors"].append() = "Missing required string parameter 'filename'";
-        res = false;
-    }
-
-    if( params.has_child("precision") &&
-       ! params["precision"].dtype().is_string() )
-    {
-        info["errors"].append() = "Optional parameter 'precision' must be a string";
-        std::string prec = params["precision"].as_string();
-        if(prec != "single" || prec != "double")
-        {
-          info["errors"].append() = "Parameter 'precision' must be 'single' or 'double'";
-        }
-        res = false;
-    }
-
-    return res;
+    param_schema["required"].append() = "field";
+    param_schema["required"].append() = "filename";
+    
+    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
