@@ -5357,9 +5357,10 @@ VTKHTransform::verify_params(const conduit::Node &params,
     if(params.has_child("reflect"))
     {
        const Node &p_vals = params["reflect"];
-       if( ! p_vals.has_child("normal/x") &&
-           ! p_vals.has_child("normal/y") &&
-           ! p_vals.has_child("normal/z") )
+       p_vals.print();
+       if( ! p_vals.has_path("normal/x") &&
+           ! p_vals.has_path("normal/y") &&
+           ! p_vals.has_path("normal/z") )
         {
             res = false;
             info["errors"].append() = "reflect transform requires: reflect/normal/x, reflect/normal/y, and/or reflect/normal/z";
@@ -5453,12 +5454,13 @@ VTKHTransform::execute()
     double t_rotate_angle      =  0.0;
     double t_rotate_axis[3]    = {0.0, 0.0, 0.0};
     //TODO: Good normal default? 
-    double t_reflect_normal[3] = {1.0, 0.0, 0.0}; 
+    double t_reflect_normal[3] = {0.0, 0.0, 0.0}; 
     double t_reflect_point[3]  = {0.0, 0.0, 0.0};
     double t_matrix[16]        = {0.0, 0.0, 0.0, 0.0,
                                   0.0, 0.0, 0.0, 0.0,
                                   0.0, 0.0, 0.0, 0.0,
                                   0.0, 0.0, 0.0, 0.0};
+    ParamSpec reflect_param[3];
 
     if(params().has_child("scale"))
     {
@@ -5549,17 +5551,17 @@ VTKHTransform::execute()
         const Node &p_vals = n_reflect["point"];
         if(p_vals.has_child("x"))
         {
-          t_reflect_point[0] = get_float64(p_vals["x"], data_object);
+          reflect_param[0] = assign_param_spec(p_vals["x"],data_object);
         }
 
         if(p_vals.has_child("y"))
         {
-          t_reflect_point[1] = get_float64(p_vals["y"], data_object);
+          reflect_param[1] = assign_param_spec(p_vals["y"],data_object);
         }
 
         if(p_vals.has_child("z"))
         {
-          t_reflect_point[2] = get_float64(p_vals["z"], data_object);
+          reflect_param[2] = assign_param_spec(p_vals["z"],data_object);
         }
       }
     }
@@ -5612,6 +5614,43 @@ VTKHTransform::execute()
 
       if(use_reflect)
       {
+          viskores::Bounds bounds = data.GetGlobalBounds();
+          //resolve the ParamSpec types now that we have bounds 
+          auto resolve = [&](int axis) -> double
+          {
+            switch(reflect_param[axis].mode)
+            {
+              case ParamVal::Unset:     
+                return 0.0;//default
+
+              case ParamVal::Value:     
+                return reflect_param[axis].value;
+
+              case ParamVal::BoundsMin:       
+                switch(axis)
+                {
+                  case 0: return bounds.X.Min;
+                  case 1: return bounds.Y.Min;
+                  case 2: return bounds.Z.Min;
+                }
+                break;
+
+              case ParamVal::BoundsMax:
+                switch(axis)
+                {
+                  case 0: return bounds.X.Max;
+                  case 1: return bounds.Y.Max;
+                  case 2: return bounds.Z.Max;
+                }
+                break;
+            }
+            return 0.0;
+          };
+
+          t_reflect_point[0] = resolve(0);
+          t_reflect_point[1] = resolve(1);
+          t_reflect_point[2] = resolve(2);
+          
           transform.SetReflect(t_reflect_point[0],
                                t_reflect_point[1],
                                t_reflect_point[2],

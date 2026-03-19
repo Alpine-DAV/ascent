@@ -107,6 +107,8 @@ PointTransform::SetReflect(const double& pointX,
 {
   // reflect across plane defined by point(p) + normal(n):
   // M = (I - 2 n n^T) with translation 2 (n·p) n
+  std::cerr <<" normal: " << normalX << " " << normalY << " " << normalZ << std::endl;
+  std::cerr <<" point: " << pointX << " " << pointY << " " << pointZ << std::endl;
 
   viskores::Vec<viskores::Float64,3> normal;
   normal[0] = normalX;
@@ -178,6 +180,8 @@ PointTransform::DoExecute()
 {
   this->m_output = new DataSet();
   const int num_domains = this->m_input->GetNumberOfDomains();
+  auto bounds = this->m_input->GetGlobalBounds();
+  std::cerr << "input global bounds: " << bounds.X.Min << " " << bounds.X.Max << " , " << bounds.Y.Min << " " << bounds.Y.Max << " , " << bounds.Z.Min << " " << bounds.Z.Max << std::endl;
 
   for(int i = 0; i < num_domains; ++i)
   {
@@ -191,6 +195,8 @@ PointTransform::DoExecute()
     // insert interesting stuff
     m_output->AddDomain(dataset, domain_id);
   }
+  auto out_bounds = m_output->GetGlobalBounds();
+  std::cerr << "output global out_bounds: " << out_bounds.X.Min << " " << out_bounds.X.Max << " , " << out_bounds.Y.Min << " " << out_bounds.Y.Max << " , " << out_bounds.Z.Min << " " << out_bounds.Z.Max << std::endl;
 }
 
 //---------------------------------------------------------------------------//
