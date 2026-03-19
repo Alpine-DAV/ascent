@@ -67,7 +67,7 @@ conduit::Node string_schema(std::optional<int> minLength,
   conduit::Node n;
   n["type"] = "string";
   if(minLength) n["minLength"] = *minLength;
-  if(maxLength) n["minLength"] = *maxLength;
+  if(maxLength) n["maxLength"] = *maxLength;
   return n;
 }
 
@@ -76,7 +76,7 @@ conduit::Node string_enum_schema(std::vector<std::string> options)
   conduit::Node n = string_schema();
   for (const auto& value: options)
   {
-    n["constraints/enum"].append() = value;
+    n["enum"].append() = value;
   }
   return n;
 }
@@ -131,7 +131,7 @@ conduit::Node integer_schema(bool supports_expressions,
   conduit::Node n;
   if (supports_expressions)
   {
-    n["oneOf"].append().set(number_schema(false, minimum, maximum, exclusiveMinimum, exclusiveMaximum));
+    n["oneOf"].append().set(integer_schema(false, minimum, maximum, exclusiveMinimum, exclusiveMaximum));
     n["oneOf"].append().set(expression_schema());
   }
   else
@@ -194,12 +194,12 @@ conduit::Node vec3_schema_anyOf(const std::string var1,
 
   conduit::Node var2_required;
   var2_required["type"] = "object";
-  var2_required["required"] = var1;
+  var2_required["required"] = var2;
   n["anyOf"].append().set(var2_required);
 
   conduit::Node var3_required;
   var3_required["type"] = "object";
-  var3_required["required"] = var1;
+  var3_required["required"] = var3;
   n["anyOf"].append().set(var3_required);
 
   return n;
