@@ -421,167 +421,52 @@ post_filter_check_for_data(const conduit::Node &output)
 //-----------------------------------------------------------------------------
 // helper shared by io save and load
 //-----------------------------------------------------------------------------
-bool
-verify_io_params(const conduit::Node &params,
-                 conduit::Node &info)
+void io_param_schema(conduit::Node &param_schema)
 {
-    bool res = true;
+    // ----------- Define Param Schema -----------
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
-    if( !params.has_child("path") )
-    {
-        info["errors"].append() = "missing required entry 'path'";
-        res = false;
-    }
-    else if(!params["path"].dtype().is_string())
-    {
-        info["errors"].append() = "'path' must be a string";
-        res = false;
-    }
-    else if(params["path"].as_string().empty())
-    {
-        info["errors"].append() = "'path' is an empty string";
-        res = false;
-    }
-
-    if( params.has_child("protocol") )
-    {
-        if(!params["protocol"].dtype().is_string())
-        {
-            info["errors"].append() = "optional entry 'protocol' must be a string";
-            res = false;
-        }
-        else if(params["protocol"].as_string().empty())
-        {
-            info["errors"].append() = "'protocol' is an empty string";
-            res = false;
-        }
-        else
-        {
-            info["info"].append() = "includes 'protocol'";
-        }
-    }
-
-    if( params.has_child("num_files") )
-    {
-        if(!params["num_files"].dtype().is_integer())
-        {
-            info["errors"].append() = "optional entry 'num_files' must be an integer";
-            res = false;
-        }
-        else
-        {
-            info["info"].append() = "includes 'num_files'";
-        }
-    }
-
-    if( params.has_child("refinement_level") )
-    {
-        if(!params["refinement_level"].dtype().is_integer())
-        {
-            info["errors"].append() = "optional entry 'refinement_level' must be an integer";
-            res = false;
-        }
-        else
-        {
-            info["info"].append() = "includes 'refinement_level'";
-        }
-    }
+    param_schema["properties/path"].set(string_schema(1));
+    param_schema["properties/protocol"].set(string_schema(1));
+    param_schema["properties/topologies"].set(ignore_schema());
+    param_schema["properties/fields"].set(ignore_schema());
+    param_schema["properties/num_files"].set(integer_schema());
+    param_schema["properties/refinement_level"].set(integer_schema());
 
 #if defined(ASCENT_HDF5_ENABLED)
-    if( params.has_child("hdf5_options") )
+    // --- HDF5 ---
     {
-        //
-        // HDF5 OPTIONS Example:
-        //
-        // compact_storage:
-        //   enabled: "true"
-        //   threshold: 1024
-        // chunking:
-        //   enabled: "true"
-        //   threshold: 2000000
-        //   chunk_size: 1000000
-        //   compression:
-        //     method: "gzip"
-        //     level: 5
+        conduit::Node hdf5_compact_storage_schema;
+        hdf5_compact_storage_schema["type"] = "object";
+        hdf5_compact_storage_schema["additionalProperties"] = false;
+        hdf5_compact_storage_schema["properties/enabled"].set(bool_schema());
+        hdf5_compact_storage_schema["properties/threshold"].set(number_schema());
 
-        const Node &params_hdf5_opts = params["hdf5_options"];
+        conduit::Node hdf5_compression_schema;
+        hdf5_compression_schema["type"] = "object";
+        hdf5_compression_schema["additionalProperties"] = false;
+        hdf5_compact_storage_schema["properties/method"].set(string_schema());
+        hdf5_compact_storage_schema["properties/level"].set(number_schema());
 
-        res &= check_object("compact_storage",
-                            params_hdf5_opts,
-                            info,
-                            false);
+        conduit::Node hdf5_chunking_schema;
+        hdf5_chunking_schema["type"] = "object";
+        hdf5_chunking_schema["additionalProperties"] = false;
+        hdf5_compact_storage_schema["properties/enabled"].set(bool_schema());
+        hdf5_compact_storage_schema["properties/threshold"].set(number_schema());
+        hdf5_compact_storage_schema["properties/chunk_size"].set(number_schema());
+        hdf5_compact_storage_schema["properties/compression"].set(hdf5_compression_schema);
 
-        res &= check_bool("compact_storage/enabled",
-                            params_hdf5_opts,
-                            info,
-                            false);
-
-        res &= check_numeric("compact_storage/threshold",
-                             params_hdf5_opts,
-                             info,
-                             false);
-
-        res &= check_object("chunking",
-                            params_hdf5_opts,
-                            info,
-                            false);
-
-        res &= check_bool("chunking/enabled",
-                          params_hdf5_opts,
-                          info,
-                          false);
-
-
-        res &= check_numeric("chunking/threshold",
-                             params_hdf5_opts,
-                             info,
-                             false);
-
-        res &= check_numeric("chunking/chunk_size",
-                             params_hdf5_opts,
-                             info,
-                             false);
-
-        res &= check_object("chunking/compression",
-                            params_hdf5_opts,
-                            info,
-                            false);
-
-        res &= check_string("chunking/compression/method",
-                            params_hdf5_opts,
-                            info,
-                            false);
-
-        res &= check_numeric("chunking/compression/level",
-                             params_hdf5_opts,
-                             info,
-                             false);
+        conduit::Node hdf5_schema;
+        hdf5_schema["type"] = "object";
+        hdf5_schema["additionalProperties"] = false;
+        hdf5_schema["properties/compact_storage"].set(hdf5_compact_storage_schema);
+        hdf5_schema["properties/chunking"].set(hdf5_chunking_schema);
+        param_schema["properties/hdf5_options"].set(hdf5_schema);
     }
 #endif
 
-    std::vector<std::string> valid_paths;
-    std::vector<std::string> ignore_paths;
-    valid_paths.push_back("path");
-    valid_paths.push_back("protocol");
-    valid_paths.push_back("topologies");
-    valid_paths.push_back("fields");
-    valid_paths.push_back("num_files");
-    valid_paths.push_back("refinement_level");
-    ignore_paths.push_back("fields");
-    ignore_paths.push_back("topologies");
-#if defined(ASCENT_HDF5_ENABLED)
-    ignore_paths.push_back("hdf5_options");
-#endif
-
-    std::string surprises = surprise_check(valid_paths, ignore_paths, params);
-
-    if(surprises != "")
-    {
-      res = false;
-      info["errors"].append() = surprises;
-    }
-
-    return res;
+    param_schema["required"].append() = "path";
 }
 
 
@@ -709,16 +594,12 @@ RelayIOSave::declare_interface(Node &i)
     i["type_name"]   = "relay_io_save";
     i["port_names"].append() = "in";
     i["output_port"] = "false";
-}
 
-//-----------------------------------------------------------------------------
-bool
-RelayIOSave::verify_params(const conduit::Node &params,
-                           conduit::Node &info)
-{
-    return verify_io_params(params,info);
+    // ----------- Define Param Schema -----------
+    conduit::Node param_schema;
+    io_param_schema(param_schema);
+    i["param_schema"].set(param_schema);
 }
-
 
 //-----------------------------------------------------------------------------
 void
@@ -1098,16 +979,12 @@ RelayIOLoad::declare_interface(Node &i)
     i["type_name"]   = "relay_io_load";
     i["port_names"] = DataType::empty();
     i["output_port"] = "true";
-}
 
-//-----------------------------------------------------------------------------
-bool
-RelayIOLoad::verify_params(const conduit::Node &params,
-                           conduit::Node &info)
-{
-    return verify_io_params(params,info);
+    // ----------- Define Param Schema -----------
+    conduit::Node param_schema;
+    io_param_schema(param_schema);
+    i["param_schema"].set(param_schema);
 }
-
 
 //-----------------------------------------------------------------------------
 void
@@ -1156,39 +1033,20 @@ BlueprintFlatten::declare_interface(Node &i)
     i["type_name"]   = "false";
     i["port_names"].append() = "in";
     i["output_port"] = "false";
+
+    // ----------- Define Param Schema -----------
+    conduit::Node param_schema;
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
+
+    param_schema["properties/path"].set(string_schema());
+    param_schema["properties/protocol"].set(string_schema());
+    param_schema["properties/fields"].set(array_schema(string_schema()));
+
+    param_schema["required"].append() = "path";
+    
+    i["param_schema"].set(param_schema);
 }
-
-//-----------------------------------------------------------------------------
-bool
-BlueprintFlatten::verify_params(const conduit::Node &params,
-                           conduit::Node &info)
-{
-    info.reset();
-    bool res = true;
-
-    if(! params.has_child("path") ||
-       ! params["path"].dtype().is_string() )
-    {
-        info["errors"].append() = "Missing required string parameter 'path'";
-    }
-
-    std::vector<std::string> valid_paths;
-    valid_paths.push_back("path");
-    valid_paths.push_back("protocol");
-    valid_paths.push_back("fields");
-
-    std::string surprises = surprise_check(valid_paths, params);
-
-    if(surprises != "")
-    {
-        res = false;
-	info["error"].append() = surprises;
-    }
-
-    return res;
-    //return verify_io_params(params,info);
-}
-
 
 //-----------------------------------------------------------------------------
 void
