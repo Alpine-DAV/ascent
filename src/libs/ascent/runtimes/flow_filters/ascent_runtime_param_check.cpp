@@ -59,17 +59,34 @@ bool is_valid_expression(const std::string &expr, std::string &err_msg)
   return res;
 }
 
-void ascent_register_flow_schema_hooks()
-{
-    flow::schema::set_expression_checker(&is_valid_expression);
-}
+//-----------------------------------------------------------------------------
 
-conduit::Node string_schema()
+conduit::Node string_schema(std::optional<int> minLength,
+                            std::optional<int> maxLength)
 {
   conduit::Node n;
   n["type"] = "string";
+  if(minLength) n["minLength"] = *minLength;
+  if(maxLength) n["minLength"] = *maxLength;
   return n;
 }
+
+conduit::Node string_enum_schema(std::vector<std::string> options)
+{
+  conduit::Node n = string_schema();
+  for (const auto& value: options)
+  {
+    n["constraints/enum"].append() = value;
+  }
+  return n;
+}
+
+conduit::Node bool_schema()
+{
+    return string_enum_schema({"true", "false"});
+}
+
+//-----------------------------------------------------------------------------
 
 conduit::Node expression_schema()
 {
@@ -78,20 +95,59 @@ conduit::Node expression_schema()
   return n;
 }
 
-conduit::Node number_schema(bool supports_expressions)
+//-----------------------------------------------------------------------------
+
+conduit::Node number_schema(bool supports_expressions,
+                            std::optional<int> minimum,
+                            std::optional<int> maximum,
+                            std::optional<int> exclusiveMinimum,
+                            std::optional<int> exclusiveMaximum)
 {
   conduit::Node n;
   if (supports_expressions)
   {
-    n["oneOf"].append().set(number_schema());
+    n["oneOf"].append().set(number_schema(false, minimum, maximum, exclusiveMinimum, exclusiveMaximum));
     n["oneOf"].append().set(expression_schema());
   }
   else
   {
     n["type"] = "number";
+
+    if(exclusiveMinimum) n["exclusiveMinimum"] = *exclusiveMinimum;
+    else if(minimum) n["minimum"] = *minimum;
+
+    if(exclusiveMaximum) n["exclusiveMaximum"] = *exclusiveMaximum;
+    else if(maximum) n["maximum"] = *maximum;
   }
   return n;
 }
+
+conduit::Node integer_schema(bool supports_expressions,
+                             std::optional<int> minimum,
+                             std::optional<int> maximum,
+                             std::optional<int> exclusiveMinimum,
+                             std::optional<int> exclusiveMaximum)
+{
+  conduit::Node n;
+  if (supports_expressions)
+  {
+    n["oneOf"].append().set(number_schema(false, minimum, maximum, exclusiveMinimum, exclusiveMaximum));
+    n["oneOf"].append().set(expression_schema());
+  }
+  else
+  {
+    n["type"] = "integer";
+
+    if(exclusiveMinimum) n["exclusiveMinimum"] = *exclusiveMinimum;
+    else if(minimum) n["minimum"] = *minimum;
+
+    if(exclusiveMaximum) n["exclusiveMaximum"] = *exclusiveMaximum;
+    else if(maximum) n["maximum"] = *maximum;
+  }
+  return n;
+}
+
+//-----------------------------------------------------------------------------
 
 conduit::Node vec3_schema(const std::string var1,
                           const std::string var2,
@@ -154,6 +210,8 @@ conduit::Node vec3_schema_anyOf(bool supports_expressions)
   return vec3_schema_anyOf("x", "y", "z", supports_expressions);
 }
 
+//-----------------------------------------------------------------------------
+
 conduit::Node array_schema(const conduit::Node &item_schema)
 {
   conduit::Node n;
@@ -168,6 +226,8 @@ conduit::Node array_schema()
   n["type"] = "array";
   return n;
 }
+
+//-----------------------------------------------------------------------------
 
 conduit::Node ignore_schema()
 {

@@ -19,6 +19,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <optional>
 
 #include <ascent_exports.h>
 #include <ascent_data_object.hpp>
@@ -43,9 +44,24 @@ namespace filters
 
 bool ASCENT_API is_valid_expression(const std::string &expr, std::string &err_msg);
 
-conduit::Node ASCENT_API string_schema();
+conduit::Node ASCENT_API string_schema(std::optional<int> minLength = std::nullopt,
+                                       std::optional<int> maxLength = std::nullopt);
 
-conduit::Node ASCENT_API number_schema(bool supports_expressions = false);
+conduit::Node ASCENT_API string_enum_schema(std::vector<std::string> options);
+
+conduit::Node ASCENT_API bool_schema();
+
+conduit::Node ASCENT_API number_schema(bool supports_expressions = false,
+                                       std::optional<int> minimum = std::nullopt,
+                                       std::optional<int> maximum = std::nullopt,
+                                       std::optional<int> exclusiveMinimum = std::nullopt,
+                                       std::optional<int> exclusiveMaximum= std::nullopt);
+
+conduit::Node ASCENT_API integer_schema(bool supports_expressions = false,
+                                        std::optional<int> minimum = std::nullopt,
+                                        std::optional<int> maximum = std::nullopt,
+                                        std::optional<int> exclusiveMinimum = std::nullopt,
+                                        std::optional<int> exclusiveMaximum= std::nullopt);
 
 conduit::Node ASCENT_API vec3_schema(bool supports_expressions = false);
 
