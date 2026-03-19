@@ -114,43 +114,33 @@ ADIOS2::declare_interface(Node &i)
     i["type_name"]   = "adios2";
     i["port_names"].append() = "in";
     i["output_port"] = "false";
-}
 
-//-----------------------------------------------------------------------------
-bool
-ADIOS2::verify_params(const conduit::Node &params,
-                     conduit::Node &info)
-{
-  bool res = true;
-  if (!params.has_child("filename") ||
-      !params["filename"].dtype().is_string())
-  {
-    info["errors"].append() = "missing required entry 'filename'";
-    res = false;
-  }
+    // ----------- Define Param Schema -----------
+    conduit::Node param_schema;
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
-  if (!params.has_child("engine") ||
-      !params["engine"].dtype().is_string())
-  {
-    info["errors"].append() = "missing required entry 'engine'";
-    res = false;
-  }
+    param_schema["properties/filename"].set(string_schema()); // Can't be a directory... need to add regex filter
+    param_schema["properties/engine"].set(string_schema());
 
-  std::string engineType = params["engine"].as_string();
-  if (engineType != "BPFile" && engineType != "SST")
-  {
-    info["errors"].append() = "unsupported engine type: " + engineType;
-    res = false;
-  }
+    conduit::Node bpfile_schema;
+    bpfile_schema["type"] = "object";
+    bpfile_schema["properties/engine"].set(string_schema());
+    bpfile_schema["properties/engine/constraints/const"] = "BPFile";
+    param_schema["oneOf"].append().set(bpfile_schema);
 
-  std::string fileName = params["filename"].as_string();
-  if (engineType == "SST" && fileName.find("/") != std::string::npos )
-  {
-    info["errors"].append() = "filename with directory not supported for SST engine";
-    res = false;
-  }
+    conduit::Node sst_schema;
+    sst_schema["type"] = "object";
+    sst_schema["properties/engine"].set(string_schema());
+    sst_schema["properties/engine/constraints/const"] = "SST";
 
-  return res;
+    conduit::Node fname = string_schema();
+    fname["pattern"] = "^[^/]*$";
+    sst_schema["properties/filename"].set(fname);
+
+    param_schema["oneOf"].append().set(sst_schema);
+    
+    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------

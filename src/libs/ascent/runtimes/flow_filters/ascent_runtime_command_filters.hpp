@@ -48,8 +48,6 @@ public:
     Command();
     ~Command();
     virtual void declare_interface(conduit::Node &i);
-    virtual bool verify_params(const conduit::Node &params,
-                               conduit::Node &info);
     virtual void execute();
 
     void static  execute_command_list(const std::vector<std::string> commands,
