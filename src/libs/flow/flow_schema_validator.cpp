@@ -74,6 +74,7 @@ bool check_type(const conduit::Node &input,
     if(schema_defined_type == "object") ok = data_type.is_object();
     else if(schema_defined_type == "string") ok = data_type.is_string();
     else if(schema_defined_type == "number") ok = data_type.is_number();
+    else if(schema_defined_type == "integer") ok = data_type.is_integer();
     else if(schema_defined_type == "array") ok = (data_type.is_list() || (data_type.is_number() && data_type.number_of_elements() >= 1) || data_type.is_object());
     else
     {
