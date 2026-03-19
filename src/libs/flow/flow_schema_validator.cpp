@@ -666,7 +666,7 @@ bool validate_array(const conduit::Node &schema,
     if(!schema.has_child("items")) return ok; // unconstrained items
 
     const conduit::Node &item_schema = schema["items"];
-    if(data_type.is_list()) {
+    if(data_type.is_list() || data_type.is_object()) {
         for(conduit::index_t i = 0; i < count; ++i)
         {
             ok = validate_node(item_schema, input.child(i), info,
