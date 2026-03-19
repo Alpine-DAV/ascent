@@ -1464,6 +1464,23 @@ void ascent::runtime::filters::BFlowPmt::declare_interface(conduit::Node &i)
   i["type_name"] = "bflow_pmt";
   i["port_names"].append() = "in";
   i["output_port"] = "true";  // true -- means filter, false -- means extract
+
+  // ----------- Define Param Schema -----------
+  conduit::Node param_schema;
+  param_schema["type"] = "object";
+
+  param_schema["properties/field"].set(string_schema());
+  param_schema["properties/fanin"].set(number_schema());
+  param_schema["properties/threshold"].set(number_schema());
+  param_schema["properties/gen_segment"].set(number_schema());
+  param_schema["properties/ugrid_select"].set(number_schema());
+
+  param_schema["required"].append() = "field";
+  param_schema["required"].append() = "fanin";
+  param_schema["required"].append() = "threshold";
+  param_schema["required"].append() = "gen_segment";
+    
+  i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -1846,21 +1863,4 @@ void ascent::runtime::filters::BFlowPmt::execute()
 #endif
   
   set_output<DataObject>(d_input);
-}
-
-//-----------------------------------------------------------------------------
-
-bool ascent::runtime::filters::BFlowPmt::verify_params(const conduit::Node &params, conduit::Node &info) 
-{
-  info.reset();
-
-  bool res = true;
-
-  res &= check_string("field", params, info, true);
-  res &= check_numeric("fanin", params, info, true);
-  res &= check_numeric("threshold", params, info, true);
-  res &= check_numeric("gen_segment", params, info, true);
-  res &= check_numeric("ugrid_select", params, info, false);
-  
-  return res;
 }

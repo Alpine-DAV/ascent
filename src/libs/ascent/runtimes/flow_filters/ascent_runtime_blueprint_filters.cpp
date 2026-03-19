@@ -103,23 +103,15 @@ BlueprintVerify::declare_interface(Node &i)
     i["type_name"]   = "blueprint_verify";
     i["port_names"].append() = "in";
     i["output_port"] = "true";
-}
 
-//-----------------------------------------------------------------------------
-bool
-BlueprintVerify::verify_params(const conduit::Node &params,
-                               conduit::Node &info)
-{
-    info.reset();
-    bool res = true;
+    // ----------- Define Param Schema -----------
+    conduit::Node param_schema;
+    param_schema["type"] = "object";
 
-    if(! params.has_child("protocol") ||
-       ! params["protocol"].dtype().is_string() )
-    {
-        info["errors"].append() = "Missing required string parameter 'protocol'";
-    }
+    param_schema["properties/protocol"].set(string_schema());
+    param_schema["required"].append() = "protocol";
 
-    return res;
+    i["param_schema"].set(param_schema);
 }
 
 
@@ -242,19 +234,6 @@ ConduitExtract::declare_interface(Node &i)
 }
 
 //-----------------------------------------------------------------------------
-bool
-ConduitExtract::verify_params(const conduit::Node &params,
-                              conduit::Node &info)
-{
-    info.reset();
-    bool res = true;
-
-    // so far, no params
-
-    return res;
-}
-
-//-----------------------------------------------------------------------------
 void
 ConduitExtract::execute()
 {
@@ -310,72 +289,43 @@ BlueprintPartition::declare_interface(Node &i)
     i["type_name"]   = "blueprint_data_partition";
     i["port_names"].append() = "in";
     i["output_port"] = "true";
+
+    // ----------- Define Param Schema -----------
+    conduit::Node param_schema;
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
+
+    param_schema["properties/target"].set(number_schema());
+    param_schema["properties/fields"].set(array_schema(ignore_schema()));
+    param_schema["properties/mapping"].set(number_schema());
+    param_schema["properties/merge_tolerance"].set(number_schema());
+    param_schema["properties/build_adjsets"].set(number_schema());
+    param_schema["properties/original_element_ids"].set(string_schema());
+    param_schema["properties/original_vertex_ids"].set(string_schema());
+    param_schema["properties/distributed"].set(ignore_schema());
+
+    // --- selections ---
+    conduit::Node domain_id_schema;
+    domain_id_schema["type"] = "object";
+    domain_id_schema["oneOf"].append().set(string_schema());
+    domain_id_schema["oneOf"].append().set(number_schema());
+
+    conduit::Node selections_schema;
+    selections_schema["type"] = "object";
+    selections_schema["additionalProperties"] = false;
+    selections_schema["properties/type"].set(string_schema());
+    selections_schema["properties/domain_id"].set(domain_id_schema);
+    selections_schema["properties/topology"].set(string_schema());
+    selections_schema["properties/field"].set(ignore_schema());
+    selections_schema["properties/start"].set(ignore_schema());
+    selections_schema["properties/end"].set(ignore_schema());
+    selections_schema["properties/elements"].set(ignore_schema());
+    selections_schema["properties/ranges"].set(ignore_schema());
+    selections_schema["required"].append() = "type";
+    param_schema["properties/selections"].set(selections_schema);
+    
+    i["param_schema"].set(param_schema);
 }
-
-//-----------------------------------------------------------------------------
-bool
-BlueprintPartition::verify_params(const conduit::Node &params,
-                               conduit::Node &info)
-{
-    info.reset();
-    bool res = true;
-
-    res &= check_numeric("target",params, info, false, false);
-
-    if(params.has_child("selections"))
-    {
-      res &= check_string("selections/type",params, info, true);
-      //domain_id can be int or "any"
-      res &= (check_string("selections/domain_id",params, info, false) || check_numeric("selections/domain_id", params, info, false, false));
-      res &= check_string("selections/topology",params, info, false);
-    }
-
-    if(params.has_child("fields"))
-    {
-      if(!params["fields"].dtype().is_list())
-      {
-        res = false;
-        info["errors"].append() = "fields is not a list";
-      }
-    }
-
-    res &= check_numeric("mapping",params, info, false, false);
-    res &= check_numeric("merge_tolerance",params, info, false, false);
-    res &= check_numeric("build_adjsets",params, info, false, false);
-    res &= check_string("original_element_ids",params, info, false);
-    res &= check_string("original_vertex_ids",params, info, false);
-
-    std::vector<std::string> valid_paths;
-    valid_paths.push_back("target");
-    valid_paths.push_back("selections/type");
-    valid_paths.push_back("selections/domain_id");
-    valid_paths.push_back("selections/field");
-    valid_paths.push_back("selections/topology");
-    valid_paths.push_back("selections/start");
-    valid_paths.push_back("selections/end");
-    valid_paths.push_back("selections/elements");
-    valid_paths.push_back("selections/ranges");
-    valid_paths.push_back("selections/field");
-    valid_paths.push_back("mapping");
-    valid_paths.push_back("merge_tolerance");
-    valid_paths.push_back("build_adjsets");
-    valid_paths.push_back("original_element_ids");
-    valid_paths.push_back("original_vertex_ids");
-    valid_paths.push_back("distributed");
-
-    std::vector<std::string> ingore_paths = {"fields"};
-
-    std::string surprises = surprise_check(valid_paths,ingore_paths, params);
-
-    if(surprises != "")
-    {
-      res = false;
-      info["errors"].append() = surprises;
-    }
-
-    return res;
-}
-
 
 //-----------------------------------------------------------------------------
 void
@@ -467,113 +417,51 @@ DataBinning::declare_interface(Node &i)
     i["type_name"]   = "data_binning";
     i["port_names"].append() = "in";
     i["output_port"] = "true";
+
+    // ----------- Define Param Schema -----------
+    conduit::Node param_schema;
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
+    param_schema["constraints/exclusiveChildren"].append() = "reduction_field";
+    param_schema["constraints/exclusiveChildren"].append() = "var";
+    param_schema["constraints/allowNoneInExclusiveGroup"] = false;
+
+    param_schema["properties/reduction_op"].set(ignore_schema());
+    param_schema["properties/reduction_field"].set(ignore_schema());
+    param_schema["properties/empty_bin_val"].set(ignore_schema());
+    param_schema["properties/output_type"].set(string_schema());
+    param_schema["properties/output_field"].set(ignore_schema());
+    param_schema["properties/var"].set(ignore_schema());
+
+    // --- Axes ---
+    {
+        conduit::Node single_axis_schema;
+        single_axis_schema["type"] = "object";
+        single_axis_schema["additionalProperties"] = false;
+        single_axis_schema["constraints/exclusiveChildren"].append() = "field";
+        single_axis_schema["constraints/exclusiveChildren"].append() = "var";
+        single_axis_schema["constraints/allowNoneInExclusiveGroup"] = false;
+
+        single_axis_schema["properties/min_val"].set(number_schema(true));
+        single_axis_schema["properties/max_val"].set(number_schema(true));
+        single_axis_schema["properties/num_bins"].set(number_schema(true));
+        single_axis_schema["properties/clamp"].set(number_schema(true));
+        single_axis_schema["properties/field"].set(number_schema(true));
+        single_axis_schema["properties/var"].set(number_schema(true));
+        single_axis_schema["required"].append() = "num_bins";
+
+        conduit::Node axes_schema = array_schema(single_axis_schema);
+        axes_schema["minItems"] = 1;
+        axes_schema["miaxItems"] = 3;
+        param_schema["properties/axes"].set(axes_schema);
+    }
+
+    param_schema["required"].append() = "reduction_op";
+    param_schema["required"].append() = "output_field";
+    param_schema["required"].append() = "axes";
+    
+    i["param_schema"].set(param_schema);
 }
-
-//-----------------------------------------------------------------------------
-bool
-DataBinning::verify_params(const conduit::Node &params,
-                               conduit::Node &info)
-{
-    info.reset();
-    bool res = true;
-
-    if(!params.has_path("reduction_op"))
-    {
-      res = false;
-      info["errors"].append() = "Missing 'reduction_op'";
-    }
-
-    // note: `var` is deprecated, new arg reduction_field
-    if(!params.has_path("reduction_field"))
-    {
-      if(!params.has_path("var"))
-      {
-        res = false;
-        info["errors"].append() = "Missing 'reduction_field'";
-      }
-    }
-
-    std::vector<std::string> valid_paths;
-    valid_paths.push_back("reduction_op");
-    valid_paths.push_back("reduction_field");
-    valid_paths.push_back("empty_bin_val");
-    valid_paths.push_back("output_type");
-    valid_paths.push_back("output_field");
-    valid_paths.push_back("var");
-
-    std::vector<std::string> ignore_paths;
-    ignore_paths.push_back("axes");
-
-    std::string surprises = surprise_check(valid_paths, ignore_paths, params);
-
-    if(!params.has_path("output_field"))
-    {
-      res = false;
-      info["errors"].append() = "Missing param 'output_field'";
-    }
-
-    if(!params.has_path("axes"))
-    {
-      res = false;
-      info["errors"].append() = "Missing binning axes";
-    }
-    else if(!params["axes"].dtype().is_list())
-    {
-      res = false;
-      info["errors"].append() = "Axes is not a list";
-    }
-    else
-    {
-      const int num_axes = params["axes"].number_of_children();
-      if(num_axes < 1 || num_axes > 3)
-      {
-        res = false;
-        info["errors"].append() = "Number of axes must be between 1 and 3";
-      }
-      else
-      {
-        for(int i = 0; i < num_axes; ++i)
-        {
-          const conduit::Node &axis = params["axes"].child(i);
-          if(!axis.has_path("num_bins"))
-          {
-            res = false;
-            info["errors"].append() = "Axis missing 'num_bins'";
-          }
-          
-          if(!axis.has_child("field"))
-          {
-            if(!axis.has_child("var"))
-            {
-              std::ostringstream oss;
-              oss << "Axis " << i << " missing 'field' parameter";
-              res = false;
-              info["errors"].append() = oss.str();
-            }
-          }
-
-          std::vector<std::string> avalid_paths;
-          avalid_paths.push_back("min_val");
-          avalid_paths.push_back("max_val");
-          avalid_paths.push_back("num_bins");
-          avalid_paths.push_back("clamp");
-          avalid_paths.push_back("field");
-          avalid_paths.push_back("var");
-
-          surprises += surprise_check(avalid_paths, axis);
-        }
-      }
-    }
-
-    if(surprises != "")
-    {
-      res = false;
-      info["errors"].append() = surprises;
-    }
-
-    return res;
-}
-
 
 //-----------------------------------------------------------------------------
 void
@@ -794,50 +682,19 @@ AddFields::declare_interface(Node &i)
     i["type_name"]   = "add_fields";
     i["port_names"].append() = "in";
     i["output_port"] = "true";
-}
 
-//-----------------------------------------------------------------------------
-bool
-AddFields::verify_params(const conduit::Node &params,
-                               conduit::Node &info)
-{
-    info.reset();
-    bool res = true;
+    // ----------- Define Param Schema -----------
+    conduit::Node param_schema;
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
+    param_schema["properties/output_field"].set(string_schema());
+    param_schema["properties/fields"].set(array_schema(ignore_schema()));
 
-    if(!params.has_path("output_field"))
-    {
-      res = false;
-      info["errors"].append() = "Missing param 'output_field'";
-    }
-
-    if(!params.has_path("fields"))
-    {
-      res = false;
-      info["errors"].append() = "Missing 'fields'";
-    }
-    else if(!params["fields"].dtype().is_list())
-    {
-      res = false;
-      info["errors"].append() = "fields is not a list";
-    }
-
-    std::vector<std::string> valid_paths;
-    std::vector<std::string> ignore_paths;
-    valid_paths.push_back("fields");
-    valid_paths.push_back("output_field");
-    ignore_paths.push_back("fields");
-
-
-    std::string surprises = surprise_check(valid_paths, ignore_paths, params);
-
-    if(surprises != "")
-    {
-      res = false;
-      info["errors"].append() = surprises;
-    }
-
-    return res;
+    param_schema["required"].append() = "output_field";
+    param_schema["required"].append() = "fields";
+    
+    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -902,51 +759,21 @@ PowerOfField::declare_interface(Node &i)
     i["type_name"]   = "power_of_field";
     i["port_names"].append() = "in";
     i["output_port"] = "true";
-}
 
-//-----------------------------------------------------------------------------
-bool
-PowerOfField::verify_params(const conduit::Node &params,
-                               conduit::Node &info)
-{
-    info.reset();
-    bool res = true;
+    // ----------- Define Param Schema -----------
+    conduit::Node param_schema;
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
+    param_schema["properties/output_field"].set(string_schema());
+    param_schema["properties/field"].set(string_schema());
+    param_schema["properties/exponent"].set(number_schema());
 
-    if(!params.has_path("output_field"))
-    {
-      res = false;
-      info["errors"].append() = "Missing param 'output_field'";
-    }
-
-    if(!params.has_path("field"))
-    {
-      res = false;
-      info["errors"].append() = "Missing param 'field'";
-    }
-
-    if(!params.has_path("exponent"))
-    {
-      res = false;
-      info["errors"].append() = "Missing param 'exponent'";
-    }
-
-    std::vector<std::string> valid_paths;
-    std::vector<std::string> ignore_paths;
-    valid_paths.push_back("field");
-    valid_paths.push_back("exponent");
-    valid_paths.push_back("output_field");
-
-
-    std::string surprises = surprise_check(valid_paths, ignore_paths, params);
-
-    if(surprises != "")
-    {
-      res = false;
-      info["errors"].append() = surprises;
-    }
-
-    return res;
+    param_schema["required"].append() = "output_field";
+    param_schema["required"].append() = "field";
+    param_schema["required"].append() = "exponent";
+    
+    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
