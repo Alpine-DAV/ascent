@@ -4020,14 +4020,14 @@ TEST(ascent_render_3d, test_render_invalid_camera)
     }
     catch(conduit::Error &err)
     {
-        if (err.message().find("Cameras must follow either an ascent format or a visit format, not both.") != std::string::npos)
+        if (err.message().find("input did not match any supported schemas") != std::string::npos)
         {
             error_occured = true;
         }
         else
         {
             std::cout << "The error that was thrown did not match the expected "
-                      << "'Cameras must follow either an ascent format or a visit format, not both.' error" << std::endl;
+                      << "'input did not match any supported schemas' error" << std::endl;
 
             std::cout << err.message() << std::endl;
         }

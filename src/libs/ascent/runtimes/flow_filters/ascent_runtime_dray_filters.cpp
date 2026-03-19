@@ -189,7 +189,6 @@ void dray_color_table_schema(conduit::Node &param_schema) {
         cp_list_item_schema["constraints/forbid"].append() = "a";
 
         conduit::Node control_points_schema;
-        control_points_schema["type"] = "object";
         control_points_schema["oneOf"].append().set(cp_compressed_schema);
         control_points_schema["oneOf"].append().set(array_schema(cp_list_item_schema));
         param_schema["properties/control_points"].set(control_points_schema);
