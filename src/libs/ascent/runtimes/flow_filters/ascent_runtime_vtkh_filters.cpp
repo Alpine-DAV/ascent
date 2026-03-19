@@ -5357,7 +5357,6 @@ VTKHTransform::verify_params(const conduit::Node &params,
     if(params.has_child("reflect"))
     {
        const Node &p_vals = params["reflect"];
-       p_vals.print();
        if( ! p_vals.has_path("normal/x") &&
            ! p_vals.has_path("normal/y") &&
            ! p_vals.has_path("normal/z") )
