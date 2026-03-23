@@ -1,4 +1,4 @@
-#An example transform filter using reflect across y axis.
+#An example transform filter using reflect across the y-axis.
 
 - 
   action: "add_pipelines"
@@ -15,7 +15,8 @@
         type: "transform"
         params: 
           reflect: 
-            y: 1.0
+            normal: 
+              y: 1.0
       pipeline: "pl0"
 - 
   action: "add_scenes"

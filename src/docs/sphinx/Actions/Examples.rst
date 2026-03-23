@@ -946,7 +946,7 @@ Resulting image:
 
 .. image:: examples/tout_transform_matrix_000100.png
 
-An example of using the transform filter to reflect over a specified point 
+An example of using the transform filter to reflect over a specified normal
 --------------------------------------------------------------------------------------------------
 
 YAML actions:
@@ -957,7 +957,7 @@ Resulting image:
 
 .. image:: examples/tout_transform_reflect_arb_000100.png
 
-An example of using the transform filter to reflect over a point along the x axis
+An example of using the transform filter to reflect over the x axis
 --------------------------------------------------------------------------------------------------
 
 YAML actions:
@@ -990,7 +990,7 @@ Resulting image:
 
 .. image:: examples/tout_transform_reflect_y_min_000100.png
 
-An example of using the transform filter to rotate around a specified point 
+An example of using the transform filter to rotate around a specified normal 
 --------------------------------------------------------------------------------------------------
 
 YAML actions:
@@ -1000,6 +1000,28 @@ YAML actions:
 Resulting image:
 
 .. image:: examples/tout_transform_rotate_arb_000100.png
+
+An example of using the transform filter to reflect over a specified point and normal 
+--------------------------------------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_transform_reflect_over_point_000100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_transform_reflect_over_point_000100.png
+
+An example of using the transform filter to reflect a 2D slice over the y axis minimum
+--------------------------------------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_transform_reflect_y_min_2d_000100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_transform_reflect_y_min_2d_000100.png
 
 An example of using the transform filter to rotate around a point on the x axis 
 --------------------------------------------------------------------------------------------------

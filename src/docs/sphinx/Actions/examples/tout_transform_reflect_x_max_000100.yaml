@@ -1,4 +1,4 @@
-#An example transform filter using reflect across x axis.
+#An example transform filter using reflect across the x-axis maximum.
 
 - 
   action: "add_pipelines"
@@ -15,7 +15,10 @@
         type: "transform"
         params: 
           reflect: 
-            x: "max"
+            normal: 
+              x: 1.0
+            point: 
+              x: "max"
       pipeline: "pl0"
 - 
   action: "add_scenes"

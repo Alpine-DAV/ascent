@@ -715,7 +715,7 @@ TEST(ascent_translate, test_reflect_x_max)
     // filter knobs
     pipelines["pl1/f1/type"] = "transform";
     pipelines["pl1/f1/params/reflect/normal/x"]= 1.0;
-    //pipelines["pl1/f1/params/reflect/point/x"]= "max";
+    pipelines["pl1/f1/params/reflect/point/x"]= "max";
     pipelines["pl1/pipeline"] = "pl0";
 
 
