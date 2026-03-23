@@ -153,7 +153,7 @@ PointTopology<T, N>::PointTopology(const std::string &topo_name,
                                    const conduit::Node &domain)
     : Topology(topo_name, domain, N)
 {
-  if(this->topo_type != "point")
+  if(this->topo_type != "points")
   {
     ASCENT_ERROR("Cannot initialize a PointTopology class from topology '"
                  << topo_name << "' in domain " << domain.name()
