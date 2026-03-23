@@ -16,6 +16,7 @@
 // standard lib includes
 #include <vector>
 #include <sstream>
+#include <regex>
 
 //-----------------------------------------------------------------------------
 // -- begin flow --
@@ -92,7 +93,7 @@ bool check_type(const conduit::Node &input,
     return ok;
 }
 
-bool validate_string_bounds(const conduit::Node &schema,
+bool validate_string(const conduit::Node &schema,
                             const conduit::Node &input,
                             conduit::Node &info,
                             const std::string &path)
@@ -124,6 +125,29 @@ bool validate_string_bounds(const conduit::Node &schema,
         }
     }
 
+    if(schema.has_child("pattern"))
+    {
+        const std::string pattern = schema["pattern"].as_string();
+        const std::string loc = path.empty() ? "<root>" : path;
+        
+        try
+        {
+            const std::regex re(pattern);
+            if(!std::regex_match(s, re))
+            {
+                add_error(info, "String at '" + loc +
+                                "' does not match pattern '" + pattern + "'");
+                ok = false;
+            }
+        }
+        catch(const std::regex_error &)
+        {
+            add_error(info, "Schema at '" + loc +
+                            "' has invalid regex pattern '" + pattern + "'");
+            ok = false;
+        }
+    }
+
     return ok;
 }
 
@@ -150,7 +174,7 @@ bool validate_enum(const conduit::Node &schema,
     return false;
 }
 
-bool validate_number_bounds(const conduit::Node &schema,
+bool validate_number(const conduit::Node &schema,
                             const conduit::Node &input,
                             conduit::Node &info,
                             const std::string &path)
@@ -708,12 +732,12 @@ bool validate_node(const conduit::Node &schema,
 
     if(schema_defined_type == "string")
     {
-        ok = validate_string_bounds(schema, input, info, path) && ok;
+        ok = validate_string(schema, input, info, path) && ok;
     }
 
     if(schema_defined_type == "number" || schema_defined_type == "integer")
     {
-        ok = validate_number_bounds(schema, input, info, path) && ok;
+        ok = validate_number(schema, input, info, path) && ok;
     }
 
     if(!ok) return false; // type mismatch stops recursion
