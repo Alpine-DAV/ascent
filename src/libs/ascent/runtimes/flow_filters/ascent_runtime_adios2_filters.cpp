@@ -24,6 +24,7 @@
 //-----------------------------------------------------------------------------
 #include <ascent_runtime_utils.hpp>
 #include <ascent_string_utils.hpp>
+#include <ascent_runtime_param_check.hpp>
 #include <ascent_logging.hpp>
 #include <ascent_data_object.hpp>
 
