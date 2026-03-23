@@ -19,10 +19,32 @@
 #include <map>
 #include <string>
 #include <vector>
-#include <optional>
 
 #include <ascent_exports.h>
 #include <ascent_data_object.hpp>
+
+#if __cplusplus >= 201703L
+  #include <optional>
+  template <typename T>
+  using compat_optional = std::optional<T>;
+#else
+  template <typename T>
+  class compat_optional
+  {
+  public:
+    compat_optional() : m_has_value(false), m_value() {}
+    compat_optional(const T& value) : m_has_value(true), m_value(value) {}
+
+    operator bool() const { return m_has_value; }
+
+    const T& operator*() const { return m_value; }
+    T& operator*() { return m_value; }
+
+  private:
+    bool m_has_value;
+    T m_value;
+  };
+#endif
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
@@ -44,24 +66,24 @@ namespace filters
 
 bool ASCENT_API is_valid_expression(const std::string &expr, std::string &err_msg);
 
-conduit::Node ASCENT_API string_schema(std::optional<int> minLength = std::nullopt,
-                                       std::optional<int> maxLength = std::nullopt);
+conduit::Node ASCENT_API string_schema(compat_optional<int> minLength = compat_optional<int>(),
+                                       compat_optional<int> maxLength = compat_optional<int>());
 
 conduit::Node ASCENT_API string_enum_schema(std::vector<std::string> options);
 
 conduit::Node ASCENT_API bool_schema();
 
 conduit::Node ASCENT_API number_schema(bool supports_expressions = false,
-                                       std::optional<int> minimum = std::nullopt,
-                                       std::optional<int> maximum = std::nullopt,
-                                       std::optional<int> exclusiveMinimum = std::nullopt,
-                                       std::optional<int> exclusiveMaximum= std::nullopt);
+                                       compat_optional<int> minimum = compat_optional<int>(),
+                                       compat_optional<int> maximum = compat_optional<int>(),
+                                       compat_optional<int> exclusiveMinimum = compat_optional<int>(),
+                                       compat_optional<int> exclusiveMaximum= compat_optional<int>());
 
 conduit::Node ASCENT_API integer_schema(bool supports_expressions = false,
-                                        std::optional<int> minimum = std::nullopt,
-                                        std::optional<int> maximum = std::nullopt,
-                                        std::optional<int> exclusiveMinimum = std::nullopt,
-                                        std::optional<int> exclusiveMaximum= std::nullopt);
+                                        compat_optional<int> minimum = compat_optional<int>(),
+                                        compat_optional<int> maximum = compat_optional<int>(),
+                                        compat_optional<int> exclusiveMinimum = compat_optional<int>(),
+                                        compat_optional<int> exclusiveMaximum= compat_optional<int>());
 
 conduit::Node ASCENT_API vec3_schema(bool supports_expressions = false);
 
