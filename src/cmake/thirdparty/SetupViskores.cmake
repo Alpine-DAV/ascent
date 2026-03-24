@@ -17,7 +17,7 @@ MESSAGE(STATUS "Looking for Viskores using VISKORES_DIR = ${VISKORES_DIR}")
 # use VISKORES_DIR to setup the options that cmake's find Viskores needs
 file(GLOB Viskores_DIR "${VISKORES_DIR}/lib/cmake/viskores-*")
 if(NOT Viskores_DIR)
-    MESSAGE(FATAL_ERROR "Failed to find Viskores at VISKORES_DIR=${VISKORES_DIR}/lib/cmake/vtk-*")
+    MESSAGE(FATAL_ERROR "Failed to find Viskores at VISKORES_DIR=${VISKORES_DIR}/lib/cmake/viskores-*")
 endif()
 
 find_package(Viskores REQUIRED QUIET)
