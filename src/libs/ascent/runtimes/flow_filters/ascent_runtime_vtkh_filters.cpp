@@ -5452,7 +5452,6 @@ VTKHTransform::execute()
     double t_translate[3]      = {0.0, 0.0, 0.0};
     double t_rotate_angle      =  0.0;
     double t_rotate_axis[3]    = {0.0, 0.0, 0.0};
-    //TODO: Good normal default? 
     double t_reflect_normal[3] = {0.0, 0.0, 0.0}; 
     double t_reflect_point[3]  = {0.0, 0.0, 0.0};
     double t_matrix[16]        = {0.0, 0.0, 0.0, 0.0,
