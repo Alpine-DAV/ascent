@@ -470,6 +470,11 @@ TEST(ascent_translate, test_bad_params)
         pipelines["pl1/f1/params/scale/x"]= 45.0;
         EXPECT_THROW(ascent.execute(actions),conduit::Error);
 
+        // reflect missing normal/x,y,z
+        pipelines["pl1/f1/params"].reset();
+        pipelines["pl1/f1/params/reflect/normal/xx"]= 45.0;
+        EXPECT_THROW(ascent.execute(actions),conduit::Error);
+
         // translate missing x,y,z
         pipelines["pl1/f1/params"].reset();
         pipelines["pl1/f1/params/translate/zz"]= 45.0;
@@ -506,6 +511,11 @@ TEST(ascent_translate, test_bad_params)
         pipelines["pl1/f1/params/rotate/x"]= 45.0;
         pipelines["pl1/f1/params/translate/x"]= 45.0;
         pipelines["pl1/f1/params/scale/x"]= 45.0;
+        ascent.execute(actions);
+
+        // reflect missing normal/x,y,z
+        pipelines["pl1/f1/params"].reset();
+        pipelines["pl1/f1/params/reflect/normal/xx"]= 45.0;
         ascent.execute(actions);
 
         // translate missing x,y,z

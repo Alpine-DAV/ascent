@@ -5544,6 +5544,11 @@ VTKHTransform::execute()
       {
         t_reflect_normal[2] = get_float64(n_vals["z"], data_object);
       }
+
+      if((t_reflect_normal[0] == 0.0) &&
+         (t_reflect_normal[1] == 0.0) && 
+         (t_reflect_normal[2] == 0.0))
+        ASCENT_ERROR("A non-zero normal must be specified.");
       
       if(n_reflect.has_child("point"))
       {
