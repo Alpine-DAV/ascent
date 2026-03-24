@@ -968,7 +968,7 @@ Resulting image:
 
 .. image:: examples/tout_transform_reflect_x_000100.png
 
-An example of using the transform filter to reflect over the x axis' max bounds 
+An example of using the transform filter to reflect over the x axis max bounds 
 --------------------------------------------------------------------------------------------------
 
 YAML actions:
@@ -979,7 +979,7 @@ Resulting image:
 
 .. image:: examples/tout_transform_reflect_x_max_000100.png
 
-An example of using the transform filter to reflect over the y axis' min bounds 
+An example of using the transform filter to reflect over the y axis min bounds 
 --------------------------------------------------------------------------------------------------
 
 YAML actions:
