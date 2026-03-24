@@ -807,7 +807,7 @@ TEST(ascent_translate, test_reflect_y_min_2d)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
-    std::string msg = "An example transform filter using reflect a 2D slice across y's minimum.";
+    std::string msg = "An example transform filter using reflect a 2D slice across y axis minimum.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
