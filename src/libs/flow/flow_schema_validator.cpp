@@ -36,22 +36,53 @@ namespace schema
 namespace detail
 {
 
-// ---------- General Helpers ----------
-ExpressionCheckFn &expr_checker()
+// ---------- Error Message Helpers ----------
+size_t MAX_OPTIONS = 3;
+
+std::string node_path(const std::string &path)
 {
-    static ExpressionCheckFn fn = nullptr;
-    return fn;
+    return path.empty() ? "<root>" : path;
 }
 
-void add_error(conduit::Node &info, const std::string &msg)
+std::string first_error_string(const conduit::Node &info,
+                               const std::string &fallback = "validation failed")
 {
-    if(!info.has_child("errors"))
+    if(info.has_child("errors") && info["errors"].number_of_children() > 0)
     {
-        info["errors"].reset();
+        return info["errors"].child(0).as_string();
     }
-    info["errors"].append() = msg;
+    return fallback;
 }
 
+void add_input_error(conduit::Node &info,
+                     const std::string &path,
+                     const std::string &rule,
+                     const std::string &message,
+                     const std::string &expected = "")
+{
+    std::ostringstream oss;
+    oss << "Validation failed at '" << node_path(path) << "'";
+    if(!rule.empty()) oss << " (" << rule << ")";
+    oss << ": " << message;
+    if(!expected.empty()) oss << " Expected " << expected << ".";
+
+    info["errors"].append() = oss.str();
+}
+
+void add_schema_error(conduit::Node &info,
+                      const std::string &path,
+                      const std::string &rule,
+                      const std::string &message)
+{
+    std::ostringstream oss;
+    oss << "Schema error near '" << node_path(path) << "'";
+    if(!rule.empty()) oss << " (" << rule << ")";
+    oss << ": " << message;
+
+    info["errors"].append() = oss.str();
+}
+
+// ---------- Type Checking ----------
 std::string get_type_string(const conduit::Node &schema)
 {
     if(schema.has_child("type") && schema["type"].dtype().is_string())
@@ -67,36 +98,92 @@ bool check_type(const conduit::Node &input,
                 const std::string &path)
 {
     const std::string schema_defined_type = get_type_string(schema);
-    if(schema_defined_type.empty()) return true; // schema didn't specify; treat as "accept anything"
+    if(schema_defined_type.empty()) return true;
 
     const auto data_type = input.dtype();
     bool ok = true;
 
-    if(schema_defined_type == "object") ok = data_type.is_object();
-    else if(schema_defined_type == "string") ok = data_type.is_string();
-    else if(schema_defined_type == "number") ok = data_type.is_number();
-    else if(schema_defined_type == "integer") ok = data_type.is_integer();
-    else if(schema_defined_type == "array") ok = (data_type.is_list() || (data_type.is_number() && data_type.number_of_elements() >= 1) || data_type.is_object());
+    if(schema_defined_type == "object")
+    {
+        ok = data_type.is_object();
+    }
+    else if(schema_defined_type == "string")
+    {
+        ok = data_type.is_string();
+    }
+    else if(schema_defined_type == "number")
+    {
+        ok = data_type.is_number();
+    }
+    else if(schema_defined_type == "integer")
+    {
+        ok = data_type.is_integer();
+    }
+    else if(schema_defined_type == "array")
+    {
+        ok = (data_type.is_list() ||
+              (data_type.is_number() && data_type.number_of_elements() >= 1) ||
+              data_type.is_object());
+    }
     else
     {
-        add_error(info, "At '" + (path.empty() ? std::string("<root>") : path) +
-                        "': unknown schema type '" + schema_defined_type + "'");
+        add_schema_error(info, path, "type",
+                         "unknown schema type '" + schema_defined_type + "'");
         return false;
     }
 
     if(!ok)
     {
-        add_error(info, "Type mismatch at '" + (path.empty() ? std::string("<root>") : path) +
-                        "': expected " + schema_defined_type + ", got " + input.dtype().name());
+        std::string expected = "type '" + schema_defined_type + "'";
+        if(schema_defined_type == "array")
+        {
+            expected += " (Conduit list, object, or numeric leaf array)";
+        }
+
+        add_input_error(info, path, "type",
+                        "type mismatch",
+                        expected + ".");
     }
 
     return ok;
 }
 
-bool validate_string(const conduit::Node &schema,
+// ---------- Expression Checking ----------
+ExpressionCheckFn &expr_checker()
+{
+    static ExpressionCheckFn fn = nullptr;
+    return fn;
+}
+
+bool validate_format(const conduit::Node &schema,
                             const conduit::Node &input,
                             conduit::Node &info,
                             const std::string &path)
+{
+    if(!schema.has_child("format")) return true;
+    if(!schema["format"].dtype().is_string()) return true;
+
+    const std::string fmt = schema["format"].as_string();
+    if(fmt != "expression") return true;
+    if(!input.dtype().is_string()) return true;
+
+    auto expr_fn = expr_checker();
+    if(expr_fn == nullptr) return true;
+
+    std::string err;
+    bool ok = expr_fn(input.as_string(), err);
+    if(!ok)
+    {
+        add_input_error(info, path, "expression", err);
+    }
+    return ok;
+}
+
+// ---------- Validate Nodes ----------
+bool validate_string(const conduit::Node &schema,
+                     const conduit::Node &input,
+                     conduit::Node &info,
+                     const std::string &path)
 {
     if(!input.dtype().is_string()) return true;
 
@@ -105,22 +192,24 @@ bool validate_string(const conduit::Node &schema,
 
     if(schema.has_child("minLength"))
     {
-        int mn = schema["minLength"].to_int();
-        if((int)s.size() < mn)
+        const int min_length = schema["minLength"].to_int();
+        if((int)s.size() < min_length)
         {
-            add_error(info, "String at '" + (path.empty() ? "<root>" : path) +
-                            "' is shorter than minLength=" + std::to_string(mn));
+            add_input_error(info, path, "minLength",
+                            "string is too short: length is " + std::to_string((int)s.size()) + ".",
+                            "string length >= " + std::to_string(min_length));
             ok = false;
         }
     }
 
     if(schema.has_child("maxLength"))
     {
-        int mx = schema["maxLength"].to_int();
-        if((int)s.size() > mx)
+        const int max_length = schema["maxLength"].to_int();
+        if((int)s.size() > max_length)
         {
-            add_error(info, "String at '" + (path.empty() ? "<root>" : path) +
-                            "' is longer than maxLength=" + std::to_string(mx));
+            add_input_error(info, path, "maxLength",
+                            "string is too long: length is " + std::to_string((int)s.size()) + ".",
+                            "string length <= " + std::to_string(max_length));
             ok = false;
         }
     }
@@ -128,22 +217,20 @@ bool validate_string(const conduit::Node &schema,
     if(schema.has_child("pattern"))
     {
         const std::string pattern = schema["pattern"].as_string();
-        const std::string loc = path.empty() ? "<root>" : path;
-        
+
         try
         {
             const std::regex re(pattern);
             if(!std::regex_match(s, re))
             {
-                add_error(info, "String at '" + loc +
-                                "' does not match pattern '" + pattern + "'");
+                add_input_error(info, path, "pattern",
+                                "string does not match required pattern '" + pattern + "'.");
                 ok = false;
             }
         }
         catch(const std::regex_error &)
         {
-            add_error(info, "Schema at '" + loc +
-                            "' has invalid regex pattern '" + pattern + "'");
+            add_schema_error(info, path, "pattern", "invalid regex pattern '" + pattern +"'.");
             ok = false;
         }
     }
@@ -156,74 +243,92 @@ bool validate_enum(const conduit::Node &schema,
                    conduit::Node &info,
                    const std::string &path)
 {
-    const conduit::Node *e = nullptr;
-    if(schema.has_child("enum")) e = &schema["enum"];
-    else return true;
-
+    if(!schema.has_child("enum")) return true;
     if(!input.dtype().is_string()) return true;
 
-    const std::string got = input.as_string();
-    for(conduit::index_t i = 0; i < e->number_of_children(); ++i)
-    {
-        if(got == e->child(i).as_string()) return true;
-    }
+    const conduit::Node &e = schema["enum"];
 
-    add_error(info, "Value not in enum at '" +
-                    (path.empty() ? "<root>" : path) +
-                    "': got '" + got + "'");
+    const std::string input_value = input.as_string();
+    std::ostringstream allowed;
+    allowed << "{";
+    for(conduit::index_t i = 0; i < e.number_of_children(); ++i)
+    {
+        if(i > 0) allowed << ", ";
+        const std::string v = e.child(i).as_string();
+        allowed << v;
+        if(input_value == v) return true;
+    }
+    allowed << "}";
+
+    add_input_error(info, path, "enum",
+                    input_value + " is not one of the allowed enum entries.",
+                    "one of " + allowed.str() + ".");
+
     return false;
 }
 
 bool validate_number(const conduit::Node &schema,
-                            const conduit::Node &input,
-                            conduit::Node &info,
-                            const std::string &path)
+                     const conduit::Node &input,
+                     conduit::Node &info,
+                     const std::string &path)
 {
-    if(!input.dtype().is_number()) return true;
+    if(get_type_string(schema) != "number" || get_type_string(schema) != "integer") return true;
 
     const double v = input.to_float64();
     bool ok = true;
 
     if(schema.has_child("minimum"))
     {
-        double mn = schema["minimum"].to_float64();
-        if(v < mn)
+        const double min_val = schema["minimum"].to_float64();
+        if(v < min_val)
         {
-            add_error(info, "Number at '" + (path.empty() ? "<root>" : path) +
-                            "' must be >= " + std::to_string(mn));
+            std::ostringstream exp;
+            exp << "number >= " << min_val;
+            add_input_error(info, path, "minimum",
+                            std::to_string(v) + " is below the allowed minimum.",
+                            exp.str());
             ok = false;
         }
     }
 
     if(schema.has_child("exclusiveMinimum"))
     {
-        double mn = schema["exclusiveMinimum"].to_float64();
-        if(v <= mn)
+        const double exclusive_min_val = schema["exclusiveMinimum"].to_float64();
+        if(v <= exclusive_min_val)
         {
-            add_error(info, "Number at '" + (path.empty() ? "<root>" : path) +
-                            "' must be > " + std::to_string(mn));
+            std::ostringstream exp;
+            exp << "number > " << exclusive_min_val;
+            add_input_error(info, path, "exclusiveMinimum",
+                            std::to_string(v) + " is not greater than the exclusive minimum.",
+                            exp.str());
             ok = false;
         }
     }
 
     if(schema.has_child("maximum"))
     {
-        double mx = schema["maximum"].to_float64();
-        if(v > mx)
+        const double max_val = schema["maximum"].to_float64();
+        if(v > max_val)
         {
-            add_error(info, "Number at '" + (path.empty() ? "<root>" : path) +
-                            "' must be <= " + std::to_string(mx));
+            std::ostringstream exp;
+            exp << "number <= " << max_val;
+            add_input_error(info, path, "maximum",
+                            std::to_string(v) + " is above the allowed maximum.",
+                            exp.str());
             ok = false;
         }
     }
 
     if(schema.has_child("exclusiveMaximum"))
     {
-        double mx = schema["exclusiveMaximum"].to_float64();
-        if(v >= mx)
+        const double exclusive_max_val = schema["exclusiveMaximum"].to_float64();
+        if(v >= exclusive_max_val)
         {
-            add_error(info, "Number at '" + (path.empty() ? "<root>" : path) +
-                            "' must be < " + std::to_string(mx));
+            std::ostringstream exp;
+            exp << "number < " << exclusive_max_val;
+            add_input_error(info, path, "exclusiveMaximum",
+                            std::to_string(v) + " is not less than the exclusive maximum.",
+                            exp.str());
             ok = false;
         }
     }
@@ -245,19 +350,24 @@ bool validate_required(const conduit::Node &schema,
                        const std::string &path)
 {
     if(!schema.has_child("required")) return true;
-    if(!input.dtype().is_object()) return true; // type error handled elsewhere
+    if(!input.dtype().is_object()) return true;
 
     bool ok = true;
     const conduit::Node &req = schema["required"];
+
     for(conduit::index_t i = 0; i < req.number_of_children(); ++i)
     {
         const std::string k = req.child(i).as_string();
         if(!input.has_child(k))
         {
-            add_error(info, "Missing required field '" + conduit::utils::join_file_path(path, k) + "'");
+            const std::string missing_path = conduit::utils::join_file_path(path, k);
+            add_input_error(info, missing_path, "required",
+                            "required field is missing.",
+                            "field to be present.");
             ok = false;
         }
     }
+
     return ok;
 }
 
@@ -276,7 +386,9 @@ bool validate_forbid(const conduit::Node &schema,
         const std::string k = forbid.child(i).as_string();
         if(input.has_child(k))
         {
-            add_error(info, "Field '" + conduit::utils::join_file_path(path, k) + "' is forbidden by schema");
+            const std::string forbidden_path = conduit::utils::join_file_path(path, k);
+            add_input_error(info, forbidden_path, "forbidden",
+                            "forbidden field is present.");
             ok = false;
         }
     }
@@ -290,20 +402,85 @@ bool validate_const(const conduit::Node &schema,
 {
     if(!schema.has_path("constraints/const")) return true;
 
-    const conduit::Node &c = schema["constraints/const"];
-    // Only implement string const for now (that’s all we used above)
-    if(input.dtype().is_string() && c.dtype().is_string())
+    const conduit::Node &const_schema = schema["constraints/const"];
+
+    // String const
+    if(const_schema.dtype().is_string())
     {
-        const std::string got = input.as_string();
-        const std::string expect = c.as_string();
-        if(got != expect)
+        const std::string expect = const_schema.as_string();
+        if(!input.dtype().is_string())
         {
-            add_error(info, "Value mismatch at '" + (path.empty() ? std::string("<root>") : path) +
-                            "': expected '" + expect + "', got '" + got + "'");
+            add_input_error(info, path, "const",
+                "expected constant string value '" +
+                expect + "', but got type '" + input.dtype().name() + "'.");
             return false;
         }
+
+        const std::string input_value = input.as_string();
+        if(input_value != expect)
+        {
+            add_input_error(info, path, "const",
+                "expected exact value '" +
+                expect + "', but got '" + input_value + "'.");
+            return false;
+        }
+
+        return true;
     }
-    return true;
+
+    // Integer const
+    if(const_schema.dtype().is_integer())
+    {
+        const long long expect = (long long)const_schema.to_int64();
+        if(!input.dtype().is_integer())
+        {
+            add_input_error(info, path, "const",
+                "expected constant integer value " +
+                std::to_string(expect) + ", but got type '" + input.dtype().name() + "'.");
+            return false;
+        }
+
+        const long long input_value = (long long)input.to_int64();
+        if(input_value != expect)
+        {
+            add_input_error(info, path, "const",
+                "expected exact value " +
+                std::to_string(expect) + ", but got " + std::to_string(input_value) + ".");
+            return false;
+        }
+
+        return true;
+    }
+
+    // General numeric const
+    if(const_schema.dtype().is_number())
+    {
+        const double expect = const_schema.to_float64();
+        if(!input.dtype().is_number())
+        {
+            add_input_error(info, path, "const",
+                "expected constant numeric value " +
+                std::to_string(expect) + ", but got type '" + input.dtype().name() + "'.");
+            return false;
+        }
+
+        const double got = input.to_float64();
+        if(got != expect)
+        {
+            add_input_error(info, path, "const",
+                "expected exact value " +
+                std::to_string(expect) + ", got " + std::to_string(got) + ".");
+            return false;
+        }
+
+        return true;
+    }
+
+    add_schema_error(info, path, "const",
+        "unsupported const type '" + const_schema.dtype().name() +
+        "'. Currently supported const types are string, integer, and number.");
+
+    return false;
 }
 
 bool validate_not_const_fields(const conduit::Node &schema,
@@ -315,24 +492,59 @@ bool validate_not_const_fields(const conduit::Node &schema,
     if(!input.dtype().is_object()) return true;
 
     bool ok = true;
-    const conduit::Node &nc = schema["constraints/not_const"];
-    for(conduit::index_t i = 0; i < nc.number_of_children(); ++i)
-    {
-        const std::string field = nc[i].name();
-        const conduit::Node &forbidden_val = nc[field];
+    const conduit::Node &not_const_schema = schema["constraints/not_const"];
 
-        if(input.has_child(field) && input[field].dtype().is_string() && forbidden_val.dtype().is_string())  
+    for(conduit::index_t i = 0; i < not_const_schema.number_of_children(); ++i)
+    {
+        const conduit::Node &forbidden_val = not_const_schema.child(i);
+        const std::string field = forbidden_val.name();
+        const std::string field_path = conduit::utils::join_file_path(path, field);
+
+        if(!input.has_child(field)) continue;
+
+        const conduit::Node &actual = input[field];
+
+        if(forbidden_val.dtype().is_string())
         {
-            const std::string got = input[field].as_string();
-            const std::string bad = forbidden_val.as_string();
-            if(got == bad)
+            if(actual.dtype().is_string() &&
+               actual.as_string() == forbidden_val.as_string())
             {
-                add_error(info, "Value forbidden at '" + conduit::utils::join_file_path(path, field) +
-                                "': must not be '" + bad + "'");
+                add_input_error(info, path, "not const",
+                    "value '" + actual.as_string() + "' is forbidden here.");
                 ok = false;
             }
         }
+        else if(forbidden_val.dtype().is_integer())
+        {
+            if(actual.dtype().is_integer() &&
+               actual.to_int64() == forbidden_val.to_int64())
+            {
+                add_input_error(info, path, "not const",
+                    "value " + std::to_string((long long)actual.to_int64()) +
+                    " is forbidden here.");
+                ok = false;
+            }
+        }
+        else if(forbidden_val.dtype().is_number())
+        {
+            if(actual.dtype().is_number() &&
+               actual.to_float64() == forbidden_val.to_float64())
+            {
+                add_input_error(info, path, "not const",
+                    "value " + std::to_string(actual.to_float64()) +
+                    " is forbidden here.");
+                ok = false;
+            }
+        }
+        else
+        {
+            add_schema_error(info, path, "not const",
+                "unsupported forbidden value type '" + forbidden_val.dtype().name() +
+                "'. Currently supported types are string, integer, and number.");
+            ok = false;
+        }
     }
+
     return ok;
 }
 
@@ -354,6 +566,7 @@ bool validate_properties(const conduit::Node &schema,
             ok = validate_node(props[k], input[k], info, conduit::utils::join_file_path(path, k)) && ok;
         }
     }
+
     return ok;
 }
 
@@ -382,14 +595,18 @@ bool validate_additional_properties(const conduit::Node &schema,
         const std::string k = input[i].name();
         if(!has_props || !props.has_child(k))
         {
-            add_error(info, "Unexpected field '" + conduit::utils::join_file_path(path, k) +
-                            "' (additionalProperties=false)");
+            add_input_error(info,
+                            conduit::utils::join_file_path(path, k),
+                            "additionalProperties",
+                            "unexpected additional field is not allowed here.");
             ok = false;
         }
     }
+
     return ok;
 }
 
+// ---------- Schema Constraints ----------
 bool validate_dependencies(const conduit::Node &schema,
                            const conduit::Node &input,
                            conduit::Node &info,
@@ -403,23 +620,24 @@ bool validate_dependencies(const conduit::Node &schema,
 
     for(conduit::index_t i = 0; i < deps.number_of_children(); ++i)
     {
-        const std::string trigger = deps[i].name();
-        if(!input.has_child(trigger)) continue;
+        const std::string dep_trigger = deps[i].name();
+        if(!input.has_child(dep_trigger)) continue;
 
-        const conduit::Node &reqs = deps[trigger];
+        const conduit::Node &reqs = deps[dep_trigger];
         for(conduit::index_t j = 0; j < reqs.number_of_children(); ++j)
         {
-        const std::string needed = reqs.child(j).as_string();
-        if(!input.has_child(needed))
+            const std::string needed = reqs.child(j).as_string();
+            if(!input.has_child(needed))
             {
-                add_error(info, "Dependency violation at '"
-                                + (path.empty() ? std::string("<root>") : path)
-                                + "': if '" + trigger + "' is provided, '" 
-                                + needed + "' must also be provided");
+                add_input_error(info, path, "dependencies",
+                                "field '" + needed + "' is required because '" +
+                                dep_trigger + "' is present",
+                                "'" + dep_trigger + "' implies '" + needed + "'");
                 ok = false;
             }
         }
     }
+
     return ok;
 }
 
@@ -436,52 +654,42 @@ bool validate_exclusive_children(const conduit::Node &schema,
                             ? (schema["constraints/allowNoneInExclusiveGroup"].to_int() != 0)
                             : true;
 
-    std::vector<std::string> present;
-    present.reserve((size_t)keys.number_of_children());
+    int count = 0;
 
+    std::ostringstream allowed, found;
+    allowed << "{";
+    found << "{";
     for(conduit::index_t i = 0; i < keys.number_of_children(); ++i)
     {
+        if(i > 0) allowed << ", ";
         const std::string k = keys.child(i).as_string();
-        if(input.has_child(k)) present.push_back(k);
-    }
-
-    const int count = (int)present.size();
-    const bool ok = allow_none ? (count <= 1) : (count == 1);
-
-    if(ok) return true;
-
-    std::ostringstream oss;
-    oss << "Exclusive-children violation at '"
-        << (path.empty() ? "<root>" : path) << "': expected "
-        << (allow_none ? "zero or one" : "exactly one")
-        << " of {";
-
-    for(conduit::index_t i = 0; i < keys.number_of_children(); ++i)
-    {
-        if(i) oss << ", ";
-        oss << keys.child(i).as_string();
-    }
-    oss << "}";
-
-    if(count > 0)
-    {
-        oss << ", but found: {";
-        for(size_t i = 0; i < present.size(); ++i)
+        allowed << k;
+        if(input.has_child(k))
         {
-            if(i) oss << ", ";
-            oss << present[i];
+            if(count > 0) found << ", ";
+            found << k;
         }
-        oss << "}";
     }
-    else
-    {
-        oss << ", but found none";
-    }
+    allowed << "}";
+    found << "}";
 
-    add_error(info, oss.str());
+    if(allow_none ? (count <= 1) : (count == 1)) return true;
+
+
+    const std::string expected =
+        allow_none ? "zero or one of " + allowed.str() + "."
+                   : "exactly one of " + allowed.str() + ".";
+
+    const std::string msg =
+        (count == 0)
+            ? "none of the mutually-exclusive fields are present."
+            : "multiple mutually-exclusive fields are present: " + found.str() + ".";
+
+    add_input_error(info, path, "exclusiveChildren", msg, expected);
     return false;
 }
 
+// ---------- Multi Option Schemas ----------
 static bool validate_all_of(const conduit::Node &schema,
                             const conduit::Node &input,
                             conduit::Node &info,
@@ -489,13 +697,42 @@ static bool validate_all_of(const conduit::Node &schema,
 {
     if(!schema.has_child("allOf")) return true;
 
-    bool ok = true;
     const conduit::Node &opts = schema["allOf"];
+    int matches = 0;
+    std::vector<std::string> option_msgs;
+
     for(conduit::index_t i = 0; i < opts.number_of_children(); ++i)
     {
-        ok = validate_node(opts.child(i), input, info, path) && ok;
+        conduit::Node tmp;
+        tmp.reset();
+
+        const bool ok = validate_node(opts.child(i), input, tmp, path);
+        if(ok)
+        {
+            matches++;
+        }
+        else
+        {
+            option_msgs.push_back(first_error_string(tmp, "failed"));
+        }
     }
-    return ok;
+
+    if (matches == opts.number_of_children()) return true;
+
+    std::ostringstream msg;
+    msg << "expected exactly all of " << opts.number_of_children()
+        << " schema options to match, but ";
+    if(matches == 0) msg << "none matched.";
+    else msg << "only " << matches << " matched.";
+
+    add_input_error(info, path, "allOf", msg.str());
+
+    for(size_t i = 0; i < option_msgs.size() && i < MAX_OPTIONS; ++i)
+    {
+        info["errors"].append() = "\tOption " + std::to_string((int)i) + " hint: " + option_msgs[i];
+    }
+
+    return false;
 }
 
 bool validate_one_of(const conduit::Node &schema,
@@ -507,8 +744,6 @@ bool validate_one_of(const conduit::Node &schema,
 
     const conduit::Node &opts = schema["oneOf"];
     int matches = 0;
-
-    // keep at most one representative failure per option for clarity
     std::vector<std::string> option_msgs;
 
     for(conduit::index_t i = 0; i < opts.number_of_children(); ++i)
@@ -516,38 +751,30 @@ bool validate_one_of(const conduit::Node &schema,
         conduit::Node tmp;
         tmp.reset();
 
-        bool ok = validate_node(opts.child(i), input, tmp, path);
-
+        const bool ok = validate_node(opts.child(i), input, tmp, path);
         if(ok)
         {
             matches++;
         }
         else
         {
-            // pick first error as representative
-            if(tmp.has_child("errors") && tmp["errors"].number_of_children() > 0)
-            {
-                option_msgs.push_back(tmp["errors"].child(0).as_string());
-            }
-            else
-            {
-                option_msgs.push_back("Option " + std::to_string((int)i) + " failed");
-            }
+            option_msgs.push_back(first_error_string(tmp, "failed"));
         }
     }
 
     if(matches == 1) return true;
 
-    std::ostringstream oss;
-    oss << "oneOf violation at '" << (path.empty() ? "<root>" : path) << "': ";
-    if(matches == 0) oss << "input did not match any supported schemas";
-    else oss << "input matched " << matches << " options (ambiguous)";
-    add_error(info, oss.str());
+    std::ostringstream msg;
+    msg << "expected exactly one of " << opts.number_of_children()
+        << " schema options to match, but ";
+    if(matches == 0) msg << "none matched.";
+    else msg << matches << " matched.";
 
-    // give a couple of hints
-    for(size_t i = 0; i < option_msgs.size() && i < 2; ++i)
+    add_input_error(info, path, "oneOf", msg.str());
+
+    for(size_t i = 0; i < option_msgs.size() && i < MAX_OPTIONS; ++i)
     {
-        add_error(info, std::string("  hint: ") + option_msgs[i]);
+        info["errors"].append() = "\tOption " + std::to_string((int)i) + " hint: " + option_msgs[i];
     }
 
     return false;
@@ -562,8 +789,6 @@ bool validate_any_of(const conduit::Node &schema,
 
     const conduit::Node &opts = schema["anyOf"];
     int matches = 0;
-
-    // collect a couple representative failures for hints
     std::vector<std::string> option_msgs;
 
     for(conduit::index_t i = 0; i < opts.number_of_children(); ++i)
@@ -571,26 +796,26 @@ bool validate_any_of(const conduit::Node &schema,
         conduit::Node tmp;
         tmp.reset();
 
-        bool ok = validate_node(opts.child(i), input, tmp, path);
-
+        const bool ok = validate_node(opts.child(i), input, tmp, path);
         if(ok)
         {
             matches++;
         }
-        else if(tmp.has_child("errors") && tmp["errors"].number_of_children() > 0)
+        else
         {
-            option_msgs.push_back(tmp["errors"].child(0).as_string());
+            option_msgs.push_back(first_error_string(tmp, "failed"));
         }
     }
 
     if(matches >= 1) return true;
 
-    add_error(info, "anyOf violation at '" + (path.empty() ? std::string("<root>") : path) +
-                    "': input did not match any option");
+    add_input_error(info, path, "anyOf",
+                    "input did not match any allowed schema option",
+                    "at least one schema option to match");
 
-    for(size_t i = 0; i < option_msgs.size() && i < 2; ++i)
+    for(size_t i = 0; i < option_msgs.size() && i < MAX_OPTIONS; ++i)
     {
-        add_error(info, std::string("  hint: ") + option_msgs[i]);
+        info["errors"].append() = "\tOption " + std::to_string((int)i) + " hint: " + option_msgs[i];
     }
 
     return false;
@@ -624,30 +849,6 @@ bool validate_object(const conduit::Node &schema,
     return ok;
 }
 
-bool validate_format(const conduit::Node &schema,
-                            const conduit::Node &input,
-                            conduit::Node &info,
-                            const std::string &path)
-{
-    if(!schema.has_child("format")) return true;
-    if(!schema["format"].dtype().is_string()) return true;
-
-    const std::string fmt = schema["format"].as_string();
-    if(fmt != "expression") return true;
-    if(!input.dtype().is_string()) return true;
-
-    auto expr_fn = expr_checker();
-    if(expr_fn == nullptr) return true;
-
-    std::string err;
-    bool ok = expr_fn(input.as_string(), err);
-    if(!ok)
-    {
-        add_error(info, "Invalid expression at '" + (path.empty() ? std::string("<root>") : path) + "': " + err);
-    }
-    return ok;
-}
-
 bool validate_array(const conduit::Node &schema,
                     const conduit::Node &input,
                     conduit::Node &info,
@@ -656,33 +857,29 @@ bool validate_array(const conduit::Node &schema,
     bool ok = true;
 
     const auto data_type = input.dtype();
-    const conduit::index_t count = (data_type.is_list() || data_type.is_object()) ? input.number_of_children() : data_type.number_of_elements();
+    const int count = (data_type.is_list() || data_type.is_object()) ? (long long)input.number_of_children() : (long long)data_type.number_of_elements();
 
     // Json Schema uses min/max bounds for array length.
     if(schema.has_child("minItems"))
     {
-        const conduit::index_t min_items = (conduit::index_t)schema["minItems"].to_int();
+        const int min_items = schema["minItems"].to_int();
         if(count < min_items)
         {
-            add_error(info,
-                      "Array at '" + (path.empty() ? std::string("<root>") : path) +
-                      "' has too few items: expected at least " +
-                      std::to_string((long long)min_items) + ", got " +
-                      std::to_string((long long)count));
+            add_input_error(info, path, "minItems",
+                      "array has too few items.",
+                      "at least " + std::to_string(min_items) + ", got " + std::to_string(count));
             ok = false;
         }
     }
 
     if(schema.has_child("maxItems"))
     {
-        const conduit::index_t max_items = (conduit::index_t)schema["maxItems"].to_int();
+        const int max_items = schema["maxItems"].to_int();
         if(count > max_items)
         {
-            add_error(info,
-                      "Array at '" + (path.empty() ? std::string("<root>") : path) +
-                      "' has too many items: expected at most " +
-                      std::to_string((long long)max_items) + ", got " +
-                      std::to_string((long long)count));
+            add_input_error(info, path, "maxItems",
+                      "array has too many items.",
+                      "expected at most " + std::to_string(max_items) + ", got " + std::to_string(count));
             ok = false;
         }
     }
