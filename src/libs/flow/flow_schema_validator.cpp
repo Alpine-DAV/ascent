@@ -666,6 +666,7 @@ bool validate_exclusive_children(const conduit::Node &schema,
         allowed << k;
         if(input.has_child(k))
         {
+            count++;
             if(count > 0) found << ", ";
             found << k;
         }
