@@ -272,7 +272,7 @@ bool validate_number(const conduit::Node &schema,
                      conduit::Node &info,
                      const std::string &path)
 {
-    if(get_type_string(schema) != "number" || get_type_string(schema) != "integer") return true;
+    if(get_type_string(schema) != "number" && get_type_string(schema) != "integer") return true;
 
     const double v = input.to_float64();
     bool ok = true;
@@ -730,7 +730,7 @@ static bool validate_all_of(const conduit::Node &schema,
 
     for(size_t i = 0; i < option_msgs.size() && i < MAX_OPTIONS; ++i)
     {
-        info["errors"].append() = "\tOption " + std::to_string((int)i) + " hint: " + option_msgs[i];
+        info["errors"].append() = "    Option " + std::to_string((int)i) + " hint: " + option_msgs[i];
     }
 
     return false;
@@ -775,7 +775,7 @@ bool validate_one_of(const conduit::Node &schema,
 
     for(size_t i = 0; i < option_msgs.size() && i < MAX_OPTIONS; ++i)
     {
-        info["errors"].append() = "\tOption " + std::to_string((int)i) + " hint: " + option_msgs[i];
+        info["errors"].append() = "    Option " + std::to_string((int)i) + " hint: " + option_msgs[i];
     }
 
     return false;
@@ -816,7 +816,7 @@ bool validate_any_of(const conduit::Node &schema,
 
     for(size_t i = 0; i < option_msgs.size() && i < MAX_OPTIONS; ++i)
     {
-        info["errors"].append() = "\tOption " + std::to_string((int)i) + " hint: " + option_msgs[i];
+        info["errors"].append() = "    Option " + std::to_string((int)i) + " hint: " + option_msgs[i];
     }
 
     return false;
