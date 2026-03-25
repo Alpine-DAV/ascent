@@ -637,7 +637,10 @@ Reflect Example:
           type: "transform"
           params:
             reflect:
-              x: 1.0
+              normal:  # a normal is required for reflection
+                x: 1.0 # (x,y,z) default is (0,0,0)
+              point:
+                x: "min" #also accepts doubles; (x,y,z) default is (0,0,0)
 
 Rotate Example:
 
