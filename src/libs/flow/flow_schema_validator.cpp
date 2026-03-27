@@ -858,7 +858,9 @@ bool validate_array(const conduit::Node &schema,
     bool ok = true;
 
     const auto data_type = input.dtype();
-    const int count = (data_type.is_list() || data_type.is_object()) ? (long long)input.number_of_children() : (long long)data_type.number_of_elements();
+    const int count = (data_type.is_list() || data_type.is_object())
+                          ? (long long)input.number_of_children()
+                          : (long long)data_type.number_of_elements();
 
     // Json Schema uses min/max bounds for array length.
     if(schema.has_child("minItems"))
@@ -888,11 +890,33 @@ bool validate_array(const conduit::Node &schema,
     if(!schema.has_child("items")) return ok; // unconstrained items
 
     const conduit::Node &item_schema = schema["items"];
-    if(data_type.is_list() || data_type.is_object()) {
+    if(data_type.is_list() || data_type.is_object())
+    {
         for(conduit::index_t i = 0; i < count; ++i)
         {
             ok = validate_node(item_schema, input.child(i), info,
                             path + "[" + std::to_string((int)i) + "]") && ok;
+        }
+    }
+    else if(data_type.is_number() && data_type.number_of_elements() >= 1)
+    {
+        // Conduit numeric leaf arrays: validate each element against the item schema.
+        // Use an external scalar node that aliases the i'th element.
+        const conduit::DataType::TypeID type_id =
+            static_cast<conduit::DataType::TypeID>(data_type.id());
+
+        const conduit::index_t byte_stride = data_type.stride();
+        const unsigned char *base =
+            static_cast<const unsigned char*>(input.data_ptr());
+
+        for(conduit::index_t i = 0; i < count; ++i)
+        {
+            conduit::Node element;
+            element.set_external(conduit::DataType(type_id, 1),
+                                 const_cast<unsigned char*>(base + i * byte_stride));
+
+            ok = validate_node(item_schema, element, info,
+                               path + "[" + std::to_string((int)i) + "]") && ok;
         }
     }
     return ok;

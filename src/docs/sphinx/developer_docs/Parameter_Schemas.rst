@@ -511,13 +511,13 @@ Array Keywords (``type: "array"``)
 ``items``
 ---------
 
-  A subschema applied to each element of the input when the input is represented
-  as a Conduit list or object.
+  A subschema applied to each element of the input.
 
   Notes:
 
-  - When the input is a numeric leaf array, ``items`` is not applied (only
-    ``minItems``/``maxItems`` are checked).
+  - For Conduit lists and objects, elements are accessed via ``child(i)``.
+  - For Conduit numeric leaf arrays, each element is validated by aliasing the
+    i'th element as an external scalar node and applying the ``items`` schema.
 
   Example:
 
