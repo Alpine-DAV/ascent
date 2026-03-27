@@ -23,6 +23,9 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added support for 64 bit IDs
 - Added support for RZ meshes
 
+### Changed
+- Redefined the parameter varification and surprise checking behavior for Filters to instead use a conduit based JSON Schema style verification schema. Implimented for all existing filters. 
+
 ### Fixed
 - Fixed issue where the plot did not align with the 3d axes when the camera was panned (`camera/xpan` and `camera/ypan`).
 
