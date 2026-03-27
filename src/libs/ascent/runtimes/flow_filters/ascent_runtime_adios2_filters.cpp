@@ -119,7 +119,6 @@ ADIOS2::declare_interface(Node &i)
     // ----------- Define Param Schema -----------
     conduit::Node param_schema;
     param_schema["type"] = "object";
-    param_schema["additionalProperties"] = false;
 
     param_schema["properties/filename"].set(string_schema()); // Can't be a directory... need to add regex filter
     param_schema["properties/engine"].set(string_schema());
