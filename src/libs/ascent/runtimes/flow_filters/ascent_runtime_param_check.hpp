@@ -105,51 +105,6 @@ conduit::Node ASCENT_API array_schema(const conduit::Node &item_schema);
 
 conduit::Node ASCENT_API ignore_schema();
 
-bool ASCENT_API check_numeric(const std::string path,
-                              const conduit::Node &params,
-                              conduit::Node &info,
-                              bool required,
-                              bool supports_expressions = false);
-
-bool ASCENT_API check_string(const std::string path,
-                             const conduit::Node &params,
-                             conduit::Node &info,
-                             bool required);
-
-bool ASCENT_API check_bool(const std::string path,
-                           const conduit::Node &params,
-                           conduit::Node &info,
-                           bool required);
-
-bool ASCENT_API check_object(const std::string path,
-                             const conduit::Node &params,
-                             conduit::Node &info,
-                             bool required);
-
-bool ASCENT_API check_list(const std::string path,
-                           const conduit::Node &params,
-                           conduit::Node &info,
-                           bool required);
-
-void ASCENT_API path_helper(std::vector<std::string> &paths,
-                            const conduit::Node &params);
-
-void ASCENT_API path_helper(std::vector<std::string> &paths,
-                            const std::vector<std::string> &ignore,
-                            const conduit::Node &params,
-                            const std::string path_prefix);
-
-std::string ASCENT_API surprise_check(const std::vector<std::string> &valid_paths,
-                                      const conduit::Node &node);
-
-//
-// Ignore paths only ignores top level paths, differing lower level
-// paths to another surprise check.
-//
-std::string ASCENT_API surprise_check(const std::vector<std::string> &valid_paths,
-                                      const std::vector<std::string> &ignore_paths,
-                                      const conduit::Node &node);
-
 // evaluate expression or return value
 double ASCENT_API get_float64(const conduit::Node &node, DataObject *dataset);
 float ASCENT_API  get_float32(const conduit::Node &node, DataObject *dataset);

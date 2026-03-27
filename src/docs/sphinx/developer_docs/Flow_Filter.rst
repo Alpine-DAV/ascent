@@ -62,12 +62,14 @@ Interface Declaration
         i["type_name"]   = "vtkh_no_op";
         i["port_names"].append() = "in";
         i["output_port"] = "true";
+        i["param_schema"] = conduit::Node();
     }
 
 
 * ``type_name``: declares the name of the filter to flow, and the only requirement is that this name be unique.
 * ``port_names``: declares a list of input port names.
 * ``output_port``: declares if this filter has an output of not. Valid values are ``true`` and ``false``.
+* ``param_schema``: defines a parameter schema as a conduit node expressing the required and optional parameters and their types.
 
 The ``port_names`` parameter is a list of input port names that can be referenced by name or index
 when creating the filter within the runtime. The typical number of inputs is one, but there is no
@@ -116,78 +118,14 @@ or equivalently in yaml:
 The Ascent runtime looks for the ``params`` node and passes it to the filter
 upon creation. Parameters are verified when the filter is created during execution.
 
-Filter Parameter Verification
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The ``verify_params`` method allow the filter creator to verify the expected parameters
-and parameter types before the filter is executed. If the verification fails, error messages
-are shown to the user. The method has two parameters: a Conduit node holding the parameters
-of the filter and a Conduit node that is populated with error information that flow will
-show if the result of the verification is false (error state).
+Filter Parameter Verification Schemas
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. code-block:: c++
-    :caption: Example parameter verification
-    :name: verify
-    :linenos:
-
-    bool
-    VTKHNoOp::verify_params(const conduit::Node &params,
-                            conduit::Node &info)
-    {
-        info.reset();
-
-        bool res = check_string("field",params, info, true);
-
-        std::vector<std::string> valid_paths;
-        valid_paths.push_back("field");
-
-        std::string surprises = surprise_check(valid_paths, params);
-
-        if(surprises != "")
-        {
-          res = false;
-          info["errors"].append() = surprises;
-        }
-
-        return res;
-    }
-
-Check Parameters
-++++++++++++++++
-While you can use the Conduit API to check for expected paths and types of values, we
-provide a number of methods to streamline common checks. These
-`parameter checking helpers <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/flow_filters/ascent_runtime_param_check.hpp>`_
-provide two basic checking mechanisms:
-
-* ``check_string``: checks for the presence of a string parameter
-* ``check_numeric``: checks for the presence of a numeric parameter
-
-Both functions have the same signature:
-
-.. code-block:: c++
-
-    bool check_numeric(const std::string path,
-                       const conduit::Node &params,
-                       conduit::Node &info,
-                       bool required);
-
-* ``path``: the expected path to the parameter in the Conduit node
-* ``params``: the parameters passed into verify
-* ``info``: the info node passed into verify
-* ``required``: indication that the parameter is required or optional
-
-These helper functions return ``false`` if the parameter check fails.
-
-Surprises
-+++++++++
-A common user error is to set a parameter at the wrong path.z
-For example the filter expects a parameter ``field`` but the user
-adds the path ``field_name``, the verification will fail and complain about a
-missing parameter. In order to provide a better error message, we provide
-a surprise parameter checking mechanism that reports unknown paths.
-Lines 9-18 in :ref:`verify` show how to use the surprise_check function to
-declare a set of known parameters and check for the existence of surprises.
-``surpise_check`` also allows you to ignore certain paths, which enables
-hierarchical surprise checking.
+.. note::
+    In prior versions of Ascent, the ``verify_params`` method was used to allow the filter creator
+    to verify the expected parameters and parameter types before the filter is executed.
+    This method now by default will refrence the ``param_schema`` and execute both parameter
+    validation and surprise checking againts the defined schema.
 
 Execute
 """""""
