@@ -117,11 +117,11 @@ RoverXRay::declare_interface(Node &i)
   rover_schema["properties/divide_emis_by_absorb"].set(bool_schema());
   rover_schema["properties/emission"].set(string_schema(1));
   rover_schema["properties/enable_rays_mesh"].set(bool_schema());
-  rover_schema["properties/height"].set(integer_schema(false, std::nullopt, std::nullopt, 0));
-  rover_schema["properties/width"].set(integer_schema(false, std::nullopt, std::nullopt, 0));
+  rover_schema["properties/height"].set(integer_schema(false, optional_param<int>(), optional_param<int>(), 0));
+  rover_schema["properties/width"].set(integer_schema(false, optional_param<int>(), optional_param<int>(), 0));
   rover_schema["properties/output_type"].set(string_enum_schema({"hdf5", "yaml", "json", "png", "bov"}));
   rover_schema["properties/precision"].set(string_enum_schema({"single", "double"}));
-  rover_schema["properties/unit_scalar"].set(number_schema(false, std::nullopt, std::nullopt, 0));
+  rover_schema["properties/unit_scalar"].set(number_schema(false, optional_param<int>(), optional_param<int>(), 0));
 
   rover_schema["constraints/dependencies/height"].append() = "width";
   rover_schema["constraints/dependencies/width"].append() = "height";

@@ -61,8 +61,8 @@ bool is_valid_expression(const std::string &expr, std::string &err_msg)
 
 //-----------------------------------------------------------------------------
 
-conduit::Node string_schema(compat_optional<int> minLength,
-                            compat_optional<int> maxLength)
+conduit::Node string_schema(optional_param<int> minLength,
+                            optional_param<int> maxLength)
 {
   conduit::Node n;
   n["type"] = "string";
@@ -98,10 +98,10 @@ conduit::Node expression_schema()
 //-----------------------------------------------------------------------------
 
 conduit::Node number_schema(bool supports_expressions,
-                            compat_optional<int> minimum,
-                            compat_optional<int> maximum,
-                            compat_optional<int> exclusiveMinimum,
-                            compat_optional<int> exclusiveMaximum)
+                            optional_param<int> minimum,
+                            optional_param<int> maximum,
+                            optional_param<int> exclusiveMinimum,
+                            optional_param<int> exclusiveMaximum)
 {
   conduit::Node n;
   if (supports_expressions)
@@ -123,10 +123,10 @@ conduit::Node number_schema(bool supports_expressions,
 }
 
 conduit::Node integer_schema(bool supports_expressions,
-                             compat_optional<int> minimum,
-                             compat_optional<int> maximum,
-                             compat_optional<int> exclusiveMinimum,
-                             compat_optional<int> exclusiveMaximum)
+                             optional_param<int> minimum,
+                             optional_param<int> maximum,
+                             optional_param<int> exclusiveMinimum,
+                             optional_param<int> exclusiveMaximum)
 {
   conduit::Node n;
   if (supports_expressions)

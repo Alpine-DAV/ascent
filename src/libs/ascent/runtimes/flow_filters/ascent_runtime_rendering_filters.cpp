@@ -1075,8 +1075,8 @@ CreateRenders::declare_interface(Node &i)
     render_schema["additionalProperties"] = false;
     render_schema["properties/image_name"].set(string_schema());
     render_schema["properties/image_prefix"].set(string_schema());
-    render_schema["properties/image_width"].set(integer_schema(true, std::nullopt, std::nullopt, 0));
-    render_schema["properties/image_height"].set(integer_schema(true, std::nullopt, std::nullopt, 0));
+    render_schema["properties/image_width"].set(integer_schema(true, optional_param<int>(), optional_param<int>(), 0));
+    render_schema["properties/image_height"].set(integer_schema(true, optional_param<int>(), optional_param<int>(), 0));
     render_schema["properties/scene_bounds"].set(ignore_schema());
     render_schema["properties/type"].set(ignore_schema());
     render_schema["properties/phi"].set(ignore_schema());
