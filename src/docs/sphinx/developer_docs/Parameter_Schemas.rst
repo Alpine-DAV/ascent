@@ -289,10 +289,11 @@ String Keywords (``type: "string"``)
 
   Requires the string to match the regular expression pattern.
 
-  Notes:
+.. note::
 
-  - The validator uses C++ ``std::regex`` and checks with ``std::regex_match``
-    (i.e., it requires a full match, not a substring match).
+  - The validator uses C++ ``std::regex`` and checks with ``std::regex_search``
+    (i.e., the pattern may match any substring; it is not implicitly anchored).
+    To require a full-string match, add anchors (e.g., ``^...$``).
   - Invalid regex patterns are reported as schema errors.
 
   Example:

@@ -221,7 +221,7 @@ bool validate_string(const conduit::Node &schema,
         try
         {
             const std::regex re(pattern);
-            if(!std::regex_match(s, re))
+            if(!std::regex_search(s, re))
             {
                 add_input_error(info, path, "pattern",
                                 "string does not match required pattern '" + pattern + "'.");
