@@ -4525,8 +4525,7 @@ VTKHTransform::declare_interface(Node &i)
     reflect_schema["type"] = "object";
     reflect_schema["additionalProperties"] = false;
     reflect_schema["properties/normal"].set(vec3_schema_anyOf(true));
-    reflect_schema["properties/point"].set(vec3_schema(true));
-    reflect_schema["required"].append() = "point";
+    reflect_schema["properties/point"].set(vec3_schema_anyOf(true));
     param_schema["properties/reflect"].set(reflect_schema);
 
     // --- matrix ---
