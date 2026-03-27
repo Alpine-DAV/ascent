@@ -78,6 +78,7 @@
 #include <vtkh/filters/HistSampling.hpp>
 #include <vtkh/filters/PointTransform.hpp>
 #include <vtkh/filters/MIR.hpp>
+#include <viskores/Bounds.h>
 #include <viskores/cont/DataSet.h>
 #include <viskores/io/VTKDataSetWriter.h>
 #include <ascent_vtkh_data_adapter.hpp>
@@ -4508,7 +4509,6 @@ VTKHTransform::declare_interface(Node &i)
 
     param_schema["properties/scale"].set(vec3_schema_anyOf(true));
     param_schema["properties/translate"].set(vec3_schema_anyOf(true));
-    param_schema["properties/reflect"].set(vec3_schema_anyOf(true));
 
     // --- rotate ---
     conduit::Node rotate_schema;
@@ -4519,6 +4519,15 @@ VTKHTransform::declare_interface(Node &i)
     rotate_schema["required"].append() = "angle";
     rotate_schema["required"].append() = "axis";
     param_schema["properties/rotate"].set(rotate_schema);
+
+    // --- reflect ---
+    conduit::Node reflect_schema;
+    reflect_schema["type"] = "object";
+    reflect_schema["additionalProperties"] = false;
+    reflect_schema["properties/normal"].set(vec3_schema_anyOf(true));
+    reflect_schema["properties/point"].set(vec3_schema(true));
+    reflect_schema["required"].append() = "point";
+    param_schema["properties/reflect"].set(reflect_schema);
 
     // --- matrix ---
     conduit::Node matrix_schema = array_schema(number_schema(true));
@@ -4556,15 +4565,17 @@ VTKHTransform::execute()
     bool use_reflect   = false;
     bool use_matrix    = false;
 
-    double t_scale[3]       = {1.0, 1.0, 1.0};
-    double t_translate[3]   = {0.0, 0.0, 0.0};
-    double t_rotate_angle   =  0.0;
-    double t_rotate_axis[3] = {0.0, 0.0, 0.0};
-    double t_reflect[3]     = {0.0, 0.0, 0.0};
-    double t_matrix[16]     = {0.0, 0.0, 0.0, 0.0,
-                               0.0, 0.0, 0.0, 0.0,
-                               0.0, 0.0, 0.0, 0.0,
-                               0.0, 0.0, 0.0, 0.0};
+    double t_scale[3]          = {1.0, 1.0, 1.0};
+    double t_translate[3]      = {0.0, 0.0, 0.0};
+    double t_rotate_angle      =  0.0;
+    double t_rotate_axis[3]    = {0.0, 0.0, 0.0};
+    double t_reflect_normal[3] = {0.0, 0.0, 0.0}; 
+    double t_reflect_point[3]  = {0.0, 0.0, 0.0};
+    double t_matrix[16]        = {0.0, 0.0, 0.0, 0.0,
+                                  0.0, 0.0, 0.0, 0.0,
+                                  0.0, 0.0, 0.0, 0.0,
+                                  0.0, 0.0, 0.0, 0.0};
+    ParamSpec reflect_param[3];
 
     if(params().has_child("scale"))
     {
@@ -4632,22 +4643,47 @@ VTKHTransform::execute()
 
     if(params().has_child("reflect"))
     {
-        use_reflect = true;
-        const Node &p_vals = params()["reflect"];
+      use_reflect = true;
+      const Node &n_reflect = params()["reflect"];
+      const Node &n_vals = n_reflect["normal"];
+      if(n_vals.has_child("x"))
+      {
+        t_reflect_normal[0] = get_float64(n_vals["x"], data_object);
+      }
+
+      if(n_vals.has_child("y"))
+      {
+        t_reflect_normal[1] = get_float64(n_vals["y"], data_object);
+      }
+
+      if(n_vals.has_child("z"))
+      {
+        t_reflect_normal[2] = get_float64(n_vals["z"], data_object);
+      }
+
+      if((t_reflect_normal[0] == 0.0) &&
+         (t_reflect_normal[1] == 0.0) && 
+         (t_reflect_normal[2] == 0.0))
+        ASCENT_ERROR("A non-zero normal must be specified.");
+      
+      if(n_reflect.has_child("point"))
+      {
+        const Node &p_vals = n_reflect["point"];
         if(p_vals.has_child("x"))
         {
-            t_reflect[0] = get_float64(p_vals["x"],data_object);
+          reflect_param[0] = assign_param_spec(p_vals["x"],data_object);
         }
 
         if(p_vals.has_child("y"))
         {
-            t_reflect[1] = get_float64(p_vals["y"],data_object);
+          reflect_param[1] = assign_param_spec(p_vals["y"],data_object);
         }
 
         if(p_vals.has_child("z"))
         {
-            t_reflect[2] = get_float64(p_vals["z"],data_object);
+          reflect_param[2] = assign_param_spec(p_vals["z"],data_object);
         }
+      }
     }
 
     if(params().has_child("matrix"))
@@ -4698,9 +4734,49 @@ VTKHTransform::execute()
 
       if(use_reflect)
       {
-          transform.SetReflect(t_reflect[0],
-                               t_reflect[1],
-                               t_reflect[2]);
+          viskores::Bounds bounds = data.GetGlobalBounds();
+          //resolve the ParamSpec types now that we have bounds 
+          auto resolve = [&](int axis) -> double
+          {
+            switch(reflect_param[axis].mode)
+            {
+              case ParamVal::Unset:     
+                return 0.0;//default
+
+              case ParamVal::Value:     
+                return reflect_param[axis].value;
+
+              case ParamVal::BoundsMin:       
+                switch(axis)
+                {
+                  case 0: return bounds.X.Min;
+                  case 1: return bounds.Y.Min;
+                  case 2: return bounds.Z.Min;
+                }
+                break;
+
+              case ParamVal::BoundsMax:
+                switch(axis)
+                {
+                  case 0: return bounds.X.Max;
+                  case 1: return bounds.Y.Max;
+                  case 2: return bounds.Z.Max;
+                }
+                break;
+            }
+            return 0.0;
+          };
+
+          t_reflect_point[0] = resolve(0);
+          t_reflect_point[1] = resolve(1);
+          t_reflect_point[2] = resolve(2);
+          
+          transform.SetReflect(t_reflect_point[0],
+                               t_reflect_point[1],
+                               t_reflect_point[2],
+                               t_reflect_normal[0],
+                               t_reflect_normal[1],
+                               t_reflect_normal[2]);
       }
 
       if(use_matrix)

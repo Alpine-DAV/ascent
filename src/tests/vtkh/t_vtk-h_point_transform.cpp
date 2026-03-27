@@ -121,7 +121,7 @@ TEST(vtkh_point_transform, vtkh_reflect)
   }
 
   vtkh::PointTransform transformer;
-  transformer.SetReflect(1.0, 0.0, 0.0);
+  transformer.SetReflect(0.0, 0.0, 0.0, 1.0, 0.0, 0.0);
   transformer.SetInput(&data_set);
 
   transformer.Update();

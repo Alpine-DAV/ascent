@@ -1,0 +1,35 @@
+#An example transform filter using reflect across arbitrary axis.
+
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl0: 
+      f1: 
+        type: "transform"
+        params: 
+          translate: 
+            x: 10.0
+            y: 10.0
+    pl1: 
+      f1: 
+        type: "transform"
+        params: 
+          reflect: 
+            normal: 
+              x: 1.0
+              y: 1.0
+      pipeline: "pl0"
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "braid"
+          pipeline: "pl1"
+        p2: 
+          type: "pseudocolor"
+          field: "braid"
+          pipeline: "pl0"
+      image_prefix: "/home/user/sandbox/ascent/scripts/build_ascent/build/ascent-checkout/tests/_output/tout_transform_reflect_arb"
