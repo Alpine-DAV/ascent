@@ -211,17 +211,17 @@ conduit::Node vec3_schema_anyOf(const std::string var1,
 
   conduit::Node var1_required;
   var1_required["type"] = "object";
-  var1_required["required"] = var1;
+  var1_required["required"].append() = var1;
   n["anyOf"].append().set(var1_required);
 
   conduit::Node var2_required;
   var2_required["type"] = "object";
-  var2_required["required"] = var2;
+  var2_required["required"].append() = var2;
   n["anyOf"].append().set(var2_required);
 
   conduit::Node var3_required;
   var3_required["type"] = "object";
-  var3_required["required"] = var3;
+  var3_required["required"].append() = var3;
   n["anyOf"].append().set(var3_required);
 
   return n;
@@ -371,7 +371,6 @@ int get_int32(const conduit::Node &node, DataObject *dataset)
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
-
 
 
 
