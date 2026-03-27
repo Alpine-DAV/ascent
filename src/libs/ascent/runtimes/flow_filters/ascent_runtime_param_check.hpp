@@ -110,6 +110,27 @@ double ASCENT_API get_float64(const conduit::Node &node, DataObject *dataset);
 float ASCENT_API  get_float32(const conduit::Node &node, DataObject *dataset);
 int ASCENT_API    get_int32(const conduit::Node &node, DataObject *dataset);
 
+//this is for filters that have params that
+//can accept either a double value
+//or the strings "min" and "max"
+
+enum class ParamVal
+{
+  Unset,
+  Value,
+  BoundsMin,
+  BoundsMax
+};
+
+struct ParamSpec
+{
+  ParamVal mode = ParamVal::Unset;
+  double value = -1.0;
+};
+
+//Parse the ParamSpec struct
+ParamSpec ASCENT_API assign_param_spec(const conduit::Node &n, DataObject *data_object);
+
 //-----------------------------------------------------------------------------
 };
 //-----------------------------------------------------------------------------

@@ -30,9 +30,12 @@ public:
                 const double& sy,
                 const double& sz);
 
-  void SetReflect(const double& axisX,
-                  const double& axisY,
-                  const double& axisZ);
+  void SetReflect(const double& pointX,
+                  const double& pointY,
+                  const double& pointZ,
+                  const double& normalX,
+                  const double& normalY,
+                  const double& normalZ);
 
   void SetTransform(const double *matrix_values);
   void SetTransform(const viskores::Matrix<double, 4, 4>& mtx);
