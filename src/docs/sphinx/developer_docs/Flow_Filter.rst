@@ -121,11 +121,14 @@ upon creation. Parameters are verified when the filter is created during executi
 Filter Parameter Verification Schemas
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Filter Parameters are validated and checked for any surprises using :ref:`param_schema`
+
 .. note::
     In prior versions of Ascent, the ``verify_params`` method was used to allow the filter creator
-    to verify the expected parameters and parameter types before the filter is executed.
-    This method now by default will refrence the ``param_schema`` and execute both parameter
-    validation and surprise checking againts the defined schema.
+    to define parameter verification and surprise checking for each individual flow filter.
+    This method now by default will refrence the ``param_schema`` defined in the filter interface
+    and execute both parameter validation and surprise checking againts the defined schema 
+    using :ref:`param_schema`
 
 Execute
 """""""

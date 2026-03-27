@@ -11,6 +11,8 @@ Parameter Schemas for Validation and Surprise Checking
 
 The schema validator supports a focused subset of JSON Schema, along with a few Conduit-specific extensions under constraints.
 
+Defined in:
+
 - ``src/libs/flow/flow_schema_validator.hpp``
 - ``src/libs/flow/flow_schema_validator.cpp``
 
@@ -19,11 +21,12 @@ as another Conduit node.
 
 .. note::
     When writing schemas for this validator, assume:
-      - only the fields documented here are supported
-      - unsupported JSON Schema keywords are ignored unless explicitly handled by the validator
-      - several behaviors differ from standard JSON Schema because they are adapted to Conduit\'s data model
 
-API surface
+    - only the fields documented here are supported
+    - unsupported JSON Schema keywords are ignored unless explicitly handled by the validator
+    - several behaviors differ from standard JSON Schema because they are adapted to Conduit's data model
+
+API Surface
 +++++++++++
 
 The public API is:
@@ -34,51 +37,30 @@ The public API is:
 ``validate`` returns ``true`` on success. On failure, ``info["errors"]`` is
 populated with one or more human-readable error strings.
 
-Basic Schema structure
-++++++++++++++++++++++
+
+Quick Usage Pattern
++++++++++++++++++++
 
 A schema is itself a Conduit node that describes the expected structure of an input node.
 
 A typical object schema looks like this:
 
-{
-  "type": "object",
-  "required": ["name"],
-  "properties": {
-    "name": {
-      "type": "string",
-      "minLength": 1
+.. code-block:: json
+
+  {
+    "type": "object",
+    "required": ["name"],
+    "properties": {
+      "name": {
+        "type": "string",
+        "minLength": 1
+      },
+      "count": {
+        "type": "integer"
+      }
     },
-    "count": {
-      "type": "integer"
-    }
-  },
-  "additionalProperties": false
-}
-
-The validator uses ``schema["type"]`` (a string) to decide which validations to
-apply. Supported types are:
-
-- ``object``: A conduit object node
-- ``string``: A string leaf node
-- ``number``: Any numeric type
-- ``integer``: Any integer type
-- ``array``: a Conduit list, a Conduit object, or a numeric leaf array (a numeric node with ``number_of_elements() >= 1``).
-
-.. note::
-    Empty input nodes (``dtype().is_empty()``) are treated specially:
-    - If the schema ``type`` is ``"object"`` and the input is empty, the validator
-      validates as if the input were an empty Conduit object.
-    - If the schema ``type`` is ``"array"`` and the input is empty, the validator
-      validates as if the input were an empty Conduit list.
-
-Supported keywords
-------------------
-
-This section lists every schema keyword the validator checks.
-
-Quick usage pattern
-+++++++++++++++++++
+    "additionalProperties": false
+  }
 
 In pseudocode, validation looks like:
 
@@ -91,21 +73,32 @@ In pseudocode, validation looks like:
 
 If ``ok`` is ``false``, read ``info["errors"]`` (a list of strings) for details.
 
+
+Supported Keywords
+++++++++++++++++++
+
 ``type``
-  Controls which type-specific rules apply and enforces the input type.
+--------
 
-  Supported values:
+  The validator uses ``schema["type"]`` (a string) to decide which validations to
+  apply. Supported types are:
 
-  - ``"object"``
-  - ``"string"``
-  - ``"number"``
-  - ``"integer"``
-  - ``"array"``
+  - ``object``: A conduit object node
+  - ``string``: A string leaf node
+  - ``number``: Any numeric type
+  - ``integer``: Any integer type
+  - ``array``: a Conduit list, a Conduit object, or a numeric leaf array (a numeric node with ``number_of_elements() >= 1``).
 
-  Notes:
+  .. note::
+    Empty input nodes (``dtype().is_empty()``) are treated specially:
 
-  - Unknown ``type`` values are reported as schema errors.
-  - For ``"array"``, see the Conduit-specific behavior described above.
+    - If the schema ``type`` is ``"object"`` and the input is empty, the validator
+      validates as if the input were an empty Conduit object.
+    - If the schema ``type`` is ``"array"`` and the input is empty, the validator
+      validates as if the input were an empty Conduit list.
+
+  .. warning::
+    Unknown ``type`` values are reported as schema errors.
 
   Example:
 
@@ -115,7 +108,29 @@ If ``ok`` is ``false``, read ``info["errors"]`` (a list of strings) for details.
     type: string
     minLength: 1
 
+  .. raw:: html
+
+    <details class="schema-failure"><summary><span style="color:#b94a48;"><strong>Validation Failure Example (type mismatch)</strong></span></summary>
+
+  .. code-block:: yaml
+
+    # Schema
+    type: string
+
+    # Input
+    42
+
+  .. code-block:: text
+
+    Validation failed at '<root>' (type): type mismatch Expected type 'string'..
+
+  .. raw:: html
+
+    </details>
+
 ``format``
+----------
+
   Only the value ``"expression"`` is recognized.
 
   If the schema contains ``format: "expression"`` and the input value is a
@@ -131,6 +146,8 @@ If ``ok`` is ``false``, read ``info["errors"]`` (a list of strings) for details.
     format: expression
 
 ``enum``
+--------
+
   Restricts a *string* input to one of the allowed values.
 
   - The validator only applies ``enum`` when the input value is a string.
@@ -144,6 +161,8 @@ If ``ok`` is ``false``, read ``info["errors"]`` (a list of strings) for details.
     enum: ["nearest", "linear"]
 
 ``allOf``
+---------
+
   Requires that the input validates against *all* subschemas in the array.
 
   On failure, the validator records a summary message and may add a small number
@@ -160,6 +179,8 @@ If ``ok`` is ``false``, read ``info["errors"]`` (a list of strings) for details.
       - {type: string, pattern: "^[a-z0-9_]+$"}
 
 ``oneOf``
+---------
+
   Requires that the input validates against *exactly one* subschema in the
   array.
 
@@ -176,7 +197,33 @@ If ``ok`` is ``false``, read ``info["errors"]`` (a list of strings) for details.
       - {type: integer, maximum: 9}
       - {type: integer, minimum: 10}
 
+  .. raw:: html
+
+    <details class="schema-failure"><summary><span style="color:#b94a48;"><strong>Validation Failure Example (no matching option; note the per-option hints)</strong></span></summary>
+
+  .. code-block:: yaml
+
+    # Schema
+    oneOf:
+      - {type: string, pattern: "^a+$"}
+      - {type: string, pattern: "^b+$"}
+
+    # Input
+    "ccc"
+
+  .. code-block:: text
+
+    Validation failed at '<root>' (oneOf): expected exactly one of 2 schema options to match, but none matched.
+        Option 0 hint: Validation failed at '<root>' (pattern): string does not match required pattern '^a+$'.
+        Option 1 hint: Validation failed at '<root>' (pattern): string does not match required pattern '^b+$'.
+
+  .. raw:: html
+
+    </details>
+
 ``anyOf``
+---------
+
   Requires that the input validates against *at least one* subschema in the
   array.
 
@@ -193,10 +240,12 @@ If ``ok`` is ``false``, read ``info["errors"]`` (a list of strings) for details.
       - {type: string, minLength: 1}
       - {type: integer, minimum: 0}
 
-String keywords (``type: "string"``)
+String Keywords (``type: "string"``)
 ++++++++++++++++++++++++++++++++++++
 
 ``minLength``
+-------------
+
   Requires the string length to be at least this integer value.
 
   Example:
@@ -206,7 +255,26 @@ String keywords (``type: "string"``)
     type: string
     minLength: 3
 
+  .. raw:: html
+
+    <details class="schema-failure"><summary><span style="color:#b94a48;"><strong>Validation Failure Example</strong></span></summary>
+
+  .. code-block:: yaml
+
+    # Input
+    "ab"
+
+  .. code-block:: text
+
+    Validation failed at '<root>' (minLength): string is too short: length is 2. Expected string length >= 3.
+
+  .. raw:: html
+
+    </details>
+
 ``maxLength``
+-------------
+
   Requires the string length to be at most this integer value.
 
   Example:
@@ -217,6 +285,8 @@ String keywords (``type: "string"``)
     maxLength: 8
 
 ``pattern``
+-----------
+
   Requires the string to match the regular expression pattern.
 
   Notes:
@@ -232,10 +302,50 @@ String keywords (``type: "string"``)
     type: string
     pattern: "^[a-z]+$"
 
-Numeric keywords (``type: "number"`` / ``type: "integer"``)
+  .. raw:: html
+
+    <details class="schema-failure"><summary><span style="color:#b94a48;"><strong>Validation Failure Example (pattern mismatch)</strong></span></summary>
+
+  .. code-block:: yaml
+
+    # Input
+    "Abc"
+
+  .. code-block:: text
+
+    Validation failed at '<root>' (pattern): string does not match required pattern '^[a-z]+$'.
+
+  .. raw:: html
+
+    </details>
+
+  .. raw:: html
+
+    <details class="schema-failure"><summary><span style="color:#b94a48;"><strong>Validation Failure Example (schema error from invalid regex)</strong></span></summary>
+
+  .. code-block:: yaml
+
+    # Schema
+    type: string
+    pattern: "["
+
+    # Input
+    "anything"
+
+  .. code-block:: text
+
+    Schema error near '<root>' (pattern): invalid regex pattern '['.
+
+  .. raw:: html
+
+    </details>
+
+Numeric Keywords (``type: "number"`` / ``type: "integer"``)
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 ``minimum``
+-----------
+
   Requires the numeric value to be ``>= minimum``.
 
   Example:
@@ -245,7 +355,26 @@ Numeric keywords (``type: "number"`` / ``type: "integer"``)
     type: number
     minimum: 0.0
 
+  .. raw:: html
+
+    <details class="schema-failure"><summary><span style="color:#b94a48;"><strong>Validation Failure Example</strong></span></summary>
+
+  .. code-block:: yaml
+
+    # Input
+    -1.0
+
+  .. code-block:: text
+
+    Validation failed at '<root>' (minimum): -1.000000 is below the allowed minimum. Expected number >= 0.
+
+  .. raw:: html
+
+    </details>
+
 ``exclusiveMinimum``
+--------------------
+
   Requires the numeric value to be ``> exclusiveMinimum``.
 
   Example:
@@ -256,6 +385,8 @@ Numeric keywords (``type: "number"`` / ``type: "integer"``)
     exclusiveMinimum: 0.0
 
 ``maximum``
+-----------
+
   Requires the numeric value to be ``<= maximum``.
 
   Example:
@@ -266,6 +397,8 @@ Numeric keywords (``type: "number"`` / ``type: "integer"``)
     maximum: 1.0
 
 ``exclusiveMaximum``
+--------------------
+
   Requires the numeric value to be ``< exclusiveMaximum``.
 
   Example:
@@ -275,10 +408,12 @@ Numeric keywords (``type: "number"`` / ``type: "integer"``)
     type: number
     exclusiveMaximum: 1.0
 
-Object keywords (``type: "object"``)
+Object Keywords (``type: "object"``)
 ++++++++++++++++++++++++++++++++++++
 
 ``properties``
+--------------
+
   Declares named subschemas for object children.
 
   The validator only validates properties that are present in the input. Missing
@@ -296,6 +431,8 @@ Object keywords (``type: "object"``)
     required: [name, count]
 
 ``required``
+------------
+
   A list of string field names that must be present on the input object.
 
   Example:
@@ -308,8 +445,11 @@ Object keywords (``type: "object"``)
     required: [name]
 
 ``additionalProperties``
+------------------------
+
   If present and falsey (``to_int() == 0``), forbids any input object children
-  not declared in ``properties``.
+  not declared in ``properties``. This is equivalent to enforcing "surprise
+  checking" against the schema.
 
   If the keyword is not present, additional properties are allowed.
 
@@ -322,10 +462,30 @@ Object keywords (``type: "object"``)
     properties:
       name: {type: string}
 
-Array keywords (``type: "array"``)
+  .. raw:: html
+
+    <details class="schema-failure"><summary><span style="color:#b94a48;"><strong>Validation Failure Example</strong></span></summary>
+
+  .. code-block:: yaml
+
+    # Input
+    name: "ok"
+    debug: "nope"
+
+  .. code-block:: text
+
+    Validation failed at 'debug' (additionalProperties): unexpected additional field is not allowed here.
+
+  .. raw:: html
+
+    </details>
+
+Array Keywords (``type: "array"``)
 ++++++++++++++++++++++++++++++++++
 
 ``minItems``
+------------
+
   Requires the array length to be at least this integer value.
 
   Example:
@@ -336,6 +496,8 @@ Array keywords (``type: "array"``)
     minItems: 1
 
 ``maxItems``
+------------
+
   Requires the array length to be at most this integer value.
 
   Example:
@@ -346,6 +508,8 @@ Array keywords (``type: "array"``)
     maxItems: 3
 
 ``items``
+---------
+
   A subschema applied to each element of the input when the input is represented
   as a Conduit list or object.
 
@@ -363,13 +527,16 @@ Array keywords (``type: "array"``)
     maxItems: 3
     items: {type: integer, minimum: 0}
 
-Non-standard keywords (``constraints/*``)
+Non-Standard Keywords (``constraints/*``)
 +++++++++++++++++++++++++++++++++++++++++
 
 The validator supports several extra keywords under a ``constraints`` object.
-These are not standard JSON Schema keywords, but they are validated explicitly.
+These are not standard JSON Schema keywords, but they allow for more flexible
+and explicit validation schemas.
 
 ``constraints/skip``
+--------------------
+
   If present and truthy (``to_int() != 0``), validation for that schema node is
   skipped entirely (it always succeeds).
 
@@ -381,7 +548,15 @@ These are not standard JSON Schema keywords, but they are validated explicitly.
     constraints:
       skip: true
 
+
+  .. note::
+    This additional feature allows for schemas to be defined without being explicitly validated
+    against or surprise checked. This allows for subsets of a schema to be validated while the
+    remainder of the schema can be ignored or validated at a later time.
+
 ``constraints/forbid``
+----------------------
+
   For object inputs only. A list of string field names that must *not* be
   present.
 
@@ -393,7 +568,16 @@ These are not standard JSON Schema keywords, but they are validated explicitly.
     constraints:
       forbid: ["debug", "internal_only"]
 
+  .. note::
+    Standard JSON Schema can express "forbidden properties", but it is verbose
+    (typically involving nested ``not`` + ``required`` combinations). This keyword
+    is a compact way to enforce deprecations, feature gating, or to block internal
+    knobs from user-facing schemas while keeping the rest of the object open to
+    evolution.
+
 ``constraints/const``
+---------------------
+
   Requires the input to exactly match a constant value.
 
   Supported constant types in the schema are:
@@ -411,7 +595,16 @@ These are not standard JSON Schema keywords, but they are validated explicitly.
     # Require a fixed string "v1"
     constraints: {const: "v1"}
 
+
+  .. note::
+    Standard JSON Schema has a top-level ``const`` keyword, but this validator
+    nests some non-standard rules under ``constraints``. Keeping const here allows
+    schemas to group "extra constraints" together and keeps the validator's
+    behavior explicit and easy to scan in Conduit/YAML.
+
 ``constraints/not_const``
+-------------------------
+
   For object inputs only. Forbids specific constant values for specific fields.
 
   The schema value is expected to be an object whose children are field names,
@@ -429,6 +622,12 @@ These are not standard JSON Schema keywords, but they are validated explicitly.
         mode: "unsafe"
         retries: 0
 
+  .. note::
+    This is a concise way to ban specific values (e.g., ``mode: "unsafe"``
+    or ``retries: 0``) without rewriting the entire field schema or adding complex
+    boolean logic. In standard JSON Schema this typically requires multiple
+    ``not`` clauses that can be harder to read and maintain.
+
 ``constraints/dependencies``
   For object inputs only. Declares field dependencies.
 
@@ -445,7 +644,17 @@ These are not standard JSON Schema keywords, but they are validated explicitly.
       dependencies:
         output_path: ["output_protocol"]
 
+  .. note::
+    JSON Schema dependency tracking varries between versions of JSON schema. This validator
+    elected to match the language used in Draft 7. Similarly to ``constraints/const``, 
+    standard JSON Schema generally has dependencies at the tope level, but this validator
+    elects to store them under constraints. Keeping const here allows
+    schemas to group "extra constraints" together and keeps the validator's
+    behavior explicit and easy to scan in Conduit/YAML.
+
 ``constraints/exclusiveChildren``
+---------------------------------
+
   For object inputs only. Declares a list of mutually-exclusive field names.
 
   By default, the validator allows *zero or one* of the listed fields to be
@@ -459,7 +668,16 @@ These are not standard JSON Schema keywords, but they are validated explicitly.
     constraints:
       exclusiveChildren: ["file", "buffer"]
 
+  .. note::
+    Mutually-exclusive property groups are common in parameter schemas ("choose
+    one of these ways to specify the input"). Standard JSON Schema can encode this
+    with ``oneOf`` and multiple ``required``/``not`` combinations, but the result
+    is verbose and difficult to maintain as the option set grows. This keyword
+    provides a consise and simple approach to this functionality.
+
 ``constraints/allowNoneInExclusiveGroup``
+-----------------------------------------
+
   Only used with ``constraints/exclusiveChildren``.
 
   If present and falsey (``to_int() == 0``), the validator requires *exactly
@@ -474,3 +692,8 @@ These are not standard JSON Schema keywords, but they are validated explicitly.
     constraints:
       exclusiveChildren: ["file", "buffer"]
       allowNoneInExclusiveGroup: false
+
+  .. note::
+    Many schemas want "exactly one" while others want "zero or one" (optional
+    selection). This keyword extends the ``constraints/exclusiveChildren`` keyword
+    and allows schemas to toggle between the two behaviors.
