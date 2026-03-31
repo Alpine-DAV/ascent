@@ -1,0 +1,29 @@
+#An example transform filter to reflect across a point.
+
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl0: 
+      f1: 
+        type: "transform"
+        params: 
+          reflect: 
+            normal: 
+              x: 1
+            point: 
+              x: 15
+              y: 0
+              z: 0
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "braid"
+        p2: 
+          type: "pseudocolor"
+          field: "radial"
+          pipeline: "pl0"
+      image_prefix: "/home/user/sandbox/ascent/scripts/build_ascent/build/ascent-checkout/tests/_output/tout_transform_reflect_over_point"

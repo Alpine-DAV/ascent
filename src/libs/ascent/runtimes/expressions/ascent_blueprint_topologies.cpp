@@ -153,7 +153,7 @@ PointTopology<T, N>::PointTopology(const std::string &topo_name,
                                    const conduit::Node &domain)
     : Topology(topo_name, domain, N)
 {
-  if(this->topo_type != "point")
+  if(this->topo_type != "points")
   {
     ASCENT_ERROR("Cannot initialize a PointTopology class from topology '"
                  << topo_name << "' in domain " << domain.name()
@@ -583,7 +583,7 @@ UnstructuredTopology<T, N>::get_num_points() const
   const conduit::int32 *conn_end =
       conn_begin + connectivity.dtype().number_of_elements();
   // points used in the topology
-  const size_t num_points = std::unordered_set<T>(conn_begin, conn_end).size();
+  const size_t num_points = std::unordered_set<conduit::int32>(conn_begin, conn_end).size();
   // points available in the coordset
   const size_t coords_size = domain["coordsets/" + coords_name + "/values"]
                                  .child(0)
@@ -670,12 +670,44 @@ topologyFactory(const std::string &topo_name, const conduit::Node &domain)
   const std::string &topo_type = n_topo["type"].as_string();
   const size_t num_dims = topo_dim(topo_name, domain);
   const std::string type = detail::coord_dtype(topo_name, domain);
-  if(topo_type == "uniform")
+  if(topo_type == "points")
   {
     if(type == "double")
     {
       switch(num_dims)
       {
+      case 1:
+        return my_make_unique<PointTopology<conduit::float64, 1>>(topo_name,
+                                                                  domain);
+        break;
+      case 2:
+        return my_make_unique<PointTopology<conduit::float64, 2>>(topo_name,
+                                                                  domain);
+        break;
+      case 3:
+        return my_make_unique<PointTopology<conduit::float64, 3>>(topo_name,
+                                                                  domain);
+        break;
+      }
+    } else {
+      switch (num_dims) {
+      case 1:
+        return my_make_unique<PointTopology<conduit::float32, 1>>(topo_name,
+                                                                  domain);
+        break;
+      case 2:
+        return my_make_unique<PointTopology<conduit::float32, 2>>(topo_name,
+                                                                  domain);
+        break;
+      case 3:
+        return my_make_unique<PointTopology<conduit::float32, 3>>(topo_name,
+                                                                  domain);
+        break;
+      }
+    }
+  } else if (topo_type == "uniform") {
+    if (type == "double") {
+      switch (num_dims) {
       case 1:
         return my_make_unique<UniformTopology<conduit::float64, 1>>(topo_name,
                                                                     domain);
