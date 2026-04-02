@@ -4531,7 +4531,7 @@ VTKHTransform::declare_interface(Node &i)
     // --- matrix ---
     conduit::Node matrix_schema = array_schema(number_schema(true));
     matrix_schema["minItems"] = 16;
-    matrix_schema["miaxItems"] = 16;
+    matrix_schema["maxItems"] = 16;
     param_schema["properties/matrix"].set(matrix_schema);
     
     i["param_schema"].set(param_schema);

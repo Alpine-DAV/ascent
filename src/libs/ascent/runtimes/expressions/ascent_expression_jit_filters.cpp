@@ -151,7 +151,7 @@ ExprJitFilter::declare_interface(Node &i)
 
   conduit::Node inputs_schema = filters::array_schema(filters::ignore_schema());
   inputs_schema["minItems"] = num_inputs;
-  inputs_schema["miaxItems"] = num_inputs;
+  inputs_schema["maxItems"] = num_inputs;
   param_schema["properties/inputs"].set(inputs_schema);
 
   param_schema["required"].append() = "func";
