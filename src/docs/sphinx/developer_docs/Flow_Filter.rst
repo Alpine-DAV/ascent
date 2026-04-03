@@ -122,14 +122,14 @@ Filter Parameter Verification Schemas
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Filter parameters are validated and checked for any surprises using :ref:`param_schema`.
-In practice, a filter's interface ``param_schema`` describes the *shape* of the ``params``
+In practice, a filter's interface ``param_schema`` describes the expected structure of the ``params``
 node that users provide when creating a filter.
 
 .. note::
     In prior versions of Ascent, the ``verify_params`` method was used to allow the filter creator
     to define parameter verification and surprise checking for each individual flow filter.
-    This method now by default will reference the ``param_schema`` defined in the filter interface
-    and execute both parameter validation and surprise checking against the defined schema
+    The base implementation of ``verify_params`` now uses the ``param_schema`` defined in the filter interface
+    to validate parameters and check for surprises against the expected schema
     using :ref:`param_schema`.
 
 Ascent Parameter Schema Helpers
