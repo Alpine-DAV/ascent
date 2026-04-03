@@ -583,7 +583,7 @@ UnstructuredTopology<T, N>::get_num_points() const
   const conduit::int32 *conn_end =
       conn_begin + connectivity.dtype().number_of_elements();
   // points used in the topology
-  const size_t num_points = std::unordered_set<T>(conn_begin, conn_end).size();
+  const size_t num_points = std::unordered_set<conduit::int32>(conn_begin, conn_end).size();
   // points available in the coordset
   const size_t coords_size = domain["coordsets/" + coords_name + "/values"]
                                  .child(0)
