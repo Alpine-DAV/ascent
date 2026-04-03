@@ -86,117 +86,125 @@ void ascent_register_flow_schema_hooks()
     flow::schema::set_expression_checker(&is_valid_expression);
 }
 
-conduit::Node string_schema()
+conduit::Node &string_schema(conduit::Node &schema_node)
 {
-  conduit::Node n;
-  n["type"] = "string";
-  return n;
+  schema_node.reset();
+  schema_node["type"] = "string";
+  return schema_node;
 }
 
-conduit::Node expression_schema()
+conduit::Node &expression_schema(conduit::Node &schema_node)
 {
-  conduit::Node n = string_schema();
-  n["format"] = "expression";
-  return n;
+  string_schema(schema_node);
+  schema_node["format"] = "expression";
+  return schema_node;
 }
 
-conduit::Node number_schema(bool supports_expressions)
+conduit::Node &number_schema(conduit::Node &schema_node, bool supports_expressions)
 {
-  conduit::Node n;
+  schema_node.reset();
   if (supports_expressions)
   {
-    n["oneOf"].append().set(number_schema());
-    n["oneOf"].append().set(expression_schema());
+    number_schema(schema_node["oneOf"].append());
+    expression_schema(schema_node["oneOf"].append());
   }
   else
   {
-    n["type"] = "number";
+    schema_node["type"] = "number";
   }
-  return n;
+  return schema_node;
 }
 
-conduit::Node vec3_schema(const std::string var1,
-                          const std::string var2,
-                          const std::string var3,
-                          bool supports_expressions)
+conduit::Node &vec3_schema(conduit::Node &schema_node,
+                           const std::string var1,
+                           const std::string var2,
+                           const std::string var3,
+                           bool supports_expressions)
 {
-  conduit::Node n;
-  n["type"] = "object";
-  n["additionalProperties"] = false;
+  schema_node.reset();
+  
+  schema_node["type"] = "object";
+  schema_node["additionalProperties"] = false;
 
-  n["properties/" + var1].set(number_schema(supports_expressions));
-  n["properties/" + var2].set(number_schema(supports_expressions));
-  n["properties/" + var3].set(number_schema(supports_expressions));
+  number_schema(schema_node["properties/" + var1], supports_expressions);
+  number_schema(schema_node["properties/" + var2], supports_expressions);
+  number_schema(schema_node["properties/" + var3], supports_expressions);
 
-  n["required"].append() = var1;
-  n["required"].append() = var2;
-  n["required"].append() = var3;
+  schema_node["required"].append() = var1;
+  schema_node["required"].append() = var2;
+  schema_node["required"].append() = var3;
 
-  return n;
+  return schema_node;
 }
 
-conduit::Node vec3_schema(bool supports_expressions)
+conduit::Node &vec3_schema(conduit::Node &schema_node, bool supports_expressions)
 {
-  return vec3_schema("x", "y", "z", supports_expressions);
+  return vec3_schema(schema_node, "x", "y", "z", supports_expressions);
 }
 
-conduit::Node vec3_schema_anyOf(const std::string var1,
-                                const std::string var2,
-                                const std::string var3,
-                                bool supports_expressions)
+conduit::Node &vec3_schema_anyOf(conduit::Node &schema_node,
+                                 const std::string var1,
+                                 const std::string var2,
+                                 const std::string var3,
+                                 bool supports_expressions)
 {
-  conduit::Node n;
-  n["type"] = "object";
-  n["additionalProperties"] = false;
+  schema_node.reset();
+  
+  schema_node["type"] = "object";
+  schema_node["additionalProperties"] = false;
 
-  n["properties/" + var1].set(number_schema(supports_expressions));
-  n["properties/" + var2].set(number_schema(supports_expressions));
-  n["properties/" + var3].set(number_schema(supports_expressions));
+  number_schema(schema_node["properties/" + var1], supports_expressions);
+  number_schema(schema_node["properties/" + var2], supports_expressions);
+  number_schema(schema_node["properties/" + var3], supports_expressions);
 
-  conduit::Node var1_required;
+  conduit::Node &var1_required = schema_node["anyOf"].append();
   var1_required["type"] = "object";
   var1_required["required"] = var1;
-  n["anyOf"].append().set(var1_required);
 
-  conduit::Node var2_required;
+  conduit::Node &var2_required = schema_node["anyOf"].append();
   var2_required["type"] = "object";
-  var2_required["required"] = var1;
-  n["anyOf"].append().set(var2_required);
+  var2_required["required"] = var2;
 
-  conduit::Node var3_required;
+  conduit::Node &var3_required = schema_node["anyOf"].append();
   var3_required["type"] = "object";
-  var3_required["required"] = var1;
-  n["anyOf"].append().set(var3_required);
+  var3_required["required"] = var3;
 
-  return n;
+  return schema_node;
 }
 
-conduit::Node vec3_schema_anyOf(bool supports_expressions)
+conduit::Node &vec3_schema_anyOf(conduit::Node &schema_node, bool supports_expressions)
 {
-  return vec3_schema_anyOf("x", "y", "z", supports_expressions);
+  return vec3_schema_anyOf(schema_node, "x", "y", "z", supports_expressions);
 }
 
-conduit::Node array_schema(const conduit::Node &item_schema)
+conduit::Node &array_schema(conduit::Node &schema_node, const conduit::Node &item_schema)
 {
-  conduit::Node n;
-  n["type"] = "array";
-  n["items"].set(item_schema);
-  return n;
+  schema_node.reset();
+  
+  schema_node["type"] = "array";
+  if (!item_schema.dtype().is_empty())
+  {
+    schema_node["items"].set(item_schema);
+  }
+
+  return schema_node;
 }
 
-conduit::Node array_schema()
+conduit::Node &array_schema(conduit::Node &schema_node)
 {
-  conduit::Node n;
-  n["type"] = "array";
-  return n;
+  schema_node.reset();
+  schema_node["type"] = "array";
+  return schema_node;
 }
 
-conduit::Node ignore_schema()
+conduit::Node &ignore_schema(conduit::Node &schema_node)
 {
-    conduit::Node n;
-    n["type"] = "object";
-    n["constraints/skip"] = true;
-    return n;
+  schema_node.reset();
+  
+  schema_node["type"] = "object";
+  schema_node["constraints/skip"] = true;
+
+  return schema_node;
 }
 
 //-----------------------------------------------------------------------------

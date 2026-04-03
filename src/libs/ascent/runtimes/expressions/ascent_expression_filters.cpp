@@ -947,14 +947,12 @@ ExprBoolean::declare_interface(Node &i)
   i["output_port"] = "true";
 
   // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
-    param_schema["properties/value"].set(filters::number_schema());
+    filters::number_schema(param_schema["properties/value"]);
     param_schema["required"].append() = "value";
-    
-    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -992,14 +990,12 @@ ExprInteger::declare_interface(Node &i)
   i["output_port"] = "true";
 
   // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
-    param_schema["properties/value"].set(filters::number_schema());
+    filters::number_schema(param_schema["properties/value"]);
     param_schema["required"].append() = "value";
-    
-    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -1038,14 +1034,12 @@ ExprDouble::declare_interface(Node &i)
   i["output_port"] = "true";
 
   // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
-    param_schema["properties/value"].set(filters::number_schema());
+    filters::number_schema(param_schema["properties/value"]);
     param_schema["required"].append() = "value";
-    
-    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -1085,14 +1079,12 @@ ExprString::declare_interface(Node &i)
   i["output_port"] = "true";
 
   // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
-    param_schema["properties/value"].set(filters::string_schema());
+    filters::string_schema(param_schema["properties/value"]);
     param_schema["required"].append() = "value";
-    
-    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -1202,14 +1194,12 @@ ExprIdentifier::declare_interface(Node &i)
   i["output_port"] = "true";
 
   // ----------- Define Param Schema -----------
-  conduit::Node param_schema;
+  conduit::Node &param_schema = i["param_schema"];
   param_schema["type"] = "object";
   param_schema["additionalProperties"] = false;
 
-  param_schema["properties/value"].set(filters::string_schema());
+  filters::string_schema(param_schema["properties/value"]);
   param_schema["required"].append() = "value";
-
-  i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -1266,14 +1256,12 @@ ExprObjectDotAccess::declare_interface(Node &i)
   i["output_port"] = "true";
 
   // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
-    param_schema["properties/name"].set(filters::string_schema());
+    filters::string_schema(param_schema["properties/name"]);
     param_schema["required"].append() = "name";
-    
-    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -1399,14 +1387,12 @@ ExprBinaryOp::declare_interface(Node &i)
   i["output_port"] = "true";
 
   // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
-    param_schema["properties/op_string"].set(filters::string_schema());
+    filters::string_schema(param_schema["properties/op_string"]);
     param_schema["required"].append() = "op_string";
-    
-    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------

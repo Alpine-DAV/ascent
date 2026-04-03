@@ -43,29 +43,35 @@ namespace filters
 
 bool ASCENT_API is_valid_expression(const std::string &expr, std::string &err_msg);
 
-conduit::Node ASCENT_API string_schema();
+conduit::Node ASCENT_API &string_schema(conduit::Node &schema_node);
 
-conduit::Node ASCENT_API number_schema(bool supports_expressions = false);
+conduit::Node ASCENT_API &number_schema(conduit::Node &schema_node,
+                                        bool supports_expressions = false);
 
-conduit::Node ASCENT_API vec3_schema(bool supports_expressions = false);
+conduit::Node ASCENT_API &vec3_schema(conduit::Node &schema_node,
+                                      bool supports_expressions = false);
 
-conduit::Node ASCENT_API vec3_schema(const std::string var1,
-                                     const std::string var2,
-                                     const std::string var3,
-                                     bool supports_expressions = false);
+conduit::Node ASCENT_API &vec3_schema(conduit::Node &schema_node,
+                                      const std::string var1,
+                                      const std::string var2,
+                                      const std::string var3,
+                                      bool supports_expressions = false);
 
-conduit::Node ASCENT_API vec3_schema_anyOf(bool supports_expressions = false);
+conduit::Node ASCENT_API &vec3_schema_anyOf(conduit::Node &schema_node,
+                                            bool supports_expressions = false);
 
-conduit::Node ASCENT_API vec3_schema_anyOf(const std::string var1,
-                                           const std::string var2,
-                                           const std::string var3,
-                                           bool supports_expressions = false);
+conduit::Node ASCENT_API &vec3_schema_anyOf(conduit::Node &schema_node,
+                                            const std::string var1,
+                                            const std::string var2,
+                                            const std::string var3,
+                                            bool supports_expressions = false);
 
-conduit::Node ASCENT_API array_schema();
+conduit::Node ASCENT_API &array_schema(conduit::Node &schema_node);
 
-conduit::Node ASCENT_API array_schema(const conduit::Node &item_schema);
+conduit::Node ASCENT_API &array_schema(conduit::Node &schema_node,
+                                       const conduit::Node &item_schema);
 
-conduit::Node ASCENT_API ignore_schema();
+conduit::Node ASCENT_API &ignore_schema(conduit::Node &schema_node);
 
 bool ASCENT_API check_numeric(const std::string path,
                               const conduit::Node &params,
