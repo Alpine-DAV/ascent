@@ -76,19 +76,22 @@ set(rover_headers
       ${CMAKE_CURRENT_BINARY_DIR}/rover_config.h
      )
 
-set(rover_sources
-      domain.cpp
-      image.cpp
-      rover.cpp
-      typed_scheduler.cpp
-      engine.cpp
-      # ray generators
-      ray_generators/ray_generator.cpp
-      ray_generators/visit_ray_generator.cpp
-      # utils sources
-      utils/rover_logging.cpp
-      utils/vtk_dataset_reader.cpp
- )
+set(rover_device_sources
+    domain.cpp
+    image.cpp
+    engine.cpp
+    ray_generators/ray_generator.cpp
+    ray_generators/visit_ray_generator.cpp
+)
+
+set(rover_host_sources
+    rover.cpp
+    typed_scheduler.cpp
+    utils/rover_logging.cpp
+    utils/vtk_dataset_reader.cpp
+)
+
+set(rover_sources ${rover_device_sources} ${rover_host_sources})
 
 ###############################################################################
 if (ENABLE_SERIAL)
@@ -98,7 +101,7 @@ if (ENABLE_SERIAL)
                     DEPENDS_ON ${rover_thirdparty_deps}
                     )
 
-    viskores_add_target_information(rover DEVICE_SOURCES ${rover_sources})
+    viskores_add_target_information(rover DEVICE_SOURCES ${rover_device_sources})
 
     # build includes
     # this allows us to include as <header.hpp>
@@ -140,7 +143,7 @@ if(MPI_FOUND)
                   DEPENDS_ON ${rover_mpi_thirdparty_deps}
                   )
 
-  viskores_add_target_information(rover_mpi DEVICE_SOURCES ${rover_sources})
+  viskores_add_target_information(rover_mpi DEVICE_SOURCES ${rover_device_sources})
 
   # build includes
   # this allows us to include as <rover/header.hpp>

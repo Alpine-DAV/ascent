@@ -13,7 +13,7 @@
 set(yaml2json_sources
     yaml2json.cpp)
 
-set(yaml2json_deps conduit)
+set(yaml2json_deps conduit::conduit)
 
 blt_add_executable(
     NAME        yaml2json
@@ -32,7 +32,7 @@ install(TARGETS yaml2json
 set(json2yaml_sources
     json2yaml.cpp)
 
-set(json2yaml_deps conduit)
+set(json2yaml_deps conduit::conduit)
 
 blt_add_executable(
     NAME        json2yaml
