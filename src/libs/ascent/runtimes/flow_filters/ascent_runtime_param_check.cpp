@@ -101,7 +101,7 @@ conduit::Node &string_schema(conduit::Node &schema_node,
 
 //-----------------------------------------------------------------------------
 
-conduit::Node &string_enum_schema(conduit::Node &schema_node, std::vector<std::string> options)
+conduit::Node &string_enum_schema(conduit::Node &schema_node, const std::vector<std::string> &options)
 {
   string_schema(schema_node);
   for (const auto& value: options)
