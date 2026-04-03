@@ -23,29 +23,6 @@
 #include <ascent_exports.h>
 #include <ascent_data_object.hpp>
 
-#if __cplusplus >= 201703L
-  #include <optional>
-  template <typename T>
-  using optional_param = std::optional<T>;
-#else
-  template <typename T>
-  class optional_param
-  {
-  public:
-    optional_param() : m_has_value(false), m_value() {}
-    optional_param(const T& value) : m_has_value(true), m_value(value) {}
-
-    operator bool() const { return m_has_value; }
-
-    const T& operator*() const { return m_value; }
-    T& operator*() { return m_value; }
-
-  private:
-    bool m_has_value;
-    T m_value;
-  };
-#endif
-
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
 //-----------------------------------------------------------------------------
@@ -69,8 +46,8 @@ bool ASCENT_API is_valid_expression(const std::string &expr, std::string &err_ms
 void ASCENT_API ascent_register_flow_schema_hooks();
 
 conduit::Node ASCENT_API &string_schema(conduit::Node &schema_node,
-                                        optional_param<int> minLength = optional_param<int>(),
-                                        optional_param<int> maxLength = optional_param<int>());
+                                        std::size_t minLength = 0,
+                                        std::size_t maxLength = std::numeric_limits<std::size_t>::max());
 
 conduit::Node ASCENT_API &string_enum_schema(conduit::Node &schema_node, const std::vector<std::string> &options);
 
@@ -78,17 +55,17 @@ conduit::Node ASCENT_API &bool_schema(conduit::Node &schema_node);
 
 conduit::Node ASCENT_API &number_schema(conduit::Node &schema_node,
                                         bool supports_expressions = false,
-                                        optional_param<int> minimum = optional_param<int>(),
-                                        optional_param<int> maximum = optional_param<int>(),
-                                        optional_param<int> exclusiveMinimum = optional_param<int>(),
-                                        optional_param<int> exclusiveMaximum= optional_param<int>());
+                                        int minimum = std::numeric_limits<int>::lowest(),
+                                        int maximum = std::numeric_limits<int>::max(),
+                                        int exclusiveMinimum = std::numeric_limits<int>::lowest(),
+                                        int exclusiveMaximum = std::numeric_limits<int>::max());
 
 conduit::Node ASCENT_API &integer_schema(conduit::Node &schema_node,
                                          bool supports_expressions = false,
-                                         optional_param<int> minimum = optional_param<int>(),
-                                         optional_param<int> maximum = optional_param<int>(),
-                                         optional_param<int> exclusiveMinimum = optional_param<int>(),
-                                         optional_param<int> exclusiveMaximum= optional_param<int>());
+                                         int minimum = std::numeric_limits<int>::lowest(),
+                                         int maximum = std::numeric_limits<int>::max(),
+                                         int exclusiveMinimum = std::numeric_limits<int>::lowest(),
+                                         int exclusiveMaximum = std::numeric_limits<int>::max());
 
 conduit::Node ASCENT_API &vec3_schema(conduit::Node &schema_node,
                                       bool supports_expressions = false);

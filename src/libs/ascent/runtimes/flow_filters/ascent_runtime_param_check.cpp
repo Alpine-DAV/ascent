@@ -89,13 +89,13 @@ void ascent_register_flow_schema_hooks()
 //-----------------------------------------------------------------------------
 
 conduit::Node &string_schema(conduit::Node &schema_node,
-                             optional_param<int> minLength,
-                             optional_param<int> maxLength)
+                             size_t minLength,
+                             size_t maxLength)
 {
   schema_node.reset();
   schema_node["type"] = "string";
-  if(minLength) schema_node["minLength"] = *minLength;
-  if(maxLength) schema_node["maxLength"] = *maxLength;
+  if(minLength != 0) schema_node["minLength"] = minLength;
+  if(maxLength != std::numeric_limits<std::size_t>::max()) schema_node["maxLength"] = maxLength;
   return schema_node;
 }
 
@@ -129,10 +129,10 @@ conduit::Node &expression_schema(conduit::Node &schema_node)
 
 conduit::Node &number_schema(conduit::Node &schema_node,
                              bool supports_expressions,
-                             optional_param<int> minimum,
-                             optional_param<int> maximum,
-                             optional_param<int> exclusiveMinimum,
-                             optional_param<int> exclusiveMaximum)
+                             int minimum,
+                             int maximum,
+                             int exclusiveMinimum,
+                             int exclusiveMaximum)
 {
   schema_node.reset();
   if (supports_expressions)
@@ -144,21 +144,21 @@ conduit::Node &number_schema(conduit::Node &schema_node,
   {
     schema_node["type"] = "number";
 
-    if(exclusiveMinimum) schema_node["exclusiveMinimum"] = *exclusiveMinimum;
-    else if(minimum) schema_node["minimum"] = *minimum;
+    if(exclusiveMinimum != std::numeric_limits<int>::lowest()) schema_node["exclusiveMinimum"] = exclusiveMinimum;
+    else if(minimum != std::numeric_limits<int>::lowest()) schema_node["minimum"] = minimum;
 
-    if(exclusiveMaximum) schema_node["exclusiveMaximum"] = *exclusiveMaximum;
-    else if(maximum) schema_node["maximum"] = *maximum;
+    if(exclusiveMaximum != std::numeric_limits<int>::max()) schema_node["exclusiveMaximum"] = exclusiveMaximum;
+    else if(maximum != std::numeric_limits<int>::max()) schema_node["maximum"] = maximum;
   }
   return schema_node;
 }
 
 conduit::Node &integer_schema(conduit::Node &schema_node,
                              bool supports_expressions,
-                             optional_param<int> minimum,
-                             optional_param<int> maximum,
-                             optional_param<int> exclusiveMinimum,
-                             optional_param<int> exclusiveMaximum)
+                             int minimum,
+                             int maximum,
+                             int exclusiveMinimum,
+                             int exclusiveMaximum)
 {
   if (supports_expressions)
   {
@@ -169,11 +169,11 @@ conduit::Node &integer_schema(conduit::Node &schema_node,
   {
     schema_node["type"] = "integer";
 
-    if(exclusiveMinimum) schema_node["exclusiveMinimum"] = *exclusiveMinimum;
-    else if(minimum) schema_node["minimum"] = *minimum;
+    if(exclusiveMinimum != std::numeric_limits<int>::lowest()) schema_node["exclusiveMinimum"] = exclusiveMinimum;
+    else if(minimum != std::numeric_limits<int>::lowest()) schema_node["minimum"] = minimum;
 
-    if(exclusiveMaximum) schema_node["exclusiveMaximum"] = *exclusiveMaximum;
-    else if(maximum) schema_node["maximum"] = *maximum;
+    if(exclusiveMaximum != std::numeric_limits<int>::max()) schema_node["exclusiveMaximum"] = exclusiveMaximum;
+    else if(maximum != std::numeric_limits<int>::max()) schema_node["maximum"] = maximum;
   }
   return schema_node;
 }
