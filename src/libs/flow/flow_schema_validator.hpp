@@ -31,9 +31,9 @@ namespace flow
 namespace schema
 {
 
-using ExpressionCheckFn = bool (*)(const std::string &expr, std::string &err_msg);
+using FormatCheckFunction = bool (*)(const std::string &expr, std::string &err_msg);
 
-void FLOW_API set_expression_checker(ExpressionCheckFn fn);
+void FLOW_API register_format_checker(const std::string &format_name, FormatCheckFunction callback);
 
 bool FLOW_API validate(const conduit::Node &schema,
                        const conduit::Node &input,

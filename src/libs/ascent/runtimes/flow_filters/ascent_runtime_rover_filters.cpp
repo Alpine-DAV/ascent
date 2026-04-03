@@ -99,29 +99,29 @@ RoverXRay::declare_interface(Node &i)
   i["output_port"] = "false";
 
   // ----------- Define Param Schema -----------
-  conduit::Node param_schema;
+  conduit::Node &param_schema = i["param_schema"];
   param_schema["type"] = "object";
   param_schema["additionalProperties"] = false;
 
-  param_schema["properties/condition"].set(string_schema());
-  param_schema["properties/callback"].set(string_schema());
-  param_schema["properties/actions_file"].set(string_schema());
-  param_schema["properties/actions_files"].set(array_schema(ignore_schema()));
-  param_schema["properties/actions"].set(array_schema(ignore_schema()));
+  string_schema(param_schema["properties/condition"]);
+  string_schema(param_schema["properties/callback"]);
+  string_schema(param_schema["properties/actions_file"]);
+  array_schema(param_schema["properties/actions_files"]);
+  array_schema(param_schema["properties/actions"]);
 
   // --- Rover ---
-  conduit::Node rover_schema;
-  rover_schema["properties/absorption"].set(string_schema(1));
-  rover_schema["properties/filename"].set(string_schema(1));
-  rover_schema["properties/background_intensity"].set(number_schema(false, 0));
-  rover_schema["properties/divide_emis_by_absorb"].set(bool_schema());
-  rover_schema["properties/emission"].set(string_schema(1));
-  rover_schema["properties/enable_rays_mesh"].set(bool_schema());
-  rover_schema["properties/height"].set(integer_schema(false, optional_param<int>(), optional_param<int>(), 0));
-  rover_schema["properties/width"].set(integer_schema(false, optional_param<int>(), optional_param<int>(), 0));
-  rover_schema["properties/output_type"].set(string_enum_schema({"hdf5", "yaml", "json", "png", "bov"}));
-  rover_schema["properties/precision"].set(string_enum_schema({"single", "double"}));
-  rover_schema["properties/unit_scalar"].set(number_schema(false, optional_param<int>(), optional_param<int>(), 0));
+  conduit::Node &rover_schema = param_schema["properties/rover"];
+  string_schema(rover_schema["properties/absorption"], 1);
+  string_schema(rover_schema["properties/filename"], 1);
+  number_schema(rover_schema["properties/background_intensity"], false, 0);
+  bool_schema(rover_schema["properties/divide_emis_by_absorb"]);
+  string_schema(rover_schema["properties/emission"], 1);
+  bool_schema(rover_schema["properties/enable_rays_mesh"]);
+  integer_schema(rover_schema["properties/height"], false, 0, std::numeric_limits<int>::max(), 0);
+  integer_schema(rover_schema["properties/width"], false, 0, std::numeric_limits<int>::max(), 0);
+  string_enum_schema(rover_schema["properties/output_type"], {"hdf5", "yaml", "json", "png", "bov"});
+  string_enum_schema(rover_schema["properties/precision"], {"single", "double"});
+  number_schema(rover_schema["properties/unit_scalar"], false, 0, std::numeric_limits<int>::max(), 0);
 
   rover_schema["constraints/dependencies/height"].append() = "width";
   rover_schema["constraints/dependencies/width"].append() = "height";
@@ -129,33 +129,27 @@ RoverXRay::declare_interface(Node &i)
   rover_schema["required"].append() = "absorption";
   rover_schema["required"].append() = "filename";
 
-  param_schema["properties/rover"].set(rover_schema);
-
   // --- Image ---
-  conduit::Node image_schema;
-  image_schema["properties/log_scale"].set(bool_schema());
-  image_schema["properties/min_value"].set(number_schema());
-  image_schema["properties/max_value"].set(number_schema());
-  param_schema["properties/image_params"].set(image_schema);
+  conduit::Node &image_schema = param_schema["properties/image_params"];
+  bool_schema(image_schema["properties/log_scale"]);
+  number_schema(image_schema["properties/min_value"]);
+  number_schema(image_schema["properties/max_value"]);
 
   // --- Camera ---
-  conduit::Node camera_schema;
-  camera_schema["properties/azimuth"].set(ignore_schema());
-  camera_schema["properties/elevation"].set(ignore_schema());
-  camera_schema["properties/far_plane"].set(ignore_schema());
-  camera_schema["properties/near_plane"].set(ignore_schema());
-  camera_schema["properties/fov"].set(ignore_schema());
-  camera_schema["properties/look_at"].set(ignore_schema());
-  camera_schema["properties/position"].set(ignore_schema());
-  camera_schema["properties/up"].set(ignore_schema());
-  camera_schema["properties/xpan"].set(ignore_schema());
-  camera_schema["properties/ypan"].set(ignore_schema());
-  camera_schema["properties/zoom"].set(ignore_schema());
-  param_schema["properties/camera"].set(camera_schema);
+  conduit::Node &camera_schema = param_schema["properties/camera"];
+  ignore_schema(camera_schema["properties/azimuth"]);
+  ignore_schema(camera_schema["properties/elevation"]);
+  ignore_schema(camera_schema["properties/far_plane"]);
+  ignore_schema(camera_schema["properties/near_plane"]);
+  ignore_schema(camera_schema["properties/fov"]);
+  ignore_schema(camera_schema["properties/look_at"]);
+  ignore_schema(camera_schema["properties/position"]);
+  ignore_schema(camera_schema["properties/up"]);
+  ignore_schema(camera_schema["properties/xpan"]);
+  ignore_schema(camera_schema["properties/ypan"]);
+  ignore_schema(camera_schema["properties/zoom"]);
 
   param_schema["required"].append() = "rover";
-    
-  i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -308,18 +302,16 @@ RoverVolume::declare_interface(Node &i)
     i["output_port"] = "false";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
-    param_schema["properties/field"].set(string_schema());
-    param_schema["properties/filename"].set(string_schema());
-    param_schema["properties/precision"].set(string_enum_schema({"single", "double"}));
+    string_schema(param_schema["properties/field"]);
+    string_schema(param_schema["properties/filename"]);
+    string_enum_schema(param_schema["properties/precision"], {"single", "double"});
 
     param_schema["required"].append() = "field";
     param_schema["required"].append() = "filename";
-    
-    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------

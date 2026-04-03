@@ -427,42 +427,37 @@ void io_param_schema(conduit::Node &param_schema)
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
-    param_schema["properties/path"].set(string_schema(1));
-    param_schema["properties/protocol"].set(string_schema(1));
-    param_schema["properties/topologies"].set(ignore_schema());
-    param_schema["properties/fields"].set(ignore_schema());
-    param_schema["properties/num_files"].set(integer_schema());
-    param_schema["properties/refinement_level"].set(integer_schema());
+    string_schema(param_schema["properties/path"], 1);
+    string_schema(param_schema["properties/protocol"], 1);
+    ignore_schema(param_schema["properties/topologies"]);
+    ignore_schema(param_schema["properties/fields"]);
+    integer_schema(param_schema["properties/num_files"]);
+    integer_schema(param_schema["properties/refinement_level"]);
 
 #if defined(ASCENT_HDF5_ENABLED)
     // --- HDF5 ---
     {
-        conduit::Node hdf5_compact_storage_schema;
-        hdf5_compact_storage_schema["type"] = "object";
-        hdf5_compact_storage_schema["additionalProperties"] = false;
-        hdf5_compact_storage_schema["properties/enabled"].set(bool_schema());
-        hdf5_compact_storage_schema["properties/threshold"].set(number_schema());
-
-        conduit::Node hdf5_compression_schema;
-        hdf5_compression_schema["type"] = "object";
-        hdf5_compression_schema["additionalProperties"] = false;
-        hdf5_compact_storage_schema["properties/method"].set(string_schema());
-        hdf5_compact_storage_schema["properties/level"].set(number_schema());
-
-        conduit::Node hdf5_chunking_schema;
-        hdf5_chunking_schema["type"] = "object";
-        hdf5_chunking_schema["additionalProperties"] = false;
-        hdf5_compact_storage_schema["properties/enabled"].set(bool_schema());
-        hdf5_compact_storage_schema["properties/threshold"].set(number_schema());
-        hdf5_compact_storage_schema["properties/chunk_size"].set(number_schema());
-        hdf5_compact_storage_schema["properties/compression"].set(hdf5_compression_schema);
-
-        conduit::Node hdf5_schema;
+        conduit::Node &hdf5_schema = param_schema["properties/hdf5_options"];
         hdf5_schema["type"] = "object";
         hdf5_schema["additionalProperties"] = false;
-        hdf5_schema["properties/compact_storage"].set(hdf5_compact_storage_schema);
-        hdf5_schema["properties/chunking"].set(hdf5_chunking_schema);
-        param_schema["properties/hdf5_options"].set(hdf5_schema);
+            conduit::Node &hdf5_compact_storage_schema = hdf5_schema["properties/compact_storage"];
+            hdf5_compact_storage_schema["type"] = "object";
+            hdf5_compact_storage_schema["additionalProperties"] = false;
+            bool_schema(hdf5_compact_storage_schema["properties/enabled"]);
+            number_schema(hdf5_compact_storage_schema["properties/threshold"]);
+
+            conduit::Node &hdf5_chunking_schema = hdf5_schema["properties/chunking"];
+            hdf5_chunking_schema["type"] = "object";
+            hdf5_chunking_schema["additionalProperties"] = false;
+            bool_schema(hdf5_chunking_schema["properties/enabled"]);
+            number_schema(hdf5_chunking_schema["properties/threshold"]);
+            number_schema(hdf5_chunking_schema["properties/chunk_size"]);
+
+            conduit::Node &hdf5_compression_schema = hdf5_chunking_schema["properties/compression"];
+            hdf5_compression_schema["type"] = "object";
+            hdf5_compression_schema["additionalProperties"] = false;
+            string_schema(hdf5_compression_schema["properties/method"]);
+            number_schema(hdf5_compression_schema["properties/level"]);
     }
 #endif
 
@@ -596,9 +591,7 @@ RelayIOSave::declare_interface(Node &i)
     i["output_port"] = "false";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
-    io_param_schema(param_schema);
-    i["param_schema"].set(param_schema);
+    io_param_schema(i["param_schema"]);
 }
 
 //-----------------------------------------------------------------------------
@@ -981,9 +974,7 @@ RelayIOLoad::declare_interface(Node &i)
     i["output_port"] = "true";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
-    io_param_schema(param_schema);
-    i["param_schema"].set(param_schema);
+    io_param_schema(i["param_schema"]);
 }
 
 //-----------------------------------------------------------------------------
@@ -1035,17 +1026,15 @@ BlueprintFlatten::declare_interface(Node &i)
     i["output_port"] = "false";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
-    param_schema["properties/path"].set(string_schema());
-    param_schema["properties/protocol"].set(string_schema());
-    param_schema["properties/fields"].set(array_schema(string_schema()));
+    string_schema(param_schema["properties/path"]);
+    string_schema(param_schema["properties/protocol"]);
+    array_schema(string_schema(param_schema["properties/fields"]));
 
     param_schema["required"].append() = "path";
-    
-    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------

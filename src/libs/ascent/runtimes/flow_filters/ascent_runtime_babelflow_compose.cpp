@@ -44,21 +44,19 @@ void ascent::runtime::filters::BFlowCompose::declare_interface(conduit::Node &i)
   i["output_port"] = "false";  // true -- means filter, false -- means extract
 
   // ----------- Define Param Schema -----------
-  conduit::Node param_schema;
+  conduit::Node &param_schema = i["param_schema"];
   param_schema["type"] = "object";
 
-  param_schema["properties/color_field"].set(string_schema());
-  param_schema["properties/depth_field"].set(string_schema());
-  param_schema["properties/image_prefix"].set(string_schema());
-  param_schema["properties/compositing"].set(number_schema());
-  param_schema["properties/fanin"].set(number_schema());
+  string_schema(param_schema["properties/color_field"]);
+  string_schema(param_schema["properties/depth_field"]);
+  string_schema(param_schema["properties/image_prefix"]);
+  number_schema(param_schema["properties/compositing"]);
+  number_schema(param_schema["properties/fanin"]);
 
   param_schema["required"].append() = "color_field";
   param_schema["required"].append() = "depth_field";
   param_schema["required"].append() = "image_prefix";
   param_schema["required"].append() = "compositing";
-    
-  i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------

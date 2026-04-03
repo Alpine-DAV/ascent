@@ -87,30 +87,31 @@ BasicTrigger::declare_interface(Node &i)
     i["output_port"] = "false";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
-    param_schema["properties/condition"].set(string_schema());
-    param_schema["properties/callback"].set(string_schema());
-    param_schema["properties/actions_file"].set(string_schema());
-    param_schema["properties/actions_files"].set(array_schema(string_schema()));
-    param_schema["properties/actions"].set(array_schema(ignore_schema()));
+    {
+        string_schema(param_schema["properties/condition"]);
+        string_schema(param_schema["properties/callback"]);
 
-    conduit::Node trigger_schema;
-    trigger_schema["constraints/exclusiveChildren"].append() = "condition";
-    trigger_schema["constraints/exclusiveChildren"].append() = "callback";
-    trigger_schema["constraints/allowNoneInExclusiveGroup"] = false;
-    param_schema["allOf"].append().set(trigger_schema);
+        conduit::Node &trigger_schema = param_schema["allOf"].append();
+        trigger_schema["constraints/exclusiveChildren"].append() = "condition";
+        trigger_schema["constraints/exclusiveChildren"].append() = "callback";
+        trigger_schema["constraints/allowNoneInExclusiveGroup"] = false;
+    }
+    {
+        conduit::Node actions_string_schema;
+        array_schema(param_schema["properties/actions_files"], string_schema(actions_string_schema));
+        array_schema(param_schema["properties/actions"]);
+        string_schema(param_schema["properties/actions_file"]);
 
-    conduit::Node action_schema;
-    action_schema["constraints/exclusiveChildren"].append() = "actions_file";
-    action_schema["constraints/exclusiveChildren"].append() = "actions_files";
-    action_schema["constraints/exclusiveChildren"].append() = "actions";
-    action_schema["constraints/allowNoneInExclusiveGroup"] = false;
-    param_schema["allOf"].append().set(action_schema);
-    
-    i["param_schema"].set(param_schema);
+        conduit::Node &action_schema = param_schema["allOf"].append();
+        action_schema["constraints/exclusiveChildren"].append() = "actions_file";
+        action_schema["constraints/exclusiveChildren"].append() = "actions_files";
+        action_schema["constraints/exclusiveChildren"].append() = "actions";
+        action_schema["constraints/allowNoneInExclusiveGroup"] = false;
+    }
 }
 
 //-----------------------------------------------------------------------------

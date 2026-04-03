@@ -1466,21 +1466,19 @@ void ascent::runtime::filters::BFlowPmt::declare_interface(conduit::Node &i)
   i["output_port"] = "true";  // true -- means filter, false -- means extract
 
   // ----------- Define Param Schema -----------
-  conduit::Node param_schema;
+  conduit::Node &param_schema = i["param_schema"];
   param_schema["type"] = "object";
 
-  param_schema["properties/field"].set(string_schema());
-  param_schema["properties/fanin"].set(number_schema());
-  param_schema["properties/threshold"].set(number_schema());
-  param_schema["properties/gen_segment"].set(number_schema());
-  param_schema["properties/ugrid_select"].set(number_schema());
+  string_schema(param_schema["properties/field"]);
+  number_schema(param_schema["properties/fanin"]);
+  number_schema(param_schema["properties/threshold"]);
+  number_schema(param_schema["properties/gen_segment"]);
+  number_schema(param_schema["properties/ugrid_select"]);
 
   param_schema["required"].append() = "field";
   param_schema["required"].append() = "fanin";
   param_schema["required"].append() = "threshold";
   param_schema["required"].append() = "gen_segment";
-    
-  i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------

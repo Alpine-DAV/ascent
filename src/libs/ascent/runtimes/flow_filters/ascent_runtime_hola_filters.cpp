@@ -79,17 +79,15 @@ HolaMPIExtract::declare_interface(Node &i)
     i["output_port"] = "false";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
-    param_schema["properties/mpi_comm"].set(integer_schema());
-    param_schema["properties/rank_split"].set(integer_schema());
+    integer_schema(param_schema["properties/mpi_comm"]);
+    integer_schema(param_schema["properties/rank_split"]);
 
     param_schema["required"].append() = "mpi_comm";
     param_schema["required"].append() = "rank_split";
-    
-    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------

@@ -83,17 +83,15 @@ BasicQuery::declare_interface(Node &i)
     i["output_port"] = "true";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
-    param_schema["properties/expression"].set(string_schema());
-    param_schema["properties/name"].set(string_schema());
+    string_schema(param_schema["properties/expression"]);
+    string_schema(param_schema["properties/name"]);
 
     param_schema["required"].append() = "expression";
     param_schema["required"].append() = "name";
-    
-    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -150,17 +148,15 @@ FilterQuery::declare_interface(Node &i)
     i["output_port"] = "true";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
-    param_schema["properties/expression"].set(string_schema());
-    param_schema["properties/name"].set(string_schema());
+    string_schema(param_schema["properties/expression"]);
+    string_schema(param_schema["properties/name"]);
 
     param_schema["required"].append() = "expression";
     param_schema["required"].append() = "name";
-    
-    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------

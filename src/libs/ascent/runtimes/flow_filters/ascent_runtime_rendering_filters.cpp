@@ -92,21 +92,23 @@ void color_table_schema(conduit::Node &param_schema) {
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
-    param_schema["properties/name"].set(string_schema());
-    param_schema["properties/reverse"].set(bool_schema());
-    param_schema["properties/annotation"].set(string_schema());
-    param_schema["properties/discrete"].set(string_schema());
+    string_schema(param_schema["properties/name"]);
+    bool_schema(param_schema["properties/reverse"]);
+    string_schema(param_schema["properties/annotation"]);
+    string_schema(param_schema["properties/discrete"]);
 
     // --- Control Points ---
     {
-        conduit::Node cp_compressed_schema;
+        conduit::Node &control_points_schema = param_schema["properties/control_points"];
+
+        conduit::Node &cp_compressed_schema = control_points_schema["oneOf"].append();
         cp_compressed_schema["type"] = "object";
         cp_compressed_schema["additionalProperties"] = false;
-        cp_compressed_schema["properties/r"].set(ignore_schema());
-        cp_compressed_schema["properties/g"].set(ignore_schema());
-        cp_compressed_schema["properties/b"].set(ignore_schema());
-        cp_compressed_schema["properties/a"].set(ignore_schema());
-        cp_compressed_schema["properties/position"].set(ignore_schema());
+        ignore_schema(cp_compressed_schema["properties/r"]);
+        ignore_schema(cp_compressed_schema["properties/g"]);
+        ignore_schema(cp_compressed_schema["properties/b"]);
+        ignore_schema(cp_compressed_schema["properties/a"]);
+        ignore_schema(cp_compressed_schema["properties/position"]);
         cp_compressed_schema["constraints/forbid"].append() = "type";
         cp_compressed_schema["constraints/forbid"].append() = "alpha";
         cp_compressed_schema["constraints/forbid"].append() = "color";
@@ -114,19 +116,16 @@ void color_table_schema(conduit::Node &param_schema) {
         conduit::Node cp_list_item_schema;
         cp_list_item_schema["type"] = "object";
         cp_list_item_schema["additionalProperties"] = false;
-        cp_list_item_schema["properties/type"].set(ignore_schema());
-        cp_list_item_schema["properties/alpha"].set(ignore_schema());
-        cp_list_item_schema["properties/color"].set(ignore_schema());
-        cp_list_item_schema["properties/position"].set(ignore_schema());
+        ignore_schema(cp_list_item_schema["properties/type"]);
+        ignore_schema(cp_list_item_schema["properties/alpha"]);
+        ignore_schema(cp_list_item_schema["properties/color"]);
+        ignore_schema(cp_list_item_schema["properties/position"]);
         cp_list_item_schema["constraints/forbid"].append() = "r";
         cp_list_item_schema["constraints/forbid"].append() = "g";
         cp_list_item_schema["constraints/forbid"].append() = "b";
         cp_list_item_schema["constraints/forbid"].append() = "a";
 
-        conduit::Node control_points_schema;
-        control_points_schema["oneOf"].append().set(cp_compressed_schema);
-        control_points_schema["oneOf"].append().set(array_schema(cp_list_item_schema));
-        param_schema["properties/control_points"].set(control_points_schema);
+        array_schema(control_points_schema["oneOf"].append(), cp_list_item_schema);
     }
 }
 
@@ -1062,113 +1061,107 @@ CreateRenders::declare_interface(Node &i)
     i["output_port"] = "true";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
-    param_schema["properties/image_name"].set(string_schema());
-    param_schema["properties/image_prefix"].set(string_schema());
+    string_schema(param_schema["properties/image_name"]);
+    string_schema(param_schema["properties/image_prefix"]);
 
     // --- render ---
     conduit::Node render_schema;
     render_schema["type"] = "object";
     render_schema["additionalProperties"] = false;
-    render_schema["properties/image_name"].set(string_schema());
-    render_schema["properties/image_prefix"].set(string_schema());
-    render_schema["properties/image_width"].set(integer_schema(true, optional_param<int>(), optional_param<int>(), 0));
-    render_schema["properties/image_height"].set(integer_schema(true, optional_param<int>(), optional_param<int>(), 0));
-    render_schema["properties/scene_bounds"].set(ignore_schema());
-    render_schema["properties/type"].set(ignore_schema());
-    render_schema["properties/phi"].set(ignore_schema());
-    render_schema["properties/phi_range"].set(ignore_schema());
-    render_schema["properties/dphi"].set(ignore_schema());
-    render_schema["properties/phi_num_angles"].set(ignore_schema());
-    render_schema["properties/phi_angles"].set(ignore_schema());
-    render_schema["properties/theta"].set(ignore_schema());
-    render_schema["properties/theta_range"].set(ignore_schema());
-    render_schema["properties/dtheta"].set(ignore_schema());
-    render_schema["properties/theta_num_angles"].set(ignore_schema());
-    render_schema["properties/theta_angles"].set(ignore_schema());
-    render_schema["properties/phi_theta_positions"].set(ignore_schema());
-    render_schema["properties/db_name"].set(ignore_schema());
-    render_schema["properties/output_path"].set(ignore_schema());
-    render_schema["properties/render_bg"].set(ignore_schema());
-    render_schema["properties/annotations"].set(ignore_schema());
-    render_schema["properties/world_annotations"].set(ignore_schema());
-    render_schema["properties/screen_annotations"].set(ignore_schema());
-    render_schema["properties/axis_scale_x"].set(ignore_schema());
-    render_schema["properties/axis_scale_y"].set(ignore_schema());
-    render_schema["properties/axis_scale_z"].set(ignore_schema());
-    render_schema["properties/fg_color"].set(ignore_schema());
-    render_schema["properties/bg_color"].set(ignore_schema());
-    render_schema["properties/shading"].set(ignore_schema());
-    render_schema["properties/use_original_bounds"].set(ignore_schema());
-    render_schema["properties/dataset_bounds"].set(ignore_schema());
-    render_schema["properties/color_bar_position"].set(ignore_schema());
-    render_schema["properties/tiled_rendering"].set(ignore_schema());
-    render_schema["properties/tiled_rendering_type"].set(ignore_schema());
-    render_schema["properties/tile_width"].set(ignore_schema());
-    render_schema["properties/tile_height"].set(ignore_schema());
+    string_schema(render_schema["properties/image_name"]);
+    string_schema(render_schema["properties/image_prefix"]);
+    integer_schema(render_schema["properties/image_width"], true, 0, std::numeric_limits<int>::max(), 0);
+    integer_schema(render_schema["properties/image_height"], true, 0, std::numeric_limits<int>::max(), 0);
+    ignore_schema(render_schema["properties/scene_bounds"]);
+    ignore_schema(render_schema["properties/type"]);
+    ignore_schema(render_schema["properties/phi"]);
+    ignore_schema(render_schema["properties/phi_range"]);
+    ignore_schema(render_schema["properties/dphi"]);
+    ignore_schema(render_schema["properties/phi_num_angles"]);
+    ignore_schema(render_schema["properties/phi_angles"]);
+    ignore_schema(render_schema["properties/theta"]);
+    ignore_schema(render_schema["properties/theta_range"]);
+    ignore_schema(render_schema["properties/dtheta"]);
+    ignore_schema(render_schema["properties/theta_num_angles"]);
+    ignore_schema(render_schema["properties/theta_angles"]);
+    ignore_schema(render_schema["properties/phi_theta_positions"]);
+    ignore_schema(render_schema["properties/db_name"]);
+    ignore_schema(render_schema["properties/output_path"]);
+    ignore_schema(render_schema["properties/render_bg"]);
+    ignore_schema(render_schema["properties/annotations"]);
+    ignore_schema(render_schema["properties/world_annotations"]);
+    ignore_schema(render_schema["properties/screen_annotations"]);
+    ignore_schema(render_schema["properties/axis_scale_x"]);
+    ignore_schema(render_schema["properties/axis_scale_y"]);
+    ignore_schema(render_schema["properties/axis_scale_z"]);
+    ignore_schema(render_schema["properties/fg_color"]);
+    ignore_schema(render_schema["properties/bg_color"]);
+    ignore_schema(render_schema["properties/shading"]);
+    ignore_schema(render_schema["properties/use_original_bounds"]);
+    ignore_schema(render_schema["properties/dataset_bounds"]);
+    ignore_schema(render_schema["properties/color_bar_position"]);
+    ignore_schema(render_schema["properties/tiled_rendering"]);
+    ignore_schema(render_schema["properties/tiled_rendering_type"]);
+    ignore_schema(render_schema["properties/tile_width"]);
+    ignore_schema(render_schema["properties/tile_height"]);
 
-    conduit::Node auto_camera_schema;
+    conduit::Node &auto_camera_schema = render_schema["properties/auto_camera"];
     auto_camera_schema["type"] = "object";
     auto_camera_schema["additionalProperties"] = false;
-    auto_camera_schema["properties/metric"].set(ignore_schema());
-    auto_camera_schema["properties/field"].set(ignore_schema());
-    auto_camera_schema["properties/samples"].set(ignore_schema());
-    auto_camera_schema["properties/bins"].set(ignore_schema());
-    auto_camera_schema["properties/height"].set(ignore_schema());
-    auto_camera_schema["properties/width"].set(ignore_schema());
-    render_schema["properties/auto_camera"].set(auto_camera_schema);
+    ignore_schema(auto_camera_schema["properties/metric"]);
+    ignore_schema(auto_camera_schema["properties/field"]);
+    ignore_schema(auto_camera_schema["properties/samples"]);
+    ignore_schema(auto_camera_schema["properties/bins"]);
+    ignore_schema(auto_camera_schema["properties/height"]);
+    ignore_schema(auto_camera_schema["properties/width"]);
 
     // --- Camera ---
-    conduit::Node ascent_camera_schema;
+    conduit::Node &camera_schema = render_schema["properties/camera"];
+    camera_schema["type"] = "object";
+
+    conduit::Node &ascent_camera_schema = camera_schema["oneOf"].append();
     ascent_camera_schema["type"] = "object";
     ascent_camera_schema["additionalProperties"] = false;
-    ascent_camera_schema["properties/2d"].set(ignore_schema());
-    ascent_camera_schema["properties/look_at"].set(ignore_schema());
-    ascent_camera_schema["properties/position"].set(ignore_schema());
-    ascent_camera_schema["properties/up"].set(ignore_schema());
-    ascent_camera_schema["properties/fov"].set(ignore_schema());
-    ascent_camera_schema["properties/xpan"].set(ignore_schema());
-    ascent_camera_schema["properties/ypan"].set(ignore_schema());
-    ascent_camera_schema["properties/zoom"].set(ignore_schema());
-    ascent_camera_schema["properties/near_plane"].set(ignore_schema());
-    ascent_camera_schema["properties/far_plane"].set(ignore_schema());
-    ascent_camera_schema["properties/azimuth"].set(ignore_schema());
-    ascent_camera_schema["properties/elevation"].set(ignore_schema());
+    ignore_schema(ascent_camera_schema["properties/2d"]);
+    ignore_schema(ascent_camera_schema["properties/look_at"]);
+    ignore_schema(ascent_camera_schema["properties/position"]);
+    ignore_schema(ascent_camera_schema["properties/up"]);
+    ignore_schema(ascent_camera_schema["properties/fov"]);
+    ignore_schema(ascent_camera_schema["properties/xpan"]);
+    ignore_schema(ascent_camera_schema["properties/ypan"]);
+    ignore_schema(ascent_camera_schema["properties/zoom"]);
+    ignore_schema(ascent_camera_schema["properties/near_plane"]);
+    ignore_schema(ascent_camera_schema["properties/far_plane"]);
+    ignore_schema(ascent_camera_schema["properties/azimuth"]);
+    ignore_schema(ascent_camera_schema["properties/elevation"]);
 
-    conduit::Node visit_camera_schema;
+    conduit::Node &visit_camera_schema = camera_schema["oneOf"].append();
     visit_camera_schema["type"] = "object";
     visit_camera_schema["additionalProperties"] = false;
-    visit_camera_schema["properties/windowCoords"].set(ignore_schema());
-    visit_camera_schema["properties/view_normal"].set(ignore_schema());
-    visit_camera_schema["properties/focus"].set(ignore_schema());
-    visit_camera_schema["properties/view_up"].set(ignore_schema());
-    visit_camera_schema["properties/view_angle"].set(ignore_schema());
-    visit_camera_schema["properties/parallel_scale"].set(ignore_schema());
-    visit_camera_schema["properties/near_plane"].set(ignore_schema());
-    visit_camera_schema["properties/far_plane"].set(ignore_schema());
-    visit_camera_schema["properties/image_pan"].set(ignore_schema());
-    visit_camera_schema["properties/image_zoom"].set(ignore_schema());
-    visit_camera_schema["properties/perspective"].set(ignore_schema());
-    visit_camera_schema["properties/eye_angle"].set(ignore_schema());
-    visit_camera_schema["properties/center_of_rotation_set"].set(ignore_schema());
-    visit_camera_schema["properties/center_of_rotation"].set(ignore_schema());
-    visit_camera_schema["properties/axis_3d_scale_flag"].set(ignore_schema());
-    visit_camera_schema["properties/axis_3d_scale"].set(ignore_schema());
-    visit_camera_schema["properties/shear"].set(ignore_schema());
-    visit_camera_schema["properties/window_valid"].set(ignore_schema());
+    ignore_schema(visit_camera_schema["properties/windowCoords"]);
+    ignore_schema(visit_camera_schema["properties/view_normal"]);
+    ignore_schema(visit_camera_schema["properties/focus"]);
+    ignore_schema(visit_camera_schema["properties/view_up"]);
+    ignore_schema(visit_camera_schema["properties/view_angle"]);
+    ignore_schema(visit_camera_schema["properties/parallel_scale"]);
+    ignore_schema(visit_camera_schema["properties/near_plane"]);
+    ignore_schema(visit_camera_schema["properties/far_plane"]);
+    ignore_schema(visit_camera_schema["properties/image_pan"]);
+    ignore_schema(visit_camera_schema["properties/image_zoom"]);
+    ignore_schema(visit_camera_schema["properties/perspective"]);
+    ignore_schema(visit_camera_schema["properties/eye_angle"]);
+    ignore_schema(visit_camera_schema["properties/center_of_rotation_set"]);
+    ignore_schema(visit_camera_schema["properties/center_of_rotation"]);
+    ignore_schema(visit_camera_schema["properties/axis_3d_scale_flag"]);
+    ignore_schema(visit_camera_schema["properties/axis_3d_scale"]);
+    ignore_schema(visit_camera_schema["properties/shear"]);
+    ignore_schema(visit_camera_schema["properties/window_valid"]);
 
-    conduit::Node camera_schema;
-    camera_schema["type"] = "object";
-    camera_schema["oneOf"].append().set(ascent_camera_schema);
-    camera_schema["oneOf"].append().set(visit_camera_schema);
-    render_schema["properties/camera"].set(camera_schema);
-
-    param_schema["properties/renders"].set(array_schema(render_schema));
-    
-    i["param_schema"].set(param_schema);
+    array_schema(param_schema["properties/renders"], render_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -1759,27 +1752,25 @@ CreatePlot::declare_interface(Node &i)
     i["output_port"] = "true";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
-    param_schema["properties/type"].set(string_schema());
-    param_schema["properties/pipeline"].set(ignore_schema());
-    param_schema["properties/topology"].set(string_schema());
+    string_schema(param_schema["properties/type"]);
+    ignore_schema(param_schema["properties/pipeline"]);
+    string_schema(param_schema["properties/topology"]);
 
-    conduit::Node color_table_schema;
-    detail::color_table_schema(color_table_schema);
-    param_schema["properties/color_table"].set(color_table_schema);
+    detail::color_table_schema(param_schema["properties/color_table"]);
 
     param_schema["required"].append() = "type";
 
     // --- Is Mesh ---
     {
         // properties are still added at the root level and then limited through forbids
-        param_schema["properties/overlay"].set(ignore_schema());
-        param_schema["properties/show_internal"].set(ignore_schema());
+        ignore_schema(param_schema["properties/overlay"]);
+        ignore_schema(param_schema["properties/show_internal"]);
 
-        conduit::Node mesh_schema;
+        conduit::Node &mesh_schema = param_schema["oneOf"].append();
         mesh_schema["type"] = "object";
         mesh_schema["properties/type/constraints/const"] = "mesh";
         mesh_schema["constraints/forbid"] = "field";
@@ -1787,34 +1778,29 @@ CreatePlot::declare_interface(Node &i)
         mesh_schema["constraints/forbid"] = "max_value";
         mesh_schema["constraints/forbid"] = "samples";
         mesh_schema["constraints/forbid"] = "points";
-        param_schema["oneOf"].append().set(mesh_schema);
     }
 
     // --- Is not Mesh ---
     {
         // properties are still added at the root level and then limited through forbids
-        param_schema["properties/field"].set(ignore_schema());
-        param_schema["properties/min_value"].set(ignore_schema());
-        param_schema["properties/max_value"].set(ignore_schema());
-        param_schema["properties/samples"].set(ignore_schema());
+        ignore_schema(param_schema["properties/field"]);
+        ignore_schema(param_schema["properties/min_value"]);
+        ignore_schema(param_schema["properties/max_value"]);
+        ignore_schema(param_schema["properties/samples"]);
         
-        conduit::Node points_schema;
+        conduit::Node &points_schema = param_schema["properties/points"];
         points_schema["type"] = "object";
         points_schema["additionalProperties"] = false;
-        points_schema["properties/radius"].set(ignore_schema());
-        points_schema["properties/radius_delta"].set(ignore_schema());
-        param_schema["properties/points"].set(points_schema);
+        ignore_schema(points_schema["properties/radius"]);
+        ignore_schema(points_schema["properties/radius_delta"]);
 
-        conduit::Node not_mesh_schema;
+        conduit::Node &not_mesh_schema = param_schema["oneOf"].append();
         not_mesh_schema["type"] = "object";
         not_mesh_schema["constraints/not_const/type"] = "mesh";
         not_mesh_schema["constraints/forbid"] = "overlay";
         not_mesh_schema["constraints/forbid"] = "show_internal";
         not_mesh_schema["required"].append() = "field";
-        param_schema["oneOf"].append().set(not_mesh_schema);
     }
-    
-    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------

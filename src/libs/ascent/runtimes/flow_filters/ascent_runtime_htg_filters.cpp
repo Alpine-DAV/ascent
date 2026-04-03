@@ -609,18 +609,16 @@ HTGIOSave::declare_interface(Node &i)
     i["output_port"] = "false";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
-    param_schema["properties/path"].set(string_schema(1));
-    param_schema["properties/blank_value"].set(number_schema());
-    param_schema["properties/fields"].set(ignore_schema());
+    string_schema(param_schema["properties/path"], 1);
+    number_schema(param_schema["properties/blank_value"]);
+    ignore_schema(param_schema["properties/fields"]);
 
     param_schema["required"].append() = "path";
     param_schema["required"].append() = "blank_value";
-    
-    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------

@@ -98,7 +98,10 @@ bool check_type(const conduit::Node &input,
                 const std::string &path)
 {
     const std::string schema_defined_type = get_type_string(schema);
-    if(schema_defined_type.empty()) return true;
+    if(schema_defined_type.empty())
+    {
+        return true;
+    }
 
     const auto data_type = input.dtype();
     bool ok = true;
@@ -122,8 +125,8 @@ bool check_type(const conduit::Node &input,
     else if(schema_defined_type == "array")
     {
         ok = (data_type.is_list() ||
-              (data_type.is_number() && data_type.number_of_elements() >= 1) ||
-              data_type.is_object());
+             (data_type.is_number() && data_type.number_of_elements() >= 1) ||
+             data_type.is_object());
     }
     else
     {
@@ -149,32 +152,29 @@ bool check_type(const conduit::Node &input,
 }
 
 // ---------- Expression Checking ----------
-ExpressionCheckFn &expr_checker()
-{
-    static ExpressionCheckFn fn = nullptr;
-    return fn;
-}
+std::map<const std::string, FormatCheckFunction> format_checker_functions;
 
 bool validate_format(const conduit::Node &schema,
-                            const conduit::Node &input,
-                            conduit::Node &info,
-                            const std::string &path)
+                     const conduit::Node &input,
+                     conduit::Node &info,
+                     const std::string &path)
 {
-    if(!schema.has_child("format")) return true;
-    if(!schema["format"].dtype().is_string()) return true;
+    if(!schema.has_child("format") || !schema["format"].dtype().is_string())
+    {
+        return true;
+    }
 
     const std::string fmt = schema["format"].as_string();
-    if(fmt != "expression") return true;
-    if(!input.dtype().is_string()) return true;
-
-    auto expr_fn = expr_checker();
-    if(expr_fn == nullptr) return true;
+    if (format_checker_functions.find(fmt) == format_checker_functions.end())
+    {
+        return true;
+    }
 
     std::string err;
-    bool ok = expr_fn(input.as_string(), err);
+    bool ok = format_checker_functions[fmt](input.as_string(), err);
     if(!ok)
     {
-        add_input_error(info, path, "expression", err);
+        add_input_error(info, path, "format - " + fmt, err);
     }
     return ok;
 }
@@ -349,8 +349,10 @@ bool validate_required(const conduit::Node &schema,
                        conduit::Node &info,
                        const std::string &path)
 {
-    if(!schema.has_child("required")) return true;
-    if(!input.dtype().is_object()) return true;
+    if(!schema.has_child("required") || !input.dtype().is_object())
+    {
+        return true;
+    }
 
     bool ok = true;
     const conduit::Node &req = schema["required"];
@@ -360,7 +362,7 @@ bool validate_required(const conduit::Node &schema,
         const std::string k = req.child(i).as_string();
         if(!input.has_child(k))
         {
-            const std::string missing_path = conduit::utils::join_file_path(path, k);
+            const std::string missing_path = conduit::utils::join_path(path, k);
             add_input_error(info, missing_path, "required",
                             "required field is missing.",
                             "field to be present.");
@@ -376,8 +378,10 @@ bool validate_forbid(const conduit::Node &schema,
                      conduit::Node &info,
                      const std::string &path)
 {
-    if(!schema.has_path("constraints/forbid")) return true;
-    if(!input.dtype().is_object()) return true;
+    if(!schema.has_path("constraints/forbid") || !input.dtype().is_object())
+    {
+        return true;
+    }
 
     bool ok = true;
     const conduit::Node &forbid = schema["constraints/forbid"];
@@ -400,7 +404,10 @@ bool validate_const(const conduit::Node &schema,
                     conduit::Node &info,
                     const std::string &path)
 {
-    if(!schema.has_path("constraints/const")) return true;
+    if(!schema.has_path("constraints/const"))
+    {
+        return true;
+    }
 
     const conduit::Node &const_schema = schema["constraints/const"];
 
@@ -488,8 +495,10 @@ bool validate_not_const_fields(const conduit::Node &schema,
                                conduit::Node &info,
                                const std::string &path)
 {
-    if(!schema.has_path("constraints/not_const")) return true;
-    if(!input.dtype().is_object()) return true;
+    if(!schema.has_path("constraints/not_const") || !input.dtype().is_object())
+    {
+        return true;
+    }
 
     bool ok = true;
     const conduit::Node &not_const_schema = schema["constraints/not_const"];
@@ -553,8 +562,10 @@ bool validate_properties(const conduit::Node &schema,
                          conduit::Node &info,
                          const std::string &path)
 {
-    if(!schema.has_child("properties")) return true;
-    if(!input.dtype().is_object()) return true;
+    if(!schema.has_child("properties") || !input.dtype().is_object())
+    {
+        return true;
+    }
 
     bool ok = true;
     const conduit::Node &props = schema["properties"];
@@ -575,7 +586,10 @@ bool validate_additional_properties(const conduit::Node &schema,
                                     conduit::Node &info,
                                     const std::string &path)
 {
-    if(!input.dtype().is_object()) return true;
+    if(!input.dtype().is_object())
+    {
+        return true;
+    }
 
     bool allow_additional = true;
     if(schema.has_child("additionalProperties"))
@@ -583,7 +597,10 @@ bool validate_additional_properties(const conduit::Node &schema,
         allow_additional = schema["additionalProperties"].to_int() != 0;
     }
 
-    if(allow_additional) return true;
+    if(allow_additional)
+    {
+        return true;
+    }
 
     const bool has_props = schema.has_child("properties");
     const conduit::Node props_dummy;
@@ -612,8 +629,10 @@ bool validate_dependencies(const conduit::Node &schema,
                            conduit::Node &info,
                            const std::string &path)
 {
-    if(!schema.has_path("constraints/dependencies")) return true;
-    if(!input.dtype().is_object()) return true;
+    if(!schema.has_path("constraints/dependencies") || !input.dtype().is_object())
+    {
+        return true;
+    }
 
     bool ok = true;
     const conduit::Node &deps = schema["constraints/dependencies"];
@@ -621,7 +640,10 @@ bool validate_dependencies(const conduit::Node &schema,
     for(conduit::index_t i = 0; i < deps.number_of_children(); ++i)
     {
         const std::string dep_trigger = deps[i].name();
-        if(!input.has_child(dep_trigger)) continue;
+        if(!input.has_child(dep_trigger))
+        {
+            continue;
+        }
 
         const conduit::Node &reqs = deps[dep_trigger];
         for(conduit::index_t j = 0; j < reqs.number_of_children(); ++j)
@@ -646,8 +668,10 @@ bool validate_exclusive_children(const conduit::Node &schema,
                                  conduit::Node &info,
                                  const std::string &path)
 {
-    if(!schema.has_path("constraints/exclusiveChildren")) return true;
-    if(!input.dtype().is_object()) return true;
+    if(!schema.has_path("constraints/exclusiveChildren") || !input.dtype().is_object())
+    {
+        return true;
+    }
 
     const conduit::Node &keys = schema["constraints/exclusiveChildren"];
     const bool allow_none = schema.has_path("constraints/allowNoneInExclusiveGroup")
@@ -667,14 +691,20 @@ bool validate_exclusive_children(const conduit::Node &schema,
         if(input.has_child(k))
         {
             count++;
-            if(count > 0) found << ", ";
+            if(count > 0) 
+            {
+                found << ", ";
+            }
             found << k;
         }
     }
     allowed << "}";
     found << "}";
 
-    if(allow_none ? (count <= 1) : (count == 1)) return true;
+    if(allow_none ? (count <= 1) : (count == 1))
+    {
+        return true;
+    }
 
 
     const std::string expected =
@@ -741,7 +771,10 @@ bool validate_one_of(const conduit::Node &schema,
                      conduit::Node &info,
                      const std::string &path)
 {
-    if(!schema.has_child("oneOf")) return true;
+    if(!schema.has_child("oneOf"))
+    {
+        return true;
+    }
 
     const conduit::Node &opts = schema["oneOf"];
     int matches = 0;
@@ -763,17 +796,27 @@ bool validate_one_of(const conduit::Node &schema,
         }
     }
 
-    if(matches == 1) return true;
+    if(matches == 1)
+    {
+        return true;
+    }
 
     std::ostringstream msg;
     msg << "expected exactly one of " << opts.number_of_children()
         << " schema options to match, but ";
-    if(matches == 0) msg << "none matched.";
-    else msg << matches << " matched.";
+    if(matches == 0)
+    {
+        msg << "none matched.";
+    }
+    else
+    {
+        msg << matches << " matched.";
+    }
 
     add_input_error(info, path, "oneOf", msg.str());
 
-    for(size_t i = 0; i < option_msgs.size() && i < MAX_OPTIONS; ++i)
+    // give a couple of hints
+    for(size_t i = 0; i < option_msgs.size() && i < 2; ++i)
     {
         info["errors"].append() = "    Option " + std::to_string((int)i) + " hint: " + option_msgs[i];
     }
@@ -786,7 +829,10 @@ bool validate_any_of(const conduit::Node &schema,
                      conduit::Node &info,
                      const std::string &path)
 {
-    if(!schema.has_child("anyOf")) return true;
+    if(!schema.has_child("anyOf"))
+    {
+        return true;
+    }
 
     const conduit::Node &opts = schema["anyOf"];
     int matches = 0;
@@ -808,7 +854,10 @@ bool validate_any_of(const conduit::Node &schema,
         }
     }
 
-    if(matches >= 1) return true;
+    if(matches >= 1)
+    {
+        return true;
+    }
 
     add_input_error(info, path, "anyOf",
                     "input did not match any allowed schema option",
@@ -887,7 +936,10 @@ bool validate_array(const conduit::Node &schema,
         }
     }
 
-    if(!schema.has_child("items")) return ok; // unconstrained items
+    if(!schema.has_child("items"))
+    {
+        return ok; // unconstrained items
+    }
 
     const conduit::Node &item_schema = schema["items"];
     if(data_type.is_list() || data_type.is_object())
@@ -962,7 +1014,10 @@ bool validate_node(const conduit::Node &schema,
         ok = validate_number(schema, input, info, path) && ok;
     }
 
-    if(!ok) return false; // type mismatch stops recursion
+    if(!ok)
+    {
+        return false; // type mismatch stops recursion
+    }
 
     if(schema_defined_type == "object")
     {
@@ -986,9 +1041,9 @@ bool validate_node(const conduit::Node &schema,
 // -- end flow::schema::detail --
 //-----------------------------------------------------------------------------
 
-void set_expression_checker(ExpressionCheckFn fn)
+void register_format_checker(const std::string &format_name, FormatCheckFunction callback)
 {
-    detail::expr_checker() = fn;
+    detail::format_checker_functions[format_name] = callback;
 }
 
 // ---------- Schema Validation Entry-Point ----------

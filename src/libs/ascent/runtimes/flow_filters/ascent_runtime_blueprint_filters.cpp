@@ -105,13 +105,11 @@ BlueprintVerify::declare_interface(Node &i)
     i["output_port"] = "true";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
 
-    param_schema["properties/protocol"].set(string_schema());
+    string_schema(param_schema["properties/protocol"]);
     param_schema["required"].append() = "protocol";
-
-    i["param_schema"].set(param_schema);
 }
 
 
@@ -291,40 +289,36 @@ BlueprintPartition::declare_interface(Node &i)
     i["output_port"] = "true";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
-    param_schema["properties/target"].set(number_schema());
-    param_schema["properties/fields"].set(array_schema(ignore_schema()));
-    param_schema["properties/mapping"].set(number_schema());
-    param_schema["properties/merge_tolerance"].set(number_schema());
-    param_schema["properties/build_adjsets"].set(number_schema());
-    param_schema["properties/original_element_ids"].set(string_schema());
-    param_schema["properties/original_vertex_ids"].set(string_schema());
-    param_schema["properties/distributed"].set(ignore_schema());
+    number_schema(param_schema["properties/target"]);
+    array_schema(param_schema["properties/fields"]);
+    number_schema(param_schema["properties/mapping"]);
+    number_schema(param_schema["properties/merge_tolerance"]);
+    number_schema(param_schema["properties/build_adjsets"]);
+    string_schema(param_schema["properties/original_element_ids"]);
+    string_schema(param_schema["properties/original_vertex_ids"]);
+    ignore_schema(param_schema["properties/distributed"]);
 
     // --- selections ---
-    conduit::Node domain_id_schema;
-    domain_id_schema["type"] = "object";
-    domain_id_schema["oneOf"].append().set(string_schema());
-    domain_id_schema["oneOf"].append().set(number_schema());
-
-    conduit::Node selections_schema;
+    conduit::Node &selections_schema = param_schema["properties/selections"];
     selections_schema["type"] = "object";
     selections_schema["additionalProperties"] = false;
-    selections_schema["properties/type"].set(string_schema());
-    selections_schema["properties/domain_id"].set(domain_id_schema);
-    selections_schema["properties/topology"].set(string_schema());
-    selections_schema["properties/field"].set(ignore_schema());
-    selections_schema["properties/start"].set(ignore_schema());
-    selections_schema["properties/end"].set(ignore_schema());
-    selections_schema["properties/elements"].set(ignore_schema());
-    selections_schema["properties/ranges"].set(ignore_schema());
+    string_schema(selections_schema["properties/type"]);
+    string_schema(selections_schema["properties/topology"]);
+    ignore_schema(selections_schema["properties/field"]);
+    ignore_schema(selections_schema["properties/start"]);
+    ignore_schema(selections_schema["properties/end"]);
+    ignore_schema(selections_schema["properties/elements"]);
+    ignore_schema(selections_schema["properties/ranges"]);
     selections_schema["required"].append() = "type";
-    param_schema["properties/selections"].set(selections_schema);
     
-    i["param_schema"].set(param_schema);
+    conduit::Node domain_id_schema = selections_schema["properties/domain_id"];
+    domain_id_schema["type"] = "object";
+    string_schema(domain_id_schema["oneOf"].append());
+    number_schema(domain_id_schema["oneOf"].append());
 }
 
 //-----------------------------------------------------------------------------
@@ -419,19 +413,19 @@ DataBinning::declare_interface(Node &i)
     i["output_port"] = "true";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
     param_schema["constraints/exclusiveChildren"].append() = "reduction_field";
     param_schema["constraints/exclusiveChildren"].append() = "var";
     param_schema["constraints/allowNoneInExclusiveGroup"] = false;
 
-    param_schema["properties/reduction_op"].set(ignore_schema());
-    param_schema["properties/reduction_field"].set(ignore_schema());
-    param_schema["properties/empty_bin_val"].set(ignore_schema());
-    param_schema["properties/output_type"].set(string_schema());
-    param_schema["properties/output_field"].set(ignore_schema());
-    param_schema["properties/var"].set(ignore_schema());
+    ignore_schema(param_schema["properties/reduction_op"]);
+    ignore_schema(param_schema["properties/reduction_field"]);
+    ignore_schema(param_schema["properties/empty_bin_val"]);
+    string_schema(param_schema["properties/output_type"]);
+    ignore_schema(param_schema["properties/output_field"]);
+    ignore_schema(param_schema["properties/var"]);
 
     // --- Axes ---
     {
@@ -442,25 +436,22 @@ DataBinning::declare_interface(Node &i)
         single_axis_schema["constraints/exclusiveChildren"].append() = "var";
         single_axis_schema["constraints/allowNoneInExclusiveGroup"] = false;
 
-        single_axis_schema["properties/min_val"].set(number_schema(true));
-        single_axis_schema["properties/max_val"].set(number_schema(true));
-        single_axis_schema["properties/num_bins"].set(number_schema(true));
-        single_axis_schema["properties/clamp"].set(number_schema(true));
-        single_axis_schema["properties/field"].set(number_schema(true));
-        single_axis_schema["properties/var"].set(number_schema(true));
+        number_schema(single_axis_schema["properties/min_val"], true);
+        number_schema(single_axis_schema["properties/max_val"], true);
+        number_schema(single_axis_schema["properties/num_bins"], true);
+        number_schema(single_axis_schema["properties/clamp"], true);
+        number_schema(single_axis_schema["properties/field"], true);
+        number_schema(single_axis_schema["properties/var"], true);
         single_axis_schema["required"].append() = "num_bins";
 
-        conduit::Node axes_schema = array_schema(single_axis_schema);
+        conduit::Node axes_schema = array_schema(param_schema["properties/axes"], single_axis_schema);
         axes_schema["minItems"] = 1;
         axes_schema["miaxItems"] = 3;
-        param_schema["properties/axes"].set(axes_schema);
     }
 
     param_schema["required"].append() = "reduction_op";
     param_schema["required"].append() = "output_field";
     param_schema["required"].append() = "axes";
-    
-    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -684,17 +675,15 @@ AddFields::declare_interface(Node &i)
     i["output_port"] = "true";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
-    param_schema["properties/output_field"].set(string_schema());
-    param_schema["properties/fields"].set(array_schema(ignore_schema()));
+    string_schema(param_schema["properties/output_field"]);
+    array_schema(ignore_schema(param_schema["properties/fields"]));
 
     param_schema["required"].append() = "output_field";
     param_schema["required"].append() = "fields";
-    
-    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -761,19 +750,17 @@ PowerOfField::declare_interface(Node &i)
     i["output_port"] = "true";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
-    param_schema["properties/output_field"].set(string_schema());
-    param_schema["properties/field"].set(string_schema());
-    param_schema["properties/exponent"].set(number_schema());
+    string_schema(param_schema["properties/output_field"]);
+    string_schema(param_schema["properties/field"]);
+    number_schema(param_schema["properties/exponent"]);
 
     param_schema["required"].append() = "output_field";
     param_schema["required"].append() = "field";
     param_schema["required"].append() = "exponent";
-    
-    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
