@@ -413,7 +413,7 @@ bool validate_forbid(const conduit::Node &schema,
         const std::string k = forbid.child(i).as_string();
         if(input.has_child(k))
         {
-            const std::string forbidden_path = conduit::utils::join_file_path(path, k);
+            const std::string forbidden_path = conduit::utils::join_path(path, k);
             add_input_error(info, forbidden_path, "forbidden",
                             "forbidden field is present");
             ok = false;
@@ -530,7 +530,7 @@ bool validate_not_const_fields(const conduit::Node &schema,
     {
         const conduit::Node &forbidden_val = not_const_schema.child(i);
         const std::string field = forbidden_val.name();
-        const std::string field_path = conduit::utils::join_file_path(path, field);
+        const std::string field_path = conduit::utils::join_path(path, field);
 
         if(!input.has_child(field))
         {
@@ -600,7 +600,7 @@ bool validate_properties(const conduit::Node &schema,
         const std::string k = props[i].name();
         if(input.has_child(k))
         {
-            ok = validate_node(props[k], input[k], info, conduit::utils::join_file_path(path, k)) && ok;
+            ok = validate_node(props[k], input[k], info, conduit::utils::join_path(path, k)) && ok;
         }
     }
 
@@ -639,7 +639,7 @@ bool validate_additional_properties(const conduit::Node &schema,
         if(!has_props || !props.has_child(k))
         {
             add_input_error(info,
-                            conduit::utils::join_file_path(path, k),
+                            conduit::utils::join_path(path, k),
                             "additionalProperties",
                             "unexpected additional field is not allowed here");
             ok = false;
