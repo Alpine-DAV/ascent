@@ -81,182 +81,199 @@ bool is_valid_expression(const std::string &expr, std::string &err_msg)
   return res;
 }
 
-//-----------------------------------------------------------------------------
-
-conduit::Node string_schema(optional_param<int> minLength,
-                            optional_param<int> maxLength)
+void ascent_register_flow_schema_hooks()
 {
-  conduit::Node n;
-  n["type"] = "string";
-  if(minLength) n["minLength"] = *minLength;
-  if(maxLength) n["maxLength"] = *maxLength;
-  return n;
+    flow::schema::register_format_checker("expression", &is_valid_expression);
 }
 
-conduit::Node string_enum_schema(std::vector<std::string> options)
+//-----------------------------------------------------------------------------
+
+conduit::Node &string_schema(conduit::Node &schema_node,
+                             optional_param<int> minLength,
+                             optional_param<int> maxLength)
 {
-  conduit::Node n = string_schema();
+  schema_node.reset();
+  schema_node["type"] = "string";
+  if(minLength) schema_node["minLength"] = *minLength;
+  if(maxLength) schema_node["maxLength"] = *maxLength;
+  return schema_node;
+}
+
+//-----------------------------------------------------------------------------
+
+conduit::Node &string_enum_schema(conduit::Node &schema_node, std::vector<std::string> options)
+{
+  string_schema(schema_node);
   for (const auto& value: options)
   {
-    n["enum"].append() = value;
+    schema_node["enum"].append() = value;
   }
-  return n;
+  return schema_node;
 }
 
-conduit::Node bool_schema()
+conduit::Node &bool_schema(conduit::Node &schema_node)
 {
-    return string_enum_schema({"true", "false"});
+    return string_enum_schema(schema_node, {"true", "false"});
 }
 
 //-----------------------------------------------------------------------------
 
-conduit::Node expression_schema()
+conduit::Node &expression_schema(conduit::Node &schema_node)
 {
-  conduit::Node n = string_schema();
-  n["format"] = "expression";
-  return n;
+  string_schema(schema_node);
+  schema_node["format"] = "expression";
+  return schema_node;
 }
 
 //-----------------------------------------------------------------------------
 
-conduit::Node number_schema(bool supports_expressions,
-                            optional_param<int> minimum,
-                            optional_param<int> maximum,
-                            optional_param<int> exclusiveMinimum,
-                            optional_param<int> exclusiveMaximum)
-{
-  conduit::Node n;
-  if (supports_expressions)
-  {
-    n["oneOf"].append().set(number_schema(false, minimum, maximum, exclusiveMinimum, exclusiveMaximum));
-    n["oneOf"].append().set(expression_schema());
-  }
-  else
-  {
-    n["type"] = "number";
-
-    if(exclusiveMinimum) n["exclusiveMinimum"] = *exclusiveMinimum;
-    else if(minimum) n["minimum"] = *minimum;
-
-    if(exclusiveMaximum) n["exclusiveMaximum"] = *exclusiveMaximum;
-    else if(maximum) n["maximum"] = *maximum;
-  }
-  return n;
-}
-
-conduit::Node integer_schema(bool supports_expressions,
+conduit::Node &number_schema(conduit::Node &schema_node,
+                             bool supports_expressions,
                              optional_param<int> minimum,
                              optional_param<int> maximum,
                              optional_param<int> exclusiveMinimum,
                              optional_param<int> exclusiveMaximum)
 {
-  conduit::Node n;
+  schema_node.reset();
   if (supports_expressions)
   {
-    n["oneOf"].append().set(integer_schema(false, minimum, maximum, exclusiveMinimum, exclusiveMaximum));
-    n["oneOf"].append().set(expression_schema());
+    number_schema(schema_node["oneOf"].append(), false, minimum, maximum, exclusiveMinimum, exclusiveMaximum);
+    expression_schema(schema_node["oneOf"].append());
   }
   else
   {
-    n["type"] = "integer";
+    schema_node["type"] = "number";
 
-    if(exclusiveMinimum) n["exclusiveMinimum"] = *exclusiveMinimum;
-    else if(minimum) n["minimum"] = *minimum;
+    if(exclusiveMinimum) schema_node["exclusiveMinimum"] = *exclusiveMinimum;
+    else if(minimum) schema_node["minimum"] = *minimum;
 
-    if(exclusiveMaximum) n["exclusiveMaximum"] = *exclusiveMaximum;
-    else if(maximum) n["maximum"] = *maximum;
+    if(exclusiveMaximum) schema_node["exclusiveMaximum"] = *exclusiveMaximum;
+    else if(maximum) schema_node["maximum"] = *maximum;
   }
-  return n;
+  return schema_node;
+}
+
+conduit::Node &integer_schema(conduit::Node &schema_node,
+                             bool supports_expressions,
+                             optional_param<int> minimum,
+                             optional_param<int> maximum,
+                             optional_param<int> exclusiveMinimum,
+                             optional_param<int> exclusiveMaximum)
+{
+  if (supports_expressions)
+  {
+    integer_schema(schema_node["oneOf"].append(), false, minimum, maximum, exclusiveMinimum, exclusiveMaximum);
+    expression_schema(schema_node["oneOf"].append());
+  }
+  else
+  {
+    schema_node["type"] = "integer";
+
+    if(exclusiveMinimum) schema_node["exclusiveMinimum"] = *exclusiveMinimum;
+    else if(minimum) schema_node["minimum"] = *minimum;
+
+    if(exclusiveMaximum) schema_node["exclusiveMaximum"] = *exclusiveMaximum;
+    else if(maximum) schema_node["maximum"] = *maximum;
+  }
+  return schema_node;
 }
 
 //-----------------------------------------------------------------------------
 
-conduit::Node vec3_schema(const std::string var1,
-                          const std::string var2,
-                          const std::string var3,
-                          bool supports_expressions)
+conduit::Node &vec3_schema(conduit::Node &schema_node,
+                           const std::string var1,
+                           const std::string var2,
+                           const std::string var3,
+                           bool supports_expressions)
 {
-  conduit::Node n;
-  n["type"] = "object";
-  n["additionalProperties"] = false;
+  schema_node.reset();
+  
+  schema_node["type"] = "object";
+  schema_node["additionalProperties"] = false;
 
-  n["properties/" + var1].set(number_schema(supports_expressions));
-  n["properties/" + var2].set(number_schema(supports_expressions));
-  n["properties/" + var3].set(number_schema(supports_expressions));
+  number_schema(schema_node["properties/" + var1], supports_expressions);
+  number_schema(schema_node["properties/" + var2], supports_expressions);
+  number_schema(schema_node["properties/" + var3], supports_expressions);
 
-  n["required"].append() = var1;
-  n["required"].append() = var2;
-  n["required"].append() = var3;
+  schema_node["required"].append() = var1;
+  schema_node["required"].append() = var2;
+  schema_node["required"].append() = var3;
 
-  return n;
+  return schema_node;
 }
 
-conduit::Node vec3_schema(bool supports_expressions)
+conduit::Node &vec3_schema(conduit::Node &schema_node, bool supports_expressions)
 {
-  return vec3_schema("x", "y", "z", supports_expressions);
+  return vec3_schema(schema_node, "x", "y", "z", supports_expressions);
 }
 
-conduit::Node vec3_schema_anyOf(const std::string var1,
-                                const std::string var2,
-                                const std::string var3,
-                                bool supports_expressions)
+conduit::Node &vec3_schema_anyOf(conduit::Node &schema_node,
+                                 const std::string var1,
+                                 const std::string var2,
+                                 const std::string var3,
+                                 bool supports_expressions)
 {
-  conduit::Node n;
-  n["type"] = "object";
-  n["additionalProperties"] = false;
+  schema_node.reset();
+  
+  schema_node["type"] = "object";
+  schema_node["additionalProperties"] = false;
 
-  n["properties/" + var1].set(number_schema(supports_expressions));
-  n["properties/" + var2].set(number_schema(supports_expressions));
-  n["properties/" + var3].set(number_schema(supports_expressions));
+  number_schema(schema_node["properties/" + var1], supports_expressions);
+  number_schema(schema_node["properties/" + var2], supports_expressions);
+  number_schema(schema_node["properties/" + var3], supports_expressions);
 
-  conduit::Node var1_required;
+  conduit::Node &var1_required = schema_node["anyOf"].append();
   var1_required["type"] = "object";
   var1_required["required"] = var1;
-  n["anyOf"].append().set(var1_required);
 
-  conduit::Node var2_required;
+  conduit::Node &var2_required = schema_node["anyOf"].append();
   var2_required["type"] = "object";
   var2_required["required"] = var2;
-  n["anyOf"].append().set(var2_required);
 
-  conduit::Node var3_required;
+  conduit::Node &var3_required = schema_node["anyOf"].append();
   var3_required["type"] = "object";
   var3_required["required"] = var3;
-  n["anyOf"].append().set(var3_required);
 
-  return n;
+  return schema_node;
 }
 
-conduit::Node vec3_schema_anyOf(bool supports_expressions)
+conduit::Node &vec3_schema_anyOf(conduit::Node &schema_node, bool supports_expressions)
 {
-  return vec3_schema_anyOf("x", "y", "z", supports_expressions);
-}
-
-//-----------------------------------------------------------------------------
-
-conduit::Node array_schema(const conduit::Node &item_schema)
-{
-  conduit::Node n;
-  n["type"] = "array";
-  n["items"].set(item_schema);
-  return n;
-}
-
-conduit::Node array_schema()
-{
-  conduit::Node n;
-  n["type"] = "array";
-  return n;
+  return vec3_schema_anyOf(schema_node, "x", "y", "z", supports_expressions);
 }
 
 //-----------------------------------------------------------------------------
 
-conduit::Node ignore_schema()
+conduit::Node &array_schema(conduit::Node &schema_node, const conduit::Node &item_schema)
 {
-    conduit::Node n;
-    n["type"] = "object";
-    n["constraints/skip"] = true;
-    return n;
+  schema_node.reset();
+  
+  schema_node["type"] = "array";
+  if (!item_schema.dtype().is_empty())
+  {
+    schema_node["items"].set(item_schema);
+  }
+
+  return schema_node;
+}
+
+conduit::Node &array_schema(conduit::Node &schema_node)
+{
+  schema_node.reset();
+  schema_node["type"] = "array";
+  return schema_node;
+}
+
+//-----------------------------------------------------------------------------
+
+conduit::Node &ignore_schema(conduit::Node &schema_node)
+{
+  schema_node.reset();
+  
+  schema_node["type"] = "object";
+  schema_node["constraints/skip"] = true;
+
+  return schema_node;
 }
 
 //-----------------------------------------------------------------------------

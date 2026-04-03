@@ -652,7 +652,7 @@ Ascent::open(const conduit::Node &options)
         m_runtime->Initialize(m_options);
 
         // Set the flow filter expression checker:
-        flow::schema::set_expression_checker(&runtime::filters::is_valid_expression);
+        runtime::filters::ascent_register_flow_schema_hooks();
 
         // don't print info messages unless we are using verbose
         // Runtimes may set their own handlers in initialize, so

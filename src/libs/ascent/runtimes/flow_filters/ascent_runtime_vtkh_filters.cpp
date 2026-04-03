@@ -136,20 +136,18 @@ VTKHMarchingCubes::declare_interface(Node &i)
     i["output_port"] = "true";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
-    param_schema["properties/field"].set(string_schema());
-    param_schema["properties/levels"].set(number_schema());
-    param_schema["properties/iso_values"].set(number_schema());
-    param_schema["properties/use_contour_tree"].set(string_schema());
+    string_schema(param_schema["properties/field"]);
+    number_schema(param_schema["properties/levels"]);
+    number_schema(param_schema["properties/iso_values"]);
+    string_schema(param_schema["properties/use_contour_tree"]);
 
     param_schema["required"].append() = "field";
     param_schema["anyOf"].append() = "levels";
     param_schema["anyOf"].append() = "iso_values";
-    
-    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -249,13 +247,11 @@ VTKHExternalSurfaces::declare_interface(Node &i)
     i["output_port"] = "true";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
-    param_schema["properties/topology"].set(string_schema());
-    
-    i["param_schema"].set(param_schema);
+    string_schema(param_schema["properties/topology"]);
 }
 
 //-----------------------------------------------------------------------------
@@ -327,16 +323,14 @@ VTKHVectorMagnitude::declare_interface(Node &i)
     i["output_port"] = "true";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
-    param_schema["properties/field"].set(string_schema());
-    param_schema["properties/output_name"].set(string_schema());
+    string_schema(param_schema["properties/field"]);
+    string_schema(param_schema["properties/output_name"]);
 
     param_schema["required"].append() = "field";
-    
-    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -419,16 +413,14 @@ VTKH3Slice::declare_interface(Node &i)
     i["output_port"] = "true";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
-    param_schema["properties/topology"].set(string_schema());
-    param_schema["properties/x_offset"].set(number_schema(true));
-    param_schema["properties/y_offset"].set(number_schema(true));
-    param_schema["properties/z_offset"].set(number_schema(true));
-    
-    i["param_schema"].set(param_schema);
+    string_schema(param_schema["properties/topology"]);
+    number_schema(param_schema["properties/x_offset"], true);
+    number_schema(param_schema["properties/y_offset"], true);
+    number_schema(param_schema["properties/z_offset"], true);
 }
 
 //-----------------------------------------------------------------------------
@@ -550,13 +542,11 @@ VTKHTriangulate::declare_interface(Node &i)
     i["output_port"] = "true";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
-    param_schema["properties/topology"].set(string_schema());
-    
-    i["param_schema"].set(param_schema);
+    string_schema(param_schema["properties/topology"]);
 }
 
 //-----------------------------------------------------------------------------
@@ -628,14 +618,12 @@ VTKHCleanGrid::declare_interface(Node &i)
     i["output_port"] = "true";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
     // optional
-    param_schema["properties/topology"].set(string_schema());
-    
-    i["param_schema"].set(param_schema);
+    string_schema(param_schema["properties/topology"]);
 }
 
 //-----------------------------------------------------------------------------
@@ -710,7 +698,7 @@ VTKHSlice::declare_interface(Node &i)
     i["output_port"] = "true";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
     param_schema["constraints/exclusiveChildren"].append() = "sphere";
@@ -721,64 +709,60 @@ VTKHSlice::declare_interface(Node &i)
     param_schema["constraints/allowNoneInExclusiveGroup"] = false;
 
     // optional
-    param_schema["properties/topology"].set(string_schema());
+    string_schema(param_schema["properties/topology"]);
 
     // --- sphere ---
-    conduit::Node sphere_schema;
+    conduit::Node &sphere_schema = param_schema["properties/sphere"];
     sphere_schema["type"] = "object";
     sphere_schema["additionalProperties"] = false;
-    sphere_schema["properties/center"].set(vec3_schema(true));
-    sphere_schema["properties/radius"].set(number_schema(true));
+    vec3_schema(sphere_schema["properties/center"], true);
+    number_schema(sphere_schema["properties/radius"], true);
     sphere_schema["required"].append() = "center";
     sphere_schema["required"].append() = "radius";
-    param_schema["properties/sphere"].set(sphere_schema);
 
     // --- cylinder ---
-    conduit::Node cylinder_schema;
+    conduit::Node &cylinder_schema = param_schema["properties/cylinder"];
     cylinder_schema["type"] = "object";
     cylinder_schema["additionalProperties"] = false;
-    cylinder_schema["properties/center"].set(vec3_schema(true));
-    cylinder_schema["properties/axis"].set(vec3_schema(true));
-    cylinder_schema["properties/radius"].set(number_schema(true));
+    vec3_schema(cylinder_schema["properties/center"], true);
+    vec3_schema(cylinder_schema["properties/axis"], true);
+    number_schema(cylinder_schema["properties/radius"], true);
     cylinder_schema["required"].append() = "center";
     cylinder_schema["required"].append() = "axis";
     cylinder_schema["required"].append() = "radius";
-    param_schema["properties/cylinder"].set(cylinder_schema);
 
     // --- box ---
-    conduit::Node box_schema;
+    conduit::Node &box_schema = param_schema["properties/box"];
     box_schema["type"] = "object";
     box_schema["additionalProperties"] = false;
-    box_schema["properties/min"].set(vec3_schema(true));
-    box_schema["properties/max"].set(vec3_schema(true));
+    vec3_schema(box_schema["properties/min"], true);
+    vec3_schema(box_schema["properties/max"], true);
     box_schema["required"].append() = "min";
     box_schema["required"].append() = "max";
-    param_schema["properties/box"].set(box_schema);
 
     // --- plane ---
-    conduit::Node plane_schema;
+    conduit::Node &plane_schema = param_schema["properties/plane"];
     plane_schema["type"] = "object";
     plane_schema["additionalProperties"] = false;
-    plane_schema["properties/point"].set(vec3_schema(true));
-    plane_schema["properties/normal"].set(vec3_schema(true));
+    vec3_schema(plane_schema["properties/point"], true);
+    vec3_schema(plane_schema["properties/normal"], true);
     plane_schema["required"].append() = "point";
     plane_schema["required"].append() = "normal";
-    param_schema["properties/plane"].set(plane_schema);
 
     // --- old point style
-    conduit::Node point_schema;
+    conduit::Node &point_schema = param_schema["properties/point"];
     point_schema["type"] = "object";
     point_schema["additionalProperties"] = false;
 
-    point_schema["properties/x"].set(number_schema(true));
-    point_schema["properties/y"].set(number_schema(true));
-    point_schema["properties/z"].set(number_schema(true));
-    point_schema["properties/x_offset"].set(number_schema(true));
-    point_schema["properties/y_offset"].set(number_schema(true));
-    point_schema["properties/z_offset"].set(number_schema(true));
+    number_schema(point_schema["properties/x"], true);
+    number_schema(point_schema["properties/y"], true);
+    number_schema(point_schema["properties/z"], true);
+    number_schema(point_schema["properties/x_offset"], true);
+    number_schema(point_schema["properties/y_offset"], true);
+    number_schema(point_schema["properties/z_offset"], true);
 
     // Option A: explicit
-    conduit::Node option_1_explicit;
+    conduit::Node &option_1_explicit = point_schema["oneOf"].append();
     option_1_explicit["type"] = "object";
     option_1_explicit["required"].append() = "x";
     option_1_explicit["required"].append() = "y";
@@ -786,10 +770,9 @@ VTKHSlice::declare_interface(Node &i)
     option_1_explicit["constraints/forbid"].append() = "x_offset";
     option_1_explicit["constraints/forbid"].append() = "y_offset";
     option_1_explicit["constraints/forbid"].append() = "z_offset";
-    point_schema["oneOf"].append().set(option_1_explicit);
 
     // Option B: offset
-    conduit::Node option_2_offset;
+    conduit::Node &option_2_offset = point_schema["oneOf"].append();
     option_2_offset["type"] = "object";
     option_2_offset["required"].append() = "x_offset";
     option_2_offset["required"].append() = "y_offset";
@@ -797,13 +780,9 @@ VTKHSlice::declare_interface(Node &i)
     option_2_offset["constraints/forbid"].append() = "x";
     option_2_offset["constraints/forbid"].append() = "y";
     option_2_offset["constraints/forbid"].append() = "z";
-    point_schema["oneOf"].append().set(option_2_offset);
 
-    param_schema["properties/point"].set(point_schema);
-    param_schema["properties/normal"].set(vec3_schema(true));
+    vec3_schema(param_schema["properties/normal"], true);
     param_schema["constraints/dependencies/normal"].append() = "point";
-    
-    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -986,19 +965,19 @@ VTKHAutoSliceLevels::declare_interface(Node &i)
     i["output_port"] = "true";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
-    param_schema["properties/field"].set(string_schema());
-    param_schema["properties/normal"].set(vec3_schema(true));
-    param_schema["properties/levels"].set(number_schema(true));
+    string_schema(param_schema["properties/field"]);
+    vec3_schema(param_schema["properties/normal"], true);
+    number_schema(param_schema["properties/levels"], true);
 
     param_schema["required"].append() = "field";
     param_schema["required"].append() = "normal";
     param_schema["required"].append() = "levels";
     
-    i["param_schema"].set(param_schema);
+    
 }
 
 //-----------------------------------------------------------------------------
@@ -1160,19 +1139,17 @@ VTKHGhostStripper::declare_interface(Node &i)
     i["output_port"] = "true";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
-    param_schema["properties/field"].set(string_schema());
-    param_schema["properties/min_value"].set(number_schema(true));
-    param_schema["properties/max_value"].set(number_schema(true));
+    string_schema(param_schema["properties/field"]);
+    number_schema(param_schema["properties/min_value"], true);
+    number_schema(param_schema["properties/max_value"], true);
 
     param_schema["required"].append() = "field";
     param_schema["required"].append() = "min_value";
     param_schema["required"].append() = "max_value";
-    
-    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -1261,15 +1238,13 @@ VTKHAddRanks::declare_interface(Node &i)
     i["output_port"] = "true";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
     // optional
-    param_schema["properties/topology"].set(string_schema());
-    param_schema["properties/output"].set(string_schema());
-    
-    i["param_schema"].set(param_schema);
+    string_schema(param_schema["properties/topology"]);
+    string_schema(param_schema["properties/output"]);
 }
 
 //-----------------------------------------------------------------------------
@@ -1356,15 +1331,13 @@ VTKHAddDomains::declare_interface(Node &i)
     i["output_port"] = "true";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
     // optional
-    param_schema["properties/topology"].set(string_schema());
-    param_schema["properties/output"].set(string_schema());
-    
-    i["param_schema"].set(param_schema);
+    string_schema(param_schema["properties/topology"]);
+    string_schema(param_schema["properties/output"]);
 }
 
 //-----------------------------------------------------------------------------
@@ -1446,7 +1419,7 @@ VTKHThreshold::declare_interface(Node &i)
     i["output_port"] = "true";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
     param_schema["constraints/exclusiveChildren"].append() = "field";
@@ -1458,73 +1431,66 @@ VTKHThreshold::declare_interface(Node &i)
     param_schema["constraints/allowNoneInExclusiveGroup"] = false;
 
     // optional
-    param_schema["properties/field"].set(string_schema());
-    param_schema["properties/topology"].set(string_schema());
-    param_schema["properties/min_value"].set(number_schema(true));
-    param_schema["properties/max_value"].set(number_schema(true));
-    param_schema["properties/invert"].set(string_schema());
-    param_schema["properties/extract"].set(string_schema());
+    string_schema(param_schema["properties/field"]);
+    string_schema(param_schema["properties/topology"]);
+    number_schema(param_schema["properties/min_value"], true);
+    number_schema(param_schema["properties/max_value"], true);
+    string_schema(param_schema["properties/invert"]);
+    string_schema(param_schema["properties/extract"]);
 
     param_schema["anyOf"].append() = "field";
     param_schema["anyOf"].append() = "topology";
 
     // --- sphere ---
-    conduit::Node sphere_schema;
+    conduit::Node &sphere_schema = param_schema["properties/sphere"];
     sphere_schema["type"] = "object";
     sphere_schema["additionalProperties"] = false;
-    sphere_schema["properties/center"].set(vec3_schema(true));
-    sphere_schema["properties/radius"].set(number_schema(true));
+    vec3_schema(sphere_schema["properties/center"], true);
+    number_schema(sphere_schema["properties/radius"], true);
     sphere_schema["required"].append() = "center";
     sphere_schema["required"].append() = "radius";
-    param_schema["properties/sphere"].set(sphere_schema);
 
     // --- cylinder ---
-    conduit::Node cylinder_schema;
+    conduit::Node &cylinder_schema = param_schema["properties/cylinder"];
     cylinder_schema["type"] = "object";
     cylinder_schema["additionalProperties"] = false;
-    cylinder_schema["properties/center"].set(vec3_schema(true));
-    cylinder_schema["properties/axis"].set(vec3_schema(true));
-    cylinder_schema["properties/radius"].set(number_schema(true));
+    vec3_schema(cylinder_schema["properties/center"], true);
+    vec3_schema(cylinder_schema["properties/axis"], true);
+    number_schema(cylinder_schema["properties/radius"], true);
     cylinder_schema["required"].append() = "center";
     cylinder_schema["required"].append() = "axis";
     cylinder_schema["required"].append() = "radius";
-    param_schema["properties/cylinder"].set(cylinder_schema);
 
     // --- box ---
-    conduit::Node box_schema;
+    conduit::Node &box_schema = param_schema["properties/box"];
     box_schema["type"] = "object";
     box_schema["additionalProperties"] = false;
-    box_schema["properties/min"].set(vec3_schema(true));
-    box_schema["properties/max"].set(vec3_schema(true));
+    vec3_schema(box_schema["properties/min"], true);
+    vec3_schema(box_schema["properties/max"], true);
     box_schema["required"].append() = "min";
     box_schema["required"].append() = "max";
-    param_schema["properties/box"].set(box_schema);
 
     // --- plane ---
-    conduit::Node plane_schema;
+    conduit::Node &plane_schema = param_schema["properties/plane"];
     plane_schema["type"] = "object";
     plane_schema["additionalProperties"] = false;
-    plane_schema["properties/point"].set(vec3_schema(true));
-    plane_schema["properties/normal"].set(vec3_schema(true));
+    vec3_schema(plane_schema["properties/point"], true);
+    vec3_schema(plane_schema["properties/normal"], true);
     plane_schema["required"].append() = "point";
     plane_schema["required"].append() = "normal";
-    param_schema["properties/plane"].set(plane_schema);
 
     // --- multi plane ---
-    conduit::Node multi_plane_schema;
+    conduit::Node &multi_plane_schema = param_schema["properties/multi_plane"];
     multi_plane_schema["type"] = "object";
     multi_plane_schema["additionalProperties"] = false;
-    multi_plane_schema["properties/point1"].set(vec3_schema(true));
-    multi_plane_schema["properties/point2"].set(vec3_schema(true));
-    multi_plane_schema["properties/normal1"].set(vec3_schema(true));
-    multi_plane_schema["properties/normal2"].set(vec3_schema(true));
+    vec3_schema(multi_plane_schema["properties/point1"], true);
+    vec3_schema(multi_plane_schema["properties/point2"], true);
+    vec3_schema(multi_plane_schema["properties/normal1"], true);
+    vec3_schema(multi_plane_schema["properties/normal2"], true);
     multi_plane_schema["required"].append() = "point1";
     multi_plane_schema["required"].append() = "point2";
     multi_plane_schema["required"].append() = "normal1";
     multi_plane_schema["required"].append() = "normal2";
-    param_schema["properties/multi_plane"].set(multi_plane_schema);
-    
-    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -1720,7 +1686,7 @@ VTKHClip::declare_interface(Node &i)
     i["output_port"] = "true";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
     param_schema["constraints/exclusiveChildren"].append() = "sphere";
@@ -1731,66 +1697,59 @@ VTKHClip::declare_interface(Node &i)
     param_schema["constraints/allowNoneInExclusiveGroup"] = false;
 
     // optional
-    param_schema["properties/topology"].set(string_schema());
-    param_schema["properties/invert"].set(string_schema());
+    string_schema(param_schema["properties/topology"]);
+    string_schema(param_schema["properties/invert"]);
 
     // --- sphere ---
-    conduit::Node sphere_schema;
+    conduit::Node &sphere_schema = param_schema["properties/sphere"];
     sphere_schema["type"] = "object";
     sphere_schema["additionalProperties"] = false;
-    sphere_schema["properties/center"].set(vec3_schema(true));
-    sphere_schema["properties/radius"].set(number_schema(true));
+    vec3_schema(sphere_schema["properties/center"], true);
+    number_schema(sphere_schema["properties/radius"], true);
     sphere_schema["required"].append() = "center";
     sphere_schema["required"].append() = "radius";
-    param_schema["properties/sphere"].set(sphere_schema);
 
     // --- cylinder ---
-    conduit::Node cylinder_schema;
+    conduit::Node &cylinder_schema = param_schema["properties/cylinder"];
     cylinder_schema["type"] = "object";
     cylinder_schema["additionalProperties"] = false;
-    cylinder_schema["properties/center"].set(vec3_schema(true));
-    cylinder_schema["properties/axis"].set(vec3_schema(true));
-    cylinder_schema["properties/radius"].set(number_schema(true));
+    vec3_schema(cylinder_schema["properties/center"], true);
+    vec3_schema(cylinder_schema["properties/axis"], true);
+    number_schema(cylinder_schema["properties/radius"], true);
     cylinder_schema["required"].append() = "center";
     cylinder_schema["required"].append() = "axis";
     cylinder_schema["required"].append() = "radius";
-    param_schema["properties/cylinder"].set(cylinder_schema);
 
     // --- box ---
-    conduit::Node box_schema;
+    conduit::Node &box_schema = param_schema["properties/box"];
     box_schema["type"] = "object";
     box_schema["additionalProperties"] = false;
-    box_schema["properties/min"].set(vec3_schema(true));
-    box_schema["properties/max"].set(vec3_schema(true));
+    vec3_schema(box_schema["properties/min"], true);
+    vec3_schema(box_schema["properties/max"], true);
     box_schema["required"].append() = "min";
     box_schema["required"].append() = "max";
-    param_schema["properties/box"].set(box_schema);
 
     // --- plane ---
-    conduit::Node plane_schema;
+    conduit::Node &plane_schema = param_schema["properties/plane"];
     plane_schema["type"] = "object";
     plane_schema["additionalProperties"] = false;
-    plane_schema["properties/point"].set(vec3_schema(true));
-    plane_schema["properties/normal"].set(vec3_schema(true));
+    vec3_schema(plane_schema["properties/point"], true);
+    vec3_schema(plane_schema["properties/normal"], true);
     plane_schema["required"].append() = "point";
     plane_schema["required"].append() = "normal";
-    param_schema["properties/plane"].set(plane_schema);
 
     // --- multi plane ---
-    conduit::Node multi_plane_schema;
+    conduit::Node &multi_plane_schema = param_schema["properties/multi_plane"];
     multi_plane_schema["type"] = "object";
     multi_plane_schema["additionalProperties"] = false;
-    multi_plane_schema["properties/point1"].set(vec3_schema(true));
-    multi_plane_schema["properties/point2"].set(vec3_schema(true));
-    multi_plane_schema["properties/normal1"].set(vec3_schema(true));
-    multi_plane_schema["properties/normal2"].set(vec3_schema(true));
+    vec3_schema(multi_plane_schema["properties/point1"], true);
+    vec3_schema(multi_plane_schema["properties/point2"], true);
+    vec3_schema(multi_plane_schema["properties/normal1"], true);
+    vec3_schema(multi_plane_schema["properties/normal2"], true);
     multi_plane_schema["required"].append() = "point1";
     multi_plane_schema["required"].append() = "point2";
     multi_plane_schema["required"].append() = "normal1";
     multi_plane_schema["required"].append() = "normal2";
-    param_schema["properties/multi_plane"].set(multi_plane_schema);
-    
-    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -1947,18 +1906,16 @@ VTKHClipWithField::declare_interface(Node &i)
     i["output_port"] = "true";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
-    param_schema["properties/clip_value"].set(number_schema(true));
-    param_schema["properties/field"].set(string_schema());
-    param_schema["properties/invert"].set(string_schema());
+    number_schema(param_schema["properties/clip_value"], true);
+    string_schema(param_schema["properties/field"]);
+    string_schema(param_schema["properties/invert"]);
 
     param_schema["required"].append() = "clip_value";
     param_schema["required"].append() = "field";
-
-    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -2047,19 +2004,17 @@ VTKHIsoVolume::declare_interface(Node &i)
     i["output_port"] = "true";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
-    param_schema["properties/min_value"].set(number_schema(true));
-    param_schema["properties/max_value"].set(number_schema(true));
-    param_schema["properties/field"].set(string_schema());
+    number_schema(param_schema["properties/min_value"], true);
+    number_schema(param_schema["properties/max_value"], true);
+    string_schema(param_schema["properties/field"]);
 
     param_schema["required"].append() = "min_value";
     param_schema["required"].append() = "max_value";
     param_schema["required"].append() = "field";
-    
-    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -2141,17 +2096,17 @@ VTKHLagrangian::declare_interface(Node &i)
     i["output_port"] = "true";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
-    param_schema["properties/field"].set(string_schema());
-    param_schema["properties/step_size"].set(number_schema());
-    param_schema["properties/write_frequency"].set(number_schema());
-    param_schema["properties/cust_res"].set(number_schema());
-    param_schema["properties/x_res"].set(number_schema());
-    param_schema["properties/y_res"].set(number_schema());
-    param_schema["properties/z_res"].set(number_schema());
+    string_schema(param_schema["properties/field"]);
+    number_schema(param_schema["properties/step_size"]);
+    number_schema(param_schema["properties/write_frequency"]);
+    number_schema(param_schema["properties/cust_res"]);
+    number_schema(param_schema["properties/x_res"]);
+    number_schema(param_schema["properties/y_res"]);
+    number_schema(param_schema["properties/z_res"]);
 
     param_schema["required"].append() = "field";
     param_schema["required"].append() = "step_size";
@@ -2160,8 +2115,6 @@ VTKHLagrangian::declare_interface(Node &i)
     param_schema["required"].append() = "x_res";
     param_schema["required"].append() = "y_res";
     param_schema["required"].append() = "z_res";
-    
-    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -2250,17 +2203,15 @@ VTKHLog::declare_interface(Node &i)
     i["output_port"] = "true";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
-    param_schema["properties/field"].set(string_schema());
-    param_schema["properties/output_name"].set(string_schema());
-    param_schema["properties/clamp_min_value"].set(number_schema(true));
+    string_schema(param_schema["properties/field"]);
+    string_schema(param_schema["properties/output_name"]);
+    number_schema(param_schema["properties/clamp_min_value"], true);
 
     param_schema["required"].append() = "field";
-    
-    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -2346,17 +2297,15 @@ VTKHLog10::declare_interface(Node &i)
     i["output_port"] = "true";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
-    param_schema["properties/field"].set(string_schema());
-    param_schema["properties/output_name"].set(string_schema());
-    param_schema["properties/clamp_min_value"].set(number_schema(true));
+    string_schema(param_schema["properties/field"]);
+    string_schema(param_schema["properties/output_name"]);
+    number_schema(param_schema["properties/clamp_min_value"], true);
 
     param_schema["required"].append() = "field";
-    
-    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -2442,17 +2391,15 @@ VTKHLog2::declare_interface(Node &i)
     i["output_port"] = "true";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
-    param_schema["properties/field"].set(string_schema());
-    param_schema["properties/output_name"].set(string_schema());
-    param_schema["properties/clamp_min_value"].set(number_schema(true));
+    string_schema(param_schema["properties/field"]);
+    string_schema(param_schema["properties/output_name"]);
+    number_schema(param_schema["properties/clamp_min_value"], true);
 
     param_schema["required"].append() = "field";
-    
-    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -2538,17 +2485,15 @@ VTKHRecenter::declare_interface(Node &i)
     i["output_port"] = "true";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
-    param_schema["properties/field"].set(string_schema());
-    param_schema["properties/association"].set(string_schema());
+    string_schema(param_schema["properties/field"]);
+    string_schema(param_schema["properties/association"]);
 
     param_schema["required"].append() = "field";
     param_schema["required"].append() = "association";
-    
-    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -2640,17 +2585,15 @@ VTKHHistSampling::declare_interface(Node &i)
     i["output_port"] = "true";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
-    param_schema["properties/field"].set(string_schema());
-    param_schema["properties/bins"].set(number_schema(true));
-    param_schema["properties/sample_rate"].set(number_schema(true));
+    string_schema(param_schema["properties/field"]);
+    number_schema(param_schema["properties/bins"], true);
+    number_schema(param_schema["properties/sample_rate"], true);
 
     param_schema["required"].append() = "field";
-
-    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -2779,17 +2722,15 @@ VTKHQCriterion::declare_interface(Node &i)
     i["output_port"] = "true";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
-    param_schema["properties/field"].set(string_schema());
-    param_schema["properties/output_name"].set(string_schema());
-    param_schema["properties/use_cell_gradient"].set(string_schema());
+    string_schema(param_schema["properties/field"]);
+    string_schema(param_schema["properties/output_name"]);
+    string_schema(param_schema["properties/use_cell_gradient"]);
 
     param_schema["required"].append() = "field";
-    
-    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -2888,17 +2829,15 @@ VTKHDivergence::declare_interface(Node &i)
     i["output_port"] = "true";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
-    param_schema["properties/field"].set(string_schema());
-    param_schema["properties/output_name"].set(string_schema());
-    param_schema["properties/use_cell_gradient"].set(string_schema());
+    string_schema(param_schema["properties/field"]);
+    string_schema(param_schema["properties/output_name"]);
+    string_schema(param_schema["properties/use_cell_gradient"]);
 
     param_schema["required"].append() = "field";
-    
-    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -2996,17 +2935,15 @@ VTKHVorticity::declare_interface(Node &i)
     i["output_port"] = "true";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
-    param_schema["properties/field"].set(string_schema());
-    param_schema["properties/output_name"].set(string_schema());
-    param_schema["properties/use_cell_gradient"].set(string_schema());
+    string_schema(param_schema["properties/field"]);
+    string_schema(param_schema["properties/output_name"]);
+    string_schema(param_schema["properties/use_cell_gradient"]);
 
     param_schema["required"].append() = "field";
-    
-    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -3104,17 +3041,15 @@ VTKHGradient::declare_interface(Node &i)
     i["output_port"] = "true";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
-    param_schema["properties/field"].set(string_schema());
-    param_schema["properties/output_name"].set(string_schema());
-    param_schema["properties/use_cell_gradient"].set(string_schema());
+    string_schema(param_schema["properties/field"]);
+    string_schema(param_schema["properties/output_name"]);
+    string_schema(param_schema["properties/use_cell_gradient"]);
 
     param_schema["required"].append() = "field";
-    
-    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -3204,21 +3139,19 @@ VTKHUniformGrid::declare_interface(Node &i)
     i["output_port"] = "true";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
-    param_schema["properties/field"].set(string_schema());
-    param_schema["properties/fields"].set(array_schema(ignore_schema()));
-    param_schema["properties/dims"].set(vec3_schema_anyOf("i", "j", "k"));
-    param_schema["properties/origin"].set(vec3_schema_anyOf());
-    param_schema["properties/spacing"].set(vec3_schema_anyOf("dx", "dy", "dz"));
-    param_schema["properties/invalid_value"].set(number_schema());
+    string_schema(param_schema["properties/field"]);
+    array_schema(param_schema["properties/fields"]);
+    vec3_schema_anyOf(param_schema["properties/dims"], "i", "j", "k");
+    vec3_schema_anyOf(param_schema["properties/origin"]);
+    vec3_schema_anyOf(param_schema["properties/spacing"], "dx", "dy", "dz");
+    number_schema(param_schema["properties/invalid_value"]);
 
     param_schema["anyOf"].append() = "field";
     param_schema["anyOf"].append() = "fields";
-    
-    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -3386,48 +3319,43 @@ VTKHSample::declare_interface(Node &i)
     i["output_port"] = "true";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
-    param_schema["properties/field"].set(string_schema());
-    param_schema["properties/fields"].set(array_schema(ignore_schema()));
-    param_schema["properties/invalid_value"].set(number_schema());
+    string_schema(param_schema["properties/field"]);
+    array_schema(param_schema["properties/fields"]);
+    number_schema(param_schema["properties/invalid_value"]);
 
     // --- Line ---
-    conduit::Node line_schema;
+    conduit::Node &line_schema = param_schema["properties/line"];
     line_schema["type"] = "object";
     line_schema["additionalProperties"] = false;
-    line_schema["properties/num_samples"].set(number_schema());
-    line_schema["properties/start"].set(vec3_schema_anyOf());
-    line_schema["properties/end"].set(vec3_schema_anyOf());
-    param_schema["properties/line"].set(line_schema);
+    number_schema(line_schema["properties/num_samples"]);
+    vec3_schema_anyOf(line_schema["properties/start"]);
+    vec3_schema_anyOf(line_schema["properties/end"]);
 
     // --- Points ---
-    param_schema["properties/points"].set(vec3_schema_anyOf());
+    vec3_schema_anyOf(param_schema["properties/points"]);
 
     // --- Box ---
-    conduit::Node box_schema;
+    conduit::Node &box_schema = param_schema["properties/box"];
     box_schema["type"] = "object";
     box_schema["additionalProperties"] = false;
-    box_schema["properties/dims"].set(vec3_schema_anyOf());
-    box_schema["properties/min"].set(vec3_schema_anyOf());
-    box_schema["properties/max"].set(vec3_schema_anyOf());
-    param_schema["properties/box"].set(box_schema);
+    vec3_schema_anyOf(box_schema["properties/dims"]);
+    vec3_schema_anyOf(box_schema["properties/min"]);
+    vec3_schema_anyOf(box_schema["properties/max"]);
 
     // --- Uniform Grid ---
-    conduit::Node uniform_grid_schema;
+    conduit::Node &uniform_grid_schema = param_schema["properties/uniform_grid"];
     uniform_grid_schema["type"] = "object";
     uniform_grid_schema["additionalProperties"] = false;
-    uniform_grid_schema["properties/dims"].set(vec3_schema_anyOf("i", "j", "k"));
-    uniform_grid_schema["properties/origin"].set(vec3_schema_anyOf());
-    uniform_grid_schema["properties/spacing"].set(vec3_schema_anyOf("dx", "dy", "dz"));
-    param_schema["properties/uniform_grid"].set(uniform_grid_schema);
+    vec3_schema_anyOf(uniform_grid_schema["properties/dims"], "i", "j", "k");
+    vec3_schema_anyOf(uniform_grid_schema["properties/origin"]);
+    vec3_schema_anyOf(uniform_grid_schema["properties/spacing"], "dx", "dy", "dz");
 
     param_schema["anyOf"].append() = "field";
     param_schema["anyOf"].append() = "fields";
-    
-    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -3794,14 +3722,12 @@ VTKHStats::declare_interface(Node &i)
     i["output_port"] = "false";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
-    param_schema["properties/field"].set(string_schema());
+    string_schema(param_schema["properties/field"]);
     param_schema["required"].append() = "field";
-    
-    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -3875,16 +3801,14 @@ VTKHHistogram::declare_interface(Node &i)
     i["output_port"] = "false";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
-    param_schema["properties/field"].set(string_schema());
-    param_schema["properties/bins"].set(number_schema(true));
+    string_schema(param_schema["properties/field"]);
+    number_schema(param_schema["properties/bins"], true);
 
     param_schema["required"].append() = "field";
-    
-    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -3962,18 +3886,16 @@ VTKHProject2d::declare_interface(Node &i)
     i["output_port"] = "true";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
-    param_schema["properties/topology"].set(string_schema());
-    param_schema["properties/image_width"].set(number_schema());
-    param_schema["properties/image_height"].set(number_schema());
-    param_schema["properties/dataset_bounds"].set(ignore_schema());
-    param_schema["properties/camera"].set(ignore_schema());
-    param_schema["properties/fields"].set(array_schema(ignore_schema()));
-    
-    i["param_schema"].set(param_schema);
+    string_schema(param_schema["properties/topology"]);
+    number_schema(param_schema["properties/image_width"]);
+    number_schema(param_schema["properties/image_height"]);
+    ignore_schema(param_schema["properties/dataset_bounds"]);
+    ignore_schema(param_schema["properties/camera"]);
+    array_schema(param_schema["properties/fields"]);
 }
 
 //-----------------------------------------------------------------------------
@@ -4117,14 +4039,12 @@ VTKHNoOp::declare_interface(Node &i)
     i["output_port"] = "true";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
-    param_schema["properties/field"].set(string_schema());
+    string_schema(param_schema["properties/field"]);
     param_schema["required"].append() = "field";
-    
-    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -4202,19 +4122,17 @@ VTKHVectorComponent::declare_interface(Node &i)
     i["output_port"] = "true";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
-    param_schema["properties/field"].set(string_schema());
-    param_schema["properties/component"].set(number_schema());
-    param_schema["properties/output_name"].set(string_schema());
+    string_schema(param_schema["properties/field"]);
+    number_schema(param_schema["properties/component"]);
+    string_schema(param_schema["properties/output_name"]);
 
     param_schema["required"].append() = "field";
     param_schema["required"].append() = "component";
     param_schema["required"].append() = "output_name";
-    
-    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -4296,20 +4214,18 @@ VTKHCompositeVector::declare_interface(Node &i)
     i["output_port"] = "true";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
-    param_schema["properties/field1"].set(string_schema());
-    param_schema["properties/field2"].set(string_schema());
-    param_schema["properties/field3"].set(string_schema());
-    param_schema["properties/output_name"].set(string_schema());
+    string_schema(param_schema["properties/field1"]);
+    string_schema(param_schema["properties/field2"]);
+    string_schema(param_schema["properties/field3"]);
+    string_schema(param_schema["properties/output_name"]);
 
     param_schema["required"].append() = "field1";
     param_schema["required"].append() = "field2";
     param_schema["required"].append() = "output_name";
-    
-    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -4421,7 +4337,7 @@ VTKHScale::declare_interface(Node &i)
     i["output_port"] = "true";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema = vec3_schema("x_scale", "y_scale", "z_scale", true);
+    vec3_schema(i["param_schema"], "x_scale", "y_scale", "z_scale", true);
 }
 
 //-----------------------------------------------------------------------------
@@ -4497,7 +4413,7 @@ VTKHTransform::declare_interface(Node &i)
     i["output_port"] = "true";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
     param_schema["constraints/exclusiveChildren"].append() = "scale";
@@ -4507,34 +4423,32 @@ VTKHTransform::declare_interface(Node &i)
     param_schema["constraints/exclusiveChildren"].append() = "matrix";
     param_schema["constraints/allowNoneInExclusiveGroup"] = false;
 
-    param_schema["properties/scale"].set(vec3_schema_anyOf(true));
-    param_schema["properties/translate"].set(vec3_schema_anyOf(true));
+    vec3_schema_anyOf(param_schema["properties/scale"], true);
+    vec3_schema_anyOf(param_schema["properties/translate"], true);
 
     // --- rotate ---
-    conduit::Node rotate_schema;
+    conduit::Node &rotate_schema = param_schema["properties/rotate"];
     rotate_schema["type"] = "object";
     rotate_schema["additionalProperties"] = false;
-    rotate_schema["properties/angle"].set(number_schema(true));
-    rotate_schema["properties/axis"].set(vec3_schema_anyOf(true));
+    number_schema(rotate_schema["properties/angle"], true);
+    vec3_schema_anyOf(rotate_schema["properties/axis"], true);
     rotate_schema["required"].append() = "angle";
     rotate_schema["required"].append() = "axis";
-    param_schema["properties/rotate"].set(rotate_schema);
 
     // --- reflect ---
-    conduit::Node reflect_schema;
+    conduit::Node &reflect_schema = param_schema["properties/reflect"];
     reflect_schema["type"] = "object";
     reflect_schema["additionalProperties"] = false;
-    reflect_schema["properties/normal"].set(vec3_schema_anyOf(true));
-    reflect_schema["properties/point"].set(vec3_schema_anyOf(true));
-    param_schema["properties/reflect"].set(reflect_schema);
+    vec3_schema_anyOf(reflect_schema["properties/normal"], true);
+    vec3_schema_anyOf(reflect_schema["properties/point"], true);
 
     // --- matrix ---
-    conduit::Node matrix_schema = array_schema(number_schema(true));
+    conduit::Node matrix_item_schema;
+    conduit::Node &matrix_schema = array_schema(param_schema["properties/matrix"], number_schema(matrix_item_schema, true));
     matrix_schema["minItems"] = 16;
-    matrix_schema["miaxItems"] = 16;
-    param_schema["properties/matrix"].set(matrix_schema);
-    
-    i["param_schema"].set(param_schema);
+    matrix_schema["maxItems"] = 16;
+
+    std::cout << param_schema.to_yaml() << std::endl;
 }
 
 //-----------------------------------------------------------------------------
@@ -4818,31 +4732,31 @@ VTKHParticleAdvection::declare_interface(Node &i)
     i["output_port"] = "true";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
-    param_schema["properties/field"].set(string_schema());
-    param_schema["properties/num_steps"].set(number_schema(true));
-    param_schema["properties/step_size"].set(number_schema(true));
+    string_schema(param_schema["properties/field"]);
+    number_schema(param_schema["properties/num_steps"], true);
+    number_schema(param_schema["properties/step_size"], true);
 
     // --- seed ---
-    conduit::Node seeds_schema;
+    conduit::Node &seeds_schema = param_schema["properties/seeds"];
     seeds_schema["type"] = "object";
     seeds_schema["additionalProperties"] = false;
-    seeds_schema["properties/type"].set(string_schema());
-    seeds_schema["properties/location"].set(number_schema());
-    seeds_schema["properties/start"].set(number_schema());
-    seeds_schema["properties/end"].set(number_schema());
-    seeds_schema["properties/num_seeds"].set(number_schema());
-    seeds_schema["properties/num_seeds_x"].set(number_schema());
-    seeds_schema["properties/num_seeds_y"].set(number_schema());
-    seeds_schema["properties/num_seeds_z"].set(number_schema());
-    seeds_schema["properties/extents_x"].set(number_schema());
-    seeds_schema["properties/extents_y"].set(number_schema());
-    seeds_schema["properties/extents_z"].set(number_schema());
-    seeds_schema["properties/sampling_type"].set(string_schema());
-    seeds_schema["properties/sampling_space"].set(string_schema());
+    string_schema(seeds_schema["properties/type"]);
+    number_schema(seeds_schema["properties/location"]);
+    number_schema(seeds_schema["properties/start"]);
+    number_schema(seeds_schema["properties/end"]);
+    number_schema(seeds_schema["properties/num_seeds"]);
+    number_schema(seeds_schema["properties/num_seeds_x"]);
+    number_schema(seeds_schema["properties/num_seeds_y"]);
+    number_schema(seeds_schema["properties/num_seeds_z"]);
+    number_schema(seeds_schema["properties/extents_x"]);
+    number_schema(seeds_schema["properties/extents_y"]);
+    number_schema(seeds_schema["properties/extents_z"]);
+    string_schema(seeds_schema["properties/sampling_type"]);
+    string_schema(seeds_schema["properties/sampling_space"]);
     seeds_schema["required"].append() = "type";
 
     seeds_schema["constraints/dependencies/extents_x"].append() = "extents_y";
@@ -4853,25 +4767,23 @@ VTKHParticleAdvection::declare_interface(Node &i)
     seeds_schema["constraints/dependencies/extents_z"].append() = "extents_y";
 
     // type == point
-    conduit::Node point_option;
+    conduit::Node &point_option = seeds_schema["oneOf"].append();
     point_option["type"] = "object";
     point_option["properties/type/type"] = "string";
     point_option["properties/type/constraints/const"] = "point";
     point_option["required"].append() = "type";
     point_option["required"].append() = "location";
-    seeds_schema["oneOf"].append().set(point_option);
 
     // type == point_list
-    conduit::Node point_list_option;
+    conduit::Node &point_list_option = seeds_schema["oneOf"].append();
     point_list_option["type"] = "object";
     point_list_option["properties/type/type"] = "string";
     point_list_option["properties/type/constraints/const"] = "point_list";
     point_list_option["required"].append() = "type";
     point_list_option["required"].append() = "location";
-    seeds_schema["oneOf"].append().set(point_list_option);
 
     // type == line
-    conduit::Node line_option;
+    conduit::Node &line_option = seeds_schema["oneOf"].append();
     line_option["type"] = "object";
     line_option["properties/type/type"] = "string";
     line_option["properties/type/constraints/const"] = "line";
@@ -4880,10 +4792,9 @@ VTKHParticleAdvection::declare_interface(Node &i)
     line_option["required"].append() = "end";
     line_option["required"].append() = "num_seeds";
     line_option["required"].append() = "sampling_type";
-    seeds_schema["oneOf"].append().set(line_option);
 
     // type == box
-    conduit::Node box_option;
+    conduit::Node &box_option = seeds_schema["oneOf"].append();
     box_option["type"] = "object";
     box_option["properties/type/type"] = "string";
     box_option["properties/type/constraints/const"] = "box";
@@ -4891,7 +4802,7 @@ VTKHParticleAdvection::declare_interface(Node &i)
     box_option["required"].append() = "sampling_space";
     box_option["required"].append() = "sampling_type";
     {
-        conduit::Node box_option_uniform;
+        conduit::Node &box_option_uniform = box_option["oneOf"].append();
         box_option_uniform["type"] = "object";
         box_option_uniform["properties/sampling_type/type"] = "string";
         box_option_uniform["properties/sampling_type/constraints/const"] = "uniform";
@@ -4899,38 +4810,30 @@ VTKHParticleAdvection::declare_interface(Node &i)
         box_option_uniform["required"].append() = "num_seeds_x";
         box_option_uniform["required"].append() = "num_seeds_y";
         box_option_uniform["required"].append() = "num_seeds_z";
-        box_option["oneOf"].append().set(box_option_uniform);
     }
     {
-        conduit::Node box_option_non_uniform;
+        conduit::Node &box_option_non_uniform = box_option["oneOf"].append();
         box_option_non_uniform["type"] = "object";
         box_option_non_uniform["required"].append() = "sampling_type";
         box_option_non_uniform["required"].append() = "num_seeds";
         box_option_non_uniform["constraints/not_const/sampling_type"] = "uniform";
-        box_option["oneOf"].append().set(box_option_non_uniform);
     }
-    seeds_schema["oneOf"].append().set(box_option);
-
-    param_schema["properties/seeds"].set(seeds_schema);
 
     // --- rendering ---
-    conduit::Node rendering_schema;
+    conduit::Node &rendering_schema = param_schema["properties/rendering"];
     rendering_schema["type"] = "object";
     rendering_schema["additionalProperties"] = false;
-    rendering_schema["properties/enable_tubes"].set(string_schema());
-    rendering_schema["properties/tube_capping"].set(string_schema());
-    rendering_schema["properties/tube_size"].set(number_schema());
-    rendering_schema["properties/tube_sides"].set(number_schema());
-    rendering_schema["properties/tube_value"].set(number_schema());
-    rendering_schema["properties/output_field"].set(string_schema());
-    param_schema["properties/rendering"].set(rendering_schema);
+    string_schema(rendering_schema["properties/enable_tubes"]);
+    string_schema(rendering_schema["properties/tube_capping"]);
+    number_schema(rendering_schema["properties/tube_size"]);
+    number_schema(rendering_schema["properties/tube_sides"]);
+    number_schema(rendering_schema["properties/tube_value"]);
+    string_schema(rendering_schema["properties/output_field"]);
 
     param_schema["required"].append() = "field";
     param_schema["required"].append() = "num_steps";
     param_schema["required"].append() = "step_size";
     param_schema["required"].append() = "seeds";
-
-    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -5466,31 +5369,28 @@ VTKHWarpXStreamline::declare_interface(Node &i)
     i["output_port"] = "true";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
-    param_schema["properties/b_field"].set(string_schema());
-    param_schema["properties/e_field"].set(string_schema());
-    param_schema["properties/num_steps"].set(number_schema(true));
-    param_schema["properties/step_size"].set(number_schema(true));
+    string_schema(param_schema["properties/b_field"]);
+    string_schema(param_schema["properties/e_field"]);
+    number_schema(param_schema["properties/num_steps"], true);
+    number_schema(param_schema["properties/step_size"], true);
 
     // --- rendering ---
-    conduit::Node rendering_schema;
+    conduit::Node &rendering_schema = param_schema["properties/rendering"];
     rendering_schema["type"] = "object";
     rendering_schema["additionalProperties"] = false;
-    rendering_schema["properties/enable_tubes"].set(string_schema());
-    rendering_schema["properties/tube_capping"].set(string_schema());
-    rendering_schema["properties/tube_size"].set(number_schema());
-    rendering_schema["properties/tube_sides"].set(number_schema());
-    rendering_schema["properties/tube_value"].set(number_schema());
-    rendering_schema["properties/output_field"].set(string_schema());
-    param_schema["properties/rendering"].set(rendering_schema);
+    string_schema(rendering_schema["properties/enable_tubes"]);
+    string_schema(rendering_schema["properties/tube_capping"]);
+    number_schema(rendering_schema["properties/tube_size"]);
+    number_schema(rendering_schema["properties/tube_sides"]);
+    number_schema(rendering_schema["properties/tube_value"]);
+    string_schema(rendering_schema["properties/output_field"]);
 
     param_schema["required"].append() = "num_steps";
     param_schema["required"].append() = "step_size";
-    
-    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -5656,16 +5556,14 @@ VTKHVTKFileExtract::declare_interface(Node &i)
     i["output_port"] = "false";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
-    param_schema["properties/path"].set(string_schema());
-    param_schema["properties/topology"].set(string_schema());
+    string_schema(param_schema["properties/path"]);
+    string_schema(param_schema["properties/topology"]);
 
     param_schema["required"].append() = "path";
-    
-    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -5848,20 +5746,18 @@ VTKHMIR::declare_interface(Node &i)
     i["output_port"] = "true";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
-    param_schema["properties/matset"].set(string_schema());
-    param_schema["properties/output_name"].set(string_schema());
-    param_schema["properties/error_scaling"].set(number_schema());
-    param_schema["properties/scaling_decay"].set(number_schema());
-    param_schema["properties/iterations"].set(number_schema());
-    param_schema["properties/max_error"].set(number_schema());
+    string_schema(param_schema["properties/matset"]);
+    string_schema(param_schema["properties/output_name"]);
+    number_schema(param_schema["properties/error_scaling"]);
+    number_schema(param_schema["properties/scaling_decay"]);
+    number_schema(param_schema["properties/iterations"]);
+    number_schema(param_schema["properties/max_error"]);
 
     param_schema["required"].append() = "matset";
-    
-    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
