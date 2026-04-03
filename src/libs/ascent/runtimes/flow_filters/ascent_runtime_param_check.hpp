@@ -43,6 +43,8 @@ namespace filters
 
 bool ASCENT_API is_valid_expression(const std::string &expr, std::string &err_msg);
 
+void ASCENT_API ascent_register_flow_schema_hooks();
+
 conduit::Node ASCENT_API &string_schema(conduit::Node &schema_node);
 
 conduit::Node ASCENT_API &number_schema(conduit::Node &schema_node,

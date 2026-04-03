@@ -36,11 +36,7 @@ namespace detail
 {
 
 // ---------- General Helpers ----------
-ExpressionCheckFn &expr_checker()
-{
-    static ExpressionCheckFn fn = nullptr;
-    return fn;
-}
+std::map<const std::string, FormatCheckFunction> format_checker_functions;
 
 void add_error(conduit::Node &info, const std::string &msg)
 {
@@ -472,18 +468,19 @@ bool validate_format(const conduit::Node &schema,
                             conduit::Node &info,
                             const std::string &path)
 {
-    if(!schema.has_child("format")) return true;
-    if(!schema["format"].dtype().is_string()) return true;
+    if(!schema.has_child("format") || !schema["format"].dtype().is_string())
+    {
+        return true;
+    }
 
     const std::string fmt = schema["format"].as_string();
-    if(fmt != "expression") return true;
-    if(!input.dtype().is_string()) return true;
-
-    auto expr_fn = expr_checker();
-    if(expr_fn == nullptr) return true;
+    if (format_checker_functions.find(fmt) == format_checker_functions.end())
+    {
+        return true;
+    }
 
     std::string err;
-    bool ok = expr_fn(input.as_string(), err);
+    bool ok = format_checker_functions[fmt](input.as_string(), err);
     if(!ok)
     {
         add_error(info, "Invalid expression at '" + (path.empty() ? std::string("<root>") : path) + "': " + err);
@@ -594,9 +591,9 @@ bool validate_node(const conduit::Node &schema,
 // -- end flow::schema::detail --
 //-----------------------------------------------------------------------------
 
-void set_expression_checker(ExpressionCheckFn fn)
+void register_format_checker(const std::string &format_name, FormatCheckFunction callback)
 {
-    detail::expr_checker() = fn;
+    detail::format_checker_functions[format_name] = callback;
 }
 
 // ---------- Schema Validation Entry-Point ----------

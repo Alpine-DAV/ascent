@@ -83,7 +83,7 @@ bool is_valid_expression(const std::string &expr, std::string &err_msg)
 
 void ascent_register_flow_schema_hooks()
 {
-    flow::schema::set_expression_checker(&is_valid_expression);
+    flow::schema::register_format_checker("expression", &is_valid_expression);
 }
 
 conduit::Node &string_schema(conduit::Node &schema_node)
