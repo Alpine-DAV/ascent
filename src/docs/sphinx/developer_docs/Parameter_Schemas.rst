@@ -101,7 +101,7 @@ Supported Keywords
   .. warning::
     Unknown ``type`` values are reported as schema errors.
 
-  Example:
+  **Example:**
 
   .. code-block:: yaml
 
@@ -123,7 +123,7 @@ Supported Keywords
 
   .. code-block:: text
 
-    Validation failed at '<root>' (type): type mismatch Expected type 'string'..
+    Validation failed at '<root>' (type): type mismatch. Expected type 'string'.
 
   .. raw:: html
 
@@ -132,14 +132,40 @@ Supported Keywords
 ``format``
 ----------
 
-  Only the value ``"expression"`` is recognized.
+  Format checking is an additional layer of string validation that allows for the input strings
+  to be validated against a given format. Formats can be registered with the schema validator using
+  ``register_format_checker(const std::string &format_name, bool (*)(const std::string &expr, std::string &err_msg) callback)``.
+  Once a format is registered, it can be refrenced in the schemas using the format name they were
+  registered with.
 
-  If the schema contains ``format: "expression"`` and the input value is a
-  string, the validator can optionally call an expression checker installed via
-  ``flow::schema::set_expression_checker``. If no checker is installed, the
-  keyword is treated as a no-op (the validator accepts the value).
+  **Example:**
 
-  Example:
+  If you had the following function to check if a string matches a specific expression grammar:
+
+  .. code-block:: c++
+
+    bool is_valid_expression(const std::string &expr, std::string &err_msg)
+    {
+        bool res = true;
+        try
+        {
+            scan_string(expr.c_str());
+        }
+        catch(const char *msg)
+        {
+            err_msg = msg;
+            res = false;
+        }
+        return res;
+    }
+
+  You could register it with the schema validator:
+
+  .. code-block:: c++
+
+    flow::schema::register_format_checker("expression", &is_valid_expression);
+
+  and then use it in any schemas to validate strings:
 
   .. code-block:: yaml
 
@@ -154,12 +180,33 @@ Supported Keywords
   - The validator only applies ``enum`` when the input value is a string.
   - The allowed list is expected to be a list of strings in the schema.
 
-  Example:
+  **Example:**
 
   .. code-block:: yaml
 
     type: string
     enum: ["nearest", "linear"]
+
+  .. raw:: html
+
+    <details class="schema-failure"><summary><span style="color:#b94a48;"><strong>Validation Failure Example (enum mismatch)</strong></span></summary>
+
+  .. code-block:: yaml
+
+    # Schema
+    type: string
+    enum: ["nearest", "linear"]
+
+    # Input
+    "furthest"
+
+  .. code-block:: text
+
+    Validation failed at '<root>' (enum): 'furthest' is not one of the allowed enum entries. Expected one of {nearest, linear}.
+
+  .. raw:: html
+
+    </details>
 
 ``allOf``
 ---------
@@ -170,7 +217,7 @@ Supported Keywords
   of per-option "hint" messages derived from the first error in each failing
   option.
 
-  Example:
+  **Example:**
 
   .. code-block:: yaml
 
@@ -178,6 +225,29 @@ Supported Keywords
     allOf:
       - {type: string, minLength: 1}
       - {type: string, pattern: "^[a-z0-9_]+$"}
+
+  .. raw:: html
+
+    <details class="schema-failure"><summary><span style="color:#b94a48;"><strong>Validation Failure Example (string not matching all schemas)</strong></span></summary>
+
+  .. code-block:: yaml
+
+    # Schema
+    allOf:
+      - {type: string, minLength: 1}
+      - {type: string, enum: ["nearest", "linear"]}
+
+    # Input
+    "furthest"
+
+  .. code-block:: text
+
+    Validation failed at '<root>' (all of): expected all of the 2 schema optioons to mathc, but only one matched
+        Option 0 hint: Validation failed at '<root>' (enum): 'furthest' is not one of the allowed enum entries. Expected one of {nearest, linear}.
+
+  .. raw:: html
+
+    </details>
 
 ``oneOf``
 ---------
@@ -189,7 +259,7 @@ Supported Keywords
   of per-option "hint" messages derived from the first error in each failing
   option.
 
-  Example:
+  **Example:**
 
   .. code-block:: yaml
 
@@ -206,17 +276,17 @@ Supported Keywords
 
     # Schema
     oneOf:
-      - {type: string, pattern: "^a+$"}
-      - {type: string, pattern: "^b+$"}
+      - {type: integer, maximum: 5}
+      - {type: integer, minimum: 10}
 
     # Input
-    "ccc"
+    8
 
   .. code-block:: text
 
-    Validation failed at '<root>' (oneOf): expected exactly one of 2 schema options to match, but none matched.
-        Option 0 hint: Validation failed at '<root>' (pattern): string does not match required pattern '^a+$'.
-        Option 1 hint: Validation failed at '<root>' (pattern): string does not match required pattern '^b+$'.
+    Validation failed at '<root>' (one of): expected exactly one of 2 schema options to match, but none matched.
+        Option 0 hint: Validation failed at '<root>' (maximum): 8 is above the allowed maximum. Expected number <= 5.
+        Option 1 hint: Validation failed at '<root>' (minimum): 8 is below the allowed minimum. Expected number >= 10.
 
   .. raw:: html
 
@@ -232,7 +302,7 @@ Supported Keywords
   of per-option "hint" messages derived from the first error in each failing
   option.
 
-  Example:
+  **Example:**
 
   .. code-block:: yaml
 
@@ -240,6 +310,30 @@ Supported Keywords
     anyOf:
       - {type: string, minLength: 1}
       - {type: integer, minimum: 0}
+
+  .. raw:: html
+
+    <details class="schema-failure"><summary><span style="color:#b94a48;"><strong>Validation Failure Example (no matching option; note the per-option hints)</strong></span></summary>
+
+  .. code-block:: yaml
+
+    # Schema
+    anyOf:
+      - {type: integer, maximum: 5}
+      - {type: integer, minimum: 10}
+
+    # Input
+    8
+
+  .. code-block:: text
+
+    Validation failed at '<root>' (any of): input did not match any allowed schema option. Expected at least one schema option to match.
+        Option 0 hint: Validation failed at '<root>' (maximum): 8 is above the allowed maximum. Expected number <= 5.
+        Option 1 hint: Validation failed at '<root>' (minimum): 8 is below the allowed minimum. Expected number >= 10.
+
+  .. raw:: html
+
+    </details>
 
 String Keywords (``type: "string"``)
 ++++++++++++++++++++++++++++++++++++
@@ -249,7 +343,7 @@ String Keywords (``type: "string"``)
 
   Requires the string length to be at least this integer value.
 
-  Example:
+  **Example:**
 
   .. code-block:: yaml
 
@@ -267,7 +361,7 @@ String Keywords (``type: "string"``)
 
   .. code-block:: text
 
-    Validation failed at '<root>' (minLength): string is too short: length is 2. Expected string length >= 3.
+    Validation failed at '<root>' (minLength): string is too short. Length is 2. Expected string length >= 3.
 
   .. raw:: html
 
@@ -278,7 +372,7 @@ String Keywords (``type: "string"``)
 
   Requires the string length to be at most this integer value.
 
-  Example:
+  **Example:**
 
   .. code-block:: yaml
 
@@ -297,7 +391,7 @@ String Keywords (``type: "string"``)
     To require a full-string match, add anchors (e.g., ``^...$``).
   - Invalid regex patterns are reported as schema errors.
 
-  Example:
+  **Example:**
 
   .. code-block:: yaml
 
@@ -310,12 +404,16 @@ String Keywords (``type: "string"``)
 
   .. code-block:: yaml
 
+    # Shema
+    type: string
+    pattern: "^A+$"
+
     # Input
     "Abc"
 
   .. code-block:: text
 
-    Validation failed at '<root>' (pattern): string does not match required pattern '^[a-z]+$'.
+    Validation failed at '<root>' (pattern): string does not match required pattern '^A+$'.
 
   .. raw:: html
 
@@ -350,7 +448,7 @@ Numeric Keywords (``type: "number"`` / ``type: "integer"``)
 
   Requires the numeric value to be ``>= minimum``.
 
-  Example:
+  **Example:**
 
   .. code-block:: yaml
 
@@ -379,7 +477,7 @@ Numeric Keywords (``type: "number"`` / ``type: "integer"``)
 
   Requires the numeric value to be ``> exclusiveMinimum``.
 
-  Example:
+  **Example:**
 
   .. code-block:: yaml
 
@@ -391,7 +489,7 @@ Numeric Keywords (``type: "number"`` / ``type: "integer"``)
 
   Requires the numeric value to be ``<= maximum``.
 
-  Example:
+  **Example:**
 
   .. code-block:: yaml
 
@@ -403,7 +501,7 @@ Numeric Keywords (``type: "number"`` / ``type: "integer"``)
 
   Requires the numeric value to be ``< exclusiveMaximum``.
 
-  Example:
+  **Example:**
 
   .. code-block:: yaml
 
@@ -437,7 +535,7 @@ Object Keywords (``type: "object"``)
 
   A list of string field names that must be present on the input object.
 
-  Example:
+  **Example:**
 
   .. code-block:: yaml
 
@@ -455,7 +553,7 @@ Object Keywords (``type: "object"``)
 
   If the keyword is not present, additional properties are allowed.
 
-  Example:
+  **Example:**
 
   .. code-block:: yaml
 
@@ -490,7 +588,7 @@ Array Keywords (``type: "array"``)
 
   Requires the array length to be at least this integer value.
 
-  Example:
+  **Example:**
 
   .. code-block:: yaml
 
@@ -502,7 +600,7 @@ Array Keywords (``type: "array"``)
 
   Requires the array length to be at most this integer value.
 
-  Example:
+  **Example:**
 
   .. code-block:: yaml
 
@@ -520,7 +618,7 @@ Array Keywords (``type: "array"``)
   - For Conduit numeric leaf arrays, each element is validated by aliasing the
     i'th element as an external scalar node and applying the ``items`` schema.
 
-  Example:
+  **Example:**
 
   .. code-block:: yaml
 
@@ -542,7 +640,7 @@ and explicit validation schemas.
   If present and truthy (``to_int() != 0``), validation for that schema node is
   skipped entirely (it always succeeds).
 
-  Example:
+  **Example:**
 
   .. code-block:: yaml
 
@@ -562,7 +660,7 @@ and explicit validation schemas.
   For object inputs only. A list of string field names that must *not* be
   present.
 
-  Example:
+  **Example:**
 
   .. code-block:: yaml
 
@@ -590,7 +688,7 @@ and explicit validation schemas.
 
   Unsupported constant types are reported as schema errors.
 
-  Example:
+  **Example:**
 
   .. code-block:: yaml
 
@@ -614,7 +712,7 @@ and explicit validation schemas.
   number). If the input contains that field with the same value, validation
   fails.
 
-  Example:
+  **Example:**
 
   .. code-block:: yaml
 
@@ -637,7 +735,7 @@ and explicit validation schemas.
   a list of *required field* names. If the trigger field is present in the
   input, all required fields must also be present.
 
-  Example:
+  **Example:**
 
   .. code-block:: yaml
 
@@ -662,7 +760,7 @@ and explicit validation schemas.
   By default, the validator allows *zero or one* of the listed fields to be
   present. If more than one is present, validation fails.
 
-  Example:
+  **Example:**
 
   .. code-block:: yaml
 

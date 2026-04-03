@@ -208,7 +208,7 @@ bool validate_string(const conduit::Node &schema,
         if((int)s.size() > max_length)
         {
             add_input_error(info, path, "maxLength",
-                            "string is too long: length is " + std::to_string((int)s.size()),
+                            "string is too long. Length is " + std::to_string((int)s.size()),
                             "string length <= " + std::to_string(max_length));
             ok = false;
         }
@@ -751,12 +751,12 @@ static bool validate_all_of(const conduit::Node &schema,
     if (matches == opts.number_of_children()) return true;
 
     std::ostringstream msg;
-    msg << "expected exactly all of " << opts.number_of_children()
+    msg << "expected all of the " << opts.number_of_children()
         << " schema options to match, but ";
     if(matches == 0) msg << "none matched";
     else msg << "only " << matches << " matched";
 
-    add_input_error(info, path, "allOf", msg.str());
+    add_input_error(info, path, "all of", msg.str());
 
     for(size_t i = 0; i < option_msgs.size() && i < MAX_OPTIONS; ++i)
     {
@@ -813,7 +813,7 @@ bool validate_one_of(const conduit::Node &schema,
         msg << matches << " matched";
     }
 
-    add_input_error(info, path, "oneOf", msg.str());
+    add_input_error(info, path, "one of", msg.str());
 
     // give a couple of hints
     for(size_t i = 0; i < option_msgs.size() && i < 2; ++i)
@@ -859,7 +859,7 @@ bool validate_any_of(const conduit::Node &schema,
         return true;
     }
 
-    add_input_error(info, path, "anyOf",
+    add_input_error(info, path, "any of",
                     "input did not match any allowed schema option",
                     "at least one schema option to match");
 
