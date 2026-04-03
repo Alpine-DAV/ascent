@@ -257,78 +257,8 @@ conduit::Node &array_schema(conduit::Node &schema_node, const conduit::Node &ite
   return schema_node;
 }
 
-conduit::Node array_schema()
-{
-  conduit::Node n;
-  n["type"] = "array";
-  return n;
-}
 
-//-----------------------------------------------------------------------------
-
-conduit::Node ignore_schema()
-{
-    conduit::Node n;
-    n["type"] = "object";
-    n["constraints/skip"] = true;
-    return n;
-}
-
-//-----------------------------------------------------------------------------
-bool
-check_numeric(const std::string path,
-              const conduit::Node &params,
-              conduit::Node &info,
-              bool required,
-              bool supports_expressions)
-{
-  bool res = true;
-  if(!params.has_path(path) && required)
-  {
-    info["errors"].append() = "Missing required numeric parameter '" + path + "'";
-    res = false;
-  }
-
-  if(params.has_path(path))
-  {
-
-    bool is_expr = false;
-    std::string err_msg;
-    if(params[path].dtype().is_string() && supports_expressions)
-    {
-      // check to see if this is a valid expression
-
-      is_expr = is_valid_expression(params[path].as_string(), err_msg);
-    }
-
-    if(!params[path].dtype().is_number() && !is_expr)
-    {
-      if(supports_expressions)
-      {
-        std::string msg = "Expected numeric parameter '" + path +
-                          " : " + params[path].to_yaml()
-                             + "'  is not numeric and is not a valid expression."
-                             + " Error message '" + err_msg + "'";
-        info["errors"].append() = msg;
-      }
-      else
-      {
-        std::string msg = "Expected numeric parameter '" + path +
-                          " : " + params[path].to_yaml()
-                             + "'  is not numeric and does not support expressions";
-      }
-      res = false;
-    }
-  }
-  return res;
-}
-
-//-----------------------------------------------------------------------------
-bool
-check_string(const std::string path,
-             const conduit::Node &params,
-             conduit::Node &info,
-             bool required)
+conduit::Node &array_schema(conduit::Node &schema_node)
 {
   schema_node.reset();
   schema_node["type"] = "array";
