@@ -228,12 +228,6 @@ Filter::verify_params(const Node &params,
 
     if (!param_schema().dtype().is_empty() && !(param_schema().dtype().is_object() && param_schema().number_of_children() == 0))
     {
-        // std::cout << "\nSlice Properties!!" << std::endl;
-        // param_schema().print();
-
-        // std::cout << "\nParams!!" << std::endl;
-        // params.print();
-
         return flow::schema::validate(param_schema(), params, info);
     }
 
