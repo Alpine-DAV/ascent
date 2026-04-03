@@ -156,14 +156,12 @@ Example pattern:
         i["port_names"].append() = "in";
         i["output_port"] = "true";
 
-        conduit::Node ps;
-        ps["type"] = "object";
-        ps["additionalProperties"] = false;
+        conduit::Node &param_schema = i["param_schema"];
+        param_schema["type"] = "object";
+        param_schema["additionalProperties"] = false;
 
-        ps["properties/field"].set(string_schema(1)); // non-empty string
-        ps["required"].append() = "field";
-
-        i["param_schema"].set(ps);
+        string_schema(param_schema["properties/field"], 1); // non-empty string
+        param_schema["required"].append() = "field";
     }
 
 string_schema
@@ -173,8 +171,9 @@ Builds a string schema with optional length bounds.
 
 .. code-block:: c++
 
-    conduit::Node string_schema(optional_param<int> minLength = optional_param<int>(),
-                                optional_param<int> maxLength = optional_param<int>());
+    conduit::Node &string_schema(conduit::Node &schema_node,
+                                 std::size_t minLength = 0,
+                                 std::size_t maxLength = std::numeric_limits<std::size_t>::max());
 
 .. raw:: html
 
@@ -183,14 +182,12 @@ Builds a string schema with optional length bounds.
 .. code-block:: c++
 
     // Example: require a non-empty string with a max length
-    conduit::Node ps;
-    ps["type"] = "object";
-    ps["additionalProperties"] = false;
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
-    ps["properties/field"].set(string_schema(1, 64));
-    ps["required"].append() = "field";
-
-    i["param_schema"].set(ps);
+    string_schema(param_schema["properties/field"], 1, 64);
+    param_schema["required"].append() = "field";
 
 Resulting schema fragment:
 
@@ -220,7 +217,8 @@ Builds a string schema restricted to an enumerated set of allowed values.
 
 .. code-block:: c++
 
-    conduit::Node string_enum_schema(std::vector<std::string> options);
+    conduit::Node &string_enum_schema(conduit::Node &schema_node, 
+                                      const std::vector<std::string> &options);
 
 .. raw:: html
 
@@ -229,14 +227,12 @@ Builds a string schema restricted to an enumerated set of allowed values.
 .. code-block:: c++
 
     // Example: restrict a string parameter to a fixed set of values
-    conduit::Node ps;
-    ps["type"] = "object";
-    ps["additionalProperties"] = false;
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
-    ps["properties/interpolation"].set(string_enum_schema({"nearest", "linear"}));
-    ps["required"].append() = "interpolation";
-
-    i["param_schema"].set(ps);
+    string_enum_schema(param_schema["properties/interpolation"], {"nearest", "linear"});
+    param_schema["required"].append() = "interpolation";
 
 Resulting schema fragment:
 
@@ -264,7 +260,7 @@ Builds a boolean-like schema represented as a *string* enum: ``"true"`` or ``"fa
 
 .. code-block:: c++
 
-    conduit::Node bool_schema();
+    conduit::Node &bool_schema(conduit::Node &schema_node);
 
 .. raw:: html
 
@@ -273,14 +269,12 @@ Builds a boolean-like schema represented as a *string* enum: ``"true"`` or ``"fa
 .. code-block:: c++
 
     // Example: model a boolean-like parameter as "true"/"false" strings
-    conduit::Node ps;
-    ps["type"] = "object";
-    ps["additionalProperties"] = false;
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
-    ps["properties/enabled"].set(bool_schema());
-    ps["required"].append() = "enabled";
-
-    i["param_schema"].set(ps);
+    bool_schema(param_schema["properties/enabled"]);
+    param_schema["required"].append() = "enabled";
 
 Resulting schema fragment:
 
@@ -310,11 +304,12 @@ the schema accepts either a number *or* an expression string (via ``oneOf``).
 
 .. code-block:: c++
 
-    conduit::Node number_schema(bool supports_expressions = false,
-                                optional_param<int> minimum = optional_param<int>(),
-                                optional_param<int> maximum = optional_param<int>(),
-                                optional_param<int> exclusiveMinimum = optional_param<int>(),
-                                optional_param<int> exclusiveMaximum = optional_param<int>());
+    conduit::Node &number_schema(conduit::Node &schema_node,
+                                 bool supports_expressions = false,
+                                 int minimum = std::numeric_limits<int>::lowest(),
+                                 int maximum = std::numeric_limits<int>::max(),
+                                 int exclusiveMinimum = std::numeric_limits<int>::lowest(),
+                                 int exclusiveMaximum = std::numeric_limits<int>::max());
 
 .. raw:: html
 
@@ -323,14 +318,12 @@ the schema accepts either a number *or* an expression string (via ``oneOf``).
 .. code-block:: c++
 
     // Example: accept a number in [0, 10]
-    conduit::Node ps;
-    ps["type"] = "object";
-    ps["additionalProperties"] = false;
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
-    ps["properties/threshold"].set(number_schema(false, 0, 10));
-    ps["required"].append() = "threshold";
-
-    i["param_schema"].set(ps);
+    number_schema(param_schema["properties/threshold"], false, 0, 10);
+    param_schema["required"].append() = "threshold";
 
 Resulting schema fragment:
 
@@ -360,14 +353,12 @@ Example input accepted by this schema:
 .. code-block:: c++
 
     // Example: accept either a numeric value or an expression string
-    conduit::Node ps;
-    ps["type"] = "object";
-    ps["additionalProperties"] = false;
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
-    ps["properties/threshold"].set(number_schema(true, 0, 10));
-    ps["required"].append() = "threshold";
-
-    i["param_schema"].set(ps);
+    number_schema(param_schema["properties/threshold"], true, 0, 10);
+    param_schema["required"].append() = "threshold";
 
 Resulting schema fragment:
 
@@ -398,11 +389,12 @@ the schema accepts either an integer *or* an expression string (via ``oneOf``).
 
 .. code-block:: c++
 
-    conduit::Node integer_schema(bool supports_expressions = false,
-                                 optional_param<int> minimum = optional_param<int>(),
-                                 optional_param<int> maximum = optional_param<int>(),
-                                 optional_param<int> exclusiveMinimum = optional_param<int>(),
-                                 optional_param<int> exclusiveMaximum = optional_param<int>());
+    conduit::Node &integer_schema(conduit::Node &schema_node,
+                                  bool supports_expressions = false,
+                                  int minimum = std::numeric_limits<int>::lowest(),
+                                  int maximum = std::numeric_limits<int>::max(),
+                                  int exclusiveMinimum = std::numeric_limits<int>::lowest(),
+                                  int exclusiveMaximum = std::numeric_limits<int>::max());
 
 .. raw:: html
 
@@ -411,14 +403,12 @@ the schema accepts either an integer *or* an expression string (via ``oneOf``).
 .. code-block:: c++
 
     // Example: accept an integer >= 1
-    conduit::Node ps;
-    ps["type"] = "object";
-    ps["additionalProperties"] = false;
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
-    ps["properties/levels"].set(integer_schema(false, 1));
-    ps["required"].append() = "levels";
-
-    i["param_schema"].set(ps);
+    integer_schema(param_schema["properties/levels"], false, 1);
+    param_schema["required"].append() = "levels";
 
 Resulting schema fragment:
 
@@ -446,14 +436,12 @@ Example input accepted by this schema:
 .. code-block:: c++
 
     // Example: accept either an integer value or an expression string
-    conduit::Node ps;
-    ps["type"] = "object";
-    ps["additionalProperties"] = false;
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
-    ps["properties/levels"].set(integer_schema(true, 1));
-    ps["required"].append() = "levels";
-
-    i["param_schema"].set(ps);
+    integer_schema(param_schema["properties/levels"], true, 1);
+    param_schema["required"].append() = "levels";
 
 Resulting schema fragment:
 
@@ -483,12 +471,14 @@ names are ``x``, ``y``, and ``z``.
 
 .. code-block:: c++
 
-    conduit::Node vec3_schema(bool supports_expressions = false);
+    conduit::Node &vec3_schema(conduit::Node &schema_node,
+                               bool supports_expressions = false);
 
-    conduit::Node vec3_schema(const std::string var1,
-                              const std::string var2,
-                              const std::string var3,
-                              bool supports_expressions = false);
+    conduit::Node &vec3_schema(conduit::Node &schema_node,
+                               const std::string var1,
+                               const std::string var2,
+                               const std::string var3,
+                               bool supports_expressions = false);
 
 .. raw:: html
 
@@ -497,14 +487,12 @@ names are ``x``, ``y``, and ``z``.
 .. code-block:: c++
 
     // Example: require all 3 components: x, y, z
-    conduit::Node ps;
-    ps["type"] = "object";
-    ps["additionalProperties"] = false;
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
-    ps["properties/offset"].set(vec3_schema());
-    ps["required"].append() = "offset";
-
-    i["param_schema"].set(ps);
+    vec3_schema(param_schema["properties/offset"]);
+    param_schema["required"].append() = "offset";
 
 Resulting schema fragment:
 
@@ -537,14 +525,12 @@ Example input accepted by this schema:
 .. code-block:: c++
 
     // Example: require all 3 components: x, y, z
-    conduit::Node ps;
-    ps["type"] = "object";
-    ps["additionalProperties"] = false;
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
-    ps["properties/offset"].set(vec3_schema("var_i", "var_j", "var_k"));
-    ps["required"].append() = "offset";
-
-    i["param_schema"].set(ps);
+    vec3_schema(param_schema["properties/offset"], "var_i", "var_j", "var_k");
+    param_schema["required"].append() = "offset";
 
 Resulting schema fragment:
 
@@ -579,12 +565,14 @@ that *at least one* of them is present (via ``anyOf``). The default component na
 
 .. code-block:: c++
 
-    conduit::Node vec3_schema_anyOf(bool supports_expressions = false);
+    conduit::Node &vec3_schema_anyOf(conduit::Node &schema_node,
+                                     bool supports_expressions = false);
 
-    conduit::Node vec3_schema_anyOf(const std::string var1,
-                                    const std::string var2,
-                                    const std::string var3,
-                                    bool supports_expressions = false);
+    conduit::Node &vec3_schema_anyOf(conduit::Node &schema_node,
+                                     const std::string var1,
+                                     const std::string var2,
+                                     const std::string var3,
+                                     bool supports_expressions = false);
 
 .. raw:: html
 
@@ -593,14 +581,12 @@ that *at least one* of them is present (via ``anyOf``). The default component na
 .. code-block:: c++
 
     // Example: allow x/y/z, but require at least one component to be present
-    conduit::Node ps;
-    ps["type"] = "object";
-    ps["additionalProperties"] = false;
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
-    ps["properties/origin"].set(vec3_schema_anyOf());
-    ps["required"].append() = "origin";
-
-    i["param_schema"].set(ps);
+    vec3_schema_anyOf(param_schema["properties/origin"]);
+    param_schema["required"].append() = "origin";
 
 Resulting schema fragment:
 
@@ -637,9 +623,10 @@ provided schema.
 
 .. code-block:: c++
 
-    conduit::Node array_schema();
+    conduit::Node &array_schema(conduit::Node &schema_node);
 
-    conduit::Node array_schema(const conduit::Node &item_schema);
+    conduit::Node &array_schema(conduit::Node &schema_node,
+                                const conduit::Node &item_schema);
 
 .. raw:: html
 
@@ -648,14 +635,12 @@ provided schema.
 .. code-block:: c++
 
     // Example: require an array where each item is a number
-    conduit::Node ps;
-    ps["type"] = "object";
-    ps["additionalProperties"] = false;
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
-    ps["properties/iso_values"].set(array_schema(number_schema()));
-    ps["required"].append() = "iso_values";
-
-    i["param_schema"].set(ps);
+    array_schema(param_schema["properties/iso_values"], number_schema());
+    param_schema["required"].append() = "iso_values";
 
 Resulting schema fragment:
 
@@ -686,7 +671,7 @@ validation is handled elsewhere.
 
 .. code-block:: c++
 
-    conduit::Node ignore_schema();
+    conduit::Node &ignore_schema(conduit::Node &schema_node);
 
 .. raw:: html
 
@@ -695,14 +680,12 @@ validation is handled elsewhere.
 .. code-block:: c++
 
     // Example: accept a subtree but skip validating it
-    conduit::Node ps;
-    ps["type"] = "object";
-    ps["additionalProperties"] = false;
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
-    ps["properties/options"].set(ignore_schema());
-    ps["required"].append() = "options";
-
-    i["param_schema"].set(ps);
+    ignore_schema(param_schema["properties/options"]);
+    param_schema["required"].append() = "options";
 
 Resulting schema fragment:
 
