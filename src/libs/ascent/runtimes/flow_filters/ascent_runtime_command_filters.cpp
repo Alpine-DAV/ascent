@@ -80,18 +80,16 @@ Command::declare_interface(Node &i)
     i["output_port"] = "false";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
     param_schema["constraints/exclusiveChildren"].append() = "callback";
     param_schema["constraints/exclusiveChildren"].append() = "shell_command";
     param_schema["constraints/allowNoneInExclusiveGroup"] = false;
 
-    param_schema["properties/callback"].set(string_schema());
-    param_schema["properties/shell_command"].set(string_schema());
-    param_schema["properties/mpi_behavior"].set(string_schema());
-    
-    i["param_schema"].set(param_schema);
+    string_schema(param_schema["properties/callback"]);
+    string_schema(param_schema["properties/shell_command"]);
+    string_schema(param_schema["properties/mpi_behavior"]);
 }
 
 //-----------------------------------------------------------------------------

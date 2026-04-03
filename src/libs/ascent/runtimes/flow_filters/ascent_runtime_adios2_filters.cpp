@@ -117,30 +117,24 @@ ADIOS2::declare_interface(Node &i)
     i["output_port"] = "false";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
 
-    param_schema["properties/filename"].set(string_schema()); // Can't be a directory... need to add regex filter
-    param_schema["properties/engine"].set(string_schema());
+    string_schema(param_schema["properties/filename"]);
+    string_schema(param_schema["properties/engine"]);
 
-    conduit::Node bpfile_schema;
+    conduit::Node &bpfile_schema = param_schema["oneOf"].append();
     bpfile_schema["type"] = "object";
-    bpfile_schema["properties/engine"].set(string_schema());
+    string_schema(bpfile_schema["properties/engine"]);
     bpfile_schema["properties/engine/constraints/const"] = "BPFile";
-    param_schema["oneOf"].append().set(bpfile_schema);
 
-    conduit::Node sst_schema;
+    conduit::Node sst_schema = param_schema["oneOf"].append();
     sst_schema["type"] = "object";
-    sst_schema["properties/engine"].set(string_schema());
+    string_schema(sst_schema["properties/engine"]);
     sst_schema["properties/engine/constraints/const"] = "SST";
 
-    conduit::Node fname = string_schema();
+    conduit::Node fname = string_schema(sst_schema["properties/filename"]);
     fname["pattern"] = "^[^/]*$";
-    sst_schema["properties/filename"].set(fname);
-
-    param_schema["oneOf"].append().set(sst_schema);
-    
-    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------

@@ -159,19 +159,21 @@ void dray_color_table_schema(conduit::Node &param_schema) {
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
-    param_schema["properties/name"].set(string_schema());
-    param_schema["properties/reverse"].set(bool_schema());
+    string_schema(param_schema["properties/name"]);
+    bool_schema(param_schema["properties/reverse"]);
 
     // --- Control Points ---
     {
-        conduit::Node cp_compressed_schema;
+        conduit::Node &control_points_schema = param_schema["properties/control_points"];
+
+        conduit::Node &cp_compressed_schema = control_points_schema["oneOf"].append();
         cp_compressed_schema["type"] = "object";
         cp_compressed_schema["additionalProperties"] = false;
-        cp_compressed_schema["properties/r"].set(ignore_schema());
-        cp_compressed_schema["properties/g"].set(ignore_schema());
-        cp_compressed_schema["properties/b"].set(ignore_schema());
-        cp_compressed_schema["properties/a"].set(ignore_schema());
-        cp_compressed_schema["properties/position"].set(ignore_schema());
+        ignore_schema(cp_compressed_schema["properties/r"]);
+        ignore_schema(cp_compressed_schema["properties/g"]);
+        ignore_schema(cp_compressed_schema["properties/b"]);
+        ignore_schema(cp_compressed_schema["properties/a"]);
+        ignore_schema(cp_compressed_schema["properties/position"]);
         cp_compressed_schema["constraints/forbid"].append() = "type";
         cp_compressed_schema["constraints/forbid"].append() = "alpha";
         cp_compressed_schema["constraints/forbid"].append() = "color";
@@ -179,19 +181,16 @@ void dray_color_table_schema(conduit::Node &param_schema) {
         conduit::Node cp_list_item_schema;
         cp_list_item_schema["type"] = "object";
         cp_list_item_schema["additionalProperties"] = false;
-        cp_list_item_schema["properties/type"].set(ignore_schema());
-        cp_list_item_schema["properties/alpha"].set(ignore_schema());
-        cp_list_item_schema["properties/color"].set(ignore_schema());
-        cp_list_item_schema["properties/position"].set(ignore_schema());
+        ignore_schema(cp_list_item_schema["properties/type"]);
+        ignore_schema(cp_list_item_schema["properties/alpha"]);
+        ignore_schema(cp_list_item_schema["properties/color"]);
+        ignore_schema(cp_list_item_schema["properties/position"]);
         cp_list_item_schema["constraints/forbid"].append() = "r";
         cp_list_item_schema["constraints/forbid"].append() = "g";
         cp_list_item_schema["constraints/forbid"].append() = "b";
         cp_list_item_schema["constraints/forbid"].append() = "a";
 
-        conduit::Node control_points_schema;
-        control_points_schema["oneOf"].append().set(cp_compressed_schema);
-        control_points_schema["oneOf"].append().set(array_schema(cp_list_item_schema));
-        param_schema["properties/control_points"].set(control_points_schema);
+        array_schema(control_points_schema["oneOf"].append(), cp_list_item_schema);
     }
 }
 
@@ -199,10 +198,10 @@ void dray_load_balance_schema(conduit::Node &param_schema) {
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
-    param_schema["properties/enabled"].set(bool_schema());
-    param_schema["properties/factor"].set(number_schema());
-    param_schema["properties/threshold"].set(number_schema());
-    param_schema["properties/use_prefix"].set(bool_schema());
+    bool_schema(param_schema["properties/enabled"]);
+    number_schema(param_schema["properties/factor"]);
+    number_schema(param_schema["properties/threshold"]);
+    bool_schema(param_schema["properties/use_prefix"]);
 }
 
 dray::Vec<float,3>
@@ -1229,57 +1228,47 @@ DRayPseudocolor::declare_interface(Node &i)
     i["output_port"] = "false";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
-    param_schema["properties/field"].set(string_schema());
-    param_schema["properties/image_prefix"].set(string_schema());
-    param_schema["properties/min_value"].set(number_schema());
-    param_schema["properties/max_value"].set(number_schema());
-    param_schema["properties/image_width"].set(number_schema());
-    param_schema["properties/image_height"].set(number_schema());
-    param_schema["properties/log_scale"].set(string_schema());
-    param_schema["properties/annotations"].set(string_schema());
-    param_schema["properties/draw_mesh"].set(string_schema());
-    param_schema["properties/line_thickness"].set(number_schema());
-    param_schema["properties/line_color"].set(number_schema());
-    param_schema["properties/camera"].set(ignore_schema());
+    string_schema(param_schema["properties/field"]);
+    string_schema(param_schema["properties/image_prefix"]);
+    number_schema(param_schema["properties/min_value"]);
+    number_schema(param_schema["properties/max_value"]);
+    number_schema(param_schema["properties/image_width"]);
+    number_schema(param_schema["properties/image_height"]);
+    string_schema(param_schema["properties/log_scale"]);
+    string_schema(param_schema["properties/annotations"]);
+    string_schema(param_schema["properties/draw_mesh"]);
+    number_schema(param_schema["properties/line_thickness"]);
+    number_schema(param_schema["properties/line_color"]);
+    ignore_schema(param_schema["properties/camera"]);
 
-    conduit::Node color_table_schema;
-    detail::dray_color_table_schema(color_table_schema);
-    param_schema["properties/color_table"].set(color_table_schema);
+    detail::dray_color_table_schema(param_schema["properties/color_table"]);
     
     param_schema["required"].append() = "field";
 
     // --- check image name ---
     {
-        conduit::Node db_name_schema;
+        conduit::Node &db_name_schema = param_schema["oneOf"].append();
         db_name_schema["type"] = "object";
         db_name_schema["required"].append() = "camera";
         db_name_schema["constraints/forbid"].append() = "image_prefix";
 
-        conduit::Node camera_schema_1;
+        conduit::Node &camera_schema_1 = db_name_schema["properties/camera"].append();
         camera_schema_1["type"] = "object";
         camera_schema_1["required"].append() = "db_name";
-        db_name_schema["properties/camera"].append().set(camera_schema_1);
-        
-        param_schema["oneOf"].append().set(db_name_schema);
     }
     {
-        conduit::Node image_prefix_schema;
+        conduit::Node &image_prefix_schema = param_schema["oneOf"].append();
         image_prefix_schema["type"] = "object";
         image_prefix_schema["required"].append() = "image_prefix";
 
-        conduit::Node camera_schema_2;
+        conduit::Node &camera_schema_2 = image_prefix_schema["properties/camera"].append();
         camera_schema_2["type"] = "object";
         camera_schema_2["constraints/forbid"].append() = "db_name";
-        image_prefix_schema["properties/camera"].append().set(camera_schema_2);
-
-        param_schema["oneOf"].append().set(image_prefix_schema);
     }
-    
-    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -1411,65 +1400,54 @@ DRay3Slice::declare_interface(Node &i)
     i["output_port"] = "false";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
-    param_schema["properties/field"].set(string_schema());
-    param_schema["properties/image_prefix"].set(string_schema());
-    param_schema["properties/min_value"].set(number_schema());
-    param_schema["properties/max_value"].set(number_schema());
-    param_schema["properties/image_width"].set(number_schema());
-    param_schema["properties/image_height"].set(number_schema());
-    param_schema["properties/log_scale"].set(string_schema());
-    param_schema["properties/annotations"].set(string_schema());
-    param_schema["properties/x_offset"].set(number_schema());
-    param_schema["properties/y_offset"].set(number_schema());
-    param_schema["properties/z_offset"].set(number_schema());
-    param_schema["properties/camera"].set(ignore_schema());
+    string_schema(param_schema["properties/field"]);
+    string_schema(param_schema["properties/image_prefix"]);
+    number_schema(param_schema["properties/min_value"]);
+    number_schema(param_schema["properties/max_value"]);
+    number_schema(param_schema["properties/image_width"]);
+    number_schema(param_schema["properties/image_height"]);
+    string_schema(param_schema["properties/log_scale"]);
+    string_schema(param_schema["properties/annotations"]);
+    number_schema(param_schema["properties/x_offset"]);
+    number_schema(param_schema["properties/y_offset"]);
+    number_schema(param_schema["properties/z_offset"]);
+    ignore_schema(param_schema["properties/camera"]);
     
-    conduit::Node color_table_schema;
-    detail::dray_color_table_schema(color_table_schema);
-    param_schema["properties/color_table"].set(color_table_schema);
+    detail::dray_color_table_schema(param_schema["properties/color_table"]);
 
     // --- sweep ---
-    conduit::Node sweep_schema;
+    conduit::Node &sweep_schema = param_schema["properties/sweep"];
     sweep_schema["type"] = "object";
     sweep_schema["additionalProperties"] = false;
-    sweep_schema["properties/count"].set(number_schema());
-    sweep_schema["properties/axis"].set(string_schema());
-    param_schema["properties/sweep"].set(sweep_schema);
+    number_schema(sweep_schema["properties/count"]);
+    string_schema(sweep_schema["properties/axis"]);
     
     param_schema["required"].append() = "field";
 
     // --- check image name ---
     {
-        conduit::Node db_name_schema;
+        conduit::Node &db_name_schema = param_schema["oneOf"].append();
         db_name_schema["type"] = "object";
         db_name_schema["required"].append() = "camera";
         db_name_schema["constraints/forbid"].append() = "image_prefix";
 
-        conduit::Node camera_schema_1;
+        conduit::Node &camera_schema_1 = db_name_schema["properties/camera"].append();
         camera_schema_1["type"] = "object";
         camera_schema_1["required"].append() = "db_name";
-        db_name_schema["properties/camera"].append().set(camera_schema_1);
-        
-        param_schema["oneOf"].append().set(db_name_schema);
     }
     {
-        conduit::Node image_prefix_schema;
+        conduit::Node &image_prefix_schema = param_schema["oneOf"].append();
         image_prefix_schema["type"] = "object";
         image_prefix_schema["required"].append() = "image_prefix";
 
-        conduit::Node camera_schema_2;
+        conduit::Node &camera_schema_2 = image_prefix_schema["properties/camera"].append();
         camera_schema_2["type"] = "object";
         camera_schema_2["constraints/forbid"].append() = "db_name";
-        image_prefix_schema["properties/camera"].append().set(camera_schema_2);
-
-        param_schema["oneOf"].append().set(image_prefix_schema);
     }
-    
-    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -1803,60 +1781,47 @@ DRayVolume::declare_interface(Node &i)
     i["output_port"] = "false";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
-    param_schema["properties/field"].set(string_schema());
-    param_schema["properties/image_prefix"].set(string_schema());
-    param_schema["properties/min_value"].set(number_schema());
-    param_schema["properties/max_value"].set(number_schema());
-    param_schema["properties/image_width"].set(number_schema());
-    param_schema["properties/image_height"].set(number_schema());
-    param_schema["properties/log_scale"].set(string_schema());
-    param_schema["properties/annotations"].set(string_schema());
-    param_schema["properties/samples"].set(number_schema());
-    param_schema["properties/use_lighing"].set(bool_schema());
-    param_schema["properties/camera"].set(ignore_schema());
+    string_schema(param_schema["properties/field"]);
+    string_schema(param_schema["properties/image_prefix"]);
+    number_schema(param_schema["properties/min_value"]);
+    number_schema(param_schema["properties/max_value"]);
+    number_schema(param_schema["properties/image_width"]);
+    number_schema(param_schema["properties/image_height"]);
+    string_schema(param_schema["properties/log_scale"]);
+    string_schema(param_schema["properties/annotations"]);
+    number_schema(param_schema["properties/samples"]);
+    bool_schema(param_schema["properties/use_lighing"]);
+    ignore_schema(param_schema["properties/camera"]);
     
-    conduit::Node color_table_schema;
-    detail::dray_color_table_schema(color_table_schema);
-    param_schema["properties/color_table"].set(color_table_schema);
-
-    conduit::Node load_balance_schema;
-    detail::dray_load_balance_schema(load_balance_schema);
-    param_schema["properties/load_balancing"].set(load_balance_schema);
+    detail::dray_color_table_schema(param_schema["properties/color_table"]);
+    detail::dray_load_balance_schema(param_schema["properties/load_balancing"]);
     
     param_schema["required"].append() = "field";
 
     // --- check image name ---
     {
-        conduit::Node db_name_schema;
+        conduit::Node &db_name_schema = param_schema["oneOf"].append();
         db_name_schema["type"] = "object";
         db_name_schema["required"].append() = "camera";
         db_name_schema["constraints/forbid"].append() = "image_prefix";
 
-        conduit::Node camera_schema_1;
+        conduit::Node &camera_schema_1 = db_name_schema["properties/camera"].append();
         camera_schema_1["type"] = "object";
         camera_schema_1["required"].append() = "db_name";
-        db_name_schema["properties/camera"].append().set(camera_schema_1);
-        
-        param_schema["oneOf"].append().set(db_name_schema);
     }
     {
-        conduit::Node image_prefix_schema;
+        conduit::Node &image_prefix_schema = param_schema["oneOf"].append();
         image_prefix_schema["type"] = "object";
         image_prefix_schema["required"].append() = "image_prefix";
 
-        conduit::Node camera_schema_2;
+        conduit::Node &camera_schema_2 = image_prefix_schema["properties/camera"].append();
         camera_schema_2["type"] = "object";
         camera_schema_2["constraints/forbid"].append() = "db_name";
-        image_prefix_schema["properties/camera"].append().set(camera_schema_2);
-
-        param_schema["oneOf"].append().set(image_prefix_schema);
     }
-    
-    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -2012,33 +1977,29 @@ DRayReflect::declare_interface(Node &i)
     i["output_port"] = "true";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
     // --- point ---
-    conduit::Node point_schema;
+    conduit::Node &point_schema = param_schema["properties/point"];
     point_schema["type"] = "object";
     point_schema["additionalProperties"] = false;
-    point_schema["properties/x"].set(number_schema());
-    point_schema["properties/y"].set(number_schema());
-    point_schema["properties/z"].set(number_schema());
+    number_schema(point_schema["properties/x"]);
+    number_schema(point_schema["properties/y"]);
+    number_schema(point_schema["properties/z"]);
     point_schema["required"].append() = "x";
     point_schema["required"].append() = "y";
-    param_schema["properties/point"].set(point_schema);
 
     // --- normal ---
-    conduit::Node normal_schema;
+    conduit::Node &normal_schema = param_schema["properties/normal"];
     normal_schema["type"] = "object";
     normal_schema["additionalProperties"] = false;
-    normal_schema["properties/x"].set(number_schema());
-    normal_schema["properties/y"].set(number_schema());
-    normal_schema["properties/z"].set(number_schema());
+    number_schema(normal_schema["properties/x"]);
+    number_schema(normal_schema["properties/y"]);
+    number_schema(normal_schema["properties/z"]);
     normal_schema["required"].append() = "x";
     normal_schema["required"].append() = "y";
-    param_schema["properties/normal"].set(normal_schema);
-    
-    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -2116,17 +2077,15 @@ DRayProject2d::declare_interface(Node &i)
     i["output_port"] = "true";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
-    param_schema["properties/fields"].set(ignore_schema());
-    param_schema["properties/image_width"].set(number_schema());
-    param_schema["properties/image_height"].set(number_schema());
-    param_schema["properties/camera"].set(ignore_schema());
-    param_schema["properties/plane"].set(ignore_schema());
-    
-    i["param_schema"].set(param_schema);
+    ignore_schema(param_schema["properties/fields"]);
+    number_schema(param_schema["properties/image_width"]);
+    number_schema(param_schema["properties/image_height"]);
+    ignore_schema(param_schema["properties/camera"]);
+    ignore_schema(param_schema["properties/plane"]);
 }
 
 //-----------------------------------------------------------------------------
@@ -2284,25 +2243,21 @@ DRayProjectColors2d::declare_interface(Node &i)
     i["output_port"] = "true";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
-    param_schema["properties/field"].set(string_schema());
-    param_schema["properties/min_value"].set(number_schema());
-    param_schema["properties/max_value"].set(number_schema());
-    param_schema["properties/image_width"].set(number_schema());
-    param_schema["properties/image_height"].set(number_schema());
-    param_schema["properties/log_scale"].set(string_schema());
-    param_schema["properties/camera"].set(ignore_schema());
+    string_schema(param_schema["properties/field"]);
+    number_schema(param_schema["properties/min_value"]);
+    number_schema(param_schema["properties/max_value"]);
+    number_schema(param_schema["properties/image_width"]);
+    number_schema(param_schema["properties/image_height"]);
+    string_schema(param_schema["properties/log_scale"]);
+    ignore_schema(param_schema["properties/camera"]);
     
-    conduit::Node color_table_schema;
-    detail::dray_color_table_schema(color_table_schema);
-    param_schema["properties/color_table"].set(color_table_schema);
+    detail::dray_color_table_schema(param_schema["properties/color_table"]);
     
     param_schema["required"].append() = "field";
-    
-    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -2401,19 +2356,17 @@ DRayVectorComponent::declare_interface(Node &i)
     i["output_port"] = "true";
 
     // ----------- Define Param Schema -----------
-    conduit::Node param_schema;
+    conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
-    param_schema["properties/field"].set(string_schema());
-    param_schema["properties/component"].set(number_schema());
-    param_schema["properties/output_name"].set(string_schema());
+    string_schema(param_schema["properties/field"]);
+    number_schema(param_schema["properties/component"]);
+    string_schema(param_schema["properties/output_name"]);
 
     param_schema["required"].append() = "field";
     param_schema["required"].append() = "component";
     param_schema["required"].append() = "output_name";
-    
-    i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------

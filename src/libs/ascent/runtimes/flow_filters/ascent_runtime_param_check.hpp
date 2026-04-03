@@ -72,7 +72,7 @@ conduit::Node ASCENT_API &string_schema(conduit::Node &schema_node,
                                         optional_param<int> minLength = optional_param<int>(),
                                         optional_param<int> maxLength = optional_param<int>());
 
-conduit::Node ASCENT_API &string_enum_schema(std::vector<std::string> options);
+conduit::Node ASCENT_API &string_enum_schema(conduit::Node &schema_node, std::vector<std::string> options);
 
 conduit::Node ASCENT_API &bool_schema(conduit::Node &schema_node);
 

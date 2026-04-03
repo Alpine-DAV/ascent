@@ -532,21 +532,19 @@ void ascent::runtime::filters::BFlowIso::declare_interface(conduit::Node &i)
   i["output_port"] = "false";  // true -- means filter, false -- means extract
 
   // ----------- Define Param Schema -----------
-  conduit::Node param_schema;
+  conduit::Node &param_schema = i["param_schema"];
   param_schema["type"] = "object";
 
-  param_schema["properties/field"].set(string_schema());
-  param_schema["properties/iso_values"].set(number_schema());
-  param_schema["properties/image_name"].set(string_schema());
-  param_schema["properties/radices"].set(number_schema());
-  param_schema["properties/width"].set(number_schema());
-  param_schema["properties/height"].set(number_schema());
+  string_schema(param_schema["properties/field"]);
+  number_schema(param_schema["properties/iso_values"]);
+  string_schema(param_schema["properties/image_name"]);
+  number_schema(param_schema["properties/radices"]);
+  number_schema(param_schema["properties/width"]);
+  number_schema(param_schema["properties/height"]);
 
   param_schema["required"].append() = "field";
   param_schema["required"].append() = "iso_values";
   param_schema["required"].append() = "image_name";
-    
-  i["param_schema"].set(param_schema);
 }
 
 //-----------------------------------------------------------------------------
