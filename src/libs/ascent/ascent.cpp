@@ -626,6 +626,10 @@ Ascent::open(const conduit::Node &options)
               {
                 vtkh::ForceCUDA();
               }
+              else if(backend == "kokkos")
+              {
+                vtkh::ForceKokkos();
+              }
               else
               {
                 ASCENT_ERROR("Ascent unrecognized backend "<<backend);
