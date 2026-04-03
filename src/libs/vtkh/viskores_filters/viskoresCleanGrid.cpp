@@ -10,6 +10,11 @@ viskoresCleanGrid::tolerance(const viskores::Float64 tol)
   m_tolerance = tol;
 }
 
+void
+viskoresCleanGrid::merge_points(bool merge) {
+  m_merge_points = merge;
+}
+
 viskores::cont::DataSet
 viskoresCleanGrid::Run(viskores::cont::DataSet &input,
                    viskores::filter::FieldSelection map_fields)
@@ -24,6 +29,7 @@ viskoresCleanGrid::Run(viskores::cont::DataSet &input,
 
   cleaner.SetFieldsToPass(map_fields);
   cleaner.SetRemoveDegenerateCells(true);
+  cleaner.SetMergePoints(m_merge_points);
   auto output = cleaner.Execute(input);
   return output;
 }
