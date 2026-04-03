@@ -9,7 +9,8 @@
 Parameter Schemas for Validation and Surprise Checking
 ======================================================
 
-The schema validator supports a focused subset of JSON Schema, along with a few Conduit-specific extensions under constraints.
+The schema validator supports a focused subset of `JSON Schema <https://json-schema.org/understanding-json-schema/reference>`_
+, along with a few Conduit-specific extensions under constraints.
 
 Defined in:
 
