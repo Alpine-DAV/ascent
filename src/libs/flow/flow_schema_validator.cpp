@@ -62,9 +62,15 @@ void add_input_error(conduit::Node &info,
 {
     std::ostringstream oss;
     oss << "Validation failed at '" << node_path(path) << "'";
-    if(!rule.empty()) oss << " (" << rule << ")";
+    if(!rule.empty())
+    {
+        oss << " (" << rule << ")";
+    }
     oss << ": " << message << ".";
-    if(!expected.empty()) oss << " Expected " << expected << ".";
+    if(!expected.empty())
+    {
+        oss << " Expected " << expected << ".";
+    }
 
     info["errors"].append() = oss.str();
 }
@@ -76,7 +82,10 @@ void add_schema_error(conduit::Node &info,
 {
     std::ostringstream oss;
     oss << "Schema error near '" << node_path(path) << "'";
-    if(!rule.empty()) oss << " (" << rule << ")";
+    if(!rule.empty())
+    {
+        oss << " (" << rule << ")";
+    }
     oss << ": " << message  << ".";
 
     info["errors"].append() = oss.str();
@@ -185,7 +194,10 @@ bool validate_string(const conduit::Node &schema,
                      conduit::Node &info,
                      const std::string &path)
 {
-    if(!input.dtype().is_string()) return true;
+    if(!input.dtype().is_string())
+    {
+        return true;
+    }
 
     const std::string s = input.as_string();
     bool ok = true;
@@ -243,8 +255,10 @@ bool validate_enum(const conduit::Node &schema,
                    conduit::Node &info,
                    const std::string &path)
 {
-    if(!schema.has_child("enum")) return true;
-    if(!input.dtype().is_string()) return true;
+    if(!schema.has_child("enum") || !input.dtype().is_string())
+    {
+        return true;
+    }
 
     const conduit::Node &e = schema["enum"];
 
@@ -253,10 +267,16 @@ bool validate_enum(const conduit::Node &schema,
     allowed << "{";
     for(conduit::index_t i = 0; i < e.number_of_children(); ++i)
     {
-        if(i > 0) allowed << ", ";
+        if(i > 0)
+        {
+            allowed << ", ";
+        }
         const std::string v = e.child(i).as_string();
         allowed << v;
-        if(input_value == v) return true;
+        if(input_value == v)
+        {
+            return true;
+        }
     }
     allowed << "}";
 
@@ -272,7 +292,10 @@ bool validate_number(const conduit::Node &schema,
                      conduit::Node &info,
                      const std::string &path)
 {
-    if(get_type_string(schema) != "number" && get_type_string(schema) != "integer") return true;
+    if(get_type_string(schema) != "number" && get_type_string(schema) != "integer")
+    {
+        return true;
+    }
 
     const double v = input.to_float64();
     bool ok = true;
@@ -509,7 +532,10 @@ bool validate_not_const_fields(const conduit::Node &schema,
         const std::string field = forbidden_val.name();
         const std::string field_path = conduit::utils::join_file_path(path, field);
 
-        if(!input.has_child(field)) continue;
+        if(!input.has_child(field))
+        {
+            continue;
+        }
 
         const conduit::Node &actual = input[field];
 
@@ -685,7 +711,10 @@ bool validate_exclusive_children(const conduit::Node &schema,
     found << "{";
     for(conduit::index_t i = 0; i < keys.number_of_children(); ++i)
     {
-        if(i > 0) allowed << ", ";
+        if(i > 0)
+        {
+            allowed << ", ";
+        }
         const std::string k = keys.child(i).as_string();
         allowed << k;
         if(input.has_child(k))
@@ -726,7 +755,10 @@ static bool validate_all_of(const conduit::Node &schema,
                             conduit::Node &info,
                             const std::string &path)
 {
-    if(!schema.has_child("allOf")) return true;
+    if(!schema.has_child("allOf"))
+    {
+        return true;
+    }
 
     const conduit::Node &opts = schema["allOf"];
     int matches = 0;
@@ -748,12 +780,18 @@ static bool validate_all_of(const conduit::Node &schema,
         }
     }
 
-    if (matches == opts.number_of_children()) return true;
+    if (matches == opts.number_of_children())
+    {
+        return true;
+    }
 
     std::ostringstream msg;
     msg << "expected all of the " << opts.number_of_children()
         << " schema options to match, but ";
-    if(matches == 0) msg << "none matched";
+    if(matches == 0)
+    {
+        msg << "none matched";
+    }
     else msg << "only " << matches << " matched";
 
     add_input_error(info, path, "all of", msg.str());
