@@ -128,12 +128,12 @@ ADIOS2::declare_interface(Node &i)
     string_schema(bpfile_schema["properties/engine"]);
     bpfile_schema["properties/engine/constraints/const"] = "BPFile";
 
-    conduit::Node sst_schema = param_schema["oneOf"].append();
+    conduit::Node &sst_schema = param_schema["oneOf"].append();
     sst_schema["type"] = "object";
     string_schema(sst_schema["properties/engine"]);
     sst_schema["properties/engine/constraints/const"] = "SST";
 
-    conduit::Node fname = string_schema(sst_schema["properties/filename"]);
+    conduit::Node &fname = string_schema(sst_schema["properties/filename"]);
     fname["pattern"] = "^[^/]*$";
 }
 
