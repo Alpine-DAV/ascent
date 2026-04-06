@@ -13,6 +13,7 @@
 #include "ascent_string_utils.hpp"
 #include <ascent.hpp>
 #include <ascent_metadata.hpp>
+#include <ascent_runtime_utils.hpp>
 
 #include <map>
 #include <ctime>
@@ -308,7 +309,7 @@ std::string expand_path_special_variables(const std::string &path_string,
       }
     }
 
-    std::string result_string = path_string;
+    std::string result_string = ascent::runtime::filters::output_dir(path_string);
 
     conduit::Node meta = Metadata::n_metadata;
 
