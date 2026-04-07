@@ -446,7 +446,7 @@ DataBinning::declare_interface(Node &i)
 
         conduit::Node axes_schema = array_schema(param_schema["properties/axes"], single_axis_schema);
         axes_schema["minItems"] = 1;
-        axes_schema["miaxItems"] = 3;
+        axes_schema["maxItems"] = 3;
     }
 
     param_schema["required"].append() = "reduction_op";
