@@ -264,15 +264,15 @@ conduit::Node &vec3_schema_anyOf(conduit::Node &schema_node,
 
   conduit::Node &var1_required = schema_node["anyOf"].append();
   var1_required["type"] = "object";
-  var1_required["required"] = var1;
+  var1_required["required"].append() = var1;
 
   conduit::Node &var2_required = schema_node["anyOf"].append();
   var2_required["type"] = "object";
-  var2_required["required"] = var2;
+  var2_required["required"].append() = var2;
 
   conduit::Node &var3_required = schema_node["anyOf"].append();
   var3_required["type"] = "object";
-  var3_required["required"] = var3;
+  var3_required["required"].append() = var3;
 
   return schema_node;
 }
