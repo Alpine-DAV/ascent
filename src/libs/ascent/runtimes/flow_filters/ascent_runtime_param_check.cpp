@@ -139,11 +139,11 @@ conduit::Node &expression_schema(conduit::Node &schema_node)
 //-----------------------------------------------------------------------------
 
 conduit::Node &number_schema(conduit::Node &schema_node,
-                             bool supports_expressions,
-                             int minimum,
-                             int maximum,
-                             int exclusiveMinimum,
-                             int exclusiveMaximum)
+                             const bool supports_expressions,
+                             const int minimum,
+                             const int maximum,
+                             const int exclusiveMinimum,
+                             const int exclusiveMaximum)
 {
   schema_node.reset();
 
@@ -179,11 +179,11 @@ conduit::Node &number_schema(conduit::Node &schema_node,
 }
 
 conduit::Node &integer_schema(conduit::Node &schema_node,
-                             bool supports_expressions,
-                             int minimum,
-                             int maximum,
-                             int exclusiveMinimum,
-                             int exclusiveMaximum)
+                             const bool supports_expressions,
+                             const int minimum,
+                             const int maximum,
+                             const int exclusiveMinimum,
+                             const int exclusiveMaximum)
 {
   schema_node.reset();
   
@@ -284,24 +284,30 @@ conduit::Node &vec3_schema_anyOf(conduit::Node &schema_node, bool supports_expre
 
 //-----------------------------------------------------------------------------
 
-conduit::Node &array_schema(conduit::Node &schema_node, const conduit::Node &item_schema)
+conduit::Node &array_schema(conduit::Node &schema_node,
+                            const conduit::Node &item_schema,
+                            const std::size_t minItems,
+                            const std::size_t maxItems)
 {
   schema_node.reset();
   
   schema_node["type"] = "array";
+
+  if(minItems != 0)
+  {
+    schema_node["minItems"] = minItems;
+  }
+
+  if(maxItems != std::numeric_limits<std::size_t>::max())
+  {
+    schema_node["maxItems"] = maxItems;
+  }
+
   if (!item_schema.dtype().is_empty())
   {
     schema_node["items"].set(item_schema);
   }
 
-  return schema_node;
-}
-
-
-conduit::Node &array_schema(conduit::Node &schema_node)
-{
-  schema_node.reset();
-  schema_node["type"] = "array";
   return schema_node;
 }
 
