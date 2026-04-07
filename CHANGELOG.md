@@ -22,6 +22,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added ability to do tiled rendering, where tiles covering an image are rendered seperately to form the final image. The default is to do tiled rendering with 1024 by 1024 tiles.
 - Added support for 64 bit IDs
 - Added support for RZ meshes
+- Added support for monochrome plotting 
 
 ### Changed
 - Redefined the parameter varification and surprise checking behavior for Filters to instead use a conduit based JSON Schema style verification schema. Implimented for all existing filters. 

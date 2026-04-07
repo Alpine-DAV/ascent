@@ -321,6 +321,24 @@ Here is an example of adding a custom color table to the volume plot:
   add_plots["action"] = "add_scenes";
   add_plots["scenes"] = scenes;
 
+Monochrome Plotting
+^^^^^^^^^^^^^^^^^^^
+
+Generally, plotting is done using a range of colors from a color table; however, in some cases
+monochrome coloring is desirable. In these cases, the single color can be passed as a list of
+RGB or RGBA percentages values between 0 and 1 to the ``color`` node.
+
+.. code-block:: c++
+  conduit::Node scenes;
+  scenes["s1/plots/p1/type"]  = "volume";
+  scenes["s1/plots/p1/field"] = "braid";
+  scenes["s1/plots/p1/color"] = {0.0, .184, .655};
+
+  conduit::Node actions;
+  conduit::Node &add_plots = actions.append();
+  add_plots["action"] = "add_scenes";
+  add_plots["scenes"] = scenes;
+
 Clamping Scalar Values
 ^^^^^^^^^^^^^^^^^^^^^^
 The minimum and maximum values of a scalar field varies with each simulation time
