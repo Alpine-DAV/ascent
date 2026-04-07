@@ -1755,11 +1755,17 @@ CreatePlot::declare_interface(Node &i)
     conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
+    param_schema["constraints/exclusiveChildren"].append() = "color";
+    param_schema["constraints/exclusiveChildren"].append() = "color_table";
 
     string_schema(param_schema["properties/type"]);
     ignore_schema(param_schema["properties/pipeline"]);
     string_schema(param_schema["properties/topology"]);
-
+    
+    conduit::Node mono_color_schema;
+    array_schema(param_schema["properties/color"], number_schema(mono_color_schema));
+    param_schema["properties/color/minItems"] = 3;
+    param_schema["properties/color/maxItems"] = 4;
     detail::color_table_schema(param_schema["properties/color_table"]);
 
     param_schema["required"].append() = "type";
@@ -1947,6 +1953,23 @@ CreatePlot::execute()
           }
         }
       }
+      renderer->SetColorTable(color_table);
+    }
+    else if(plot_params.has_path("color"))
+    {
+      viskores::cont::ColorTable color_table;
+      color_table.ClearColors();
+
+      float64_array color_vals = plot_params.fetch("color").value();
+      viskores::Vec<viskores::Float64,3> ecolor(color_vals[0], color_vals[1], color_vals[2]);
+      color_table.AddPoint(0.0, ecolor);
+
+      if (color_vals.number_of_elements() == 4)
+      {
+        color_table.AddPointAlpha(0.0, std::min(1., std::max(color_vals[3], 0.)));
+      }
+
+      renderer->DisableColorBar();
       renderer->SetColorTable(color_table);
     }
 

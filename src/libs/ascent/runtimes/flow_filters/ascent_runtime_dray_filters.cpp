@@ -1200,8 +1200,24 @@ parse_params(const conduit::Node &params,
   {
     color_map.color_table(parse_color_table(params["color_table"]));
   }
+  else if(params.has_path("color"))
+  {
+    conduit::Node color_vals_node;
+    params["color"].to_float32_array(color_vals_node);
+    float32_array color_vals = color_vals_node.as_float32_array();
 
+    conduit::Node mono_color_table;
+    mono_color_table["control_points/r"] = {color_vals[0]};
+    mono_color_table["control_points/g"] = {color_vals[1]};
+    mono_color_table["control_points/b"] = {color_vals[2]};
+    if (color_vals.number_of_elements() == 4)
+    {
+        mono_color_table["control_points/a"] = {color_vals[3]};
+    }
+    mono_color_table["control_points/position"] = {0.0};
 
+    color_map.color_table(parse_color_table(mono_color_table));
+  }
 }
 
 }; // namespace detail
@@ -1231,6 +1247,8 @@ DRayPseudocolor::declare_interface(Node &i)
     conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
+    param_schema["constraints/exclusiveChildren"].append() = "color";
+    param_schema["constraints/exclusiveChildren"].append() = "color_table";
 
     string_schema(param_schema["properties/field"]);
     string_schema(param_schema["properties/image_prefix"]);
@@ -1245,6 +1263,10 @@ DRayPseudocolor::declare_interface(Node &i)
     number_schema(param_schema["properties/line_color"]);
     ignore_schema(param_schema["properties/camera"]);
 
+    conduit::Node mono_color_schema;
+    array_schema(param_schema["properties/color"], number_schema(mono_color_schema));
+    param_schema["properties/color/minItems"] = 3;
+    param_schema["properties/color/maxItems"] = 4;
     detail::dray_color_table_schema(param_schema["properties/color_table"]);
     
     param_schema["required"].append() = "field";
@@ -1403,6 +1425,8 @@ DRay3Slice::declare_interface(Node &i)
     conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
+    param_schema["constraints/exclusiveChildren"].append() = "color";
+    param_schema["constraints/exclusiveChildren"].append() = "color_table";
 
     string_schema(param_schema["properties/field"]);
     string_schema(param_schema["properties/image_prefix"]);
@@ -1417,6 +1441,10 @@ DRay3Slice::declare_interface(Node &i)
     number_schema(param_schema["properties/z_offset"]);
     ignore_schema(param_schema["properties/camera"]);
     
+    conduit::Node mono_color_schema;
+    array_schema(param_schema["properties/color"], number_schema(mono_color_schema));
+    param_schema["properties/color/minItems"] = 3;
+    param_schema["properties/color/maxItems"] = 4;
     detail::dray_color_table_schema(param_schema["properties/color_table"]);
 
     // --- sweep ---
@@ -1784,6 +1812,8 @@ DRayVolume::declare_interface(Node &i)
     conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
+    param_schema["constraints/exclusiveChildren"].append() = "color";
+    param_schema["constraints/exclusiveChildren"].append() = "color_table";
 
     string_schema(param_schema["properties/field"]);
     string_schema(param_schema["properties/image_prefix"]);
@@ -1796,7 +1826,11 @@ DRayVolume::declare_interface(Node &i)
     number_schema(param_schema["properties/samples"]);
     bool_schema(param_schema["properties/use_lighing"]);
     ignore_schema(param_schema["properties/camera"]);
-    
+
+    conduit::Node mono_color_schema;
+    array_schema(param_schema["properties/color"], number_schema(mono_color_schema));
+    param_schema["properties/color/minItems"] = 3;
+    param_schema["properties/color/maxItems"] = 4;
     detail::dray_color_table_schema(param_schema["properties/color_table"]);
     detail::dray_load_balance_schema(param_schema["properties/load_balancing"]);
     
@@ -2246,6 +2280,8 @@ DRayProjectColors2d::declare_interface(Node &i)
     conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
+    param_schema["constraints/exclusiveChildren"].append() = "color";
+    param_schema["constraints/exclusiveChildren"].append() = "color_table";
 
     string_schema(param_schema["properties/field"]);
     number_schema(param_schema["properties/min_value"]);
@@ -2255,6 +2291,10 @@ DRayProjectColors2d::declare_interface(Node &i)
     string_schema(param_schema["properties/log_scale"]);
     ignore_schema(param_schema["properties/camera"]);
     
+    conduit::Node mono_color_schema;
+    array_schema(param_schema["properties/color"], number_schema(mono_color_schema));
+    param_schema["properties/color/minItems"] = 3;
+    param_schema["properties/color/maxItems"] = 4;
     detail::dray_color_table_schema(param_schema["properties/color_table"]);
     
     param_schema["required"].append() = "field";
