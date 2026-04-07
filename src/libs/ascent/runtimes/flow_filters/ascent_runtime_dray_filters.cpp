@@ -1264,9 +1264,7 @@ DRayPseudocolor::declare_interface(Node &i)
     ignore_schema(param_schema["properties/camera"]);
 
     conduit::Node mono_color_schema;
-    array_schema(param_schema["properties/color"], number_schema(mono_color_schema));
-    param_schema["properties/color/minItems"] = 3;
-    param_schema["properties/color/maxItems"] = 4;
+    array_schema(param_schema["properties/color"], number_schema(mono_color_schema), 3, 4);
     detail::dray_color_table_schema(param_schema["properties/color_table"]);
     
     param_schema["required"].append() = "field";
@@ -1442,9 +1440,7 @@ DRay3Slice::declare_interface(Node &i)
     ignore_schema(param_schema["properties/camera"]);
     
     conduit::Node mono_color_schema;
-    array_schema(param_schema["properties/color"], number_schema(mono_color_schema));
-    param_schema["properties/color/minItems"] = 3;
-    param_schema["properties/color/maxItems"] = 4;
+    array_schema(param_schema["properties/color"], number_schema(mono_color_schema), 3, 4);
     detail::dray_color_table_schema(param_schema["properties/color_table"]);
 
     // --- sweep ---
@@ -1828,9 +1824,7 @@ DRayVolume::declare_interface(Node &i)
     ignore_schema(param_schema["properties/camera"]);
 
     conduit::Node mono_color_schema;
-    array_schema(param_schema["properties/color"], number_schema(mono_color_schema));
-    param_schema["properties/color/minItems"] = 3;
-    param_schema["properties/color/maxItems"] = 4;
+    array_schema(param_schema["properties/color"], number_schema(mono_color_schema), 3, 4);
     detail::dray_color_table_schema(param_schema["properties/color_table"]);
     detail::dray_load_balance_schema(param_schema["properties/load_balancing"]);
     
@@ -2292,9 +2286,7 @@ DRayProjectColors2d::declare_interface(Node &i)
     ignore_schema(param_schema["properties/camera"]);
     
     conduit::Node mono_color_schema;
-    array_schema(param_schema["properties/color"], number_schema(mono_color_schema));
-    param_schema["properties/color/minItems"] = 3;
-    param_schema["properties/color/maxItems"] = 4;
+    array_schema(param_schema["properties/color"], number_schema(), 3, 4);
     detail::dray_color_table_schema(param_schema["properties/color_table"]);
     
     param_schema["required"].append() = "field";
