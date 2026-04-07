@@ -639,7 +639,8 @@ provided schema.
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
-    array_schema(param_schema["properties/iso_values"], number_schema());
+    conduit::Node num_schema;
+    array_schema(param_schema["properties/iso_values"], number_schema(num_schema));
     param_schema["required"].append() = "iso_values";
 
 Resulting schema fragment:

@@ -680,7 +680,7 @@ AddFields::declare_interface(Node &i)
     param_schema["additionalProperties"] = false;
 
     string_schema(param_schema["properties/output_field"]);
-    array_schema(ignore_schema(param_schema["properties/fields"]));
+    array_schema(param_schema["properties/fields"]);
 
     param_schema["required"].append() = "output_field";
     param_schema["required"].append() = "fields";
