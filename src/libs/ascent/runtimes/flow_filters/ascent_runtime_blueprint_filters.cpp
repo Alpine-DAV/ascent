@@ -444,9 +444,7 @@ DataBinning::declare_interface(Node &i)
         number_schema(single_axis_schema["properties/var"], true);
         single_axis_schema["required"].append() = "num_bins";
 
-        conduit::Node axes_schema = array_schema(param_schema["properties/axes"], single_axis_schema);
-        axes_schema["minItems"] = 1;
-        axes_schema["miaxItems"] = 3;
+        conduit::Node axes_schema = array_schema(param_schema["properties/axes"], single_axis_schema, 1, 3);
     }
 
     param_schema["required"].append() = "reduction_op";
