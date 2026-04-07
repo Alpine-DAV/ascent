@@ -729,6 +729,8 @@ and explicit validation schemas.
     ``not`` clauses that can be harder to read and maintain.
 
 ``constraints/dependencies``
+----------------------------
+
   For object inputs only. Declares field dependencies.
 
   The schema value is expected to be an object mapping a *trigger field* name to
