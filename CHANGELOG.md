@@ -22,6 +22,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added ability to do tiled rendering, where tiles covering an image are rendered seperately to form the final image. The default is to do tiled rendering with 1024 by 1024 tiles.
 - Added support for 64 bit IDs
 - Added support for RZ meshes
+- If a `default_dir` is passed as an Ascent Option, extracts and plots will output to that directory by default now.
 
 ### Fixed
 - Fixed issue where the plot did not align with the 3d axes when the camera was panned (`camera/xpan` and `camera/ypan`).
