@@ -172,8 +172,8 @@ Builds a string schema with optional length bounds.
 .. code-block:: c++
 
     conduit::Node &string_schema(conduit::Node &schema_node,
-                                 std::size_t minLength = 0,
-                                 std::size_t maxLength = std::numeric_limits<std::size_t>::max());
+                                 const std::size_t minLength = 0,
+                                 const std::size_t maxLength = std::numeric_limits<std::size_t>::max());
 
 .. raw:: html
 
@@ -305,11 +305,11 @@ the schema accepts either a number *or* an expression string (via ``oneOf``).
 .. code-block:: c++
 
     conduit::Node &number_schema(conduit::Node &schema_node,
-                                 bool supports_expressions = false,
-                                 int minimum = std::numeric_limits<int>::lowest(),
-                                 int maximum = std::numeric_limits<int>::max(),
-                                 int exclusiveMinimum = std::numeric_limits<int>::lowest(),
-                                 int exclusiveMaximum = std::numeric_limits<int>::max());
+                                 const bool supports_expressions = false,
+                                 const int minimum = std::numeric_limits<int>::lowest(),
+                                 const int maximum = std::numeric_limits<int>::max(),
+                                 const int exclusiveMinimum = std::numeric_limits<int>::lowest(),
+                                 const int exclusiveMaximum = std::numeric_limits<int>::max());
 
 .. raw:: html
 
@@ -390,11 +390,11 @@ the schema accepts either an integer *or* an expression string (via ``oneOf``).
 .. code-block:: c++
 
     conduit::Node &integer_schema(conduit::Node &schema_node,
-                                  bool supports_expressions = false,
-                                  int minimum = std::numeric_limits<int>::lowest(),
-                                  int maximum = std::numeric_limits<int>::max(),
-                                  int exclusiveMinimum = std::numeric_limits<int>::lowest(),
-                                  int exclusiveMaximum = std::numeric_limits<int>::max());
+                                  const bool supports_expressions = false,
+                                  const int minimum = std::numeric_limits<int>::lowest(),
+                                  const int maximum = std::numeric_limits<int>::max(),
+                                  const int exclusiveMinimum = std::numeric_limits<int>::lowest(),
+                                  const int exclusiveMaximum = std::numeric_limits<int>::max());
 
 .. raw:: html
 
@@ -472,13 +472,13 @@ names are ``x``, ``y``, and ``z``.
 .. code-block:: c++
 
     conduit::Node &vec3_schema(conduit::Node &schema_node,
-                               bool supports_expressions = false);
+                               const bool supports_expressions = false);
 
     conduit::Node &vec3_schema(conduit::Node &schema_node,
                                const std::string var1,
                                const std::string var2,
                                const std::string var3,
-                               bool supports_expressions = false);
+                               const bool supports_expressions = false);
 
 .. raw:: html
 
@@ -566,13 +566,13 @@ that *at least one* of them is present (via ``anyOf``). The default component na
 .. code-block:: c++
 
     conduit::Node &vec3_schema_anyOf(conduit::Node &schema_node,
-                                     bool supports_expressions = false);
+                                     const bool supports_expressions = false);
 
     conduit::Node &vec3_schema_anyOf(conduit::Node &schema_node,
                                      const std::string var1,
                                      const std::string var2,
                                      const std::string var3,
-                                     bool supports_expressions = false);
+                                     const bool supports_expressions = false);
 
 .. raw:: html
 
@@ -623,10 +623,10 @@ provided schema.
 
 .. code-block:: c++
 
-    conduit::Node &array_schema(conduit::Node &schema_node);
-
     conduit::Node &array_schema(conduit::Node &schema_node,
-                                const conduit::Node &item_schema);
+                                const conduit::Node &item_schema = conduit::Node(),
+                                const std::size_t minItems = 0,
+                                const std::size_t maxItems = std::numeric_limits<std::size_t>::max());
 
 .. raw:: html
 
