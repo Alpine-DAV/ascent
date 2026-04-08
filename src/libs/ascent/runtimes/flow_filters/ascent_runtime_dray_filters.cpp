@@ -2286,7 +2286,7 @@ DRayProjectColors2d::declare_interface(Node &i)
     ignore_schema(param_schema["properties/camera"]);
     
     conduit::Node mono_color_schema;
-    array_schema(param_schema["properties/color"], number_schema(), 3, 4);
+    array_schema(param_schema["properties/color"], number_schema(mono_color_schema), 3, 4);
     detail::dray_color_table_schema(param_schema["properties/color_table"]);
     
     param_schema["required"].append() = "field";
