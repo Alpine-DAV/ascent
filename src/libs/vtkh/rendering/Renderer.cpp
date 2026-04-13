@@ -230,10 +230,10 @@ Renderer::DoExecute()
   }
 
   bool is_lines = m_input->IsLineMesh();
-  //TODO: 
+  //TODO:
   //deal with 1D lines when viskores updated: https://github.com/Viskores/viskores/issues/164
   if(is_lines && !IsMeshRenderer())
-  { 
+  {
     typedef viskores::rendering::MapperCylinder TracerType;
     auto mapper = std::make_shared<TracerType>();
     viskores::Bounds bounds = m_input->GetBounds();
@@ -284,7 +284,7 @@ Renderer::DoExecute()
       viskores::Int32 tile_height = 0;
       if (m_renders[i].GetTiledRendering())
       {
-        switch(m_renders[i].GetTiledRenderingType()) 
+        switch(m_renders[i].GetTiledRenderingType())
         {
           case Render::TiledRenderingType::SquareTiles:
             if (canvas.GetWidth() > m_renders[i].GetTileWidth() ||
