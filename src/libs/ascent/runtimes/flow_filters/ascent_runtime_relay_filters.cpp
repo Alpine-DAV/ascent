@@ -437,27 +437,42 @@ void io_param_schema(conduit::Node &param_schema)
 #if defined(ASCENT_HDF5_ENABLED)
     // --- HDF5 ---
     {
+        //
+        // HDF5 OPTIONS Example:
+        //
+        // compact_storage:
+        //   enabled: "true"
+        //   threshold: 1024
+        // chunking:
+        //   enabled: "true"
+        //   threshold: 2000000
+        //   chunk_size: 1000000
+        //   compression:
+        //     method: "gzip"
+        //     level: 5
+
         conduit::Node &hdf5_schema = param_schema["properties/hdf5_options"];
         hdf5_schema["type"] = "object";
         hdf5_schema["additionalProperties"] = false;
-            conduit::Node &hdf5_compact_storage_schema = hdf5_schema["properties/compact_storage"];
-            hdf5_compact_storage_schema["type"] = "object";
-            hdf5_compact_storage_schema["additionalProperties"] = false;
-            bool_schema(hdf5_compact_storage_schema["properties/enabled"]);
-            number_schema(hdf5_compact_storage_schema["properties/threshold"]);
+        
+        conduit::Node &hdf5_compact_storage_schema = hdf5_schema["properties/compact_storage"];
+        hdf5_compact_storage_schema["type"] = "object";
+        hdf5_compact_storage_schema["additionalProperties"] = false;
+        bool_schema(hdf5_compact_storage_schema["properties/enabled"]);
+        number_schema(hdf5_compact_storage_schema["properties/threshold"]);
 
-            conduit::Node &hdf5_chunking_schema = hdf5_schema["properties/chunking"];
-            hdf5_chunking_schema["type"] = "object";
-            hdf5_chunking_schema["additionalProperties"] = false;
-            bool_schema(hdf5_chunking_schema["properties/enabled"]);
-            number_schema(hdf5_chunking_schema["properties/threshold"]);
-            number_schema(hdf5_chunking_schema["properties/chunk_size"]);
+        conduit::Node &hdf5_chunking_schema = hdf5_schema["properties/chunking"];
+        hdf5_chunking_schema["type"] = "object";
+        hdf5_chunking_schema["additionalProperties"] = false;
+        bool_schema(hdf5_chunking_schema["properties/enabled"]);
+        number_schema(hdf5_chunking_schema["properties/threshold"]);
+        number_schema(hdf5_chunking_schema["properties/chunk_size"]);
 
-            conduit::Node &hdf5_compression_schema = hdf5_chunking_schema["properties/compression"];
-            hdf5_compression_schema["type"] = "object";
-            hdf5_compression_schema["additionalProperties"] = false;
-            string_schema(hdf5_compression_schema["properties/method"]);
-            number_schema(hdf5_compression_schema["properties/level"]);
+        conduit::Node &hdf5_compression_schema = hdf5_chunking_schema["properties/compression"];
+        hdf5_compression_schema["type"] = "object";
+        hdf5_compression_schema["additionalProperties"] = false;
+        string_schema(hdf5_compression_schema["properties/method"]);
+        number_schema(hdf5_compression_schema["properties/level"]);
     }
 #endif
 
