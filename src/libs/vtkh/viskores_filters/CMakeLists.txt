@@ -67,7 +67,7 @@ blt_add_library(NAME viskores_compiled_filters
                 OBJECT TRUE
                 )
 
-viskores_add_target_information(viskores_compiled_filters DEVICE_SOURCES ${viskores_filter_sources})
+viskores_add_target_information(viskores_compiled_filters DEVICE_SOURCES ${viskores_filters_sources})
 
 if(ENABLE_HIDDEN_VISIBILITY)
   set_target_properties(viskores_compiled_filters PROPERTIES CXX_VISIBILITY_PRESET hidden)
