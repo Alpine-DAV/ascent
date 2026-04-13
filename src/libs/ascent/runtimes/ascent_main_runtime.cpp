@@ -136,7 +136,7 @@ AscentRuntime::Initialize(const conduit::Node &options)
 
 // handle logging first
 #if defined(ASCENT_MPI_ENABLED)
-    
+
 #else
 
 #endif
@@ -670,7 +670,7 @@ AscentRuntime::EnsureDomainIds()
       {
 	unique_ids = 0;
 	ss << i << " ";
-      } 
+      }
     }
 
     if(!unique_ids)
@@ -1989,9 +1989,9 @@ AscentRuntime::BuildGraph(const conduit::Node &actions)
         }
 
         #if defined(ASCENT_MPI_ENABLED)
-            std::string file_pattern = action.has_path("file_pattern") ? 
+            std::string file_pattern = action.has_path("file_pattern") ?
                                    action["file_pattern"].as_string() : "ascent_log_output_rank_{rank:05d}.yaml";
-            
+
             int comm_id = flow::Workspace::default_mpi_comm();
             MPI_Comm mpi_comm = MPI_Comm_f2c(comm_id);
             int comm_size = 1;
@@ -2001,7 +2001,7 @@ AscentRuntime::BuildGraph(const conduit::Node &actions)
                                                   m_rank,
                                                   comm_size));
         #else
-            std::string file_pattern = action.has_path("file_pattern") ? 
+            std::string file_pattern = action.has_path("file_pattern") ?
                                    action["file_pattern"].as_string() : "ascent_log_output.yaml";
             ASCENT_LOG_OPEN(file_pattern);
             ASCENT_LOG_DEBUG("MPI not enabled");
@@ -2679,6 +2679,3 @@ AscentRuntime::SaveSession()
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
-
-
-
