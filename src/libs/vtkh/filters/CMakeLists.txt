@@ -104,7 +104,7 @@ if (ENABLE_SERIAL)
                     DEPENDS_ON ${vtkh_filters_deps}
                     )
 
-    viskores_add_target_information(vtkh_filters DEVICE_SOURCES ${vtkh_filter_sources})
+    viskores_add_target_information(vtkh_filters DEVICE_SOURCES ${vtkh_filters_sources})
 
     # build time only defs
     target_compile_definitions(vtkh_filters PRIVATE ASCENT_EXPORTS_FLAG)
@@ -147,7 +147,7 @@ if (MPI_FOUND)
                     )
     
     # if serial is off, still still need to set this
-    viskores_add_target_information(vtkh_filters_mpi DEVICE_SOURCES ${vtkh_filter_sources})
+    viskores_add_target_information(vtkh_filters_mpi DEVICE_SOURCES ${vtkh_filters_sources})
 
     # build time only defs
     target_compile_definitions(vtkh_filters_mpi PRIVATE ASCENT_EXPORTS_FLAG)
