@@ -487,15 +487,18 @@ Renderer::RenderTiled(Render::viskoresCanvas &canvas,
 
         for(int ii = 0; ii < x_max; ++ii)
         {
-          color_buffer[kk]   = tile_color_buffer[ll];
-          color_buffer[kk+1] = tile_color_buffer[ll+1];
-          color_buffer[kk+2] = tile_color_buffer[ll+2];
-          color_buffer[kk+3] = tile_color_buffer[ll+3];
-          depth_buffer[kk2] = tile_depth_buffer[ll2];
-          kk  += 4;
-          kk2 += 1;
-          ll  += 4;
-          ll2 += 1;
+          if (tile_depth_buffer[ll2] < depth_buffer[kk2])
+            {
+              color_buffer[kk]   = tile_color_buffer[ll];
+              color_buffer[kk+1] = tile_color_buffer[ll+1];
+              color_buffer[kk+2] = tile_color_buffer[ll+2];
+              color_buffer[kk+3] = tile_color_buffer[ll+3];
+              depth_buffer[kk2] = tile_depth_buffer[ll2];
+              kk  += 4;
+              kk2 += 1;
+              ll  += 4;
+              ll2 += 1;
+            }
         }
       }
       xpan -= xpan_delta;
