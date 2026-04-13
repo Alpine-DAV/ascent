@@ -600,7 +600,7 @@ bool validate_one_of(const conduit::Node &schema,
     oss << "oneOf violation at '" << (path.empty() ? "<root>" : path) << "': ";
     if(matches == 0)
     {
-        oss << "input did not match any supported schemas";
+        oss << "input did not match any supported schema";
     }
     else
     {
