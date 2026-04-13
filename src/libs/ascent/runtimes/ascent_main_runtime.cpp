@@ -1461,6 +1461,24 @@ AscentRuntime::PopulateMetadata()
     }
   }
 
+#ifdef ASCENT_MPI_ENABLED
+  // Broadcast cycle and time to all ranks. Ranks with no local
+  // domains never set these, causing filename expansion to fail
+  // on the rank that writes the final image.
+  {
+    int comm_id = flow::Workspace::default_mpi_comm();
+    MPI_Comm mpi_comm = MPI_Comm_f2c(comm_id);
+
+    int global_cycle;
+    MPI_Allreduce(&cycle, &global_cycle, 1, MPI_INT, MPI_MAX, mpi_comm);
+    cycle = global_cycle;
+
+    float global_time;
+    MPI_Allreduce(&time, &global_time, 1, MPI_FLOAT, MPI_MAX, mpi_comm);
+    time = global_time;
+  }
+#endif
+
   if(cycle != -1)
   {
     Metadata::n_metadata["cycle"] = cycle;
