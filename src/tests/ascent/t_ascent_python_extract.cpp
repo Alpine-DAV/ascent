@@ -365,7 +365,7 @@ TEST(ascent_runtime, test_python_script_with_ascent_py_present)
     }
     catch(conduit::Error &err)
     {
-        std::string expected_error = "`ascent.py` exists in the current working directory.";
+        std::string expected_error = "Executing an Ascent Python script but a local version of `ascent.py` exists in the current working directory";
         if (err.message().find(expected_error) != std::string::npos)
         {
             error_occured = true;

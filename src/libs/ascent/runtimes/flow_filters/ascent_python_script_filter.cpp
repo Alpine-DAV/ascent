@@ -70,9 +70,9 @@ AscentPythonScript::execute()
 
     if(conduit::utils::is_file("ascent.py"))
     {
-      ASCENT_WARN("`ascent.py` exists in the current working directory. " <<
-                    "This could cause errors or undesired behavior. " <<
-                    "It is Recomended to remove or rename `ascent.py` and try again.");
+      ASCENT_WARN("Executing an Ascent Python script but a local version of `ascent.py` exists " <<
+                  "in the current working directory. This could cause errors or undesired behavior. " <<
+                  "It is recomended to remove or rename `ascent.py` and try again.");
     }
 
     DataObject *data_object = input<DataObject>(0);
