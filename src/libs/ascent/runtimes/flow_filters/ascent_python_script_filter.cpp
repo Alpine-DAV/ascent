@@ -67,6 +67,14 @@ AscentPythonScript::execute()
         ASCENT_ERROR("AscentPythonScript input must be a DataObject");
     }
 
+
+    if(conduit::utils::is_file("ascent.py"))
+    {
+      ASCENT_WARN("`ascent.py` exists in the current working directory. " <<
+                    "This could cause errors or undesired behavior. " <<
+                    "It is Recomended to remove or rename `ascent.py` and try again.");
+    }
+
     DataObject *data_object = input<DataObject>(0);
 
     conduit::Node *n_input = data_object->as_node().get();
