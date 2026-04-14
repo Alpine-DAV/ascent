@@ -19,7 +19,7 @@ mesh = conduit.Node()
 
 # create the coordinate set
 num_per_dim = 9
-mesh["coordsets/coords/type"] = "uniform";
+mesh["coordsets/coords/type"] = "uniform"
 mesh["coordsets/coords/dims/i"] = num_per_dim
 mesh["coordsets/coords/dims/j"] = num_per_dim
 mesh["coordsets/coords/dims/k"] = num_per_dim
@@ -37,9 +37,9 @@ mesh["coordsets/coords/spacing/dz"] = distance_per_step
 
 # add the topology
 # this case is simple b/c it's implicitly derived from the coordinate set
-mesh["topologies/topo/type"] = "uniform";
+mesh["topologies/topo/type"] = "uniform"
 # reference the coordinate set by name
-mesh["topologies/topo/coordset"] = "coords";
+mesh["topologies/topo/coordset"] = "coords"
 
 # create a vertex associated field named alternating
 num_vertices = num_per_dim * num_per_dim * num_per_dim
@@ -49,8 +49,8 @@ for i in range(num_vertices):
         vals[i] = 0.0
     else:
         vals[i] = 1.0
-mesh["fields/alternating/association"] = "vertex";
-mesh["fields/alternating/topology"] = "topo";
+mesh["fields/alternating/association"] = "vertex"
+mesh["fields/alternating/topology"] = "topo"
 mesh["fields/alternating/values"].set_external(vals)
 
 # print the mesh we created
@@ -73,10 +73,10 @@ a.publish(mesh)
 
 # setup actions
 actions = conduit.Node()
-add_act = actions.append();
-add_act["action"] = "add_scenes";
+add_act = actions.append()
+add_act["action"] = "add_scenes"
 
-# declare a scene (s1) with one plot (p1) 
+# declare a scene (s1) with one plot (p1)
 # to render the dataset
 scenes = add_act["scenes"]
 scenes["s1/plots/p1/type"] = "pseudocolor"

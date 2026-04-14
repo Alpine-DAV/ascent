@@ -19,7 +19,7 @@ tutorial_tets_example(mesh)
 # Use Ascent with multiple scenes to render different variables
 a = ascent.Ascent()
 a.open()
-a.publish(mesh);
+a.publish(mesh)
 
 # setup actions
 actions = conduit.Node()
@@ -30,15 +30,15 @@ add_act["action"] = "add_scenes"
 scenes = add_act["scenes"]
 # our first scene (named 's1') will render the field 'var1'
 # to the file out_scene_ex1_render_var1.png
-scenes["s1/plots/p1/type"] = "pseudocolor";
-scenes["s1/plots/p1/field"] = "var1";
-scenes["s1/image_name"] = "out_scene_ex1_render_var1";
+scenes["s1/plots/p1/type"] = "pseudocolor"
+scenes["s1/plots/p1/field"] = "var1"
+scenes["s1/image_name"] = "out_scene_ex1_render_var1"
 
 # our second scene (named 's2') will render the field 'var2'
 # to the file out_scene_ex1_render_var2.png
-scenes["s2/plots/p1/type"] = "pseudocolor";
-scenes["s2/plots/p1/field"] = "var2";
-scenes["s2/image_name"] = "out_scene_ex1_render_var2";
+scenes["s2/plots/p1/type"] = "pseudocolor"
+scenes["s2/plots/p1/field"] = "var2"
+scenes["s2/image_name"] = "out_scene_ex1_render_var2"
 
 # print our full actions tree
 print(actions.to_yaml())
