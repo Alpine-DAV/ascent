@@ -134,40 +134,20 @@ VTKHMarchingCubes::declare_interface(Node &i)
     i["type_name"]   = "vtkh_marchingcubes";
     i["port_names"].append() = "in";
     i["output_port"] = "true";
-}
 
-//-----------------------------------------------------------------------------
-bool
-VTKHMarchingCubes::verify_params(const conduit::Node &params,
-                                 conduit::Node &info)
-{
-    info.reset();
+    // ----------- Define Param Schema -----------
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
-    bool res = check_string("field",params, info, true);
-    bool has_values = check_numeric("iso_values",params, info, false);
-    bool has_levels = check_numeric("levels",params, info, false);
+    string_schema(param_schema["properties/field"]);
+    number_schema(param_schema["properties/levels"]);
+    number_schema(param_schema["properties/iso_values"]);
+    string_schema(param_schema["properties/use_contour_tree"]);
 
-    if(!has_values && !has_levels)
-    {
-        info["errors"].append() = "Missing required numeric parameter. Contour must"
-                                  " specify 'iso_values' or 'levels'.";
-        res = false;
-    }
-
-    std::vector<std::string> valid_paths;
-    valid_paths.push_back("field");
-    valid_paths.push_back("levels");
-    valid_paths.push_back("iso_values");
-    valid_paths.push_back("use_contour_tree");
-    std::string surprises = surprise_check(valid_paths, params);
-
-    if(surprises != "")
-    {
-      res = false;
-      info["errors"].append() = surprises;
-    }
-
-    return res;
+    param_schema["required"].append() = "field";
+    param_schema["anyOf"].append() = "levels";
+    param_schema["anyOf"].append() = "iso_values";
 }
 
 //-----------------------------------------------------------------------------
@@ -246,7 +226,6 @@ VTKHMarchingCubes::execute()
 }
 
 //-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 VTKHExternalSurfaces::VTKHExternalSurfaces()
 :Filter()
 {
@@ -266,31 +245,13 @@ VTKHExternalSurfaces::declare_interface(Node &i)
     i["type_name"]   = "vtkh_external_surfaces";
     i["port_names"].append() = "in";
     i["output_port"] = "true";
-}
 
-//-----------------------------------------------------------------------------
-bool
-VTKHExternalSurfaces::verify_params(const conduit::Node &params,
-                                    conduit::Node &info)
-{
-    info.reset();
+    // ----------- Define Param Schema -----------
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
-    bool res = true;
-
-    res = check_string("topology",params, info, false) && res;
-
-    std::vector<std::string> valid_paths;
-    valid_paths.push_back("topology");
-
-    std::string surprises = surprise_check(valid_paths, params);
-
-    if(surprises != "")
-    {
-      res = false;
-      info["errors"].append() = surprises;
-    }
-
-    return res;
+    string_schema(param_schema["properties/topology"]);
 }
 
 //-----------------------------------------------------------------------------
@@ -360,30 +321,16 @@ VTKHVectorMagnitude::declare_interface(Node &i)
     i["type_name"]   = "vtkh_vector_magnitude";
     i["port_names"].append() = "in";
     i["output_port"] = "true";
-}
 
-//-----------------------------------------------------------------------------
-bool
-VTKHVectorMagnitude::verify_params(const conduit::Node &params,
-                                   conduit::Node &info)
-{
-    info.reset();
+    // ----------- Define Param Schema -----------
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
-    bool res = check_string("field",params, info, true);
-    res = check_string("output_name",params, info, false) && res;
+    string_schema(param_schema["properties/field"]);
+    string_schema(param_schema["properties/output_name"]);
 
-    std::vector<std::string> valid_paths;
-    valid_paths.push_back("field");
-    valid_paths.push_back("output_name");
-    std::string surprises = surprise_check(valid_paths, params);
-
-    if(surprises != "")
-    {
-      res = false;
-      info["errors"].append() = surprises;
-    }
-
-    return res;
+    param_schema["required"].append() = "field";
 }
 
 //-----------------------------------------------------------------------------
@@ -464,36 +411,16 @@ VTKH3Slice::declare_interface(Node &i)
     i["type_name"]   = "vtkh_3slice";
     i["port_names"].append() = "in";
     i["output_port"] = "true";
-}
 
-//-----------------------------------------------------------------------------
-bool
-VTKH3Slice::verify_params(const conduit::Node &params,
-                         conduit::Node &info)
-{
-    info.reset();
-    bool res = true;
-    std::vector<std::string> valid_paths;
-    res &= check_string("topology",params, info, false);
-    valid_paths.push_back("topology");
+    // ----------- Define Param Schema -----------
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
-    res &= check_numeric("x_offset",params, info, false, true);
-    res &= check_numeric("y_offset",params, info, false, true);
-    res &= check_numeric("z_offset",params, info, false, true);
-    res = check_string("topology",params, info, false) && res;
-
-    valid_paths.push_back("x_offset");
-    valid_paths.push_back("y_offset");
-    valid_paths.push_back("z_offset");
-
-    std::string surprises = surprise_check(valid_paths, params);
-    if(surprises != "")
-    {
-       res = false;
-       info["errors"].append() = surprises;
-    }
-
-    return res;
+    string_schema(param_schema["properties/topology"]);
+    number_schema(param_schema["properties/x_offset"], true);
+    number_schema(param_schema["properties/y_offset"], true);
+    number_schema(param_schema["properties/z_offset"], true);
 }
 
 //-----------------------------------------------------------------------------
@@ -613,32 +540,13 @@ VTKHTriangulate::declare_interface(Node &i)
     i["type_name"]   = "vtkh_triangulate";
     i["port_names"].append() = "in";
     i["output_port"] = "true";
-}
 
-//-----------------------------------------------------------------------------
-bool
-VTKHTriangulate::verify_params(const conduit::Node &params,
-                               conduit::Node &info)
-{
-    info.reset();
+    // ----------- Define Param Schema -----------
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
-    bool res = true;
-
-    res = check_string("topology",params, info, false) && res;
-
-    std::vector<std::string> valid_paths;
-    valid_paths.push_back("topology");
-
-
-    std::string surprises = surprise_check(valid_paths, params);
-
-    if(surprises != "")
-    {
-      res = false;
-      info["errors"].append() = surprises;
-    }
-
-    return res;
+    string_schema(param_schema["properties/topology"]);
 }
 
 //-----------------------------------------------------------------------------
@@ -708,32 +616,14 @@ VTKHCleanGrid::declare_interface(Node &i)
     i["type_name"]   = "vtkh_clean";
     i["port_names"].append() = "in";
     i["output_port"] = "true";
-}
 
-//-----------------------------------------------------------------------------
-bool
-VTKHCleanGrid::verify_params(const conduit::Node &params,
-                         conduit::Node &info)
-{
-    info.reset();
+    // ----------- Define Param Schema -----------
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
-    bool res = true;
-
-    res = check_string("topology",params, info, false) && res;
-
-    std::vector<std::string> valid_paths;
-    valid_paths.push_back("topology");
-
-
-    std::string surprises = surprise_check(valid_paths, params);
-
-    if(surprises != "")
-    {
-      res = false;
-      info["errors"].append() = surprises;
-    }
-
-    return res;
+    // optional
+    string_schema(param_schema["properties/topology"]);
 }
 
 //-----------------------------------------------------------------------------
@@ -806,138 +696,93 @@ VTKHSlice::declare_interface(Node &i)
     i["type_name"]   = "vtkh_slice";
     i["port_names"].append() = "in";
     i["output_port"] = "true";
-}
 
-//-----------------------------------------------------------------------------
-bool
-VTKHSlice::verify_params(const conduit::Node &params,
-                         conduit::Node &info)
-{
-    info.reset();
+    // ----------- Define Param Schema -----------
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
+    param_schema["constraints/exclusiveChildren"].append() = "sphere";
+    param_schema["constraints/exclusiveChildren"].append() = "cylinder";
+    param_schema["constraints/exclusiveChildren"].append() = "box";
+    param_schema["constraints/exclusiveChildren"].append() = "plane";
+    param_schema["constraints/exclusiveChildren"].append() = "point";
+    param_schema["constraints/allowNoneInExclusiveGroup"] = false;
 
-    bool res = true;
+    // optional
+    string_schema(param_schema["properties/topology"]);
 
-    res &= check_string("topology",params, info, false);
-    if(params.has_child("sphere"))
-    {
-        res = check_numeric("sphere/center/x",params, info, true, true) && res;
-        res = check_numeric("sphere/center/y",params, info, true, true) && res;
-        res = check_numeric("sphere/center/z",params, info, true, true) && res;
-        res = check_numeric("sphere/radius",params, info, true, true) && res;
-    }
-    else if(params.has_child("cylinder"))
-    {
-        res = check_numeric("cylinder/center/x",params, info, true, true) && res;
-        res = check_numeric("cylinder/center/y",params, info, true, true) && res;
-        res = check_numeric("cylinder/center/z",params, info, true, true) && res;
-        res = check_numeric("cylinder/axis/x",params, info, true, true) && res;
-        res = check_numeric("cylinder/axis/y",params, info, true, true) && res;
-        res = check_numeric("cylinder/axis/z",params, info, true, true) && res;
-        res = check_numeric("cylinder/radius",params, info, true, true) && res;
-    }
-    else if(params.has_child("box"))
-    {
-        res = check_numeric("box/min/x",params, info, true, true) && res;
-        res = check_numeric("box/min/y",params, info, true, true) && res;
-        res = check_numeric("box/min/z",params, info, true, true) && res;
-        res = check_numeric("box/max/x",params, info, true, true) && res;
-        res = check_numeric("box/max/y",params, info, true, true) && res;
-        res = check_numeric("box/max/z",params, info, true, true) && res;
-    }
-    else if(params.has_child("plane"))
-    {
-        res = check_numeric("plane/point/x",params, info, true, true) && res;
-        res = check_numeric("plane/point/y",params, info, true, true) && res;
-        res = check_numeric("plane/point/z",params, info, true, true) && res;
-        res = check_numeric("plane/normal/x",params, info, true, true) && res;
-        res = check_numeric("plane/normal/y",params, info, true, true) && res;
-        res = check_numeric("plane/normal/z",params, info, true, true) && res;
-    }
+    // --- sphere ---
+    conduit::Node &sphere_schema = param_schema["properties/sphere"];
+    sphere_schema["type"] = "object";
+    sphere_schema["additionalProperties"] = false;
+    vec3_schema(sphere_schema["properties/center"], true);
+    number_schema(sphere_schema["properties/radius"], true);
+    sphere_schema["required"].append() = "center";
+    sphere_schema["required"].append() = "radius";
 
-    // old style plane
-    if(params.has_path("point/x_offset") && params.has_path("point/x"))
-    {
-      info["errors"]
-        .append() = "Cannot specify the plane point as both an offset and explicit point";
-      res = false;
-    }
+    // --- cylinder ---
+    conduit::Node &cylinder_schema = param_schema["properties/cylinder"];
+    cylinder_schema["type"] = "object";
+    cylinder_schema["additionalProperties"] = false;
+    vec3_schema(cylinder_schema["properties/center"], true);
+    vec3_schema(cylinder_schema["properties/axis"], true);
+    number_schema(cylinder_schema["properties/radius"], true);
+    cylinder_schema["required"].append() = "center";
+    cylinder_schema["required"].append() = "axis";
+    cylinder_schema["required"].append() = "radius";
 
-    if(params.has_path("point/x"))
-    {
-      res &= check_numeric("point/x",params, info, true, true);
-      res = check_numeric("point/y",params, info, true, true) && res;
-      res = check_numeric("point/z",params, info, true, true) && res;
-    }
-    else if(params.has_path("point/x_offset"))
-    {
-      res &= check_numeric("point/x_offset",params, info, true, true);
-      res = check_numeric("point/y_offset",params, info, true, true) && res;
-      res = check_numeric("point/z_offset",params, info, true, true) && res;
-    }
-    // else
-    // {
-    //   info["errors"]
-    //     .append() = "Slice must specify a point for the plane.";
-    //   res = false;
-    // }
-    if(params.has_path("normal/x"))
-    {
-        res = check_numeric("normal/x",params, info, true, true) && res;
-        res = check_numeric("normal/y",params, info, true, true) && res;
-        res = check_numeric("normal/z",params, info, true, true) && res;
-    }
+    // --- box ---
+    conduit::Node &box_schema = param_schema["properties/box"];
+    box_schema["type"] = "object";
+    box_schema["additionalProperties"] = false;
+    vec3_schema(box_schema["properties/min"], true);
+    vec3_schema(box_schema["properties/max"], true);
+    box_schema["required"].append() = "min";
+    box_schema["required"].append() = "max";
 
-    std::vector<std::string> valid_paths;
-    // old style plane
-    valid_paths.push_back("point/x");
-    valid_paths.push_back("point/y");
-    valid_paths.push_back("point/z");
-    valid_paths.push_back("point/x_offset");
-    valid_paths.push_back("point/y_offset");
-    valid_paths.push_back("point/z_offset");
-    valid_paths.push_back("normal/x");
-    valid_paths.push_back("normal/y");
-    valid_paths.push_back("normal/z");
-    valid_paths.push_back("topology");
+    // --- plane ---
+    conduit::Node &plane_schema = param_schema["properties/plane"];
+    plane_schema["type"] = "object";
+    plane_schema["additionalProperties"] = false;
+    vec3_schema(plane_schema["properties/point"], true);
+    vec3_schema(plane_schema["properties/normal"], true);
+    plane_schema["required"].append() = "point";
+    plane_schema["required"].append() = "normal";
 
-    // sphere
-    valid_paths.push_back("sphere/center/x");
-    valid_paths.push_back("sphere/center/y");
-    valid_paths.push_back("sphere/center/z");
-    valid_paths.push_back("sphere/radius");
-    // cylinder
-    valid_paths.push_back("cylinder/center/x");
-    valid_paths.push_back("cylinder/center/y");
-    valid_paths.push_back("cylinder/center/z");
-    valid_paths.push_back("cylinder/axis/x");
-    valid_paths.push_back("cylinder/axis/y");
-    valid_paths.push_back("cylinder/axis/z");
-    valid_paths.push_back("cylinder/radius");
-    // box
-    valid_paths.push_back("box/min/x");
-    valid_paths.push_back("box/min/y");
-    valid_paths.push_back("box/min/z");
-    valid_paths.push_back("box/max/x");
-    valid_paths.push_back("box/max/y");
-    valid_paths.push_back("box/max/z");
-    // new style plane
-    valid_paths.push_back("plane/point/x");
-    valid_paths.push_back("plane/point/y");
-    valid_paths.push_back("plane/point/z");
-    valid_paths.push_back("plane/normal/x");
-    valid_paths.push_back("plane/normal/y");
-    valid_paths.push_back("plane/normal/z");
+    // --- old point style
+    conduit::Node &point_schema = param_schema["properties/point"];
+    point_schema["type"] = "object";
+    point_schema["additionalProperties"] = false;
 
+    number_schema(point_schema["properties/x"], true);
+    number_schema(point_schema["properties/y"], true);
+    number_schema(point_schema["properties/z"], true);
+    number_schema(point_schema["properties/x_offset"], true);
+    number_schema(point_schema["properties/y_offset"], true);
+    number_schema(point_schema["properties/z_offset"], true);
 
-    std::string surprises = surprise_check(valid_paths, params);
+    // Option A: explicit
+    conduit::Node &option_1_explicit = point_schema["oneOf"].append();
+    option_1_explicit["type"] = "object";
+    option_1_explicit["required"].append() = "x";
+    option_1_explicit["required"].append() = "y";
+    option_1_explicit["required"].append() = "z";
+    option_1_explicit["constraints/forbid"].append() = "x_offset";
+    option_1_explicit["constraints/forbid"].append() = "y_offset";
+    option_1_explicit["constraints/forbid"].append() = "z_offset";
 
-    if(surprises != "")
-    {
-      res = false;
-      info["errors"].append() = surprises;
-    }
+    // Option B: offset
+    conduit::Node &option_2_offset = point_schema["oneOf"].append();
+    option_2_offset["type"] = "object";
+    option_2_offset["required"].append() = "x_offset";
+    option_2_offset["required"].append() = "y_offset";
+    option_2_offset["required"].append() = "z_offset";
+    option_2_offset["constraints/forbid"].append() = "x";
+    option_2_offset["constraints/forbid"].append() = "y";
+    option_2_offset["constraints/forbid"].append() = "z";
 
-    return res;
+    vec3_schema(param_schema["properties/normal"], true);
+    param_schema["constraints/dependencies/normal"].append() = "point";
 }
 
 //-----------------------------------------------------------------------------
@@ -1118,48 +963,21 @@ VTKHAutoSliceLevels::declare_interface(Node &i)
     i["type_name"]   = "vtkh_autoslicelevels";
     i["port_names"].append() = "in";
     i["output_port"] = "true";
-}
 
-//-----------------------------------------------------------------------------
-bool
-VTKHAutoSliceLevels::verify_params(const conduit::Node &params,
-                         conduit::Node &info)
-{
-    info.reset();
+    // ----------- Define Param Schema -----------
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
-    bool res = check_string("field",params, info, true);
+    string_schema(param_schema["properties/field"]);
+    vec3_schema(param_schema["properties/normal"], true);
+    number_schema(param_schema["properties/levels"], true);
 
-    if(!params.has_path("levels"))
-    {
-      info["errors"]
-        .append() = "AutoSliceLevels must specify number of slices to consider via 'levels'.";
-      res = false;
-    }
-
-
-    res = check_numeric("normal/x",params, info, true, true) && res;
-    res = check_numeric("normal/y",params, info, true, true) && res;
-    res = check_numeric("normal/z",params, info, true, true) && res;
-
-    res = check_numeric("levels",params, info, true, true) && res;
-
-    std::vector<std::string> valid_paths;
-    valid_paths.push_back("levels");
-    valid_paths.push_back("field");
-    valid_paths.push_back("normal/x");
-    valid_paths.push_back("normal/y");
-    valid_paths.push_back("normal/z");
-
-
-    std::string surprises = surprise_check(valid_paths, params);
-
-    if(surprises != "")
-    {
-      res = false;
-      info["errors"].append() = surprises;
-    }
-
-    return res;
+    param_schema["required"].append() = "field";
+    param_schema["required"].append() = "normal";
+    param_schema["required"].append() = "levels";
+    
+    
 }
 
 //-----------------------------------------------------------------------------
@@ -1319,33 +1137,19 @@ VTKHGhostStripper::declare_interface(Node &i)
     i["type_name"]   = "vtkh_ghost_stripper";
     i["port_names"].append() = "in";
     i["output_port"] = "true";
-}
 
-//-----------------------------------------------------------------------------
-bool
-VTKHGhostStripper::verify_params(const conduit::Node &params,
-                             conduit::Node &info)
-{
-    info.reset();
+    // ----------- Define Param Schema -----------
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
-    bool res = check_string("field",params, info, true);
+    string_schema(param_schema["properties/field"]);
+    number_schema(param_schema["properties/min_value"], true);
+    number_schema(param_schema["properties/max_value"], true);
 
-    res = check_numeric("min_value",params, info, true, true) && res;
-    res = check_numeric("max_value",params, info, true, true) && res;
-
-    std::vector<std::string> valid_paths;
-    valid_paths.push_back("field");
-    valid_paths.push_back("min_value");
-    valid_paths.push_back("max_value");
-    std::string surprises = surprise_check(valid_paths, params);
-
-    if(surprises != "")
-    {
-      res = false;
-      info["errors"].append() = surprises;
-    }
-
-    return res;
+    param_schema["required"].append() = "field";
+    param_schema["required"].append() = "min_value";
+    param_schema["required"].append() = "max_value";
 }
 
 //-----------------------------------------------------------------------------
@@ -1432,31 +1236,15 @@ VTKHAddRanks::declare_interface(Node &i)
     i["type_name"]   = "vtkh_add_mpi_ranks";
     i["port_names"].append() = "in";
     i["output_port"] = "true";
-}
 
-//-----------------------------------------------------------------------------
-bool
-VTKHAddRanks::verify_params(const conduit::Node &params,
-                             conduit::Node &info)
-{
-    info.reset();
+    // ----------- Define Param Schema -----------
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
-    bool res = check_string("topology",params, info, false);
-    res = check_string("output",params, info, false);
-
-    std::vector<std::string> valid_paths;
-    valid_paths.push_back("output");
-    valid_paths.push_back("topology");
-
-    std::string surprises = surprise_check(valid_paths, params);
-
-    if(surprises != "")
-    {
-      res = false;
-      info["errors"].append() = surprises;
-    }
-
-    return res;
+    // optional
+    string_schema(param_schema["properties/topology"]);
+    string_schema(param_schema["properties/output"]);
 }
 
 //-----------------------------------------------------------------------------
@@ -1541,31 +1329,15 @@ VTKHAddDomains::declare_interface(Node &i)
     i["type_name"]   = "vtkh_add_domain_ids";
     i["port_names"].append() = "in";
     i["output_port"] = "true";
-}
 
-//-----------------------------------------------------------------------------
-bool
-VTKHAddDomains::verify_params(const conduit::Node &params,
-                             conduit::Node &info)
-{
-    info.reset();
+    // ----------- Define Param Schema -----------
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
-    bool res = check_string("topology",params, info, false);
-    res = check_string("output",params, info, false);
-
-    std::vector<std::string> valid_paths;
-    valid_paths.push_back("output");
-    valid_paths.push_back("topology");
-
-    std::string surprises = surprise_check(valid_paths, params);
-
-    if(surprises != "")
-    {
-      res = false;
-      info["errors"].append() = surprises;
-    }
-
-    return res;
+    // optional
+    string_schema(param_schema["properties/topology"]);
+    string_schema(param_schema["properties/output"]);
 }
 
 //-----------------------------------------------------------------------------
@@ -1645,176 +1417,81 @@ VTKHThreshold::declare_interface(Node &i)
     i["type_name"]   = "vtkh_threshold";
     i["port_names"].append() = "in";
     i["output_port"] = "true";
+
+    // ----------- Define Param Schema -----------
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
+    param_schema["constraints/exclusiveChildren"].append() = "field";
+    param_schema["constraints/exclusiveChildren"].append() = "sphere";
+    param_schema["constraints/exclusiveChildren"].append() = "cylinder";
+    param_schema["constraints/exclusiveChildren"].append() = "box";
+    param_schema["constraints/exclusiveChildren"].append() = "plane";
+    param_schema["constraints/exclusiveChildren"].append() = "multi_plane";
+    param_schema["constraints/allowNoneInExclusiveGroup"] = false;
+
+    // optional
+    string_schema(param_schema["properties/field"]);
+    string_schema(param_schema["properties/topology"]);
+    number_schema(param_schema["properties/min_value"], true);
+    number_schema(param_schema["properties/max_value"], true);
+    string_schema(param_schema["properties/invert"]);
+    string_schema(param_schema["properties/extract"]);
+
+    param_schema["anyOf"].append() = "field";
+    param_schema["anyOf"].append() = "topology";
+
+    // --- sphere ---
+    conduit::Node &sphere_schema = param_schema["properties/sphere"];
+    sphere_schema["type"] = "object";
+    sphere_schema["additionalProperties"] = false;
+    vec3_schema(sphere_schema["properties/center"], true);
+    number_schema(sphere_schema["properties/radius"], true);
+    sphere_schema["required"].append() = "center";
+    sphere_schema["required"].append() = "radius";
+
+    // --- cylinder ---
+    conduit::Node &cylinder_schema = param_schema["properties/cylinder"];
+    cylinder_schema["type"] = "object";
+    cylinder_schema["additionalProperties"] = false;
+    vec3_schema(cylinder_schema["properties/center"], true);
+    vec3_schema(cylinder_schema["properties/axis"], true);
+    number_schema(cylinder_schema["properties/radius"], true);
+    cylinder_schema["required"].append() = "center";
+    cylinder_schema["required"].append() = "axis";
+    cylinder_schema["required"].append() = "radius";
+
+    // --- box ---
+    conduit::Node &box_schema = param_schema["properties/box"];
+    box_schema["type"] = "object";
+    box_schema["additionalProperties"] = false;
+    vec3_schema(box_schema["properties/min"], true);
+    vec3_schema(box_schema["properties/max"], true);
+    box_schema["required"].append() = "min";
+    box_schema["required"].append() = "max";
+
+    // --- plane ---
+    conduit::Node &plane_schema = param_schema["properties/plane"];
+    plane_schema["type"] = "object";
+    plane_schema["additionalProperties"] = false;
+    vec3_schema(plane_schema["properties/point"], true);
+    vec3_schema(plane_schema["properties/normal"], true);
+    plane_schema["required"].append() = "point";
+    plane_schema["required"].append() = "normal";
+
+    // --- multi plane ---
+    conduit::Node &multi_plane_schema = param_schema["properties/multi_plane"];
+    multi_plane_schema["type"] = "object";
+    multi_plane_schema["additionalProperties"] = false;
+    vec3_schema(multi_plane_schema["properties/point1"], true);
+    vec3_schema(multi_plane_schema["properties/point2"], true);
+    vec3_schema(multi_plane_schema["properties/normal1"], true);
+    vec3_schema(multi_plane_schema["properties/normal2"], true);
+    multi_plane_schema["required"].append() = "point1";
+    multi_plane_schema["required"].append() = "point2";
+    multi_plane_schema["required"].append() = "normal1";
+    multi_plane_schema["required"].append() = "normal2";
 }
-
-//-----------------------------------------------------------------------------
-bool
-VTKHThreshold::verify_params(const conduit::Node &params,
-                             conduit::Node &info)
-{
-    info.reset();
-    bool res = true;
-
-    bool type_present = false;
-
-    if(params.has_child("field"))
-    {
-      type_present = true;
-    }
-    else if(params.has_child("sphere"))
-    {
-      type_present = true;
-    }
-    else if(params.has_child("cylinder"))
-    {
-      type_present = true;
-    }
-    else if(params.has_child("box"))
-    {
-      type_present = true;
-    }
-    else if(params.has_child("plane"))
-    {
-      type_present = true;
-    }
-    else if(params.has_child("multi_plane"))
-    {
-      type_present = true;
-    }
-
-    if(!type_present)
-    {
-        info["errors"].append() = "Missing required parameter. Threshold must specify 'field', 'sphere', 'cylinder', 'box', or 'plane'";
-        res = false;
-    }
-    else
-    {
-      if(params.has_child("sphere"))
-      {
-         res = check_numeric("sphere/center/x",params, info, true, true) && res;
-         res = check_numeric("sphere/center/y",params, info, true, true) && res;
-         res = check_numeric("sphere/center/z",params, info, true, true) && res;
-         res = check_numeric("sphere/radius",params, info, true, true) && res;
-      }
-      else if(params.has_child("cylinder"))
-      {
-         res = check_numeric("cylinder/center/x",params, info, true, true) && res;
-         res = check_numeric("cylinder/center/y",params, info, true, true) && res;
-         res = check_numeric("cylinder/center/z",params, info, true, true) && res;
-         res = check_numeric("cylinder/axis/x",params, info, true, true) && res;
-         res = check_numeric("cylinder/axis/y",params, info, true, true) && res;
-         res = check_numeric("cylinder/axis/z",params, info, true, true) && res;
-         res = check_numeric("cylinder/radius",params, info, true, true) && res;
-      }
-      else if(params.has_child("box"))
-      {
-         res = check_numeric("box/min/x",params, info, true, true) && res;
-         res = check_numeric("box/min/y",params, info, true, true) && res;
-         res = check_numeric("box/min/z",params, info, true, true) && res;
-         res = check_numeric("box/max/x",params, info, true, true) && res;
-         res = check_numeric("box/max/y",params, info, true, true) && res;
-         res = check_numeric("box/max/z",params, info, true, true) && res;
-      }
-      else if(params.has_child("plane"))
-      {
-         res = check_numeric("plane/point/x",params, info, true, true) && res;
-         res = check_numeric("plane/point/y",params, info, true, true) && res;
-         res = check_numeric("plane/point/z",params, info, true, true) && res;
-         res = check_numeric("plane/normal/x",params, info, true, true) && res;
-         res = check_numeric("plane/normal/y",params, info, true, true) && res;
-         res = check_numeric("plane/normal/z",params, info, true, true) && res;
-      }
-      else if(params.has_child("multi_plane"))
-      {
-         res = check_numeric("multi_plane/point1/x",params, info, true, true) && res;
-         res = check_numeric("multi_plane/point1/y",params, info, true, true) && res;
-         res = check_numeric("multi_plane/point1/z",params, info, true, true) && res;
-         res = check_numeric("multi_plane/normal1/x",params, info, true, true) && res;
-         res = check_numeric("multi_plane/normal1/y",params, info, true, true) && res;
-         res = check_numeric("multi_plane/normal1/z",params, info, true, true) && res;
-
-         res = check_numeric("multi_plane/point2/x",params, info, true, true) && res;
-         res = check_numeric("multi_plane/point2/y",params, info, true, true) && res;
-         res = check_numeric("multi_plane/point2/z",params, info, true, true) && res;
-         res = check_numeric("multi_plane/normal2/x",params, info, true, true) && res;
-         res = check_numeric("multi_plane/normal2/y",params, info, true, true) && res;
-         res = check_numeric("multi_plane/normal2/z",params, info, true, true) && res;
-      }
-    }
-
-    // we either need 'field` or `topology`
-    if(!params.has_child("field")) 
-    {
-      res &= check_string("topology",params, info, false);
-    }
-
-    // field case
-    res = check_string("field",params, info, false);
-    res = check_numeric("min_value",params, info, false, true) && res;
-    res = check_numeric("max_value",params, info, false, true) && res;
-
-    res = check_string("invert",params, info, false) && res;
-
-    std::vector<std::string> valid_paths;
-    valid_paths.push_back("invert");
-    valid_paths.push_back("field");
-    valid_paths.push_back("min_value");
-    valid_paths.push_back("max_value");
-
-    valid_paths.push_back("topology");
-    valid_paths.push_back("extract");
-
-    valid_paths.push_back("sphere/center/x");
-    valid_paths.push_back("sphere/center/y");
-    valid_paths.push_back("sphere/center/z");
-    valid_paths.push_back("sphere/radius");
-
-    valid_paths.push_back("cylinder/center/x");
-    valid_paths.push_back("cylinder/center/y");
-    valid_paths.push_back("cylinder/center/z");
-    valid_paths.push_back("cylinder/axis/x");
-    valid_paths.push_back("cylinder/axis/y");
-    valid_paths.push_back("cylinder/axis/z");
-    valid_paths.push_back("cylinder/radius");
-
-    valid_paths.push_back("box/min/x");
-    valid_paths.push_back("box/min/y");
-    valid_paths.push_back("box/min/z");
-    valid_paths.push_back("box/max/x");
-    valid_paths.push_back("box/max/y");
-    valid_paths.push_back("box/max/z");
-
-    valid_paths.push_back("plane/point/x");
-    valid_paths.push_back("plane/point/y");
-    valid_paths.push_back("plane/point/z");
-    valid_paths.push_back("plane/normal/x");
-    valid_paths.push_back("plane/normal/y");
-    valid_paths.push_back("plane/normal/z");
-
-    valid_paths.push_back("multi_plane/point1/x");
-    valid_paths.push_back("multi_plane/point1/y");
-    valid_paths.push_back("multi_plane/point1/z");
-    valid_paths.push_back("multi_plane/normal1/x");
-    valid_paths.push_back("multi_plane/normal1/y");
-    valid_paths.push_back("multi_plane/normal1/z");
-
-    valid_paths.push_back("multi_plane/point2/x");
-    valid_paths.push_back("multi_plane/point2/y");
-    valid_paths.push_back("multi_plane/point2/z");
-    valid_paths.push_back("multi_plane/normal2/x");
-    valid_paths.push_back("multi_plane/normal2/y");
-    valid_paths.push_back("multi_plane/normal2/z");
-    std::string surprises = surprise_check(valid_paths, params);
-
-    if(surprises != "")
-    {
-      res = false;
-      info["errors"].append() = surprises;
-    }
-
-    return res;
-}
-
 
 //-----------------------------------------------------------------------------
 void
@@ -2007,159 +1684,73 @@ VTKHClip::declare_interface(Node &i)
     i["type_name"] = "vtkh_clip";
     i["port_names"].append() = "in";
     i["output_port"] = "true";
+
+    // ----------- Define Param Schema -----------
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
+    param_schema["constraints/exclusiveChildren"].append() = "sphere";
+    param_schema["constraints/exclusiveChildren"].append() = "cylinder";
+    param_schema["constraints/exclusiveChildren"].append() = "box";
+    param_schema["constraints/exclusiveChildren"].append() = "plane";
+    param_schema["constraints/exclusiveChildren"].append() = "multi_plane";
+    param_schema["constraints/allowNoneInExclusiveGroup"] = false;
+
+    // optional
+    string_schema(param_schema["properties/topology"]);
+    string_schema(param_schema["properties/invert"]);
+
+    // --- sphere ---
+    conduit::Node &sphere_schema = param_schema["properties/sphere"];
+    sphere_schema["type"] = "object";
+    sphere_schema["additionalProperties"] = false;
+    vec3_schema(sphere_schema["properties/center"], true);
+    number_schema(sphere_schema["properties/radius"], true);
+    sphere_schema["required"].append() = "center";
+    sphere_schema["required"].append() = "radius";
+
+    // --- cylinder ---
+    conduit::Node &cylinder_schema = param_schema["properties/cylinder"];
+    cylinder_schema["type"] = "object";
+    cylinder_schema["additionalProperties"] = false;
+    vec3_schema(cylinder_schema["properties/center"], true);
+    vec3_schema(cylinder_schema["properties/axis"], true);
+    number_schema(cylinder_schema["properties/radius"], true);
+    cylinder_schema["required"].append() = "center";
+    cylinder_schema["required"].append() = "axis";
+    cylinder_schema["required"].append() = "radius";
+
+    // --- box ---
+    conduit::Node &box_schema = param_schema["properties/box"];
+    box_schema["type"] = "object";
+    box_schema["additionalProperties"] = false;
+    vec3_schema(box_schema["properties/min"], true);
+    vec3_schema(box_schema["properties/max"], true);
+    box_schema["required"].append() = "min";
+    box_schema["required"].append() = "max";
+
+    // --- plane ---
+    conduit::Node &plane_schema = param_schema["properties/plane"];
+    plane_schema["type"] = "object";
+    plane_schema["additionalProperties"] = false;
+    vec3_schema(plane_schema["properties/point"], true);
+    vec3_schema(plane_schema["properties/normal"], true);
+    plane_schema["required"].append() = "point";
+    plane_schema["required"].append() = "normal";
+
+    // --- multi plane ---
+    conduit::Node &multi_plane_schema = param_schema["properties/multi_plane"];
+    multi_plane_schema["type"] = "object";
+    multi_plane_schema["additionalProperties"] = false;
+    vec3_schema(multi_plane_schema["properties/point1"], true);
+    vec3_schema(multi_plane_schema["properties/point2"], true);
+    vec3_schema(multi_plane_schema["properties/normal1"], true);
+    vec3_schema(multi_plane_schema["properties/normal2"], true);
+    multi_plane_schema["required"].append() = "point1";
+    multi_plane_schema["required"].append() = "point2";
+    multi_plane_schema["required"].append() = "normal1";
+    multi_plane_schema["required"].append() = "normal2";
 }
-
-//-----------------------------------------------------------------------------
-bool
-VTKHClip::verify_params(const conduit::Node &params,
-                             conduit::Node &info)
-{
-    info.reset();
-    bool res = true;
-
-    bool type_present = false;
-
-    if(params.has_child("sphere"))
-    {
-      type_present = true;
-    }
-    else if(params.has_child("cylinder"))
-    {
-      type_present = true;
-    }
-    else if(params.has_child("box"))
-    {
-      type_present = true;
-    }
-    else if(params.has_child("plane"))
-    {
-      type_present = true;
-    }
-    else if(params.has_child("multi_plane"))
-    {
-      type_present = true;
-    }
-
-    if(!type_present)
-    {
-        info["errors"].append() = "Missing required parameter. Clip must specify a 'sphere', 'cylinder', 'box', 'plane', or 'mulit_plane'";
-        res = false;
-    }
-    else
-    {
-
-      res &= check_string("topology",params, info, false);
-      if(params.has_child("sphere"))
-      {
-         res = check_numeric("sphere/center/x",params, info, true, true) && res;
-         res = check_numeric("sphere/center/y",params, info, true, true) && res;
-         res = check_numeric("sphere/center/z",params, info, true, true) && res;
-         res = check_numeric("sphere/radius",params, info, true, true) && res;
-      }
-      else if(params.has_child("cylinder"))
-      {
-         res = check_numeric("cylinder/center/x",params, info, true, true) && res;
-         res = check_numeric("cylinder/center/y",params, info, true, true) && res;
-         res = check_numeric("cylinder/center/z",params, info, true, true) && res;
-         res = check_numeric("cylinder/axis/x",params, info, true, true) && res;
-         res = check_numeric("cylinder/axis/y",params, info, true, true) && res;
-         res = check_numeric("cylinder/axis/z",params, info, true, true) && res;
-         res = check_numeric("cylinder/radius",params, info, true, true) && res;
-      }
-      else if(params.has_child("box"))
-      {
-         res = check_numeric("box/min/x",params, info, true, true) && res;
-         res = check_numeric("box/min/y",params, info, true, true) && res;
-         res = check_numeric("box/min/z",params, info, true, true) && res;
-         res = check_numeric("box/max/x",params, info, true, true) && res;
-         res = check_numeric("box/max/y",params, info, true, true) && res;
-         res = check_numeric("box/max/z",params, info, true, true) && res;
-      }
-      else if(params.has_child("plane"))
-      {
-         res = check_numeric("plane/point/x",params, info, true, true) && res;
-         res = check_numeric("plane/point/y",params, info, true, true) && res;
-         res = check_numeric("plane/point/z",params, info, true, true) && res;
-         res = check_numeric("plane/normal/x",params, info, true, true) && res;
-         res = check_numeric("plane/normal/y",params, info, true, true) && res;
-         res = check_numeric("plane/normal/z",params, info, true, true) && res;
-      }
-      else if(params.has_child("multi_plane"))
-      {
-         res = check_numeric("multi_plane/point1/x",params, info, true, true) && res;
-         res = check_numeric("multi_plane/point1/y",params, info, true, true) && res;
-         res = check_numeric("multi_plane/point1/z",params, info, true, true) && res;
-         res = check_numeric("multi_plane/normal1/x",params, info, true, true) && res;
-         res = check_numeric("multi_plane/normal1/y",params, info, true, true) && res;
-         res = check_numeric("multi_plane/normal1/z",params, info, true, true) && res;
-
-         res = check_numeric("multi_plane/point2/x",params, info, true, true) && res;
-         res = check_numeric("multi_plane/point2/y",params, info, true, true) && res;
-         res = check_numeric("multi_plane/point2/z",params, info, true, true) && res;
-         res = check_numeric("multi_plane/normal2/x",params, info, true, true) && res;
-         res = check_numeric("multi_plane/normal2/y",params, info, true, true) && res;
-         res = check_numeric("multi_plane/normal2/z",params, info, true, true) && res;
-      }
-    }
-
-    res = check_string("invert",params, info, false) && res;
-    res = check_string("topology",params, info, false) && res;
-
-    std::vector<std::string> valid_paths;
-    valid_paths.push_back("topology");
-    valid_paths.push_back("invert");
-
-    valid_paths.push_back("sphere/center/x");
-    valid_paths.push_back("sphere/center/y");
-    valid_paths.push_back("sphere/center/z");
-    valid_paths.push_back("sphere/radius");
-
-    valid_paths.push_back("cylinder/center/x");
-    valid_paths.push_back("cylinder/center/y");
-    valid_paths.push_back("cylinder/center/z");
-    valid_paths.push_back("cylinder/axis/x");
-    valid_paths.push_back("cylinder/axis/y");
-    valid_paths.push_back("cylinder/axis/z");
-    valid_paths.push_back("cylinder/radius");
-
-    valid_paths.push_back("box/min/x");
-    valid_paths.push_back("box/min/y");
-    valid_paths.push_back("box/min/z");
-    valid_paths.push_back("box/max/x");
-    valid_paths.push_back("box/max/y");
-    valid_paths.push_back("box/max/z");
-
-    valid_paths.push_back("plane/point/x");
-    valid_paths.push_back("plane/point/y");
-    valid_paths.push_back("plane/point/z");
-    valid_paths.push_back("plane/normal/x");
-    valid_paths.push_back("plane/normal/y");
-    valid_paths.push_back("plane/normal/z");
-
-    valid_paths.push_back("multi_plane/point1/x");
-    valid_paths.push_back("multi_plane/point1/y");
-    valid_paths.push_back("multi_plane/point1/z");
-    valid_paths.push_back("multi_plane/normal1/x");
-    valid_paths.push_back("multi_plane/normal1/y");
-    valid_paths.push_back("multi_plane/normal1/z");
-
-    valid_paths.push_back("multi_plane/point2/x");
-    valid_paths.push_back("multi_plane/point2/y");
-    valid_paths.push_back("multi_plane/point2/z");
-    valid_paths.push_back("multi_plane/normal2/x");
-    valid_paths.push_back("multi_plane/normal2/y");
-    valid_paths.push_back("multi_plane/normal2/z");
-    std::string surprises = surprise_check(valid_paths, params);
-
-    if(surprises != "")
-    {
-      res = false;
-      info["errors"].append() = surprises;
-    }
-
-    return res;
-}
-
 
 //-----------------------------------------------------------------------------
 void
@@ -2313,33 +1904,19 @@ VTKHClipWithField::declare_interface(Node &i)
     i["type_name"] = "vtkh_clip_with_field";
     i["port_names"].append() = "in";
     i["output_port"] = "true";
+
+    // ----------- Define Param Schema -----------
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
+
+    number_schema(param_schema["properties/clip_value"], true);
+    string_schema(param_schema["properties/field"]);
+    string_schema(param_schema["properties/invert"]);
+
+    param_schema["required"].append() = "clip_value";
+    param_schema["required"].append() = "field";
 }
-
-//-----------------------------------------------------------------------------
-bool
-VTKHClipWithField::verify_params(const conduit::Node &params,
-                             conduit::Node &info)
-{
-    info.reset();
-    bool res = check_numeric("clip_value",params, info, true, true);
-    res = check_string("field",params, info, true) && res;
-    res = check_string("invert",params, info, false) && res;
-
-    std::vector<std::string> valid_paths;
-    valid_paths.push_back("clip_value");
-    valid_paths.push_back("invert");
-    valid_paths.push_back("field");
-    std::string surprises = surprise_check(valid_paths, params);
-
-    if(surprises != "")
-    {
-      res = false;
-      info["errors"].append() = surprises;
-    }
-
-    return res;
-}
-
 
 //-----------------------------------------------------------------------------
 void
@@ -2425,34 +2002,20 @@ VTKHIsoVolume::declare_interface(Node &i)
     i["type_name"] = "vtkh_iso_volume";
     i["port_names"].append() = "in";
     i["output_port"] = "true";
+
+    // ----------- Define Param Schema -----------
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
+
+    number_schema(param_schema["properties/min_value"], true);
+    number_schema(param_schema["properties/max_value"], true);
+    string_schema(param_schema["properties/field"]);
+
+    param_schema["required"].append() = "min_value";
+    param_schema["required"].append() = "max_value";
+    param_schema["required"].append() = "field";
 }
-
-//-----------------------------------------------------------------------------
-bool
-VTKHIsoVolume::verify_params(const conduit::Node &params,
-                             conduit::Node &info)
-{
-    info.reset();
-
-    bool res = check_numeric("min_value",params, info, true, true);
-    res = check_numeric("max_value",params, info, true, true) && res;
-    res = check_string("field",params, info, true) && res;
-
-    std::vector<std::string> valid_paths;
-    valid_paths.push_back("min_value");
-    valid_paths.push_back("max_value");
-    valid_paths.push_back("field");
-    std::string surprises = surprise_check(valid_paths, params);
-
-    if(surprises != "")
-    {
-      res = false;
-      info["errors"].append() = surprises;
-    }
-
-    return res;
-}
-
 
 //-----------------------------------------------------------------------------
 void
@@ -2531,43 +2094,28 @@ VTKHLagrangian::declare_interface(Node &i)
     i["type_name"]   = "vtkh_lagrangian";
     i["port_names"].append() = "in";
     i["output_port"] = "true";
+
+    // ----------- Define Param Schema -----------
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
+
+    string_schema(param_schema["properties/field"]);
+    number_schema(param_schema["properties/step_size"]);
+    number_schema(param_schema["properties/write_frequency"]);
+    number_schema(param_schema["properties/cust_res"]);
+    number_schema(param_schema["properties/x_res"]);
+    number_schema(param_schema["properties/y_res"]);
+    number_schema(param_schema["properties/z_res"]);
+
+    param_schema["required"].append() = "field";
+    param_schema["required"].append() = "step_size";
+    param_schema["required"].append() = "write_frequency";
+    param_schema["required"].append() = "cust_res";
+    param_schema["required"].append() = "x_res";
+    param_schema["required"].append() = "y_res";
+    param_schema["required"].append() = "z_res";
 }
-
-//-----------------------------------------------------------------------------
-bool
-VTKHLagrangian::verify_params(const conduit::Node &params,
-                        conduit::Node &info)
-{
-    info.reset();
-
-    bool res = check_string("field",params, info, true);
-    res &= check_numeric("step_size", params, info, true);
-    res &= check_numeric("write_frequency", params, info, true);
-    res &= check_numeric("cust_res", params, info, true);
-    res &= check_numeric("x_res", params, info, true);
-    res &= check_numeric("y_res", params, info, true);
-    res &= check_numeric("z_res", params, info, true);
-
-
-    std::vector<std::string> valid_paths;
-    valid_paths.push_back("field");
-    valid_paths.push_back("step_size");
-    valid_paths.push_back("write_frequency");
-    valid_paths.push_back("cust_res");
-    valid_paths.push_back("x_res");
-    valid_paths.push_back("y_res");
-    valid_paths.push_back("z_res");
-
-    std::string surprises = surprise_check(valid_paths, params);
-
-    if(surprises != "")
-    {
-      res = false;
-      info["errors"].append() = surprises;
-    }
-    return res;
-}
-
 
 //-----------------------------------------------------------------------------
 void
@@ -2653,33 +2201,17 @@ VTKHLog::declare_interface(Node &i)
     i["type_name"]   = "vtkh_log";
     i["port_names"].append() = "in";
     i["output_port"] = "true";
-}
 
-//-----------------------------------------------------------------------------
-bool
-VTKHLog::verify_params(const conduit::Node &params,
-                        conduit::Node &info)
-{
-    info.reset();
+    // ----------- Define Param Schema -----------
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
-    bool res = check_string("field",params, info, true);
-    res &= check_string("output_name",params, info, false);
-    res &= check_numeric("clamp_min_value",params, info, false, true);
+    string_schema(param_schema["properties/field"]);
+    string_schema(param_schema["properties/output_name"]);
+    number_schema(param_schema["properties/clamp_min_value"], true);
 
-    std::vector<std::string> valid_paths;
-    valid_paths.push_back("field");
-    valid_paths.push_back("output_name");
-    valid_paths.push_back("clamp_min_value");
-
-    std::string surprises = surprise_check(valid_paths, params);
-
-    if(surprises != "")
-    {
-      res = false;
-      info["errors"].append() = surprises;
-    }
-
-    return res;
+    param_schema["required"].append() = "field";
 }
 
 //-----------------------------------------------------------------------------
@@ -2763,33 +2295,17 @@ VTKHLog10::declare_interface(Node &i)
     i["type_name"]   = "vtkh_log10";
     i["port_names"].append() = "in";
     i["output_port"] = "true";
-}
 
-//-----------------------------------------------------------------------------
-bool
-VTKHLog10::verify_params(const conduit::Node &params,
-                        conduit::Node &info)
-{
-    info.reset();
+    // ----------- Define Param Schema -----------
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
-    bool res = check_string("field",params, info, true);
-    res &= check_string("output_name",params, info, false);
-    res &= check_numeric("clamp_min_value",params, info, false, true);
+    string_schema(param_schema["properties/field"]);
+    string_schema(param_schema["properties/output_name"]);
+    number_schema(param_schema["properties/clamp_min_value"], true);
 
-    std::vector<std::string> valid_paths;
-    valid_paths.push_back("field");
-    valid_paths.push_back("output_name");
-    valid_paths.push_back("clamp_min_value");
-
-    std::string surprises = surprise_check(valid_paths, params);
-
-    if(surprises != "")
-    {
-      res = false;
-      info["errors"].append() = surprises;
-    }
-
-    return res;
+    param_schema["required"].append() = "field";
 }
 
 //-----------------------------------------------------------------------------
@@ -2873,33 +2389,17 @@ VTKHLog2::declare_interface(Node &i)
     i["type_name"]   = "vtkh_log2";
     i["port_names"].append() = "in";
     i["output_port"] = "true";
-}
 
-//-----------------------------------------------------------------------------
-bool
-VTKHLog2::verify_params(const conduit::Node &params,
-                        conduit::Node &info)
-{
-    info.reset();
+    // ----------- Define Param Schema -----------
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
-    bool res = check_string("field",params, info, true);
-    res &= check_string("output_name",params, info, false);
-    res &= check_numeric("clamp_min_value",params, info, false, true);
+    string_schema(param_schema["properties/field"]);
+    string_schema(param_schema["properties/output_name"]);
+    number_schema(param_schema["properties/clamp_min_value"], true);
 
-    std::vector<std::string> valid_paths;
-    valid_paths.push_back("field");
-    valid_paths.push_back("output_name");
-    valid_paths.push_back("clamp_min_value");
-
-    std::string surprises = surprise_check(valid_paths, params);
-
-    if(surprises != "")
-    {
-      res = false;
-      info["errors"].append() = surprises;
-    }
-
-    return res;
+    param_schema["required"].append() = "field";
 }
 
 //-----------------------------------------------------------------------------
@@ -2983,31 +2483,17 @@ VTKHRecenter::declare_interface(Node &i)
     i["type_name"]   = "vtkh_recenter";
     i["port_names"].append() = "in";
     i["output_port"] = "true";
-}
 
-//-----------------------------------------------------------------------------
-bool
-VTKHRecenter::verify_params(const conduit::Node &params,
-                        conduit::Node &info)
-{
-    info.reset();
+    // ----------- Define Param Schema -----------
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
-    bool res = check_string("field",params, info, true);
-    res &= check_string("association",params, info, true);
+    string_schema(param_schema["properties/field"]);
+    string_schema(param_schema["properties/association"]);
 
-    std::vector<std::string> valid_paths;
-    valid_paths.push_back("field");
-    valid_paths.push_back("association");
-
-    std::string surprises = surprise_check(valid_paths, params);
-
-    if(surprises != "")
-    {
-      res = false;
-      info["errors"].append() = surprises;
-    }
-
-    return res;
+    param_schema["required"].append() = "field";
+    param_schema["required"].append() = "association";
 }
 
 //-----------------------------------------------------------------------------
@@ -3097,33 +2583,17 @@ VTKHHistSampling::declare_interface(Node &i)
     i["type_name"]   = "vtkh_hist_sampling";
     i["port_names"].append() = "in";
     i["output_port"] = "true";
-}
 
-//-----------------------------------------------------------------------------
-bool
-VTKHHistSampling::verify_params(const conduit::Node &params,
-                        conduit::Node &info)
-{
-    info.reset();
+    // ----------- Define Param Schema -----------
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
-    bool res = check_string("field",params, info, true);
-    res &= check_numeric("bins",params, info, false, true);
-    res &= check_numeric("sample_rate",params, info, false, true);
+    string_schema(param_schema["properties/field"]);
+    number_schema(param_schema["properties/bins"], true);
+    number_schema(param_schema["properties/sample_rate"], true);
 
-    std::vector<std::string> valid_paths;
-    valid_paths.push_back("field");
-    valid_paths.push_back("bins");
-    valid_paths.push_back("sample_rate");
-
-    std::string surprises = surprise_check(valid_paths, params);
-
-    if(surprises != "")
-    {
-      res = false;
-      info["errors"].append() = surprises;
-    }
-
-    return res;
+    param_schema["required"].append() = "field";
 }
 
 //-----------------------------------------------------------------------------
@@ -3250,32 +2720,17 @@ VTKHQCriterion::declare_interface(Node &i)
     i["type_name"]   = "vtkh_qcriterion";
     i["port_names"].append() = "in";
     i["output_port"] = "true";
-}
 
-//-----------------------------------------------------------------------------
-bool
-VTKHQCriterion::verify_params(const conduit::Node &params,
-                             conduit::Node &info)
-{
-    info.reset();
-    bool res = check_string("field",params, info, true);
-    res &= check_string("output_name",params, info, false);
-    res &= check_string("use_cell_gradient",params, info, false);
+    // ----------- Define Param Schema -----------
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
-    std::vector<std::string> valid_paths;
-    valid_paths.push_back("field");
-    valid_paths.push_back("output_name");
-    valid_paths.push_back("use_cell_gradient");
+    string_schema(param_schema["properties/field"]);
+    string_schema(param_schema["properties/output_name"]);
+    string_schema(param_schema["properties/use_cell_gradient"]);
 
-    std::string surprises = surprise_check(valid_paths, params);
-
-    if(surprises != "")
-    {
-      res = false;
-      info["errors"].append() = surprises;
-    }
-
-    return res;
+    param_schema["required"].append() = "field";
 }
 
 //-----------------------------------------------------------------------------
@@ -3372,32 +2827,17 @@ VTKHDivergence::declare_interface(Node &i)
     i["type_name"]   = "vtkh_divergence";
     i["port_names"].append() = "in";
     i["output_port"] = "true";
-}
 
-//-----------------------------------------------------------------------------
-bool
-VTKHDivergence::verify_params(const conduit::Node &params,
-                             conduit::Node &info)
-{
-    info.reset();
-    bool res = check_string("field",params, info, true);
-    res &= check_string("output_name",params, info, false);
-    res &= check_string("use_cell_gradient",params, info, false);
+    // ----------- Define Param Schema -----------
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
-    std::vector<std::string> valid_paths;
-    valid_paths.push_back("field");
-    valid_paths.push_back("output_name");
-    valid_paths.push_back("use_cell_gradient");
+    string_schema(param_schema["properties/field"]);
+    string_schema(param_schema["properties/output_name"]);
+    string_schema(param_schema["properties/use_cell_gradient"]);
 
-    std::string surprises = surprise_check(valid_paths, params);
-
-    if(surprises != "")
-    {
-      res = false;
-      info["errors"].append() = surprises;
-    }
-
-    return res;
+    param_schema["required"].append() = "field";
 }
 
 //-----------------------------------------------------------------------------
@@ -3493,32 +2933,17 @@ VTKHVorticity::declare_interface(Node &i)
     i["type_name"]   = "vtkh_curl";
     i["port_names"].append() = "in";
     i["output_port"] = "true";
-}
 
-//-----------------------------------------------------------------------------
-bool
-VTKHVorticity::verify_params(const conduit::Node &params,
-                             conduit::Node &info)
-{
-    info.reset();
-    bool res = check_string("field",params, info, true);
-    res &= check_string("output_name",params, info, false);
-    res &= check_string("use_cell_gradient",params, info, false);
+    // ----------- Define Param Schema -----------
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
-    std::vector<std::string> valid_paths;
-    valid_paths.push_back("field");
-    valid_paths.push_back("output_name");
-    valid_paths.push_back("use_cell_gradient");
+    string_schema(param_schema["properties/field"]);
+    string_schema(param_schema["properties/output_name"]);
+    string_schema(param_schema["properties/use_cell_gradient"]);
 
-    std::string surprises = surprise_check(valid_paths, params);
-
-    if(surprises != "")
-    {
-      res = false;
-      info["errors"].append() = surprises;
-    }
-
-    return res;
+    param_schema["required"].append() = "field";
 }
 
 //-----------------------------------------------------------------------------
@@ -3614,33 +3039,17 @@ VTKHGradient::declare_interface(Node &i)
     i["type_name"]   = "vtkh_gradient";
     i["port_names"].append() = "in";
     i["output_port"] = "true";
-}
 
-//-----------------------------------------------------------------------------
-bool
-VTKHGradient::verify_params(const conduit::Node &params,
-                             conduit::Node &info)
-{
-    info.reset();
+    // ----------- Define Param Schema -----------
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
-    bool res = check_string("field",params, info, true);
-    res &= check_string("output_name",params, info, false);
-    res &= check_string("use_cell_gradient",params, info, false);
+    string_schema(param_schema["properties/field"]);
+    string_schema(param_schema["properties/output_name"]);
+    string_schema(param_schema["properties/use_cell_gradient"]);
 
-    std::vector<std::string> valid_paths;
-    valid_paths.push_back("field");
-    valid_paths.push_back("output_name");
-    valid_paths.push_back("use_cell_gradient");
-
-    std::string surprises = surprise_check(valid_paths, params);
-
-    if(surprises != "")
-    {
-      res = false;
-      info["errors"].append() = surprises;
-    }
-
-    return res;
+    param_schema["required"].append() = "field";
 }
 
 //-----------------------------------------------------------------------------
@@ -3728,69 +3137,21 @@ VTKHUniformGrid::declare_interface(Node &i)
     i["type_name"]   = "vtkh_uniform_grid";
     i["port_names"].append() = "in";
     i["output_port"] = "true";
-}
 
-//-----------------------------------------------------------------------------
-bool
-VTKHUniformGrid::verify_params(const conduit::Node &params,
-                         conduit::Node &info)
-{
-    info.reset();
+    // ----------- Define Param Schema -----------
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
-    bool res = true;
-    res &= check_string("field",params, info, false);
-    res &= check_numeric("dims/i",params, info, false);
-    res &= check_numeric("dims/j",params, info, false);
-    res &= check_numeric("dims/k",params, info, false);
-    res &= check_numeric("origin/x",params, info, false);
-    res &= check_numeric("origin/y",params, info, false);
-    res &= check_numeric("origin/z",params, info, false);
-    res &= check_numeric("spacing/dx",params, info, false);
-    res &= check_numeric("spacing/dy",params, info, false);
-    res &= check_numeric("spacing/dz",params, info, false);
-    res &= check_numeric("invalid_value",params, info, false);
+    string_schema(param_schema["properties/field"]);
+    array_schema(param_schema["properties/fields"]);
+    vec3_schema_anyOf(param_schema["properties/dims"], "i", "j", "k");
+    vec3_schema_anyOf(param_schema["properties/origin"]);
+    vec3_schema_anyOf(param_schema["properties/spacing"], "dx", "dy", "dz");
+    number_schema(param_schema["properties/invalid_value"]);
 
-    if(!params.has_child("field") && !params.has_child("fields"))
-    {
-      res = false;
-      info["errors"].append() = "Uniform Grid Sampling requires 'field' or 'fields'";
-    }
-
-    if(params.has_child("fields") && !params["fields"].dtype().is_list())
-    {
-      res = false;
-      info["errors"].append() = "'fields' is not a list";
-    }
-
-    std::vector<std::string> valid_paths;
-    valid_paths.push_back("field");
-    valid_paths.push_back("fields");
-    valid_paths.push_back("dims/i");
-    valid_paths.push_back("dims/j");
-    valid_paths.push_back("dims/k");
-    valid_paths.push_back("origin/x");
-    valid_paths.push_back("origin/y");
-    valid_paths.push_back("origin/z");
-    valid_paths.push_back("spacing/dx");
-    valid_paths.push_back("spacing/dy");
-    valid_paths.push_back("spacing/dz");
-    valid_paths.push_back("invalid_value");
-
-    std::string surprises = "";
-
-    std::vector<std::string> ignore_paths;
-    ignore_paths.push_back("fields");
-
-    if(params.number_of_children() != 0)
-      std::string surprises = surprise_check(valid_paths, ignore_paths, params);
-
-    if(surprises != "")
-    {
-      res = false;
-      info["errors"].append() = surprises;
-    }
-
-    return res;
+    param_schema["anyOf"].append() = "field";
+    param_schema["anyOf"].append() = "fields";
 }
 
 //-----------------------------------------------------------------------------
@@ -3956,114 +3317,45 @@ VTKHSample::declare_interface(Node &i)
     i["type_name"]   = "vtkh_sample";
     i["port_names"].append() = "in";
     i["output_port"] = "true";
-}
 
-//-----------------------------------------------------------------------------
-bool
-VTKHSample::verify_params(const conduit::Node &params,
-                          conduit::Node &info)
-{
-    info.reset();
+    // ----------- Define Param Schema -----------
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
-    bool res = true;
-    res &= check_string("field",params, info, false);
-    res &= check_numeric("invalid_value",params, info, false);
-    
-    res &= check_numeric("line/num_samples",params, info, false);
-    res &= check_numeric("line/start/x",params, info, false);
-    res &= check_numeric("line/start/y",params, info, false);
-    res &= check_numeric("line/start/z",params, info, false);
-    res &= check_numeric("line/end/x",params, info, false);
-    res &= check_numeric("line/end/y",params, info, false);
-    res &= check_numeric("line/end/z",params, info, false);
+    string_schema(param_schema["properties/field"]);
+    array_schema(param_schema["properties/fields"]);
+    number_schema(param_schema["properties/invalid_value"]);
 
-    res &= check_numeric("points/x",params, info, false);
-    res &= check_numeric("points/y",params, info, false);
-    res &= check_numeric("points/z",params, info, false);
+    // --- Line ---
+    conduit::Node &line_schema = param_schema["properties/line"];
+    line_schema["type"] = "object";
+    line_schema["additionalProperties"] = false;
+    number_schema(line_schema["properties/num_samples"]);
+    vec3_schema_anyOf(line_schema["properties/start"]);
+    vec3_schema_anyOf(line_schema["properties/end"]);
 
-    res &= check_numeric("box/dims/x",params, info, false);
-    res &= check_numeric("box/dims/y",params, info, false);
-    res &= check_numeric("box/dims/z",params, info, false);
-    res &= (check_numeric("box/min/x",params, info, false) 
-           || check_string("box/min/x",params, info, false));
-    res &= (check_numeric("box/min/y",params, info, false) 
-           || check_string("box/min/y",params, info, false));
-    res &= (check_numeric("box/min/z",params, info, false) 
-           || check_string("box/min/z",params, info, false));
-    res &= (check_numeric("box/max/x",params, info, false) 
-           || check_string("box/max/x",params, info, false));
-    res &= (check_numeric("box/max/y",params, info, false) 
-           || check_string("box/max/y",params, info, false));
-    res &= (check_numeric("box/max/z",params, info, false) 
-           || check_string("box/max/z",params, info, false));
+    // --- Points ---
+    vec3_schema_anyOf(param_schema["properties/points"]);
 
-    if(!params.has_child("field") && !params.has_child("fields"))
-    {
-      res = false;
-      info["errors"].append() = "Sampling requires 'field' or 'fields'";
-    }
+    // --- Box ---
+    conduit::Node &box_schema = param_schema["properties/box"];
+    box_schema["type"] = "object";
+    box_schema["additionalProperties"] = false;
+    vec3_schema_anyOf(box_schema["properties/dims"]);
+    vec3_schema_anyOf(box_schema["properties/min"]);
+    vec3_schema_anyOf(box_schema["properties/max"]);
 
-    if(params.has_child("fields") && !params["fields"].dtype().is_list())
-    {
-      res = false;
-      info["errors"].append() = "'fields' is not a list";
-    }
+    // --- Uniform Grid ---
+    conduit::Node &uniform_grid_schema = param_schema["properties/uniform_grid"];
+    uniform_grid_schema["type"] = "object";
+    uniform_grid_schema["additionalProperties"] = false;
+    vec3_schema_anyOf(uniform_grid_schema["properties/dims"], "i", "j", "k");
+    vec3_schema_anyOf(uniform_grid_schema["properties/origin"]);
+    vec3_schema_anyOf(uniform_grid_schema["properties/spacing"], "dx", "dy", "dz");
 
-    std::vector<std::string> valid_paths;
-    valid_paths.push_back("field");
-    valid_paths.push_back("fields");
-    valid_paths.push_back("invalid_value");
-
-    valid_paths.push_back("line/num_samples");
-    valid_paths.push_back("line/start/x");
-    valid_paths.push_back("line/start/y");
-    valid_paths.push_back("line/start/z");
-    valid_paths.push_back("line/end/x");
-    valid_paths.push_back("line/end/y");
-    valid_paths.push_back("line/end/z");
-
-    valid_paths.push_back("points/x");
-    valid_paths.push_back("points/y");
-    valid_paths.push_back("points/z");
-
-    valid_paths.push_back("uniform_grid");
-    valid_paths.push_back("uniform_grid/dims/i");
-    valid_paths.push_back("uniform_grid/dims/j");
-    valid_paths.push_back("uniform_grid/dims/k");
-    valid_paths.push_back("uniform_grid/origin/x");
-    valid_paths.push_back("uniform_grid/origin/y");
-    valid_paths.push_back("uniform_grid/origin/z");
-    valid_paths.push_back("uniform_grid/spacing/dx");
-    valid_paths.push_back("uniform_grid/spacing/dy");
-    valid_paths.push_back("uniform_grid/spacing/dz");
-
-    valid_paths.push_back("box/dims/i");
-    valid_paths.push_back("box/dims/j");
-    valid_paths.push_back("box/dims/k");
-    valid_paths.push_back("box/min/x");
-    valid_paths.push_back("box/min/y");
-    valid_paths.push_back("box/min/z");
-    valid_paths.push_back("box/max/x");
-    valid_paths.push_back("box/max/y");
-    valid_paths.push_back("box/max/z");
-
-    std::string surprises = "";
-
-    std::vector<std::string> ignore_paths;
-    ignore_paths.push_back("fields");
-
-    if(params.number_of_children() != 0)
-    {
-      surprises = surprise_check(valid_paths, ignore_paths, params);
-    }
-
-    if(surprises != "")
-    {
-      res = false;
-      info["errors"].append() = surprises;
-    }
-
-    return res;
+    param_schema["anyOf"].append() = "field";
+    param_schema["anyOf"].append() = "fields";
 }
 
 //-----------------------------------------------------------------------------
@@ -4428,29 +3720,14 @@ VTKHStats::declare_interface(Node &i)
     i["type_name"]   = "vtkh_stats";
     i["port_names"].append() = "in";
     i["output_port"] = "false";
-}
 
-//-----------------------------------------------------------------------------
-bool
-VTKHStats::verify_params(const conduit::Node &params,
-                         conduit::Node &info)
-{
-    info.reset();
+    // ----------- Define Param Schema -----------
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
-    bool res = check_string("field",params, info, true);
-
-    std::vector<std::string> valid_paths;
-    valid_paths.push_back("field");
-
-    std::string surprises = surprise_check(valid_paths, params);
-
-    if(surprises != "")
-    {
-      res = false;
-      info["errors"].append() = surprises;
-    }
-
-    return res;
+    string_schema(param_schema["properties/field"]);
+    param_schema["required"].append() = "field";
 }
 
 //-----------------------------------------------------------------------------
@@ -4522,31 +3799,16 @@ VTKHHistogram::declare_interface(Node &i)
     i["type_name"]   = "vtkh_histogram";
     i["port_names"].append() = "in";
     i["output_port"] = "false";
-}
 
-//-----------------------------------------------------------------------------
-bool
-VTKHHistogram::verify_params(const conduit::Node &params,
-                             conduit::Node &info)
-{
-    info.reset();
+    // ----------- Define Param Schema -----------
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
-    bool res = check_string("field",params, info, true);
-    res &= check_numeric("bins",params, info, false, true);
+    string_schema(param_schema["properties/field"]);
+    number_schema(param_schema["properties/bins"], true);
 
-    std::vector<std::string> valid_paths;
-    valid_paths.push_back("field");
-    valid_paths.push_back("bins");
-
-    std::string surprises = surprise_check(valid_paths, params);
-
-    if(surprises != "")
-    {
-      res = false;
-      info["errors"].append() = surprises;
-    }
-
-    return res;
+    param_schema["required"].append() = "field";
 }
 
 //-----------------------------------------------------------------------------
@@ -4622,48 +3884,19 @@ VTKHProject2d::declare_interface(Node &i)
     i["type_name"]   = "vtkh_project_2d";
     i["port_names"].append() = "in";
     i["output_port"] = "true";
+
+    // ----------- Define Param Schema -----------
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
+
+    string_schema(param_schema["properties/topology"]);
+    number_schema(param_schema["properties/image_width"]);
+    number_schema(param_schema["properties/image_height"]);
+    ignore_schema(param_schema["properties/dataset_bounds"]);
+    ignore_schema(param_schema["properties/camera"]);
+    array_schema(param_schema["properties/fields"]);
 }
-
-//-----------------------------------------------------------------------------
-bool
-VTKHProject2d::verify_params(const conduit::Node &params,
-                             conduit::Node &info)
-{
-    info.reset();
-    bool res = check_string("topology",params, info, false);
-    res &= check_numeric("image_width",params, info, false);
-    res &= check_numeric("image_height",params, info, false);
-
-    if(params.has_child("fields") && !params["fields"].dtype().is_list())
-    {
-      res = false;
-      info["errors"].append() = "fields is not a list";
-    }
-
-    std::vector<std::string> valid_paths;
-    std::vector<std::string> ignore_paths;
-    valid_paths.push_back("topology");
-    valid_paths.push_back("image_width");
-    valid_paths.push_back("image_height");
-    valid_paths.push_back("dataset_bounds");
-    valid_paths.push_back("camera");
-    valid_paths.push_back("fields");
-
-    ignore_paths.push_back("camera");
-    ignore_paths.push_back("fields");
-    ignore_paths.push_back("dataset_bounds");
-
-    std::string surprises = surprise_check(valid_paths, ignore_paths, params);
-
-    if(surprises != "")
-    {
-      res = false;
-      info["errors"].append() = surprises;
-    }
-
-    return res;
-}
-
 
 //-----------------------------------------------------------------------------
 void
@@ -4804,29 +4037,14 @@ VTKHNoOp::declare_interface(Node &i)
     i["type_name"]   = "vtkh_no_op";
     i["port_names"].append() = "in";
     i["output_port"] = "true";
-}
 
-//-----------------------------------------------------------------------------
-bool
-VTKHNoOp::verify_params(const conduit::Node &params,
-                        conduit::Node &info)
-{
-    info.reset();
+    // ----------- Define Param Schema -----------
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
-    bool res = check_string("field",params, info, true);
-
-    std::vector<std::string> valid_paths;
-    valid_paths.push_back("field");
-
-    std::string surprises = surprise_check(valid_paths, params);
-
-    if(surprises != "")
-    {
-      res = false;
-      info["errors"].append() = surprises;
-    }
-
-    return res;
+    string_schema(param_schema["properties/field"]);
+    param_schema["required"].append() = "field";
 }
 
 //-----------------------------------------------------------------------------
@@ -4902,33 +4120,19 @@ VTKHVectorComponent::declare_interface(Node &i)
     i["type_name"]   = "vtkh_vector_component";
     i["port_names"].append() = "in";
     i["output_port"] = "true";
-}
 
-//-----------------------------------------------------------------------------
-bool
-VTKHVectorComponent::verify_params(const conduit::Node &params,
-                                   conduit::Node &info)
-{
-    info.reset();
+    // ----------- Define Param Schema -----------
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
-    bool res = check_string("field",params, info, true);
-    res &= check_numeric("component",params, info, true);
-    res &= check_string("output_name",params, info, true);
+    string_schema(param_schema["properties/field"]);
+    number_schema(param_schema["properties/component"]);
+    string_schema(param_schema["properties/output_name"]);
 
-    std::vector<std::string> valid_paths;
-    valid_paths.push_back("field");
-    valid_paths.push_back("component");
-    valid_paths.push_back("output_name");
-
-    std::string surprises = surprise_check(valid_paths, params);
-
-    if(surprises != "")
-    {
-      res = false;
-      info["errors"].append() = surprises;
-    }
-
-    return res;
+    param_schema["required"].append() = "field";
+    param_schema["required"].append() = "component";
+    param_schema["required"].append() = "output_name";
 }
 
 //-----------------------------------------------------------------------------
@@ -5008,35 +4212,20 @@ VTKHCompositeVector::declare_interface(Node &i)
     i["type_name"]   = "vtkh_composite_vector";
     i["port_names"].append() = "in";
     i["output_port"] = "true";
-}
 
-//-----------------------------------------------------------------------------
-bool
-VTKHCompositeVector::verify_params(const conduit::Node &params,
-                        conduit::Node &info)
-{
-    info.reset();
+    // ----------- Define Param Schema -----------
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
-    bool res = check_string("field1",params, info, true);
-    res &= check_string("field2",params, info, true);
-    res &= check_string("field3",params, info, false);
-    res &= check_string("output_name",params, info, true);
+    string_schema(param_schema["properties/field1"]);
+    string_schema(param_schema["properties/field2"]);
+    string_schema(param_schema["properties/field3"]);
+    string_schema(param_schema["properties/output_name"]);
 
-    std::vector<std::string> valid_paths;
-    valid_paths.push_back("field1");
-    valid_paths.push_back("field2");
-    valid_paths.push_back("field3");
-    valid_paths.push_back("output_name");
-
-    std::string surprises = surprise_check(valid_paths, params);
-
-    if(surprises != "")
-    {
-      res = false;
-      info["errors"].append() = surprises;
-    }
-
-    return res;
+    param_schema["required"].append() = "field1";
+    param_schema["required"].append() = "field2";
+    param_schema["required"].append() = "output_name";
 }
 
 //-----------------------------------------------------------------------------
@@ -5146,33 +4335,9 @@ VTKHScale::declare_interface(Node &i)
     i["type_name"]   = "vtkh_scale_transform";
     i["port_names"].append() = "in";
     i["output_port"] = "true";
-}
 
-//-----------------------------------------------------------------------------
-bool
-VTKHScale::verify_params(const conduit::Node &params,
-                                  conduit::Node &info)
-{
-    info.reset();
-
-    bool res = check_numeric("x_scale",params, info, true, true);
-    res &= check_numeric("y_scale",params, info, true, true);
-    res &= check_numeric("z_scale",params, info, true, true);
-
-    std::vector<std::string> valid_paths;
-    valid_paths.push_back("x_scale");
-    valid_paths.push_back("y_scale");
-    valid_paths.push_back("z_scale");
-
-    std::string surprises = surprise_check(valid_paths, params);
-
-    if(surprises != "")
-    {
-      res = false;
-      info["errors"].append() = surprises;
-    }
-
-    return res;
+    // ----------- Define Param Schema -----------
+    vec3_schema(i["param_schema"], "x_scale", "y_scale", "z_scale", true);
 }
 
 //-----------------------------------------------------------------------------
@@ -5246,179 +4411,42 @@ VTKHTransform::declare_interface(Node &i)
     i["type_name"]   = "vtkh_transform";
     i["port_names"].append() = "in";
     i["output_port"] = "true";
-}
 
-//-----------------------------------------------------------------------------
-bool
-VTKHTransform::verify_params(const conduit::Node &params,
-                             conduit::Node &info)
-{
-    info.reset();
+    // ----------- Define Param Schema -----------
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
+    param_schema["constraints/exclusiveChildren"].append() = "scale";
+    param_schema["constraints/exclusiveChildren"].append() = "translate";
+    param_schema["constraints/exclusiveChildren"].append() = "reflect";
+    param_schema["constraints/exclusiveChildren"].append() = "rotate";
+    param_schema["constraints/exclusiveChildren"].append() = "matrix";
+    param_schema["constraints/allowNoneInExclusiveGroup"] = false;
 
-/*
-    scale/x,y,z
-    translate/x,y,z
-    rotate/x,y,z
-    reflect/x,y,z
-    transform_matrix: float64 x 16
-*/
+    vec3_schema_anyOf(param_schema["properties/scale"], true);
+    vec3_schema_anyOf(param_schema["properties/translate"], true);
 
-    bool res = true;
-    
-    std::vector<std::string> modes = {"scale",
-                                      "translate",
-                                      "rotate",
-                                      "reflect",
-                                      "matrix"};
+    // --- rotate ---
+    conduit::Node &rotate_schema = param_schema["properties/rotate"];
+    rotate_schema["type"] = "object";
+    rotate_schema["additionalProperties"] = false;
+    number_schema(rotate_schema["properties/angle"], true);
+    vec3_schema_anyOf(rotate_schema["properties/axis"], true);
+    rotate_schema["required"].append() = "angle";
+    rotate_schema["required"].append() = "axis";
 
-    index_t mode_count = 0;
-    for( auto mode : modes)
-    {
-      if(params.has_child(mode))
-      {
-          mode_count++;
-      }
-    }
+    // --- reflect ---
+    conduit::Node &reflect_schema = param_schema["properties/reflect"];
+    reflect_schema["type"] = "object";
+    reflect_schema["additionalProperties"] = false;
+    vec3_schema_anyOf(reflect_schema["properties/normal"], true);
+    vec3_schema_anyOf(reflect_schema["properties/point"], true);
 
-    if(mode_count > 1)
-    {
-        info["errors"].append() = "transform only supports one of: scale, translate, rotate, reflect, or matrix";
-        res = false;
-    }
-
-    if(mode_count == 0)
-    {
-        info["errors"].append() = "transform requires parameters for: scale, translate, rotate, reflect, or matrix";
-        res = false;
-    }
-
-    if(params.has_child("scale"))
-    {
-       const Node &p_vals = params["scale"];
-       if( ! p_vals.has_child("x") &&
-           ! p_vals.has_child("y") &&
-           ! p_vals.has_child("z") )
-        {
-            res = false;
-            info["errors"].append()="scale transform requires: scale/x, scale/y, and/or scale/z";
-        }
-        res &= check_numeric("x", p_vals, info, false, true);
-        res &= check_numeric("y", p_vals, info, false, true);
-        res &= check_numeric("z", p_vals, info, false, true);
-    }
-
-    if(params.has_child("translate"))
-    {
-       const Node &p_vals = params["translate"];
-       if( ! p_vals.has_child("x") &&
-           ! p_vals.has_child("y") &&
-           ! p_vals.has_child("z") )
-        {
-            res = false;
-            info["errors"].append() = "translate transform requires: translate/x, translate/y, and/or translate/z";
-        }
-        res &= check_numeric("x", p_vals, info, false, true);
-        res &= check_numeric("y", p_vals, info, false, true);
-        res &= check_numeric("z", p_vals, info, false, true);
-    }
-
-    if(params.has_child("rotate"))
-    {
-        const Node &p_vals = params["rotate"];
-        bool rotate_ok = check_numeric("angle", p_vals, info, true, true);
-
-        if(p_vals.has_child("axis"))
-        {
-           const Node &p_axis = p_vals["axis"];
-           if( ! p_axis.has_child("x") &&
-               ! p_axis.has_child("y") &&
-               ! p_axis.has_child("z") )
-            {
-                rotate_ok  = false;
-            }
-
-           res &= check_numeric("x", p_axis, info, false, true);
-           res &= check_numeric("y", p_axis, info, false, true);
-           res &= check_numeric("z", p_axis, info, false, true);
-
-        }
-        else
-        {
-           rotate_ok = false;
-        }
-
-        if(!rotate_ok)
-        {
-            res = false;
-            info["errors"].append()="rotate transform requires: rotate/angle and rotate/axis/x, rotate/axis/y, and/or rotate/axis/z";
-        }
-    }
-
-    if(params.has_child("reflect"))
-    {
-       const Node &p_vals = params["reflect"];
-       if( ! p_vals.has_path("normal/x") &&
-           ! p_vals.has_path("normal/y") &&
-           ! p_vals.has_path("normal/z") )
-        {
-            res = false;
-            info["errors"].append() = "reflect transform requires: reflect/normal/x, reflect/normal/y, and/or reflect/normal/z";
-        }
-
-        res &= check_numeric("normal/x", p_vals, info, false, true);
-        res &= check_numeric("normal/y", p_vals, info, false, true);
-        res &= check_numeric("normal/z", p_vals, info, false, true);
-
-        res &= (check_numeric("point/x", p_vals, info, false, true) || 
-                check_string("point/x", p_vals, info, true));
-        res &= (check_numeric("point/y", p_vals, info, false, true) || 
-                check_string("point/y", p_vals, info, true));
-        res &= (check_numeric("point/z", p_vals, info, false, true) || 
-                check_string("point/z", p_vals, info, true));
-    }
-
-    if(params.has_child("matrix"))
-    {
-        res &= check_numeric("matrix",params, info, true, true);
-        if(res)
-        {
-            // make sure it is 16 long
-            index_t matrix_len = params["matrix"].dtype().number_of_elements();
-            if(matrix_len != 16)
-            {
-                res = false;
-                info["errors"].append()="matrix must an array with 16 entries (representing a 4x4 transform matrix)";
-            }
-        }
-    }
-
-    std::vector<std::string> valid_paths = { "scale/x",
-                                             "scale/y",
-                                             "scale/z",
-                                             "translate/x",
-                                             "translate/y",
-                                             "translate/z",
-                                             "rotate/angle",
-                                             "rotate/axis/x",
-                                             "rotate/axis/y",
-                                             "rotate/axis/z",
-                                             "reflect/normal/x",
-                                             "reflect/normal/y",
-                                             "reflect/normal/z",
-                                             "reflect/point/x",
-                                             "reflect/point/y",
-                                             "reflect/point/z",
-                                             "matrix"};
-
-    std::string surprises = surprise_check(valid_paths, params);
-
-    if(surprises != "")
-    {
-      res = false;
-      info["errors"].append() = surprises;
-    }
-
-    return res;
+    // --- matrix ---
+    conduit::Node matrix_item_schema;
+    conduit::Node &matrix_schema = array_schema(param_schema["properties/matrix"], number_schema(matrix_item_schema, true));
+    matrix_schema["minItems"] = 16;
+    matrix_schema["maxItems"] = 16;
 }
 
 //-----------------------------------------------------------------------------
@@ -5700,126 +4728,110 @@ VTKHParticleAdvection::declare_interface(Node &i)
     i["type_name"]   = "vtkh_particle_advection";
     i["port_names"].append() = "in";
     i["output_port"] = "true";
-}
 
-//-----------------------------------------------------------------------------
-bool
-VTKHParticleAdvection::verify_params(const conduit::Node &params,
-                                     conduit::Node &info)
-{
-    bool res = check_string("field", params, info, true);
-    res &= check_numeric("num_steps", params, info, true, true);
-    res &= check_numeric("step_size", params, info, true, true);
-    info.reset();
+    // ----------- Define Param Schema -----------
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
-    if(!params.has_child("seeds"))
+    string_schema(param_schema["properties/field"]);
+    number_schema(param_schema["properties/num_steps"], true);
+    number_schema(param_schema["properties/step_size"], true);
+
+    // --- seed ---
+    conduit::Node &seeds_schema = param_schema["properties/seeds"];
+    seeds_schema["type"] = "object";
+    seeds_schema["additionalProperties"] = false;
+    string_schema(seeds_schema["properties/type"]);
+    number_schema(seeds_schema["properties/location"]);
+    number_schema(seeds_schema["properties/start"]);
+    number_schema(seeds_schema["properties/end"]);
+    number_schema(seeds_schema["properties/num_seeds"]);
+    number_schema(seeds_schema["properties/num_seeds_x"]);
+    number_schema(seeds_schema["properties/num_seeds_y"]);
+    number_schema(seeds_schema["properties/num_seeds_z"]);
+    number_schema(seeds_schema["properties/extents_x"]);
+    number_schema(seeds_schema["properties/extents_y"]);
+    number_schema(seeds_schema["properties/extents_z"]);
+    string_schema(seeds_schema["properties/sampling_type"]);
+    string_schema(seeds_schema["properties/sampling_space"]);
+    seeds_schema["required"].append() = "type";
+
+    seeds_schema["constraints/dependencies/extents_x"].append() = "extents_y";
+    seeds_schema["constraints/dependencies/extents_x"].append() = "extents_z";
+    seeds_schema["constraints/dependencies/extents_y"].append() = "extents_x";
+    seeds_schema["constraints/dependencies/extents_y"].append() = "extents_z";
+    seeds_schema["constraints/dependencies/extents_z"].append() = "extents_x";
+    seeds_schema["constraints/dependencies/extents_z"].append() = "extents_y";
+
+    // type == point
+    conduit::Node &point_option = seeds_schema["oneOf"].append();
+    point_option["type"] = "object";
+    point_option["properties/type/type"] = "string";
+    point_option["properties/type/constraints/const"] = "point";
+    point_option["required"].append() = "type";
+    point_option["required"].append() = "location";
+
+    // type == point_list
+    conduit::Node &point_list_option = seeds_schema["oneOf"].append();
+    point_list_option["type"] = "object";
+    point_list_option["properties/type/type"] = "string";
+    point_list_option["properties/type/constraints/const"] = "point_list";
+    point_list_option["required"].append() = "type";
+    point_list_option["required"].append() = "location";
+
+    // type == line
+    conduit::Node &line_option = seeds_schema["oneOf"].append();
+    line_option["type"] = "object";
+    line_option["properties/type/type"] = "string";
+    line_option["properties/type/constraints/const"] = "line";
+    line_option["required"].append() = "type";
+    line_option["required"].append() = "start";
+    line_option["required"].append() = "end";
+    line_option["required"].append() = "num_seeds";
+    line_option["required"].append() = "sampling_type";
+
+    // type == box
+    conduit::Node &box_option = seeds_schema["oneOf"].append();
+    box_option["type"] = "object";
+    box_option["properties/type/type"] = "string";
+    box_option["properties/type/constraints/const"] = "box";
+    box_option["required"].append() = "type";
+    box_option["required"].append() = "sampling_space";
+    box_option["required"].append() = "sampling_type";
     {
-        info["errors"].append() = "Missing required parameter. Particle Advection must specify seeds";
-        res = false;
+        conduit::Node &box_option_uniform = box_option["oneOf"].append();
+        box_option_uniform["type"] = "object";
+        box_option_uniform["properties/sampling_type/type"] = "string";
+        box_option_uniform["properties/sampling_type/constraints/const"] = "uniform";
+        box_option_uniform["required"].append() = "sampling_type";
+        box_option_uniform["required"].append() = "num_seeds_x";
+        box_option_uniform["required"].append() = "num_seeds_y";
+        box_option_uniform["required"].append() = "num_seeds_z";
     }
-    else
     {
-        conduit::Node seed_params = params["seeds"];
-        if(!seed_params.has_child("type"))
-        {
-            info["errors"].append() = "Missing required parameter. Particle Advection must specify seed type";
-            res = false;
-        }
-        else
-        {
-
-            res &= check_string("type", seed_params, info, true);
-            std::string type = seed_params["type"].as_string();	
-            if(type == "point")
-            {
-                 res &= check_numeric("location",seed_params,info,true);
-            }
-            else if(type == "point_list")
-            {
-                 res &= check_numeric("location",seed_params,info,true);
-            }
-            else if(type == "line")
-            {
-                 res &= check_numeric("start",seed_params,info,true);
-                 res &= check_numeric("end",seed_params,info,true);
-                res &= check_numeric("num_seeds",seed_params,info,true);
-                 res &= check_string("sampling_type", seed_params, info, true);
-            }
-            else if(type == "box")
-            {
-                res &= check_string("sampling_space", seed_params, info, true);
-                res &= check_string("sampling_type", seed_params, info, true);
-                string sampling_type = seed_params["sampling_type"].as_string();
-                if(sampling_type == "uniform")
-                {
-                    res &= check_numeric("num_seeds_x",seed_params,info,true);
-                    res &= check_numeric("num_seeds_y",seed_params,info,true);
-                    res &= check_numeric("num_seeds_z",seed_params,info,true);
-                }
-                else
-                {
-                    res &= check_numeric("num_seeds",seed_params,info,true);
-                }
-
-                if(seed_params.has_child("extents_x"))
-                {
-                    res &= check_numeric("extents_x",seed_params,info,true);
-                    res &= check_numeric("extents_y",seed_params,info,true);
-                    res &= check_numeric("extents_z",seed_params,info,true);
-                }
-            }
-            else
-            {
-                info["errors"].append() = "Unrecognized parameter. Particle Advection supports seed types 'point', 'point_list', 'line', or 'box'.";
-                res = false;
-            }
-        }
-    }
-
-    if(params.has_child("rendering"))
-    {
-        res &= check_string("rendering/enable_tubes", params, info, false);
-        res &= check_string("rendering/tube_capping", params, info, false);
-        res &= check_numeric("rendering/tube_size", params, info, false);
-        res &= check_numeric("rendering/tube_sides", params, info, false);
-        res &= check_numeric("rendering/tube_value", params, info, false);
-        res &= check_string("rendering/output_field", params, info, false);
-    }
-
-    std::vector<std::string> valid_paths;
-    valid_paths.push_back("field");
-    valid_paths.push_back("num_steps");
-    valid_paths.push_back("step_size");
-    valid_paths.push_back("seeds/type");
-    valid_paths.push_back("seeds/location");
-    valid_paths.push_back("seeds/start");
-    valid_paths.push_back("seeds/end");
-    valid_paths.push_back("seeds/num_seeds");
-    valid_paths.push_back("seeds/num_seeds_x");
-    valid_paths.push_back("seeds/num_seeds_y");
-    valid_paths.push_back("seeds/num_seeds_z");
-    valid_paths.push_back("seeds/extents_x");
-    valid_paths.push_back("seeds/extents_y");
-    valid_paths.push_back("seeds/extents_z");
-    valid_paths.push_back("seeds/sampling_type");
-    valid_paths.push_back("seeds/sampling_space");
-
-    valid_paths.push_back("rendering/enable_tubes");
-    valid_paths.push_back("rendering/tube_capping");
-    valid_paths.push_back("rendering/tube_size");
-    valid_paths.push_back("rendering/tube_sides");
-    valid_paths.push_back("rendering/tube_value");
-    valid_paths.push_back("rendering/output_field");
-
-    std::string surprises = surprise_check(valid_paths, params);
-
-    if(surprises != "")
-    {
-        res = false;
-        info["errors"].append() = surprises;
+        conduit::Node &box_option_non_uniform = box_option["oneOf"].append();
+        box_option_non_uniform["type"] = "object";
+        box_option_non_uniform["required"].append() = "sampling_type";
+        box_option_non_uniform["required"].append() = "num_seeds";
+        box_option_non_uniform["constraints/not_const/sampling_type"] = "uniform";
     }
 
-    return res;
+    // --- rendering ---
+    conduit::Node &rendering_schema = param_schema["properties/rendering"];
+    rendering_schema["type"] = "object";
+    rendering_schema["additionalProperties"] = false;
+    string_schema(rendering_schema["properties/enable_tubes"]);
+    string_schema(rendering_schema["properties/tube_capping"]);
+    number_schema(rendering_schema["properties/tube_size"]);
+    number_schema(rendering_schema["properties/tube_sides"]);
+    number_schema(rendering_schema["properties/tube_value"]);
+    string_schema(rendering_schema["properties/output_field"]);
+
+    param_schema["required"].append() = "field";
+    param_schema["required"].append() = "num_steps";
+    param_schema["required"].append() = "step_size";
+    param_schema["required"].append() = "seeds";
 }
 
 //-----------------------------------------------------------------------------
@@ -6353,55 +5365,32 @@ VTKHWarpXStreamline::declare_interface(Node &i)
     i["type_name"]   = "vtkh_warpx_streamline";
     i["port_names"].append() = "in";
     i["output_port"] = "true";
+
+    // ----------- Define Param Schema -----------
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
+
+    string_schema(param_schema["properties/b_field"]);
+    string_schema(param_schema["properties/e_field"]);
+    number_schema(param_schema["properties/num_steps"], true);
+    number_schema(param_schema["properties/step_size"], true);
+
+    // --- rendering ---
+    conduit::Node &rendering_schema = param_schema["properties/rendering"];
+    rendering_schema["type"] = "object";
+    rendering_schema["additionalProperties"] = false;
+    string_schema(rendering_schema["properties/enable_tubes"]);
+    string_schema(rendering_schema["properties/tube_capping"]);
+    number_schema(rendering_schema["properties/tube_size"]);
+    number_schema(rendering_schema["properties/tube_sides"]);
+    number_schema(rendering_schema["properties/tube_value"]);
+    string_schema(rendering_schema["properties/output_field"]);
+
+    param_schema["required"].append() = "num_steps";
+    param_schema["required"].append() = "step_size";
 }
 
-//-----------------------------------------------------------------------------
-bool
-VTKHWarpXStreamline::verify_params(const conduit::Node &params,
-                                     conduit::Node &info)
-{
-    info.reset();
-    bool res = check_string("b_field", params, info, false);
-    res &= check_string("e_field", params, info, false);
-    res &= check_numeric("num_steps", params, info, true, true);
-    res &= check_numeric("step_size", params, info, true, true);
-
-    if(params.has_child("rendering"))
-    {
-        res &= check_string("rendering/enable_tubes", params, info, false);
-        res &= check_string("rendering/tube_capping", params, info, false);
-        res &= check_numeric("rendering/tube_size", params, info, false);
-        res &= check_numeric("rendering/tube_sides", params, info, false);
-        res &= check_numeric("rendering/tube_value", params, info, false);
-        res &= check_string("rendering/output_field", params, info, false);
-    }
-
-    std::vector<std::string> valid_paths;
-    valid_paths.push_back("b_field");
-    valid_paths.push_back("e_field");
-    valid_paths.push_back("charge_field");
-    valid_paths.push_back("mass_field");
-    valid_paths.push_back("momentum_field");
-    valid_paths.push_back("weighting_field");
-    valid_paths.push_back("num_steps");
-    valid_paths.push_back("step_size");
-    valid_paths.push_back("rendering/enable_tubes");
-    valid_paths.push_back("rendering/tube_capping");
-    valid_paths.push_back("rendering/tube_size");
-    valid_paths.push_back("rendering/tube_sides");
-    valid_paths.push_back("rendering/tube_value");
-    valid_paths.push_back("rendering/output_field");
-
-    std::string surprises = surprise_check(valid_paths, params);
-
-    if(surprises != "")
-    {
-        res = false;
-        info["errors"].append() = surprises;
-    }
-
-    return res;
-}
 //-----------------------------------------------------------------------------
 void
 VTKHWarpXStreamline::execute()
@@ -6563,38 +5552,16 @@ VTKHVTKFileExtract::declare_interface(Node &i)
     i["type_name"]   = "vtkh_vtk_file_extract";
     i["port_names"].append() = "in";
     i["output_port"] = "false";
-}
 
-//-----------------------------------------------------------------------------
-bool
-VTKHVTKFileExtract::verify_params(const conduit::Node &params,
-                                  conduit::Node &info)
-{
-    info.reset();
+    // ----------- Define Param Schema -----------
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
-    bool res = true;
+    string_schema(param_schema["properties/path"]);
+    string_schema(param_schema["properties/topology"]);
 
-    if( !params.has_child("path") )
-    {
-        info["errors"].append() = "missing required entry 'path'";
-        res = false;
-    }
-
-    res = check_string("topology",params, info, false) && res;
-
-    std::vector<std::string> valid_paths;
-    valid_paths.push_back("path");
-    valid_paths.push_back("topology");
-
-    std::string surprises = surprise_check(valid_paths, params);
-
-    if(surprises != "")
-    {
-      res = false;
-      info["errors"].append() = surprises;
-    }
-
-    return res;
+    param_schema["required"].append() = "path";
 }
 
 //-----------------------------------------------------------------------------
@@ -6775,39 +5742,20 @@ VTKHMIR::declare_interface(Node &i)
     i["type_name"]   = "vtkh_mir";
     i["port_names"].append() = "in";
     i["output_port"] = "true";
-}
 
-//-----------------------------------------------------------------------------
-bool
-VTKHMIR::verify_params(const conduit::Node &params,
-                        conduit::Node &info)
-{
-    info.reset();
+    // ----------- Define Param Schema -----------
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
-    bool res = check_string("matset",params, info, true);
-    res &= check_string("output_name", params, info, false);
-    res &= check_numeric("error_scaling", params, info, false);
-    res &= check_numeric("scaling_decay", params, info, false);
-    res &= check_numeric("iterations", params, info, false);
-    res &= check_numeric("max_error", params, info, false);
+    string_schema(param_schema["properties/matset"]);
+    string_schema(param_schema["properties/output_name"]);
+    number_schema(param_schema["properties/error_scaling"]);
+    number_schema(param_schema["properties/scaling_decay"]);
+    number_schema(param_schema["properties/iterations"]);
+    number_schema(param_schema["properties/max_error"]);
 
-    std::vector<std::string> valid_paths;
-    valid_paths.push_back("matset");
-    valid_paths.push_back("output_name");
-    valid_paths.push_back("error_scaling");
-    valid_paths.push_back("scaling_decay");
-    valid_paths.push_back("iterations");
-    valid_paths.push_back("max_error");
-
-    std::string surprises = surprise_check(valid_paths, params);
-
-    if(surprises != "")
-    {
-      res = false;
-      info["errors"].append() = surprises;
-    }
-
-    return res;
+    param_schema["required"].append() = "matset";
 }
 
 //-----------------------------------------------------------------------------

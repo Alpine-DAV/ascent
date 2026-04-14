@@ -77,7 +77,6 @@ public:
   ~ExprBoolean();
 
   virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
   virtual void execute();
 };
 
@@ -89,7 +88,6 @@ public:
   ~ExprInteger();
 
   virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
   virtual void execute();
 };
 
@@ -101,7 +99,6 @@ public:
   ~ExprDouble();
 
   virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
   virtual void execute();
 };
 
@@ -113,7 +110,6 @@ public:
   ~ExprString();
 
   virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
   virtual void execute();
 };
 
@@ -125,7 +121,6 @@ public:
   ~ExprNan();
 
   virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
   virtual void execute();
 };
 
@@ -137,7 +132,6 @@ public:
   ~ExprNull();
 
   virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
   virtual void execute();
 };
 
@@ -149,7 +143,6 @@ public:
   ~ExprIdentifier();
 
   virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
   virtual void execute();
 };
 
@@ -161,7 +154,6 @@ public:
   ~ExprObjectDotAccess();
 
   virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
   virtual void execute();
 };
 
@@ -173,7 +165,6 @@ public:
   ~ExprIf();
 
   virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
   virtual void execute();
 };
 
@@ -185,7 +176,6 @@ public:
   ~ExprBinaryOp();
 
   virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
   virtual void execute();
 };
 
@@ -206,7 +196,6 @@ public:
   ~ExprScalarMin();
 
   virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
   virtual void execute();
 };
 
@@ -218,7 +207,6 @@ public:
   ~ExprScalarMax();
 
   virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
   virtual void execute();
 };
 
@@ -230,7 +218,6 @@ public:
   ~ExprScalarAbs();
 
   virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
   virtual void execute();
 };
 
@@ -242,7 +229,6 @@ public:
   ~ExprScalarExp();
 
   virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
   virtual void execute();
 };
 
@@ -254,7 +240,6 @@ public:
   ~ExprScalarLog();
 
   virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
   virtual void execute();
 };
 
@@ -266,7 +251,6 @@ public:
   ~ExprScalarPow();
 
   virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
   virtual void execute();
 };
 
@@ -287,7 +271,6 @@ public:
   ~ExprVector();
 
   virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
   virtual void execute();
 };
 
@@ -299,7 +282,6 @@ public:
   ~ExprVectorMagnitude();
 
   virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
   virtual void execute();
 };
 
@@ -320,7 +302,6 @@ public:
   ~ExprArrayAccess();
 
   virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
   virtual void execute();
 };
 
@@ -332,7 +313,6 @@ public:
   ~ExprArrayReplace();
 
   virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
   virtual void execute();
 };
 
@@ -344,7 +324,6 @@ public:
   ~ExprArrayReductionMin();
 
   virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
   virtual void execute();
 };
 
@@ -356,7 +335,6 @@ public:
   ~ExprArrayReductionMax();
 
   virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
   virtual void execute();
 };
 
@@ -368,7 +346,6 @@ public:
   ~ExprArrayReductionAvg();
 
   virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
   virtual void execute();
 };
 
@@ -380,7 +357,6 @@ public:
   ~ExprArrayReductionSum();
 
   virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
   virtual void execute();
 };
 
@@ -401,7 +377,6 @@ public:
   ~ExprHistory();
 
   virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
   virtual void execute();
 };
 
@@ -413,7 +388,6 @@ public:
   ~ExprHistoryRange();
 
   virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
   virtual void execute();
 };
 
@@ -425,7 +399,6 @@ public:
   ~ExprHistoryGradient();
 
   virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
   virtual void execute();
 };
 
@@ -437,7 +410,6 @@ public:
   ~ExprHistoryGradientRange();
 
   virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
   virtual void execute();
 };
 
@@ -458,7 +430,6 @@ public:
   ~ExprHistogram();
 
   virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
   virtual void execute();
 };
 
@@ -470,7 +441,6 @@ public:
   ~ExprHistogramEntropy();
 
   virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
   virtual void execute();
 };
 
@@ -482,7 +452,6 @@ public:
   ~ExprHistogramPDF();
 
   virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
   virtual void execute();
 };
 
@@ -494,7 +463,6 @@ public:
   ~ExprHistogramCDF();
 
   virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
   virtual void execute();
 };
 
@@ -506,7 +474,6 @@ public:
   ~ExprHistogramCDFQuantile();
 
   virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
   virtual void execute();
 };
 
@@ -519,7 +486,6 @@ public:
   ~ExprHistogramBinByIndex();
 
   virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
   virtual void execute();
 };
 
@@ -531,7 +497,6 @@ public:
   ~ExprHistogramBinByValue();
 
   virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
   virtual void execute();
 };
 
@@ -552,7 +517,6 @@ public:
   ~ExprMeshCycle();
 
   virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
   virtual void execute();
 };
 
@@ -564,7 +528,6 @@ public:
   ~ExprMeshTime();
 
   virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
   virtual void execute();
 };
 
@@ -576,7 +539,6 @@ public:
   ~ExprMeshField();
 
   virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
   virtual void execute();
 };
 
@@ -588,7 +550,6 @@ public:
   ~ExprMeshTopology();
 
   virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
   virtual void execute();
 };
 
@@ -600,7 +561,6 @@ public:
   ~ExprMeshBounds();
 
   virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
   virtual void execute();
 };
 
@@ -612,7 +572,6 @@ public:
   ~ExprMeshLineout();
 
   virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
   virtual void execute();
 };
 
@@ -633,7 +592,6 @@ public:
   ~ExprMeshFieldReductionMin();
 
   virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
   virtual void execute();
 };
 
@@ -645,7 +603,6 @@ public:
   ~ExprMeshFieldReductionMax();
 
   virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
   virtual void execute();
 };
 
@@ -657,7 +614,6 @@ public:
   ~ExprMeshFieldReductionAvg();
 
   virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
   virtual void execute();
 };
 
@@ -669,7 +625,6 @@ public:
   ~ExprMeshFieldReductionSum();
 
   virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
   virtual void execute();
 };
 
@@ -681,7 +636,6 @@ public:
   ~ExprMeshFieldReductionNanCount();
 
   virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
   virtual void execute();
 };
 
@@ -693,7 +647,6 @@ public:
   ~ExprMeshFieldReductionInfCount();
 
   virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
   virtual void execute();
 };
 
@@ -715,7 +668,6 @@ public:
   ~ExprMeshBinning();
 
   virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
   virtual void execute();
 };
 
@@ -727,7 +679,6 @@ public:
   ~ExprMeshBinningAxis();
 
   virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
   virtual void execute();
 };
 
@@ -739,7 +690,6 @@ public:
   ~ExprMeshBinningBinByIndex();
 
   virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
   virtual void execute();
 };
 
@@ -751,7 +701,6 @@ public:
   ~ExprMeshBinningPointAndAxis();
 
   virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
   virtual void execute();
 };
 
@@ -763,7 +712,6 @@ public:
   ~ExprMeshBinningMaxFromPoint();
 
   virtual void declare_interface(conduit::Node &i);
-  virtual bool verify_params(const conduit::Node &params, conduit::Node &info);
   virtual void execute();
 };
 

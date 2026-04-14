@@ -26,6 +26,7 @@
 #include <flow_registry.hpp>
 #include <flow_graph.hpp>
 #include <flow_workspace.hpp>
+#include <flow_schema_validator.hpp>
 
 
 using namespace conduit;
@@ -111,6 +112,10 @@ Filter::init(Graph *g,
         n_iface["port_names"] = DataType::empty();
     }
 
+    if( !n_iface.has_child("param_schema") )
+    {
+        n_iface["param_schema"] = DataType::empty();
+    }
 
     params().update(default_params());
     params().update(p);
@@ -135,6 +140,13 @@ const Node &
 Filter::default_params() const
 {
     return properties()["interface/default_params"];
+}
+
+//-----------------------------------------------------------------------------
+const Node &
+Filter::param_schema() const
+{
+    return properties()["interface/param_schema"];
 }
 
 //-----------------------------------------------------------------------------
@@ -209,10 +221,16 @@ Filter::params()
 
 //-----------------------------------------------------------------------------
 bool
-Filter::verify_params(const Node &, // unused: params,
+Filter::verify_params(const Node &params,
                       Node &info)
 {
     info.reset();
+
+    if (!param_schema().dtype().is_empty() && !(param_schema().dtype().is_object() && param_schema().number_of_children() == 0))
+    {
+        return flow::schema::validate(param_schema(), params, info);
+    }
+
     return true;
 }
 

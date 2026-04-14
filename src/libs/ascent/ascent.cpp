@@ -22,6 +22,8 @@
 #include <runtimes/ascent_main_runtime.hpp>
 #include <utils/ascent_string_utils.hpp>
 #include <flow.hpp>
+#include <flow_schema_validator.hpp>
+#include <flow_filters/ascent_runtime_param_check.hpp>
 
 #include <conduit_fmt/conduit_fmt.h>
 
@@ -652,6 +654,9 @@ Ascent::open(const conduit::Node &options)
         }
 
         m_runtime->Initialize(m_options);
+
+        // Set the flow filter expression checker:
+        runtime::filters::ascent_register_flow_schema_hooks();
 
         // don't print info messages unless we are using verbose
         // Runtimes may set their own handlers in initialize, so

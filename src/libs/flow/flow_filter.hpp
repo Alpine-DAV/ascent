@@ -138,6 +138,7 @@ public:
     bool                  output_port() const;
 
     const conduit::Node  &default_params() const;
+    const conduit::Node  &param_schema() const;
 
     int                   number_of_input_ports() const;
     bool                  has_port(const std::string &name) const;

@@ -136,7 +136,7 @@ AscentRuntime::Initialize(const conduit::Node &options)
 
 // handle logging first
 #if defined(ASCENT_MPI_ENABLED)
-    
+
 #else
 
 #endif
@@ -670,7 +670,7 @@ AscentRuntime::EnsureDomainIds()
       {
 	unique_ids = 0;
 	ss << i << " ";
-      } 
+      }
     }
 
     if(!unique_ids)
@@ -1461,6 +1461,24 @@ AscentRuntime::PopulateMetadata()
     }
   }
 
+#ifdef ASCENT_MPI_ENABLED
+  // Broadcast cycle and time to all ranks. Ranks with no local
+  // domains never set these, causing filename expansion to fail
+  // on the rank that writes the final image.
+  {
+    int comm_id = flow::Workspace::default_mpi_comm();
+    MPI_Comm mpi_comm = MPI_Comm_f2c(comm_id);
+
+    int global_cycle;
+    MPI_Allreduce(&cycle, &global_cycle, 1, MPI_INT, MPI_MAX, mpi_comm);
+    cycle = global_cycle;
+
+    float global_time;
+    MPI_Allreduce(&time, &global_time, 1, MPI_FLOAT, MPI_MAX, mpi_comm);
+    time = global_time;
+  }
+#endif
+
   if(cycle != -1)
   {
     Metadata::n_metadata["cycle"] = cycle;
@@ -1989,9 +2007,9 @@ AscentRuntime::BuildGraph(const conduit::Node &actions)
         }
 
         #if defined(ASCENT_MPI_ENABLED)
-            std::string file_pattern = action.has_path("file_pattern") ? 
+            std::string file_pattern = action.has_path("file_pattern") ?
                                    action["file_pattern"].as_string() : "ascent_log_output_rank_{rank:05d}.yaml";
-            
+
             int comm_id = flow::Workspace::default_mpi_comm();
             MPI_Comm mpi_comm = MPI_Comm_f2c(comm_id);
             int comm_size = 1;
@@ -2001,7 +2019,7 @@ AscentRuntime::BuildGraph(const conduit::Node &actions)
                                                   m_rank,
                                                   comm_size));
         #else
-            std::string file_pattern = action.has_path("file_pattern") ? 
+            std::string file_pattern = action.has_path("file_pattern") ?
                                    action["file_pattern"].as_string() : "ascent_log_output.yaml";
             ASCENT_LOG_OPEN(file_pattern);
             ASCENT_LOG_DEBUG("MPI not enabled");
@@ -2679,6 +2697,3 @@ AscentRuntime::SaveSession()
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
-
-
-

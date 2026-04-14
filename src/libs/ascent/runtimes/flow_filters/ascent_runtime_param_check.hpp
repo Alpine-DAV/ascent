@@ -41,6 +41,40 @@ namespace runtime
 namespace filters
 {
 
+bool ASCENT_API is_valid_expression(const std::string &expr, std::string &err_msg);
+
+void ASCENT_API ascent_register_flow_schema_hooks();
+
+conduit::Node ASCENT_API &string_schema(conduit::Node &schema_node);
+
+conduit::Node ASCENT_API &number_schema(conduit::Node &schema_node,
+                                        bool supports_expressions = false);
+
+conduit::Node ASCENT_API &vec3_schema(conduit::Node &schema_node,
+                                      bool supports_expressions = false);
+
+conduit::Node ASCENT_API &vec3_schema(conduit::Node &schema_node,
+                                      const std::string var1,
+                                      const std::string var2,
+                                      const std::string var3,
+                                      bool supports_expressions = false);
+
+conduit::Node ASCENT_API &vec3_schema_anyOf(conduit::Node &schema_node,
+                                            bool supports_expressions = false);
+
+conduit::Node ASCENT_API &vec3_schema_anyOf(conduit::Node &schema_node,
+                                            const std::string var1,
+                                            const std::string var2,
+                                            const std::string var3,
+                                            bool supports_expressions = false);
+
+conduit::Node ASCENT_API &array_schema(conduit::Node &schema_node);
+
+conduit::Node ASCENT_API &array_schema(conduit::Node &schema_node,
+                                       const conduit::Node &item_schema);
+
+conduit::Node ASCENT_API &ignore_schema(conduit::Node &schema_node);
+
 bool ASCENT_API check_numeric(const std::string path,
                               const conduit::Node &params,
                               conduit::Node &info,
@@ -77,6 +111,7 @@ void ASCENT_API path_helper(std::vector<std::string> &paths,
 
 std::string ASCENT_API surprise_check(const std::vector<std::string> &valid_paths,
                                       const conduit::Node &node);
+
 //
 // Ignore paths only ignores top level paths, differing lower level
 // paths to another surprise check.
