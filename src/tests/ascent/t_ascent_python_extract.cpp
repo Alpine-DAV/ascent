@@ -334,11 +334,11 @@ TEST(ascent_runtime, test_python_script_with_ascent_py_present)
     extracts["e1/params/source"] = py_script;
 
     conduit::Node actions;
-    // add the extracts
     conduit::Node &add_extracts = actions.append();
     add_extracts["action"] = "add_extracts";
     add_extracts["extracts"] = extracts;
 
+    // Create a fake ascent.py file to throw errors about
     std::ofstream ascent_python_file("ascent.py");
     if (ascent_python_file.is_open()) {
         ascent_python_file << "# This is a fake ascent python file for testing.\n";
@@ -357,6 +357,7 @@ TEST(ascent_runtime, test_python_script_with_ascent_py_present)
     ascent.open(ascent_opts);
     ascent.publish(data);
 
+    // Assert that the ascent.py is detected and warned about
     bool error_occured = false;
     try
     {
@@ -382,5 +383,6 @@ TEST(ascent_runtime, test_python_script_with_ascent_py_present)
 
     EXPECT_TRUE(error_occured);
 
+    // Clean up
     remove_test_file("ascent.py");
 }
