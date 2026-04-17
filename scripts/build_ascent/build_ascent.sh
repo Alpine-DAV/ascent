@@ -688,6 +688,7 @@ if [ ! -d ${viskores_src_dir} ]; then
   cd ${viskores_src_dir}
   echo "**** Applying Patches to ${viskores_tarball}"
   patch -p1 < ${script_dir}/2026_01_02_viskores_implent_pan_raytracing.patch
+  patch -p1 < ${script_dir}/2026_04_17_viskores_clip_kokkos_batch_fix.patch
   cd ${root_dir}
 fi
 
