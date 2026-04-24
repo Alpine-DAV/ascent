@@ -21,7 +21,7 @@ import numpy as np
 # and modify one of its fields to create a time-varying
 # example
 
-# Define a function that will calcualte a time varying field
+# Define a function that will calculate a time varying field
 def braid_time_varying(npts_x, npts_y, npts_z, interp, res):
     if npts_z < 1:
         npts_z = 1

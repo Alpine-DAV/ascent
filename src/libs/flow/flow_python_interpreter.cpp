@@ -38,7 +38,7 @@ using namespace std;
 #if defined(IS_PY3K)
 
 //-----------------------------------------------------------------------------
-int
+static int
 PyString_Check(PyObject *o)
 {
     return PyUnicode_Check(o);
@@ -46,7 +46,7 @@ PyString_Check(PyObject *o)
 
 
 //-----------------------------------------------------------------------------
-char *
+static char *
 PyString_AsString(PyObject *py_obj)
 {
     char *res = NULL;
@@ -78,42 +78,42 @@ PyString_AsString(PyObject *py_obj)
 }
 
 //-----------------------------------------------------------------------------
-PyObject *
+static PyObject *
 PyString_FromString(const char *s)
 {
     return PyUnicode_FromString(s);
 }
 
 //-----------------------------------------------------------------------------
-void
+static void
 PyString_AsString_Cleanup(char *bytes)
 {
     free(bytes);
 }
 
 //-----------------------------------------------------------------------------
-int
+static int
 PyInt_Check(PyObject *o)
 {
     return PyLong_Check(o);
 }
 
 //-----------------------------------------------------------------------------
-long
+static long
 PyInt_AsLong(PyObject *o)
 {
     return PyLong_AsLong(o);
 }
 
 //-----------------------------------------------------------------------------
-long
+static long
 PyInt_AS_LONG(PyObject *o)
 {
     return PyLong_AS_LONG(o);
 }
 
 //-----------------------------------------------------------------------------
-PyObject *
+static PyObject *
 PyNumber_Int(PyObject *o)
 {
     return PyNumber_Long(o);

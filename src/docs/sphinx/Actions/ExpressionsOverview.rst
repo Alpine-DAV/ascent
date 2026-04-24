@@ -365,7 +365,7 @@ later expressions via ``field('name')``.
    For performance reasons, derived expressions dealing with vectors should
    prefer using ``field('velocity', 'x')`` over ``field('velocity').x`` to get
    a component. Using ``.x`` will be necessary in the case that the field is a
-   derived field. See the :ref:`Curl Example`.
+   derived field. See the :ref:`CurlExample`.
 
 Function Examples
 ~~~~~~~~~~~~~~~~~
@@ -391,7 +391,11 @@ preceding the final expression.
 Here is an expression which takes advantage of assignments to calculate the
 curl (which is also a builtin function) using the gradient.
 
-.. _Curl Example:
+.. _CurlExample:
+
+Curl Example
+~~~~~~~~~~~~~~~~~
+
 .. code-block:: yaml
 
    -
