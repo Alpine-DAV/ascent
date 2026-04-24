@@ -10,10 +10,10 @@
 
 import numpy as np
 
-# get published blueprint data from the ascent 
+# get published blueprint data from the ascent
 
 # python extract always consumes the multi-domain
-# flavor of the mesh blueprint, since we have a 
+# flavor of the mesh blueprint, since we have a
 # single domain mesh, the data we want is the first child
 
 mesh = ascent_data().child(0)
