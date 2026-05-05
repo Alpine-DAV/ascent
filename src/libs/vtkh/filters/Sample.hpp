@@ -50,6 +50,12 @@ public:
            double y_end,
            double z_end);
 
+  void Plane(const Vec3_f64 point,
+             const Vec3_f64 normal,
+             const Vec2_f64 dims,
+             const Vec2_f64 spacing,
+             const int axes[2]);
+
   void Points(viskores::cont::ArrayHandle<viskores::Float64> xs,
               viskores::cont::ArrayHandle<viskores::Float64> ys,
               viskores::cont::ArrayHandle<viskores::Float64> zs);

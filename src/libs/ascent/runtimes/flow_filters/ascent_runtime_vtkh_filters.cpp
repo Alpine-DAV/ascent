@@ -3338,6 +3338,29 @@ VTKHSample::declare_interface(Node &i)
     // --- Points ---
     vec3_schema_anyOf(param_schema["properties/points"]);
 
+    // --- Plane ---
+    conduit::Node &plane_schema = param_schema["properties/plane"];
+    plane_schema["type"] = "object";
+    plane_schema["additionalProperties"] = false;
+    vec3_schema(plane_schema["properties/point"], true);
+    vec3_schema(plane_schema["properties/normal"], true);
+    conduit::Node &plane_dims_schema = plane_schema["properties/dims"];
+    plane_dims_schema["type"] = "object";
+    plane_dims_schema["additionalProperties"] = false;
+    number_schema(plane_dims_schema["properties/i"], true);
+    number_schema(plane_dims_schema["properties/j"], true);
+    number_schema(plane_dims_schema["properties/k"], true);
+    conduit::Node &plane_spacing_schema = plane_schema["properties/spacing"];
+    plane_spacing_schema["type"] = "object";
+    plane_spacing_schema["additionalProperties"] = false;
+    number_schema(plane_spacing_schema["properties/dx"], true);
+    number_schema(plane_spacing_schema["properties/dy"], true);
+    number_schema(plane_spacing_schema["properties/dz"], true);
+    plane_schema["required"].append() = "point";
+    plane_schema["required"].append() = "normal";
+    plane_schema["required"].append() = "dims";
+    plane_schema["required"].append() = "spacing";
+
     // --- Box ---
     conduit::Node &box_schema = param_schema["properties/box"];
     box_schema["type"] = "object";
@@ -3474,6 +3497,75 @@ VTKHSample::execute()
         
         sampler.Points(x_hnd, y_hnd, z_hnd);
 
+    }
+    else if(params().has_path("plane"))
+    {
+      using Vec2_f64 = viskores::Vec<viskores::Float64,2>;
+      using Vec3_f64 = viskores::Vec<viskores::Float64,3>;
+
+      const Node &plane_p = params()["plane"];
+      const Node &point_p = plane_p["point"];
+      const Node &normal_p = plane_p["normal"];
+      const Node &dims_p = plane_p["dims"];
+      const Node &spacing_p = plane_p["spacing"];
+      const std::string dim_names[3] = {"i", "j", "k"};
+      const std::string spacing_names[3] = {"dx", "dy", "dz"};
+
+      Vec3_f64 point = {
+        get_float64(point_p["x"], data_object),
+        get_float64(point_p["y"], data_object),
+        get_float64(point_p["z"], data_object)
+      };
+      Vec3_f64 normal = {
+        get_float64(normal_p["x"], data_object),
+        get_float64(normal_p["y"], data_object),
+        get_float64(normal_p["z"], data_object)
+      };
+
+      int axes[2];
+      int num_axes = 0;
+      for(int axis = 0; axis < 3; ++axis)
+      {
+        const bool has_dim = dims_p.has_path(dim_names[axis]);
+        const bool has_spacing = spacing_p.has_path(spacing_names[axis]);
+        if(has_dim != has_spacing)
+        {
+          ASCENT_ERROR("vtkh_sample plane dims and spacing must specify the same axes");
+        }
+        if(has_dim)
+        {
+          if(num_axes == 2)
+          {
+            ASCENT_ERROR("vtkh_sample plane must specify exactly two axes");
+          }
+          axes[num_axes++] = axis;
+        }
+      }
+      if(num_axes != 2)
+      {
+        ASCENT_ERROR("vtkh_sample plane must specify exactly two axes");
+      }
+
+      Vec2_f64 dims = {
+        get_float64(dims_p[dim_names[axes[0]]], data_object),
+        get_float64(dims_p[dim_names[axes[1]]], data_object)
+      };
+      Vec2_f64 spacing = {
+        get_float64(spacing_p[spacing_names[axes[0]]], data_object),
+        get_float64(spacing_p[spacing_names[axes[1]]], data_object)
+      };
+      dims[0] = static_cast<viskores::Float64>(static_cast<int>(dims[0]));
+      dims[1] = static_cast<viskores::Float64>(static_cast<int>(dims[1]));
+      if(dims[0] <= 0.0 || dims[1] <= 0.0)
+      {
+        ASCENT_ERROR("vtkh_sample plane dims values must be greater than zero");
+      }
+      if(spacing[0] <= 0.0 || spacing[1] <= 0.0)
+      {
+        ASCENT_ERROR("vtkh_sample plane spacing values must be greater than zero");
+      }
+
+      sampler.Plane(point, normal, dims, spacing, axes);
     }
     else if(params().has_path("uniform_grid"))
     {
