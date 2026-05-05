@@ -1162,9 +1162,9 @@ Sample::Plane(const Vec3_f64 point,
 {
   m_is_points = true;
 
-  const int Ni = dims[0] > 0 ? static_cast<int>(dims[0]) : 1;
-  const int Nj = dims[1] > 0 ? static_cast<int>(dims[1]) : 1;
-  m_num_samples = Ni * Nj;
+  const int dim_1 = dims[0] > 0 ? static_cast<int>(dims[0]) : 1;
+  const int dim_2 = dims[1] > 0 ? static_cast<int>(dims[1]) : 1;
+  m_num_samples = dim_1 * dim_2;
 
   Vec3_f64 n = normal;
   const viskores::Float64 n_mag =
@@ -1211,18 +1211,18 @@ Sample::Plane(const Vec3_f64 point,
   auto y_portal = m_points_ys.WritePortal();
   auto z_portal = m_points_zs.WritePortal();
 
-  const viskores::Float64 i_center = 0.5 * static_cast<viskores::Float64>(Ni - 1);
-  const viskores::Float64 j_center = 0.5 * static_cast<viskores::Float64>(Nj - 1);
+  const viskores::Float64 center_1 = 0.5 * static_cast<viskores::Float64>(dim_1 - 1);
+  const viskores::Float64 center_2 = 0.5 * static_cast<viskores::Float64>(dim_2 - 1);
 
   int idx = 0;
-  for(int i = 0; i < Ni; ++i)
+  for(int i = 0; i < dim_1; ++i)
   {
     const viskores::Float64 i_offset =
-      (static_cast<viskores::Float64>(i) - i_center) * spacing[0];
-    for(int j = 0; j < Nj; ++j)
+      (static_cast<viskores::Float64>(i) - center_1) * spacing[0];
+    for(int j = 0; j < dim_2; ++j)
     {
       const viskores::Float64 j_offset =
-        (static_cast<viskores::Float64>(j) - j_center) * spacing[1];
+        (static_cast<viskores::Float64>(j) - center_2) * spacing[1];
       const Vec3_f64 p = {
         point[0] + i_offset * dirs[0][0] + j_offset * dirs[1][0],
         point[1] + i_offset * dirs[0][1] + j_offset * dirs[1][1],
