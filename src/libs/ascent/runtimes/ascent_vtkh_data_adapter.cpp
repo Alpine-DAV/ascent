@@ -532,23 +532,14 @@ void ExtractVector(viskores::cont::DataSet *dset,
     viskores::cont::ArrayHandle<T> x_handle;
     viskores::cont::ArrayHandle<T> y_handle;
 
-    // always zero copy because we are about to make a copy
-    detail::CopyArray(x_handle, x_ptr, num_vals, true);
-    detail::CopyArray(y_handle, y_ptr, num_vals, true);
+    detail::CopyArray(x_handle, x_ptr, num_vals, zero_copy);
+    detail::CopyArray(y_handle, y_ptr, num_vals, zero_copy);
 
 
     auto composite  = make_ArrayHandleSOA(x_handle,
                                           y_handle);
 
-    viskores::cont::ArrayHandle<viskores::Vec<T,2>> interleaved_handle;
-    interleaved_handle.Allocate(num_vals);
-    // Calling this without forcing serial could cause serious problems
-    {
-      viskores::cont::ScopedRuntimeDeviceTracker tracker(viskores::cont::DeviceAdapterTagSerial{});
-      viskores::cont::ArrayCopy(composite, interleaved_handle);
-    }
-
-    viskores::cont::Field field(field_name, viskores_assoc, interleaved_handle);
+    viskores::cont::Field field(field_name, viskores_assoc, composite);
     dset->AddField(field);
   }
 
@@ -562,24 +553,15 @@ void ExtractVector(viskores::cont::DataSet *dset,
     viskores::cont::ArrayHandle<T> y_handle;
     viskores::cont::ArrayHandle<T> z_handle;
 
-    // always zero copy because we are about to make a copy
-    detail::CopyArray(x_handle, x_ptr, num_vals, true);
-    detail::CopyArray(y_handle, y_ptr, num_vals, true);
-    detail::CopyArray(z_handle, z_ptr, num_vals, true);
+    detail::CopyArray(x_handle, x_ptr, num_vals, zero_copy);
+    detail::CopyArray(y_handle, y_ptr, num_vals, zero_copy);
+    detail::CopyArray(z_handle, z_ptr, num_vals, zero_copy);
 
     auto composite  = make_ArrayHandleSOA(x_handle,
                                           y_handle,
                                           z_handle);
 
-    viskores::cont::ArrayHandle<viskores::Vec<T,3>> interleaved_handle;
-    interleaved_handle.Allocate(num_vals);
-    // Calling this without forcing serial could cause serious problems
-    {
-      viskores::cont::ScopedRuntimeDeviceTracker tracker(viskores::cont::DeviceAdapterTagSerial{});
-      viskores::cont::ArrayCopy(composite, interleaved_handle);
-    }
-
-    viskores::cont::Field field(field_name, viskores_assoc, interleaved_handle);
+    viskores::cont::Field field(field_name, viskores_assoc, composite);
     dset->AddField(field);
   }
 }
