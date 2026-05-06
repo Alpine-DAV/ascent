@@ -1,0 +1,36 @@
+#An example of using the sample filter to sample points on a plane.
+
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "sample"
+        params: 
+          fields: 
+            - "braid"
+          plane: 
+            point: 
+              x: 0.0
+              y: 0.0
+              z: 0.0
+            normal: 
+              x: 0.0
+              y: 1.0
+              z: 0.0
+            dims: 
+              i: 5.0
+              k: 5.0
+            spacing: 
+              dx: 1.0
+              dz: 1.0
+          invalid_value: -10.0
+- 
+  action: "add_extracts"
+  extracts: 
+    e1: 
+      pipeline: "pl1"
+      type: "relay"
+      params: 
+        protocol: "hdf5"
+        path: "/usr/WS1/nicolem/sadbox/ascent/scripts/build_ascent/build/ascent-checkout/tests/_output/tout_sample_plane"
