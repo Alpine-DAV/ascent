@@ -10,7 +10,7 @@ permissions:
 jobs:
   build_windows_msvc_base:
     name: MSVC Base Release
-    runs-on: windows-2025
+    runs-on: windows-2022
     steps:
     - name: Setup MPI
       uses: mpi4py/setup-mpi@dbbb80b116bea57fc1788daf7dbbf7ab3df3a0f1 # v1
