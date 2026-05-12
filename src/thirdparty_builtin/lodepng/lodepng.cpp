@@ -5610,7 +5610,8 @@ unsigned lodepng_encode(unsigned char** out, size_t* outsize,
   if(!lodepng_color_mode_equal(&state->info_raw, &info.color))
   {
     unsigned char* converted;
-    size_t size = (w * h * lodepng_get_bpp(&info.color) + 7) / 8;
+    // ASCENT FIX: Use size_t to avoid overflow with large image sizes
+    size_t size = (size_t(w) * size_t(w) * size_t(lodepng_get_bpp(&info.color)) + 7) / 8;
 
     converted = (unsigned char*)lodepng_malloc(size);
     if(!converted && size) state->error = 83; /*alloc fail*/
