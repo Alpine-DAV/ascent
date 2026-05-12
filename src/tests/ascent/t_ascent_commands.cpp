@@ -67,6 +67,35 @@ bool bool_callback_2()
 }
 
 //-----------------------------------------------------------------------------
+void void_callback_inception(conduit::Node &params, conduit::Node &output)
+{
+    params.print();
+    //
+    // run another instance of ascent with custom actions plumbed via
+    // a callback
+    //
+    std::string incpt_acts_file = params["my_cb_actions_file"].as_string();
+    Node actions;
+    actions.load(incpt_acts_file);
+
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              10,
+                                              27,
+                                              10,
+                                              data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data, verify_info));
+
+    Ascent ascent;
+    ascent.open();
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+}
+
+
+//-----------------------------------------------------------------------------
 TEST(ascent_commands, register_no_name_void)
 {
     // Reset callbacks
@@ -370,6 +399,99 @@ TEST(ascent_commands, bool_callback_trigger_condition)
 
     ascent.close();
 }
+
+
+//-----------------------------------------------------------------------------
+TEST(ascent_commands, void_callback_inception)
+{
+    // Reset callbacks
+    ascent::reset_callbacks();
+
+    // Register callbacks
+    ascent::register_callback("void_callback_inception", void_callback_inception);
+
+    // the viskores runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with viskores support
+    if (n["runtimes/ascent/viskores/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping test");
+        return;
+    }
+
+    //
+    // Create example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data, verify_info));
+
+    string output_path = prepare_output_dir();
+    string cb_actions_file = conduit::utils::join_file_path(output_path, "my_cb_actions.yaml");
+
+    string output_file = conduit::utils::join_file_path(output_path,"tout_cb_inception");
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+    // remove old actions file
+    if (conduit::utils::is_file(cb_actions_file))
+    {
+        conduit::utils::remove_file(cb_actions_file);
+    }
+
+    // create an actions we want to use in our callback
+    std::string acts_str = R"xyzxyz(
+- 
+  action: "add_scenes"
+  scenes:
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "braid"
+        p2: 
+          type: "mesh"
+)xyzxyz";
+    Node cb_actions;
+    cb_actions.parse(acts_str);
+    cb_actions[0]["scenes/s1/image_prefix"] = output_file;
+    cb_actions.save(cb_actions_file,"yaml");
+    cb_actions.print();
+
+
+    // Create actions to invoke our callback with arguments
+    Node actions;
+    conduit::Node commands;
+    commands["c1/params/callback"] = "void_callback_inception";
+    commands["c1/params/arguments"]["a"] = 42;
+    commands["c1/params/arguments"]["my_cb_actions_file"] =  cb_actions_file;
+
+    conduit::Node &add_commands = actions.append();
+    add_commands["action"] = "add_commands";
+    add_commands["commands"] = commands;
+    actions.print();
+
+    // Run Ascent
+    Ascent ascent;
+    ascent.open();
+    ascent.publish(data);
+    ascent.execute(actions);
+
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file));
+
+    std::string msg = "An example of passing arguments to a custom callback that invokes Ascent.";
+    ASCENT_ACTIONS_DUMP(actions, std::string("void_callback_inception"), msg);
+    ascent.close();
+}
+
 
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])

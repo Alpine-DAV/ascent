@@ -16,10 +16,11 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - mfem@4.8
 
 ### Added
+- Added support to pass arguments to command callbacks via actions
 - Added the ability to specify "min/max" as the x/y/z point for the reflect transform filter
 - Added Uniform Grid filter as a parameter of the Sample Filter
 - Added ability to define cameras for rendering using visit camera view parameters
-- Added ability to do tiled rendering, where tiles covering an image are rendered seperately to form the final image. The default is to do tiled rendering with 1024 by 1024 tiles.
+- Added ability to do tiled rendering, where tiles covering an image are rendered separately to form the final image. The default is to do tiled rendering with 1024 by 1024 tiles.
 - Added support for 64 bit IDs
 - Added support for RZ meshes
 - Added a warning if a `ascent.py` file exsits in the current working directory when executing a python extract. 
