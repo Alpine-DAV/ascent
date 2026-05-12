@@ -291,7 +291,7 @@ fi # build_hdf5
 ################
 # Silo
 ################
-silo_version=4.11.1
+silo_version=4.12.0
 silo_src_dir=$(ospath ${source_dir}/Silo-${silo_version})
 silo_build_dir=$(ospath ${build_dir}/silo-${silo_version}/)
 silo_install_dir=$(ospath ${install_dir}/silo-${silo_version}/)
@@ -309,19 +309,15 @@ if [ ! -d ${silo_src_dir} ]; then
   # untar and avoid symlinks (which windows despises)
   tar ${tar_extra_args} -xzf ${silo_tarball} -C ${source_dir} \
       --exclude="Silo-${silo_version}/config-site/*" \
-      --exclude="Silo-${silo_version}/README.md"
-  # apply silo patches
+      --exclude="Silo-${silo_version}/LICENSE.md" \
+      --exclude="Silo-${silo_version}/silo_objects.png"
+
+  # ns patch for 4.12.0
   cd  ${silo_src_dir}
-  patch -p1 < ${script_dir}/2024_07_25_silo_4_11_cmake_fix.patch
-
-  # windows specifc patch
-  if [[ "$build_windows" == "ON" ]]; then
-    patch -p1 < ${script_dir}/2024_07_29_silo-pr389-win32-bugfix.patch
-  fi
-
+  patch -p1 < ${script_dir}/2026_01_26_silo_ns_patch_pr_515.patch
+  patch -p1 < ${script_dir}/2026_02_18_silo_vfd_fix_pr_517.patch
   cd ${root_dir}
 fi
-
 
 echo "**** Configuring Silo ${silo_version}"
 cmake -S ${silo_src_dir} -B ${silo_build_dir} ${cmake_compiler_settings} \
@@ -347,6 +343,7 @@ fi
 else
   echo "**** Skipping Silo build, install found at: ${silo_install_dir}"
 fi # build_silo
+
 
 ############################
 # Python Virtual Env
@@ -510,7 +507,7 @@ fi # build_zfp
 ################
 # Conduit
 ################
-conduit_version=v0.9.5
+conduit_version=v0.9.6
 conduit_src_dir=$(ospath ${source_dir}/conduit-${conduit_version})
 conduit_build_dir=$(ospath ${build_dir}/conduit-${conduit_version}/)
 conduit_install_dir=$(ospath ${install_dir}/conduit-${conduit_version}/)
