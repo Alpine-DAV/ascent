@@ -116,6 +116,11 @@ Ascent's Python extract provides a simple path to run Python scripts for
 custom analysis. Ascent provides the Python environment, so Python extracts can 
 for any host code (even those without a Python interface). Ascent's Python environment
 supports distributed-memory executing with a Python interpreter per MPI task.
+
+.. warning::
+    Having a file named ``ascent.py`` in the current working directory when executing an Ascent
+    Python extract can cause errors or undesired behavior. It is recomended to remove or rename 
+    all local ``ascent.py`` files before using a python extract. 
   
 
 For this demo we use numpy and mpi4py to compute a histogram of Cloverleaf3D's 

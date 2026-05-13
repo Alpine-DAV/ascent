@@ -76,7 +76,7 @@ ascent_opts["exceptions"] = "forward"
 a.open(ascent_opts)
 
 # publish mesh to ascent
-a.publish(mesh);
+a.publish(mesh)
 
 # setup actions
 actions = conduit.Node()
@@ -100,7 +100,7 @@ extracts["e1/params/file"] = "ascent_tutorial_python_extract_braid_histogram.py"
 print(actions.to_yaml())
 
 # execute the actions
-a.execute(actions);
+a.execute(actions)
 
 # close ascent
 a.close()

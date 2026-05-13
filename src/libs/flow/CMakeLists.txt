@@ -25,6 +25,7 @@ set(flow_sources
     flow_graph.cpp
     flow_workspace.cpp
     flow_timer.cpp
+    flow_schema_validator.cpp
     filters/flow_builtin_filters.cpp)
 
 set(flow_headers
@@ -38,6 +39,7 @@ set(flow_headers
     flow_graph.hpp
     flow_workspace.hpp
     flow_timer.hpp
+    flow_schema_validator.hpp
     filters/flow_builtin_filters.hpp)
 
 set(flow_thirdparty_libs

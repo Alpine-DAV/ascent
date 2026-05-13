@@ -404,12 +404,12 @@ destination directory. It then uses Spack to build and install Conduit's depende
 destination directory that specifies the compiler settings and paths to all of the dependencies.
 
 
-.. .. _building_known_hpc:
-..
-.. Building with Uberenv on Known HPC Platforms
-.. --------------------------------------------------
-..
-.. `Here is a link to the scripts we use to build public Ascent installs. <https://github.com/Alpine-DAV/ascent/tree/develop/scripts/spack_install>`_
+.. _building_known_hpc:
+
+Building with Uberenv on Known HPC Platforms
+---------------------------------------------
+
+`Here is a link to the scripts we use to build public Ascent installs. <https://github.com/Alpine-DAV/ascent/tree/develop/scripts/spack_install>`_
 
 
 Building Third Party Dependencies for Development
@@ -460,7 +460,7 @@ The Ascent Spack package provides several
 `variants <http://spack.readthedocs.io/en/latest/basic_usage.html#specs-dependencies>`_
 that customize the options and dependencies used to build Ascent.
 
-Please see the `Ascent Spack package source <https://github.com/spack/spack/blob/develop/var/spack/repos/builtin/packages/ascent/package.py>`_ (or use ``spack info ascent``) to learn about variants.
+Please see the `Ascent Spack package source <https://https://github.com/spack/spack/blob/develop/var/spack/test_repos/spack_repo/builtin_mock/packages/ascent/package.py>`_ (or use ``spack info ascent``) to learn about variants.
 
 
 Uberenv Spack Configurations 

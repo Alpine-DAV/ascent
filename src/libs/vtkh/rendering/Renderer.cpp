@@ -230,10 +230,10 @@ Renderer::DoExecute()
   }
 
   bool is_lines = m_input->IsLineMesh();
-  //TODO: 
+  //TODO:
   //deal with 1D lines when viskores updated: https://github.com/Viskores/viskores/issues/164
   if(is_lines && !IsMeshRenderer())
-  { 
+  {
     typedef viskores::rendering::MapperCylinder TracerType;
     auto mapper = std::make_shared<TracerType>();
     viskores::Bounds bounds = m_input->GetBounds();
@@ -284,7 +284,7 @@ Renderer::DoExecute()
       viskores::Int32 tile_height = 0;
       if (m_renders[i].GetTiledRendering())
       {
-        switch(m_renders[i].GetTiledRenderingType()) 
+        switch(m_renders[i].GetTiledRenderingType())
         {
           case Render::TiledRenderingType::SquareTiles:
             if (canvas.GetWidth() > m_renders[i].GetTileWidth() ||
@@ -487,15 +487,18 @@ Renderer::RenderTiled(Render::viskoresCanvas &canvas,
 
         for(int ii = 0; ii < x_max; ++ii)
         {
-          color_buffer[kk]   = tile_color_buffer[ll];
-          color_buffer[kk+1] = tile_color_buffer[ll+1];
-          color_buffer[kk+2] = tile_color_buffer[ll+2];
-          color_buffer[kk+3] = tile_color_buffer[ll+3];
-          depth_buffer[kk2] = tile_depth_buffer[ll2];
-          kk  += 4;
-          kk2 += 1;
-          ll  += 4;
-          ll2 += 1;
+          if (tile_depth_buffer[ll2] < depth_buffer[kk2])
+            {
+              color_buffer[kk]   = tile_color_buffer[ll];
+              color_buffer[kk+1] = tile_color_buffer[ll+1];
+              color_buffer[kk+2] = tile_color_buffer[ll+2];
+              color_buffer[kk+3] = tile_color_buffer[ll+3];
+              depth_buffer[kk2] = tile_depth_buffer[ll2];
+              kk  += 4;
+              kk2 += 1;
+              ll  += 4;
+              ll2 += 1;
+            }
         }
       }
       xpan -= xpan_delta;

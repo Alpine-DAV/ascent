@@ -36,7 +36,7 @@ scenes = add_act["scenes"]
 
 # the first scene (s1) will render a pseudocolor 
 # plot using Viridis color table
-scenes["s1/plots/p1/type"] = "pseudocolor";
+scenes["s1/plots/p1/type"] = "pseudocolor"
 scenes["s1/plots/p1/field"] = "var1"
 scenes["s1/plots/p1/color_table/name"] = "Viridis"
 scenes["s1/image_name"] = "out_scene_ex4_render_viridis"

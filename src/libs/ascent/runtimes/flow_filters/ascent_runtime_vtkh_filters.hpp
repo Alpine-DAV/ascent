@@ -51,8 +51,6 @@ public:
     virtual ~VTKHMarchingCubes();
 
     virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
     virtual void   execute();
 };
 
@@ -64,8 +62,6 @@ public:
     virtual ~VTKHExternalSurfaces();
 
     virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
     virtual void   execute();
 };
 
@@ -77,8 +73,6 @@ public:
     virtual ~VTKHVectorMagnitude();
 
     virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
     virtual void   execute();
 };
 
@@ -90,8 +84,6 @@ public:
     virtual ~VTKHSlice();
 
     virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
     virtual void   execute();
 };
 
@@ -103,8 +95,6 @@ public:
     virtual ~VTKHAutoSliceLevels();
 
     virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
     virtual void   execute();
 };
 //-----------------------------------------------------------------------------
@@ -115,8 +105,6 @@ public:
     virtual ~VTKH3Slice();
 
     virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
     virtual void   execute();
 };
 
@@ -128,8 +116,6 @@ public:
     virtual ~VTKHThreshold();
 
     virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
     virtual void   execute();
 };
 
@@ -141,8 +127,6 @@ public:
     virtual ~VTKHGhostStripper();
 
     virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
     virtual void   execute();
 };
 
@@ -154,8 +138,6 @@ public:
     virtual ~VTKHAddRanks();
 
     virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
     virtual void   execute();
 };
 
@@ -168,8 +150,6 @@ public:
 
 
     virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
     virtual void   execute();
 };
 
@@ -183,8 +163,6 @@ public:
     virtual ~VTKHClip();
 
     virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
     virtual void   execute();
 };
 
@@ -196,8 +174,6 @@ public:
     virtual ~VTKHClipWithField();
 
     virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
     virtual void   execute();
 };
 
@@ -209,8 +185,6 @@ public:
     virtual ~VTKHIsoVolume();
 
     virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
     virtual void   execute();
 };
 
@@ -222,8 +196,6 @@ public:
     virtual ~VTKHLagrangian();
 
     virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
     virtual void   execute();
 };
 
@@ -235,8 +207,6 @@ public:
     virtual ~VTKHLog();
 
     virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
     virtual void   execute();
 };
 
@@ -248,8 +218,6 @@ public:
     virtual ~VTKHLog10();
 
     virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
     virtual void   execute();
 };
 
@@ -261,8 +229,6 @@ public:
     virtual ~VTKHLog2();
 
     virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
     virtual void   execute();
 };
 
@@ -274,8 +240,6 @@ public:
     virtual ~VTKHRecenter();
 
     virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
     virtual void   execute();
 };
 
@@ -287,8 +251,6 @@ public:
     virtual ~VTKHHistSampling();
 
     virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
     virtual void   execute();
 };
 
@@ -300,8 +262,6 @@ public:
     virtual ~VTKHQCriterion();
 
     virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
     virtual void   execute();
 };
 
@@ -313,8 +273,6 @@ public:
     virtual ~VTKHDivergence();
 
     virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
     virtual void   execute();
 };
 
@@ -326,8 +284,6 @@ public:
     virtual ~VTKHVorticity();
 
     virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
     virtual void   execute();
 };
 
@@ -339,8 +295,6 @@ public:
     virtual ~VTKHGradient();
 
     virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
     virtual void   execute();
 };
 
@@ -352,8 +306,6 @@ public:
     virtual ~VTKHNoOp();
 
     virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
     virtual void   execute();
 };
 
@@ -365,8 +317,6 @@ public:
     virtual ~VTKHVectorComponent();
 
     virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
     virtual void   execute();
 };
 
@@ -378,8 +328,6 @@ public:
     virtual ~VTKHCompositeVector();
 
     virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
     virtual void   execute();
 };
 
@@ -391,8 +339,6 @@ public:
     virtual ~VTKHStats();
 
     virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
     virtual void   execute();
 };
 
@@ -404,8 +350,6 @@ public:
     virtual ~VTKHUniformGrid();
 
     virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
     virtual void   execute();
 };
 
@@ -417,8 +361,6 @@ public:
     virtual ~VTKHSample();
 
     virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
     virtual void   execute();
 };
 
@@ -430,8 +372,6 @@ public:
     virtual ~VTKHHistogram();
 
     virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
     virtual void   execute();
 };
 
@@ -444,8 +384,6 @@ public:
     virtual ~VTKHProject2d();
 
     virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
     virtual void   execute();
 };
 
@@ -458,8 +396,6 @@ public:
     virtual ~VTKHCleanGrid();
 
     virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
     virtual void   execute();
 };
 
@@ -471,8 +407,6 @@ public:
     virtual ~VTKHScale();
 
     virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
     virtual void   execute();
 };
 
@@ -484,8 +418,6 @@ public:
     virtual ~VTKHTransform();
 
     virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
     virtual void   execute();
 };
 
@@ -497,8 +429,6 @@ public:
     virtual ~VTKHTriangulate();
 
     virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
     virtual void   execute();
 };
 
@@ -510,8 +440,6 @@ public:
     virtual ~VTKHParticleAdvection();
 
     virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
     virtual void   execute();
 
 protected:
@@ -535,8 +463,6 @@ public:
     virtual ~VTKHWarpXStreamline();
 
     virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
     virtual void   execute();
 
 protected:
@@ -551,8 +477,6 @@ public:
     virtual ~VTKHVTKFileExtract();
 
     virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
     virtual void   execute();
 
 };
@@ -566,8 +490,6 @@ public:
     virtual ~VTKHMIR();
 
     virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
     virtual void   execute();
 };
 
