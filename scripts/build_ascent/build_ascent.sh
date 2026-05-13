@@ -91,9 +91,12 @@ else
     build_kokkos="${build_kokkos:=false}"
 fi
 
+echo "*** OSTYPE=$OSTYPE"
+
 case "$OSTYPE" in
   win*)     build_windows="ON";;
   msys*)    build_windows="ON";;
+  cygwin*)  build_windows="ON";;
   darwin*)  build_macos="ON";;
   *)        ;;
 esac
