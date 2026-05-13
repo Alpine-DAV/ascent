@@ -22,7 +22,7 @@ x = np.array( [-1.0, 0.0, 0.0, 0.0, 1.0 ], dtype=np.float64 )
 y = np.array( [0.0, -1.0, 0.0, 1.0, 0.0 ], dtype=np.float64 )
 z = np.array( [ 0.0, 0.0, 1.0, 0.0, 0.0 ], dtype=np.float64 )
 
-mesh["coordsets/coords/type"] = "explicit";
+mesh["coordsets/coords/type"] = "explicit"
 mesh["coordsets/coords/values/x"].set_external(x)
 mesh["coordsets/coords/values/y"].set_external(y)
 mesh["coordsets/coords/values/z"].set_external(z)
@@ -70,10 +70,10 @@ a.publish(mesh)
 
 # setup actions
 actions = conduit.Node()
-add_act = actions.append();
+add_act = actions.append()
 add_act["action"] = "add_scenes"
 
-# declare a scene (s1) with one plot (p1) 
+# declare a scene (s1) with one plot (p1)
 # to render the dataset
 scenes = add_act["scenes"]
 scenes["s1/plots/p1/type"] = "pseudocolor"

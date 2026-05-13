@@ -24,7 +24,7 @@ def tutorial_tets_example(mesh):
     y = np.array( [0.0, -1.0, 0.0, 1.0, 0.0 ], dtype=np.float64 )
     z = np.array( [ 0.0, 0.0, 1.0, 0.0, 0.0 ], dtype=np.float64 )
 
-    mesh["coordsets/coords/type"] = "explicit";
+    mesh["coordsets/coords/type"] = "explicit"
     mesh["coordsets/coords/values/x"].set(x)
     mesh["coordsets/coords/values/y"].set(y)
     mesh["coordsets/coords/values/z"].set(z)
@@ -112,5 +112,5 @@ def tutorial_gyre_example(time):
                 idx = idx + 1
 
     #print(values)
-    field["values"] = values  
+    field["values"] = values
     return mesh

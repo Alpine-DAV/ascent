@@ -11,5 +11,5 @@ import numpy as np
 # Using hierarchical paths imposes a tree structure
 #
 n = conduit.Node()
-n["dir1/dir2/val1"] = 100.5;
+n["dir1/dir2/val1"] = 100.5
 print(n.to_yaml()) 
