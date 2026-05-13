@@ -134,12 +134,30 @@ TEST(vtkh_particle_advection, vtkh_serial_particle_advection)
   }
 
   vtkh::DataSet *outPA=NULL, *outSL=NULL;
+  outPA = RunFilter<vtkh::ParticleAdvection>(data_set, "vector_data_Float32", seeds, maxAdvSteps, 0.1);
+  checkValidity(outPA, maxAdvSteps+1, false);
+
   outPA = RunFilter<vtkh::ParticleAdvection>(data_set, "vector_data_Float64", seeds, maxAdvSteps, 0.1);
   std::cerr << "Particle Advection Output:" << std::endl;
   outPA->PrintSummary(std::cerr);
   checkValidity(outPA, maxAdvSteps+1, false);
 
   vtkh::Streamline streamline;
+  streamline.SetInput(&data_set);
+  streamline.SetField("vector_data_Float32");
+  streamline.SetNumberOfSteps(maxAdvSteps);
+  streamline.SetStepSize(0.1);
+  streamline.SetSeeds(seeds);
+  streamline.SetTubes(true);
+  streamline.SetTubeCapping(true);
+  streamline.SetTubeSize(0.1);
+  streamline.SetTubeSides(3);
+  streamline.SetOutputField("lines");
+  streamline.Update();
+
+  outSL = streamline.GetOutput();
+  checkValidity(outSL, maxAdvSteps+1, true);
+
   streamline.SetInput(&data_set);
   streamline.SetField("vector_data_Float64");
   streamline.SetNumberOfSteps(maxAdvSteps);
