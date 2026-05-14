@@ -19,6 +19,18 @@ jobs:
     - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v4
       with: 
         submodules: 'recursive'
+    - name: Setup CMake
+      run: |
+          CMAKE_VERSION="3.31.12"
+          INSTALLER="cmake-${CMAKE_VERSION}-windows-x86_64.msi"
+          URL="https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/${INSTALLER}"
+          DOWNLOAD_DIR="${TEMP:-/tmp}/cmake_install"
+          INSTALLER_PATH="${DOWNLOAD_DIR}/${INSTALLER}"
+          curl -L --fail -o "${INSTALLER}" "${URL}"
+          cmd.exe /c msiexec /i "$(cygpath -w "${INSTALLER_PATH}")" /qn ADD_CMAKE_TO_PATH=System
+          which cmake
+          cmake --version
+      shell: bash
     - name: Build TPLs
       run: |
         env build_ascent=false `
@@ -26,7 +38,6 @@ jobs:
             ./scripts/build_ascent/build_ascent.sh
     - name: Configure Ascent
       run: |
-        cmake --version
         echo "**** Configuring Ascent"
         cmake -S src -B build `
               -C ascent-config.cmake `
