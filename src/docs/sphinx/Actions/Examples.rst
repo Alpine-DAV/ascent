@@ -813,6 +813,13 @@ YAML actions:
 
 .. literalinclude:: examples/tout_sample_pts_2d_000100.yaml
 
+An example of using the sample filter to sample a 2D plane.
+---------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_sample_plane_000100.yaml
+
 An example of using the sample filter to sample a list of 3D points.
 ---------------------------------------------------------------------
 
