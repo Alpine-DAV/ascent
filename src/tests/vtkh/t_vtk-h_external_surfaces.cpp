@@ -11,7 +11,7 @@
 #include <vtkh/filters/ExternalSurfaces.hpp>
 #include <vtkh/rendering/RayTracer.hpp>
 #include <vtkh/rendering/Scene.hpp>
-#include "t_vtkm_test_utils.hpp"
+#include "t_viskores_test_utils.hpp"
 
 #include <iostream>
 
@@ -19,7 +19,7 @@
 //----------------------------------------------------------------------------
 TEST(vtkh_threshold, vtkh_external_surfaces)
 {
-#ifdef VTKM_ENABLE_KOKKOS
+#ifdef VISKORES_ENABLE_KOKKOS
   vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
@@ -36,10 +36,10 @@ TEST(vtkh_threshold, vtkh_external_surfaces)
   extsurf.SetInput(&data_set);
   extsurf.Update();
   vtkh::DataSet *output = extsurf.GetOutput();
-  vtkm::Bounds bounds = output->GetGlobalBounds();
+  viskores::Bounds bounds = output->GetGlobalBounds();
 
-  vtkm::rendering::Camera camera;
-  camera.SetPosition(vtkm::Vec<vtkm::Float64,3>(-16, -16, -16));
+  viskores::rendering::Camera camera;
+  camera.SetPosition(viskores::Vec<viskores::Float64,3>(-16, -16, -16));
   camera.ResetToBounds(bounds);
   vtkh::Render render = vtkh::MakeRender(512,
                                          512,

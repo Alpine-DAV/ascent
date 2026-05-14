@@ -314,3 +314,75 @@ TEST(ascent_runtime, test_python_extract_inception)
 
 }
 
+TEST(ascent_runtime, test_python_script_with_ascent_py_present)
+{
+    //
+    // Create the data.
+    //
+    Node data, verify_info;
+    create_3d_example_dataset(data,32,0,1);
+    data["state/cycle"] = 101;
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    //
+    // Create the actions.
+    //
+
+    conduit::Node extracts;
+    extracts["e1/type"]  = "python";
+    extracts["e1/params/source"] = py_script;
+
+    conduit::Node actions;
+    conduit::Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    add_extracts["extracts"] = extracts;
+
+    // Create a fake ascent.py file to throw errors about
+    std::ofstream ascent_python_file("ascent.py");
+    if (ascent_python_file.is_open()) {
+        ascent_python_file << "# This is a fake ascent python file for testing.\n";
+        ascent_python_file.close();
+    }
+
+    //
+    // Run Ascent
+    //
+
+    Node ascent_opts;
+    ascent_opts["ascent_info"] = "verbose";
+    ascent_opts["exceptions"] = "forward";
+
+    Ascent ascent;
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+
+    // Assert that the ascent.py is detected and warned about
+    bool error_occured = false;
+    try
+    {
+        ascent.execute(actions);
+    }
+    catch(conduit::Error &err)
+    {
+        std::string expected_error = "Executing an Ascent Python script but a local version of `ascent.py` exists in the current working directory";
+        if (err.message().find(expected_error) != std::string::npos)
+        {
+            error_occured = true;
+        }
+        else
+        {
+            std::cout << "The error that was thrown did not match the expected "
+                      << "'" << expected_error << "' error" << std::endl;
+
+            std::cout << err.message() << std::endl;
+        }
+    }
+
+    ascent.close();
+
+    EXPECT_TRUE(error_occured);
+
+    // Clean up
+    remove_test_file("ascent.py");
+}

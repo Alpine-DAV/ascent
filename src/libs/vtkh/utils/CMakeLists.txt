@@ -5,13 +5,13 @@ set(vtkh_utils_headers
     Mutex.hpp
     StreamUtil.hpp
     ThreadSafeContainer.hpp
-    vtkm_array_utils.hpp
-    vtkm_dataset_info.hpp
+    viskores_array_utils.hpp
+    viskores_dataset_info.hpp
     )
 
 set(vtkh_utils_sources
     Mutex.cpp
-    vtkm_dataset_info.cpp
+    viskores_dataset_info.cpp
     )
 
 
@@ -21,7 +21,7 @@ set(vtkh_utils_sources
          DESTINATION include/ascent/vtkh/utils)
 
 # deps are same between mpi and non mpi
-set(vtkh_utils_deps vtkm ascent_lodepng ${vtkh_base_deps})
+set(vtkh_utils_deps viskores ascent_lodepng ${vtkh_base_deps})
 
 ###############################################################################
 if (ENABLE_SERIAL)
@@ -31,7 +31,7 @@ if (ENABLE_SERIAL)
                     DEPENDS_ON ${vtkh_utils_deps}
                     )
 
-    vtkm_add_target_information(vtkh_utils DEVICE_SOURCES vtkm_dataset_info.cpp)
+    viskores_add_target_information(vtkh_utils DEVICE_SOURCES viskores_dataset_info.cpp)
 
     # build time only defs
     target_compile_definitions(vtkh_utils PRIVATE ASCENT_EXPORTS_FLAG)
@@ -71,7 +71,7 @@ if (MPI_FOUND)
                     DEPENDS_ON ${vtkh_utils_deps} ${ascent_blt_mpi_deps}
                     )
 
-    vtkm_add_target_information(vtkh_utils_mpi DEVICE_SOURCES vtkm_dataset_info.cpp)
+    viskores_add_target_information(vtkh_utils_mpi DEVICE_SOURCES viskores_dataset_info.cpp)
 
     # build time only defs
     target_compile_definitions(vtkh_utils_mpi PRIVATE ASCENT_EXPORTS_FLAG)

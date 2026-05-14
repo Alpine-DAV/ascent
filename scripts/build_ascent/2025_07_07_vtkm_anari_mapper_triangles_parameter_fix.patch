@@ -1,9 +1,9 @@
-diff --git a/vtkm/interop/anari/ANARIMapperTriangles.cxx b/vtkm/interop/anari/ANARIMapperTriangles.cxx
+diff --git a/viskores/interop/anari/ANARIMapperTriangles.cxx b/viskores/interop/anari/ANARIMapperTriangles.cxx
 index 9cd86ced1..ece8e809b 100644
---- a/vtkm/interop/anari/ANARIMapperTriangles.cxx
-+++ b/vtkm/interop/anari/ANARIMapperTriangles.cxx
+--- a/viskores/interop/anari/ANARIMapperTriangles.cxx
++++ b/viskores/interop/anari/ANARIMapperTriangles.cxx
 @@ -379,7 +379,7 @@ anari_cpp::Surface ANARIMapperTriangles::GetANARISurface()
-   colors[2] = vtkm::Vec4f_32(0.f, 0.f, 1.f, 1.f);
+   colors[2] = viskores::Vec4f_32(0.f, 0.f, 1.f, 1.f);
    anari_cpp::unmap(d, colorArray);
    anari_cpp::setAndReleaseParameter(d, s, "image", colorArray);
 -  anari_cpp::setParameter(d, s, "filter", "nearest");

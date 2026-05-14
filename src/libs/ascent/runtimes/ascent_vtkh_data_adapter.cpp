@@ -30,23 +30,23 @@
 #include <ascent_logging.hpp>
 #include <ascent_logging_old.hpp>
 
-// VTKm includes
-#define VTKM_USE_DOUBLE_PRECISION
-#include <vtkm/cont/DataSet.h>
-#include <vtkm/cont/Algorithm.h>
-#include <vtkm/cont/ArrayCopy.h>
-#include <vtkm/cont/ArrayHandle.h>
-#include <vtkm/cont/ArrayHandleExtractComponent.h>
-#include <vtkm/cont/CoordinateSystem.h>
-#include <vtkm/cont/Invoker.h>
+// Viskores includes
+#define VISKORES_USE_DOUBLE_PRECISION
+#include <viskores/cont/DataSet.h>
+#include <viskores/cont/Algorithm.h>
+#include <viskores/cont/ArrayCopy.h>
+#include <viskores/cont/ArrayHandle.h>
+#include <viskores/cont/ArrayHandleExtractComponent.h>
+#include <viskores/cont/CoordinateSystem.h>
+#include <viskores/cont/Invoker.h>
 #include <vtkh/DataSet.hpp>
 
 // other ascent includes
 #include <ascent_logging.hpp>
 #include <ascent_block_timer.hpp>
 #include <ascent_mpi_utils.hpp>
-#include <vtkh/utils/vtkm_array_utils.hpp>
-#include <vtkh/utils/vtkm_dataset_info.hpp>
+#include <vtkh/utils/viskores_array_utils.hpp>
+#include <vtkh/utils/viskores_dataset_info.hpp>
 
 #include <conduit_blueprint.hpp>
 
@@ -65,9 +65,9 @@ namespace ascent
 namespace detail
 {
 
-vtkm::Id3 topo_origin(const conduit::Node &n_topo)
+viskores::Id3 topo_origin(const conduit::Node &n_topo)
 {
-  vtkm::Id3 topo_origin(0,0,0);
+  viskores::Id3 topo_origin(0,0,0);
   // maintain backwards compatibility between
   // i and i0 versions
   if(n_topo.has_path("elements/origin"))
@@ -121,39 +121,39 @@ const float32* GetNodePointer<float32>(const conduit::Node &node)
 }
 
 template<typename T>
-void CopyArray(vtkm::cont::ArrayHandle<T> &vtkm_handle, const T* vals_ptr, const int size, bool zero_copy)
+void CopyArray(viskores::cont::ArrayHandle<T> &viskores_handle, const T* vals_ptr, const int size, bool zero_copy)
 {
-  vtkm::CopyFlag copy = vtkm::CopyFlag::On;
+  viskores::CopyFlag copy = viskores::CopyFlag::On;
   if(zero_copy)
   {
-    copy = vtkm::CopyFlag::Off;
+    copy = viskores::CopyFlag::Off;
   }
 
-  vtkm_handle = vtkm::cont::make_ArrayHandle(vals_ptr, size, copy);
+  viskores_handle = viskores::cont::make_ArrayHandle(vals_ptr, size, copy);
 }
 
 
 template<typename T>
 void
-BlueprintIndexArrayToVTKmIdArray(const conduit::Node &n,
+BlueprintIndexArrayToViskoresIdArray(const conduit::Node &n,
                                  bool zero_copy,
-                                 vtkm::cont::ArrayHandle<T> &vtkm_handle)
+                                 viskores::cont::ArrayHandle<T> &viskores_handle)
 {
     int array_size = n.dtype().number_of_elements();
 
-    if( sizeof(T) == 1 ) // uint8 is what vtk-m will use for this case.
+    if( sizeof(T) == 1 ) // uint8 is what viskores will use for this case.
     {
         if(n.is_compact() && n.dtype().is_uint8())
         {
             // directly compatible
             const void *idx_ptr = n.data_ptr();
-            CopyArray(vtkm_handle, (const T*)idx_ptr, array_size,zero_copy);
+            CopyArray(viskores_handle, (const T*)idx_ptr, array_size,zero_copy);
         }
         else
         {
-            // we need to convert to uint8 to match vtkm::Id
-            vtkm_handle.Allocate(array_size);
-            void *ptr = (void*) vtkh::GetVTKMPointer(vtkm_handle);
+            // we need to convert to uint8 to match viskores::Id
+            viskores_handle.Allocate(array_size);
+            void *ptr = (void*) vtkh::GetVISKORESPointer(viskores_handle);
             Node n_tmp;
             n_tmp.set_external(DataType::uint8(array_size),ptr);
             n.to_uint8_array(n_tmp);
@@ -162,39 +162,39 @@ BlueprintIndexArrayToVTKmIdArray(const conduit::Node &n,
     else if( sizeof(T) == 2)
     {
         // unsupported!
-        ASCENT_ERROR("BlueprintIndexArrayToVTKmIdArray does not support 2-byte index arrays");
+        ASCENT_ERROR("BlueprintIndexArrayToViskoresIdArray does not support 2-byte index arrays");
     }
-    else if( sizeof(T) == 4) // int32 is what vtk-m will use for this case.
+    else if( sizeof(T) == 4) // int32 is what viskores will use for this case.
     {
         if(n.is_compact() && n.dtype().is_int32())
         {
             // directly compatible
             const void *idx_ptr = n.data_ptr();
-            CopyArray(vtkm_handle, (const T*)idx_ptr, array_size,zero_copy);
+            CopyArray(viskores_handle, (const T*)idx_ptr, array_size,zero_copy);
         }
         else
         {
-            // we need to convert to int32 to match vtkm::Id
-            vtkm_handle.Allocate(array_size);
-            void *ptr = (void*) vtkh::GetVTKMPointer(vtkm_handle);
+            // we need to convert to int32 to match viskores::Id
+            viskores_handle.Allocate(array_size);
+            void *ptr = (void*) vtkh::GetVISKORESPointer(viskores_handle);
             Node n_tmp;
             n_tmp.set_external(DataType::int32(array_size),ptr);
             n.to_int32_array(n_tmp);
         }
     }
-    else if( sizeof(T) == 8) // int64 is what vtk-m will use for this case.
+    else if( sizeof(T) == 8) // int64 is what viskores will use for this case.
     {
         if(n.is_compact() && n.dtype().is_int64())
         {
             // directly compatible
             const void *idx_ptr = n.data_ptr();
-            CopyArray(vtkm_handle, (const T*)idx_ptr, array_size, zero_copy);
+            CopyArray(viskores_handle, (const T*)idx_ptr, array_size, zero_copy);
         }
         else
         {
-            // we need to convert to int64 to match vtkm::Id
-            vtkm_handle.Allocate(array_size);
-            void *ptr = (void*) vtkh::GetVTKMPointer(vtkm_handle);
+            // we need to convert to int64 to match viskores::Id
+            viskores_handle.Allocate(array_size);
+            void *ptr = (void*) vtkh::GetVISKORESPointer(viskores_handle);
             Node n_tmp;
             n_tmp.set_external(DataType::int64(array_size),ptr);
             n.to_int64_array(n_tmp);
@@ -204,7 +204,7 @@ BlueprintIndexArrayToVTKmIdArray(const conduit::Node &n,
 
 
 template<typename T>
-vtkm::cont::CoordinateSystem
+viskores::cont::CoordinateSystem
 GetExplicitCoordinateSystem(const conduit::Node &n_coords,
                             const std::string &name,
                             int &ndims,
@@ -213,10 +213,10 @@ GetExplicitCoordinateSystem(const conduit::Node &n_coords,
                             index_t &z_element_stride,
                             bool zero_copy)
 {
-    vtkm::CopyFlag copy = vtkm::CopyFlag::On;
+    viskores::CopyFlag copy = viskores::CopyFlag::On;
     if(zero_copy)
     {
-      copy = vtkm::CopyFlag::Off;
+      copy = viskores::CopyFlag::Off;
     }
       
     int nverts = n_coords["values/x"].dtype().number_of_elements();
@@ -226,9 +226,9 @@ GetExplicitCoordinateSystem(const conduit::Node &n_coords,
     // disabling this path until we find out what is going wrong.
     //is_interleaved = false;
 
-    vtkm::cont::ArrayHandle<T> x_coords_handle;
-    vtkm::cont::ArrayHandle<T> y_coords_handle;
-    vtkm::cont::ArrayHandle<T> z_coords_handle;
+    viskores::cont::ArrayHandle<T> x_coords_handle;
+    viskores::cont::ArrayHandle<T> y_coords_handle;
+    viskores::cont::ArrayHandle<T> z_coords_handle;
 
     ndims = 2;
 
@@ -241,15 +241,15 @@ GetExplicitCoordinateSystem(const conduit::Node &n_coords,
     {
       int x_verts_expanded = nverts * x_element_stride;
       const T *x_verts_ptr = n_coords["values/x"].value();
-      vtkm::cont::ArrayHandle<T> x_source_array = vtkm::cont::make_ArrayHandle<T>(x_verts_ptr,
+      viskores::cont::ArrayHandle<T> x_source_array = viskores::cont::make_ArrayHandle<T>(x_verts_ptr,
                                                                                   x_verts_expanded,
                                                                                   copy);
-      vtkm::cont::ArrayHandleStride<T> x_stride_handle(x_source_array,
+      viskores::cont::ArrayHandleStride<T> x_stride_handle(x_source_array,
                                                        nverts,
                                                        x_element_stride,
                                                        0); // offset
 
-      vtkm::cont::Algorithm::Copy(x_stride_handle, x_coords_handle);
+      viskores::cont::Algorithm::Copy(x_stride_handle, x_coords_handle);
     }
 
     if(y_element_stride == 1)
@@ -261,21 +261,21 @@ GetExplicitCoordinateSystem(const conduit::Node &n_coords,
     {
       int y_verts_expanded = nverts * y_element_stride;
       const T *y_verts_ptr = n_coords["values/y"].value();
-      vtkm::cont::ArrayHandle<T> y_source_array = vtkm::cont::make_ArrayHandle<T>(y_verts_ptr,
+      viskores::cont::ArrayHandle<T> y_source_array = viskores::cont::make_ArrayHandle<T>(y_verts_ptr,
                                                                                   y_verts_expanded,
                                                                                   copy);
-      vtkm::cont::ArrayHandleStride<T> y_stride_handle(y_source_array,
+      viskores::cont::ArrayHandleStride<T> y_stride_handle(y_source_array,
                                                        nverts,
                                                        y_element_stride,
                                                        0); // offset
 
-      vtkm::cont::Algorithm::Copy(y_stride_handle, y_coords_handle);
+      viskores::cont::Algorithm::Copy(y_stride_handle, y_coords_handle);
     }
 
     if(z_element_stride == 0)
     {
       z_coords_handle.AllocateAndFill(nverts,0.0);
-      T *z = vtkh::GetVTKMPointer(z_coords_handle);
+      T *z = vtkh::GetVISKORESPointer(z_coords_handle);
     }
     else if(z_element_stride == 1)
     {
@@ -288,50 +288,121 @@ GetExplicitCoordinateSystem(const conduit::Node &n_coords,
       ndims = 3;
       int z_verts_expanded = nverts * z_element_stride;
       const T *z_verts_ptr = n_coords["values/z"].value();
-      vtkm::cont::ArrayHandle<T> z_source_array = vtkm::cont::make_ArrayHandle<T>(z_verts_ptr,
+      viskores::cont::ArrayHandle<T> z_source_array = viskores::cont::make_ArrayHandle<T>(z_verts_ptr,
                                                                                   z_verts_expanded,
                                                                                   copy);
-      vtkm::cont::ArrayHandleStride<T> z_stride_handle(z_source_array,
+      viskores::cont::ArrayHandleStride<T> z_stride_handle(z_source_array,
                                                        nverts,
                                                        z_element_stride,
                                                        0); // offset
 
-      vtkm::cont::Algorithm::Copy(z_stride_handle, z_coords_handle);
+      viskores::cont::Algorithm::Copy(z_stride_handle, z_coords_handle);
     }
 
-    return vtkm::cont::CoordinateSystem(name,
+    return viskores::cont::CoordinateSystem(name,
                                         make_ArrayHandleSOA(x_coords_handle,
                                                             y_coords_handle,
                                                             z_coords_handle));
 
 }
 
+template<typename T>
+viskores::cont::CoordinateSystem
+GetRZCoordinateSystem(const conduit::Node &n_coords,
+                            const std::string &name,
+                            int &ndims,
+                            index_t &r_element_stride,
+                            index_t &z_element_stride,
+                            bool zero_copy)
+{
+    viskores::CopyFlag copy = viskores::CopyFlag::On;
+    if(zero_copy)
+    {
+      copy = viskores::CopyFlag::Off;
+    }
+      
+    int nverts = n_coords["values/r"].dtype().number_of_elements();
+
+    viskores::cont::ArrayHandle<T> r_coords_handle;
+    viskores::cont::ArrayHandle<T> z_coords_handle;
+    viskores::cont::ArrayHandle<T> theta_coords_handle;
+
+    ndims = 2;
+
+    if(r_element_stride == 1)
+    {
+      const T *r_verts_ptr = n_coords["values/r"].value();
+      detail::CopyArray(r_coords_handle, r_verts_ptr, nverts, zero_copy);
+    }
+    else
+    {
+      int r_verts_expanded = (nverts - 1) * r_element_stride + 1;
+      const T *r_verts_ptr = n_coords["values/r"].value();
+      viskores::cont::ArrayHandle<T> r_source_array = viskores::cont::make_ArrayHandle<T>(r_verts_ptr,
+                                                                                  r_verts_expanded,
+                                                                                  copy);
+      viskores::cont::ArrayHandleStride<T> r_stride_handle(r_source_array,
+                                                       nverts,
+                                                       r_element_stride,
+                                                       0); // offset
+
+      viskores::cont::Algorithm::Copy(r_stride_handle, r_coords_handle);
+    }
+
+    if(z_element_stride == 1)
+    {
+      const T *z_verts_ptr = n_coords["values/z"].value();
+      detail::CopyArray(z_coords_handle, z_verts_ptr, nverts, zero_copy);
+    }
+    else
+    {
+      int z_verts_expanded = (nverts - 1) * z_element_stride + 1;
+      const T *z_verts_ptr = n_coords["values/z"].value();
+      viskores::cont::ArrayHandle<T> z_source_array = viskores::cont::make_ArrayHandle<T>(z_verts_ptr,
+                                                                                  z_verts_expanded,
+                                                                                  copy);
+      viskores::cont::ArrayHandleStride<T> z_stride_handle(z_source_array,
+                                                       nverts,
+                                                       z_element_stride,
+                                                       0); // offset
+
+      viskores::cont::Algorithm::Copy(z_stride_handle, z_coords_handle);
+    }
+
+    theta_coords_handle.AllocateAndFill(nverts,0.0);
+
+    return viskores::cont::CoordinateSystem(name,
+                                    make_ArrayHandleSOA(z_coords_handle,
+                                                        r_coords_handle,
+                                                        theta_coords_handle));
+}
+
 
 template<typename T>
-vtkm::cont::Field GetField(const conduit::Node &node,
+viskores::cont::Field GetField(const conduit::Node &node,
                            const std::string &field_name,
                            const std::string &assoc_str,
                            const std::string &topo_str,
                            index_t element_stride,
                            bool zero_copy)
 {
-  vtkm::CopyFlag copy = vtkm::CopyFlag::On;
+  viskores::CopyFlag copy = viskores::CopyFlag::On;
   if(zero_copy)
   {
-    copy = vtkm::CopyFlag::Off;
+    copy = viskores::CopyFlag::Off;
   }
-  vtkm::cont::Field::Association vtkm_assoc = vtkm::cont::Field::Association::Any;
+  viskores::cont::Field::Association viskores_assoc = viskores::cont::Field::Association::Any;
   if(assoc_str == "vertex")
   {
-    vtkm_assoc = vtkm::cont::Field::Association::Points;
+    viskores_assoc = viskores::cont::Field::Association::Points;
   }
   else if(assoc_str == "element")
   {
-    vtkm_assoc = vtkm::cont::Field::Association::Cells;
+    viskores_assoc = viskores::cont::Field::Association::Cells;
   }
   else if(assoc_str == "whole")
   {
-    vtkm_assoc = vtkm::cont::Field::Association::WholeDataSet;
+    viskores_assoc = viskores::cont::Field::Association::WholeDataSet;
   }
   else
   {
@@ -342,12 +413,12 @@ vtkm::cont::Field GetField(const conduit::Node &node,
 
   const T *values_ptr = node.value();
 
-  vtkm::cont::Field field;
+  viskores::cont::Field field;
   // base case is naturally stride data
   if(element_stride == 1)
   {
-      field = vtkm::cont::make_Field(field_name,
-                                     vtkm_assoc,
+      field = viskores::cont::make_Field(field_name,
+                                     viskores_assoc,
                                      values_ptr,
                                      num_vals,
                                      copy);
@@ -362,15 +433,15 @@ vtkm::cont::Field GetField(const conduit::Node &node,
       // the full extent of the strided area3
 
       int num_vals_expanded = num_vals * element_stride;
-      vtkm::cont::ArrayHandle<T> source_array = vtkm::cont::make_ArrayHandle(values_ptr,
+      viskores::cont::ArrayHandle<T> source_array = viskores::cont::make_ArrayHandle(values_ptr,
                                                                              num_vals_expanded,
                                                                              copy);
-      vtkm::cont::ArrayHandleStride<T> stride_array(source_array,
+      viskores::cont::ArrayHandleStride<T> stride_array(source_array,
                                                     num_vals,
                                                     element_stride,
                                                     0);
-      field =  vtkm::cont::Field(field_name,
-                                 vtkm_assoc,
+      field =  viskores::cont::Field(field_name,
+                                 viskores_assoc,
                                  stride_array);
   }
 
@@ -379,26 +450,26 @@ vtkm::cont::Field GetField(const conduit::Node &node,
 
 
 template<typename T>
-vtkm::cont::Field GetVectorField(T *values_ptr,
+viskores::cont::Field GetVectorField(T *values_ptr,
                                  const int num_vals,
                                  const std::string &field_name,
                                  const std::string &assoc_str,
                                  const std::string &topo_str,
                                  bool zero_copy)
 {
-  vtkm::CopyFlag copy = vtkm::CopyFlag::On;
+  viskores::CopyFlag copy = viskores::CopyFlag::On;
   if(zero_copy)
   {
-    copy = vtkm::CopyFlag::Off;
+    copy = viskores::CopyFlag::Off;
   }
-  vtkm::cont::Field::Association vtkm_assoc = vtkm::cont::Field::Association::Any;
+  viskores::cont::Field::Association viskores_assoc = viskores::cont::Field::Association::Any;
   if(assoc_str == "vertex")
   {
-    vtkm_assoc = vtkm::cont::Field::Association::Points;
+    viskores_assoc = viskores::cont::Field::Association::Points;
   }
   else if(assoc_str == "element")
   {
-    vtkm_assoc = vtkm::cont::Field::Association::Cells;
+    viskores_assoc = viskores::cont::Field::Association::Cells;
   }
   else
   {
@@ -406,9 +477,9 @@ vtkm::cont::Field GetVectorField(T *values_ptr,
                  <<assoc_str<<" field_name "<<field_name);
   }
 
-  vtkm::cont::Field field;
-  field = vtkm::cont::make_Field(field_name,
-                                 vtkm_assoc,
+  viskores::cont::Field field;
+  field = viskores::cont::make_Field(field_name,
+                                 viskores_assoc,
                                  values_ptr,
                                  num_vals,
                                  copy);
@@ -420,7 +491,7 @@ vtkm::cont::Field GetVectorField(T *values_ptr,
 // extract a vector from 3 separate arrays
 //
 template<typename T>
-void ExtractVector(vtkm::cont::DataSet *dset,
+void ExtractVector(viskores::cont::DataSet *dset,
                    const conduit::Node &u,
                    const conduit::Node &v,
                    const conduit::Node &w,
@@ -438,14 +509,14 @@ void ExtractVector(vtkm::cont::DataSet *dset,
     ASCENT_ERROR("Extract vector: only 2 and 3 dims supported given "<<dims);
   }
 
-  vtkm::cont::Field::Association vtkm_assoc = vtkm::cont::Field::Association::Any;
+  viskores::cont::Field::Association viskores_assoc = viskores::cont::Field::Association::Any;
   if(assoc_str == "vertex")
   {
-    vtkm_assoc = vtkm::cont::Field::Association::Points;
+    viskores_assoc = viskores::cont::Field::Association::Points;
   }
   else if (assoc_str == "element")
   {
-    vtkm_assoc = vtkm::cont::Field::Association::Cells;
+    viskores_assoc = viskores::cont::Field::Association::Cells;
   }
   else
   {
@@ -458,26 +529,15 @@ void ExtractVector(vtkm::cont::DataSet *dset,
     const T *x_ptr = GetNodePointer<T>(u);
     const T *y_ptr = GetNodePointer<T>(v);
 
-    vtkm::cont::ArrayHandle<T> x_handle;
-    vtkm::cont::ArrayHandle<T> y_handle;
+    viskores::cont::ArrayHandle<T> x_handle;
+    viskores::cont::ArrayHandle<T> y_handle;
+    detail::CopyArray(x_handle, x_ptr, num_vals, zero_copy);
+    detail::CopyArray(y_handle, y_ptr, num_vals, zero_copy);
 
-    // always zero copy because we are about to make a copy
-    detail::CopyArray(x_handle, x_ptr, num_vals, true);
-    detail::CopyArray(y_handle, y_ptr, num_vals, true);
+    auto composite = make_ArrayHandleSOA(x_handle,
+                                         y_handle);
 
-
-    auto composite  = make_ArrayHandleSOA(x_handle,
-                                          y_handle);
-
-    vtkm::cont::ArrayHandle<vtkm::Vec<T,2>> interleaved_handle;
-    interleaved_handle.Allocate(num_vals);
-    // Calling this without forcing serial could cause serious problems
-    {
-      vtkm::cont::ScopedRuntimeDeviceTracker tracker(vtkm::cont::DeviceAdapterTagSerial{});
-      vtkm::cont::ArrayCopy(composite, interleaved_handle);
-    }
-
-    vtkm::cont::Field field(field_name, vtkm_assoc, interleaved_handle);
+    viskores::cont::Field field(field_name, viskores_assoc, composite);
     dset->AddField(field);
   }
 
@@ -487,36 +547,26 @@ void ExtractVector(vtkm::cont::DataSet *dset,
     const T *y_ptr = GetNodePointer<T>(v);
     const T *z_ptr = GetNodePointer<T>(w);
 
-    vtkm::cont::ArrayHandle<T> x_handle;
-    vtkm::cont::ArrayHandle<T> y_handle;
-    vtkm::cont::ArrayHandle<T> z_handle;
+    viskores::cont::ArrayHandle<T> x_handle;
+    viskores::cont::ArrayHandle<T> y_handle;
+    viskores::cont::ArrayHandle<T> z_handle;
+    detail::CopyArray(x_handle, x_ptr, num_vals, zero_copy);
+    detail::CopyArray(y_handle, y_ptr, num_vals, zero_copy);
+    detail::CopyArray(z_handle, z_ptr, num_vals, zero_copy);
 
-    // always zero copy because we are about to make a copy
-    detail::CopyArray(x_handle, x_ptr, num_vals, true);
-    detail::CopyArray(y_handle, y_ptr, num_vals, true);
-    detail::CopyArray(z_handle, z_ptr, num_vals, true);
+    auto composite = make_ArrayHandleSOA(x_handle,
+                                         y_handle,
+                                         z_handle);
 
-    auto composite  = make_ArrayHandleSOA(x_handle,
-                                          y_handle,
-                                          z_handle);
-
-    vtkm::cont::ArrayHandle<vtkm::Vec<T,3>> interleaved_handle;
-    interleaved_handle.Allocate(num_vals);
-    // Calling this without forcing serial could cause serious problems
-    {
-      vtkm::cont::ScopedRuntimeDeviceTracker tracker(vtkm::cont::DeviceAdapterTagSerial{});
-      vtkm::cont::ArrayCopy(composite, interleaved_handle);
-    }
-
-    vtkm::cont::Field field(field_name, vtkm_assoc, interleaved_handle);
+    viskores::cont::Field field(field_name, viskores_assoc, composite);
     dset->AddField(field);
   }
 }
 
 
-void VTKmCellShape(const std::string &shape_type,
-                   vtkm::UInt8 &shape_id,
-                   vtkm::IdComponent &num_indices)
+void ViskoresCellShape(const std::string &shape_type,
+                   viskores::UInt8 &shape_id,
+                   viskores::IdComponent &num_indices)
 {
   shape_id = 0;
   num_indices = 0;
@@ -582,14 +632,14 @@ void GetMatSetFields(const conduit::Node &node, //materials["matset"]
                            const std::string &vfs_name,
                            const std::string &topo_str,
                            const int neles,
-                           vtkm::cont::Field &length,
-                           vtkm::cont::Field &offsets,
-                           vtkm::cont::Field &ids,
-                           vtkm::cont::Field &vfs)
+                           viskores::cont::Field &length,
+                           viskores::cont::Field &offsets,
+                           viskores::cont::Field &ids,
+                           viskores::cont::Field &vfs)
 {
-  vtkm::CopyFlag copy = vtkm::CopyFlag::On;
+  viskores::CopyFlag copy = viskores::CopyFlag::On;
 
-  vtkm::cont::Field::Association vtkm_assoc_c = vtkm::cont::Field::Association::Cells;
+  viskores::cont::Field::Association viskores_assoc_c = viskores::cont::Field::Association::Cells;
 
   std::vector<T> v_length(neles,0);
   std::vector<T> v_offsets(neles,0);
@@ -647,21 +697,21 @@ void GetMatSetFields(const conduit::Node &node, //materials["matset"]
 
   const T *length_ptr = v_length.data();
 
-  length = vtkm::cont::make_Field(length_name,
-                                 vtkm_assoc_c,
+  length = viskores::cont::make_Field(length_name,
+                                 viskores_assoc_c,
                                  length_ptr,
                                  neles,
                                  copy);
 
   const T *offsets_ptr = v_offsets.data();
 
-  offsets = vtkm::cont::make_Field(offsets_name,
-                                 vtkm_assoc_c,
+  offsets = viskores::cont::make_Field(offsets_name,
+                                 viskores_assoc_c,
                                  offsets_ptr,
                                  neles,
                                  copy);
   //calc vfs and mat ids
-  vtkm::cont::Field::Association vtkm_assoc_w = vtkm::cont::Field::Association::WholeDataSet;
+  viskores::cont::Field::Association viskores_assoc_w = viskores::cont::Field::Association::WholeDataSet;
   std::vector<T> v_ids(l_total,0);
   std::vector<S> v_vfs(l_total,0);
 
@@ -733,16 +783,16 @@ void GetMatSetFields(const conduit::Node &node, //materials["matset"]
 
   const T *ids_ptr = v_ids.data();
 
-  ids = vtkm::cont::make_Field(ids_name,
-                               vtkm_assoc_w,
+  ids = viskores::cont::make_Field(ids_name,
+                               viskores_assoc_w,
                                ids_ptr,
                                l_total,
                                copy);
 
   const S *vfs_ptr = v_vfs.data();
 
-  vfs = vtkm::cont::make_Field(vfs_name,
-                               vtkm_assoc_w,
+  vfs = viskores::cont::make_Field(vfs_name,
+                               viskores_assoc_w,
                                vfs_ptr,
                                l_total,
                                copy);
@@ -755,11 +805,11 @@ void GetMatSetFields(const conduit::Node &node, //materials["matset"]
 //                           const std::string &topo_str,
 //                           const int total,
 //                           const int neles,
-//                           vtkm::cont::Field &offsets,
+//                           viskores::cont::Field &offsets,
 //{
-//  vtkm::CopyFlag copy = vtkm::CopyFlag::On;
+//  viskores::CopyFlag copy = viskores::CopyFlag::On;
 //
-//  vtkm::cont::ArrayHandle<int> ah_offsets;
+//  viskores::cont::ArrayHandle<int> ah_offsets;
 //  offsets.GetData().AsArrayHandle(ah_offsets);
 //  
 //  int num_materials = node["volume_fractions"].number_of_children();
@@ -783,16 +833,16 @@ void GetMatSetFields(const conduit::Node &node, //materials["matset"]
 //
 //  const T *ids_ptr = v_ids.data();
 //
-//  ids = vtkm::cont::make_Field(ids_name,
-//                               vtkm_assoc,
+//  ids = viskores::cont::make_Field(ids_name,
+//                               viskores_assoc,
 //                               ids_ptr,
 //                               total,
 //                               copy);
 //
 //  const S *vfs_ptr = v_vfs.data();
 //
-//  vfs = vtkm::cont::make_Field(vfs_name,
-//                               vtkm_assoc,
+//  vfs = viskores::cont::make_Field(vfs_name,
+//                               viskores_assoc,
 //                               vfs_ptr,
 //                               total,
 //                               copy);
@@ -822,9 +872,9 @@ VTKHDataAdapter::BlueprintToVTKHCollection(const conduit::Node &n,
 
     VTKHCollection *res = new VTKHCollection();
     std::map<std::string, vtkh::DataSet> datasets;
-    vtkm::UInt64 cycle = 0;
+    viskores::UInt64 cycle = 0;
     double time = 0;
-    std::vector<vtkm::UInt64> allCycles;
+    std::vector<viskores::UInt64> allCycles;
     std::vector<double> allTimes;
 
     for(int i = 0; i < num_domains; ++i)
@@ -853,7 +903,7 @@ VTKHDataAdapter::BlueprintToVTKHCollection(const conduit::Node &n,
       for(int t = 0; t < topo_names.size(); ++t)
       {
         const std::string topo_name = topo_names[t];
-        vtkm::cont::DataSet *dset = BlueprintToVTKmDataSet(dom, zero_copy, topo_name);
+        viskores::cont::DataSet *dset = BlueprintToViskoresDataSet(dom, zero_copy, topo_name);
         datasets[topo_name].AddDomain(*dset,domain_id);
         delete dset;
       }
@@ -902,19 +952,19 @@ VTKHDataAdapter::BlueprintToVTKHDataSet(const Node &node,
     for(int i = 0; i < num_domains; ++i)
     {
       const conduit::Node &dom = node.child(i);
-      vtkm::cont::DataSet *dset = VTKHDataAdapter::BlueprintToVTKmDataSet(dom,
+      viskores::cont::DataSet *dset = VTKHDataAdapter::BlueprintToViskoresDataSet(dom,
                                                                           zero_copy,
                                                                           topo_name);
       int domain_id = dom["state/domain_id"].to_int();
 
       if(dom.has_path("state/cycle"))
       {
-        vtkm::UInt64 cycle = dom["state/cycle"].to_uint64();
+        viskores::UInt64 cycle = dom["state/cycle"].to_uint64();
         res->SetCycle(cycle);
       }
 
       res->AddDomain(*dset,domain_id);
-      // vtk-m will shallow copy the data assoced with dset
+      // viskores will shallow copy the data assoced with dset
       // clean up our copy
       delete dset;
 
@@ -924,9 +974,9 @@ VTKHDataAdapter::BlueprintToVTKHDataSet(const Node &node,
 
 //-----------------------------------------------------------------------------
 vtkh::DataSet *
-VTKHDataAdapter::VTKmDataSetToVTKHDataSet(vtkm::cont::DataSet *dset)
+VTKHDataAdapter::ViskoresDataSetToVTKHDataSet(viskores::cont::DataSet *dset)
 {
-    // wrap a single VTKm data set into a VTKH dataset
+    // wrap a single Viskores data set into a VTKH dataset
     vtkh::DataSet   *res = new  vtkh::DataSet;
     int domain_id = 0; // TODO, MPI_TASK_ID ?
     res->AddDomain(*dset,domain_id);
@@ -934,12 +984,12 @@ VTKHDataAdapter::VTKmDataSetToVTKHDataSet(vtkm::cont::DataSet *dset)
 }
 
 //-----------------------------------------------------------------------------
-vtkm::cont::DataSet *
-VTKHDataAdapter::BlueprintToVTKmDataSet(const Node &node,
+viskores::cont::DataSet *
+VTKHDataAdapter::BlueprintToViskoresDataSet(const Node &node,
                                         bool zero_copy,
                                         const std::string &topo_name_str)
 {
-    vtkm::cont::DataSet * result = NULL;
+    viskores::cont::DataSet * result = NULL;
 
     std::string topo_name = topo_name_str;
 
@@ -963,7 +1013,7 @@ VTKHDataAdapter::BlueprintToVTKmDataSet(const Node &node,
 
     if( mesh_type ==  "uniform")
     {
-        result = UniformBlueprintToVTKmDataSet(coords_name,
+        result = UniformBlueprintToViskoresDataSet(coords_name,
                                                n_coords,
                                                topo_name,
                                                n_topo,
@@ -972,7 +1022,7 @@ VTKHDataAdapter::BlueprintToVTKmDataSet(const Node &node,
     }
     else if(mesh_type == "rectilinear")
     {
-        result = RectilinearBlueprintToVTKmDataSet(coords_name,
+        result = RectilinearBlueprintToViskoresDataSet(coords_name,
                                                    n_coords,
                                                    topo_name,
                                                    n_topo,
@@ -983,7 +1033,7 @@ VTKHDataAdapter::BlueprintToVTKmDataSet(const Node &node,
     }
     else if(mesh_type == "structured")
     {
-        result =  StructuredBlueprintToVTKmDataSet(coords_name,
+        result =  StructuredBlueprintToViskoresDataSet(coords_name,
                                                    n_coords,
                                                    topo_name,
                                                    n_topo,
@@ -993,7 +1043,7 @@ VTKHDataAdapter::BlueprintToVTKmDataSet(const Node &node,
     }
     else if( mesh_type ==  "points")
     {
-        result =  PointsImplicitBlueprintToVTKmDataSet(coords_name,
+        result =  PointsImplicitBlueprintToViskoresDataSet(coords_name,
                                                        n_coords,
                                                        topo_name,
                                                        n_topo,
@@ -1003,7 +1053,7 @@ VTKHDataAdapter::BlueprintToVTKmDataSet(const Node &node,
     }
     else if( mesh_type ==  "unstructured")
     {
-        result =  UnstructuredBlueprintToVTKmDataSet(coords_name,
+        result =  UnstructuredBlueprintToViskoresDataSet(coords_name,
                                                      n_coords,
                                                      topo_name,
                                                      n_topo,
@@ -1108,28 +1158,28 @@ VTKHDataAdapter::BlueprintToVTKmDataSet(const Node &node,
 class ExplicitArrayHelper
 {
 public:
-// Helper function to create explicit coordinate arrays for vtkm data sets
-void CreateExplicitArrays(vtkm::cont::ArrayHandle<vtkm::UInt8> &shapes,
-                          vtkm::cont::ArrayHandle<vtkm::IdComponent> &num_indices,
+// Helper function to create explicit coordinate arrays for viskores data sets
+void CreateExplicitArrays(viskores::cont::ArrayHandle<viskores::UInt8> &shapes,
+                          viskores::cont::ArrayHandle<viskores::IdComponent> &num_indices,
                           const std::string &shape_type,
-                          const vtkm::Id &conn_size,
-                          vtkm::IdComponent &dimensionality,
+                          const viskores::Id &conn_size,
+                          viskores::IdComponent &dimensionality,
                           int &neles)
 {
-    vtkm::UInt8 shape_id = 0;
-    vtkm::IdComponent indices= 0;
+    viskores::UInt8 shape_id = 0;
+    viskores::IdComponent indices= 0;
     if(shape_type == "tri")
     {
         shape_id = 3;
         indices = 3;
-        // note: vtkm cell dimensions are topological
+        // note: viskores cell dimensions are topological
         dimensionality = 2;
     }
     else if(shape_type == "quad")
     {
         shape_id = 9;
         indices = 4;
-        // note: vtkm cell dimensions are topological
+        // note: viskores cell dimensions are topological
         dimensionality = 2;
     }
     else if(shape_type == "tet")
@@ -1172,7 +1222,7 @@ void CreateExplicitArrays(vtkm::cont::ArrayHandle<vtkm::UInt8> &shapes,
     if(conn_size % indices != 0)
         ASCENT_ERROR("Connectivity array size " <<conn_size << " be evenly divided by indices size" << indices);
 
-    const vtkm::Id num_shapes = conn_size / indices;
+    const viskores::Id num_shapes = conn_size / indices;
 
     neles = num_shapes;
 
@@ -1184,8 +1234,8 @@ void CreateExplicitArrays(vtkm::cont::ArrayHandle<vtkm::UInt8> &shapes,
     // them, smart pointers will automatically delete them.
     // Hopefull the compiler turns this into a memset.
 
-    const vtkm::UInt8 shape_value = shape_id;
-    const vtkm::IdComponent indices_value = indices;
+    const viskores::UInt8 shape_value = shape_id;
+    const viskores::IdComponent indices_value = indices;
     auto shapes_portal = shapes.WritePortal();
     auto num_indices_portal = num_indices.WritePortal();
 #ifdef ASCENT_OPENMP_ENABLED
@@ -1200,8 +1250,8 @@ void CreateExplicitArrays(vtkm::cont::ArrayHandle<vtkm::UInt8> &shapes,
 };
 //-----------------------------------------------------------------------------
 
-vtkm::cont::DataSet *
-VTKHDataAdapter::UniformBlueprintToVTKmDataSet
+viskores::cont::DataSet *
+VTKHDataAdapter::UniformBlueprintToViskoresDataSet
     (const std::string &coords_name, // input string with coordset name
      const Node &n_coords,           // input mesh bp coordset (assumed uniform)
      const std::string &topo_name,   // input string with topo name
@@ -1216,8 +1266,8 @@ VTKHDataAdapter::UniformBlueprintToVTKmDataSet
     //  origin/{x,y,z} (optional)
     //  spacing/{dx,dy,dz} (optional)
 
-    //Create implicit vtkm coordinate system
-    vtkm::cont::DataSet *result = new vtkm::cont::DataSet();
+    //Create implicit viskores coordinate system
+    viskores::cont::DataSet *result = new viskores::cont::DataSet();
 
     const Node &n_dims = n_coords["dims"];
 
@@ -1234,35 +1284,65 @@ VTKHDataAdapter::UniformBlueprintToVTKmDataSet
         is_2d = false;
     }
 
-
-
     float64 origin_x = 0.0;
     float64 origin_y = 0.0;
     float64 origin_z = 0.0;
-
 
     float64 spacing_x = 1.0;
     float64 spacing_y = 1.0;
     float64 spacing_z = 1.0;
 
+    const bool is_rz = (n_coords.has_child("origin") && (n_coords["origin"].has_child("r") || (n_coords["origin"].has_child("z") && is_2d))) ||
+                 (n_coords.has_child("spacing") && (n_coords["spacing"].has_child("dr") || (n_coords["spacing"].has_child("dz") && is_2d)));
+    const bool is_cartesian = (n_coords.has_child("origin") && (n_coords["origin"].has_child("x") || n_coords["origin"].has_child("y"))) ||
+                          (n_coords.has_child("spacing") && (n_coords["spacing"].has_child("dx") || n_coords["spacing"].has_child("dy"))) ||
+                          !is_rz;
+
+    if (is_rz && is_cartesian) {
+        ASCENT_ERROR("Unsupported coordset: expected cartesian {x,y,(z)} or cylindrical {r,z} but got parameters for both.")
+    }
+    
+    if (!is_rz && !is_cartesian)
+    {
+        ASCENT_ERROR("Unsupported coordset: expected cartesian {x,y,(z)} or cylindrical {r,z} but got neither.")
+    }
 
     if(n_coords.has_child("origin"))
     {
         const Node &n_origin = n_coords["origin"];
 
-        if(n_origin.has_child("x"))
+        if (is_cartesian)
         {
-            origin_x = n_origin["x"].to_float64();
-        }
+            if(n_origin.has_child("x"))
+            {
+                origin_x = n_origin["x"].to_float64();
+            }
 
-        if(n_origin.has_child("y"))
-        {
-            origin_y = n_origin["y"].to_float64();
-        }
+            if(n_origin.has_child("y"))
+            {
+                origin_y = n_origin["y"].to_float64();
+            }
 
-        if(n_origin.has_child("z"))
+            if(n_origin.has_child("z"))
+            {
+                origin_z = n_origin["z"].to_float64();
+            }
+        }
+        else if (is_rz && is_2d)
         {
-            origin_z = n_origin["z"].to_float64();
+            if(n_origin.has_child("z"))
+            {
+                origin_x = n_origin["z"].to_float64();
+            }
+
+            if(n_origin.has_child("r"))
+            {
+                origin_y = n_origin["r"].to_float64();
+            }
+        }
+        else if (is_rz && !is_2d)
+        {
+            ASCENT_ERROR("Unsupported coordset: cylindrical {r,z} coordinates only supported in 2d.")
         }
     }
 
@@ -1270,54 +1350,84 @@ VTKHDataAdapter::UniformBlueprintToVTKmDataSet
     {
         const Node &n_spacing = n_coords["spacing"];
 
-        if(n_spacing.has_path("dx"))
+        if (is_cartesian)
         {
-            spacing_x = n_spacing["dx"].to_float64();
-        }
+            if(n_spacing.has_path("dx"))
+            {
+                spacing_x = n_spacing["dx"].to_float64();
+            }
 
-        if(n_spacing.has_path("dy"))
-        {
-            spacing_y = n_spacing["dy"].to_float64();
-        }
+            if(n_spacing.has_path("dy"))
+            {
+                spacing_y = n_spacing["dy"].to_float64();
+            }
 
-        if(n_spacing.has_path("dz"))
+            if(n_spacing.has_path("dz"))
+            {
+                spacing_z = n_spacing["dz"].to_float64();
+            }
+        }
+        else if (is_rz && is_2d)
         {
-            spacing_z = n_spacing["dz"].to_float64();
+            if(n_spacing.has_path("dz"))
+            {
+                spacing_x = n_spacing["dz"].to_float64();
+            }
+
+            if(n_spacing.has_path("dr"))
+            {
+                spacing_y = n_spacing["dr"].to_float64();
+            }
+        }
+        else if (is_rz && !is_2d)
+        {
+            ASCENT_ERROR("Unsupported coordset: cylindrical {r,z} coordinates only supported in 2d.")
         }
     }
 
     // todo, should this be float64 -- or should we read float32 above?
 
-    vtkm::Vec<vtkm::Float32,3> origin(origin_x,
+    viskores::Vec<viskores::Float32,3> origin(origin_x,
                                       origin_y,
                                       origin_z);
 
-    vtkm::Vec<vtkm::Float32,3> spacing(spacing_x,
+    viskores::Vec<viskores::Float32,3> spacing(spacing_x,
                                        spacing_y,
                                        spacing_z);
 
-    vtkm::Id3 dims(dims_i,
-                   dims_j,
-                   dims_k);
+    viskores::Id3 dims;
+    if(is_rz)
+    {
+        dims = viskores::Id3(dims_j,
+                    dims_i,
+                    dims_k);
+    }
+    else
+    {
+        dims = viskores::Id3(dims_i,
+                    dims_j,
+                    dims_k);
+    }
 
     // todo, use actually coordset and topo names?
-    result->AddCoordinateSystem( vtkm::cont::CoordinateSystem(coords_name.c_str(),
+    result->AddCoordinateSystem( viskores::cont::CoordinateSystem(coords_name.c_str(),
                                                               dims,
                                                               origin,
                                                               spacing));
-    vtkm::Id3 topo_origin = detail::topo_origin(n_topo);
+
+    viskores::Id3 topo_origin = detail::topo_origin(n_topo);
     if(is_2d)
     {
-      vtkm::Id2 dims2(dims[0], dims[1]);
-      vtkm::cont::CellSetStructured<2> cell_set;
+      viskores::Id2 dims2(dims[0], dims[1]);
+      viskores::cont::CellSetStructured<2> cell_set;
       cell_set.SetPointDimensions(dims2);
-      vtkm::Id2 origin2(topo_origin[0], topo_origin[1]);
+      viskores::Id2 origin2(topo_origin[0], topo_origin[1]);
       cell_set.SetGlobalPointIndexStart(origin2);
       result->SetCellSet(cell_set);
     }
     else
     {
-      vtkm::cont::CellSetStructured<3> cell_set;
+      viskores::cont::CellSetStructured<3> cell_set;
       cell_set.SetPointDimensions(dims);
       cell_set.SetGlobalPointIndexStart(topo_origin);
       result->SetCellSet(cell_set);
@@ -1341,8 +1451,8 @@ VTKHDataAdapter::UniformBlueprintToVTKmDataSet
 
 //-----------------------------------------------------------------------------
 
-vtkm::cont::DataSet *
-VTKHDataAdapter::RectilinearBlueprintToVTKmDataSet
+viskores::cont::DataSet *
+VTKHDataAdapter::RectilinearBlueprintToViskoresDataSet
     (const std::string &coords_name, // input string with coordset name
      const Node &n_coords,           // input mesh bp coordset (assumed rectilinear)
      const std::string &topo_name,   // input string with topo name
@@ -1351,62 +1461,201 @@ VTKHDataAdapter::RectilinearBlueprintToVTKmDataSet
      int &nverts,                    // output, number of verts
      bool zero_copy)                 // attempt to zero copy
 {
-    vtkm::cont::DataSet *result = new vtkm::cont::DataSet();
+    viskores::cont::DataSet *result = new viskores::cont::DataSet();
 
-    int x_npts = n_coords["values/x"].dtype().number_of_elements();
-    int y_npts = n_coords["values/y"].dtype().number_of_elements();
-    int z_npts = 0;
+    const bool is_rz = n_coords["values"].has_child("r") && n_coords["values"].has_child("z");
+    const bool is_cartesian = n_coords["values"].has_child("x") && n_coords["values"].has_child("y");
 
-    int32 ndims = 2;
-
-    if (zero_copy && 
-        (!n_coords["values/x"].dtype().is_float64() || 
-         !n_coords["values/y"].dtype().is_float64()))
+    if (is_rz && is_cartesian)
     {
-        ASCENT_INFO("Zero-copy requested, but either x or y coordinate data is not float64." <<
-                    "x type: " << n_coords["values/x"].dtype().name() << 
-                    ", y type: " << n_coords["values/y"].dtype().name() << 
-                    ". Turning zero-copy off.");
-        zero_copy = false;
-    }
-
-    const float64 *x_coords_ptr;
-    Node temp_x;
-    if (n_coords["values/x"].dtype().is_float64())
-    {
-        x_coords_ptr = n_coords["values/x"].as_float64_ptr();
-    }
-    else
-    {
-        n_coords["values/x"].to_float64_array(temp_x);
-        x_coords_ptr = temp_x.value();
+        ASCENT_ERROR("Unsupported coordset: expected cartesian {x,y,(z)} or cylindrical {r,z} but got parameters for both.")
     }
     
-    const float64 *y_coords_ptr;
-    Node temp_y;
-    if (n_coords["values/y"].dtype().is_float64())
+    if (!is_rz && !is_cartesian)
     {
-        y_coords_ptr = n_coords["values/y"].as_float64_ptr();
+        ASCENT_ERROR("Unsupported coordset: expected cartesian {x,y,(z)} or cylindrical {r,z} but got neither.")
+    }
+
+    if (is_cartesian)
+    {
+        if (zero_copy &&
+            (!n_coords["values/x"].dtype().is_float64() || 
+             !n_coords["values/y"].dtype().is_float64()))
+        {
+            ASCENT_INFO("Zero-copy requested, but either x or y coordinate data is not float64." <<
+                        "x type: " << n_coords["values/x"].dtype().name() << 
+                        ", y type: " << n_coords["values/y"].dtype().name() << 
+                        ". Turning zero-copy off.");
+            zero_copy = false;
+        }
+
+        int x_npts = n_coords["values/x"].dtype().number_of_elements();
+        int y_npts = n_coords["values/y"].dtype().number_of_elements();
+        int z_npts = 0;
+
+        const float64 *x_coords_ptr;
+        Node temp_x;
+        if (n_coords["values/x"].dtype().is_float64())
+        {
+            x_coords_ptr = n_coords["values/x"].as_float64_ptr();
+        }
+        else
+        {
+            n_coords["values/x"].to_float64_array(temp_x);
+            x_coords_ptr = temp_x.value();
+        }
+        
+        const float64 *y_coords_ptr;
+        Node temp_y;
+        if (n_coords["values/y"].dtype().is_float64())
+        {
+            y_coords_ptr = n_coords["values/y"].as_float64_ptr();
+        }
+        else
+        {
+            n_coords["values/y"].to_float64_array(temp_y);
+            y_coords_ptr = temp_y.value();
+        }
+
+        int32 ndims = 2;
+        const float64 *z_coords_ptr = NULL;
+        Node temp_z;
+        if(n_coords.has_path("values/z"))
+        {
+            if (zero_copy && !n_coords["values/z"].dtype().is_float64())
+            {
+                ASCENT_INFO("Zero-copy requested, but z coordinate data is " <<
+                            n_coords["values/z"].dtype().name() <<
+                            " not float64. Turning zero-copy off.");
+                zero_copy = false;
+            }
+            ndims = 3;
+            z_npts = n_coords["values/z"].dtype().number_of_elements();
+            if (n_coords["values/z"].dtype().is_float64())
+            {
+                z_coords_ptr = n_coords["values/z"].as_float64_ptr();
+            }
+            else
+            {
+                n_coords["values/z"].to_float64_array(temp_z);
+                z_coords_ptr = temp_z.value();
+            }
+        }
+
+        viskores::cont::ArrayHandle<viskores::Float64> x_coords_handle;
+        viskores::cont::ArrayHandle<viskores::Float64> y_coords_handle;
+        viskores::cont::ArrayHandle<viskores::Float64> z_coords_handle;
+
+        if(zero_copy)
+        {
+            x_coords_handle = viskores::cont::make_ArrayHandle(x_coords_ptr, x_npts, viskores::CopyFlag::Off);
+            y_coords_handle = viskores::cont::make_ArrayHandle(y_coords_ptr, y_npts, viskores::CopyFlag::Off);
+        }
+        else
+        {
+            x_coords_handle.Allocate(x_npts);
+            y_coords_handle.Allocate(y_npts);
+
+            viskores::Float64 *x = vtkh::GetVISKORESPointer(x_coords_handle);
+            memcpy(x, x_coords_ptr, sizeof(float64) * x_npts);
+            viskores::Float64 *y = vtkh::GetVISKORESPointer(y_coords_handle);
+            memcpy(y, y_coords_ptr, sizeof(float64) * y_npts);
+        }
+
+        if(ndims == 3)
+        {
+            if(zero_copy)
+            {
+                z_coords_handle = viskores::cont::make_ArrayHandle(z_coords_ptr, z_npts, viskores::CopyFlag::Off);
+            }
+            else
+            {
+                z_coords_handle.Allocate(z_npts);
+                viskores::Float64 *z = vtkh::GetVISKORESPointer(z_coords_handle);
+                memcpy(z, z_coords_ptr, sizeof(float64) * z_npts);
+            }
+        }
+        else
+        {
+            z_coords_handle.Allocate(1);
+            z_coords_handle.WritePortal().Set(0, 0.0);
+        }
+
+        static_assert(std::is_same<viskores::FloatDefault, double>::value,
+                    "Viskores needs to be configured with 'Viskores_USE_DOUBLE_PRECISION=ON'");
+        viskores::cont::ArrayHandleCartesianProduct<
+            viskores::cont::ArrayHandle<viskores::FloatDefault>,
+            viskores::cont::ArrayHandle<viskores::FloatDefault>,
+            viskores::cont::ArrayHandle<viskores::FloatDefault> > coords;
+
+        coords = viskores::cont::make_ArrayHandleCartesianProduct(x_coords_handle,
+                                                            y_coords_handle,
+                                                            z_coords_handle);
+
+        viskores::cont::CoordinateSystem coordinate_system(coords_name.c_str(), coords);
+        result->AddCoordinateSystem(coordinate_system);
+
+        viskores::Id3 topo_origin = detail::topo_origin(n_topo);
+
+        if (ndims == 2)
+        {
+            viskores::cont::CellSetStructured<2> cell_set;
+            cell_set.SetPointDimensions(viskores::make_Vec(x_npts,
+                                                        y_npts));
+            viskores::Id2 origin2(topo_origin[0], topo_origin[1]);
+            cell_set.SetGlobalPointIndexStart(origin2);
+            result->SetCellSet(cell_set);
+        }
+        else
+        {
+            viskores::cont::CellSetStructured<3> cell_set;
+            cell_set.SetPointDimensions(viskores::make_Vec(x_npts,
+                                                        y_npts,
+                                                        z_npts));
+            cell_set.SetGlobalPointIndexStart(topo_origin);
+            result->SetCellSet(cell_set);
+        }
+
+        nverts = x_npts * y_npts;
+        neles = (x_npts - 1) * (y_npts - 1);
+        if(ndims > 2)
+        {
+            nverts *= z_npts;
+            neles *= (z_npts - 1);
+        }
+
+        return result;
     }
     else
     {
-        n_coords["values/y"].to_float64_array(temp_y);
-        y_coords_ptr = temp_y.value();
-    }
-
-    const float64 *z_coords_ptr = NULL;
-    Node temp_z;
-    if(n_coords.has_path("values/z"))
-    {
-        if (zero_copy && !n_coords["values/z"].dtype().is_float64())
+        if (zero_copy &&
+            (!n_coords["values/r"].dtype().is_float64() || 
+            !n_coords["values/z"].dtype().is_float64()))
         {
-            ASCENT_INFO("Zero-copy requested, but z coordinate data is " <<
-                        n_coords["values/z"].dtype().name() <<
-                        " not float64. Turning zero-copy off.");
+            ASCENT_INFO("Zero-copy requested, but either r or z coordinate data is not float64." <<
+                        "r type: " << n_coords["values/r"].dtype().name() << 
+                        ", z type: " << n_coords["values/z"].dtype().name() << 
+                        ". Turning zero-copy off.");
             zero_copy = false;
         }
-        ndims = 3;
-        z_npts = n_coords["values/z"].dtype().number_of_elements();
+
+        int r_npts = n_coords["values/r"].dtype().number_of_elements();
+        int z_npts = n_coords["values/z"].dtype().number_of_elements();
+
+        const float64 *r_coords_ptr;
+        Node temp_r;
+        if (n_coords["values/r"].dtype().is_float64())
+        {
+            r_coords_ptr = n_coords["values/r"].as_float64_ptr();
+        }
+        else
+        {
+            n_coords["values/r"].to_float64_array(temp_r);
+            r_coords_ptr = temp_r.value();
+        }
+        
+        const float64 *z_coords_ptr;
+        Node temp_z;
         if (n_coords["values/z"].dtype().is_float64())
         {
             z_coords_ptr = n_coords["values/z"].as_float64_ptr();
@@ -1416,98 +1665,66 @@ VTKHDataAdapter::RectilinearBlueprintToVTKmDataSet
             n_coords["values/z"].to_float64_array(temp_z);
             z_coords_ptr = temp_z.value();
         }
+
+        viskores::cont::ArrayHandle<viskores::Float64> r_coords_handle;
+        viskores::cont::ArrayHandle<viskores::Float64> z_coords_handle;
+        viskores::cont::ArrayHandle<viskores::Float64> theta_coords_handle;
+
+        if(zero_copy)
+        {
+            r_coords_handle = viskores::cont::make_ArrayHandle(r_coords_ptr, r_npts, viskores::CopyFlag::Off);
+            z_coords_handle = viskores::cont::make_ArrayHandle(z_coords_ptr, z_npts, viskores::CopyFlag::Off);
+        }
+        else
+        {
+            r_coords_handle.Allocate(r_npts);
+            z_coords_handle.Allocate(z_npts);
+
+            viskores::Float64 *r = vtkh::GetVISKORESPointer(r_coords_handle);
+            memcpy(r, r_coords_ptr, sizeof(float64) * r_npts);
+            viskores::Float64 *z = vtkh::GetVISKORESPointer(z_coords_handle);
+            memcpy(z, z_coords_ptr, sizeof(float64) * z_npts);
+        }
+
+        theta_coords_handle.Allocate(1);
+        theta_coords_handle.WritePortal().Set(0, 0.0);
+
+        static_assert(std::is_same<viskores::FloatDefault, double>::value,
+                    "Viskores needs to be configured with 'Viskores_USE_DOUBLE_PRECISION=ON'");
+
+        viskores::cont::ArrayHandleCartesianProduct<
+            viskores::cont::ArrayHandle<viskores::FloatDefault>,
+            viskores::cont::ArrayHandle<viskores::FloatDefault>,
+            viskores::cont::ArrayHandle<viskores::FloatDefault> > coords;
+
+        coords = viskores::cont::make_ArrayHandleCartesianProduct(z_coords_handle,
+                                                                    r_coords_handle,
+                                                                    theta_coords_handle);
+
+        viskores::cont::CoordinateSystem coordinate_system(coords_name.c_str(), coords);
+
+        result->AddCoordinateSystem(coordinate_system);
+
+        viskores::Id3 topo_origin = detail::topo_origin(n_topo);
+
+        viskores::cont::CellSetStructured<2> cell_set;
+        cell_set.SetPointDimensions(viskores::make_Vec(z_npts,
+                                                    r_npts));
+        viskores::Id2 origin2(topo_origin[0], topo_origin[1]);
+        cell_set.SetGlobalPointIndexStart(origin2);
+        result->SetCellSet(cell_set);
+
+        nverts = r_npts * z_npts;
+        neles = (r_npts - 1) * (z_npts - 1);
+
+        return result;
     }
-
-    vtkm::cont::ArrayHandle<vtkm::Float64> x_coords_handle;
-    vtkm::cont::ArrayHandle<vtkm::Float64> y_coords_handle;
-    vtkm::cont::ArrayHandle<vtkm::Float64> z_coords_handle;
-
-    if(zero_copy)
-    {
-      x_coords_handle = vtkm::cont::make_ArrayHandle(x_coords_ptr, x_npts, vtkm::CopyFlag::Off);
-      y_coords_handle = vtkm::cont::make_ArrayHandle(y_coords_ptr, y_npts, vtkm::CopyFlag::Off);
-    }
-    else
-    {
-      x_coords_handle.Allocate(x_npts);
-      y_coords_handle.Allocate(y_npts);
-
-      vtkm::Float64 *x = vtkh::GetVTKMPointer(x_coords_handle);
-      memcpy(x, x_coords_ptr, sizeof(float64) * x_npts);
-      vtkm::Float64 *y = vtkh::GetVTKMPointer(y_coords_handle);
-      memcpy(y, y_coords_ptr, sizeof(float64) * y_npts);
-    }
-
-    if(ndims == 3)
-    {
-      if(zero_copy)
-      {
-        z_coords_handle = vtkm::cont::make_ArrayHandle(z_coords_ptr, z_npts, vtkm::CopyFlag::Off);
-      }
-      else
-      {
-        z_coords_handle.Allocate(z_npts);
-        vtkm::Float64 *z = vtkh::GetVTKMPointer(z_coords_handle);
-        memcpy(z, z_coords_ptr, sizeof(float64) * z_npts);
-      }
-    }
-    else
-    {
-        z_coords_handle.Allocate(1);
-        z_coords_handle.WritePortal().Set(0, 0.0);
-    }
-
-    static_assert(std::is_same<vtkm::FloatDefault, double>::value,
-                  "VTK-m needs to be configured with 'VTKm_USE_DOUBLE_PRECISION=ON'");
-    vtkm::cont::ArrayHandleCartesianProduct<
-        vtkm::cont::ArrayHandle<vtkm::FloatDefault>,
-        vtkm::cont::ArrayHandle<vtkm::FloatDefault>,
-        vtkm::cont::ArrayHandle<vtkm::FloatDefault> > coords;
-
-    coords = vtkm::cont::make_ArrayHandleCartesianProduct(x_coords_handle,
-                                                          y_coords_handle,
-                                                          z_coords_handle);
-
-    vtkm::cont::CoordinateSystem coordinate_system(coords_name.c_str(),
-                                                  coords);
-    result->AddCoordinateSystem(coordinate_system);
-
-    vtkm::Id3 topo_origin = detail::topo_origin(n_topo);
-
-    if (ndims == 2)
-    {
-      vtkm::cont::CellSetStructured<2> cell_set;
-      cell_set.SetPointDimensions(vtkm::make_Vec(x_npts,
-                                                 y_npts));
-      vtkm::Id2 origin2(topo_origin[0], topo_origin[1]);
-      cell_set.SetGlobalPointIndexStart(origin2);
-      result->SetCellSet(cell_set);
-    }
-    else
-    {
-      vtkm::cont::CellSetStructured<3> cell_set;
-      cell_set.SetPointDimensions(vtkm::make_Vec(x_npts,
-                                                 y_npts,
-                                                 z_npts));
-      cell_set.SetGlobalPointIndexStart(topo_origin);
-      result->SetCellSet(cell_set);
-    }
-
-    nverts = x_npts * y_npts;
-    neles = (x_npts - 1) * (y_npts - 1);
-    if(ndims > 2)
-    {
-        nverts *= z_npts;
-        neles *= (z_npts - 1);
-    }
-
-    return result;
 }
 
 //-----------------------------------------------------------------------------
 
-vtkm::cont::DataSet *
-VTKHDataAdapter::StructuredBlueprintToVTKmDataSet
+viskores::cont::DataSet *
+VTKHDataAdapter::StructuredBlueprintToViskoresDataSet
     (const std::string &coords_name, // input string with coordset name
      const Node &n_coords,           // input mesh bp coordset (assumed rectilinear)
      const std::string &topo_name,   // input string with topo name
@@ -1516,139 +1733,218 @@ VTKHDataAdapter::StructuredBlueprintToVTKmDataSet
      int &nverts,                    // output, number of verts
      bool zero_copy)                 // attempt to zero copy
 {
-    vtkm::cont::DataSet *result = new vtkm::cont::DataSet();
+    viskores::cont::DataSet *result = new viskores::cont::DataSet();
 
     string coords_type = n_coords["type"].as_string();
-    nverts = n_coords["values/x"].dtype().number_of_elements();
+    viskores::cont::CoordinateSystem coords;
     int ndims = 0;
 
-    vtkm::cont::CoordinateSystem coords;
-    if(n_coords["values/x"].dtype().is_float64())
-    {
-      index_t x_stride = n_coords["values/x"].dtype().stride();
-      index_t x_element_stride = x_stride / sizeof(float64);
-      index_t y_stride = n_coords["values/y"].dtype().stride();
-      index_t y_element_stride = y_stride / sizeof(float64);
-      index_t z_element_stride = 0;
-      if(n_coords.has_path("values/z"))
-      {
-        index_t z_stride = n_coords["values/z"].dtype().stride();
-        z_element_stride = z_stride / sizeof(float64);
-      }
+    const bool is_rz = n_coords["values"].has_child("r") && n_coords["values"].has_child("z");
+    const bool is_cartesian = n_coords["values"].has_child("x") && n_coords["values"].has_child("y");
 
-      coords = detail::GetExplicitCoordinateSystem<float64>(n_coords,
-                                                            coords_name,
-                                                            ndims,
-                                                            x_element_stride,
-                                                            y_element_stride,
-                                                            z_element_stride,
-                                                            zero_copy);
+    if (is_rz && is_cartesian)
+    {
+        ASCENT_ERROR("Unsupported coordset: expected cartesian {x,y,(z)} or cylindrical {r,z} but got parameters for both.")
     }
-    else if(n_coords["values/x"].dtype().is_float32())
+    
+    if (!is_rz && !is_cartesian)
     {
-      index_t x_stride = n_coords["values/x"].dtype().stride();
-      index_t x_element_stride = x_stride / sizeof(float32);
-      index_t y_stride = n_coords["values/y"].dtype().stride();
-      index_t y_element_stride = y_stride / sizeof(float32);
-      index_t z_element_stride = 0;
-      if(n_coords.has_path("values/z"))
-      {
-        index_t z_stride = n_coords["values/z"].dtype().stride();
-        z_element_stride = z_stride / sizeof(float32);
-      }
+        ASCENT_ERROR("Unsupported coordset: expected cartesian {x,y,(z)} or cylindrical {r,z} but got neither.")
+    }
 
-      coords = detail::GetExplicitCoordinateSystem<float32>(n_coords,
-                                                            coords_name,
-                                                            ndims,
-                                                            x_element_stride,
-                                                            y_element_stride,
-                                                            z_element_stride,
-                                                            zero_copy);
+    if (is_cartesian)
+    {
+        nverts = n_coords["values/x"].dtype().number_of_elements();
+        if(n_coords["values/x"].dtype().is_float64())
+        {
+            index_t x_stride = n_coords["values/x"].dtype().stride();
+            index_t x_element_stride = x_stride / sizeof(float64);
+            index_t y_stride = n_coords["values/y"].dtype().stride();
+            index_t y_element_stride = y_stride / sizeof(float64);
+            index_t z_element_stride = 0;
+            if(n_coords.has_path("values/z"))
+            {
+                index_t z_stride = n_coords["values/z"].dtype().stride();
+                z_element_stride = z_stride / sizeof(float64);
+            }
+
+            coords = detail::GetExplicitCoordinateSystem<float64>(n_coords,
+                                                                    coords_name,
+                                                                    ndims,
+                                                                    x_element_stride,
+                                                                    y_element_stride,
+                                                                    z_element_stride,
+                                                                    zero_copy);
+        }
+        else if(n_coords["values/x"].dtype().is_float32())
+        {
+            index_t x_stride = n_coords["values/x"].dtype().stride();
+            index_t x_element_stride = x_stride / sizeof(float32);
+            index_t y_stride = n_coords["values/y"].dtype().stride();
+            index_t y_element_stride = y_stride / sizeof(float32);
+            index_t z_element_stride = 0;
+            if(n_coords.has_path("values/z"))
+            {
+                index_t z_stride = n_coords["values/z"].dtype().stride();
+                z_element_stride = z_stride / sizeof(float32);
+            }
+
+            coords = detail::GetExplicitCoordinateSystem<float32>(n_coords,
+                                                                    coords_name,
+                                                                    ndims,
+                                                                    x_element_stride,
+                                                                    y_element_stride,
+                                                                    z_element_stride,
+                                                                    zero_copy);
+        }
+        else
+        {
+            ASCENT_ERROR("Coordinate system must be floating point values");
+        }
+    }
+    else if (n_coords["values"].has_child("r") && n_coords["values"].has_child("z"))
+    {
+        nverts = n_coords["values/r"].dtype().number_of_elements();
+        if(n_coords["values/r"].dtype().is_float64())
+        {
+            index_t r_stride = n_coords["values/r"].dtype().stride();
+            index_t r_element_stride = r_stride / sizeof(float64);
+            index_t z_stride = n_coords["values/z"].dtype().stride();
+            index_t z_element_stride = z_stride / sizeof(float64);
+            
+            coords = detail::GetRZCoordinateSystem<float64>(n_coords,
+                                                                coords_name,
+                                                                ndims,
+                                                                r_element_stride,
+                                                                z_element_stride,
+                                                                zero_copy);
+        }
+        else if(n_coords["values/r"].dtype().is_float32())
+        {
+            index_t r_stride = n_coords["values/r"].dtype().stride();
+            index_t r_element_stride = r_stride / sizeof(float32);
+            index_t z_stride = n_coords["values/z"].dtype().stride();
+            index_t z_element_stride = z_stride / sizeof(float32);
+
+            coords = detail::GetRZCoordinateSystem<float32>(n_coords,
+                                                                coords_name,
+                                                                ndims,
+                                                                r_element_stride,
+                                                                z_element_stride,
+                                                                zero_copy);
+        }
+        else
+        {
+            ASCENT_ERROR("Coordinate system must be floating point values");
+        }
     }
     else
     {
-      ASCENT_ERROR("Coordinate system must be floating point values");
+        ASCENT_ERROR("Unsupported coordset: expected cartesian {x,y,(z)} or cylindrical {r,z}");
     }
 
     result->AddCoordinateSystem(coords);
 
-    int32 x_elems = n_topo["elements/dims/i"].to_int();
-    int32 y_elems = n_topo["elements/dims/j"].to_int();
+    int32 i_elems = n_topo["elements/dims/i"].to_int();
+    int32 j_elems = n_topo["elements/dims/j"].to_int();
 
-    vtkm::Id3 topo_origin = detail::topo_origin(n_topo);
+    viskores::Id3 topo_origin = detail::topo_origin(n_topo);
 
     if(coords_type == "explicit")
     {
       if(ndims == 2)
       {
-        vtkm::Id x_verts = x_elems + 1;
-        vtkm::Id y_verts = y_elems + 1;
-        neles = x_elems * y_elems;
+        viskores::Id x_verts = i_elems + 1;
+        viskores::Id y_verts = j_elems + 1;
+        neles = i_elems * j_elems;
         nverts = (x_verts) * (y_verts);
         
         std::string ele_shape = "quad";
-        vtkm::UInt8 shape_id;
-        vtkm::IdComponent indices_per;
-        detail::VTKmCellShape(ele_shape, shape_id, indices_per);
-        vtkm::cont::ArrayHandle<vtkm::Id> connectivity;
+        viskores::UInt8 shape_id;
+        viskores::IdComponent indices_per;
+        detail::ViskoresCellShape(ele_shape, shape_id, indices_per);
+        viskores::cont::ArrayHandle<viskores::Id> connectivity;
         connectivity.Allocate(neles * indices_per);
         auto conn_portal = connectivity.WritePortal();
         int offset = 0;
         // Build Connectivity 
-        for (vtkm::Id i = 0; i < x_elems; ++i) 
+
+        if (is_rz)
         {
-          for (vtkm::Id j = 0; j < y_elems; ++j) 
-          {
-            vtkm::Id v0 = j * x_verts + i;
-            vtkm::Id v1 = v0 + 1;
-            vtkm::Id v2 = v0 + x_verts;
-            vtkm::Id v3 = v0 + x_verts + 1;
-            
-            conn_portal.Set(offset, v0);// bottom left
-            conn_portal.Set(offset+1, v1); //bottom right
-            conn_portal.Set(offset+2, v3); //top right
-            conn_portal.Set(offset+3, v2); //top left 
-            offset = offset + 4;
-          }
+            for (viskores::Id j = 0; j < j_elems; ++j) 
+            {
+                for (viskores::Id i = 0; i < i_elems; ++i) 
+                {
+                    viskores::Id v0 = j * x_verts + i;
+                    viskores::Id v1 = v0 + 1;
+                    viskores::Id v2 = v0 + x_verts;
+                    viskores::Id v3 = v0 + x_verts + 1;
+                    
+                    conn_portal.Set(offset, v0);// bottom left
+                    conn_portal.Set(offset+1, v1); //bottom right
+                    conn_portal.Set(offset+2, v3); //top right
+                    conn_portal.Set(offset+3, v2); //top left 
+                    offset = offset + 4;
+                }
+            }
         }
-        vtkm::cont::CellSetSingleType<> cell_set;
+        else
+        {
+            for (viskores::Id i = 0; i < i_elems; ++i) 
+            {
+                for (viskores::Id j = 0; j < j_elems; ++j) 
+                {
+                    viskores::Id v0 = j * x_verts + i;
+                    viskores::Id v1 = v0 + 1;
+                    viskores::Id v2 = v0 + x_verts;
+                    viskores::Id v3 = v0 + x_verts + 1;
+                    
+                    conn_portal.Set(offset, v0);// bottom left
+                    conn_portal.Set(offset+1, v1); //bottom right
+                    conn_portal.Set(offset+2, v3); //top right
+                    conn_portal.Set(offset+3, v2); //top left 
+                    offset = offset + 4;
+                }
+            }
+        }
+        viskores::cont::CellSetSingleType<> cell_set;
         cell_set.Fill(nverts, shape_id, indices_per, connectivity);
         neles = cell_set.GetNumberOfCells();
         result->SetCellSet(cell_set);
       }
       else
       {
-        int32 z_elems = n_topo["elements/dims/k"].to_int();
+        int32 k_elems = n_topo["elements/dims/k"].to_int();
 
-        vtkm::Id x_verts = x_elems + 1;
-        vtkm::Id y_verts = y_elems + 1;
-        vtkm::Id z_verts = z_elems + 1;
-        neles = x_elems * y_elems * z_elems;
+        viskores::Id x_verts = i_elems + 1;
+        viskores::Id y_verts = j_elems + 1;
+        viskores::Id z_verts = k_elems + 1;
+        neles = i_elems * j_elems * k_elems;
         nverts = (x_verts) * (y_verts) * (z_verts);
         
         std::string ele_shape = "hex";
-        vtkm::UInt8 shape_id;
-        vtkm::IdComponent indices_per;
-        detail::VTKmCellShape(ele_shape, shape_id, indices_per);
-        vtkm::cont::ArrayHandle<vtkm::Id> connectivity;
+        viskores::UInt8 shape_id;
+        viskores::IdComponent indices_per;
+        detail::ViskoresCellShape(ele_shape, shape_id, indices_per);
+        viskores::cont::ArrayHandle<viskores::Id> connectivity;
         connectivity.Allocate(neles * indices_per);
         auto conn_portal = connectivity.WritePortal();
         int offset = 0;
         // Build Connectivity (Polyhedral cells)
-        for (vtkm::Id i = 0; i < x_elems; ++i) 
+        for (viskores::Id i = 0; i < i_elems; ++i) 
         {
-          for (vtkm::Id j = 0; j < y_elems; ++j) 
+          for (viskores::Id j = 0; j < j_elems; ++j) 
           {
-            for (vtkm::Id k = 0; k < z_elems; ++k) 
+            for (viskores::Id k = 0; k < k_elems; ++k) 
             {
-              vtkm::Id v0 = k * y_verts * x_verts + j * x_verts + i;
-              vtkm::Id v1 = v0 + 1;
-              vtkm::Id v2 = v0 + x_verts;
-              vtkm::Id v3 = v0 + x_verts + 1;
-              vtkm::Id v4 = v0 + y_verts * x_verts;
-              vtkm::Id v5 = v4 + 1;
-              vtkm::Id v6 = v4 + x_verts;
-              vtkm::Id v7 = v4 + x_verts + 1;
+              viskores::Id v0 = k * y_verts * x_verts + j * x_verts + i;
+              viskores::Id v1 = v0 + 1;
+              viskores::Id v2 = v0 + x_verts;
+              viskores::Id v3 = v0 + x_verts + 1;
+              viskores::Id v4 = v0 + y_verts * x_verts;
+              viskores::Id v5 = v4 + 1;
+              viskores::Id v6 = v4 + x_verts;
+              viskores::Id v7 = v4 + x_verts + 1;
               
               conn_portal.Set(offset, v0);
               conn_portal.Set(offset+1, v1);
@@ -1663,7 +1959,7 @@ VTKHDataAdapter::StructuredBlueprintToVTKmDataSet
           }
         }
 
-        vtkm::cont::CellSetSingleType<> cell_set;
+        viskores::cont::CellSetSingleType<> cell_set;
         cell_set.Fill(nverts, shape_id, indices_per, connectivity);
         neles = cell_set.GetNumberOfCells();
         result->SetCellSet(cell_set);
@@ -1673,24 +1969,24 @@ VTKHDataAdapter::StructuredBlueprintToVTKmDataSet
     {
       if (ndims == 2)
       {
-        vtkm::cont::CellSetStructured<2> cell_set;
-        cell_set.SetPointDimensions(vtkm::make_Vec(x_elems+1,
-                                                   y_elems+1));
-        vtkm::Id2 origin2(topo_origin[0], topo_origin[1]);
+        viskores::cont::CellSetStructured<2> cell_set;
+        cell_set.SetPointDimensions(viskores::make_Vec(i_elems+1,
+                                                   j_elems+1));
+        viskores::Id2 origin2(topo_origin[0], topo_origin[1]);
         cell_set.SetGlobalPointIndexStart(origin2);
         result->SetCellSet(cell_set);
-        neles = x_elems * y_elems;
+        neles = i_elems * j_elems;
       }
       else
       {
-        int32 z_elems = n_topo["elements/dims/k"].to_int();
-        vtkm::cont::CellSetStructured<3> cell_set;
-        cell_set.SetPointDimensions(vtkm::make_Vec(x_elems+1,
-                                                   y_elems+1,
-                                                   z_elems+1));
+        int32 k_elems = n_topo["elements/dims/k"].to_int();
+        viskores::cont::CellSetStructured<3> cell_set;
+        cell_set.SetPointDimensions(viskores::make_Vec(i_elems+1,
+                                                   j_elems+1,
+                                                   k_elems+1));
         cell_set.SetGlobalPointIndexStart(topo_origin);
         result->SetCellSet(cell_set);
-        neles = x_elems * y_elems * z_elems;
+        neles = i_elems * j_elems * k_elems;
       }
     }    
     return result;
@@ -1698,8 +1994,8 @@ VTKHDataAdapter::StructuredBlueprintToVTKmDataSet
 
 //-----------------------------------------------------------------------------
 
-vtkm::cont::DataSet *
-VTKHDataAdapter::PointsImplicitBlueprintToVTKmDataSet
+viskores::cont::DataSet *
+VTKHDataAdapter::PointsImplicitBlueprintToViskoresDataSet
     (const std::string &coords_name, // input string with coordset name
      const Node &n_coords,           // input mesh bp coordset (assumed unstructured)
      const std::string &topo_name,   // input string with topo name
@@ -1708,12 +2004,12 @@ VTKHDataAdapter::PointsImplicitBlueprintToVTKmDataSet
      int &nverts,                    // output, number of verts (will be the same as neles)
      bool zero_copy)                 // attempt to zero copy
 {
-    vtkm::cont::DataSet *result = new vtkm::cont::DataSet();
+    viskores::cont::DataSet *result = new viskores::cont::DataSet();
 
     nverts = n_coords["values/x"].dtype().number_of_elements();
 
     int32 ndims;
-    vtkm::cont::CoordinateSystem coords;
+    viskores::cont::CoordinateSystem coords;
     if(n_coords["values/x"].dtype().is_float64())
     {
       index_t x_stride = n_coords["values/x"].dtype().stride();
@@ -1763,11 +2059,11 @@ VTKHDataAdapter::PointsImplicitBlueprintToVTKmDataSet
 
     result->AddCoordinateSystem(coords);
 
-    vtkm::UInt8 shape_id = 1;
-    vtkm::IdComponent indices_per = 1;
-    vtkm::cont::CellSetSingleType<> cellset;
+    viskores::UInt8 shape_id = 1;
+    viskores::IdComponent indices_per = 1;
+    viskores::cont::CellSetSingleType<> cellset;
     // alloc conn to nverts, fill with 0 --> nverts-1)
-    vtkm::cont::ArrayHandle<vtkm::Id> connectivity;
+    viskores::cont::ArrayHandle<viskores::Id> connectivity;
     connectivity.Allocate(nverts);
     auto conn_portal = connectivity.WritePortal();
     for(int i = 0; i < nverts; ++i)
@@ -1782,8 +2078,8 @@ VTKHDataAdapter::PointsImplicitBlueprintToVTKmDataSet
 
 
 //-----------------------------------------------------------------------------
-vtkm::cont::DataSet *
-VTKHDataAdapter::UnstructuredBlueprintToVTKmDataSet
+viskores::cont::DataSet *
+VTKHDataAdapter::UnstructuredBlueprintToViskoresDataSet
     (const std::string &coords_name, // input string with coordset name
      const Node &n_coords,           // input mesh bp coordset (assumed unstructured)
      const std::string &topo_name,   // input string with topo name
@@ -1792,70 +2088,116 @@ VTKHDataAdapter::UnstructuredBlueprintToVTKmDataSet
      int &nverts,                    // output, number of verts
      bool zero_copy)                 // attempt to zero copy
 {
+    viskores::cont::DataSet *result = new viskores::cont::DataSet();
 
-    vtkm::cont::DataSet *result = new vtkm::cont::DataSet();
-
-    nverts = n_coords["values/x"].dtype().number_of_elements();
-
+    viskores::cont::CoordinateSystem coords;
     int32 ndims;
-    vtkm::cont::CoordinateSystem coords;
-    if(n_coords["values/x"].dtype().is_float64())
-    {
-      index_t x_stride = n_coords["values/x"].dtype().stride();
-      index_t x_element_stride = x_stride / sizeof(float64);
-      index_t y_stride = n_coords["values/y"].dtype().stride();
-      index_t y_element_stride = y_stride / sizeof(float64);
-      index_t z_element_stride = 0;
-      if(n_coords.has_path("values/z"))
-      {
-        index_t z_stride = n_coords["values/z"].dtype().stride();
-        z_element_stride = z_stride / sizeof(float64);
-      }
 
-      //TODO:
-      //can we assume all by checking one? 
-      //or check ystride & zstride % float64 == 0? 
-      if(x_stride % sizeof(float64) == 0)
-      {
-        coords = detail::GetExplicitCoordinateSystem<float64>(n_coords,
-                                                              coords_name,
-                                                              ndims,
-                                                              x_element_stride,
-                                                              y_element_stride,
-                                                              z_element_stride,
-                                                              zero_copy);
-      }
+    if (n_coords["values"].has_child("x") && n_coords["values"].has_child("y"))
+    {
+        nverts = n_coords["values/x"].dtype().number_of_elements();
+        if(n_coords["values/x"].dtype().is_float64())
+        {
+            index_t x_stride = n_coords["values/x"].dtype().stride();
+            index_t x_element_stride = x_stride / sizeof(float64);
+            index_t y_stride = n_coords["values/y"].dtype().stride();
+            index_t y_element_stride = y_stride / sizeof(float64);
+            index_t z_element_stride = 0;
+            
+            if(n_coords.has_path("values/z"))
+            {
+                index_t z_stride = n_coords["values/z"].dtype().stride();
+                z_element_stride = z_stride / sizeof(float64);
+            }
+
+            if(x_stride % sizeof(float64) == 0)
+            {
+                coords = detail::GetExplicitCoordinateSystem<float64>(n_coords,
+                                                                    coords_name,
+                                                                    ndims,
+                                                                    x_element_stride,
+                                                                    y_element_stride,
+                                                                    z_element_stride,
+                                                                    zero_copy);
+            }
+        }
+        else if(n_coords["values/x"].dtype().is_float32())
+        {
+            index_t x_stride = n_coords["values/x"].dtype().stride();
+            index_t x_element_stride = x_stride / sizeof(float32);
+            index_t y_stride = n_coords["values/y"].dtype().stride();
+            index_t y_element_stride = y_stride / sizeof(float32);
+            index_t z_element_stride = 0;
+            if(n_coords.has_path("values/z"))
+            {
+                index_t z_stride = n_coords["values/z"].dtype().stride();
+                z_element_stride = z_stride / sizeof(float32);
+            }
+
+            //TODO:
+            //can we assume all by checking one? 
+            //or check ystride & zstride % float64 == 0? 
+            if(x_stride % sizeof(float32) == 0)
+            {
+                coords = detail::GetExplicitCoordinateSystem<float32>(n_coords,
+                                                                    coords_name,
+                                                                    ndims,
+                                                                    x_element_stride,
+                                                                    y_element_stride,
+                                                                    z_element_stride,
+                                                                    zero_copy);
+            }
+        }
+        else
+        {
+            ASCENT_ERROR("Coordinate system must be floating point values");
+        }
     }
-    else if(n_coords["values/x"].dtype().is_float32())
+    else if (n_coords["values"].has_child("r") && n_coords["values"].has_child("z"))
     {
-      index_t x_stride = n_coords["values/x"].dtype().stride();
-      index_t x_element_stride = x_stride / sizeof(float32);
-      index_t y_stride = n_coords["values/y"].dtype().stride();
-      index_t y_element_stride = y_stride / sizeof(float32);
-      index_t z_element_stride = 0;
-      if(n_coords.has_path("values/z"))
-      {
-        index_t z_stride = n_coords["values/z"].dtype().stride();
-        z_element_stride = z_stride / sizeof(float32);
-      }
+        nverts = n_coords["values/r"].dtype().number_of_elements();
+        if(n_coords["values/r"].dtype().is_float64())
+        {
+            index_t r_stride = n_coords["values/r"].dtype().stride();
+            index_t r_element_stride = r_stride / sizeof(float64);
+            index_t z_stride = n_coords["values/z"].dtype().stride();
+            index_t z_element_stride = z_stride / sizeof(float64);
 
-      //TODO:
-      //can we assume all by checking one? 
-      //or check ystride & zstride % float64 == 0? 
-      if(x_stride % sizeof(float32) == 0)
-      {
-        coords = detail::GetExplicitCoordinateSystem<float32>(n_coords,
-                                                              coords_name,
-                                                              ndims,
-                                                              x_element_stride,
-                                                              y_element_stride,
-                                                              z_element_stride,
-                                                              zero_copy);
-      }
+            if(r_stride % sizeof(float64) == 0)
+            {
+                coords = detail::GetRZCoordinateSystem<float64>(n_coords,
+                                                                coords_name,
+                                                                ndims,
+                                                                r_element_stride,
+                                                                z_element_stride,
+                                                                zero_copy);
+            }
+        }
+        else if(n_coords["values/r"].dtype().is_float32())
+        {
+            index_t r_stride = n_coords["values/r"].dtype().stride();
+            index_t r_element_stride = r_stride / sizeof(float32);
+            index_t z_stride = n_coords["values/z"].dtype().stride();
+            index_t z_element_stride = z_stride / sizeof(float32);
+
+            if(r_stride % sizeof(float64) == 0)
+            {
+                coords = detail::GetRZCoordinateSystem<float32>(n_coords,
+                                                                coords_name,
+                                                                ndims,
+                                                                r_element_stride,
+                                                                z_element_stride,
+                                                                zero_copy);
+            }
+        }
+        else
+        {
+            ASCENT_ERROR("Coordinate system must be floating point values");
+        }
     }
     else
     {
-      ASCENT_ERROR("Coordinate system must be floating point values");
+        ASCENT_ERROR("Unsupported coordset: expected cartesian {x,y,(z)} or cylindrical {r,z}");
     }
 
     result->AddCoordinateSystem(coords);
@@ -1869,15 +2211,15 @@ VTKHDataAdapter::UnstructuredBlueprintToVTKmDataSet
     if(ele_shape == "mixed")
     {
         // blueprint allows mapping of shape names
-        // to arbitrary ids, check if shape ids match the VTK-m ids
+        // to arbitrary ids, check if shape ids match the Viskores ids
         index_t num_of_shapes = n_topo_eles["shape_map"].number_of_children();
 
-        if(!CheckShapeMapVsVTKmShapeIds(n_topo_eles["shape_map"]))
+        if(!CheckShapeMapVsViskoresShapeIds(n_topo_eles["shape_map"]))
         {
             Node ref_map;
-            VTKmBlueprintShapeMap(ref_map);
+            ViskoresBlueprintShapeMap(ref_map);
             // TODO -- (strategy to remap ids)?
-            ASCENT_ERROR("Shape Map Entries do not match required VTK-m Shape Ids."
+            ASCENT_ERROR("Shape Map Entries do not match required Viskores Shape Ids."
                          << std::endl
                          << "Passed Shape Map:"  << std::endl
                          << n_topo_eles["shape_map"].to_yaml()
@@ -1892,52 +2234,52 @@ VTKHDataAdapter::UnstructuredBlueprintToVTKmDataSet
         // number of elements is the number of shapes presented
         neles = (int) n_topo_eles["shapes"].dtype().number_of_elements();
 
-        vtkm::cont::ArrayHandle<vtkm::Id> vtkm_conn;
-        detail::BlueprintIndexArrayToVTKmIdArray(n_topo_eles["connectivity"],
+        viskores::cont::ArrayHandle<viskores::Id> viskores_conn;
+        detail::BlueprintIndexArrayToViskoresIdArray(n_topo_eles["connectivity"],
                                                  zero_copy,
-                                                 vtkm_conn);
+                                                 viskores_conn);
 
         // shapes
-        vtkm::cont::ArrayHandle<vtkm::UInt8> vtkm_shapes;
-        detail::BlueprintIndexArrayToVTKmIdArray(n_topo_eles["shapes"],
+        viskores::cont::ArrayHandle<viskores::UInt8> viskores_shapes;
+        detail::BlueprintIndexArrayToViskoresIdArray(n_topo_eles["shapes"],
                                                  zero_copy,
-                                                 vtkm_shapes);
+                                                 viskores_shapes);
 
         // offsets
-        vtkm::cont::ArrayHandle<vtkm::Id> vtkm_offsets;
-        detail::BlueprintIndexArrayToVTKmIdArray(n_topo_eles["offsets"],
+        viskores::cont::ArrayHandle<viskores::Id> viskores_offsets;
+        detail::BlueprintIndexArrayToViskoresIdArray(n_topo_eles["offsets"],
                                                  zero_copy,
-                                                 vtkm_offsets);
+                                                 viskores_offsets);
 
-        // vtk-m offsets needs an extra entry
+        // viskores offsets needs an extra entry
         // the last entry needs to be the size of the conn array
-        vtkm::cont::ArrayHandle<vtkm::Id> vtkm_offsets_full;
-        vtkm_offsets_full.Allocate(neles + 1);
-        vtkm::cont::ArrayHandle<vtkm::Id>::WritePortalType vtkm_offsets_full_wp = vtkm_offsets_full.WritePortal();
-        vtkm::cont::ArrayHandle<vtkm::Id>::ReadPortalType vtkm_offsets_rp = vtkm_offsets.ReadPortal();
+        viskores::cont::ArrayHandle<viskores::Id> viskores_offsets_full;
+        viskores_offsets_full.Allocate(neles + 1);
+        viskores::cont::ArrayHandle<viskores::Id>::WritePortalType viskores_offsets_full_wp = viskores_offsets_full.WritePortal();
+        viskores::cont::ArrayHandle<viskores::Id>::ReadPortalType viskores_offsets_rp = viskores_offsets.ReadPortal();
 
         for(int i=0;i<neles;i++)
         {
-          vtkm_offsets_full_wp.Set(i,vtkm_offsets_rp.Get(i));
+          viskores_offsets_full_wp.Set(i,viskores_offsets_rp.Get(i));
         }
         // set last
-        vtkm_offsets_full_wp.Set(neles,num_ids);
+        viskores_offsets_full_wp.Set(neles,num_ids);
 
-        vtkm::cont::CellSetExplicit<> cell_set;
-        cell_set.Fill(nverts, vtkm_shapes, vtkm_conn, vtkm_offsets_full);
+        viskores::cont::CellSetExplicit<> cell_set;
+        cell_set.Fill(nverts, viskores_shapes, viskores_conn, viskores_offsets_full);
         result->SetCellSet(cell_set);
         // for debugging help
         //result->PrintSummary(std::cout);
     }
     else
     {
-        vtkm::cont::ArrayHandle<vtkm::Id> vtkm_conn;
-        detail::BlueprintIndexArrayToVTKmIdArray(n_topo_eles["connectivity"],zero_copy,vtkm_conn);
-        vtkm::UInt8 shape_id;
-        vtkm::IdComponent indices_per;
-        detail::VTKmCellShape(ele_shape, shape_id, indices_per);
-        vtkm::cont::CellSetSingleType<> cell_set;
-        cell_set.Fill(nverts, shape_id, indices_per, vtkm_conn);
+        viskores::cont::ArrayHandle<viskores::Id> viskores_conn;
+        detail::BlueprintIndexArrayToViskoresIdArray(n_topo_eles["connectivity"],zero_copy,viskores_conn);
+        viskores::UInt8 shape_id;
+        viskores::IdComponent indices_per;
+        detail::ViskoresCellShape(ele_shape, shape_id, indices_per);
+        viskores::cont::CellSetSingleType<> cell_set;
+        cell_set.Fill(nverts, shape_id, indices_per, viskores_conn);
         neles = cell_set.GetNumberOfCells();
         result->SetCellSet(cell_set);
     }
@@ -1952,25 +2294,25 @@ VTKHDataAdapter::AddField(const std::string &field_name,
                           const std::string &topo_name,
                           int neles,
                           int nverts,
-                          vtkm::cont::DataSet *dset,
+                          viskores::cont::DataSet *dset,
                           bool zero_copy)                 // attempt to zero copy
 {
     // TODO: how do we deal with vector valued fields?, these will be mcarrays
 
     string assoc_str = n_field["association"].as_string();
 
-    vtkm::cont::Field::Association vtkm_assoc = vtkm::cont::Field::Association::Any;
+    viskores::cont::Field::Association viskores_assoc = viskores::cont::Field::Association::Any;
     if(assoc_str == "vertex")
     {
-      vtkm_assoc = vtkm::cont::Field::Association::Points;
+      viskores_assoc = viskores::cont::Field::Association::Points;
     }
     else if(assoc_str == "element")
     {
-      vtkm_assoc = vtkm::cont::Field::Association::Cells;
+      viskores_assoc = viskores::cont::Field::Association::Cells;
     }
     else
     {
-      ASCENT_INFO("VTKm conversion does not support field assoc "<<assoc_str<<". Skipping");
+      ASCENT_INFO("Viskores conversion does not support field assoc "<<assoc_str<<". Skipping");
       return;
     }
     if(n_field["values"].number_of_children() > 1)
@@ -2005,7 +2347,7 @@ VTKHDataAdapter::AddField(const std::string &field_name,
     {
         bool supported_type = false;
 
-        // vtk-m can stride as long as the strides are a multiple of the native stride
+        // viskores can stride as long as the strides are a multiple of the native stride
 
         // we compile vtk-h with fp types
         if(n_vals.dtype().is_float32())
@@ -2056,252 +2398,252 @@ VTKHDataAdapter::AddField(const std::string &field_name,
         else if(n_vals.dtype().is_uint8())
         {
 
-          vtkm::cont::ArrayHandle<vtkm::Float64> vtkm_arr;
-          vtkm_arr.Allocate(num_vals);
+          viskores::cont::ArrayHandle<viskores::Float64> viskores_arr;
+          viskores_arr.Allocate(num_vals);
 
           const conduit::uint8 *input = n_vals.value();
-          vtkm::cont::ArrayHandle<conduit::uint8> input_arr = vtkm::cont::make_ArrayHandle(input, num_vals, vtkm::CopyFlag::Off);
+          viskores::cont::ArrayHandle<conduit::uint8> input_arr = viskores::cont::make_ArrayHandle(input, num_vals, viskores::CopyFlag::Off);
 
-          vtkm::cont::Invoker invoker;
-          vtkh::VTKmTypeCast worklet;
+          viskores::cont::Invoker invoker;
+          vtkh::ViskoresTypeCast worklet;
 
-          invoker(worklet,input_arr,vtkm_arr);
+          invoker(worklet,input_arr,viskores_arr);
 
           // add field to dataset
           if(assoc_str == "vertex")
           {
-              dset->AddField(vtkm::cont::Field(field_name.c_str(),
-                                               vtkm::cont::Field::Association::Points,
-                                               vtkm_arr));
+              dset->AddField(viskores::cont::Field(field_name.c_str(),
+                                               viskores::cont::Field::Association::Points,
+                                               viskores_arr));
               supported_type = true;
           }
           else if( assoc_str == "element")
           {
-              dset->AddField(vtkm::cont::Field(field_name.c_str(),
-                                               vtkm::cont::Field::Association::Cells,
-                                               vtkm_arr));
+              dset->AddField(viskores::cont::Field(field_name.c_str(),
+                                               viskores::cont::Field::Association::Cells,
+                                               viskores_arr));
               supported_type = true;
           }
         }
         else if(n_vals.dtype().is_uint16())
         {
 
-          vtkm::cont::ArrayHandle<vtkm::Float64> vtkm_arr;
-          vtkm_arr.Allocate(num_vals);
+          viskores::cont::ArrayHandle<viskores::Float64> viskores_arr;
+          viskores_arr.Allocate(num_vals);
 
           const conduit::uint16 *input = n_vals.value();
-          vtkm::cont::ArrayHandle<conduit::uint16> input_arr = vtkm::cont::make_ArrayHandle(input, num_vals, vtkm::CopyFlag::Off);
+          viskores::cont::ArrayHandle<conduit::uint16> input_arr = viskores::cont::make_ArrayHandle(input, num_vals, viskores::CopyFlag::Off);
 
-          vtkm::cont::Invoker invoker;
-          vtkh::VTKmTypeCast worklet;
+          viskores::cont::Invoker invoker;
+          vtkh::ViskoresTypeCast worklet;
 
-          invoker(worklet,input_arr,vtkm_arr);
+          invoker(worklet,input_arr,viskores_arr);
 
           // add field to dataset
           if(assoc_str == "vertex")
           {
-              dset->AddField(vtkm::cont::Field(field_name.c_str(),
-                                               vtkm::cont::Field::Association::Points,
-                                               vtkm_arr));
+              dset->AddField(viskores::cont::Field(field_name.c_str(),
+                                               viskores::cont::Field::Association::Points,
+                                               viskores_arr));
               supported_type = true;
           }
           else if( assoc_str == "element")
           {
-              dset->AddField(vtkm::cont::Field(field_name.c_str(),
-                                               vtkm::cont::Field::Association::Cells,
-                                               vtkm_arr));
+              dset->AddField(viskores::cont::Field(field_name.c_str(),
+                                               viskores::cont::Field::Association::Cells,
+                                               viskores_arr));
               supported_type = true;
           }
         }
         else if(n_vals.dtype().is_uint32())
         {
 
-          vtkm::cont::ArrayHandle<vtkm::Float64> vtkm_arr;
-          vtkm_arr.Allocate(num_vals);
+          viskores::cont::ArrayHandle<viskores::Float64> viskores_arr;
+          viskores_arr.Allocate(num_vals);
 
           const conduit::uint32 *input = n_vals.value();
-          vtkm::cont::ArrayHandle<conduit::uint32> input_arr = vtkm::cont::make_ArrayHandle(input, num_vals, vtkm::CopyFlag::Off);
+          viskores::cont::ArrayHandle<conduit::uint32> input_arr = viskores::cont::make_ArrayHandle(input, num_vals, viskores::CopyFlag::Off);
 
-          vtkm::cont::Invoker invoker;
-          vtkh::VTKmTypeCast worklet;
+          viskores::cont::Invoker invoker;
+          vtkh::ViskoresTypeCast worklet;
 
-          invoker(worklet,input_arr,vtkm_arr);
+          invoker(worklet,input_arr,viskores_arr);
 
           // add field to dataset
           if(assoc_str == "vertex")
           {
-              dset->AddField(vtkm::cont::Field(field_name.c_str(),
-                                               vtkm::cont::Field::Association::Points,
-                                               vtkm_arr));
+              dset->AddField(viskores::cont::Field(field_name.c_str(),
+                                               viskores::cont::Field::Association::Points,
+                                               viskores_arr));
               supported_type = true;
           }
           else if( assoc_str == "element")
           {
-              dset->AddField(vtkm::cont::Field(field_name.c_str(),
-                                               vtkm::cont::Field::Association::Cells,
-                                               vtkm_arr));
+              dset->AddField(viskores::cont::Field(field_name.c_str(),
+                                               viskores::cont::Field::Association::Cells,
+                                               viskores_arr));
               supported_type = true;
           }
         }
         else if(n_vals.dtype().is_uint64())
         {
 
-          vtkm::cont::ArrayHandle<vtkm::Float64> vtkm_arr;
-          vtkm_arr.Allocate(num_vals);
+          viskores::cont::ArrayHandle<viskores::Float64> viskores_arr;
+          viskores_arr.Allocate(num_vals);
 
           const conduit::uint64 *input = n_vals.value();
-          vtkm::cont::ArrayHandle<conduit::uint64> input_arr = vtkm::cont::make_ArrayHandle(input, num_vals, vtkm::CopyFlag::Off);
+          viskores::cont::ArrayHandle<conduit::uint64> input_arr = viskores::cont::make_ArrayHandle(input, num_vals, viskores::CopyFlag::Off);
 
-          vtkm::cont::Invoker invoker;
-          vtkh::VTKmTypeCast worklet;
+          viskores::cont::Invoker invoker;
+          vtkh::ViskoresTypeCast worklet;
 
-          invoker(worklet,input_arr,vtkm_arr);
+          invoker(worklet,input_arr,viskores_arr);
 
           // add field to dataset
           if(assoc_str == "vertex")
           {
-              dset->AddField(vtkm::cont::Field(field_name.c_str(),
-                                               vtkm::cont::Field::Association::Points,
-                                               vtkm_arr));
+              dset->AddField(viskores::cont::Field(field_name.c_str(),
+                                               viskores::cont::Field::Association::Points,
+                                               viskores_arr));
               supported_type = true;
           }
           else if( assoc_str == "element")
           {
-              dset->AddField(vtkm::cont::Field(field_name.c_str(),
-                                               vtkm::cont::Field::Association::Cells,
-                                               vtkm_arr));
+              dset->AddField(viskores::cont::Field(field_name.c_str(),
+                                               viskores::cont::Field::Association::Cells,
+                                               viskores_arr));
               supported_type = true;
           }
         }
         else if(n_vals.dtype().is_int8())
         {
 
-          vtkm::cont::ArrayHandle<vtkm::Float64> vtkm_arr;
-          vtkm_arr.Allocate(num_vals);
+          viskores::cont::ArrayHandle<viskores::Float64> viskores_arr;
+          viskores_arr.Allocate(num_vals);
 
           const conduit::int8 *input = n_vals.value();
-          vtkm::cont::ArrayHandle<conduit::int8> input_arr = vtkm::cont::make_ArrayHandle(input, num_vals, vtkm::CopyFlag::Off);
+          viskores::cont::ArrayHandle<conduit::int8> input_arr = viskores::cont::make_ArrayHandle(input, num_vals, viskores::CopyFlag::Off);
 
-          vtkm::cont::Invoker invoker;
-          vtkh::VTKmTypeCast worklet;
+          viskores::cont::Invoker invoker;
+          vtkh::ViskoresTypeCast worklet;
 
-          invoker(worklet,input_arr,vtkm_arr);
+          invoker(worklet,input_arr,viskores_arr);
 
           // add field to dataset
           if(assoc_str == "vertex")
           {
-              dset->AddField(vtkm::cont::Field(field_name.c_str(),
-                                               vtkm::cont::Field::Association::Points,
-                                               vtkm_arr));
+              dset->AddField(viskores::cont::Field(field_name.c_str(),
+                                               viskores::cont::Field::Association::Points,
+                                               viskores_arr));
               supported_type = true;
           }
           else if( assoc_str == "element")
           {
-              dset->AddField(vtkm::cont::Field(field_name.c_str(),
-                                               vtkm::cont::Field::Association::Cells,
-                                               vtkm_arr));
+              dset->AddField(viskores::cont::Field(field_name.c_str(),
+                                               viskores::cont::Field::Association::Cells,
+                                               viskores_arr));
               supported_type = true;
           }
         }
         else if(n_vals.dtype().is_int16())
         {
 
-          vtkm::cont::ArrayHandle<vtkm::Float64> vtkm_arr;
-          vtkm_arr.Allocate(num_vals);
+          viskores::cont::ArrayHandle<viskores::Float64> viskores_arr;
+          viskores_arr.Allocate(num_vals);
 
           const conduit::int16 *input = n_vals.value();
-          vtkm::cont::ArrayHandle<conduit::int16> input_arr = vtkm::cont::make_ArrayHandle(input, num_vals, vtkm::CopyFlag::Off);
+          viskores::cont::ArrayHandle<conduit::int16> input_arr = viskores::cont::make_ArrayHandle(input, num_vals, viskores::CopyFlag::Off);
 
-          vtkm::cont::Invoker invoker;
-          vtkh::VTKmTypeCast worklet;
+          viskores::cont::Invoker invoker;
+          vtkh::ViskoresTypeCast worklet;
 
-          invoker(worklet,input_arr,vtkm_arr);
+          invoker(worklet,input_arr,viskores_arr);
 
           // add field to dataset
           if(assoc_str == "vertex")
           {
-              dset->AddField(vtkm::cont::Field(field_name.c_str(),
-                                               vtkm::cont::Field::Association::Points,
-                                               vtkm_arr));
+              dset->AddField(viskores::cont::Field(field_name.c_str(),
+                                               viskores::cont::Field::Association::Points,
+                                               viskores_arr));
               supported_type = true;
           }
           else if( assoc_str == "element")
           {
-              dset->AddField(vtkm::cont::Field(field_name.c_str(),
-                                               vtkm::cont::Field::Association::Cells,
-                                               vtkm_arr));
+              dset->AddField(viskores::cont::Field(field_name.c_str(),
+                                               viskores::cont::Field::Association::Cells,
+                                               viskores_arr));
               supported_type = true;
           }
         }
         else if(n_vals.dtype().is_int32())
         {
 
-          vtkm::cont::ArrayHandle<vtkm::Float64> vtkm_arr;
-          vtkm_arr.Allocate(num_vals);
+          viskores::cont::ArrayHandle<viskores::Float64> viskores_arr;
+          viskores_arr.Allocate(num_vals);
 
           const conduit::int32 *input = n_vals.value();
-          vtkm::cont::ArrayHandle<conduit::int32> input_arr = vtkm::cont::make_ArrayHandle(input, num_vals, vtkm::CopyFlag::Off);
+          viskores::cont::ArrayHandle<conduit::int32> input_arr = viskores::cont::make_ArrayHandle(input, num_vals, viskores::CopyFlag::Off);
 
-          vtkm::cont::Invoker invoker;
-          vtkh::VTKmTypeCast worklet;
+          viskores::cont::Invoker invoker;
+          vtkh::ViskoresTypeCast worklet;
 
-          invoker(worklet,input_arr,vtkm_arr);
+          invoker(worklet,input_arr,viskores_arr);
 
           // add field to dataset
           if(assoc_str == "vertex")
           {
-              dset->AddField(vtkm::cont::Field(field_name.c_str(),
-                                               vtkm::cont::Field::Association::Points,
-                                               vtkm_arr));
+              dset->AddField(viskores::cont::Field(field_name.c_str(),
+                                               viskores::cont::Field::Association::Points,
+                                               viskores_arr));
               supported_type = true;
           }
           else if( assoc_str == "element")
           {
-              dset->AddField(vtkm::cont::Field(field_name.c_str(),
-                                               vtkm::cont::Field::Association::Cells,
-                                               vtkm_arr));
+              dset->AddField(viskores::cont::Field(field_name.c_str(),
+                                               viskores::cont::Field::Association::Cells,
+                                               viskores_arr));
               supported_type = true;
           }
         }
         else if(n_vals.dtype().is_int64())
         {
 
-          vtkm::cont::ArrayHandle<vtkm::Float64> vtkm_arr;
-          vtkm_arr.Allocate(num_vals);
+          viskores::cont::ArrayHandle<viskores::Float64> viskores_arr;
+          viskores_arr.Allocate(num_vals);
 
           const conduit::int64 *input = n_vals.value();
-          vtkm::cont::ArrayHandle<conduit::int64> input_arr = vtkm::cont::make_ArrayHandle(input, num_vals, vtkm::CopyFlag::Off);
+          viskores::cont::ArrayHandle<conduit::int64> input_arr = viskores::cont::make_ArrayHandle(input, num_vals, viskores::CopyFlag::Off);
 
-          vtkm::cont::Invoker invoker;
-          vtkh::VTKmTypeCast worklet;
+          viskores::cont::Invoker invoker;
+          vtkh::ViskoresTypeCast worklet;
 
-          invoker(worklet,input_arr,vtkm_arr);
+          invoker(worklet,input_arr,viskores_arr);
 
           // add field to dataset
           if(assoc_str == "vertex")
           {
-              dset->AddField(vtkm::cont::Field(field_name.c_str(),
-                                               vtkm::cont::Field::Association::Points,
-                                               vtkm_arr));
+              dset->AddField(viskores::cont::Field(field_name.c_str(),
+                                               viskores::cont::Field::Association::Points,
+                                               viskores_arr));
               supported_type = true;
           }
           else if( assoc_str == "element")
           {
-              dset->AddField(vtkm::cont::Field(field_name.c_str(),
-                                               vtkm::cont::Field::Association::Cells,
-                                               vtkm_arr));
+              dset->AddField(viskores::cont::Field(field_name.c_str(),
+                                               viskores::cont::Field::Association::Cells,
+                                               viskores_arr));
               supported_type = true;
           }
         }
         // ***********************************************************************
         // ***********************************************************************
         // ***********************************************************************
-        // NOTE: TODO OUR VTK-M is not compiled with int32 and int64 support ...
+        // NOTE: TODO OUR VISKORES is not compiled with int32 and int64 support ...
         // ***********************************************************************
         // These cases fail and provide this error message:
-        //   Execution failed with vtkm: Could not find appropriate cast for array in CastAndCall.
-        //   Array: valueType=x storageType=N4vtkm4cont15StorageTagBasicE 27 values occupying 216 bytes [0 1 2 ... 24 25 26]
-        //   TypeList: N4vtkm4ListIJfdEEE
+        //   Execution failed with viskores: Could not find appropriate cast for array in CastAndCall.
+        //   Array: valueType=x storageType=N4viskores4cont15StorageTagBasicE 27 values occupying 216 bytes [0 1 2 ... 24 25 26]
+        //   TypeList: N4viskores4ListIJfdEEE
         // ***********************************************************************
         // ***********************************************************************
         // NOTE: int32 should work as of sept 10 2024 
@@ -2375,7 +2717,7 @@ VTKHDataAdapter::AddField(const std::string &field_name,
         //    }
         //}
 
-        // vtk-m cant support zero copy for this layout or was not compiled to expose this datatype
+        // viskores cant support zero copy for this layout or was not compiled to expose this datatype
         // use float64 by default
         if(!supported_type)
         {
@@ -2383,11 +2725,11 @@ VTKHDataAdapter::AddField(const std::string &field_name,
             //std::cout << "WE ARE IN UNSUPPORTED DATA TYPE: "
             //          << n_vals.dtype().name() << std::endl;
             // convert to float64, we use this as a compromise to cover the widest range
-            vtkm::cont::ArrayHandle<vtkm::Float64> vtkm_arr;
-            vtkm_arr.Allocate(num_vals);
+            viskores::cont::ArrayHandle<viskores::Float64> viskores_arr;
+            viskores_arr.Allocate(num_vals);
 
             // TODO -- FUTURE: Do this conversion w/ device if on device
-            void *ptr = (void*) vtkh::GetVTKMPointer(vtkm_arr);
+            void *ptr = (void*) vtkh::GetVISKORESPointer(viskores_arr);
             Node n_tmp;
             n_tmp.set_external(DataType::float64(num_vals),ptr);
             n_vals.to_float64_array(n_tmp);
@@ -2395,15 +2737,15 @@ VTKHDataAdapter::AddField(const std::string &field_name,
             // add field to dataset
             if(assoc_str == "vertex")
             {
-                dset->AddField(vtkm::cont::Field(field_name.c_str(),
-                                                 vtkm::cont::Field::Association::Points,
-                                                 vtkm_arr));
+                dset->AddField(viskores::cont::Field(field_name.c_str(),
+                                                 viskores::cont::Field::Association::Points,
+                                                 viskores_arr));
             }
             else if( assoc_str == "element")
             {
-                dset->AddField(vtkm::cont::Field(field_name.c_str(),
-                                                 vtkm::cont::Field::Association::Cells,
-                                                 vtkm_arr));
+                dset->AddField(viskores::cont::Field(field_name.c_str(),
+                                                 viskores::cont::Field::Association::Cells,
+                                                 viskores_arr));
             }
         // else
         // {
@@ -2412,9 +2754,9 @@ VTKHDataAdapter::AddField(const std::string &field_name,
         // }
       }
     }
-    catch (vtkm::cont::Error error)
+    catch (viskores::cont::Error error)
     {
-        ASCENT_ERROR("VTKm exception:" << error.GetMessage());
+        ASCENT_ERROR("Viskores exception:" << error.GetMessage());
     }
 
 }
@@ -2425,31 +2767,41 @@ VTKHDataAdapter::AddVectorField(const std::string &field_name,
                                 const std::string &topo_name,
                                 int neles,
                                 int nverts,
-                                vtkm::cont::DataSet *dset,
+                                viskores::cont::DataSet *dset,
                                 const int dims,
                                 bool zero_copy)                 // attempt to zero copy
 {
     string assoc_str = n_field["association"].as_string();
 
-    vtkm::cont::Field::Association vtkm_assoc = vtkm::cont::Field::Association::Any;
+    viskores::cont::Field::Association viskores_assoc = viskores::cont::Field::Association::Any;
     if(assoc_str == "vertex")
     {
-      vtkm_assoc = vtkm::cont::Field::Association::Points;
+      viskores_assoc = viskores::cont::Field::Association::Points;
     }
     else if(assoc_str == "element")
     {
-      vtkm_assoc = vtkm::cont::Field::Association::Cells;
+      viskores_assoc = viskores::cont::Field::Association::Cells;
     }
     else
     {
-      ASCENT_INFO("VTKm conversion does not support field assoc "<<assoc_str<<". Skipping");
+      ASCENT_INFO("Viskores conversion does not support field assoc "<<assoc_str<<". Skipping");
       return;
     }
 
 
     const Node &n_vals = n_field["values"];
-    int num_vals = n_vals.child(0).dtype().number_of_elements();
+    const int num_vals = (assoc_str == "vertex") ? nverts : neles;
     int num_components = n_field["values"].number_of_children();
+
+    if(n_vals.child(0).dtype().number_of_elements() < num_vals)
+    {
+      ASCENT_INFO("Field '"<<field_name<<"' (topology: '" << topo_name <<
+                  "') number of values "<<n_vals.child(0).dtype().number_of_elements()<<
+                  " does not match the number of "
+                  <<(assoc_str == "vertex" ? "points " : "elements ")
+                  <<num_vals<<". Skipping");
+      return;
+    }
 
     const conduit::Node &u = n_field["values"].child(0);
     bool interleaved = conduit::blueprint::mcarray::is_interleaved(n_vals);
@@ -2465,7 +2817,7 @@ VTKHDataAdapter::AddVectorField(const std::string &field_name,
               if(u.dtype().is_float32())
               {
 
-                using Vec3f32 = vtkm::Vec<vtkm::Float32,3>;
+                using Vec3f32 = viskores::Vec<viskores::Float32,3>;
                 const Vec3f32 *vec_ptr = reinterpret_cast<const Vec3f32*>(u.as_float32_ptr());
 
                 dset->AddField(detail::GetVectorField(vec_ptr,
@@ -2479,7 +2831,7 @@ VTKHDataAdapter::AddVectorField(const std::string &field_name,
               else if(u.dtype().is_float64())
               {
 
-                using Vec3f64 = vtkm::Vec<vtkm::Float64,3>;
+                using Vec3f64 = viskores::Vec<viskores::Float64,3>;
                 const Vec3f64 *vec_ptr = reinterpret_cast<const Vec3f64*>(u.as_float64_ptr());
 
                 dset->AddField(detail::GetVectorField(vec_ptr,
@@ -2497,7 +2849,7 @@ VTKHDataAdapter::AddVectorField(const std::string &field_name,
               if(u.dtype().is_float32())
               {
 
-                using Vec2f32 = vtkm::Vec<vtkm::Float32,2>;
+                using Vec2f32 = viskores::Vec<viskores::Float32,2>;
                 const Vec2f32 *vec_ptr = reinterpret_cast<const Vec2f32*>(u.as_float32_ptr());
 
                 dset->AddField(detail::GetVectorField(vec_ptr,
@@ -2511,7 +2863,7 @@ VTKHDataAdapter::AddVectorField(const std::string &field_name,
               else if(u.dtype().is_float64())
               {
 
-                using Vec2f64 = vtkm::Vec<vtkm::Float64,2>;
+                using Vec2f64 = viskores::Vec<viskores::Float64,2>;
                 const Vec2f64 *vec_ptr = reinterpret_cast<const Vec2f64*>(u.as_float64_ptr());
 
                 dset->AddField(detail::GetVectorField(vec_ptr,
@@ -2531,7 +2883,7 @@ VTKHDataAdapter::AddVectorField(const std::string &field_name,
         else
         {
           // we have a vector with 2/3 separate arrays
-          // While vtkm supports ArrayHandleCompositeVectors for
+          // While viskores supports ArrayHandleCompositeVectors for
           // coordinate systems, it does not support composites
           // for fields. Thus we have to copy the data.
           if(dims == 3)
@@ -2603,132 +2955,522 @@ VTKHDataAdapter::AddVectorField(const std::string &field_name,
           }
         }
     }
-    catch (vtkm::cont::Error error)
+    catch (viskores::cont::Error error)
     {
-        ASCENT_ERROR("VTKm exception:" << error.GetMessage());
+        ASCENT_ERROR("Viskores exception:" << error.GetMessage());
     }
 
 }
 
+template <typename Id_T, typename Float_T>
+void AddMatSetFieldsCommon(const conduit::Node &matset,
+                           const std::string &length_name,
+                           const std::string &offsets_name,
+                           const std::string &ids_name,
+                           const std::string &vfs_name,
+                           const std::string &topo_name,
+                           int neles,
+                           viskores::cont::DataSet *dset)
+{
+    viskores::cont::Field length, offsets, ids, vfs;
+
+    detail::GetMatSetFields<Id_T, Float_T>(
+        matset,
+        length_name,
+        offsets_name,
+        ids_name,
+        vfs_name,
+        topo_name,
+        neles,
+        length,
+        offsets,
+        ids,
+        vfs);
+
+    dset->AddField(length);
+    dset->AddField(offsets);
+    dset->AddField(ids);
+    dset->AddField(vfs);
+}
+
+const conduit::Node &
+GetSparseByMaterialVfsSample(const conduit::Node &matset,
+                             const std::string   &matset_name)
+{
+    const conduit::Node &elem_ids = matset["element_ids"];
+    const conduit::Node &vf_group = matset["volume_fractions"];
+
+    const int num_ids       = elem_ids.number_of_children();
+    const int num_materials = vf_group.number_of_children();
+
+    if (num_ids == 0)
+    {
+        ASCENT_ERROR("No element ids were defined for matset: " << matset_name);
+    }
+
+    if (num_materials == 0)
+    {
+        ASCENT_ERROR("No volume fractions were defined for matset: " << matset_name);
+    }
+
+    if (num_materials != num_ids)
+    {
+        ASCENT_ERROR("Number of materials (" << num_materials
+                     << ") does not match number of element IDs ("
+                     << num_ids << ") defined for matset: " << matset_name);
+    }
+
+    const conduit::Node &first_child = vf_group.child(0);
+    const int            child_count = first_child.number_of_children();
+
+    return (child_count != 0)
+           ? *first_child.child_ptr(0)
+           : *vf_group.child_ptr(0);
+}
+
 void
 VTKHDataAdapter::AddMatSets(const std::string &matset_name,
-                            const Node &n_matset,
+                            const conduit::Node &n_matset,
                             const std::string &topo_name,
                             int neles,
-                            vtkm::cont::DataSet *dset,
-                            bool zero_copy)                 // attempt to zero copy
+                            viskores::cont::DataSet *dset,
+                            bool zero_copy)
 {
-
-    if(!n_matset.has_child("volume_fractions"))
-        ASCENT_ERROR("No volume fractions were defined for matset: " << matset_name);
-    //TODO: zero_copy = true segfaulting in vtkm mir filter
-    //zero_copy = false;
-    
-    
-    std::string assoc_str = "element";
-    //fields required from VTK-m MIR filter
-    //std::string length_name, offsets_name, ids_name, vfs_name;
-    std::string length_name = "sizes";//matset_name + "_lengths";
-    std::string offsets_name = "offsets";//matset_name + "_offsets";
-    std::string ids_name = "material_ids";//matset_name + "_ids";
-    std::string vfs_name = "volume_fractions";//matset_name + "_vfs";
-    //matset is "sparse_by_element"
-    if(n_matset.has_child("material_map"))
+    // Common precondition: all matsets must have volume fractions.
+    if (!n_matset.has_child("volume_fractions"))
     {
-        try
+        ASCENT_ERROR("No volume fractions were defined for matset: " << matset_name);
+    }
+
+    const bool use64BitIds = (sizeof(viskores::Id) == 8);
+
+    const std::string assoc_str = "element";
+    const std::string length_name = "sizes";
+    const std::string offsets_name = "offsets";
+    const std::string ids_name = "material_ids";
+    const std::string vfs_name = "volume_fractions";
+
+    // Helper: add an integer Node as a viskores::Id field, converting width if needed.
+    auto add_index_field_as_Id = [&](const conduit::Node &src, const std::string &name, const std::string &assoc)
+    {
+        const index_t n = static_cast<index_t>(src.dtype().number_of_elements());
+        const bool type_ok = ( use64BitIds && src.dtype().is_int64() ) || (!use64BitIds && src.dtype().is_int32());
+
+        if (type_ok)
         {
-            bool supported_type = false;
+            dset->AddField(
+                detail::GetField<viskores::Id>(src,
+                                               name,
+                                               assoc,
+                                               topo_name,
+                                               index_t(1),
+                                               zero_copy));
+            return;
+        }
 
-            // we compile vtk-h with fp types
-            if(n_matset["volume_fractions"].dtype().is_float32())
+        conduit::Node tmp;
+
+        if (use64BitIds && src.dtype().is_int32())
+        {
+            // 32 -> 64
+            tmp.set(conduit::DataType::int64(n));
+
+            const conduit::int32 *p32 = src.as_int32_ptr();
+            conduit::int64 *p64 = tmp.as_int64_ptr();
+
+            for (index_t i = 0; i < n; ++i)
             {
-                //add materials directly
-                const conduit::Node &n_length = n_matset["sizes"];
-                dset->AddField(detail::GetField<int>(n_length,
-                                                     length_name,
-                                                     assoc_str,
-                                                     topo_name,
-                                                     index_t(1),
-                                                     zero_copy));
-                const conduit::Node &n_offsets = n_matset["offsets"];
-                dset->AddField(detail::GetField<int>(n_offsets,
-                                                     offsets_name,
-                                                     assoc_str,
-                                                     topo_name,
-                                                     index_t(1),
-                                                     zero_copy));
-                const conduit::Node &n_material_ids = n_matset["material_ids"];
-                int num_vals = n_material_ids.dtype().number_of_elements();
-                if(n_material_ids.dtype().is_int32())
-                {
-                    const conduit::int32 *n_ids = n_material_ids.value();
-                    const vector<conduit::int32> vec_ids(n_ids, n_ids + num_vals);
-                    bool zeroes = std::any_of(vec_ids.begin(), vec_ids.end(), [](int value) { return value<=0; });
-                    if(zeroes) //need to make a copy and increment all material ids
-                    {
-                        conduit::Node n_mat_ids = n_matset["material_ids"];
-                        conduit::int32 *tmp_vec_ids = n_mat_ids.value();
-                        for(index_t i = 0; i < num_vals; ++i)
-                        {
-                            tmp_vec_ids[i] += 1.0; 
-                        }
-                        vtkm::cont::Field field_copy = detail::GetField<int32>(n_mat_ids,
-                                                                               ids_name,
-                                                                               "whole",
-                                                                               topo_name,
-                                                                               index_t(1),
-                                                                               false);
-                        dset->AddField(field_copy);
-                    }
-                    else //can zero copy the material ids
-                    {
-                        vtkm::cont::Field field_copy = detail::GetField<int32>(n_material_ids,
-                                                                               ids_name,
-                                                                               "whole",
-                                                                               topo_name,
-                                                                               index_t(1),
-                                                                               zero_copy);
+                p64[i] = static_cast<conduit::int64>(p32[i]);
+            }
+        }
+        else if (!use64BitIds && src.dtype().is_int64())
+        {
+            // 64 -> 32
+            tmp.set(conduit::DataType::int32(n));
 
-                        dset->AddField(field_copy);
+            const conduit::int64 *p64 = src.as_int64_ptr();
+            conduit::int32 *p32 = tmp.as_int32_ptr();
+
+            for (index_t i = 0; i < n; ++i)
+            {
+                p32[i] = static_cast<conduit::int32>(p64[i]);
+            }
+        }
+        else
+        {
+            ASCENT_ERROR("Unsupported integer type for index field '" << name << "'");
+        }
+
+        dset->AddField(detail::GetField<viskores::Id>(tmp,
+                                                      name,
+                                                      assoc,
+                                                      topo_name,
+                                                      index_t(1),
+                                                      false));
+    };
+
+    // ------------------------------------------------------------------------
+    // 64-bit ID path
+    // ------------------------------------------------------------------------
+    if (use64BitIds)
+    {
+        // --------------------------------------------------------------------
+        // Case 1: "sparse_by_element" / material_map
+        // --------------------------------------------------------------------
+        if (n_matset.has_child("material_map"))
+        {
+            try
+            {
+                // sizes and offsets as Id-type fields
+                const conduit::Node &n_sizes = n_matset["sizes"];
+                const conduit::Node &n_offsets = n_matset["offsets"];
+
+                add_index_field_as_Id(n_sizes, length_name, assoc_str);
+                add_index_field_as_Id(n_offsets, offsets_name, assoc_str);
+
+                // Material IDs: allow int32 or int64 in input, ensure > 0, then adapt to Id type
+                const conduit::Node &n_material_ids = n_matset["material_ids"];
+                const auto &id_dtype = n_material_ids.dtype();
+                const index_t num_vals = static_cast<index_t>(id_dtype.number_of_elements());
+
+                conduit::Node tmp_ids;
+                const conduit::Node *ids_src = &n_material_ids;
+
+                if (id_dtype.is_int32())
+                {
+                    const conduit::int32 *ids = n_material_ids.as_int32_ptr();
+                    const bool has_non_positive = std::any_of(ids, ids + num_vals, [](conduit::int32 v) { return v <= 0; });
+
+                    if (has_non_positive)
+                    {
+                        tmp_ids.set(n_material_ids);
+                        conduit::int32 *mutable_ids = tmp_ids.as_int32_ptr();
+                        for (index_t i = 0; i < num_vals; ++i)
+                        {
+                            mutable_ids[i] += 1;
+                        }
+                        ids_src = &tmp_ids;
                     }
                 }
-                else if(n_material_ids.dtype().is_int64())
+                else if (id_dtype.is_int64())
                 {
-                    const conduit::int64 *n_ids = n_material_ids.value();
-                    const vector<conduit::int64> vec_ids(n_ids, n_ids + num_vals);
-                    bool zeroes = std::any_of(vec_ids.begin(), vec_ids.end(), [](int value) { return value<=0; });
-                    if(zeroes) //need to make a copy and increment all material ids
-                    {
-                        conduit::Node n_mat_ids = n_matset["material_ids"];
-                        conduit::int64 *tmp_vec_ids = n_mat_ids.value();
-                        for(index_t i = 0; i < num_vals; ++i)
-                        {
-                            tmp_vec_ids[i] += 1.0; 
-                        }
-                        vtkm::cont::Field field_copy = detail::GetField<int64>(n_mat_ids,
-                                                                               ids_name,
-                                                                               "whole",
-                                                                               topo_name,
-                                                                               index_t(1),
-                                                                               false);
-                        dset->AddField(field_copy);
-                    }
-                    else //can zero copy the material ids
-                    {
-                        vtkm::cont::Field field_copy = detail::GetField<int64>(n_material_ids,
-                                                                               ids_name,
-                                                                               "whole",
-                                                                               topo_name,
-                                                                               index_t(1),
-                                                                               zero_copy);
+                    const conduit::int64 *ids = n_material_ids.as_int64_ptr();
+                    const bool has_non_positive = std::any_of(ids, ids + num_vals, [](conduit::int64 v) { return v <= 0; });
 
-                        dset->AddField(field_copy);
+                    if (has_non_positive)
+                    {
+                        tmp_ids.set(n_material_ids);
+                        conduit::int64 *mutable_ids = tmp_ids.as_int64_ptr();
+                        for (index_t i = 0; i < num_vals; ++i)
+                        {
+                            mutable_ids[i] += 1;
+                        }
+                        ids_src = &tmp_ids;
                     }
                 }
                 else
                 {
-                    ASCENT_ERROR("Unsupported integer type for material IDs");
+                    ASCENT_ERROR("Unsupported integer type for material IDs in matset: "
+                                 << matset_name);
                 }
+
+                // Now adapt material_ids (possibly shifted) to viskores::Id
+                add_index_field_as_Id(*ids_src, ids_name, "whole");
+
+                // Volume fractions: must be float32 or float64
+                const conduit::Node &n_vfs = n_matset["volume_fractions"];
+
+                if (n_vfs.dtype().is_float32())
+                {
+                    dset->AddField(detail::GetField<float32>(n_vfs,
+                                                            vfs_name,
+                                                            "whole",
+                                                            topo_name,
+                                                            index_t(1),
+                                                            zero_copy));
+                }
+                else if (n_vfs.dtype().is_float64())
+                {
+                    dset->AddField(detail::GetField<float64>(n_vfs,
+                                                            vfs_name,
+                                                            "whole",
+                                                            topo_name,
+                                                            index_t(1),
+                                                            zero_copy));
+                }
+                else
+                {
+                    ASCENT_ERROR("Unsupported floating-point type for volume_fractions in matset: "
+                                 << matset_name);
+                }
+            }
+            catch (const viskores::cont::Error &error)
+            {
+                ASCENT_ERROR("Viskores exception: " << error.GetMessage());
+            }
+        }
+        
+        // --------------------------------------------------------------------
+        // Case 2: "sparse_by_material" (element_ids)
+        // --------------------------------------------------------------------
+        else if (n_matset.has_child("element_ids"))
+        {
+            const conduit::Node &sample_vfs = GetSparseByMaterialVfsSample(n_matset, matset_name);
+
+            try
+            {
+                // Prepare matset with element_ids widened to int64 if needed
+                const conduit::Node *matset_for_fields = &n_matset;
+                conduit::Node matset_converted;
+
+                const conduit::Node &elem_ids_src = n_matset["element_ids"];
+
+                bool need_conversion = false;
+                const int num_elem_children = elem_ids_src.number_of_children();
+                for (int i = 0; i < num_elem_children; ++i)
+                {
+                    const conduit::Node &child = elem_ids_src.child(i);
+                    if (child.dtype().is_int32())
+                    {
+                        need_conversion = true;
+                        break;
+                    }
+                }
+
+                if (need_conversion)
+                {
+                    matset_converted.set(n_matset);
+                    conduit::Node &elem_ids_dst = matset_converted["element_ids"];
+
+                    for (int i = 0; i < elem_ids_dst.number_of_children(); ++i)
+                    {
+                        conduit::Node &child = elem_ids_dst.child(i);
+                        if (child.dtype().is_int32())
+                        {
+                            const index_t n = static_cast<index_t>(child.dtype().number_of_elements());
+
+                            conduit::Node tmp64;
+                            tmp64.set(conduit::DataType::int64(n));
+
+                            const conduit::int32 *src_ptr = child.as_int32_ptr();
+                            conduit::int64 *dst_ptr = tmp64.as_int64_ptr();
+
+                            for (index_t j = 0; j < n; ++j)
+                            {
+                                dst_ptr[j] = static_cast<conduit::int64>(src_ptr[j]);
+                            }
+
+                            // Replace the child array with the 64-bit version
+                            child.set(tmp64);
+                        }
+                    }
+
+                    matset_for_fields = &matset_converted;
+                }
+
+                if (sample_vfs.dtype().is_float32())
+                {
+                    AddMatSetFieldsCommon<viskores::Id, float32>(
+                        *matset_for_fields,
+                        length_name,
+                        offsets_name,
+                        ids_name,
+                        vfs_name,
+                        topo_name,
+                        neles,
+                        dset);
+                }
+                else if (sample_vfs.dtype().is_float64())
+                {
+                    AddMatSetFieldsCommon<viskores::Id, float64>(
+                        *matset_for_fields,
+                        length_name,
+                        offsets_name,
+                        ids_name,
+                        vfs_name,
+                        topo_name,
+                        neles,
+                        dset);
+                }
+                else
+                {
+                    ASCENT_ERROR("Unsupported floating-point type for sparse_by_material "
+                                 "volume_fractions in matset: " << matset_name);
+                }
+            }
+            catch (const viskores::cont::Error &error)
+            {
+                ASCENT_ERROR("Viskores exception: " << error.GetMessage());
+            }
+        }
+
+        // --------------------------------------------------------------------
+        // Case 3: "full" matset
+        // --------------------------------------------------------------------
+        else
+        {
+            const conduit::Node &vf_group = n_matset["volume_fractions"];
+            const int num_materials = vf_group.number_of_children();
+
+            if (num_materials == 0)
+            {
+                ASCENT_ERROR("No volume fractions were defined for matset: " << matset_name);
+            }
+
+            const conduit::Node &first_material = vf_group.child(0);
+            const std::string material_name = first_material.name();
+            const index_t num_vals = static_cast<index_t>(first_material.dtype().number_of_elements());
+
+            if (num_vals != static_cast<index_t>(neles))
+            {
+                ASCENT_ERROR("Number of vf values "
+                             << num_vals
+                             << " for material "
+                             << material_name
+                             << " does not equal number of cells "
+                             << neles);
+            }
+
+            try
+            {
+                if (first_material.dtype().is_float32())
+                {
+                    AddMatSetFieldsCommon<viskores::Id, float32>(
+                        n_matset,
+                        length_name,
+                        offsets_name,
+                        ids_name,
+                        vfs_name,
+                        topo_name,
+                        neles,
+                        dset);
+                }
+                else if (first_material.dtype().is_float64())
+                {
+                    AddMatSetFieldsCommon<viskores::Id, float64>(
+                        n_matset,
+                        length_name,
+                        offsets_name,
+                        ids_name,
+                        vfs_name,
+                        topo_name,
+                        neles,
+                        dset);
+                }
+                else
+                {
+                    ASCENT_ERROR("Unsupported floating-point type for full matset "
+                                 "volume_fractions in matset: " << matset_name);
+                }
+            }
+            catch (const viskores::cont::Error &error)
+            {
+                ASCENT_ERROR("Viskores exception: " << error.GetMessage());
+            }
+        }
+
+        return;
+    }
+
+    // ------------------------------------------------------------------------
+    // 32-bit ID path
+    // ------------------------------------------------------------------------
+
+    //TODO: zero_copy = true segfaulting in viskores mir filter
+    //zero_copy = false;
+
+    // --------------------------------------------------------------------
+    // Case 1: "sparse_by_element" (material_map)
+    // --------------------------------------------------------------------
+    if (n_matset.has_child("material_map"))
+    {
+        try
+        {
+            // Add materials directly
+            const conduit::Node &n_length = n_matset["sizes"];
+            const conduit::Node &n_offsets = n_matset["offsets"];
+
+            add_index_field_as_Id(n_length, length_name, assoc_str);
+            add_index_field_as_Id(n_offsets, offsets_name, assoc_str);
+
+            const conduit::Node &n_material_ids = n_matset["material_ids"];
+            const int num_vals = n_material_ids.dtype().number_of_elements();
+
+            if (n_material_ids.dtype().is_int32())
+            {
+                const conduit::int32 *ids = n_material_ids.value();
+                const bool has_non_positive = std::any_of(ids, ids + num_vals, [](conduit::int32 v) { return v <= 0; });
+
+                if (has_non_positive) // need to make a copy and increment all material ids
+                {
+                    conduit::Node n_mat_ids = n_matset["material_ids"];
+                    conduit::int32 *tmp_vec_ids = n_mat_ids.value();
+
+                    for (index_t i = 0; i < num_vals; ++i)
+                    {
+                        tmp_vec_ids[i] += 1;
+                    }
+
+                    viskores::cont::Field field_copy = detail::GetField<int32>(n_mat_ids,
+                                                                               ids_name,
+                                                                               "whole",
+                                                                               topo_name,
+                                                                               index_t(1),
+                                                                               false);
+                    dset->AddField(field_copy);
+                }
+                else // can zero copy the material ids
+                {
+                    viskores::cont::Field field_copy = detail::GetField<int32>(n_material_ids,
+                                                                               ids_name,
+                                                                               "whole",
+                                                                               topo_name,
+                                                                               index_t(1),
+                                                                               zero_copy);
+
+                    dset->AddField(field_copy);
+                }
+            }
+            else if (n_material_ids.dtype().is_int64())
+            {
+                const conduit::int64 *ids = n_material_ids.value();
+                const bool has_non_positive = std::any_of(ids, ids + num_vals, [](conduit::int64 v) { return v <= 0; });
+
+                if (has_non_positive) // need to make a copy and increment all material ids
+                {
+                    conduit::Node n_mat_ids = n_matset["material_ids"];
+                    conduit::int64 *tmp_vec_ids = n_mat_ids.value();
+
+                    for (index_t i = 0; i < num_vals; ++i)
+                    {
+                        tmp_vec_ids[i] += 1;
+                    }
+
+                    viskores::cont::Field field_copy = detail::GetField<int64>(n_mat_ids,
+                                                                               ids_name,
+                                                                               "whole",
+                                                                               topo_name,
+                                                                               index_t(1),
+                                                                               false);
+                    dset->AddField(field_copy);
+                }
+                else // can zero copy the material ids
+                {
+                    dset->AddField(detail::GetField<int64>(n_material_ids,
+                                                           ids_name,
+                                                           "whole",
+                                                           topo_name,
+                                                           index_t(1),
+                                                           zero_copy));
+                }
+            }
+            else
+            {
+                ASCENT_ERROR("Unsupported integer type for material IDs");
+            }
+
+            if (n_matset["volume_fractions"].dtype().is_float32())
+            {
                 const conduit::Node &n_volume_fractions = n_matset["volume_fractions"];
                 dset->AddField(detail::GetField<float32>(n_volume_fractions,
                                                          vfs_name,
@@ -2736,97 +3478,9 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
                                                          topo_name,
                                                          index_t(1),
                                                          zero_copy));
-                supported_type = true;
             }
-            else if(n_matset["volume_fractions"].dtype().is_float64())
+            else if (n_matset["volume_fractions"].dtype().is_float64())
             {
-                //add materials directly
-                const Node &n_length = n_matset["sizes"];
-                dset->AddField(detail::GetField<int>(n_length,
-                                                     length_name,
-                                                     assoc_str,
-                                                     topo_name,
-                                                     index_t(1),
-                                                     zero_copy));
-                const conduit::Node &n_offsets = n_matset["offsets"];
-                dset->AddField(detail::GetField<int>(n_offsets,
-                                                     offsets_name,
-                                                     assoc_str,
-                                                     topo_name,
-                                                     index_t(1),
-                                                     zero_copy));
-                const conduit::Node &n_material_ids = n_matset["material_ids"];
-                int num_vals = n_material_ids.dtype().number_of_elements(); 
-                if(n_material_ids.dtype().is_int32())
-                {
-                    const conduit::int32 *n_ids = n_material_ids.value();
-                    const vector<conduit::int32> vec_ids(n_ids, n_ids + num_vals);
-                    bool zeroes = std::any_of(vec_ids.begin(), vec_ids.end(), [](int value) { return value<=0; });
-                    if(zeroes) //need to make a copy and increment all material ids
-                    {
-                        conduit::Node n_mat_ids = n_matset["material_ids"];
-                        conduit::int32 *tmp_vec_ids = n_mat_ids.value();
-                        for(index_t i = 0; i < num_vals; ++i)
-                        {
-                            tmp_vec_ids[i] += 1.0; 
-                        }
-                        vtkm::cont::Field field_copy = detail::GetField<int32>(n_mat_ids,
-                                                                               ids_name,
-                                                                               "whole",
-                                                                               topo_name,
-                                                                               index_t(1),
-                                                                               false);
-                        dset->AddField(field_copy);
-                    }
-                    else //can zero copy the material ids
-                    {
-                        vtkm::cont::Field field_copy = detail::GetField<int32>(n_material_ids,
-                                                                               ids_name,
-                                                                               "whole",
-                                                                               topo_name,
-                                                                               index_t(1),
-                                                                               zero_copy);
-
-                        dset->AddField(field_copy);
-                    }
-                }
-                else if(n_material_ids.dtype().is_int64())
-                {
-                    const conduit::int64 *n_ids = n_material_ids.value();
-                    const vector<conduit::int64> vec_ids(n_ids, n_ids + num_vals);
-                    bool zeroes = std::any_of(vec_ids.begin(), vec_ids.end(), [](int value) { return value<=0; });
-                    if(zeroes) //need to make a copy and increment all material ids
-                    {
-                      conduit::Node n_mat_ids = n_matset["material_ids"];
-                      conduit::int64 *tmp_vec_ids = n_mat_ids.value();
-                      for(index_t i = 0; i < num_vals; ++i)
-                      {
-                        tmp_vec_ids[i] += 1.0; 
-                      }
-                      vtkm::cont::Field field_copy = detail::GetField<int64>(n_mat_ids,
-                                                                             ids_name,
-                                                                             "whole",
-                                                                             topo_name,
-                                                                             index_t(1),
-                                                                             false);
-                      dset->AddField(field_copy);
-                    }
-                    else //can zero copy the material ids
-                    {
-                      vtkm::cont::Field field_copy = detail::GetField<int64>(n_material_ids,
-                                                                             ids_name,
-                                                                             "whole",
-                                                                             topo_name,
-                                                                             index_t(1),
-                                                                             zero_copy);
-
-                      dset->AddField(field_copy);
-                    }
-                }
-                else
-                {
-                    ASCENT_ERROR("Unsupported integer type for material IDs");
-                }
                 const conduit::Node &n_volume_fractions = n_matset["volume_fractions"];
                 dset->AddField(detail::GetField<float64>(n_volume_fractions,
                                                          vfs_name,
@@ -2834,217 +3488,150 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
                                                          topo_name,
                                                          index_t(1),
                                                          zero_copy));
-                supported_type = true;
             }
         }
-        catch (vtkm::cont::Error error)
+        catch (const viskores::cont::Error &error)
         {
-            ASCENT_ERROR("VTKm exception:" << error.GetMessage());
+            ASCENT_ERROR("Viskores exception:" << error.GetMessage());
         }
-
     }
-    else if(n_matset.has_child("element_ids"))//matset is "sparse_by_material"
-    {
-        int num_ids = n_matset["element_ids"].number_of_children();
-        if(num_ids == 0)
-        {
-            ASCENT_ERROR("No element ids were defined for matset: " << matset_name);
-        }
 
-        int num_materials = n_matset["volume_fractions"].number_of_children();
-        if(num_materials == 0)
-        {
-            ASCENT_ERROR("No volume fractions were defined for matset: " << matset_name);
-        }
-        
-        if(num_materials != num_ids)
-        {
-            ASCENT_ERROR("Number of materials (" << num_materials << 
-                         ") does not match number of elment IDs(" << num_ids << 
-                         " defined for matset: " << matset_name);
-        }
+    // --------------------------------------------------------------------
+    // Case 2: "sparse_by_material" (element_ids)
+    // --------------------------------------------------------------------
+    else if (n_matset.has_child("element_ids"))
+    {
+        const conduit::Node &sample_vfs = GetSparseByMaterialVfsSample(n_matset, matset_name);
 
         try
         {
-            bool supported_type = false;
-
-            const conduit::Node *n_vfs; //= n_matset["volume_fractions"].child(0);
-            const conduit::Node &tmp_vfs = n_matset["volume_fractions"].child(0);
-            int num_children = tmp_vfs.number_of_children();
-
-            if(num_children != 0) //of == 1?  
+            if (sample_vfs.dtype().is_float32())
             {
-              n_vfs = tmp_vfs.child_ptr(0);
+                AddMatSetFieldsCommon<int, float32>(
+                    n_matset,
+                    length_name,
+                    offsets_name,
+                    ids_name,
+                    vfs_name,
+                    topo_name,
+                    neles,
+                    dset);
             }
-            else
+            else if (sample_vfs.dtype().is_float64())
             {
-              n_vfs = n_matset["volume_fractions"].child_ptr(0);
-
-            }
-
-            // we compile vtk-h with fp types
-            if(n_vfs->dtype().is_float32())
-            {
-                supported_type = true;
-                //add calculated material fields for vtkm
-                vtkm::cont::Field length, offsets, ids, vfs;
-                detail::GetMatSetFields<int,float32>(n_matset, 
-                                                     length_name, 
-                                                     offsets_name, 
-                                                     ids_name,
-                                                     vfs_name,
-                                                     topo_name, 
-                                                     neles, 
-                                                     length, 
-                                                     offsets,
-                                                     ids,
-                                                     vfs);
-                dset->AddField(length);
-                dset->AddField(offsets);
-                dset->AddField(ids);
-                dset->AddField(vfs);
-            }
-            else if(n_vfs->dtype().is_float64())
-            {
-                supported_type = true;
-                //add calculated material fields for vtkm
-                vtkm::cont::Field length, offsets, ids, vfs;
-                detail::GetMatSetFields<int,float64>(n_matset, 
-                                                     length_name, 
-                                                     offsets_name, 
-                                                     ids_name,
-                                                     vfs_name,
-                                                     topo_name, 
-                                                     neles, 
-                                                     length, 
-                                                     offsets,
-                                                     ids,
-                                                     vfs);
-                dset->AddField(length);
-                dset->AddField(offsets);
-                dset->AddField(ids);
-                dset->AddField(vfs);
+                AddMatSetFieldsCommon<int, float64>(
+                    n_matset,
+                    length_name,
+                    offsets_name,
+                    ids_name,
+                    vfs_name,
+                    topo_name,
+                    neles,
+                    dset);
             }
         }
-        catch (vtkm::cont::Error error)
+        catch (const viskores::cont::Error &error)
         {
-            ASCENT_ERROR("VTKm exception:" << error.GetMessage());
+            ASCENT_ERROR("Viskores exception:" << error.GetMessage());
         }
     }
-    else //matset is "full"
+
+    // --------------------------------------------------------------------
+    // Case 3: "full" matset
+    // --------------------------------------------------------------------
+    else
     {
         int num_materials = n_matset["volume_fractions"].number_of_children();
-        if(num_materials == 0)
+        if (num_materials == 0)
+        {
             ASCENT_ERROR("No volume fractions were defined for matset: " << matset_name);
+        }
 
-        const Node n_material = n_matset["volume_fractions"].child(0);
+        const conduit::Node &n_material = n_matset["volume_fractions"].child(0);
         std::string material_name = n_material.name();
-
         int num_vals = n_material.dtype().number_of_elements();
 
-        if(num_vals != neles )
+        if (num_vals != neles)
         {
-            ASCENT_ERROR("Number of vf values " 
-                          << num_vals 
-                          << " for material " 
-                          << material_name 
-                          << " does not equal number of cells "
-                          << neles);
+            ASCENT_ERROR("Number of vf values "
+                         << num_vals
+                         << " for material "
+                         << material_name
+                         << " does not equal number of cells "
+                         << neles);
         }
+
         try
         {
-            bool supported_type = false;
-
-            // we compile vtk-h with fp types
-            if(n_material.dtype().is_float32())
+            if (n_material.dtype().is_float32())
             {
-                supported_type = true;
-                //add calculated material fields for vtkm
-                int total;
-                vtkm::cont::Field length, offsets, ids, vfs;
-                detail::GetMatSetFields<int,float32>(n_matset, 
-                                                     length_name, 
-                                                     offsets_name, 
-                                                     ids_name,
-                                                     vfs_name,
-                                                     topo_name, 
-                                                     neles, 
-                                                     length, 
-                                                     offsets,
-                                                     ids,
-                                                     vfs);
-                dset->AddField(length);
-                dset->AddField(offsets);
-                dset->AddField(ids);
-                dset->AddField(vfs);
+                AddMatSetFieldsCommon<int, float32>(
+                    n_matset,
+                    length_name,
+                    offsets_name,
+                    ids_name,
+                    vfs_name,
+                    topo_name,
+                    neles,
+                    dset);
             }
-            else if(n_material.dtype().is_float64())
+            else if (n_material.dtype().is_float64())
             {
-                supported_type = true;
-                //add calculated material fields for vtkm
-                int total;
-                vtkm::cont::Field length, offsets, ids, vfs;
-                detail::GetMatSetFields<int,float64>(n_matset, 
-                                                     length_name, 
-                                                     offsets_name, 
-                                                     ids_name,
-                                                     vfs_name,
-                                                     topo_name, 
-                                                     neles, 
-                                                     length, 
-                                                     offsets,
-                                                     ids,
-                                                     vfs);
-                dset->AddField(length);
-                dset->AddField(offsets);
-                dset->AddField(ids);
-                dset->AddField(vfs);
+                AddMatSetFieldsCommon<int, float64>(
+                    n_matset,
+                    length_name,
+                    offsets_name,
+                    ids_name,
+                    vfs_name,
+                    topo_name,
+                    neles,
+                    dset);
             }
         }
-        catch (vtkm::cont::Error error)
+        catch (const viskores::cont::Error &error)
         {
-            ASCENT_ERROR("VTKm exception:" << error.GetMessage());
+            ASCENT_ERROR("Viskores exception:" << error.GetMessage());
         }
-    }   
+    }
 }
 
 std::string
-GetBlueprintCellName(vtkm::UInt8 shape_id)
+GetBlueprintCellName(viskores::UInt8 shape_id)
 {
   std::string name;
-  if(shape_id == vtkm::CELL_SHAPE_TRIANGLE)
+  if(shape_id == viskores::CELL_SHAPE_TRIANGLE)
   {
     name = "tri";
   }
-  else if(shape_id == vtkm::CELL_SHAPE_VERTEX)
+  else if(shape_id == viskores::CELL_SHAPE_VERTEX)
   {
     name = "point";
   }
-  else if(shape_id == vtkm::CELL_SHAPE_LINE)
+  else if(shape_id == viskores::CELL_SHAPE_LINE)
   {
     name = "line";
   }
-  else if(shape_id == vtkm::CELL_SHAPE_POLYGON)
+  else if(shape_id == viskores::CELL_SHAPE_POLYGON)
   {
     ASCENT_ERROR("Polygon is not supported in blueprint");
   }
-  else if(shape_id == vtkm::CELL_SHAPE_QUAD)
+  else if(shape_id == viskores::CELL_SHAPE_QUAD)
   {
     name = "quad";
   }
-  else if(shape_id == vtkm::CELL_SHAPE_TETRA)
+  else if(shape_id == viskores::CELL_SHAPE_TETRA)
   {
     name = "tet";
   }
-  else if(shape_id == vtkm::CELL_SHAPE_HEXAHEDRON)
+  else if(shape_id == viskores::CELL_SHAPE_HEXAHEDRON)
   {
     name = "hex";
   }
-  else if(shape_id == vtkm::CELL_SHAPE_PYRAMID)
+  else if(shape_id == viskores::CELL_SHAPE_PYRAMID)
   {
     name = "pyramid";
   }
-  else if(shape_id == vtkm::CELL_SHAPE_WEDGE)
+  else if(shape_id == viskores::CELL_SHAPE_WEDGE)
   {
     name = "wedge";
   }
@@ -3053,26 +3640,26 @@ GetBlueprintCellName(vtkm::UInt8 shape_id)
 
 
 inline index_t
-vtkm_shape_size(vtkm::Id shape_id)
+viskores_shape_size(viskores::Id shape_id)
 {
     switch(shape_id)
     {
         // point
-        case vtkm::CELL_SHAPE_VERTEX:  return 1; break;
+        case viskores::CELL_SHAPE_VERTEX:  return 1; break;
         // line
-        case vtkm::CELL_SHAPE_LINE:  return 2; break;
+        case viskores::CELL_SHAPE_LINE:  return 2; break;
         // tri
-        case vtkm::CELL_SHAPE_TRIANGLE:  return 3; break;
+        case viskores::CELL_SHAPE_TRIANGLE:  return 3; break;
         // quad
-        case vtkm::CELL_SHAPE_QUAD:  return 4; break;
+        case viskores::CELL_SHAPE_QUAD:  return 4; break;
         // tet
-        case vtkm::CELL_SHAPE_TETRA: return 4; break;
+        case viskores::CELL_SHAPE_TETRA: return 4; break;
         // hex
-        case vtkm::CELL_SHAPE_HEXAHEDRON: return 8; break;
+        case viskores::CELL_SHAPE_HEXAHEDRON: return 8; break;
         // pyramid
-        case vtkm::CELL_SHAPE_PYRAMID: return 5; break;
+        case viskores::CELL_SHAPE_PYRAMID: return 5; break;
         // wedge
-        case vtkm::CELL_SHAPE_WEDGE: return 6; break;
+        case viskores::CELL_SHAPE_WEDGE: return 6; break;
         //
         default: return 0;
     }
@@ -3088,23 +3675,23 @@ generate_sizes_from_shapes(const conduit::Node &shapes,conduit::Node &sizes)
 
     for(index_t i=0; i < num_eles; i++)
     {
-        sizes_arr[i] = vtkm_shape_size(shapes_arr[i]);
+        sizes_arr[i] = viskores_shape_size(shapes_arr[i]);
     }
     
 }
 
 bool
-VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
-                                         const vtkm::cont::DataSet &data_set,
+VTKHDataAdapter::ViskoresTopologyToBlueprint(conduit::Node &output,
+                                         const viskores::cont::DataSet &data_set,
                                          const std::string &topo_name,
                                          bool zero_copy)
 {
 
   int topo_dims;
-  bool is_structured = vtkh::VTKMDataSetInfo::IsStructured(data_set, topo_dims);
-  bool is_uniform = vtkh::VTKMDataSetInfo::IsUniform(data_set);
-  bool is_rectilinear = vtkh::VTKMDataSetInfo::IsRectilinear(data_set);
-  vtkm::cont::CoordinateSystem coords = data_set.GetCoordinateSystem();
+  bool is_structured = vtkh::VISKORESDataSetInfo::IsStructured(data_set, topo_dims);
+  bool is_uniform = vtkh::VISKORESDataSetInfo::IsUniform(data_set);
+  bool is_rectilinear = vtkh::VISKORESDataSetInfo::IsRectilinear(data_set);
+  viskores::cont::CoordinateSystem coords = data_set.GetCoordinateSystem();
   const std::string coords_name = coords.GetName();
   // we cannot access an empty domain
   bool is_empty = false;
@@ -3122,7 +3709,7 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
 
   if(is_uniform)
   {
-    auto points = coords.GetData().AsArrayHandle<vtkm::cont::ArrayHandleUniformPointCoordinates>();
+    auto points = coords.GetData().AsArrayHandle<viskores::cont::ArrayHandleUniformPointCoordinates>();
     auto portal = points.ReadPortal();
 
     auto origin = portal.GetOrigin();
@@ -3145,9 +3732,9 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
   }
   else if(is_rectilinear)
   {
-    typedef vtkm::cont::ArrayHandleCartesianProduct<vtkm::cont::ArrayHandle<vtkm::FloatDefault>,
-                                                    vtkm::cont::ArrayHandle<vtkm::FloatDefault>,
-                                                    vtkm::cont::ArrayHandle<vtkm::FloatDefault>> Cartesian;
+    typedef viskores::cont::ArrayHandleCartesianProduct<viskores::cont::ArrayHandle<viskores::FloatDefault>,
+                                                    viskores::cont::ArrayHandle<viskores::FloatDefault>,
+                                                    viskores::cont::ArrayHandle<viskores::FloatDefault>> Cartesian;
 
     const auto points = coords.GetData().AsArrayHandle<Cartesian>();
     auto portal = points.ReadPortal();
@@ -3156,9 +3743,9 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
     auto z_portal = portal.GetThirdPortal();
 
     // work around for conduit not accepting const pointers
-    vtkm::FloatDefault *x_ptr = const_cast<vtkm::FloatDefault*>(x_portal.GetArray());
-    vtkm::FloatDefault *y_ptr = const_cast<vtkm::FloatDefault*>(y_portal.GetArray());
-    vtkm::FloatDefault *z_ptr = const_cast<vtkm::FloatDefault*>(z_portal.GetArray());
+    viskores::FloatDefault *x_ptr = const_cast<viskores::FloatDefault*>(x_portal.GetArray());
+    viskores::FloatDefault *y_ptr = const_cast<viskores::FloatDefault*>(y_portal.GetArray());
+    viskores::FloatDefault *z_ptr = const_cast<viskores::FloatDefault*>(z_portal.GetArray());
 
     output["topologies/"+topo_name+"/coordset"] = coords_name;
     output["topologies/"+topo_name+"/type"] = "rectilinear";
@@ -3184,13 +3771,13 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
     // This still could be structured, but this will always
     // have an explicit coordinate system
     output["coordsets/"+coords_name+"/type"] = "explicit";
-    using Coords32 = vtkm::cont::ArrayHandleSOA<vtkm::Vec<vtkm::Float32, 3>>;
-    using Coords64 = vtkm::cont::ArrayHandleSOA<vtkm::Vec<vtkm::Float64, 3>>;
+    using Coords32 = viskores::cont::ArrayHandleSOA<viskores::Vec<viskores::Float32, 3>>;
+    using Coords64 = viskores::cont::ArrayHandleSOA<viskores::Vec<viskores::Float64, 3>>;
 
-    using CoordsVec32 = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32,3>>;
-    using CoordsVec64 = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64,3>>;
+    using CoordsVec32 = viskores::cont::ArrayHandle<viskores::Vec<viskores::Float32,3>>;
+    using CoordsVec64 = viskores::cont::ArrayHandle<viskores::Vec<viskores::Float64,3>>;
 
-    vtkm::cont::UnknownArrayHandle coordsHandle(coords.GetData());
+    viskores::cont::UnknownArrayHandle coordsHandle(coords.GetData());
 
     if(coordsHandle.CanConvert<Coords32>())
     {
@@ -3208,20 +3795,20 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
       if(zero_copy)
       {
         output["coordsets/"+coords_name+"/values/x"].
-          set_external(vtkh::GetVTKMPointer(x_handle), point_dims[0]);
+          set_external(vtkh::GetVISKORESPointer(x_handle), point_dims[0]);
         output["coordsets/"+coords_name+"/values/y"].
-          set_external(vtkh::GetVTKMPointer(y_handle), point_dims[1]);
+          set_external(vtkh::GetVISKORESPointer(y_handle), point_dims[1]);
         output["coordsets/"+coords_name+"/values/z"].
-          set_external(vtkh::GetVTKMPointer(z_handle), point_dims[2]);
+          set_external(vtkh::GetVISKORESPointer(z_handle), point_dims[2]);
       }
       else
       {
         output["coordsets/"+coords_name+"/values/x"].
-          set(vtkh::GetVTKMPointer(x_handle), point_dims[0]);
+          set(vtkh::GetVISKORESPointer(x_handle), point_dims[0]);
         output["coordsets/"+coords_name+"/values/y"].
-          set(vtkh::GetVTKMPointer(y_handle), point_dims[1]);
+          set(vtkh::GetVISKORESPointer(y_handle), point_dims[1]);
         output["coordsets/"+coords_name+"/values/z"].
-          set(vtkh::GetVTKMPointer(z_handle), point_dims[2]);
+          set(vtkh::GetVISKORESPointer(z_handle), point_dims[2]);
 
       }
 
@@ -3232,8 +3819,8 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
       coordsHandle.AsArrayHandle(points);
 
       const int num_vals = points.GetNumberOfValues();
-      vtkm::Float32 *points_ptr = (vtkm::Float32*)vtkh::GetVTKMPointer(points);
-      const int byte_size = sizeof(vtkm::Float32);
+      viskores::Float32 *points_ptr = (viskores::Float32*)vtkh::GetVISKORESPointer(points);
+      const int byte_size = sizeof(viskores::Float32);
 
       if(zero_copy)
       {
@@ -3244,7 +3831,7 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
         output["coordsets/"+coords_name+"/values/y"].set_external(points_ptr,
                                                                   num_vals,
                                                                   byte_size*1,  // byte offset
-                                                                  sizeof(vtkm::Float32)*3); // stride
+                                                                  sizeof(viskores::Float32)*3); // stride
         output["coordsets/"+coords_name+"/values/z"].set_external(points_ptr,
                                                                   num_vals,
                                                                   byte_size*2,  // byte offset
@@ -3259,7 +3846,7 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
         output["coordsets/"+coords_name+"/values/y"].set(points_ptr,
                                                          num_vals,
                                                          byte_size*1,  // byte offset
-                                                         sizeof(vtkm::Float32)*3); // stride
+                                                         sizeof(viskores::Float32)*3); // stride
         output["coordsets/"+coords_name+"/values/z"].set(points_ptr,
                                                          num_vals,
                                                          byte_size*2,  // byte offset
@@ -3283,20 +3870,20 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
       if(zero_copy)
       {
         output["coordsets/"+coords_name+"/values/x"].
-          set_external(vtkh::GetVTKMPointer(x_handle), point_dims[0]);
+          set_external(vtkh::GetVISKORESPointer(x_handle), point_dims[0]);
         output["coordsets/"+coords_name+"/values/y"].
-          set_external(vtkh::GetVTKMPointer(y_handle), point_dims[1]);
+          set_external(vtkh::GetVISKORESPointer(y_handle), point_dims[1]);
         output["coordsets/"+coords_name+"/values/z"].
-          set_external(vtkh::GetVTKMPointer(z_handle), point_dims[2]);
+          set_external(vtkh::GetVISKORESPointer(z_handle), point_dims[2]);
       }
       else
       {
         output["coordsets/"+coords_name+"/values/x"].
-          set(vtkh::GetVTKMPointer(x_handle), point_dims[0]);
+          set(vtkh::GetVISKORESPointer(x_handle), point_dims[0]);
         output["coordsets/"+coords_name+"/values/y"].
-          set(vtkh::GetVTKMPointer(y_handle), point_dims[1]);
+          set(vtkh::GetVISKORESPointer(y_handle), point_dims[1]);
         output["coordsets/"+coords_name+"/values/z"].
-          set(vtkh::GetVTKMPointer(z_handle), point_dims[2]);
+          set(vtkh::GetVISKORESPointer(z_handle), point_dims[2]);
 
       }
     }
@@ -3306,8 +3893,8 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
       coordsHandle.AsArrayHandle(points);
 
       const int num_vals = points.GetNumberOfValues();
-      vtkm::Float64 *points_ptr = (vtkm::Float64*)vtkh::GetVTKMPointer(points);
-      const int byte_size = sizeof(vtkm::Float64);
+      viskores::Float64 *points_ptr = (viskores::Float64*)vtkh::GetVISKORESPointer(points);
+      const int byte_size = sizeof(viskores::Float64);
 
       if(zero_copy)
       {
@@ -3344,17 +3931,17 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
     }
     else
     {
-      // Ok vtkm has handed us something we don't know about, and its really
-      // hard to ask vtkm to tell us what it is. Before we give up, we will
+      // Ok viskores has handed us something we don't know about, and its really
+      // hard to ask viskores to tell us what it is. Before we give up, we will
       // attempt to copy the data to a known type and copy that copy.
       // We can't avoid the double copy since conduit can't take ownership
       // and we can't seem to write to a zero copied array
 
-      vtkm::cont::ArrayHandle<vtkm::Vec<double,3>> coords_copy;
-      vtkm::cont::ArrayCopy(coordsHandle, coords_copy);
+      viskores::cont::ArrayHandle<viskores::Vec<double,3>> coords_copy;
+      viskores::cont::ArrayCopy(coordsHandle, coords_copy);
       const int num_vals = coords_copy.GetNumberOfValues();
-      vtkm::Float64 *points_ptr = (vtkm::Float64*)vtkh::GetVTKMPointer(coords_copy);
-      const int byte_size = sizeof(vtkm::Float64);
+      viskores::Float64 *points_ptr = (viskores::Float64*)vtkh::GetVISKORESPointer(coords_copy);
+      const int byte_size = sizeof(viskores::Float64);
 
 
       output["coordsets/"+coords_name+"/values/x"].set(points_ptr,
@@ -3371,26 +3958,26 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
                                                        byte_size*3); // stride
     }
 
-    vtkm::UInt8 shape_id = 0;
+    viskores::UInt8 shape_id = 0;
     if(is_structured)
     {
       output["topologies/"+topo_name+"/coordset"] = coords_name;
       output["topologies/"+topo_name+"/type"] = "structured";
 
-      vtkm::cont::UnknownCellSet dyn_cells = data_set.GetCellSet();
-      using Structured2D = vtkm::cont::CellSetStructured<2>;
-      using Structured3D = vtkm::cont::CellSetStructured<3>;
+      viskores::cont::UnknownCellSet dyn_cells = data_set.GetCellSet();
+      using Structured2D = viskores::cont::CellSetStructured<2>;
+      using Structured3D = viskores::cont::CellSetStructured<3>;
       if(dyn_cells.CanConvert<Structured2D>())
       {
         Structured2D cells = dyn_cells.AsCellSet<Structured2D>();
-        vtkm::Id2 cell_dims = cells.GetCellDimensions();
+        viskores::Id2 cell_dims = cells.GetCellDimensions();
         output["topologies/"+topo_name+"/elements/dims/i"] = (int) cell_dims[0];
         output["topologies/"+topo_name+"/elements/dims/j"] = (int) cell_dims[1];
       }
       else if(dyn_cells.CanConvert<Structured3D>())
       {
         Structured3D cells = dyn_cells.AsCellSet<Structured3D>();
-        vtkm::Id3 cell_dims = cells.GetCellDimensions();
+        viskores::Id3 cell_dims = cells.GetCellDimensions();
         output["topologies/"+topo_name+"/elements/dims/i"] = (int) cell_dims[0];
         output["topologies/"+topo_name+"/elements/dims/j"] = (int) cell_dims[1];
         output["topologies/"+topo_name+"/elements/dims/k"] = (int) cell_dims[2];
@@ -3405,55 +3992,55 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
     {
       output["topologies/"+topo_name+"/coordset"] = coords_name;
       output["topologies/"+topo_name+"/type"] = "unstructured";
-      vtkm::cont::UnknownCellSet dyn_cells = data_set.GetCellSet();
+      viskores::cont::UnknownCellSet dyn_cells = data_set.GetCellSet();
 
-      using SingleType = vtkm::cont::CellSetSingleType<>;
-      using MixedType = vtkm::cont::CellSetExplicit<>;
+      using SingleType = viskores::cont::CellSetSingleType<>;
+      using MixedType = viskores::cont::CellSetExplicit<>;
 
       if(dyn_cells.CanConvert<SingleType>())
       {
         SingleType cells = dyn_cells.AsCellSet<SingleType>();
-        vtkm::UInt8 shape_id = cells.GetCellShape(0);
+        viskores::UInt8 shape_id = cells.GetCellShape(0);
         std::string conduit_name = GetBlueprintCellName(shape_id);
         output["topologies/"+topo_name+"/elements/shape"] = conduit_name;
 
-        auto conn = cells.GetConnectivityArray(vtkm::TopologyElementTagCell(),
-                                               vtkm::TopologyElementTagPoint());
+        auto conn = cells.GetConnectivityArray(viskores::TopologyElementTagCell(),
+                                               viskores::TopologyElementTagPoint());
 
         if(zero_copy)
         {
           output["topologies/"+topo_name+"/elements/connectivity"].
-            set_external(vtkh::GetVTKMPointer(conn), conn.GetNumberOfValues());
+            set_external(vtkh::GetVISKORESPointer(conn), conn.GetNumberOfValues());
         }
         else
         {
           output["topologies/"+topo_name+"/elements/connectivity"].
-            set(vtkh::GetVTKMPointer(conn), conn.GetNumberOfValues());
+            set(vtkh::GetVISKORESPointer(conn), conn.GetNumberOfValues());
         }
       }
-      else if(vtkh::VTKMDataSetInfo::IsSingleCellShape(dyn_cells, shape_id))
+      else if(vtkh::VISKORESDataSetInfo::IsSingleCellShape(dyn_cells, shape_id))
       {
         // If we are here, the we know that the cell set is explicit,
         // but only a single cell shape
-        auto cells = dyn_cells.AsCellSet<vtkm::cont::CellSetExplicit<>>();
-        auto shapes = cells.GetShapesArray(vtkm::TopologyElementTagCell(),
-                                           vtkm::TopologyElementTagPoint());
+        auto cells = dyn_cells.AsCellSet<viskores::cont::CellSetExplicit<>>();
+        auto shapes = cells.GetShapesArray(viskores::TopologyElementTagCell(),
+                                           viskores::TopologyElementTagPoint());
 
         std::string conduit_name = GetBlueprintCellName(shape_id);
         output["topologies/"+topo_name+"/elements/shape"] = conduit_name;
 
-        auto conn = cells.GetConnectivityArray(vtkm::TopologyElementTagCell(),
-                                               vtkm::TopologyElementTagPoint());
+        auto conn = cells.GetConnectivityArray(viskores::TopologyElementTagCell(),
+                                               viskores::TopologyElementTagPoint());
 
         if(zero_copy)
         {
           output["topologies/"+topo_name+"/elements/connectivity"].
-            set_external(vtkh::GetVTKMPointer(conn), conn.GetNumberOfValues());
+            set_external(vtkh::GetVISKORESPointer(conn), conn.GetNumberOfValues());
         }
         else
         {
           output["topologies/"+topo_name+"/elements/connectivity"].
-            set(vtkh::GetVTKMPointer(conn), conn.GetNumberOfValues());
+            set(vtkh::GetVISKORESPointer(conn), conn.GetNumberOfValues());
         }
 
       }
@@ -3466,27 +4053,27 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
             ["topologies/" + topo_name + "/elements"];
         topo_ele["shape"] = "mixed";
 
-        VTKmBlueprintShapeMap(topo_ele["shape_map"]);
+        ViskoresBlueprintShapeMap(topo_ele["shape_map"]);
 
         size_t num_cells = static_cast<size_t>(cells.GetNumberOfCells());
-        auto vtkm_shapes  = cells.GetShapesArray(vtkm::TopologyElementTagCell{}, vtkm::TopologyElementTagPoint{});
-        auto vtkm_conn    = cells.GetConnectivityArray(vtkm::TopologyElementTagCell{}, vtkm::TopologyElementTagPoint{});
-        auto vtkm_offsets = cells.GetOffsetsArray(vtkm::TopologyElementTagCell{}, vtkm::TopologyElementTagPoint{});
+        auto viskores_shapes  = cells.GetShapesArray(viskores::TopologyElementTagCell{}, viskores::TopologyElementTagPoint{});
+        auto viskores_conn    = cells.GetConnectivityArray(viskores::TopologyElementTagCell{}, viskores::TopologyElementTagPoint{});
+        auto viskores_offsets = cells.GetOffsetsArray(viskores::TopologyElementTagCell{}, viskores::TopologyElementTagPoint{});
 
 
-        std::size_t conn_size = static_cast<std::size_t>(vtkm_conn.GetNumberOfValues());
+        std::size_t conn_size = static_cast<std::size_t>(viskores_conn.GetNumberOfValues());
 
         if(zero_copy)
         {
-            topo_ele["shapes"].set_external(vtkh::GetVTKMPointer(vtkm_shapes), num_cells);
-            topo_ele["connectivity"].set_external(vtkh::GetVTKMPointer(vtkm_conn), conn_size);
-            topo_ele["offsets"].set_external(vtkh::GetVTKMPointer(vtkm_offsets), num_cells);
+            topo_ele["shapes"].set_external(vtkh::GetVISKORESPointer(viskores_shapes), num_cells);
+            topo_ele["connectivity"].set_external(vtkh::GetVISKORESPointer(viskores_conn), conn_size);
+            topo_ele["offsets"].set_external(vtkh::GetVISKORESPointer(viskores_offsets), num_cells);
         }
         else
         {
-            topo_ele["shapes"].set(vtkh::GetVTKMPointer(vtkm_shapes), num_cells);
-            topo_ele["connectivity"].set(vtkh::GetVTKMPointer(vtkm_conn), conn_size);
-            topo_ele["offsets"].set(vtkh::GetVTKMPointer(vtkm_offsets), num_cells);
+            topo_ele["shapes"].set(vtkh::GetVISKORESPointer(viskores_shapes), num_cells);
+            topo_ele["connectivity"].set(vtkh::GetVISKORESPointer(viskores_conn), conn_size);
+            topo_ele["offsets"].set(vtkh::GetVISKORESPointer(viskores_offsets), num_cells);
         }
 
         // bp requires sizes, so we have to compute them
@@ -3500,10 +4087,10 @@ VTKHDataAdapter::VTKmTopologyToBlueprint(conduit::Node &output,
 }
 
 //---------------------------------------------------------------------------//
-// helper to set conduit field values for from a vector style vtkm array
+// helper to set conduit field values for from a vector style viskores array
 //---------------------------------------------------------------------------//
 template<typename T, int N>
-void SetFieldValuesFromVTKmUnknownArrayHandleVec(vtkm::cont::UnknownArrayHandle &dyn_handle,
+void SetFieldValuesFromViskoresUnknownArrayHandleVec(viskores::cont::UnknownArrayHandle &dyn_handle,
                                                  bool zero_copy,
                                                  Node &output_values)
 {
@@ -3517,7 +4104,7 @@ void SetFieldValuesFromVTKmUnknownArrayHandleVec(vtkm::cont::UnknownArrayHandle 
     for(index_t comp = 0; comp < N; comp++)
     {
       zero_copy = try_zero_copy;
-      vtkm::cont::ArrayHandleStride<T> stride_handle;
+      viskores::cont::ArrayHandleStride<T> stride_handle;
 
       Node &output_values_component = output_values[comp_names[comp]];
 
@@ -3525,31 +4112,31 @@ void SetFieldValuesFromVTKmUnknownArrayHandleVec(vtkm::cont::UnknownArrayHandle 
       {
         try
         {
-          stride_handle = dyn_handle.ExtractComponent<T>(comp,vtkm::CopyFlag::Off);
+          stride_handle = dyn_handle.ExtractComponent<T>(comp,viskores::CopyFlag::Off);
         }
         catch(...)
         {
-          stride_handle = dyn_handle.ExtractComponent<T>(comp,vtkm::CopyFlag::On);
+          stride_handle = dyn_handle.ExtractComponent<T>(comp,viskores::CopyFlag::On);
           zero_copy = false;
         }
       }
       else
       {
-        stride_handle = dyn_handle.ExtractComponent<T>(comp,vtkm::CopyFlag::On);
+        stride_handle = dyn_handle.ExtractComponent<T>(comp,viskores::CopyFlag::On);
       }
 
-      vtkm::cont::ArrayHandleBasic<T> basic_array = stride_handle.GetBasicArray();
+      viskores::cont::ArrayHandleBasic<T> basic_array = stride_handle.GetBasicArray();
 
       if(zero_copy)
       {
-        output_values_component.set_external((T*) vtkh::GetVTKMPointer(basic_array),
+        output_values_component.set_external((T*) vtkh::GetVISKORESPointer(basic_array),
                                              stride_handle.GetNumberOfValues(),
                                              sizeof(T)*stride_handle.GetOffset(),   // starting offset in bytes
                                              sizeof(T)*stride_handle.GetStride());  // stride in bytes
       }
       else
       {
-        output_values_component.set((T*) vtkh::GetVTKMPointer(basic_array),
+        output_values_component.set((T*) vtkh::GetVISKORESPointer(basic_array),
                                     stride_handle.GetNumberOfValues(),
                                     sizeof(T)*stride_handle.GetOffset(),   // starting offset in bytes
                                     sizeof(T)*stride_handle.GetStride());  // stride in bytes
@@ -3560,37 +4147,37 @@ void SetFieldValuesFromVTKmUnknownArrayHandleVec(vtkm::cont::UnknownArrayHandle 
 
 
 //---------------------------------------------------------------------------//
-// helper to set conduit field values for from a vtkm array
+// helper to set conduit field values for from a viskores array
 //---------------------------------------------------------------------------//
 template<typename T>
-void SetFieldValuesFromVTKmUnknownArrayHandle(vtkm::cont::UnknownArrayHandle &dyn_handle,
+void SetFieldValuesFromViskoresUnknownArrayHandle(viskores::cont::UnknownArrayHandle &dyn_handle,
                                               bool zero_copy,
                                               Node &output_values)
 {
-    vtkm::cont::ArrayHandleStride<T> stride_handle;
+    viskores::cont::ArrayHandleStride<T> stride_handle;
     if(zero_copy)
     {
       // if we cannot zero copy, extract component will throw an exception
       // and we can fall back to copying
       try
       {
-        stride_handle = dyn_handle.ExtractComponent<T>(0,vtkm::CopyFlag::Off);
-      }catch(vtkm::cont::Error &e)  // fall back to copy
+        stride_handle = dyn_handle.ExtractComponent<T>(0,viskores::CopyFlag::Off);
+      }catch(viskores::cont::Error &e)  // fall back to copy
       {
-        stride_handle = dyn_handle.ExtractComponent<T>(0,vtkm::CopyFlag::On);
+        stride_handle = dyn_handle.ExtractComponent<T>(0,viskores::CopyFlag::On);
         zero_copy = false;
       }
     }
 
-    vtkm::cont::ArrayHandleBasic<T> basic_array = stride_handle.GetBasicArray();
+    viskores::cont::ArrayHandleBasic<T> basic_array = stride_handle.GetBasicArray();
     if(zero_copy)
     {
-      output_values.set_external(vtkh::GetVTKMPointer(basic_array),
+      output_values.set_external(vtkh::GetVISKORESPointer(basic_array),
                                  stride_handle.GetNumberOfValues());
     }
     else // copy case
     {
-      output_values.set(vtkh::GetVTKMPointer(basic_array),
+      output_values.set(vtkh::GetVISKORESPointer(basic_array),
                         stride_handle.GetNumberOfValues());
     }
 }
@@ -3598,16 +4185,16 @@ void SetFieldValuesFromVTKmUnknownArrayHandle(vtkm::cont::UnknownArrayHandle &dy
 
 
 void
-VTKHDataAdapter::VTKmFieldToBlueprint(conduit::Node &output,
-                                      const vtkm::cont::Field &field,
+VTKHDataAdapter::ViskoresFieldToBlueprint(conduit::Node &output,
+                                      const viskores::cont::Field &field,
                                       const std::string &topo_name,
                                       bool zero_copy)
 {
   std::string name = field.GetName();
   std::string path = "fields/" + name;
-  bool assoc_points = vtkm::cont::Field::Association::Points == field.GetAssociation();
-  bool assoc_cells  = vtkm::cont::Field::Association::Cells == field.GetAssociation();
-  //bool assoc_mesh  = vtkm::cont::Field::ASSOC_WHOLE_MESH == field.GetAssociation();
+  bool assoc_points = viskores::cont::Field::Association::Points == field.GetAssociation();
+  bool assoc_cells  = viskores::cont::Field::Association::Cells == field.GetAssociation();
+  //bool assoc_mesh  = viskores::cont::Field::ASSOC_WHOLE_MESH == field.GetAssociation();
   if(!assoc_points && ! assoc_cells)
   {
     ASCENT_ERROR("Field must be associated with cells or points\n");
@@ -3620,88 +4207,88 @@ VTKHDataAdapter::VTKmFieldToBlueprint(conduit::Node &output,
   output[path + "/association"] = conduit_name;
   output[path + "/topology"] = topo_name;
   Node &output_values =   output[path + "/values"];
-  vtkm::cont::UnknownArrayHandle dyn_handle = field.GetData();
+  viskores::cont::UnknownArrayHandle dyn_handle = field.GetData();
 
   //
   // this can be literally anything. Lets do some exhaustive casting
   //
-  if (dyn_handle.IsValueType<vtkm::Vec<vtkm::Float32, 3>>())
+  if (dyn_handle.IsValueType<viskores::Vec<viskores::Float32, 3>>())
   {
-      SetFieldValuesFromVTKmUnknownArrayHandleVec<vtkm::Float32, 3>(dyn_handle,
+      SetFieldValuesFromViskoresUnknownArrayHandleVec<viskores::Float32, 3>(dyn_handle,
           zero_copy,
           output_values);
   }
-  else if (dyn_handle.IsValueType<vtkm::Vec<vtkm::Float64, 3>>())
+  else if (dyn_handle.IsValueType<viskores::Vec<viskores::Float64, 3>>())
   {
-      SetFieldValuesFromVTKmUnknownArrayHandleVec<vtkm::Float64, 3>(dyn_handle,
+      SetFieldValuesFromViskoresUnknownArrayHandleVec<viskores::Float64, 3>(dyn_handle,
           zero_copy,
           output_values);
   }
-  else if (dyn_handle.IsValueType<vtkm::Vec<vtkm::Int32, 3>>())
+  else if (dyn_handle.IsValueType<viskores::Vec<viskores::Int32, 3>>())
   {
-      SetFieldValuesFromVTKmUnknownArrayHandleVec<vtkm::Int32, 3>(dyn_handle,
+      SetFieldValuesFromViskoresUnknownArrayHandleVec<viskores::Int32, 3>(dyn_handle,
           zero_copy,
           output_values);
   }
-  else if (dyn_handle.IsValueType<vtkm::Vec<vtkm::Float32, 2>>())
+  else if (dyn_handle.IsValueType<viskores::Vec<viskores::Float32, 2>>())
   {
-      SetFieldValuesFromVTKmUnknownArrayHandleVec<vtkm::Float32, 2>(dyn_handle,
+      SetFieldValuesFromViskoresUnknownArrayHandleVec<viskores::Float32, 2>(dyn_handle,
           zero_copy,
           output_values);
   }
-  else if (dyn_handle.IsValueType<vtkm::Vec<vtkm::Float64, 2>>())
+  else if (dyn_handle.IsValueType<viskores::Vec<viskores::Float64, 2>>())
   {
-      SetFieldValuesFromVTKmUnknownArrayHandleVec<vtkm::Float64, 2>(dyn_handle,
+      SetFieldValuesFromViskoresUnknownArrayHandleVec<viskores::Float64, 2>(dyn_handle,
           zero_copy,
           output_values);
   }
-  else if (dyn_handle.IsValueType<vtkm::Vec<vtkm::Int32, 2>>())
+  else if (dyn_handle.IsValueType<viskores::Vec<viskores::Int32, 2>>())
   {
-      SetFieldValuesFromVTKmUnknownArrayHandleVec<vtkm::Int32, 2>(dyn_handle,
+      SetFieldValuesFromViskoresUnknownArrayHandleVec<viskores::Int32, 2>(dyn_handle,
           zero_copy,
           output_values);
   }
-  else if(dyn_handle.IsValueType<vtkm::Float32>())
+  else if(dyn_handle.IsValueType<viskores::Float32>())
   {
-    SetFieldValuesFromVTKmUnknownArrayHandle<vtkm::Float32>(dyn_handle,
+    SetFieldValuesFromViskoresUnknownArrayHandle<viskores::Float32>(dyn_handle,
                                   zero_copy,
                                   output_values);
   }
-  else if(dyn_handle.IsValueType<vtkm::Float64>())
+  else if(dyn_handle.IsValueType<viskores::Float64>())
   {
-    SetFieldValuesFromVTKmUnknownArrayHandle<vtkm::Float64>(dyn_handle,
+    SetFieldValuesFromViskoresUnknownArrayHandle<viskores::Float64>(dyn_handle,
                                   zero_copy,
                                   output_values);
   }
-  else if(dyn_handle.IsValueType<vtkm::Int8>())
+  else if(dyn_handle.IsValueType<viskores::Int8>())
   {
-    SetFieldValuesFromVTKmUnknownArrayHandle<vtkm::Int8>(dyn_handle,
+    SetFieldValuesFromViskoresUnknownArrayHandle<viskores::Int8>(dyn_handle,
                               zero_copy,
                               output_values);
 
   }
-  else if(dyn_handle.IsValueType<vtkm::Int32>())
+  else if(dyn_handle.IsValueType<viskores::Int32>())
   {
-    SetFieldValuesFromVTKmUnknownArrayHandle<vtkm::Int32>(dyn_handle,
+    SetFieldValuesFromViskoresUnknownArrayHandle<viskores::Int32>(dyn_handle,
                               zero_copy,
                               output_values);
   }
-  else if(dyn_handle.IsValueType<vtkm::Int64>())
+  else if(dyn_handle.IsValueType<viskores::Int64>())
   {
-    SetFieldValuesFromVTKmUnknownArrayHandle<vtkm::Int64>(dyn_handle,
+    SetFieldValuesFromViskoresUnknownArrayHandle<viskores::Int64>(dyn_handle,
                               zero_copy,
                               output_values);
 
   }
-  else if(dyn_handle.IsValueType<vtkm::UInt32>())
+  else if(dyn_handle.IsValueType<viskores::UInt32>())
   {
-    SetFieldValuesFromVTKmUnknownArrayHandle<vtkm::UInt32>(dyn_handle,
+    SetFieldValuesFromViskoresUnknownArrayHandle<viskores::UInt32>(dyn_handle,
                               zero_copy,
                               output_values);
   }
-  else if(dyn_handle.IsValueType<vtkm::UInt8>())
+  else if(dyn_handle.IsValueType<viskores::UInt8>())
   {
-    SetFieldValuesFromVTKmUnknownArrayHandle<vtkm::UInt8>(dyn_handle,
+    SetFieldValuesFromViskoresUnknownArrayHandle<viskores::UInt8>(dyn_handle,
                               zero_copy,
                               output_values);
   }
@@ -3720,12 +4307,12 @@ VTKHDataAdapter::VTKmFieldToBlueprint(conduit::Node &output,
 
 //-----------------------------------------------------------------------------
 bool
-VTKHDataAdapter::CheckShapeMapVsVTKmShapeIds(const Node &shape_map)
+VTKHDataAdapter::CheckShapeMapVsViskoresShapeIds(const Node &shape_map)
 {
     bool res = true;
     Node ref_map;
 
-    VTKHDataAdapter::VTKmBlueprintShapeMap(ref_map);
+    VTKHDataAdapter::ViskoresBlueprintShapeMap(ref_map);
     NodeConstIterator itr = shape_map.children();
     while(itr.has_next() && res)
     {
@@ -3747,7 +4334,7 @@ VTKHDataAdapter::CheckShapeMapVsVTKmShapeIds(const Node &shape_map)
 
 
 void
-VTKHDataAdapter::VTKmBlueprintShapeMap(conduit::Node &output)
+VTKHDataAdapter::ViskoresBlueprintShapeMap(conduit::Node &output)
 {
     output.reset();
     output["tri"]     = 5;
@@ -3769,7 +4356,7 @@ void VTKHDataAdapter::VTKHCollectionToBlueprintDataSet(VTKHCollection *collectio
   bool success = true;
   // we have to re-merge the domains so all domains with the same
   // domain id end up in a single domain
-  std::map<int, std::map<std::string,vtkm::cont::DataSet>> domain_map;
+  std::map<int, std::map<std::string,viskores::cont::DataSet>> domain_map;
   domain_map = collection->by_domain_id();
   std::string err_msg;
   try
@@ -3784,8 +4371,8 @@ void VTKHDataAdapter::VTKHCollectionToBlueprintDataSet(VTKHCollection *collectio
       for(auto topo_it : domain_it.second)
       {
         const std::string topo_name = topo_it.first;
-        vtkm::cont::DataSet &dataset = topo_it.second;
-        VTKHDataAdapter::VTKmToBlueprintDataSet(&dataset, dom, topo_name, zero_copy);
+        viskores::cont::DataSet &dataset = topo_it.second;
+        VTKHDataAdapter::ViskoresToBlueprintDataSet(&dataset, dom, topo_name, zero_copy);
       }
     }
   }
@@ -3794,7 +4381,7 @@ void VTKHDataAdapter::VTKHCollectionToBlueprintDataSet(VTKHCollection *collectio
      err_msg = error.message();
      success = false;
   }
-  catch (vtkm::cont::Error error)
+  catch (viskores::cont::Error error)
   {
     err_msg =  error.GetMessage();
     success = false;
@@ -3808,7 +4395,7 @@ void VTKHDataAdapter::VTKHCollectionToBlueprintDataSet(VTKHCollection *collectio
   if(!success)
   { 
     //  TODO: broadcast error messages to root?
-    ASCENT_ERROR("Failed to convert VTK-m data set to blueprint: " << err_msg);
+    ASCENT_ERROR("Failed to convert Viskores data set to blueprint: " << err_msg);
   }
 }
 
@@ -3826,11 +4413,11 @@ VTKHDataAdapter::VTKHToBlueprintDataSet(vtkh::DataSet *dset,
     for(int i = 0; i < num_doms; ++i)
     {
       conduit::Node &dom = node.append();
-      vtkm::cont::DataSet vtkm_dom;
-      vtkm::Id domain_id;
+      viskores::cont::DataSet viskores_dom;
+      viskores::Id domain_id;
       int cycle = dset->GetCycle();
-      dset->GetDomain(i, vtkm_dom, domain_id);
-      VTKHDataAdapter::VTKmToBlueprintDataSet(&vtkm_dom,dom, "topo", zero_copy);
+      dset->GetDomain(i, viskores_dom, domain_id);
+      VTKHDataAdapter::ViskoresToBlueprintDataSet(&viskores_dom,dom, "topo", zero_copy);
       dom["state/domain_id"] = (int) domain_id;
       dom["state/cycle"] = cycle;
     }
@@ -3840,7 +4427,7 @@ VTKHDataAdapter::VTKHToBlueprintDataSet(vtkh::DataSet *dset,
       err_msg = error.message();
       success = false;
   }
-  catch (vtkm::cont::Error error)
+  catch (viskores::cont::Error error)
   {
       err_msg = error.GetMessage();
       success = false;
@@ -3855,35 +4442,35 @@ VTKHDataAdapter::VTKHToBlueprintDataSet(vtkh::DataSet *dset,
   if(!success)
   {
     //  TODO: broadcast error messages to root?
-    ASCENT_ERROR("Failed to convert VTK-m data set to blueprint: " << err_msg);
+    ASCENT_ERROR("Failed to convert Viskores data set to blueprint: " << err_msg);
   }
 }
 
 void
-VTKHDataAdapter::VTKmToBlueprintDataSet(const vtkm::cont::DataSet *dset,
+VTKHDataAdapter::ViskoresToBlueprintDataSet(const viskores::cont::DataSet *dset,
                                         conduit::Node &node,
                                         const std::string &topo_name,
                                         bool zero_copy)
 {
   //
-  // with vtkm, we have no idea what the type is of anything inside
+  // with viskores, we have no idea what the type is of anything inside
   // dataset, so we have to ask all fields, cell sets anc coordinate systems.
   //
 
-  bool is_empty = VTKmTopologyToBlueprint(node, *dset, topo_name, zero_copy);
+  bool is_empty = ViskoresTopologyToBlueprint(node, *dset, topo_name, zero_copy);
 
   if(!is_empty)
   {
-    const vtkm::Id num_fields = dset->GetNumberOfFields();
-    for(vtkm::Id i = 0; i < num_fields; ++i)
+    const viskores::Id num_fields = dset->GetNumberOfFields();
+    for(viskores::Id i = 0; i < num_fields; ++i)
     {
-      vtkm::cont::Field field = dset->GetField(i);
-      // as of VTK-m 2.0, coordinates are also stored as VTK-m fields
+      viskores::cont::Field field = dset->GetField(i);
+      // as of Viskores 2.0, coordinates are also stored as Viskores fields
       // skip wrapping coords as a field, since they are 
       // already captured in the blueprint coordset
       if (!dset->HasCoordinateSystem(field.GetName()))
       {
-          VTKmFieldToBlueprint(node, field, topo_name, zero_copy);
+          ViskoresFieldToBlueprint(node, field, topo_name, zero_copy);
       }
     }
   }

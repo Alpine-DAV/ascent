@@ -28,7 +28,7 @@ The VTK-h filter interface is straight-forward:
     virtual void PostExecute();
 
 A new VTK-h filter must minimally implement two methods: ``GetName()`` and ``DoExecute``.
-A filter's input is a VTK-h data set which is a collection (a std::vector)  of VTK-m data set
+A filter's input is a VTK-h data set which is a collection (a std::vector)  of Viskores data set
 with extra meta data like the cycle and domain ids.
 
 Implementing A New Filter
@@ -36,7 +36,7 @@ Implementing A New Filter
 As a convenience, we provide a `NoOp <https://github.com/Alpine-DAV/vtk-h/blob/develop/src/libs/vtkh/filters/NoOp.hpp>`_
 filter as staring point. Its recommended that you copy and rename the header and source code
 files and use that as a base. The NoOp filter demonstrates how to loop through all the domains
-in the input data set, retrieve the underlying VTK-m data set, and where the interesting stuff
+in the input data set, retrieve the underlying Viskores data set, and where the interesting stuff
 goes.
 
 .. code-block:: c++
@@ -48,15 +48,15 @@ goes.
 
     for(int i = 0; i < num_domains; ++i)
     {
-      vtkm::Id domain_id;
-      vtkm::cont::DataSet dom;
+      viskores::Id domain_id;
+      viskores::cont::DataSet dom;
       this->m_input->GetDomain(i, dom, domain_id);
       // insert interesting stuff
       m_output->AddDomain(dom, domain_id);
     }
   }
 
-Inside of the source file, you are free to create new and invoke existing VTK-m worklets that will
+Inside of the source file, you are free to create new and invoke existing Viskores worklets that will
 execute on supported devices. For a more fully functional example, consult the `Marching Cubes <https://github.com/Alpine-DAV/vtk-h/blob/develop/src/libs/vtkh/filters/MarchingCubes.cpp>`_
 filter.
 

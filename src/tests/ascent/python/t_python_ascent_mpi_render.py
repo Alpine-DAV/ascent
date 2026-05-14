@@ -28,7 +28,7 @@ class Test_Ascent_MPI_Render(unittest.TestCase):
         # if we don't have ascent, or mpi simply return
 
         info = ascent.mpi.about()
-        if info["runtimes/ascent/vtkm/status"] != "enabled":
+        if info["runtimes/ascent/viskores/status"] != "enabled":
             print("ascent runtime not enabled, skipping mpi render test")
             return
 
@@ -85,7 +85,7 @@ class Test_Ascent_MPI_Render(unittest.TestCase):
         # if we don't have ascent, simply return
 
         info = ascent.mpi.about()
-        if info["runtimes/ascent/vtkm/status"] != "enabled":
+        if info["runtimes/ascent/viskores/status"] != "enabled":
             print("ascent runtime not enabled, skipping mpi render test")
             return
 

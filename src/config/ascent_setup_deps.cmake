@@ -218,24 +218,24 @@ if(ANARI_DIR)
 endif()
 
 ###############################################################################
-# Setup VTK-m
+# Setup Viskores
 ###############################################################################
-if(NOT VTKM_DIR)
-    set(VTKM_DIR ${ASCENT_VTKM_DIR})
+if(NOT VISKORES_DIR)
+    set(VISKORES_DIR ${ASCENT_VISKORES_DIR})
 endif()
 
-if(VTKM_DIR)
-    # use VTKM_DIR to setup the options that cmake's find VTKm needs
-    if(NOT EXISTS ${VTKM_DIR})
-        message(FATAL_ERROR "Failed to find VTKm at VTKM_DIR=${VTKM_DIR}")
+if(VISKORES_DIR)
+    # use VISKORES_DIR to setup the options that cmake's find Viskores needs
+    if(NOT EXISTS ${VISKORES_DIR})
+        message(FATAL_ERROR "Failed to find Viskores at VISKORES_DIR=${VISKORES_DIR}")
     endif()
 
     ###############################################################################
     # Import CMake targets
     ###############################################################################
-    find_dependency(VTKm REQUIRED
+    find_dependency(Viskores REQUIRED
       NO_DEFAULT_PATH
-      PATHS ${VTKM_DIR})
+      PATHS ${VISKORES_DIR})
 endif()
 
 
@@ -493,5 +493,4 @@ endif()
 if(ASCENT_CUDA_ENABLED AND ASCENT_OCCA_ENABLED)
     find_package(CUDAToolkit REQUIRED)
 endif()
-
 

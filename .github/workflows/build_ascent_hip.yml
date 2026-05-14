@@ -4,6 +4,9 @@ on:
   pull_request:
     branches: [ develop ]
 
+permissions:
+  contents: read
+
 jobs:
   build_cuda:
     name: Build Ascent HIP
@@ -13,7 +16,7 @@ jobs:
       CMAKE_VERSION: 3.24.4
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v4
       with:
         submodules: 'recursive'
     - name: Install CMake

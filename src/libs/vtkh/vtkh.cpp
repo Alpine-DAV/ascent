@@ -2,12 +2,12 @@
 #include "Error.hpp"
 #include <vtkh/Logger.hpp>
 
-#include <vtkm/cont/Initialize.h>
-#include <vtkm/cont/RuntimeDeviceInformation.h>
-#include <vtkm/cont/RuntimeDeviceTracker.h>
+#include <viskores/cont/Initialize.h>
+#include <viskores/cont/RuntimeDeviceInformation.h>
+#include <viskores/cont/RuntimeDeviceTracker.h>
 
 
-#if defined(VTKM_CUDA) || defined(KOKKOS_ENABLE_CUDA)
+#if defined(VISKORES_CUDA) || defined(KOKKOS_ENABLE_CUDA)
 #include <cuda.h>
 #endif
 
@@ -22,7 +22,7 @@
 #include <mpi.h>
 #endif
 
-#ifdef VTKM_ENABLE_KOKKOS
+#ifdef VISKORES_ENABLE_KOKKOS
 #include<Kokkos_Core.hpp>
 #endif
 
@@ -30,7 +30,7 @@ namespace vtkh
 {
 
 static int  g_mpi_comm_id = -1;
-static bool g_vtkm_inited = false;
+static bool g_viskores_inited = false;
 static bool g_vtkh_inited_kokkos = false;
 
 
@@ -149,11 +149,11 @@ GetMPISize()
 void
 Initialize()
 {
-    // call vtk-m init, if we haven't already
-    if(!g_vtkm_inited)
+    // call viskores init, if we haven't already
+    if(!g_viskores_inited)
     {
-        vtkm::cont::Initialize();
-        g_vtkm_inited = true;
+        viskores::cont::Initialize();
+        g_viskores_inited = true;
     }
 }
 
@@ -171,7 +171,7 @@ IsMPIEnabled()
 std::string GetCurrentDevice()
 {
   std::string device = "serial";
-  // use the same prefered ordering as vtkm
+  // use the same prefered ordering as viskores
   if(IsCUDAEnabled())
   {
     device = "cuda";
@@ -192,8 +192,8 @@ std::string GetCurrentDevice()
 bool
 IsSerialAvailable()
 {
-  vtkm::cont::RuntimeDeviceInformation info;
-  return info.Exists(vtkm::cont::DeviceAdapterTagSerial());
+  viskores::cont::RuntimeDeviceInformation info;
+  return info.Exists(viskores::cont::DeviceAdapterTagSerial());
 }
 
 
@@ -201,33 +201,33 @@ IsSerialAvailable()
 bool
 IsOpenMPAvailable()
 {
-  vtkm::cont::RuntimeDeviceInformation info;
-  return info.Exists(vtkm::cont::DeviceAdapterTagOpenMP());
+  viskores::cont::RuntimeDeviceInformation info;
+  return info.Exists(viskores::cont::DeviceAdapterTagOpenMP());
 }
 
 //---------------------------------------------------------------------------//
 bool
 IsCUDAAvailable()
 {
-  vtkm::cont::RuntimeDeviceInformation info;
-  return info.Exists(vtkm::cont::DeviceAdapterTagCuda());
+  viskores::cont::RuntimeDeviceInformation info;
+  return info.Exists(viskores::cont::DeviceAdapterTagCuda());
 }
 
 //---------------------------------------------------------------------------//
 bool
 IsKokkosAvailable()
 {
-  vtkm::cont::RuntimeDeviceInformation info;
-  return info.Exists(vtkm::cont::DeviceAdapterTagKokkos());
+  viskores::cont::RuntimeDeviceInformation info;
+  return info.Exists(viskores::cont::DeviceAdapterTagKokkos());
 }
 
 //---------------------------------------------------------------------------//
 bool
 IsSerialEnabled()
 {
-  vtkm::cont::RuntimeDeviceTracker &device_tracker
-    = vtkm::cont::GetRuntimeDeviceTracker();
-  return device_tracker.CanRunOn(vtkm::cont::DeviceAdapterTagSerial());
+  viskores::cont::RuntimeDeviceTracker &device_tracker
+    = viskores::cont::GetRuntimeDeviceTracker();
+  return device_tracker.CanRunOn(viskores::cont::DeviceAdapterTagSerial());
 }
 
 
@@ -235,27 +235,27 @@ IsSerialEnabled()
 bool
 IsOpenMPEnabled()
 {
-  vtkm::cont::RuntimeDeviceTracker &device_tracker
-    = vtkm::cont::GetRuntimeDeviceTracker();
-  return device_tracker.CanRunOn(vtkm::cont::DeviceAdapterTagOpenMP());
+  viskores::cont::RuntimeDeviceTracker &device_tracker
+    = viskores::cont::GetRuntimeDeviceTracker();
+  return device_tracker.CanRunOn(viskores::cont::DeviceAdapterTagOpenMP());
 }
 
 //---------------------------------------------------------------------------//
 bool
 IsCUDAEnabled()
 {
-  vtkm::cont::RuntimeDeviceTracker &device_tracker
-    = vtkm::cont::GetRuntimeDeviceTracker();
-  return device_tracker.CanRunOn(vtkm::cont::DeviceAdapterTagCuda());
+  viskores::cont::RuntimeDeviceTracker &device_tracker
+    = viskores::cont::GetRuntimeDeviceTracker();
+  return device_tracker.CanRunOn(viskores::cont::DeviceAdapterTagCuda());
 }
 
 //---------------------------------------------------------------------------//
 bool
 IsKokkosEnabled()
 {
-  vtkm::cont::RuntimeDeviceTracker &device_tracker
-    = vtkm::cont::GetRuntimeDeviceTracker();
-  return device_tracker.CanRunOn(vtkm::cont::DeviceAdapterTagKokkos());
+  viskores::cont::RuntimeDeviceTracker &device_tracker
+    = viskores::cont::GetRuntimeDeviceTracker();
+  return device_tracker.CanRunOn(viskores::cont::DeviceAdapterTagKokkos());
 }
 
 //---------------------------------------------------------------------------//
@@ -263,7 +263,7 @@ int
 CUDADeviceCount()
 {
     int device_count = 0;
-#ifdef VTKM_CUDA
+#ifdef VISKORES_CUDA
     cudaError_t res = cudaGetDeviceCount(&device_count);
     if(res != cudaSuccess)
     {
@@ -276,7 +276,7 @@ CUDADeviceCount()
     return device_count;
 
 #else
-    throw Error("Cannot fetch CUDA device count: VTK-m lacks CUDA support");
+    throw Error("Cannot fetch CUDA device count: Viskores lacks CUDA support");
 #endif
     return device_count;
 }
@@ -285,7 +285,7 @@ CUDADeviceCount()
 void
 SelectCUDADevice(int device_index)
 {
-#ifdef VTKM_CUDA
+#ifdef VISKORES_CUDA
     int device_count = CUDADeviceCount();
     // make sure index is ok
     if(device_index >= 0 && device_index < device_count)
@@ -311,7 +311,7 @@ SelectCUDADevice(int device_index)
         throw Error(msg.str());
     }
 #else
-    throw Error("Cannot set CUDA device: VTK-m lacks CUDA support");
+    throw Error("Cannot set CUDA device: Viskores lacks CUDA support");
 #endif
 
 }
@@ -327,7 +327,7 @@ int
 KokkosDeviceCount()
 {
     int device_count = 0;
-#ifdef VTKM_ENABLE_KOKKOS
+#ifdef VISKORES_ENABLE_KOKKOS
     // NEW KOKKOS API makes this easier, use it when we have access
     // device_count = Kokkos::num_devices();
 
@@ -361,7 +361,7 @@ KokkosDeviceCount()
         }
     #endif
 #else
-    throw Error("Cannot fetch Kokkos device count: VTK-m lacks Kokkos support");
+    throw Error("Cannot fetch Kokkos device count: Viskores lacks Kokkos support");
 #endif
     return device_count;
 }
@@ -371,7 +371,7 @@ KokkosDeviceCount()
 void
 SelectKokkosDevice(int device_index)
 { 
-#ifdef VTKM_ENABLE_KOKKOS
+#ifdef VISKORES_ENABLE_KOKKOS
     // if kokkos is not already inited
     if(!Kokkos::is_initialized())
     {
@@ -394,44 +394,44 @@ SelectKokkosDevice(int device_index)
 void
 ForceSerial()
 {
-  vtkm::cont::RuntimeDeviceTracker &device_tracker
-    = vtkm::cont::GetRuntimeDeviceTracker();
-  device_tracker.ForceDevice(vtkm::cont::DeviceAdapterTagSerial());
+  viskores::cont::RuntimeDeviceTracker &device_tracker
+    = viskores::cont::GetRuntimeDeviceTracker();
+  device_tracker.ForceDevice(viskores::cont::DeviceAdapterTagSerial());
 }
 
 //---------------------------------------------------------------------------//
 void
 ForceOpenMP()
 {
-  vtkm::cont::RuntimeDeviceTracker &device_tracker
-    = vtkm::cont::GetRuntimeDeviceTracker();
-  device_tracker.ForceDevice(vtkm::cont::DeviceAdapterTagOpenMP());
+  viskores::cont::RuntimeDeviceTracker &device_tracker
+    = viskores::cont::GetRuntimeDeviceTracker();
+  device_tracker.ForceDevice(viskores::cont::DeviceAdapterTagOpenMP());
 }
 
 //---------------------------------------------------------------------------//
 void
 ForceCUDA()
 {
-  vtkm::cont::RuntimeDeviceTracker &device_tracker
-    = vtkm::cont::GetRuntimeDeviceTracker();
-  device_tracker.ForceDevice(vtkm::cont::DeviceAdapterTagCuda());
+  viskores::cont::RuntimeDeviceTracker &device_tracker
+    = viskores::cont::GetRuntimeDeviceTracker();
+  device_tracker.ForceDevice(viskores::cont::DeviceAdapterTagCuda());
 }
 
 //---------------------------------------------------------------------------//
 void
 ForceKokkos()
 {
-  vtkm::cont::RuntimeDeviceTracker &device_tracker
-    = vtkm::cont::GetRuntimeDeviceTracker();
-  device_tracker.ForceDevice(vtkm::cont::DeviceAdapterTagKokkos());
+  viskores::cont::RuntimeDeviceTracker &device_tracker
+    = viskores::cont::GetRuntimeDeviceTracker();
+  device_tracker.ForceDevice(viskores::cont::DeviceAdapterTagKokkos());
 }
 
 //---------------------------------------------------------------------------//
 void
 ResetDevices()
 {
-  vtkm::cont::RuntimeDeviceTracker &device_tracker
-    = vtkm::cont::GetRuntimeDeviceTracker();
+  viskores::cont::RuntimeDeviceTracker &device_tracker
+    = viskores::cont::GetRuntimeDeviceTracker();
   device_tracker.Reset();
 }
 
@@ -448,7 +448,7 @@ AboutVTKH()
 #else
   msg<<"MPI version: n/a\n";
 #endif
-  msg<<"VTK-m adapters: ";
+  msg<<"Viskores adapters: ";
 
   if(IsCUDAAvailable())
   {

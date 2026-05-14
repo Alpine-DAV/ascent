@@ -39,13 +39,13 @@
 #include <mpi.h>
 #endif
 
-#if defined(ASCENT_VTKM_ENABLED)
+#if defined(ASCENT_VISKORES_ENABLED)
 #include <rover.hpp>
 #include <rover/utils/rover_logging.hpp>
 #include <vtkh/vtkh.hpp>
 #include <vtkh/DataSet.hpp>
 #include <ascent_vtkh_data_adapter.hpp>
-#include <ascent_runtime_conduit_to_vtkm_parsing.hpp>
+#include <ascent_runtime_conduit_to_viskores_parsing.hpp>
 #include <ascent_runtime_blueprint_filters.hpp>
 #include <ascent_runtime_relay_filters.hpp>
 #endif
@@ -652,7 +652,7 @@ RoverVolume::execute()
 
     vtkh::DataSet &dataset = collection->dataset_by_topology(topo_name);
 
-    vtkmCamera camera;
+    viskoresCamera camera;
     camera.ResetToBounds(dataset.GetGlobalBounds());
 
     if(params().has_path("camera"))
@@ -711,7 +711,7 @@ RoverVolume::execute()
     }
     else
     {
-      vtkmColorTable color_table("cool to warm");
+      viskoresColorTable color_table("cool to warm");
       color_table.AddPointAlpha(0.0, .1);
       color_table.AddPointAlpha(0.5, .2);
       color_table.AddPointAlpha(1.0, .3);

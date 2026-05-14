@@ -5,13 +5,13 @@
 #include <vtkh/vtkh.hpp>
 #include <vtkh/filters/Filter.hpp>
 #include <vtkh/DataSet.hpp>
-#include <vtkm/rendering/Camera.h>
+#include <viskores/rendering/Camera.h>
 
 
 namespace vtkh
 {
 
-typedef vtkm::rendering::Camera vtkmCamera;
+typedef viskores::rendering::Camera viskoresCamera;
 
 class VTKH_API AutoCamera : public Filter
 {
@@ -27,7 +27,7 @@ public:
   int GetHeight();
   int GetWidth();
 
-  vtkmCamera GetCamera();
+  viskoresCamera GetCamera();
 
   void SetMetric(std::string metric);
   void SetField(std::string field);
@@ -46,7 +46,7 @@ protected:
   int m_samples;
   std::string m_field;
   std::string m_metric;
-  vtkmCamera m_camera;
+  viskoresCamera m_camera;
 };
 
 } //namespace vtkh

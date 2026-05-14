@@ -47,14 +47,14 @@
 #include <ascent_data_object.hpp>
 #include <ascent_data_logger.hpp>
 
-#if defined(ASCENT_VTKM_ENABLED)
-#include <vtkm/cont/Error.h>
+#if defined(ASCENT_VISKORES_ENABLED)
+#include <viskores/cont/Error.h>
 #include <vtkh/vtkh.hpp>
 #include <vtkh/Error.hpp>
 #include <vtkh/Logger.hpp>
 
-#ifdef VTKM_CUDA
-#include <vtkm/cont/cuda/ChooseCudaDevice.h>
+#ifdef VISKORES_CUDA
+#include <viskores/cont/cuda/ChooseCudaDevice.h>
 #endif
 #endif
 
@@ -136,7 +136,7 @@ AscentRuntime::Initialize(const conduit::Node &options)
 
 // handle logging first
 #if defined(ASCENT_MPI_ENABLED)
-    
+
 #else
 
 #endif
@@ -150,7 +150,7 @@ AscentRuntime::Initialize(const conduit::Node &options)
     }
 
     flow::Workspace::set_default_mpi_comm(options["mpi_comm"].to_int());
-#if defined(ASCENT_VTKM_ENABLED)
+#if defined(ASCENT_VISKORES_ENABLED)
     vtkh::Initialize();
     vtkh::SetMPICommHandle(options["mpi_comm"].to_int());
 #endif
@@ -172,7 +172,7 @@ AscentRuntime::Initialize(const conduit::Node &options)
     }
 
 
-#if defined(ASCENT_VTKM_ENABLED)
+#if defined(ASCENT_VISKORES_ENABLED)
     vtkh::Initialize();
 #endif
 
@@ -181,7 +181,7 @@ AscentRuntime::Initialize(const conduit::Node &options)
     // set a info handler so we only display messages on rank 0;
     conduit::utils::set_info_handler(InfoHandler::info_handler);
     AllocationManager::set_conduit_mem_handlers();
-#ifdef VTKM_CUDA
+#ifdef VISKORES_CUDA
 
     bool sel_cuda_device = true;
 
@@ -196,7 +196,7 @@ AscentRuntime::Initialize(const conduit::Node &options)
     //
     if(sel_cuda_device)
     {
-#if defined(ASCENT_VTKM_ENABLED)
+#if defined(ASCENT_VISKORES_ENABLED)
       {
         int device_count = vtkh::CUDADeviceCount();
         int rank_device = m_rank % device_count;
@@ -213,7 +213,7 @@ AscentRuntime::Initialize(const conduit::Node &options)
     }
 #endif
 
-#if defined(ASCENT_KOKKOS_ENABLED) && defined(ASCENT_VTKM_ENABLED)
+#if defined(ASCENT_KOKKOS_ENABLED) && defined(ASCENT_VISKORES_ENABLED)
     int device_count = vtkh::KokkosDeviceCount();
     int rank_device = m_rank % device_count;
     vtkh::SelectKokkosDevice(rank_device);
@@ -670,7 +670,7 @@ AscentRuntime::EnsureDomainIds()
       {
 	unique_ids = 0;
 	ss << i << " ";
-      } 
+      }
     }
 
     if(!unique_ids)
@@ -797,7 +797,7 @@ AscentRuntime::CreateDefaultFilters()
 
     std::string prev_filter = "verify";
 
-#if defined(ASCENT_VTKM_ENABLED)
+#if defined(ASCENT_VISKORES_ENABLED)
     // we can have multiple ghost fields
     std::vector<std::string> ghost_fields;
     const int num_children = m_ghost_fields.number_of_children();
@@ -1292,7 +1292,7 @@ AscentRuntime::ConvertPlotToFlow(const conduit::Node &plot,
 
   std::string prev_filter = plot_source;
 
-#if defined(ASCENT_VTKM_ENABLED)
+#if defined(ASCENT_VISKORES_ENABLED)
   const int num_ghosts = m_ghost_fields.number_of_children();
   if(num_ghosts != 0)
   {
@@ -1460,6 +1460,24 @@ AscentRuntime::PopulateMetadata()
       time = dom["state/time"].to_float32();
     }
   }
+
+#ifdef ASCENT_MPI_ENABLED
+  // Broadcast cycle and time to all ranks. Ranks with no local
+  // domains never set these, causing filename expansion to fail
+  // on the rank that writes the final image.
+  {
+    int comm_id = flow::Workspace::default_mpi_comm();
+    MPI_Comm mpi_comm = MPI_Comm_f2c(comm_id);
+
+    int global_cycle;
+    MPI_Allreduce(&cycle, &global_cycle, 1, MPI_INT, MPI_MAX, mpi_comm);
+    cycle = global_cycle;
+
+    float global_time;
+    MPI_Allreduce(&time, &global_time, 1, MPI_FLOAT, MPI_MAX, mpi_comm);
+    time = global_time;
+  }
+#endif
 
   if(cycle != -1)
   {
@@ -1989,9 +2007,9 @@ AscentRuntime::BuildGraph(const conduit::Node &actions)
         }
 
         #if defined(ASCENT_MPI_ENABLED)
-            std::string file_pattern = action.has_path("file_pattern") ? 
+            std::string file_pattern = action.has_path("file_pattern") ?
                                    action["file_pattern"].as_string() : "ascent_log_output_rank_{rank:05d}.yaml";
-            
+
             int comm_id = flow::Workspace::default_mpi_comm();
             MPI_Comm mpi_comm = MPI_Comm_f2c(comm_id);
             int comm_size = 1;
@@ -2001,7 +2019,7 @@ AscentRuntime::BuildGraph(const conduit::Node &actions)
                                                   m_rank,
                                                   comm_size));
         #else
-            std::string file_pattern = action.has_path("file_pattern") ? 
+            std::string file_pattern = action.has_path("file_pattern") ?
                                    action["file_pattern"].as_string() : "ascent_log_output.yaml";
             ASCENT_LOG_OPEN(file_pattern);
             ASCENT_LOG_DEBUG("MPI not enabled");
@@ -2153,7 +2171,7 @@ AscentRuntime::Execute(const conduit::Node &actions)
         m_info["actions"] = actions;
         // m_workspace.graph().save_dot_html("ascent_flow_graph.html");
 
-#if defined(ASCENT_VTKM_ENABLED)
+#if defined(ASCENT_VISKORES_ENABLED)
         if(log_timings)
         {
           int cycle = 0;
@@ -2170,7 +2188,7 @@ AscentRuntime::Execute(const conduit::Node &actions)
         // now execute the data flow graph
         m_workspace.execute();
 
-#if defined(ASCENT_VTKM_ENABLED)
+#if defined(ASCENT_VISKORES_ENABLED)
         if(log_timings)
         {
           vtkh::DataLogger::GetInstance()->CloseLogEntry();
@@ -2235,17 +2253,17 @@ AscentRuntime::Execute(const conduit::Node &actions)
 
     // Defend calling code by repackaging
     // as many errors as possible with catch statements
-#if defined(ASCENT_VTKM_ENABLED)
-    // bottle vtkm and vtkh errors
+#if defined(ASCENT_VISKORES_ENABLED)
+    // bottle viskores and vtkh errors
     catch(vtkh::Error &e)
     {
       m_workspace.reset();
       ASCENT_ERROR("Execution failed with vtkh: "<<e.what());
     }
-    catch(vtkm::cont::Error &e)
+    catch(viskores::cont::Error &e)
     {
       m_workspace.reset();
-      ASCENT_ERROR("Execution failed with vtkm: "<<e.what());
+      ASCENT_ERROR("Execution failed with viskores: "<<e.what());
     }
 #endif
     catch(conduit::Error &e)
@@ -2585,7 +2603,7 @@ AscentRuntime::SaveInfo()
             // default
             std::string filename = "out_ascent_info.yaml";
             // default, if we have cycle  out_ascent_info_cycle_000zzz.yaml
-            if(Metadata::n_metadata.has_path("cycle"))
+            if(Metadata::n_metadata.has_child("cycle"))
             {
                 int cycle = Metadata::n_metadata["cycle"].to_int64();
                 filename = conduit_fmt::format("out_ascent_info_{:06d}.yaml",
@@ -2593,15 +2611,32 @@ AscentRuntime::SaveInfo()
             }
 
             // also allow explicit name
-            if(action.has_path("file_name"))
+            if(action.has_child("filename"))
             {
-                if(!action["file_name"].dtype().is_string())
+                if(!action["filename"].dtype().is_string())
                 {
                     ASCENT_ERROR("save_info filename must be a string");
                 }
-                filename = action["file_name"].as_string();
+                filename = action["filename"].as_string();
             }
             m_info.save(filename);
+
+            // save the html view of the flow graph if asked for
+            if(action.has_child("flow_graph_html_filename"))
+            {
+                if(!action["flow_graph_html_filename"].dtype().is_string())
+                {
+                    ASCENT_ERROR("save_info flow_graph_html_filename must be a string");
+                }
+
+                std::string html_fname = action["flow_graph_html_filename"].as_string();
+                std::ofstream ofs(html_fname);
+                if (!ofs.is_open())
+                {
+                    ASCENT_ERROR("save_info failed to open flow_graph_html_filename: " << html_fname << " to write");
+                }
+                ofs << m_info["flow_graph_dot_html"].as_string();
+            }
         }
     }
 }
@@ -2662,6 +2697,3 @@ AscentRuntime::SaveSession()
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
-
-
-

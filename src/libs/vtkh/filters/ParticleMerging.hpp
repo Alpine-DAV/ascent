@@ -16,7 +16,7 @@ public:
   virtual ~ParticleMerging();
   std::string GetName() const override;
   void SetField(const std::string &field_name);
-  void SetRadius(const vtkm::Float64 radius);
+  void SetRadius(const viskores::Float64 radius);
 
 protected:
   void PreExecute() override;
@@ -24,7 +24,7 @@ protected:
   void DoExecute() override;
 
   std::string m_field_name;
-  vtkm::Float64 m_radius;
+  viskores::Float64 m_radius;
 };
 
 } //namespace vtkh

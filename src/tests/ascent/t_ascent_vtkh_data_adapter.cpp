@@ -12,7 +12,7 @@
 
 
 #include "gtest/gtest.h"
-#include "t_vtkm_test_utils.hpp"
+#include "t_viskores_test_utils.hpp"
 
 #include <ascent.hpp>
 #include <runtimes/ascent_vtkh_data_adapter.hpp>
@@ -35,22 +35,22 @@ index_t EXAMPLE_MESH_SIDE_DIM = 20;
 
 
 //-----------------------------------------------------------------------------
-TEST(ascent_data_adapter, vtkm_uniform_2d_to_blueprint)
+TEST(ascent_data_adapter, viskores_uniform_2d_to_blueprint)
 {
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
         return;
     }
 
-    vtkm::cont::DataSet ds = Make2DUniformDataSet0();
+    viskores::cont::DataSet ds = Make2DUniformDataSet0();
     conduit::Node blueprint;
     bool zero_copy = false;
     std::string topo_name = "topo";
-    VTKHDataAdapter::VTKmToBlueprintDataSet(&ds, blueprint,topo_name, false);
+    VTKHDataAdapter::ViskoresToBlueprintDataSet(&ds, blueprint,topo_name, false);
     conduit::Node info;
     bool success = conduit::blueprint::verify("mesh",blueprint,info);
     if(!success) info.print();
@@ -59,22 +59,22 @@ TEST(ascent_data_adapter, vtkm_uniform_2d_to_blueprint)
 
 
 //-----------------------------------------------------------------------------
-TEST(ascent_data_adapter, vtkm_uniform_3d_to_blueprint)
+TEST(ascent_data_adapter, viskores_uniform_3d_to_blueprint)
 {
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
         return;
     }
 
-    vtkm::cont::DataSet ds = Make3DUniformDataSet0();
+    viskores::cont::DataSet ds = Make3DUniformDataSet0();
     conduit::Node blueprint;
     bool zero_copy = false;
     std::string topo_name = "topo";
-    VTKHDataAdapter::VTKmToBlueprintDataSet(&ds, blueprint,topo_name, false);
+    VTKHDataAdapter::ViskoresToBlueprintDataSet(&ds, blueprint,topo_name, false);
     conduit::Node info;
     bool success = conduit::blueprint::verify("mesh",blueprint,info);
     if(!success) info.print();
@@ -82,25 +82,25 @@ TEST(ascent_data_adapter, vtkm_uniform_3d_to_blueprint)
 }
 
 //-----------------------------------------------------------------------------
-TEST(ascent_data_adapter, vtkm_rectilinear_3d_to_blueprint)
+TEST(ascent_data_adapter, viskores_rectilinear_3d_to_blueprint)
 {
-#ifdef VTKM_ENABLE_KOKKOS
+#ifdef VISKORES_ENABLE_KOKKOS
     vtkh::InitializeKokkos();
 #endif
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
         return;
     }
 
-    vtkm::cont::DataSet ds = Make3DRectilinearDataSet0();
+    viskores::cont::DataSet ds = Make3DRectilinearDataSet0();
     conduit::Node blueprint;
     bool zero_copy = false;
     std::string topo_name = "topo";
-    VTKHDataAdapter::VTKmToBlueprintDataSet(&ds, blueprint,topo_name, false);
+    VTKHDataAdapter::ViskoresToBlueprintDataSet(&ds, blueprint,topo_name, false);
     conduit::Node info;
     bool success = conduit::blueprint::verify("mesh",blueprint,info);
     if(!success) info.print();
@@ -109,22 +109,22 @@ TEST(ascent_data_adapter, vtkm_rectilinear_3d_to_blueprint)
 
 
 //-----------------------------------------------------------------------------
-TEST(ascent_data_adapter, vtkm_rectilinear_2d_to_blueprint)
+TEST(ascent_data_adapter, viskores_rectilinear_2d_to_blueprint)
 {
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
         return;
     }
 
-    vtkm::cont::DataSet ds = Make2DRectilinearDataSet0();
+    viskores::cont::DataSet ds = Make2DRectilinearDataSet0();
     conduit::Node blueprint;
     bool zero_copy = false;
     std::string topo_name = "topo";
-    VTKHDataAdapter::VTKmToBlueprintDataSet(&ds, blueprint,topo_name, false);
+    VTKHDataAdapter::ViskoresToBlueprintDataSet(&ds, blueprint,topo_name, false);
     conduit::Node info;
     bool success = conduit::blueprint::verify("mesh",blueprint,info);
     if(!success) info.print();
@@ -132,14 +132,14 @@ TEST(ascent_data_adapter, vtkm_rectilinear_2d_to_blueprint)
 }
 
 //-----------------------------------------------------------------------------
-TEST(ascent_data_adapter, vtkm_rectilinear_non_float64)
+TEST(ascent_data_adapter, viskores_rectilinear_non_float64)
 {
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
         return;
     }
 
@@ -153,29 +153,29 @@ TEST(ascent_data_adapter, vtkm_rectilinear_non_float64)
 
     string output_path = prepare_output_dir();
     string output_file = conduit::utils::join_file_path(output_path,
-                                    "tout_vtkm_rectilinear");
+                                    "tout_viskores_rectilinear");
 
     std::string topo_name = "image_topo";
-    VTKHDataAdapter::BlueprintToVTKmDataSet(test_data["domain_000000"], false, topo_name);
+    VTKHDataAdapter::BlueprintToViskoresDataSet(test_data["domain_000000"], false, topo_name);
 }
 
 //-----------------------------------------------------------------------------
-TEST(ascent_data_adapter, vtkm_explicit_single_type_to_blueprint)
+TEST(ascent_data_adapter, viskores_explicit_single_type_to_blueprint)
 {
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
         return;
     }
 
-    vtkm::cont::DataSet ds = Make3DExplicitDataSetCowNose();
+    viskores::cont::DataSet ds = Make3DExplicitDataSetCowNose();
     conduit::Node blueprint;
     bool zero_copy = false;
     std::string topo_name = "topo";
-    VTKHDataAdapter::VTKmToBlueprintDataSet(&ds, blueprint,topo_name, false);
+    VTKHDataAdapter::ViskoresToBlueprintDataSet(&ds, blueprint,topo_name, false);
     conduit::Node info;
     bool success = conduit::blueprint::verify("mesh",blueprint,info);
     if(!success) info.print();
@@ -188,7 +188,7 @@ TEST(ascent_data_adapter, vtkm_explicit_single_type_to_blueprint)
     string output_path = "";
     output_path = prepare_output_dir();
 
-    string output_file = conduit::utils::join_file_path(output_path,"tout_explicit_vtkm_converions");
+    string output_file = conduit::utils::join_file_path(output_path,"tout_explicit_viskores_converions");
 
     conduit::Node extracts;
     extracts["e1/type"]  = "relay";
@@ -215,10 +215,10 @@ TEST(ascent_data_adapter, zero_copy_test)
 {
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
         return;
     }
 
@@ -234,7 +234,7 @@ TEST(ascent_data_adapter, zero_copy_test)
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
 
-    ASCENT_INFO("testing zero copy bp -> vtkm -> bp");
+    ASCENT_INFO("testing zero copy bp -> viskores -> bp");
 
 
     string output_path = prepare_output_dir();
@@ -282,16 +282,140 @@ TEST(ascent_data_adapter, zero_copy_test)
     ascent.close();
 }
 
+//-----------------------------------------------------------------------------
+TEST(ascent_data_adapter, interleaved_vector_field_round_trip)
+{
+    Node n;
+    ascent::about(n);
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
+        return;
+    }
+
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+    add_interleaved_vector(data);
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data, verify_info));
+
+    const std::string topo_name = data["fields/vel_interleaved/topology"].as_string();
+    viskores::cont::DataSet *ds =
+        VTKHDataAdapter::BlueprintToViskoresDataSet(data, true, topo_name);
+
+    ASSERT_NE(ds, nullptr);
+    EXPECT_TRUE(ds->HasField("vel_interleaved"));
+
+    Node round_trip, round_trip_info;
+    VTKHDataAdapter::ViskoresToBlueprintDataSet(ds, round_trip, topo_name, true);
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(round_trip, round_trip_info));
+
+    const index_t expected_num_vals =
+        data["fields/vel/values/u"].dtype().number_of_elements();
+    const float64_array in_u = data["fields/vel/values/u"].value();
+    const float64_array in_v = data["fields/vel/values/v"].value();
+    const float64_array in_w = data["fields/vel/values/w"].value();
+    const float64_array out_u = round_trip["fields/vel_interleaved/values/u"].value();
+    const float64_array out_v = round_trip["fields/vel_interleaved/values/v"].value();
+    const float64_array out_w = round_trip["fields/vel_interleaved/values/w"].value();
+
+    EXPECT_EQ(round_trip["fields/vel_interleaved/values/u"].data_ptr(),
+              data["fields/vel_interleaved/values/u"].data_ptr());
+    EXPECT_EQ(round_trip["fields/vel_interleaved/values/v"].data_ptr(),
+              data["fields/vel_interleaved/values/v"].data_ptr());
+    EXPECT_EQ(round_trip["fields/vel_interleaved/values/w"].data_ptr(),
+              data["fields/vel_interleaved/values/w"].data_ptr());
+
+    EXPECT_EQ(round_trip["fields/vel_interleaved/values"].number_of_children(), 3);
+    EXPECT_EQ(out_u.number_of_elements(), expected_num_vals);
+    EXPECT_EQ(out_v.number_of_elements(), expected_num_vals);
+    EXPECT_EQ(out_w.number_of_elements(), expected_num_vals);
+
+    const index_t sample_ids[3] = {0, expected_num_vals / 2, expected_num_vals - 1};
+    for(index_t sample_id : sample_ids)
+    {
+        EXPECT_EQ(out_u[sample_id], in_u[sample_id]);
+        EXPECT_EQ(out_v[sample_id], in_v[sample_id]);
+        EXPECT_EQ(out_w[sample_id], in_w[sample_id]);
+    }
+
+    delete ds;
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_data_adapter, non_interleaved_vector_field_zero_copy_round_trip)
+{
+    Node n;
+    ascent::about(n);
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
+        return;
+    }
+
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("uniform",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data, verify_info));
+
+    const std::string topo_name = data["fields/vel/topology"].as_string();
+    viskores::cont::DataSet *ds =
+        VTKHDataAdapter::BlueprintToViskoresDataSet(data, true, topo_name);
+
+    ASSERT_NE(ds, nullptr);
+    EXPECT_TRUE(ds->HasField("vel"));
+
+    Node round_trip, round_trip_info;
+    VTKHDataAdapter::ViskoresToBlueprintDataSet(ds, round_trip, topo_name, true);
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(round_trip, round_trip_info));
+
+    const float64_array in_u = data["fields/vel/values/u"].value();
+    const float64_array in_v = data["fields/vel/values/v"].value();
+    const float64_array in_w = data["fields/vel/values/w"].value();
+
+    EXPECT_EQ(round_trip["fields/vel/values/u"].data_ptr(),
+              data["fields/vel/values/u"].data_ptr());
+    EXPECT_EQ(round_trip["fields/vel/values/v"].data_ptr(),
+              data["fields/vel/values/v"].data_ptr());
+    EXPECT_EQ(round_trip["fields/vel/values/w"].data_ptr(),
+              data["fields/vel/values/w"].data_ptr());
+
+    const float64_array out_u = round_trip["fields/vel/values/u"].value();
+    const float64_array out_v = round_trip["fields/vel/values/v"].value();
+    const float64_array out_w = round_trip["fields/vel/values/w"].value();
+
+    const index_t expected_num_vals = in_u.number_of_elements();
+    EXPECT_EQ(out_u.number_of_elements(), expected_num_vals);
+    EXPECT_EQ(out_v.number_of_elements(), expected_num_vals);
+    EXPECT_EQ(out_w.number_of_elements(), expected_num_vals);
+
+    const index_t sample_ids[3] = {0, expected_num_vals / 2, expected_num_vals - 1};
+    for(index_t sample_id : sample_ids)
+    {
+        EXPECT_EQ(out_u[sample_id], in_u[sample_id]);
+        EXPECT_EQ(out_v[sample_id], in_v[sample_id]);
+        EXPECT_EQ(out_w[sample_id], in_w[sample_id]);
+    }
+
+    delete ds;
+}
+
 
 //-----------------------------------------------------------------------------
 TEST(ascent_data_adapter, consistent_domain_ids_check)
 {
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
         return;
     }
 
@@ -332,14 +456,14 @@ TEST(ascent_data_adapter, interleaved_3d)
 {
     // CYRUSH: I tried recreate an issue with interleaved coords
     // we hit in AMReX with this test case, however it does not
-    // replicate it  (rendering still works with the vtk-m interleaved logic)
+    // replicate it  (rendering still works with the viskores interleaved logic)
     // It is still a good basic interleaved test case.
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
         return;
     }
 
@@ -395,10 +519,10 @@ TEST(ascent_multi_topo, adapter_test)
 {
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
         return;
     }
 
@@ -420,6 +544,266 @@ TEST(ascent_multi_topo, adapter_test)
 }
 
 //-----------------------------------------------------------------------------
+
+TEST(ascent_data_adapter, rz_mesh_structured)
+{
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
+        return;
+    }
+
+    Node mesh, verify_info;
+    conduit::blueprint::mesh::examples::rz_cylinder("structured",
+                                                    10,
+                                                    10,
+                                                    mesh);
+    mesh["state/cycle"] = 100;
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(mesh,verify_info));
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path, "tout_vtkh_data_adapter_rz_structured");
+
+    //
+    // Create the actions.
+    //
+
+    conduit::Node scenes;
+    scenes["s1/plots/p1/type"] = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "cyl";
+    scenes["s1/image_prefix"] = output_file;
+    scenes["s1/renders/r1/image_prefix"]   = output_file;
+
+    // conduit::Node extracts;
+    // extracts["e1/type"] = "relay";
+    // extracts["e1/params/path"] = conduit::utils::join_file_path(output_path, "tout_vtkh_data_adapter_rz_structured_export");;
+    // extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
+
+    conduit::Node actions;
+    conduit::Node &add_plots = actions.append();
+    add_plots["action"] = "add_scenes";
+    add_plots["scenes"] = scenes;
+
+    // conduit::Node &add_extracts = actions.append();
+    // add_extracts["action"] = "add_extracts";
+    // add_extracts["extracts"] = extracts;
+
+    //
+    // Publish to Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent_opts["exceptions"] = "forward";
+    ascent.open(ascent_opts);
+    ascent.publish(mesh);
+    ascent.execute(actions);
+    ascent.close();
+
+    EXPECT_TRUE(check_test_image(output_file, 0.001f));
+}
+
+//-----------------------------------------------------------------------------
+
+TEST(ascent_data_adapter, rz_mesh_unstructured)
+{
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
+        return;
+    }
+
+    Node mesh, verify_info;
+    conduit::blueprint::mesh::examples::rz_cylinder("unstructured",
+                                                    10,
+                                                    10,
+                                                    mesh);
+    mesh["state/cycle"] = 100;
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(mesh,verify_info));
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path, "tout_vtkh_data_adapter_rz_unstructured");
+
+    //
+    // Create the actions. 
+    //
+
+    conduit::Node scenes;
+    scenes["s1/plots/p1/type"] = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "cyl";
+    scenes["s1/image_prefix"] = output_file;
+    scenes["s1/renders/r1/image_prefix"]   = output_file;
+
+    // conduit::Node extracts;
+    // extracts["e1/type"] = "relay";
+    // extracts["e1/params/path"] = conduit::utils::join_file_path(output_path, "tout_vtkh_data_adapter_rz_unstructured_export");;
+    // extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
+
+    conduit::Node actions;
+    conduit::Node &add_plots = actions.append();
+    add_plots["action"] = "add_scenes";
+    add_plots["scenes"] = scenes;
+
+    // conduit::Node &add_extracts = actions.append();
+    // add_extracts["action"] = "add_extracts";
+    // add_extracts["extracts"] = extracts;
+
+    //
+    // Publish to Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent_opts["exceptions"] = "forward";
+    ascent.open(ascent_opts);
+    ascent.publish(mesh);
+    ascent.execute(actions);
+    ascent.close();
+
+    EXPECT_TRUE(check_test_image(output_file, 0.001f));
+}
+
+//-----------------------------------------------------------------------------
+
+TEST(ascent_data_adapter, rz_mesh_uniform)
+{
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
+        return;
+    }
+
+    Node mesh, verify_info;
+    conduit::blueprint::mesh::examples::rz_cylinder("uniform",
+                                                    10,
+                                                    10,
+                                                    mesh);
+    mesh["state/cycle"] = 100;
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(mesh,verify_info));
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path, "tout_vtkh_data_adapter_rz_uniform");
+
+    //
+    // Create the actions. 
+    //
+
+    conduit::Node scenes;
+    scenes["s1/plots/p1/type"] = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "cyl";
+    scenes["s1/image_prefix"] = output_file;
+    scenes["s1/renders/r1/image_prefix"]   = output_file;
+
+    // conduit::Node extracts;
+    // extracts["e1/type"] = "relay";
+    // extracts["e1/params/path"] = conduit::utils::join_file_path(output_path, "tout_vtkh_data_adapter_rz_uniform_export");;
+    // extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
+
+    conduit::Node actions;
+    conduit::Node &add_plots = actions.append();
+    add_plots["action"] = "add_scenes";
+    add_plots["scenes"] = scenes;
+
+    // conduit::Node &add_extracts = actions.append();
+    // add_extracts["action"] = "add_extracts";
+    // add_extracts["extracts"] = extracts;
+
+    //
+    // Publish to Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent_opts["exceptions"] = "forward";
+    ascent.open(ascent_opts);
+    ascent.publish(mesh);
+    ascent.execute(actions);
+    ascent.close();
+
+    EXPECT_TRUE(check_test_image(output_file, 0.001f));
+}
+
+//-----------------------------------------------------------------------------
+
+TEST(ascent_data_adapter, rz_mesh_rectilinear)
+{
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
+        return;
+    }
+
+    Node mesh, verify_info;
+    conduit::blueprint::mesh::examples::rz_cylinder("rectilinear",
+                                                    10,
+                                                    10,
+                                                    mesh);
+    mesh["state/cycle"] = 100;
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(mesh,verify_info));
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path, "tout_vtkh_data_adapter_rz_rectilinear");
+
+    //
+    // Create the actions. 
+    //
+
+    conduit::Node scenes;
+    scenes["s1/plots/p1/type"] = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "cyl";
+    scenes["s1/image_prefix"] = output_file;
+    scenes["s1/renders/r1/image_prefix"]   = output_file;
+
+    // conduit::Node extracts;
+    // extracts["e1/type"] = "relay";
+    // extracts["e1/params/path"] = conduit::utils::join_file_path(output_path, "tout_vtkh_data_adapter_rz_rectilinear_export");;
+    // extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
+
+    conduit::Node actions;
+    conduit::Node &add_plots = actions.append();
+    add_plots["action"] = "add_scenes";
+    add_plots["scenes"] = scenes;
+    
+    // conduit::Node &add_extracts = actions.append();
+    // add_extracts["action"] = "add_extracts";
+    // add_extracts["extracts"] = extracts;
+
+    //
+    // Publish to Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent_opts["exceptions"] = "forward";
+    ascent.open(ascent_opts);
+    ascent.publish(mesh);
+    ascent.execute(actions);
+    ascent.close();
+
+    EXPECT_TRUE(check_test_image(output_file, 0.001f));
+}
+
+//-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {
     int result = 0;
@@ -435,5 +819,3 @@ int main(int argc, char* argv[])
     result = RUN_ALL_TESTS();
     return result;
 }
-
-

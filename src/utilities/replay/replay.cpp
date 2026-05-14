@@ -109,6 +109,27 @@ struct Options
       usage();
       exit(1);
     }
+
+    if(!m_cycles_file.empty())
+    { 
+      if(conduit::utils::is_directory(m_cycles_file))
+      {
+        std::cerr<<"The '--cycles' path '" << m_cycles_file
+                 << "' is a directory, but a file is required."
+                 << " Please create a text file containing a list of root files, one per line."
+                 << " Bailing...\n";
+        usage();
+        exit(1);
+      }
+
+      if(!conduit::utils::is_file(m_cycles_file))
+      {
+        std::cerr<<"The '--cycles' path '" << m_cycles_file
+                 << "' does not exist or cannot be accessed. Bailing...\n";
+        usage();
+        exit(1);
+      }
+    }
   }
 
 std::vector<std::string> &split(const std::string &s,

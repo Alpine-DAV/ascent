@@ -10,13 +10,13 @@ Setting Up A Development Environment
 ====================================
 The type of development environment needed depends on the use case.
 In most cases, all that is needed is a build of Ascent. The exception
-is VTK-m filter development, which requires separate builds of VTK-m
+is Viskores filter development, which requires separate builds of Viskores
 and VTK-h.
 
 The list of common development use cases:
   * C++ and python filter development using Conduit Mesh Blueprint data
   * Connecting a new library to Ascent
-  * VTK-m filter development
+  * Viskores filter development
 
 
 I Want To Develop C++ and Python Code Directly In Ascent
@@ -145,12 +145,12 @@ file was created that contains the CMake variables need for an Ascent build:
     # vtk-h
     set(ENABLE_VTKH "ON" CACHE BOOL "")
 
-    # vtk-m from spack
-    set(VTKM_DIR "/Users/harrison37/Work/alpine/ascent/uberenv_libs/spack/opt/spack/darwin-ventura-m1/apple-clang-14.0.0/vtk-m-2.1.0-l5yh5lkvapxdil5fvhhj4l4udm2x6dg7" CACHE PATH "")
+    # viskores from spack
+    set(VISKORES_DIR "/Users/harrison37/Work/alpine/ascent/uberenv_libs/spack/opt/spack/darwin-ventura-m1/apple-clang-14.0.0/viskores-1.0.0-l5yh5lkvapxdil5fvhhj4l4udm2x6dg7" CACHE PATH "")
 
-    set(VTKm_ENABLE_CUDA "OFF" CACHE BOOL "")
+    set(Viskores_ENABLE_CUDA "OFF" CACHE BOOL "")
 
-    # vtk-m not using ROCm
+    # viskores not using ROCm
     # mfem from spack 
     set(MFEM_DIR "/Users/harrison37/Work/alpine/ascent/uberenv_libs/spack/opt/spack/darwin-ventura-m1/apple-clang-14.0.0/mfem-4.5.2-tspz4yld6oqq55tymvxufwoylsjjg36r" CACHE PATH "")
 
@@ -189,18 +189,16 @@ file was created that contains the CMake variables need for an Ascent build:
 
 
 
-I Want To Develop VTK-m and VTK-h Pipelines
----------------------------------------------
+I Want To Develop Viskores and VTK-h Pipelines
+-----------------------------------------------
 If you want to add new features to VTK-h, its source is developed inside
 the Ascent repo in the `src/libs/vtkh` directory.
 
-If your changes also require new features in VTK-m, you will need to build
-and install your own version of VTK-m. 
-Follow the examples in :ref:`building_manually` to create a VTK-m build.
-
+If your changes also require new features in Viskores, you will need to build
+and install your own version of Viskores. 
 
 Once built and installed, update the CMake configure file with the locations
-of the installs in the CMake variables ``VTKM_DIR``.
+of the installs in the CMake variables ``VISKORES_DIR``.
 
 .. note::
 
@@ -209,7 +207,7 @@ of the installs in the CMake variables ``VTKM_DIR``.
     manually, consult :ref:`building` for specific build options for each
     dependency.
 
-Here is the current version of VTK-m  we are using:
+Here is the current version of Viskores  we are using:
 
 .. literalinclude:: ../../../../hashes.txt
     :linenos:

@@ -3,15 +3,15 @@
 #include <vtkh/filters/MarchingCubes.hpp>
 #include <vtkh/filters/CleanGrid.hpp>
 #include <vtkh/filters/IsoVolume.hpp>
-#include <vtkh/vtkm_filters/vtkmClip.hpp>
-#include <vtkm/filter/contour/Slice.h>
+#include <vtkh/viskores_filters/viskoresClip.hpp>
+#include <viskores/filter/contour/Slice.h>
 
-#include <vtkm/VectorAnalysis.h>
-#include <vtkm/cont/Algorithm.h>
-#include <vtkm/cont/TryExecute.h>
-#include <vtkm/ImplicitFunction.h>
-#include <vtkm/worklet/DispatcherMapField.h>
-#include <vtkm/worklet/WorkletMapField.h>
+#include <viskores/VectorAnalysis.h>
+#include <viskores/cont/Algorithm.h>
+#include <viskores/cont/TryExecute.h>
+#include <viskores/ImplicitFunction.h>
+#include <viskores/worklet/DispatcherMapField.h>
+#include <viskores/worklet/WorkletMapField.h>
 
 namespace vtkh
 {
@@ -22,9 +22,9 @@ namespace detail
 struct print_f
 {
   template<typename T, typename S>
-  void operator()(const vtkm::cont::ArrayHandle<T,S> &a) const
+  void operator()(const viskores::cont::ArrayHandle<T,S> &a) const
   {
-    vtkm::Id s = a.GetNumberOfValues();
+    viskores::Id s = a.GetNumberOfValues();
     auto p = a.ReadPortal();
     for(int i = 0; i < s; ++i)
     {
@@ -34,40 +34,40 @@ struct print_f
   }
 };
 
-class SliceField : public vtkm::worklet::WorkletMapField
+class SliceField : public viskores::worklet::WorkletMapField
 {
 protected:
-  vtkm::Vec<vtkm::Float32,3> m_point;
-  vtkm::Vec<vtkm::Float32,3> m_normal;
+  viskores::Vec<viskores::Float32,3> m_point;
+  viskores::Vec<viskores::Float32,3> m_normal;
 public:
-  VTKM_CONT
-  SliceField(vtkm::Vec<vtkm::Float32,3> point, vtkm::Vec<vtkm::Float32,3> normal)
+  VISKORES_CONT
+  SliceField(viskores::Vec<viskores::Float32,3> point, viskores::Vec<viskores::Float32,3> normal)
     : m_point(point),
       m_normal(normal)
   {
-    vtkm::Normalize(m_normal);
+    viskores::Normalize(m_normal);
   }
 
   typedef void ControlSignature(FieldIn, FieldOut);
   typedef void ExecutionSignature(_1, _2);
 
   template<typename T>
-  VTKM_EXEC
-  void operator()(const vtkm::Vec<T,3> &point, vtkm::Float32& distance) const
+  VISKORES_EXEC
+  void operator()(const viskores::Vec<T,3> &point, viskores::Float32& distance) const
   {
-    vtkm::Vec<vtkm::Float32,3> f_point(point[0], point[1], point[2]);
-    distance = vtkm::dot(m_point - f_point, m_normal);
+    viskores::Vec<viskores::Float32,3> f_point(point[0], point[1], point[2]);
+    distance = viskores::dot(m_point - f_point, m_normal);
   }
 }; //class SliceField
 
-class Offset : public vtkm::worklet::WorkletMapField
+class Offset : public viskores::worklet::WorkletMapField
 {
 protected:
-  vtkm::Id m_offset;
+  viskores::Id m_offset;
 
 public:
-  VTKM_CONT
-  Offset(const vtkm::Id offset)
+  VISKORES_CONT
+  Offset(const viskores::Id offset)
     : m_offset(offset)
   {
   }
@@ -76,10 +76,10 @@ public:
   typedef void ExecutionSignature(_1, _2);
 
   template<typename PortalType>
-  VTKM_EXEC
-  void operator()(const vtkm::Id &index, PortalType values) const
+  VISKORES_EXEC
+  void operator()(const viskores::Id &index, PortalType values) const
   {
-    vtkm::Id value = values.Get(index);
+    viskores::Id value = values.Get(index);
     values.Set(index, value + m_offset);
   }
 }; //class Offset
@@ -87,13 +87,13 @@ public:
 //---------------------------------------------------------------------------//
 // Multi Plane Implicit Function 
 //---------------------------------------------------------------------------//
-class MultiPlane : public vtkm::internal::ImplicitFunctionBase<MultiPlane>
+class MultiPlane : public viskores::internal::ImplicitFunctionBase<MultiPlane>
 {
 public:
   MultiPlane() = default;
 
   //-------------------------------------------------------------------------//
-  VTKM_EXEC_CONT MultiPlane(const Vector points[3],
+  VISKORES_EXEC_CONT MultiPlane(const Vector points[3],
                             const Vector normals[3],
                             const int num_planes)
   {
@@ -102,75 +102,75 @@ public:
   }
 
   //-------------------------------------------------------------------------//
-  VTKM_EXEC void SetPlanes(const Vector points[6], const Vector normals[6])
+  VISKORES_EXEC void SetPlanes(const Vector points[6], const Vector normals[6])
   {
-    for (vtkm::Id index : { 0, 1, 2})
+    for (viskores::Id index : { 0, 1, 2})
     {
       this->Points[index] = points[index];
     }
-    for (vtkm::Id index : { 0, 1, 2})
+    for (viskores::Id index : { 0, 1, 2})
     {
       this->Normals[index] = normals[index];
     }
   }
 
   //-------------------------------------------------------------------------//
-  VTKM_EXEC void SetPlane(int idx, const Vector& point, const Vector& normal)
+  VISKORES_EXEC void SetPlane(int idx, const Vector& point, const Vector& normal)
   {
-    VTKM_ASSERT((idx >= 0) && (idx < 3));
+    VISKORES_ASSERT((idx >= 0) && (idx < 3));
     this->Points[idx] = point;
     this->Normals[idx] = normal;
   }
 
   //-------------------------------------------------------------------------//
-  VTKM_EXEC_CONT void SetNumPlanes(const int &num)
+  VISKORES_EXEC_CONT void SetNumPlanes(const int &num)
   {
     this->m_num_planes = num;
   }
 
   //-------------------------------------------------------------------------//
-  VTKM_EXEC_CONT void GetPlanes(Vector points[3], Vector normals[3]) const
+  VISKORES_EXEC_CONT void GetPlanes(Vector points[3], Vector normals[3]) const
   {
-    for (vtkm::Id index : { 0, 1, 2})
+    for (viskores::Id index : { 0, 1, 2})
     {
       points[index] = this->Points[index];
     }
-    for (vtkm::Id index : { 0, 1, 2})
+    for (viskores::Id index : { 0, 1, 2})
     {
       normals[index] = this->Normals[index];
     }
   }
 
   //-------------------------------------------------------------------------//
-  VTKM_EXEC_CONT const Vector* GetPoints() const { return this->Points; }
+  VISKORES_EXEC_CONT const Vector* GetPoints() const { return this->Points; }
 
   //-------------------------------------------------------------------------//
-  VTKM_EXEC_CONT const Vector* GetNormals() const { return this->Normals; }
+  VISKORES_EXEC_CONT const Vector* GetNormals() const { return this->Normals; }
 
   //-------------------------------------------------------------------------//
-  VTKM_EXEC_CONT Scalar Value(const Vector& point) const
+  VISKORES_EXEC_CONT Scalar Value(const Vector& point) const
   {
-    Scalar maxVal = vtkm::NegativeInfinity<Scalar>();
-    for (vtkm::Id index = 0; index < this->m_num_planes; ++index)
+    Scalar maxVal = viskores::NegativeInfinity<Scalar>();
+    for (viskores::Id index = 0; index < this->m_num_planes; ++index)
     {
       const Vector& p = this->Points[index];
       const Vector& n = this->Normals[index];
-      const Scalar val = vtkm::Dot(point - p, n);
-      maxVal = vtkm::Max(maxVal, val);
+      const Scalar val = viskores::Dot(point - p, n);
+      maxVal = viskores::Max(maxVal, val);
     }
     return maxVal;
   }
 
   //-------------------------------------------------------------------------//
-  VTKM_EXEC_CONT Vector Gradient(const Vector& point) const
+  VISKORES_EXEC_CONT Vector Gradient(const Vector& point) const
   {
-    Scalar maxVal = vtkm::NegativeInfinity<Scalar>();
-    vtkm::Id maxValIdx = 0;
-    for (vtkm::Id index = 0; index < this->m_num_planes; ++index)
+    Scalar maxVal = viskores::NegativeInfinity<Scalar>();
+    viskores::Id maxValIdx = 0;
+    for (viskores::Id index = 0; index < this->m_num_planes; ++index)
     {
       const Vector& p = this->Points[index];
       const Vector& n = this->Normals[index];
-      Scalar val = vtkm::Dot(point - p, n);
+      Scalar val = viskores::Dot(point - p, n);
       if (val > maxVal)
       {
         maxVal = val;
@@ -193,13 +193,13 @@ private:
 //---------------------------------------------------------------------------//
 /// Multi Plane Field 
 //---------------------------------------------------------------------------//
-class MultiPlaneField : public vtkm::worklet::WorkletMapField
+class MultiPlaneField : public viskores::worklet::WorkletMapField
 {
 protected:
   MultiPlane m_multi_plane;
 public:
   //-------------------------------------------------------------------------//
-  VTKM_CONT MultiPlaneField(MultiPlane &multi_plane)
+  VISKORES_CONT MultiPlaneField(MultiPlane &multi_plane)
     : m_multi_plane(multi_plane)
   {
   }
@@ -209,8 +209,8 @@ public:
 
   //-------------------------------------------------------------------------//
   template<typename T>
-  VTKM_EXEC
-  void operator()(const vtkm::Vec<T,3> &point, vtkm::Float32& distance) const
+  VISKORES_EXEC
+  void operator()(const viskores::Vec<T,3> &point, viskores::Float32& distance) const
   {
     distance = m_multi_plane.Value(point);
   }
@@ -234,13 +234,13 @@ public:
     }
   }
 
-  std::vector<vtkm::Id> UnionDomainIds()
+  std::vector<viskores::Id> UnionDomainIds()
   {
-    std::vector<vtkm::Id> domain_ids;
+    std::vector<viskores::Id> domain_ids;
     const size_t num_dsets = m_data_sets.size();
     for(size_t i = 0; i < num_dsets; ++i)
     {
-      std::vector<vtkm::Id> add = m_data_sets[i]->GetDomainIds();
+      std::vector<viskores::Id> add = m_data_sets[i]->GetDomainIds();
       domain_ids.insert(domain_ids.end(), add.begin(), add.end());
     }
 
@@ -253,21 +253,31 @@ public:
   template<typename U>
   struct CopyFunctor
   {
-    vtkm::cont::ArrayHandle<vtkm::Vec<U,3>> output;
-    vtkm::Id offset;
+    viskores::cont::ArrayHandle<viskores::Vec<U,3>> &output;
+    viskores::Id offset;
+
+    CopyFunctor(viskores::cont::ArrayHandle<viskores::Vec<U,3>> &out,
+                viskores::Id o)
+    : output(out), offset(o) {}
 
     template<typename Type, typename S>
-    void operator()(vtkm::cont::ArrayHandle<Type,S> &input)
+    void operator()(const viskores::cont::ArrayHandle<Type,S> &input) const
     {
-      vtkm::Id copy_size = input.GetNumberOfValues();
-      vtkm::Id start = 0;
-      vtkm::cont::Algorithm::CopySubRange(input, start, copy_size, output, offset);
+      // Only copy if the dispatched type matches the output type
+      // avoid compiler error with cast and call for cuda 12.9.1
+      if constexpr (std::is_same<Type, viskores::Vec<U,3>>::value)
+      {
+        viskores::Id copy_size = input.GetNumberOfValues();
+        viskores::cont::Algorithm::CopySubRange(
+            input, 0, copy_size, output, offset);
+      }
     }
   };
+
   template<typename T, typename S, typename U>
-  void CopyCoords(vtkm::cont::UncertainArrayHandle<T,S> &input,
-                  vtkm::cont::ArrayHandle<vtkm::Vec<U,3>> &output,
-                  vtkm::Id offset)
+  void CopyCoords(viskores::cont::UncertainArrayHandle<T,S> &input,
+                  viskores::cont::ArrayHandle<viskores::Vec<U,3>> &output,
+                  viskores::Id offset)
   {
     CopyFunctor<U> func{output,offset};
     input.CastAndCall(func);
@@ -275,21 +285,21 @@ public:
 
   struct CopyField
   {
-    vtkm::cont::DataSet &m_data_set;
-    std::vector<vtkm::cont::DataSet> m_in_data_sets;
-    vtkm::Id *m_point_offsets;
-    vtkm::Id *m_cell_offsets;
-    vtkm::Id  m_field_index;
-    vtkm::Id  m_num_points;
-    vtkm::Id  m_num_cells;
+    viskores::cont::DataSet &m_data_set;
+    std::vector<viskores::cont::DataSet> m_in_data_sets;
+    viskores::Id *m_point_offsets;
+    viskores::Id *m_cell_offsets;
+    viskores::Id  m_field_index;
+    viskores::Id  m_num_points;
+    viskores::Id  m_num_cells;
 
-    CopyField(vtkm::cont::DataSet &data_set,
-              std::vector<vtkm::cont::DataSet> in_data_sets,
-              vtkm::Id *point_offsets,
-              vtkm::Id *cell_offsets,
-              vtkm::Id num_points,
-              vtkm::Id num_cells,
-              vtkm::Id field_index)
+    CopyField(viskores::cont::DataSet &data_set,
+              std::vector<viskores::cont::DataSet> in_data_sets,
+              viskores::Id *point_offsets,
+              viskores::Id *cell_offsets,
+              viskores::Id num_points,
+              viskores::Id num_cells,
+              viskores::Id field_index)
       : m_data_set(data_set),
         m_in_data_sets(in_data_sets),
         m_point_offsets(point_offsets),
@@ -300,17 +310,17 @@ public:
     {}
 
     template<typename T, typename S>
-    void operator()(const vtkm::cont::ArrayHandle<T,S> &vtkmNotUsed(field)) const
+    void operator()(const viskores::cont::ArrayHandle<T,S> &viskoresNotUsed(field)) const
     {
       //check to see if this is a supported field ;
-      const vtkm::cont::Field &scalar_field = m_in_data_sets[0].GetField(m_field_index);
-      bool is_supported = (scalar_field.GetAssociation() == vtkm::cont::Field::Association::Points ||
-                           scalar_field.GetAssociation() == vtkm::cont::Field::Association::Cells);
+      const viskores::cont::Field &scalar_field = m_in_data_sets[0].GetField(m_field_index);
+      bool is_supported = (scalar_field.GetAssociation() == viskores::cont::Field::Association::Points ||
+                           scalar_field.GetAssociation() == viskores::cont::Field::Association::Cells);
 
       if(!is_supported) return;
 
-      bool assoc_points = scalar_field.GetAssociation() == vtkm::cont::Field::Association::Points;
-      vtkm::cont::ArrayHandle<T> out;
+      bool assoc_points = scalar_field.GetAssociation() == viskores::cont::Field::Association::Points;
+      viskores::cont::ArrayHandle<T> out;
       if(assoc_points)
       {
         out.Allocate(m_num_points);
@@ -322,16 +332,16 @@ public:
 
       for(size_t i = 0; i < m_in_data_sets.size(); ++i)
       {
-        const vtkm::cont::Field &f = m_in_data_sets[i].GetField(m_field_index);
-        vtkm::cont::ArrayHandle<T,S> in = f.GetData().AsArrayHandle<vtkm::cont::ArrayHandle<T,S>>();
-        vtkm::Id start = 0;
-        vtkm::Id copy_size = in.GetNumberOfValues();
-        vtkm::Id offset = assoc_points ? m_point_offsets[i] : m_cell_offsets[i];
+        const viskores::cont::Field &f = m_in_data_sets[i].GetField(m_field_index);
+        viskores::cont::ArrayHandle<T,S> in = f.GetData().AsArrayHandle<viskores::cont::ArrayHandle<T,S>>();
+        viskores::Id start = 0;
+        viskores::Id copy_size = in.GetNumberOfValues();
+        viskores::Id offset = assoc_points ? m_point_offsets[i] : m_cell_offsets[i];
 
-        vtkm::cont::Algorithm::CopySubRange(in, start, copy_size, out, offset);
+        viskores::cont::Algorithm::CopySubRange(in, start, copy_size, out, offset);
       }
 
-      vtkm::cont::Field out_field(scalar_field.GetName(),
+      viskores::cont::Field out_field(scalar_field.GetName(),
                                   scalar_field.GetAssociation(),
                                   out);
       m_data_set.AddField(out_field);
@@ -339,26 +349,26 @@ public:
     }
   };
 
-  vtkm::cont::DataSet MergeDomains(std::vector<vtkm::cont::DataSet> &doms)
+  viskores::cont::DataSet MergeDomains(std::vector<viskores::cont::DataSet> &doms)
   {
-    vtkm::cont::DataSet res;
+    viskores::cont::DataSet res;
 
-    vtkm::Id num_cells = 0;
-    vtkm::Id num_points = 0;
-    std::vector<vtkm::Id> cell_offsets(doms.size());
-    std::vector<vtkm::Id> point_offsets(doms.size());
+    viskores::Id num_cells = 0;
+    viskores::Id num_points = 0;
+    std::vector<viskores::Id> cell_offsets(doms.size());
+    std::vector<viskores::Id> point_offsets(doms.size());
 
     for(size_t dom = 0; dom < doms.size(); ++dom)
     {
       auto cell_set = doms[dom].GetCellSet();
 
       // In the past, we were making assumptions that the output of contour
-      // was a cell set single type. Because of difficult vtkm reasons, the output
+      // was a cell set single type. Because of difficult viskores reasons, the output
       // of contour is now explicit cell set,but we can still assume that
       // this output will be all triangles.
       // this becomes more complicated if we want to support mixed types
-      //if(!cell_set.IsType(vtkm::cont::CellSetSingleType<>())) continue;
-      if(!cell_set.IsType<vtkm::cont::CellSetExplicit<>>())
+      //if(!cell_set.IsType(viskores::cont::CellSetSingleType<>())) continue;
+      if(!cell_set.IsType<viskores::cont::CellSetExplicit<>>())
       {
         std::cout<<"expected explicit cell set as the result of contour\n";
 
@@ -374,48 +384,48 @@ public:
 
     }
 
-    const vtkm::Id conn_size = num_cells * 3;
+    const viskores::Id conn_size = num_cells * 3;
 
     // calculate merged offsets for all domains
-    vtkm::cont::ArrayHandle<vtkm::Id> conn;
+    viskores::cont::ArrayHandle<viskores::Id> conn;
     conn.Allocate(conn_size);
 
     // handle coordinate merging
-    vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64, 3>> out_coords;
+    viskores::cont::ArrayHandle<viskores::Vec<viskores::Float64, 3>> out_coords;
     out_coords.Allocate(num_points);
     // coordinate type that contour produces
-    //using CoordsType3f = vtkm::cont::ArrayHandleVirtual<vtkm::Vec<vtkm::Float32,3>>;
-    //using CoordsType3d = vtkm::cont::ArrayHandleVirtual<vtkm::Vec<vtkm::Float64,3>>;
+    //using CoordsType3f = viskores::cont::ArrayHandleVirtual<viskores::Vec<viskores::Float32,3>>;
+    //using CoordsType3d = viskores::cont::ArrayHandleVirtual<viskores::Vec<viskores::Float64,3>>;
 
     for(size_t dom = 0; dom < doms.size(); ++dom)
     {
       auto cell_set = doms[dom].GetCellSet();
 
-      //if(!cell_set.IsType(vtkm::cont::CellSetSingleType<>())) continue;
-      if(!cell_set.IsType<vtkm::cont::CellSetExplicit<>>())
+      //if(!cell_set.IsType(viskores::cont::CellSetSingleType<>())) continue;
+      if(!cell_set.IsType<viskores::cont::CellSetExplicit<>>())
       {
         std::cout<<"expected explicit cell set as the result of contour\n";
         continue;
       }
 
       // grab the connectivity and copy it into the larger array
-      //vtkm::cont::CellSetSingleType<> single_type = cell_set.Cast<vtkm::cont::CellSetSingleType<>>();
-      vtkm::cont::CellSetExplicit<> single_type =
-        cell_set.AsCellSet<vtkm::cont::CellSetExplicit<>>();
-      const vtkm::cont::ArrayHandle<vtkm::Id> dconn = single_type.GetConnectivityArray(
-        vtkm::TopologyElementTagCell(),
-        vtkm::TopologyElementTagPoint());
+      //viskores::cont::CellSetSingleType<> single_type = cell_set.Cast<viskores::cont::CellSetSingleType<>>();
+      viskores::cont::CellSetExplicit<> single_type =
+        cell_set.AsCellSet<viskores::cont::CellSetExplicit<>>();
+      const viskores::cont::ArrayHandle<viskores::Id> dconn = single_type.GetConnectivityArray(
+        viskores::TopologyElementTagCell(),
+        viskores::TopologyElementTagPoint());
 
-      vtkm::Id copy_size = dconn.GetNumberOfValues();
-      vtkm::Id start = 0;
+      viskores::Id copy_size = dconn.GetNumberOfValues();
+      viskores::Id start = 0;
 
-      vtkm::cont::Algorithm::CopySubRange(dconn, start, copy_size, conn, cell_offsets[dom]*3);
+      viskores::cont::Algorithm::CopySubRange(dconn, start, copy_size, conn, cell_offsets[dom]*3);
       // now we offset the connectiviy we just copied in so we references the
       // correct points
       if(cell_offsets[dom] != 0)
       {
-        vtkm::cont::ArrayHandleCounting<vtkm::Id> indexes(cell_offsets[dom]*3, 1, copy_size);
-        vtkm::worklet::DispatcherMapField<detail::Offset>(detail::Offset(point_offsets[dom]))
+        viskores::cont::ArrayHandleCounting<viskores::Id> indexes(cell_offsets[dom]*3, 1, copy_size);
+        viskores::worklet::DispatcherMapField<detail::Offset>(detail::Offset(point_offsets[dom]))
           .Invoke(indexes, conn);
       }
 
@@ -440,18 +450,18 @@ public:
     } // for each domain
 
 
-    vtkm::cont::CellSetSingleType<> cellSet;
-    cellSet.Fill(num_points, vtkm::CELL_SHAPE_TRIANGLE, 3, conn);
+    viskores::cont::CellSetSingleType<> cellSet;
+    cellSet.Fill(num_points, viskores::CELL_SHAPE_TRIANGLE, 3, conn);
     res.SetCellSet(cellSet);
 
-    res.AddCoordinateSystem(vtkm::cont::CoordinateSystem("coords", out_coords));
+    res.AddCoordinateSystem(viskores::cont::CoordinateSystem("coords", out_coords));
 
     // handle fields, they are all the same since they came from the same data set
     const int num_fields = doms[0].GetNumberOfFields();
 
     for(int f = 0; f < num_fields; ++f)
     {
-      const vtkm::cont::Field &field = doms[0].GetField(f);
+      const viskores::cont::Field &field = doms[0].GetField(f);
 
       if(field.GetName() == m_skip_field) continue;
 
@@ -463,7 +473,7 @@ public:
                        num_cells,
                        f);
 
-      auto full = field.GetData().ResetTypes(vtkm::TypeListCommon(),VTKM_DEFAULT_STORAGE_LIST{});
+      auto full = field.GetData().ResetTypes(viskores::TypeListCommon(),VISKORES_DEFAULT_STORAGE_LIST{});
       full.CastAndCall(copier);
     }
     return res;
@@ -471,13 +481,13 @@ public:
 
   vtkh::DataSet* Merge()
   {
-    std::vector<vtkm::Id> domain_ids = this->UnionDomainIds();
+    std::vector<viskores::Id> domain_ids = this->UnionDomainIds();
     vtkh::DataSet *res = new vtkh::DataSet();
     for(size_t dom = 0; dom < domain_ids.size(); ++dom)
     {
       // gather domain
-      std::vector<vtkm::cont::DataSet> doms;
-      vtkm::Id domain_id = domain_ids[dom];
+      std::vector<viskores::cont::DataSet> doms;
+      viskores::Id domain_id = domain_ids[dom];
       for(size_t i = 0; i < m_data_sets.size(); ++i)
       {
         if(m_data_sets[i]->HasDomainId(domain_id))
@@ -500,7 +510,7 @@ GetScalarData(vtkh::DataSet &vtkhData, const char *field_name)
 {
   //Get domain Ids on this rank
   //will be nonzero even if there is no data
-  std::vector<vtkm::Id> localDomainIds = vtkhData.GetDomainIds();
+  std::vector<viskores::Id> localDomainIds = vtkhData.GetDomainIds();
   std::vector<T> data;
      
   //if there is data: loop through domains and grab all triangles.
@@ -508,19 +518,19 @@ GetScalarData(vtkh::DataSet &vtkhData, const char *field_name)
   {
     for(int i = 0; i < localDomainIds.size(); i++)
     {
-      vtkm::cont::DataSet dataset = vtkhData.GetDomainById(localDomainIds[i]);
-      vtkm::cont::CoordinateSystem coords = dataset.GetCoordinateSystem();
-      vtkm::cont::UnknownCellSet cellset = dataset.GetCellSet();
+      viskores::cont::DataSet dataset = vtkhData.GetDomainById(localDomainIds[i]);
+      viskores::cont::CoordinateSystem coords = dataset.GetCoordinateSystem();
+      viskores::cont::UnknownCellSet cellset = dataset.GetCellSet();
       //Get variable
-      vtkm::cont::Field field = dataset.GetField(field_name);
+      viskores::cont::Field field = dataset.GetField(field_name);
       
       long int size = field.GetNumberOfValues();
       
-      using data_d = vtkm::cont::ArrayHandle<vtkm::Float64>;
-      using data_f = vtkm::cont::ArrayHandle<vtkm::Float32>;
+      using data_d = viskores::cont::ArrayHandle<viskores::Float64>;
+      using data_f = viskores::cont::ArrayHandle<viskores::Float32>;
       if(field.GetData().IsType<data_d>())
       {
-        vtkm::cont::ArrayHandle<vtkm::Float64> field_data;
+        viskores::cont::ArrayHandle<viskores::Float64> field_data;
         field.GetData().AsArrayHandle(field_data);
         auto portal = field_data.ReadPortal();
 
@@ -531,7 +541,7 @@ GetScalarData(vtkh::DataSet &vtkhData, const char *field_name)
       }
       if(field.GetData().IsType<data_f>())
       {
-        vtkm::cont::ArrayHandle<vtkm::Float32> field_data;
+        viskores::cont::ArrayHandle<viskores::Float32> field_data;
         field.GetData().AsArrayHandle(field_data);
         auto portal = field_data.ReadPortal();
 
@@ -605,8 +615,8 @@ Slice::~Slice()
 
 //---------------------------------------------------------------------------//
 void
-Slice::AddPlane(vtkm::Vec<vtkm::Float32,3> point,
-                vtkm::Vec<vtkm::Float32,3> normal)
+Slice::AddPlane(viskores::Vec<viskores::Float32,3> point,
+                viskores::Vec<viskores::Float32,3> normal)
 {
   m_points.push_back(point);
   m_normals.push_back(normal);
@@ -635,21 +645,21 @@ Slice::DoExecute()
   std::vector<vtkh::DataSet*> slices;
   for(int s = 0; s < num_slices; ++s)
   {
-    vtkm::Vec<vtkm::Float32,3> point = m_points[s];
-    vtkm::Vec<vtkm::Float32,3> normal = m_normals[s];
+    viskores::Vec<viskores::Float32,3> point = m_points[s];
+    viskores::Vec<viskores::Float32,3> normal = m_normals[s];
     vtkh::DataSet temp_ds = *(this->m_input);
     // shallow copy the input so we don't propagate the slice field
     // to the input data set, since it might be used in other places
     for(int i = 0; i < num_domains; ++i)
     {
-      vtkm::cont::DataSet &dom = temp_ds.GetDomain(i);
+      viskores::cont::DataSet &dom = temp_ds.GetDomain(i);
 
-      vtkm::cont::ArrayHandle<vtkm::Float32> slice_field;
-      vtkm::worklet::DispatcherMapField<detail::SliceField>(detail::SliceField(point, normal))
+      viskores::cont::ArrayHandle<viskores::Float32> slice_field;
+      viskores::worklet::DispatcherMapField<detail::SliceField>(detail::SliceField(point, normal))
         .Invoke(dom.GetCoordinateSystem().GetData(), slice_field);
 
-      dom.AddField(vtkm::cont::Field(fname,
-                                      vtkm::cont::Field::Association::Points,
+      dom.AddField(viskores::cont::Field(fname,
+                                      viskores::cont::Field::Association::Points,
                                       slice_field));
     } // each domain
 
@@ -695,7 +705,7 @@ Slice::GetName() const
 //---------------------------------------------------------------------------//
 struct SliceImplicit::InternalsType
 {
-  vtkm::ImplicitFunctionGeneral m_func;
+  viskores::ImplicitFunctionGeneral m_func;
   detail::MultiPlane m_multi_plane;
   InternalsType()
   {}
@@ -720,10 +730,10 @@ SliceImplicit::~SliceImplicit()
 
 //---------------------------------------------------------------------------//
 void
-SliceImplicit::SetBoxSlice(const vtkm::Bounds &clipping_bounds)
+SliceImplicit::SetBoxSlice(const viskores::Bounds &clipping_bounds)
 {
   m_do_multi_plane = false;
-  auto box = vtkm::Box({ clipping_bounds.X.Min,
+  auto box = viskores::Box({ clipping_bounds.X.Min,
                          clipping_bounds.Y.Min,
                          clipping_bounds.Z.Min},
                        { clipping_bounds.X.Max,
@@ -738,13 +748,13 @@ void
 SliceImplicit::SetSphereSlice(const double center[3], const double radius)
 {
   m_do_multi_plane = false;
-  vtkm::Vec<vtkm::FloatDefault,3> vec_center;
+  viskores::Vec<viskores::FloatDefault,3> vec_center;
   vec_center[0] = center[0];
   vec_center[1] = center[1];
   vec_center[2] = center[2];
-  vtkm::FloatDefault r = radius;
+  viskores::FloatDefault r = radius;
 
-  auto sphere = vtkm::Sphere(vec_center, r);
+  auto sphere = viskores::Sphere(vec_center, r);
   m_internals->m_func = sphere;
 }
 
@@ -755,19 +765,19 @@ SliceImplicit::SetCylinderSlice(const double center[3],
                                 const double radius)
 {
   m_do_multi_plane = false;
-  vtkm::Vec<vtkm::FloatDefault,3> vec_center;
+  viskores::Vec<viskores::FloatDefault,3> vec_center;
   vec_center[0] = center[0];
   vec_center[1] = center[1];
   vec_center[2] = center[2];
 
-  vtkm::Vec<vtkm::FloatDefault,3> vec_axis;
+  viskores::Vec<viskores::FloatDefault,3> vec_axis;
   vec_axis[0] = axis[0];
   vec_axis[1] = axis[1];
   vec_axis[2] = axis[2];
 
-  vtkm::FloatDefault r = radius;
+  viskores::FloatDefault r = radius;
 
-  auto cylinder = vtkm::Cylinder(vec_center, vec_axis, r);
+  auto cylinder = viskores::Cylinder(vec_center, vec_axis, r);
   m_internals->m_func = cylinder;
 }
 
@@ -777,17 +787,17 @@ SliceImplicit::SetPlaneSlice(const double origin[3],
                              const double normal[3])
 {
   m_do_multi_plane = false;
-  vtkm::Vec<vtkm::FloatDefault,3> vec_origin;
+  viskores::Vec<viskores::FloatDefault,3> vec_origin;
   vec_origin[0] = origin[0];
   vec_origin[1] = origin[1];
   vec_origin[2] = origin[2];
 
-  vtkm::Vec<vtkm::FloatDefault,3> vec_normal;
+  viskores::Vec<viskores::FloatDefault,3> vec_normal;
   vec_normal[0] = normal[0];
   vec_normal[1] = normal[1];
   vec_normal[2] = normal[2];
 
-  auto plane = vtkm::Plane(vec_origin, vec_normal);
+  auto plane = viskores::Plane(vec_origin, vec_normal);
   m_internals->m_func = plane;
 }
 
@@ -802,7 +812,7 @@ SliceImplicit::SetPlaneSlice(const double origin[3],
 //                               const double normal2[3])
 // {
 //   m_do_multi_plane = true;
-//   vtkm::Vec3f plane_points[3];
+//   viskores::Vec3f plane_points[3];
 //   plane_points[0][0] = float(origin1[0]);
 //   plane_points[0][1] = float(origin1[1]);
 //   plane_points[0][2] = float(origin1[2]);
@@ -815,7 +825,7 @@ SliceImplicit::SetPlaneSlice(const double origin[3],
 //   plane_points[2][1] = 0.f;
 //   plane_points[2][2] = 0.f;
 //
-//   vtkm::Vec3f plane_normals[3];
+//   viskores::Vec3f plane_normals[3];
 //   plane_normals[0][0] = float(normal1[0]);
 //   plane_normals[0][1] = float(normal1[1]);
 //   plane_normals[0][2] = float(normal1[2]);
@@ -828,8 +838,8 @@ SliceImplicit::SetPlaneSlice(const double origin[3],
 //   plane_normals[2][1] = 0.f;
 //   plane_normals[2][2] = 0.f;
 //
-//   vtkm::Normalize(plane_normals[0]);
-//   vtkm::Normalize(plane_normals[1]);
+//   viskores::Normalize(plane_normals[0]);
+//   viskores::Normalize(plane_normals[1]);
 //
 //   auto planes
 //     = detail::MultiPlane(plane_points, plane_normals, 2);
@@ -846,7 +856,7 @@ SliceImplicit::SetPlaneSlice(const double origin[3],
 //                               const double normal3[3])
 // {
 //   m_do_multi_plane = true;
-//   vtkm::Vec3f plane_points[3];
+//   viskores::Vec3f plane_points[3];
 //   plane_points[0][0] = float(origin1[0]);
 //   plane_points[0][1] = float(origin1[1]);
 //   plane_points[0][2] = float(origin1[2]);
@@ -859,7 +869,7 @@ SliceImplicit::SetPlaneSlice(const double origin[3],
 //   plane_points[2][1] = float(origin3[1]);
 //   plane_points[2][2] = float(origin3[2]);
 //
-//   vtkm::Vec3f plane_normals[3];
+//   viskores::Vec3f plane_normals[3];
 //   plane_normals[0][0] = float(normal1[0]);
 //   plane_normals[0][1] = float(normal1[1]);
 //   plane_normals[0][2] = float(normal1[2]);
@@ -872,9 +882,9 @@ SliceImplicit::SetPlaneSlice(const double origin[3],
 //   plane_normals[2][1] = float(normal3[1]);
 //   plane_normals[2][2] = float(normal3[2]);
 //
-//   vtkm::Normalize(plane_normals[0]);
-//   vtkm::Normalize(plane_normals[1]);
-//   vtkm::Normalize(plane_normals[2]);
+//   viskores::Normalize(plane_normals[0]);
+//   viskores::Normalize(plane_normals[1]);
+//   viskores::Normalize(plane_normals[2]);
 //
 //   auto planes
 //     = detail::MultiPlane(plane_points, plane_normals, 3);
@@ -913,11 +923,11 @@ void SliceImplicit::DoExecute()
   const int num_domains = this->m_input->GetNumberOfDomains();
   for(int i = 0; i < num_domains; ++i)
   {
-    vtkm::Id domain_id;
-    vtkm::cont::DataSet dom;
+    viskores::Id domain_id;
+    viskores::cont::DataSet dom;
     this->m_input->GetDomain(i, dom, domain_id);
 
-    vtkm::filter::contour::Slice slicer;
+    viskores::filter::contour::Slice slicer;
     slicer.SetImplicitFunction(m_internals->m_func);
     slicer.SetFieldsToPass(this->GetFieldSelection());
     auto dataset = slicer.Execute(dom);
@@ -957,7 +967,7 @@ AutoSliceLevels::~AutoSliceLevels()
 
 //---------------------------------------------------------------------------//
 void
-AutoSliceLevels::SetNormal(vtkm::Vec<vtkm::Float32,3> normal)
+AutoSliceLevels::SetNormal(viskores::Vec<viskores::Float32,3> normal)
 {
   m_normals.push_back(normal);
 }
@@ -977,28 +987,28 @@ AutoSliceLevels::SetField(std::string field)
 }
 
 //---------------------------------------------------------------------------//
-vtkmCamera*
+viskoresCamera*
 AutoSliceLevels::GetCamera()
 {
   return m_camera;
 }
 
 //---------------------------------------------------------------------------//
-vtkm::Bounds
+viskores::Bounds
 AutoSliceLevels::GetDataBounds()
 {
   return m_bounds;
 }
 
 //---------------------------------------------------------------------------//
-vtkm::Vec<vtkm::Float32,3>
+viskores::Vec<viskores::Float32,3>
 AutoSliceLevels::GetNormal()
 {
   return m_normal;
 }
 
 //---------------------------------------------------------------------------//
-vtkm::Float32
+viskores::Float32
 AutoSliceLevels::GetRadius()
 {
   return m_radius;
@@ -1012,10 +1022,10 @@ AutoSliceLevels::PreExecute()
 }
 
 //---------------------------------------------------------------------------//
-vtkm::Vec<vtkm::Float32,3>
-GetPoint(int level, int num_levels, vtkm::Bounds bounds)
+viskores::Vec<viskores::Float32,3>
+GetPoint(int level, int num_levels, viskores::Bounds bounds)
 {
-  vtkm::Vec<vtkm::Float32,3> point;
+  viskores::Vec<viskores::Float32,3> point;
   float spacing = 100.0/num_levels;
   float current_space = level * spacing;
   const float eps = 1e-5;
@@ -1074,25 +1084,25 @@ AutoSliceLevels::DoExecute()
 
 #endif
 
-  vtkm::Bounds bounds = this->m_input->GetGlobalBounds();
-  vtkm::Vec<vtkm::Float32,3> normal = m_normals[0];
+  viskores::Bounds bounds = this->m_input->GetGlobalBounds();
+  viskores::Vec<viskores::Float32,3> normal = m_normals[0];
  
   for(int s = 0; s < num_slices; ++s)
   {
-    vtkm::Vec<vtkm::Float32,3> point = GetPoint(s, num_slices, bounds);
+    viskores::Vec<viskores::Float32,3> point = GetPoint(s, num_slices, bounds);
     vtkh::DataSet temp_ds = *(this->m_input);
     // shallow copy the input so we don't propagate the slice field
     // to the input data set, since it might be used in other places
     for(int i = 0; i < num_domains; ++i)
     {
-      vtkm::cont::DataSet &dom = temp_ds.GetDomain(i);
+      viskores::cont::DataSet &dom = temp_ds.GetDomain(i);
 
-      vtkm::cont::ArrayHandle<vtkm::Float32> slice_field;
-      vtkm::worklet::DispatcherMapField<detail::SliceField>(detail::SliceField(point, normal))
+      viskores::cont::ArrayHandle<viskores::Float32> slice_field;
+      viskores::worklet::DispatcherMapField<detail::SliceField>(detail::SliceField(point, normal))
         .Invoke(dom.GetCoordinateSystem().GetData(), slice_field);
 
-      dom.AddField(vtkm::cont::Field(fname,
-                                      vtkm::cont::Field::Association::Points,
+      dom.AddField(viskores::cont::Field(fname,
+                                      viskores::cont::Field::Association::Points,
                                       slice_field));
     } // each domain
 
@@ -1122,13 +1132,13 @@ AutoSliceLevels::DoExecute()
   //else
   //{
   //        std::cerr << "normal is not 1 1 1 " << std::endl;
-  //  vtkmCamera *camera = new vtkmCamera;
+  //  viskoresCamera *camera = new viskoresCamera;
   //  camera->ResetToBounds(bounds);
   //  std::cerr << "In VTKH Filters" << std::endl;
-  //  vtkm::Float32 xb = vtkm::Float32(bounds.X.Length());
-  //  vtkm::Float32 yb = vtkm::Float32(bounds.Y.Length());
-  //  vtkm::Float32 zb = vtkm::Float32(bounds.Z.Length());
-  //  vtkm::Float32 radius = sqrt(xb*xb+yb*yb+zb*zb)/2.0;
+  //  viskores::Float32 xb = viskores::Float32(bounds.X.Length());
+  //  viskores::Float32 yb = viskores::Float32(bounds.Y.Length());
+  //  viskores::Float32 zb = viskores::Float32(bounds.Z.Length());
+  //  viskores::Float32 radius = sqrt(xb*xb+yb*yb+zb*zb)/2.0;
   //  std::cerr << "X bounds: " << bounds.X.Min << " " << bounds.X.Max << " ";
   //  std::cerr << "Y bounds: " << bounds.Y.Min << " " << bounds.Y.Max << " ";
   //  std::cerr << "Z bounds: " << bounds.Z.Min << " " << bounds.Z.Max << " ";

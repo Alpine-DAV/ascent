@@ -1,0 +1,31 @@
+#An example of using the sample filter to sample points along a 3d line.
+
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "sample"
+        params: 
+          fields: 
+            - "braid"
+          line: 
+            num_samples: 100
+            start: 
+              x: 1.0
+              y: 1.0
+              z: 1.0
+            end: 
+              x: 0.0
+              y: 0.0
+              z: 0.0
+          invalid_value: -10.0
+- 
+  action: "add_extracts"
+  extracts: 
+    e1: 
+      pipeline: "pl1"
+      type: "relay"
+      params: 
+        protocol: "hdf5"
+        path: "/home/user/sandbox/ascent/scripts/build_ascent/build/ascent-checkout/tests/_output/tout_sample_line_3d"

@@ -9,7 +9,7 @@
 #include <vtkh/vtkh.hpp>
 #include <vtkh/DataSet.hpp>
 #include <vtkh/filters/Histogram.hpp>
-#include "t_vtkm_test_utils.hpp"
+#include "t_viskores_test_utils.hpp"
 
 #include <iostream>
 #include <mpi.h>
@@ -17,7 +17,7 @@
 //----------------------------------------------------------------------------
 TEST(vtkh_histogram_par, vtkh_histogram_clamp_range)
 {
-#ifdef VTKM_ENABLE_KOKKOS
+#ifdef VISKORES_ENABLE_KOKKOS
   vtkh::InitializeKokkos();
 #endif
 
@@ -43,7 +43,7 @@ TEST(vtkh_histogram_par, vtkh_histogram_clamp_range)
   vtkh::Histogram histogrammer;
   histogrammer.SetNumBins(128);
 
-  vtkm::Range range;
+  viskores::Range range;
   range.Min = 0;
   range.Max = 100;
 

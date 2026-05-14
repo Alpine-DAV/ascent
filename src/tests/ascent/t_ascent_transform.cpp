@@ -33,15 +33,15 @@ index_t EXAMPLE_MESH_SIDE_DIM = 20;
 
 //-----------------------------------------------------------------------------
 bool
-vtkm_avalible()
+viskores_avalible()
 {
-    // the vtkm runtime is currently our only rendering runtime
+    // the viskores runtime is currently our only rendering runtime
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
         return false;
     }
     return true;
@@ -79,7 +79,7 @@ setup(const std::string &tout_name, Node &data, std::string &output_file)
 //-----------------------------------------------------------------------------
 TEST(ascent_translate, test_translate)
 {
-    if(!vtkm_avalible())
+    if(!viskores_avalible())
     {
         return;
     }
@@ -112,8 +112,6 @@ TEST(ascent_translate, test_translate)
 
     scenes["s1/image_prefix"] = output_file;
 
-    std::cout << actions.to_yaml() << std::endl;
-
     Ascent ascent;
     ascent.open();
     ascent.publish(data);
@@ -129,7 +127,7 @@ TEST(ascent_translate, test_translate)
 //-----------------------------------------------------------------------------
 TEST(ascent_translate, test_scale)
 {
-    if(!vtkm_avalible())
+    if(!viskores_avalible())
     {
         return;
     }
@@ -166,8 +164,6 @@ TEST(ascent_translate, test_scale)
 
     scenes["s1/image_prefix"] = output_file;
 
-    std::cout << actions.to_yaml() << std::endl;
-
     Ascent ascent;
     ascent.open();
     ascent.publish(data);
@@ -183,7 +179,7 @@ TEST(ascent_translate, test_scale)
 //-----------------------------------------------------------------------------
 TEST(ascent_translate, test_rotate_x)
 {
-    if(!vtkm_avalible())
+    if(!viskores_avalible())
     {
         return;
     }
@@ -219,8 +215,6 @@ TEST(ascent_translate, test_rotate_x)
 
     scenes["s1/image_prefix"] = output_file;
 
-    std::cout << actions.to_yaml() << std::endl;
-
     Ascent ascent;
     ascent.open();
     ascent.publish(data);
@@ -237,7 +231,7 @@ TEST(ascent_translate, test_rotate_x)
 //-----------------------------------------------------------------------------
 TEST(ascent_translate, test_rotate_y)
 {
-    if(!vtkm_avalible())
+    if(!viskores_avalible())
     {
         return;
     }
@@ -273,8 +267,6 @@ TEST(ascent_translate, test_rotate_y)
 
     scenes["s1/image_prefix"] = output_file;
 
-    std::cout << actions.to_yaml() << std::endl;
-
     Ascent ascent;
     ascent.open();
     ascent.publish(data);
@@ -290,7 +282,7 @@ TEST(ascent_translate, test_rotate_y)
 //-----------------------------------------------------------------------------
 TEST(ascent_translate, test_rotate_z)
 {
-    if(!vtkm_avalible())
+    if(!viskores_avalible())
     {
         return;
     }
@@ -326,8 +318,6 @@ TEST(ascent_translate, test_rotate_z)
 
     scenes["s1/image_prefix"] = output_file;
 
-    std::cout << actions.to_yaml() << std::endl;
-
     Ascent ascent;
     ascent.open();
     ascent.publish(data);
@@ -343,7 +333,7 @@ TEST(ascent_translate, test_rotate_z)
 //-----------------------------------------------------------------------------
 TEST(ascent_translate, test_rotate_arb)
 {
-    if(!vtkm_avalible())
+    if(!viskores_avalible())
     {
         return;
     }
@@ -380,8 +370,6 @@ TEST(ascent_translate, test_rotate_arb)
 
     scenes["s1/image_prefix"] = output_file;
 
-    std::cout << actions.to_yaml() << std::endl;
-
     Ascent ascent;
     ascent.open();
     ascent.publish(data);
@@ -398,7 +386,7 @@ TEST(ascent_translate, test_rotate_arb)
 //-----------------------------------------------------------------------------
 TEST(ascent_translate, test_matrix)
 {
-    if(!vtkm_avalible())
+    if(!viskores_avalible())
     {
         return;
     }
@@ -439,8 +427,6 @@ TEST(ascent_translate, test_matrix)
 
     scenes["s1/image_prefix"] = output_file;
 
-    std::cout << actions.to_yaml() << std::endl;
-
     Ascent ascent;
     ascent.open();
     ascent.publish(data);
@@ -456,7 +442,7 @@ TEST(ascent_translate, test_matrix)
 //-----------------------------------------------------------------------------
 TEST(ascent_translate, test_bad_params)
 {
-    if(!vtkm_avalible())
+    if(!viskores_avalible())
     {
         return;
     }
@@ -482,6 +468,11 @@ TEST(ascent_translate, test_bad_params)
         pipelines["pl1/f1/params/rotate/x"]= 45.0;
         pipelines["pl1/f1/params/translate/x"]= 45.0;
         pipelines["pl1/f1/params/scale/x"]= 45.0;
+        EXPECT_THROW(ascent.execute(actions),conduit::Error);
+
+        // reflect missing normal/x,y,z
+        pipelines["pl1/f1/params"].reset();
+        pipelines["pl1/f1/params/reflect/normal/xx"]= 45.0;
         EXPECT_THROW(ascent.execute(actions),conduit::Error);
 
         // translate missing x,y,z
@@ -522,6 +513,11 @@ TEST(ascent_translate, test_bad_params)
         pipelines["pl1/f1/params/scale/x"]= 45.0;
         ascent.execute(actions);
 
+        // reflect missing normal/x,y,z
+        pipelines["pl1/f1/params"].reset();
+        pipelines["pl1/f1/params/reflect/normal/xx"]= 45.0;
+        ascent.execute(actions);
+
         // translate missing x,y,z
         pipelines["pl1/f1/params"].reset();
         pipelines["pl1/f1/params/translate/zz"]= 45.0;
@@ -548,7 +544,7 @@ TEST(ascent_translate, test_bad_params)
 //-----------------------------------------------------------------------------
 TEST(ascent_translate, test_reflect_x)
 {
-    if(!vtkm_avalible())
+    if(!viskores_avalible())
     {
         return;
     }
@@ -568,7 +564,7 @@ TEST(ascent_translate, test_reflect_x)
 
     // filter knobs
     pipelines["pl1/f1/type"] = "transform";
-    pipelines["pl1/f1/params/reflect/x"]= 1.0;
+    pipelines["pl1/f1/params/reflect/normal/x"]= 1.0;
     pipelines["pl1/pipeline"] = "pl0";
 
     conduit::Node &add_scenes = actions.append();
@@ -586,8 +582,6 @@ TEST(ascent_translate, test_reflect_x)
 
     scenes["s1/image_prefix"] = output_file;
 
-    std::cout << actions.to_yaml() << std::endl;
-
     Ascent ascent;
     ascent.open();
     ascent.publish(data);
@@ -603,7 +597,7 @@ TEST(ascent_translate, test_reflect_x)
 //-----------------------------------------------------------------------------
 TEST(ascent_translate, test_reflect_arb)
 {
-    if(!vtkm_avalible())
+    if(!viskores_avalible())
     {
         return;
     }
@@ -623,8 +617,8 @@ TEST(ascent_translate, test_reflect_arb)
 
     // filter knobs
     pipelines["pl1/f1/type"] = "transform";
-    pipelines["pl1/f1/params/reflect/x"]= 1.0;
-    pipelines["pl1/f1/params/reflect/y"]= 1.0;
+    pipelines["pl1/f1/params/reflect/normal/x"]= 1.0;
+    pipelines["pl1/f1/params/reflect/normal/y"]= 1.0;
     pipelines["pl1/pipeline"] = "pl0";
 
     conduit::Node &add_scenes = actions.append();
@@ -642,8 +636,6 @@ TEST(ascent_translate, test_reflect_arb)
 
     scenes["s1/image_prefix"] = output_file;
 
-    std::cout << actions.to_yaml() << std::endl;
-
     Ascent ascent;
     ascent.open();
     ascent.publish(data);
@@ -660,7 +652,7 @@ TEST(ascent_translate, test_reflect_arb)
 //-----------------------------------------------------------------------------
 TEST(ascent_translate, test_reflect_y)
 {
-    if(!vtkm_avalible())
+    if(!viskores_avalible())
     {
         return;
     }
@@ -680,7 +672,7 @@ TEST(ascent_translate, test_reflect_y)
 
     // filter knobs
     pipelines["pl1/f1/type"] = "transform";
-    pipelines["pl1/f1/params/reflect/y"]= 1.0;
+    pipelines["pl1/f1/params/reflect/normal/y"]= 1.0;
     pipelines["pl1/pipeline"] = "pl0";
 
     conduit::Node &add_scenes = actions.append();
@@ -698,7 +690,59 @@ TEST(ascent_translate, test_reflect_y)
 
     scenes["s1/image_prefix"] = output_file;
 
-    std::cout << actions.to_yaml() << std::endl;
+    Ascent ascent;
+    ascent.open();
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example transform filter using reflect across the y-axis.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+}
+//-----------------------------------------------------------------------------
+TEST(ascent_translate, test_reflect_x_max)
+{
+    if(!viskores_avalible())
+    {
+        return;
+    }
+
+    std::string output_file;
+    conduit::Node data;
+    setup("tout_transform_reflect_x_max",data,output_file);
+
+    conduit::Node actions;
+    conduit::Node &add_pipelines = actions.append();
+    add_pipelines["action"] = "add_pipelines";
+    conduit::Node &pipelines = add_pipelines["pipelines"];
+
+    pipelines["pl0/f1/type"] = "transform";
+    pipelines["pl0/f1/params/translate/x"]= 10.0;
+    pipelines["pl0/f1/params/translate/y"]= 10.0;
+
+    // filter knobs
+    pipelines["pl1/f1/type"] = "transform";
+    pipelines["pl1/f1/params/reflect/normal/x"]= 1.0;
+    pipelines["pl1/f1/params/reflect/point/x"]= "max";
+    pipelines["pl1/pipeline"] = "pl0";
+
+
+    conduit::Node &add_scenes = actions.append();
+    add_scenes["action"] = "add_scenes";
+    conduit::Node &scenes = add_scenes["scenes"];
+
+    // render transformed
+    scenes["s1/plots/p1/type"]  = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "braid";
+    scenes["s1/plots/p1/pipeline"] = "pl1";
+    // and orig
+    scenes["s1/plots/p2/type"]  = "pseudocolor";
+    scenes["s1/plots/p2/field"] = "braid";
+    scenes["s1/plots/p2/pipeline"] = "pl0";
+
+    scenes["s1/image_prefix"] = output_file;
 
     Ascent ascent;
     ascent.open();
@@ -708,10 +752,126 @@ TEST(ascent_translate, test_reflect_y)
 
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
-    std::string msg = "An example transform filter using reflect across y axis.";
+    std::string msg = "An example transform filter using reflect across the x-axis maximum.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
+//-----------------------------------------------------------------------------
+TEST(ascent_translate, test_reflect_y_min_2d)
+{
+    if(!viskores_avalible())
+    {
+        return;
+    }
+
+    std::string output_file;
+    conduit::Node data;
+    setup("tout_transform_reflect_y_min_2d",data,output_file);
+
+    conduit::Node actions;
+    conduit::Node &add_pipelines = actions.append();
+    add_pipelines["action"] = "add_pipelines";
+    conduit::Node &pipelines = add_pipelines["pipelines"];
+
+    pipelines["pl0/f1/type"] = "transform";
+    pipelines["pl0/f1/params/translate/x"]= 10.0;
+    pipelines["pl0/f1/params/translate/y"]= 10.0;
+
+    pipelines["pl1/f1/type"] = "slice";
+    pipelines["pl1/f1/params/point/x"]= 0.0;
+    pipelines["pl1/f1/params/point/y"]= 0.0;
+    pipelines["pl1/f1/params/point/z"]= 0.0;
+
+    pipelines["pl1/f1/params/normal/x"]= 0.0;
+    pipelines["pl1/f1/params/normal/y"]= 0.0;
+    pipelines["pl1/f1/params/normal/z"]= 1.0;
+    //pipelines["pl1/pipeline"] = "pl0";
+    // filter knobs
+    pipelines["pl2/f1/type"] = "transform";
+    pipelines["pl2/f1/params/reflect/normal/y"]= 1;
+    pipelines["pl2/f1/params/reflect/point/y"]= "min";
+    pipelines["pl2/pipeline"] = "pl1";
+
+
+    conduit::Node &add_scenes = actions.append();
+    add_scenes["action"] = "add_scenes";
+    conduit::Node &scenes = add_scenes["scenes"];
+
+    // render transformed
+    scenes["s1/plots/p1/type"]  = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "braid";
+    scenes["s1/plots/p1/pipeline"] = "pl2";
+    // and orig
+    scenes["s1/plots/p2/type"]  = "pseudocolor";
+    scenes["s1/plots/p2/field"] = "braid";
+    scenes["s1/plots/p2/pipeline"] = "pl1";
+
+    scenes["s1/image_prefix"] = output_file;
+
+
+    Ascent ascent;
+    ascent.open();
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example transform filter using reflect a 2D slice across y axis minimum.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_translate, test_reflect_over_point)
+{
+    if(!viskores_avalible())
+    {
+        return;
+    }
+
+    std::string output_file;
+    conduit::Node data;
+    setup("tout_transform_reflect_over_point",data,output_file);
+
+    conduit::Node actions;
+    conduit::Node &add_pipelines = actions.append();
+    add_pipelines["action"] = "add_pipelines";
+    conduit::Node &pipelines = add_pipelines["pipelines"];
+
+    // filter knobs
+    pipelines["pl0/f1/type"] = "transform";
+    pipelines["pl0/f1/params/reflect/normal/x"]= 1;
+    pipelines["pl0/f1/params/reflect/point/x"]= 15;
+    pipelines["pl0/f1/params/reflect/point/y"]= 0;
+    pipelines["pl0/f1/params/reflect/point/z"]= 0;
+
+
+    conduit::Node &add_scenes = actions.append();
+    add_scenes["action"] = "add_scenes";
+    conduit::Node &scenes = add_scenes["scenes"];
+
+    // render transformed
+    scenes["s1/plots/p1/type"]  = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "braid";
+    // and orig
+    scenes["s1/plots/p2/type"]  = "pseudocolor";
+    scenes["s1/plots/p2/field"] = "radial";
+    scenes["s1/plots/p2/pipeline"] = "pl0";
+
+    scenes["s1/image_prefix"] = output_file;
+
+
+    Ascent ascent;
+    ascent.open();
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example transform filter to reflect across a point.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+}
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {

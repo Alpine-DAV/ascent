@@ -218,7 +218,7 @@ Color Tables
 ^^^^^^^^^^^^
 The color map translates normalized scalars to color values. Color maps
 can be applied to each each plot in a scene.
-Image of the color tables provided by VTK-m can be found in :ref:`vtkm_color_tables`.
+Image of the color tables provided by Viskores can be found in :ref:`viskores_color_tables`.
 Minimally, a color table name needs to be specified, but the ``color_table`` node allows you to specify RGB and Alpha (opacity) control points for complete customization of color maps.
 Alpha control points are used when rendering volumes.
 The built-in Color map names are: ``Cool to Warm``, ``Black-Body Radiation``, ``Samsel Fire``, ``Inferno``, ``Linear YGB``, ``Cold and Hot``, ``Rainbow Desaturated``, ``Cool to Warm (Extended)``, ``X Ray``, ``Black, Blue and White``, ``Viridis``, ``Linear Green``, ``Jet``, and ``Rainbow``.
@@ -405,7 +405,7 @@ Now we add a second render to the same example using every available parameter:
 Rendering Camera Configuration
 ---------------------------------
 Ascent supports rendering in both 2D and 3D. For 3D rendering, Ascent supports two primary methods for defining the camera:
-the Ascent native (VTKm style) camera, which is camera-centric, and the VisIt style camera, which is view-centric.
+the Ascent native (Viskores style) camera, which is camera-centric, and the VisIt style camera, which is view-centric.
 Both formats provide control over how scenes are rendered, but they differ in terminology, orientation, and internal computation of the view matrix.
 
 2D Camera
@@ -414,9 +414,9 @@ Both formats provide control over how scenes are rendered, but they differ in te
 
 - ``2d`` or ``windowCoords``: Enables 2D rendering mode. Expects a 4-element array defining the 2D view bounds [x0 (left), x1 (right), y0 (bottom), y1 (top)].
 
-Ascent Native (VTKm Style) Camera
+Ascent Native (Viskores Style) Camera
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The native Ascent camera follows the VTKm camera model which focuses on defining the camera's physical parameters and orientation in 3D space.
+The native Ascent camera follows the Viskores camera model which focuses on defining the camera's physical parameters and orientation in 3D space.
 This camera-centric approach specifies where the camera is located, what it is looking at, and how it is oriented.
 The following parameters are supported:
 
@@ -451,7 +451,7 @@ The following parameters are supported:
 
 Unsupported VisIt Camera Parameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In addition to the above supported VisIt camera parameters, there are a number of VisIt camera parameters that are not completely translatable to the VTKm style camera and are therefore currently ignored.
+In addition to the above supported VisIt camera parameters, there are a number of VisIt camera parameters that are not completely translatable to the Viskores style camera and are therefore currently ignored.
 
 .. Note::
    These parameters are safely ignored if provided. They will not influence the rendered image but also will not produce errors.
@@ -478,6 +478,25 @@ parameters:
 - ``dataset_bounds`` : controls the dimensions of the rendered bounding box around the dataset. This will overwrite the default bounding box based on the dataset's dimensions. A valid value is an array of six floats ([xMin,xMax,yMin,yMax,zMin,zMax]) that define dimensions larger than the default. Note: this does not control annotations. To turn off dataset annotations, see :ref:`world_annotations_off`. To turn off screen annotations, see :ref:`screen_annotations_off`.
 - ``color_bar_position`` : controls the position of 1 or more color bars. A valid value for positioning a single color bar is an array of four floats ([xMin,xMax,yMin,yMax]). A valid value for positioning N color bars is an array of 4*N floats ([xMin1_0,xMax1_0,yMin1_0,yMax1_0,...,xMin_n,xMax_n,yMin_n,yMax_n]). This repositioning is performed in Screen Space, so valid minimum and maximum values are limited to the range [-1,1] (i.e. the origin (0,0) is in the center of the image, (-1,-1) is the bottom-left corner, and (1,1) is the top-right corner). Note: Ascent does not check for correctness of user positioned color bars.
 
+
+Tiled Rendering
+---------------
+
+The renderer supports tiled rendering where the image is divided into a regular grid and each section of the grid, or tile, is rendered separately.
+The advantage of tiled rendering is that it requires fewer resources than rendering the entire image at once.
+Tiled rendering supports five ``tiled_rendering_type``'s - ``square_tiles``, ``rectangular_tiles``, ``horizontal_strips``, ``vertical_strips`` and ``optimized_tiles``.
+When the ``tiled_rendering_type`` is ``square_tiles``, the tiles are square where the width and height are given by the ``tile_width``.
+When the ``tiled_rendering_type`` is ``rectangular_tiles``, the tiles are rectangular where the width and height are given by the ``tile_width`` and ``tile_height``.
+When the ``tiled_rendering_type`` is ``horizontal_strips``, the tiles are horizontal strips that are the width of the image with a height of ``tile_height``.
+When the ``tiled_rendering_type`` is ``vertical_strips``, the tiles are vertical strips that are the height of the image with a width of ``tile_width``.
+When the ``tiled_rendering_type`` is ``optimized_tiles``, the tiles are rectangular with a maximum width and height of ``tile_width`` and ``tile_height`` such that the extra pixels in the rows and columns is minimized.
+Tiled rendering is on by default, with optimized_tiles and 1024 by 1024 tiles.
+Below is a list of the parameters that control tiled rendering:
+
+- ``tiled_rendering`` : controls if tiled rendering is enabled. Valid values are ``"true"`` and ``"false"``. The default is ``"true"``.
+- ``tiled_rendering_type`` : controls the tiled rendering type. Valid values are ``"square_tiles"``, ``"rectangular_tiles"``, ``"horizontal_strips"``, ``"vertical_strips"`` and ``"optimized_tiles"``. The default is ``"optimized_tiles"``.
+- ``tile_width`` : The width of a tile. The default is ``1024``.
+- ``tile_height`` : The height of a tile. The default is ``1024``.
 
 Automatic Camera
 ----------------

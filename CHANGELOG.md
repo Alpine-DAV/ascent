@@ -8,7 +8,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ### Preferred dependency versions for ascent@develop
 - cmake@3.23 or newer
 - conduit@0.9.5
-- vtk-m@2.3.0
+- viskores@1.0.0
 - raja@v2025.09.0
 - umpire@v2025.09.0
 - camp@v2025.09.2
@@ -16,7 +16,17 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - mfem@4.8
 
 ### Added
+- Added plane to the Sample Filter
+- Added the ability to specify "min/max" as the x/y/z point for the reflect transform filter
+- Added Uniform Grid filter as a parameter of the Sample Filter
 - Added ability to define cameras for rendering using visit camera view parameters
+- Added ability to do tiled rendering, where tiles covering an image are rendered seperately to form the final image. The default is to do tiled rendering with 1024 by 1024 tiles.
+- Added support for 64 bit IDs
+- Added support for RZ meshes
+- Added a warning if a `ascent.py` file exsits in the current working directory when executing a python extract. 
+
+### Fixed
+- Fixed issue where the plot did not align with the 3d axes when the camera was panned (`camera/xpan` and `camera/ypan`).
 
 ## [0.9.5] - Released 2025-09-10
 ### Preferred dependency versions for ascent@0.9.5

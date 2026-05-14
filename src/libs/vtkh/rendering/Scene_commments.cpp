@@ -2,7 +2,7 @@
 #include <vtkh/rendering/MeshRenderer.hpp>
 #include <vtkh/rendering/VolumeRenderer.hpp>
 #include <vtkh/rendering/ANARIVolumeRenderer.hpp>
-#include <vtkh/utils/vtkm_array_utils.hpp>
+#include <vtkh/utils/viskores_array_utils.hpp>
 
 #ifdef VTKH_PARALLEL
 #include <mpi.h>
@@ -129,10 +129,10 @@ void
 Scene::Render()
 {
 
-  std::vector<vtkm::Range> ranges;
+  std::vector<viskores::Range> ranges;
   std::vector<std::string> field_names;
   std::vector<int> is_ct_discrete;
-  std::vector<vtkm::cont::ColorTable> color_tables;
+  std::vector<viskores::cont::ColorTable> color_tables;
   bool do_once = true;
 
   //
@@ -268,7 +268,7 @@ void Scene::SynchDepths(std::vector<vtkh::Render> &renders)
   int rank = vtkh::GetMPIRank();
   for(auto render : renders)
   {
-    vtkm::rendering::Canvas &canvas = render.GetCanvas();
+    viskores::rendering::Canvas &canvas = render.GetCanvas();
     const int image_size = canvas.GetWidth() * canvas.GetHeight();
     float *depth_ptr = GetVTKMPointer(canvas.GetDepthBuffer());
     MPI_Bcast( depth_ptr, image_size, MPI_FLOAT, 0, comm);

@@ -41,6 +41,40 @@ namespace runtime
 namespace filters
 {
 
+bool ASCENT_API is_valid_expression(const std::string &expr, std::string &err_msg);
+
+void ASCENT_API ascent_register_flow_schema_hooks();
+
+conduit::Node ASCENT_API &string_schema(conduit::Node &schema_node);
+
+conduit::Node ASCENT_API &number_schema(conduit::Node &schema_node,
+                                        bool supports_expressions = false);
+
+conduit::Node ASCENT_API &vec3_schema(conduit::Node &schema_node,
+                                      bool supports_expressions = false);
+
+conduit::Node ASCENT_API &vec3_schema(conduit::Node &schema_node,
+                                      const std::string var1,
+                                      const std::string var2,
+                                      const std::string var3,
+                                      bool supports_expressions = false);
+
+conduit::Node ASCENT_API &vec3_schema_anyOf(conduit::Node &schema_node,
+                                            bool supports_expressions = false);
+
+conduit::Node ASCENT_API &vec3_schema_anyOf(conduit::Node &schema_node,
+                                            const std::string var1,
+                                            const std::string var2,
+                                            const std::string var3,
+                                            bool supports_expressions = false);
+
+conduit::Node ASCENT_API &array_schema(conduit::Node &schema_node);
+
+conduit::Node ASCENT_API &array_schema(conduit::Node &schema_node,
+                                       const conduit::Node &item_schema);
+
+conduit::Node ASCENT_API &ignore_schema(conduit::Node &schema_node);
+
 bool ASCENT_API check_numeric(const std::string path,
                               const conduit::Node &params,
                               conduit::Node &info,
@@ -77,6 +111,7 @@ void ASCENT_API path_helper(std::vector<std::string> &paths,
 
 std::string ASCENT_API surprise_check(const std::vector<std::string> &valid_paths,
                                       const conduit::Node &node);
+
 //
 // Ignore paths only ignores top level paths, differing lower level
 // paths to another surprise check.
@@ -89,6 +124,27 @@ std::string ASCENT_API surprise_check(const std::vector<std::string> &valid_path
 double ASCENT_API get_float64(const conduit::Node &node, DataObject *dataset);
 float ASCENT_API  get_float32(const conduit::Node &node, DataObject *dataset);
 int ASCENT_API    get_int32(const conduit::Node &node, DataObject *dataset);
+
+//this is for filters that have params that
+//can accept either a double value
+//or the strings "min" and "max"
+
+enum class ParamVal
+{
+  Unset,
+  Value,
+  BoundsMin,
+  BoundsMax
+};
+
+struct ParamSpec
+{
+  ParamVal mode = ParamVal::Unset;
+  double value = -1.0;
+};
+
+//Parse the ParamSpec struct
+ParamSpec ASCENT_API assign_param_spec(const conduit::Node &n, DataObject *data_object);
 
 //-----------------------------------------------------------------------------
 };

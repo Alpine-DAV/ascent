@@ -9,7 +9,6 @@ endif()
 MESSAGE(STATUS "Looking for OCCA using OCCA_DIR = ${OCCA_DIR}")
 
 set(occa_DIR ${OCCA_DIR}/lib)
-message(STATUS "Found OCCA include dirs: ${OCCA_INCLUDE_DIRS}")
 
 find_path(OCCA_INCLUDE_DIRS occa.hpp
           PATHS ${OCCA_DIR}/include
@@ -18,6 +17,7 @@ find_path(OCCA_INCLUDE_DIRS occa.hpp
           NO_CMAKE_PATH
           NO_SYSTEM_ENVIRONMENT_PATH
           NO_CMAKE_SYSTEM_PATH)
+message(STATUS "Found OCCA include dirs: ${OCCA_INCLUDE_DIRS}")
 
 #find libs
 find_library(OCCA_LIBRARIES LIBRARIES NAMES occa

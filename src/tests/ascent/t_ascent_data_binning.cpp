@@ -689,13 +689,13 @@ void test_binning_pipline_filter(const std::string &tag,
                                  Node &data,
                                  const Node &binning_filter_def)
 {
-  // the vtkm runtime is currently our only rendering runtime
+  // the viskores runtime is currently our only rendering runtime
   Node n;
   ascent::about(n);
-  // only run this test if ascent was built with vtkm support
-  if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+  // only run this test if ascent was built with viskores support
+  if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
   {
-      ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+      ASCENT_INFO("Ascent viskores support disabled, skipping test");
       return;
   }
 
@@ -761,11 +761,11 @@ void test_binning_pipline_filter(const std::string &tag,
 // //-----------------------------------------------------------------------------
 // TEST(ascent_binning, binning_basic_meshes_2d)
 // {
-//   // the vtkm runtime is currently our only rendering runtime
+//   // the viskores runtime is currently our only rendering runtime
 //   Node n;
 //   ascent::about(n);
-//   // only run this test if ascent was built with vtkm support
-//   if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+//   // only run this test if ascent was built with viskores support
+//   if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
 //   {
 //     ASCENT_INFO("Ascent support disabled, skipping test");
 //     return;
@@ -810,11 +810,11 @@ void test_binning_pipline_filter(const std::string &tag,
 // //-----------------------------------------------------------------------------
 // TEST(ascent_binning, binning_basic_meshes_3d)
 // {
-//   // the vtkm runtime is currently our only rendering runtime
+//   // the viskores runtime is currently our only rendering runtime
 //   Node n;
 //   ascent::about(n);
-//   // only run this test if ascent was built with vtkm support
-//   if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+//   // only run this test if ascent was built with viskores support
+//   if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
 //   {
 //     ASCENT_INFO("Ascent support disabled, skipping test");
 //     return;
@@ -852,11 +852,11 @@ void test_binning_pipline_filter(const std::string &tag,
 // TEST(ascent_binning, binning_errors)
 // {
 //   return;
-//   // the vtkm runtime is currently our only rendering runtime
+//   // the viskores runtime is currently our only rendering runtime
 //   Node n;
 //   ascent::about(n);
-//   // only run this test if ascent was built with vtkm support
-//   if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+//   // only run this test if ascent was built with viskores support
+//   if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
 //   {
 //     ASCENT_INFO("Ascent support disabled, skipping test");
 //     return;
@@ -947,11 +947,11 @@ void test_binning_pipline_filter(const std::string &tag,
 //-----------------------------------------------------------------------------
 TEST(ascent_binning, filter_braid_binning_mesh)
 {
-  // the vtkm runtime is currently our only rendering runtime
+  // the viskores runtime is currently our only rendering runtime
   Node n;
   ascent::about(n);
-  // only run this test if ascent was built with vtkm support
-  if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+  // only run this test if ascent was built with viskores support
+  if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
   {
     ASCENT_INFO("Ascent support disabled, skipping test");
     return;
@@ -1025,11 +1025,11 @@ TEST(ascent_binning, filter_braid_binning_mesh)
 //-----------------------------------------------------------------------------
 TEST(ascent_binning, filter_braid_binning_bins)
 {
-  // the vtkm runtime is currently our only rendering runtime
+  // the viskores runtime is currently our only rendering runtime
   Node n;
   ascent::about(n);
-  // only run this test if ascent was built with vtkm support
-  if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+  // only run this test if ascent was built with viskores support
+  if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
   {
     ASCENT_INFO("Ascent support disabled, skipping test");
     return;
@@ -1113,11 +1113,11 @@ TEST(ascent_binning, filter_braid_binning_bins)
 //-----------------------------------------------------------------------------
 TEST(ascent_binning, filter_braid_binning_bins_int64_params)
 {
-  // the vtkm runtime is currently our only rendering runtime
+  // the viskores runtime is currently our only rendering runtime
   Node n;
   ascent::about(n);
-  // only run this test if ascent was built with vtkm support
-  if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+  // only run this test if ascent was built with viskores support
+  if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
   {
     ASCENT_INFO("Ascent support disabled, skipping test");
     return;
@@ -1255,13 +1255,13 @@ TEST(ascent_binning, expr_braid_non_spatial_bins)
 //-----------------------------------------------------------------------------
 TEST(ascent_binning, binning_render_basic_mesh_cases)
 {
-  // the vtkm runtime is currently our only rendering runtime
+  // the viskores runtime is currently our only rendering runtime
   Node n;
   ascent::about(n);
-  // only run this test if ascent was built with vtkm support
-  if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+  // only run this test if ascent was built with viskores support
+  if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
   {
-      ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+      ASCENT_INFO("Ascent viskores support disabled, skipping test");
       return;
   }
 

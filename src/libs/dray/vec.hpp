@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: (BSD-3-Clause)
 
 // Note: this file was derived from
-// https://gitlab.kitware.com/vtk/vtk-m/blob/master/vtkm/Types.h
+// https://gitlab.kitware.com/vtk/viskores/blob/master/viskores/Types.h
 
 #ifndef DRAY_VEC_HPP
 #define DRAY_VEC_HPP

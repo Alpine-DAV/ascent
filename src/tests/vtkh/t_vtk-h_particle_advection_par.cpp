@@ -5,7 +5,7 @@
 //-----------------------------------------------------------------------------
 
 #include "gtest/gtest.h"
-#include "t_vtkm_test_utils.hpp"
+#include "t_viskores_test_utils.hpp"
 
 #include <vtkh/vtkh.hpp>
 #include <vtkh/DataSet.hpp>
@@ -14,9 +14,9 @@
 #include <vtkh/rendering/RayTracer.hpp>
 #include <vtkh/rendering/Scene.hpp>
 
-#include <vtkm/io/VTKDataSetWriter.h>
-#include <vtkm/cont/DataSet.h>
-#include <vtkm/cont/CellSetSingleType.h>
+#include <viskores/io/VTKDataSetWriter.h>
+#include <viskores/cont/DataSet.h>
+#include <viskores/cont/CellSetSingleType.h>
 
 #include <iostream>
 #include <mpi.h>
@@ -40,7 +40,7 @@ void checkValidity(vtkh::DataSet *data, const int maxSteps, bool isSL)
     }
     else
     {
-      if (!cs.IsType<vtkm::cont::CellSetSingleType<>>())
+      if (!cs.IsType<viskores::cont::CellSetSingleType<>>())
         EXPECT_TRUE(false);
     }
   }
@@ -54,19 +54,19 @@ void writeDataSet(vtkh::DataSet *data, std::string fName, int rank)
   {
     char fileNm[128];
     sprintf(fileNm, "%s.rank%d.domain%d.vtk", fName.c_str(), rank, i);
-    vtkm::io::VTKDataSetWriter write(fileNm);
+    viskores::io::VTKDataSetWriter write(fileNm);
     write.WriteDataSet(data->GetDomain(i));
   }
 }
 
-static inline vtkm::FloatDefault
+static inline viskores::FloatDefault
 rand01()
 {
-  return (vtkm::FloatDefault)rand() / (RAND_MAX+1.0f);
+  return (viskores::FloatDefault)rand() / (RAND_MAX+1.0f);
 }
 
-static inline vtkm::FloatDefault
-randRange(const vtkm::FloatDefault &a, const vtkm::FloatDefault &b)
+static inline viskores::FloatDefault
+randRange(const viskores::FloatDefault &a, const viskores::FloatDefault &b)
 {
     return a + (b-a)*rand01();
 }
@@ -75,7 +75,7 @@ template <typename FilterType>
 vtkh::DataSet *
 RunFilter(vtkh::DataSet& input,
           const std::string& fieldName,
-          const std::vector<vtkm::Particle>& seeds,
+          const std::vector<viskores::Particle>& seeds,
           int maxAdvSteps,
           double stepSize)
 {
@@ -94,7 +94,7 @@ RunFilter(vtkh::DataSet& input,
 //----------------------------------------------------------------------------
 TEST(vtkh_particle_advection, vtkh_serial_particle_advection)
 {
-#ifdef VTKM_ENABLE_KOKKOS
+#ifdef VISKORES_ENABLE_KOKKOS
   vtkh::InitializeKokkos();
 #endif
   MPI_Init(NULL, NULL);
@@ -117,29 +117,47 @@ TEST(vtkh_particle_advection, vtkh_serial_particle_advection)
     data_set.AddDomain(CreateTestDataRectilinear(domain_id, num_blocks, base_size), domain_id);
   }
 
-  std::vector<vtkm::Particle> seeds;
+  std::vector<viskores::Particle> seeds;
 
-  vtkm::Bounds bounds = data_set.GetGlobalBounds();
+  viskores::Bounds bounds = data_set.GetGlobalBounds();
   std::cout<<"Bounds= "<<bounds<<std::endl;
 
   for (int i = 0; i < 100; i++)
   {
-    vtkm::Particle p;
-    p.SetPosition(vtkm::Vec3f(randRange(bounds.X.Min, bounds.X.Max),
+    viskores::Particle p;
+    p.SetPosition(viskores::Vec3f(randRange(bounds.X.Min, bounds.X.Max),
                               randRange(bounds.Y.Min, bounds.Y.Max),
       	                      randRange(bounds.Z.Min, bounds.Z.Max)));
-    p.SetID(static_cast<vtkm::Id>(i));
+    p.SetID(static_cast<viskores::Id>(i));
 
     seeds.push_back(p);
   }
 
   vtkh::DataSet *outPA=NULL, *outSL=NULL;
+  outPA = RunFilter<vtkh::ParticleAdvection>(data_set, "vector_data_Float32", seeds, maxAdvSteps, 0.1);
+  checkValidity(outPA, maxAdvSteps+1, false);
+
   outPA = RunFilter<vtkh::ParticleAdvection>(data_set, "vector_data_Float64", seeds, maxAdvSteps, 0.1);
   std::cerr << "Particle Advection Output:" << std::endl;
   outPA->PrintSummary(std::cerr);
   checkValidity(outPA, maxAdvSteps+1, false);
 
   vtkh::Streamline streamline;
+  streamline.SetInput(&data_set);
+  streamline.SetField("vector_data_Float32");
+  streamline.SetNumberOfSteps(maxAdvSteps);
+  streamline.SetStepSize(0.1);
+  streamline.SetSeeds(seeds);
+  streamline.SetTubes(true);
+  streamline.SetTubeCapping(true);
+  streamline.SetTubeSize(0.1);
+  streamline.SetTubeSides(3);
+  streamline.SetOutputField("lines");
+  streamline.Update();
+
+  outSL = streamline.GetOutput();
+  checkValidity(outSL, maxAdvSteps+1, true);
+
   streamline.SetInput(&data_set);
   streamline.SetField("vector_data_Float64");
   streamline.SetNumberOfSteps(maxAdvSteps);
@@ -160,10 +178,10 @@ TEST(vtkh_particle_advection, vtkh_serial_particle_advection)
 
   writeDataSet(outSL, "advection_SeedsRandomWhole", rank);
 
-  vtkm::Bounds paBounds = outSL->GetGlobalBounds();
+  viskores::Bounds paBounds = outSL->GetGlobalBounds();
 
-  vtkm::rendering::Camera camera;
-  camera.SetPosition(vtkm::Vec<vtkm::Float64,3>(-16, -16, -16));
+  viskores::rendering::Camera camera;
+  camera.SetPosition(viskores::Vec<viskores::Float64,3>(-16, -16, -16));
   camera.ResetToBounds(paBounds);
   vtkh::Render render = vtkh::MakeRender(512,
                                          512,

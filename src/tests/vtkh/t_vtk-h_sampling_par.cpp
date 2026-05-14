@@ -12,7 +12,7 @@
 #include <vtkh/rendering/RayTracer.hpp>
 #include <vtkh/rendering/PointRenderer.hpp>
 #include <vtkh/rendering/Scene.hpp>
-#include "t_vtkm_test_utils.hpp"
+#include "t_viskores_test_utils.hpp"
 
 #include <iostream>
 #include <mpi.h>
@@ -20,7 +20,7 @@
 //----------------------------------------------------------------------------
 TEST(vtkh_hist_sampling_par, vtkh_sampling_point_view)
 {
-#ifdef VTKM_ENABLE_KOKKOS
+#ifdef VISKORES_ENABLE_KOKKOS
   vtkh::InitializeKokkos();
 #endif
 
@@ -51,9 +51,9 @@ TEST(vtkh_hist_sampling_par, vtkh_sampling_point_view)
   sampler.Update();
   vtkh::DataSet *output = sampler.GetOutput();
 
-  vtkm::Bounds bounds = output->GetGlobalBounds();
+  viskores::Bounds bounds = output->GetGlobalBounds();
 
-  vtkm::rendering::Camera camera;
+  viskores::rendering::Camera camera;
   camera.ResetToBounds(bounds);
   vtkh::Render render = vtkh::MakeRender(512,
                                          512,
@@ -77,7 +77,7 @@ TEST(vtkh_hist_sampling_par, vtkh_sampling_point_view)
 //----------------------------------------------------------------------------
 TEST(vtkh_hist_sampling_par, vtkh_sampling_cell_view)
 {
-#ifdef VTKM_ENABLE_KOKKOS
+#ifdef VISKORES_ENABLE_KOKKOS
   vtkh::InitializeKokkos();
 #endif
 
@@ -108,9 +108,9 @@ TEST(vtkh_hist_sampling_par, vtkh_sampling_cell_view)
   sampler.Update();
   vtkh::DataSet *output = sampler.GetOutput();
 
-  vtkm::Bounds bounds = output->GetGlobalBounds();
+  viskores::Bounds bounds = output->GetGlobalBounds();
 
-  vtkm::rendering::Camera camera;
+  viskores::rendering::Camera camera;
   camera.ResetToBounds(bounds);
   vtkh::Render render = vtkh::MakeRender(512,
                                          512,

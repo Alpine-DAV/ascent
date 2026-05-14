@@ -1,13 +1,13 @@
 #include <iostream>
 #include <vtkh/filters/ParticleAdvection.hpp>
-#include <vtkm/filter/flow/ParticleAdvection.h>
-#include <vtkm/cont/EnvironmentTracker.h>
+#include <viskores/filter/flow/ParticleAdvection.h>
+#include <viskores/cont/EnvironmentTracker.h>
 #include <vtkh/vtkh.hpp>
 #include <vtkh/Error.hpp>
 
 #if VTKH_PARALLEL
-#include <vtkm/thirdparty/diy/diy.h>
-#include <vtkm/thirdparty/diy/mpi-cast.h>
+#include <viskores/thirdparty/diy/diy.h>
+#include <viskores/thirdparty/diy/mpi-cast.h>
 #include <mpi.h>
 #endif
 
@@ -38,12 +38,12 @@ void ParticleAdvection::DoExecute()
 {
   this->m_output = new DataSet();
 
-#ifndef VTKH_BYPASS_VTKM_BIH
+#ifndef VTKH_BYPASS_VISKORES_BIH
 
 #ifdef VTKH_PARALLEL
-  // Setup VTK-h and VTK-m comm.
+  // Setup VTK-h and Viskores comm.
   MPI_Comm mpi_comm = MPI_Comm_f2c(vtkh::GetMPICommHandle());
-  vtkm::cont::EnvironmentTracker::SetCommunicator(vtkmdiy::mpi::communicator(vtkmdiy::mpi::make_DIY_MPI_Comm(mpi_comm)));
+  viskores::cont::EnvironmentTracker::SetCommunicator(viskoresdiy::mpi::communicator(viskoresdiy::mpi::make_DIY_MPI_Comm(mpi_comm)));
 #endif
 
   //Make sure that the field exists on any domain.
@@ -52,7 +52,7 @@ void ParticleAdvection::DoExecute()
     throw Error("Domain does not contain specified vector field for ParticleAdvection analysis.");
   }
 
-  vtkm::cont::PartitionedDataSet inputs;
+  viskores::cont::PartitionedDataSet inputs;
 
   //Create a partitioned dataset for all domains with the field.
   if (this->m_input->FieldExists(m_field_name))
@@ -60,15 +60,13 @@ void ParticleAdvection::DoExecute()
     const int num_domains = this->m_input->GetNumberOfDomains();
     for (int i = 0; i < num_domains; i++)
     {
-      vtkm::Id domain_id;
-      vtkm::cont::DataSet dom;
+      viskores::Id domain_id;
+      viskores::cont::DataSet dom;
       this->m_input->GetDomain(i, dom, domain_id);
       if(dom.HasField(m_field_name))
       {
-        using vectorField_d = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64, 3>>;
-        using vectorField_f = vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float32, 3>>;
         auto field = dom.GetField(m_field_name).GetData();
-        if(field.IsType<vectorField_d>() && !field.IsType<vectorField_f>())
+        if(field.GetNumberOfComponentsFlat() == 3)
         {
           inputs.AppendPartition(dom);
         }
@@ -92,13 +90,13 @@ void ParticleAdvection::DoExecute()
 
   if (!validField)
   {
-    throw Error("Vector field type does not match <vtkm::Vec<vtkm::Float32,3>> or <vtkm::Vec<vtkm::Float64,3>>");
+    throw Error("Vector field type does not match <viskores::Vec<viskores::Float32,3>> or <viskores::Vec<viskores::Float64,3>>");
   }
 
-  //Everything is valid. Call the VTKm filter.
+  //Everything is valid. Call the Viskores filter.
 
-  vtkm::filter::flow::ParticleAdvection particleAdvectionFilter;
-  auto seedsAH = vtkm::cont::make_ArrayHandle(m_seeds, vtkm::CopyFlag::Off);
+  viskores::filter::flow::ParticleAdvection particleAdvectionFilter;
+  auto seedsAH = viskores::cont::make_ArrayHandle(m_seeds, viskores::CopyFlag::Off);
 
   particleAdvectionFilter.SetStepSize(m_step_size);
   particleAdvectionFilter.SetActiveField(m_field_name);
@@ -106,7 +104,7 @@ void ParticleAdvection::DoExecute()
   particleAdvectionFilter.SetNumberOfSteps(m_num_steps);
   auto out = particleAdvectionFilter.Execute(inputs);
 
-  for (vtkm::Id i = 0; i < out.GetNumberOfPartitions(); i++)
+  for (viskores::Id i = 0; i < out.GetNumberOfPartitions(); i++)
   {
     this->m_output->AddDomain(out.GetPartition(i), i);
   }

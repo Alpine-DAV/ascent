@@ -197,9 +197,9 @@ ADIOS2::execute()
 
   vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
 
-  vtkm::cont::PartitionedDataSet pds;
-  vtkm::Id numDS = data.GetNumberOfDomains();
-  for (vtkm::Id i = 0; i < numDS; i++)
+  viskores::cont::PartitionedDataSet pds;
+  viskores::Id numDS = data.GetNumberOfDomains();
+  for (viskores::Id i = 0; i < numDS; i++)
     pds.AppendPartition(data.GetDomain(i));
 
   writer->Write(pds, engineType);

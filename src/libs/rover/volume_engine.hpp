@@ -8,7 +8,7 @@
 #define rover_volume_engine_h
 #include <rover_config.h>
 #include <engine.hpp>
-#include <vtkm/rendering/ConnectivityProxy.h>
+#include <viskores/rendering/ConnectivityProxy.h>
 
 namespace rover
 {
@@ -17,23 +17,23 @@ namespace rover
 class VolumeEngine : public Engine
 {
 protected:
-  vtkm::rendering::ConnectivityProxy *m_tracer;
+  viskores::rendering::ConnectivityProxy *m_tracer;
   int m_num_samples;
 public:
   VolumeEngine();
   ~VolumeEngine();
 
-  vtkmColorMap correct_opacity();
-  void set_data_set(vtkm::cont::DataSet &) override;
+  viskoresColorMap correct_opacity();
+  void set_data_set(viskores::cont::DataSet &) override;
   PartialVector32 partial_trace(Ray32 &rays) override;
   PartialVector64 partial_trace(Ray64 &rays) override;
   void init_rays(Ray32 &rays) override;
   void init_rays(Ray64 &rays) override;
-  void set_primary_range(const vtkmRange &range) override;
+  void set_primary_range(const viskoresRange &range) override;
   void set_primary_field(const std::string &primary_field) override;
   void set_composite_background(bool on) override;
-  void set_samples(const vtkm::Bounds &global_bounds, const int &samples) override;
-  vtkmRange get_primary_range() override;
+  void set_samples(const viskores::Bounds &global_bounds, const int &samples) override;
+  viskoresRange get_primary_range() override;
   int get_num_channels() override;
 };
 #endif

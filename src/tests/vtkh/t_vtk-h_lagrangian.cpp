@@ -11,14 +11,14 @@
 #include <vtkh/filters/Lagrangian.hpp>
 #include <vtkh/rendering/LineRenderer.hpp>
 #include <vtkh/rendering/Scene.hpp>
-#include "t_vtkm_test_utils.hpp"
-#include <vtkm/cont/DataSet.h>
-#include <vtkm/cont/DataSetBuilderUniform.h>
+#include "t_viskores_test_utils.hpp"
+#include <viskores/cont/DataSet.h>
+#include <viskores/cont/DataSetBuilderUniform.h>
 #include <iostream>
 
-vtkm::cont::DataSet MakeTestUniformDataSet(vtkm::Id time)
+viskores::cont::DataSet MakeTestUniformDataSet(viskores::Id time)
 {
-  vtkm::Float64 xmin, xmax, ymin, ymax, zmin, zmax;
+  viskores::Float64 xmin, xmax, ymin, ymax, zmin, zmax;
   xmin = 0.0;
   ymin = 0.0;
   zmin = 0.0;
@@ -27,32 +27,32 @@ vtkm::cont::DataSet MakeTestUniformDataSet(vtkm::Id time)
   ymax = 10.0;
   zmax = 10.0;
 
-  const vtkm::Id3 DIMS(16, 16, 16);
+  const viskores::Id3 DIMS(16, 16, 16);
 
-  vtkm::cont::DataSetBuilderUniform dsb;
+  viskores::cont::DataSetBuilderUniform dsb;
 
-  vtkm::Float64 xdiff = (xmax - xmin) / (static_cast<vtkm::Float64>(DIMS[0] - 1));
-  vtkm::Float64 ydiff = (ymax - ymin) / (static_cast<vtkm::Float64>(DIMS[1] - 1));
-  vtkm::Float64 zdiff = (zmax - zmin) / (static_cast<vtkm::Float64>(DIMS[2] - 1));
+  viskores::Float64 xdiff = (xmax - xmin) / (static_cast<viskores::Float64>(DIMS[0] - 1));
+  viskores::Float64 ydiff = (ymax - ymin) / (static_cast<viskores::Float64>(DIMS[1] - 1));
+  viskores::Float64 zdiff = (zmax - zmin) / (static_cast<viskores::Float64>(DIMS[2] - 1));
 
-  vtkm::Vec<vtkm::Float64, 3> ORIGIN(0, 0, 0);
-  vtkm::Vec<vtkm::Float64, 3> SPACING(xdiff, ydiff, zdiff);
+  viskores::Vec<viskores::Float64, 3> ORIGIN(0, 0, 0);
+  viskores::Vec<viskores::Float64, 3> SPACING(xdiff, ydiff, zdiff);
 
-  vtkm::cont::DataSet dataset = dsb.Create(DIMS, ORIGIN, SPACING);
+  viskores::cont::DataSet dataset = dsb.Create(DIMS, ORIGIN, SPACING);
 
-  vtkm::Id numPoints = DIMS[0] * DIMS[1] * DIMS[2];
+  viskores::Id numPoints = DIMS[0] * DIMS[1] * DIMS[2];
 
-  vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::Float64, 3>> velocityField;
+  viskores::cont::ArrayHandle<viskores::Vec<viskores::Float64, 3>> velocityField;
   velocityField.Allocate(numPoints);
 
-  vtkm::Id count = 0;
-  for (vtkm::Id i = 0; i < DIMS[0]; i++)
+  viskores::Id count = 0;
+  for (viskores::Id i = 0; i < DIMS[0]; i++)
   {
-    for (vtkm::Id j = 0; j < DIMS[1]; j++)
+    for (viskores::Id j = 0; j < DIMS[1]; j++)
     {
-      for (vtkm::Id k = 0; k < DIMS[2]; k++)
+      for (viskores::Id k = 0; k < DIMS[2]; k++)
       {
-        velocityField.WritePortal().Set(count, vtkm::Vec<vtkm::Float64, 3>(0.01*time, 0.01*time, 0.01*time));
+        velocityField.WritePortal().Set(count, viskores::Vec<viskores::Float64, 3>(0.01*time, 0.01*time, 0.01*time));
         count++;
       }
     }
@@ -65,9 +65,9 @@ void render_output(vtkh::DataSet *data, std::string file_name)
 {
   data->AddConstantPointField(1.f,"lines");
 
-  vtkm::Bounds bounds = data->GetGlobalBounds();
+  viskores::Bounds bounds = data->GetGlobalBounds();
 
-  vtkm::rendering::Camera camera;
+  viskores::rendering::Camera camera;
   camera.ResetToBounds(bounds);
   float bg_color[4] = { 0.f, 0.f, 0.f, 1.f};
   vtkh::Render render = vtkh::MakeRender(512,
@@ -92,7 +92,7 @@ void render_output(vtkh::DataSet *data, std::string file_name)
 //----------------------------------------------------------------------------
 TEST(vtkh_lagrangian, vtkh_serial_lagrangian)
 {
-#ifdef VTKM_ENABLE_KOKKOS
+#ifdef VISKORES_ENABLE_KOKKOS
   vtkh::InitializeKokkos();
 #endif
   vtkh::Lagrangian lagrangianFilter;
@@ -105,16 +105,16 @@ TEST(vtkh_lagrangian, vtkh_serial_lagrangian)
   lagrangianFilter.SetSeedResolutionInZ(1);
 
   std::cout << "Running Lagrangian filter test - vtkh" << std::endl;
-  vtkm::cont::ArrayHandle<vtkm::Particle> lagrangianBasisParticles;
-  vtkm::cont::ArrayHandle<vtkm::Particle> lagrangianBasisParticlesOriginal;
-  vtkm::cont::ArrayHandle<vtkm::Id> lagrangianBasisParticlesValidity;
+  viskores::cont::ArrayHandle<viskores::Particle> lagrangianBasisParticles;
+  viskores::cont::ArrayHandle<viskores::Particle> lagrangianBasisParticlesOriginal;
+  viskores::cont::ArrayHandle<viskores::Id> lagrangianBasisParticlesValidity;
 
   lagrangianFilter.SetBasisParticles(lagrangianBasisParticles);
   lagrangianFilter.SetBasisParticlesOriginal(lagrangianBasisParticlesOriginal);
   lagrangianFilter.SetBasisParticleValidity(lagrangianBasisParticlesValidity);
 
   vtkh::DataSet *extracted_basis;
-  for(vtkm::Id time = 0; time < 10; ++time)
+  for(viskores::Id time = 0; time < 10; ++time)
   {
     vtkh::DataSet data_set;
     data_set.AddDomain(MakeTestUniformDataSet(time),0);

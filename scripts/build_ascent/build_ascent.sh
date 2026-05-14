@@ -3,7 +3,7 @@
 ##############################################################################
 # Demonstrates how to manually build Ascent and its dependencies, including:
 #
-#  hdf5, conduit, vtk-m, mfem, raja, and umpire
+#  hdf5, conduit, viskores, mfem, raja, and umpire
 #
 # usage example:
 #   env enable_mpi=ON enable_openmp=ON ./build_ascent.sh
@@ -33,6 +33,7 @@ enable_mpicc="${enable_mpicc:=OFF}"
 enable_find_mpi="${enable_find_mpi:=ON}"
 enable_tests="${enable_tests:=OFF}"
 enable_verbose="${enable_verbose:=ON}"
+enable_64bit_ids="${enable_64bit_ids:=OFF}"
 build_jobs="${build_jobs:=6}"
 build_config="${build_config:=Release}"
 build_shared_libs="${build_shared_libs:=ON}"
@@ -44,7 +45,7 @@ build_pyvenv="${build_pyvenv:=false}"
 build_caliper="${build_caliper:=false}"
 build_silo="${build_silo:=true}"
 build_conduit="${build_conduit:=true}"
-build_vtkm="${build_vtkm:=true}"
+build_viskores="${build_viskores:=true}"
 build_camp="${build_camp:=true}"
 build_raja="${build_raja:=true}"
 build_umpire="${build_umpire:=true}"
@@ -72,7 +73,7 @@ if [[ "$enable_cuda" == "ON" ]]; then
     FTN="${FTN:=gfortran}"
 
     CUDA_ARCH="${CUDA_ARCH:=80}"
-    CUDA_ARCH_VTKM="${CUDA_ARCH_VTKM:=ampere}"
+    CUDA_ARCH_VISKORES="${CUDA_ARCH_VISKORES:=ampere}"
 fi
 
 # NOTE: this script only builds kokkos when enable_hip=ON or enable_cycl=ON
@@ -93,9 +94,12 @@ else
     build_kokkos="${build_kokkos:=false}"
 fi
 
+echo "*** OSTYPE=$OSTYPE"
+
 case "$OSTYPE" in
   win*)     build_windows="ON";;
   msys*)    build_windows="ON";;
+  cygwin*)  build_windows="ON";;
   darwin*)  build_macos="ON";;
   *)        ;;
 esac
@@ -656,7 +660,7 @@ cmake -S ${kokkos_src_dir} -B ${kokkos_build_dir} ${cmake_compiler_settings} \
 
 echo "**** Building Kokkos ${kokkos_version}"
 cmake --build ${kokkos_build_dir} --config ${build_config} -j${build_jobs}
-echo "**** Installing VTK-m ${kokkos_version}"
+echo "**** Installing Kokkos ${kokkos_version}"
 cmake --install ${kokkos_build_dir} --config ${build_config}
 
 fi
@@ -810,91 +814,94 @@ fi # build_barney
 
 
 ################
-# VTK-m
+# Viskores
 ################
-vtkm_version=v2.3.0
-vtkm_src_dir=$(ospath ${source_dir}/vtk-m-${vtkm_version})
-vtkm_build_dir=$(ospath ${build_dir}/vtk-m-${vtkm_version})
-vtkm_install_dir=$(ospath ${install_dir}/vtk-m-${vtkm_version}/)
-vtkm_tarball=$(ospath ${source_dir}/vtk-m-${vtkm_version}.tar.gz)
+viskores_version=1.0.0
+viskores_src_dir=$(ospath ${source_dir}/viskores-${viskores_version})
+viskores_build_dir=$(ospath ${build_dir}/viskores-${viskores_version})
+viskores_install_dir=$(ospath ${install_dir}/viskores-${viskores_version}/)
+viskores_tarball=$(ospath ${source_dir}/v${viskores_version}.tar.gz)
 
 # build only if install doesn't exist
-if [ ! -d ${vtkm_install_dir} ]; then
-if ${build_vtkm}; then
-if [ ! -f ${vtkm_tarball} ]; then
-  echo "**** Downloading ${vtkm_tarball}"
-  curl -L https://gitlab.kitware.com/vtk/vtk-m/-/archive/${vtkm_version}/vtk-m-${vtkm_version}.tar.gz -o ${vtkm_tarball}
+if [ ! -d ${viskores_install_dir} ]; then
+if ${build_viskores}; then
+if [ ! -f ${viskores_tarball} ]; then
+  echo "**** Downloading ${viskores_tarball}"
+  curl -L https://github.com/Viskores/viskores/archive/refs/tags/v${viskores_version}.tar.gz -o ${viskores_tarball}
 fi
-if [ ! -d ${vtkm_src_dir} ]; then
-  echo "**** Extracting ${vtkm_tarball}"
-  tar ${tar_extra_args} -xzf ${vtkm_tarball} -C ${source_dir}
+if [ ! -d ${viskores_src_dir} ]; then
+  echo "**** Extracting ${viskores_tarball}"
+  tar ${tar_extra_args} -xzf ${viskores_tarball} -C ${source_dir}
 
   # apply patches
-  cd ${vtkm_src_dir}
-  patch -p1 < ${script_dir}/2025_06_18_vtkm_z_extents_ray_culling_bugfix_viskores_mr109.patch
+  cd ${viskores_src_dir}
+  echo "**** Applying Patches to ${viskores_tarball}"
+  patch -p1 < ${script_dir}/2025_06_18_viskores_z_extents_ray_culling_bugfix_viskores_mr109.patch
   patch -p1 < ${script_dir}/2025_07_07_vtkm_anari_mapper_triangles_parameter_fix.patch
+  patch -p1 < ${script_dir}/2026_01_02_viskores_implent_pan_raytracing.patch
+  patch -p1 < ${script_dir}/2026_04_17_viskores_clip_celloffset_increment.patch
   cd ${root_dir}
 fi
 
 
-vtkm_extra_cmake_args=""
+viskores_extra_cmake_args=""
 if [[ "$enable_cuda" == "ON" ]]; then
-  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DVTKm_ENABLE_CUDA=ON"
-  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DCMAKE_CUDA_HOST_COMPILER=${CXX}"
-  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DCMAKE_CUDA_ARCHITECTURES=${CUDA_ARCH}"
+  viskores_extra_cmake_args="${viskores_extra_cmake_args} -DViskores_ENABLE_CUDA=ON"
+  viskores_extra_cmake_args="${viskores_extra_cmake_args} -DCMAKE_CUDA_HOST_COMPILER=${CXX}"
+  viskores_extra_cmake_args="${viskores_extra_cmake_args} -DCMAKE_CUDA_ARCHITECTURES=${CUDA_ARCH}"
 fi
 
 if [[ "$enable_hip" == "ON" ]]; then
-  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DVTKm_ENABLE_KOKKOS=ON"
-  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DCMAKE_PREFIX_PATH=${kokkos_install_dir}"
-  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DCMAKE_HIP_ARCHITECTURES=${ROCM_ARCH}"
-  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DVTKm_ENABLE_KOKKOS_THRUST=OFF"
+  viskores_extra_cmake_args="${viskores_extra_cmake_args} -DViskores_ENABLE_KOKKOS=ON"
+  viskores_extra_cmake_args="${viskores_extra_cmake_args} -DCMAKE_PREFIX_PATH=${kokkos_install_dir}"
+  viskores_extra_cmake_args="${viskores_extra_cmake_args} -DCMAKE_HIP_ARCHITECTURES=${ROCM_ARCH}"
+  viskores_extra_cmake_args="${viskores_extra_cmake_args} -DViskores_ENABLE_KOKKOS_THRUST=OFF"
 fi
 
 if [[ "$enable_sycl" == "ON" ]]; then
-  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DVTKm_ENABLE_KOKKOS=ON"
-  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DCMAKE_PREFIX_PATH=${kokkos_install_dir}"
-  vtkm_extra_cmake_args="-DCMAKE_CXX_FLAGS=-fPIC -fp-model=precise -Wno-unused-command-line-argument -Wno-deprecated-declarations -fsycl-device-code-split=per_kernel -fsycl-max-parallel-link-jobs=128"
+  viskores_extra_cmake_args="${viskores_extra_cmake_args} -DViskores_ENABLE_KOKKOS=ON"
+  viskores_extra_cmake_args="${viskores_extra_cmake_args} -DCMAKE_PREFIX_PATH=${kokkos_install_dir}"
+  viskores_extra_cmake_args="-DCMAKE_CXX_FLAGS=-fPIC -fp-model=precise -Wno-unused-command-line-argument -Wno-deprecated-declarations -fsycl-device-code-split=per_kernel -fsycl-max-parallel-link-jobs=128"
 fi
 
 
 if [[ "$enable_mpicc" == "ON" ]]; then
-  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DMPI_C_COMPILER=${mpicc_exe}"
-  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DMPI_CXX_COMPILER=${mpicxx_exe}"
+  viskores_extra_cmake_args="${viskores_extra_cmake_args} -DMPI_C_COMPILER=${mpicc_exe}"
+  viskores_extra_cmake_args="${viskores_extra_cmake_args} -DMPI_CXX_COMPILER=${mpicxx_exe}"
 fi
 
 if ${build_anari}; then
-  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DVTKm_ENABLE_ANARI=ON"
-  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DANARI_DIR=$anari_install_dir}"
-  vtkm_extra_cmake_args="${vtkm_extra_cmake_args} -DCMAKE_PREFIX_PATH=${anari_install_dir}"
+  viskores_extra_cmake_args="${viskores_extra_cmake_args} -DViskores_ENABLE_ANARI=ON"
+  viskores_extra_cmake_args="${viskores_extra_cmake_args} -DANARI_DIR=${anari_install_dir}"
+  viskores_extra_cmake_args="${viskores_extra_cmake_args} -DCMAKE_PREFIX_PATH=${anari_install_dir}"
 fi
 
 
-echo "**** Configuring VTK-m ${vtkm_version}"
-cmake -S ${vtkm_src_dir} -B ${vtkm_build_dir} ${cmake_compiler_settings} \
+echo "**** Configuring Viskores v${viskores_version}"
+cmake -S ${viskores_src_dir} -B ${viskores_build_dir} ${cmake_compiler_settings} \
   -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose}\
   -DCMAKE_BUILD_TYPE=${build_config} \
   -DBUILD_SHARED_LIBS=${build_shared_libs} \
-  -DVTKm_USE_64BIT_IDS=OFF \
-  -DVTKm_USE_DOUBLE_PRECISION=ON \
-  -DVTKm_USE_DEFAULT_TYPES_FOR_ASCENT=ON \
-  -DVTKm_ENABLE_MPI=${enable_mpi} \
-  -DVTKm_ENABLE_OPENMP=${enable_openmp}\
-  -DVTKm_ENABLE_RENDERING=ON \
-  -DVTKm_ENABLE_TESTING=OFF\
+  -DViskores_USE_64BIT_IDS=${enable_64bit_ids} \
+  -DViskores_USE_DOUBLE_PRECISION=ON \
+  -DViskores_USE_DEFAULT_TYPES_FOR_ASCENT=OFF \
+  -DViskores_ENABLE_MPI=${enable_mpi} \
+  -DViskores_ENABLE_OPENMP=${enable_openmp}\
+  -DViskores_ENABLE_RENDERING=ON \
+  -DViskores_ENABLE_TESTING=OFF\
   -DBUILD_TESTING=OFF \
-  -DVTKm_ENABLE_BENCHMARKS=OFF ${vtkm_extra_cmake_args} \
-  -DCMAKE_INSTALL_PREFIX=${vtkm_install_dir}
+  -DViskores_ENABLE_BENCHMARKS=OFF ${viskores_extra_cmake_args} \
+  -DCMAKE_INSTALL_PREFIX=${viskores_install_dir}
 
-echo "**** Building VTK-m ${vtkm_version}"
-cmake --build ${vtkm_build_dir} --config ${build_config} -j${build_jobs}
-echo "**** Installing VTK-m ${vtkm_version}"
-cmake --install ${vtkm_build_dir}  --config ${build_config}
+echo "**** Building Viskores v${viskores_version}"
+cmake --build ${viskores_build_dir} --config ${build_config} -j${build_jobs}
+echo "**** Installing Viskores v${viskores_version}"
+cmake --install ${viskores_build_dir}  --config ${build_config}
 
 fi
 else
-  echo "**** Skipping VTK-m build, install found at: ${vtkm_install_dir}"
-fi # build_vtkm
+  echo "**** Skipping Viskores build, install found at: ${viskores_install_dir}"
+fi # build_viskores
 
 
 ################
@@ -1244,7 +1251,7 @@ if ${build_caliper}; then
   echo 'set(CALIPER_DIR ' ${caliper_install_dir} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
 fi
 echo 'set(CONDUIT_DIR ' ${conduit_install_dir} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
-echo 'set(VTKM_DIR ' ${vtkm_install_dir} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
+echo 'set(VISKORES_DIR ' ${viskores_install_dir} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
 echo 'set(CAMP_DIR ' ${camp_install_dir} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
 echo 'set(RAJA_DIR ' ${raja_install_dir} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
 echo 'set(UMPIRE_DIR ' ${umpire_install_dir} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake

@@ -1,7 +1,7 @@
 module load cmake/3.24.3
 
 export CUDA_ARCH=80
-export CUDA_ARCH_VTKM=ampere
+export CUDA_ARCH_VISKORES=ampere
 
 export CC=$(which cc)
 export CXX=$(which CC)

@@ -613,7 +613,7 @@ Resulting image:
 .. image:: examples/milk_chocolate100.png
 
 An example of creating a custom color map using a compressed format.
--------------------------------------------
+---------------------------------------------------------------------
 
 YAML actions:
 
@@ -624,7 +624,7 @@ Resulting image:
 .. image:: examples/milk_chocolate100.png
 
 An example of passing a color table using yaml include
--------------------------------------------
+-------------------------------------------------------
 
 YAML actions:
 
@@ -792,83 +792,128 @@ Resulting image:
 
 .. image:: examples/tout_cell_gradient_mag_radial100.png
 
+An example of using the sample filter to sample a 2D line.
+-----------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_sample_line_2d_000100.yaml
+
+An example of using the sample filter to sample a 3D line.
+-----------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_sample_line_3d_000100.yaml
+
+An example of using the sample filter to sample a list of 2D points.
+---------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_sample_pts_2d_000100.yaml
+
+An example of using the sample filter to sample a 2D plane.
+---------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_sample_plane_000100.yaml
+
+An example of using the sample filter to sample a list of 3D points.
+---------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_sample_pts_3d_000100.yaml
+
+An example of using the sample filter to sample a 3D box.
+----------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_sample_box_3d_000100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_sample_box_3d_000100.png
 
 An example of using the  uniform sample grid filter on a 20x20x20 hexahedron mesh to sample a grid that is smaller in each dimension by 10.
----------------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------------------------------------
 
 YAML actions:
 
-.. literalinclude:: examples/tout_uniform_smaller_by10_grid100.yaml
+.. literalinclude:: examples/tout_uniform_smaller_by10_grid_000100.yaml
 
 Resulting image:
 
-.. image:: examples/tout_uniform_smaller_by10_grid100.png
+.. image:: examples/tout_uniform_smaller_by10_grid_000100.png
 
-An example of using the  uniform sample grid filter on a 20x20x20 hexahedron mesh to sample a grid that is equal in dimensions.
----------------------------------------------------------------------------------------------------------------------
+An example of using the uniform sample grid filter on a 20x20x20 hexahedron mesh to sample a grid that is equal in dimensions to the input mesh.
+--------------------------------------------------------------------------------------------------------------------------------------------------
 
 YAML actions:
 
-.. literalinclude:: examples/tout_uniform_equal_grid100.yaml
+.. literalinclude:: examples/tout_uniform_grid_sample_input_dims_000100.yaml
 
 Resulting image:
 
-.. image:: examples/tout_uniform_equal_grid100.png
+.. image:: examples/tout_uniform_grid_sample_input_dims_000100.png
 
 An example of using the uniform sample grid filter on a 20x20x20 hexahedron mesh to sample a grid that is equal in dimensions but with smaller spacing between points.
----------------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 YAML actions:
 
-.. literalinclude:: examples/tout_uniform_grid_equal_dims_decrease_spacing100.yaml
+.. literalinclude:: examples/tout_uniform_grid_equal_dims_decrease_spacing_000100.yaml
 
 Resulting image:
 
-.. image:: examples/tout_uniform_grid_equal_dims_decrease_spacing100.png
+.. image:: examples/tout_uniform_grid_equal_dims_decrease_spacing_000100.png
 
 An example of using the uniform sample grid filter on a 20x20x20 hexahedron mesh to sample a grid that is equal in dimensions but with larger spacing between points.
----------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 YAML actions:
 
-.. literalinclude:: examples/tout_uniform_grid_equal_dims_increase_spacing100.yaml
+.. literalinclude:: examples/tout_uniform_grid_equal_dims_increase_spacing_000100.yaml
 
 Resulting image:
 
-.. image:: examples/tout_uniform_grid_equal_dims_increase_spacing100.png
+.. image:: examples/tout_uniform_grid_equal_dims_increase_spacing_000100.png
 
 An example of using the uniform sample grid filter on a 20x20x20 hexahedron mesh to sample a grid that is equal in dimensions but with a shifted origin.
----------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------------------------------------------------
 
 YAML actions:
 
-.. literalinclude:: examples/tout_uniform_grid_shift_origin100.yaml
+.. literalinclude:: examples/tout_uniform_grid_shift_origin_000100.yaml
 
 Resulting image:
 
-.. image:: examples/tout_uniform_grid_shift_origin100.png
+.. image:: examples/tout_uniform_grid_shift_origin_000100.png
 
 An example of using the uniform sample grid filter on a 20x20x20 hexahedron mesh to sample a grid that has larger dimensions by 5.
----------------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------------------
 
 YAML actions:
 
-.. literalinclude:: examples/tout_uniform_larger_by5_grid100.yaml
+.. literalinclude:: examples/tout_uniform_larger_by5_grid_000100.yaml
 
 Resulting image:
 
-.. image:: examples/tout_uniform_larger_by5_grid100.png
+.. image:: examples/tout_uniform_larger_by5_grid_000100.png
 
 An example of using the uniform sample grid filter on a 20x20x20 hexahedron mesh to sample a grid that has larger dimensions by 5 and with a disproportionately large invalid_value.
----------------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 YAML actions:
 
-.. literalinclude:: examples/tout_uniform_larger_by5_grid_with_invalid_value100.yaml
+.. literalinclude:: examples/tout_uniform_larger_by5_grid_with_invalid_value_000100.yaml
 
 Resulting image:
 
-.. image:: examples/tout_uniform_larger_by5_grid_with_invalid_value100.png
+.. image:: examples/tout_uniform_larger_by5_grid_with_invalid_value_000100.png
 
 An example of using the streamline filter and associated tube parameters to produce a rendering.
 --------------------------------------------------------------------------------------------------
@@ -881,6 +926,148 @@ Resulting image:
 
 .. image:: examples/tout_streamline_render100.png
 
+An example of using the transform filter with a matrix 
+-------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_transform_matrix_000100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_transform_matrix_000100.png
+
+An example of using the transform filter to reflect over a specified normal
+----------------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_transform_reflect_arb_000100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_transform_reflect_arb_000100.png
+
+An example of using the transform filter to reflect over the x axis
+--------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_transform_reflect_x_000100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_transform_reflect_x_000100.png
+
+An example of using the transform filter to reflect over the x axis max bounds 
+-------------------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_transform_reflect_x_max_000100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_transform_reflect_x_max_000100.png
+
+An example of using the transform filter to reflect over the y axis min bounds 
+-------------------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_transform_reflect_y_min_000100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_transform_reflect_y_min_000100.png
+
+An example of using the transform filter to rotate around a specified normal 
+-----------------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_transform_rotate_arb_000100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_transform_rotate_arb_000100.png
+
+An example of using the transform filter to reflect over a specified point and normal 
+--------------------------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_transform_reflect_over_point_000100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_transform_reflect_over_point_000100.png
+
+An example of using the transform filter to reflect a 2D slice over the y axis minimum
+---------------------------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_transform_reflect_y_min_2d_000100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_transform_reflect_y_min_2d_000100.png
+
+An example of using the transform filter to rotate around a point on the x axis 
+--------------------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_transform_rotate_x_000100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_transform_rotate_x_000100.png
+
+An example of using the transform filter to rotate around a point on the y axis
+--------------------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_transform_rotate_y_000100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_transform_rotate_y_000100.png
+
+An example of using the transform filter to rotate around a point on the z axis
+--------------------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_transform_rotate_z_000100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_transform_rotate_z_000100.png
+
+An example of using the transform filter to scale the data
+-----------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_transform_scale_000100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_transform_scale_000100.png
+
+An example of using the transform filter to translate the data
+---------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_transform_translate_000100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_transform_translate_000100.png
 
 
 An example of using the xray extract.
@@ -926,7 +1113,7 @@ YAML actions:
 .. literalinclude:: examples/tout_render_3d_name_format100.yaml
 
 An example of rendering to a filename using keyword formatting specifiers.
----------------------------------------------------------------
+---------------------------------------------------------------------------
 
 YAML actions:
 
@@ -1053,12 +1240,12 @@ YAML actions:
 
 
 An example of using the Material Interface Reconstruction filter.
---------------------------------------------------------------------------------------------------
+------------------------------------------------------------------
 
 YAML actions:
 
-.. literalinclude:: examples/tout_mir_venn0.yaml
+.. literalinclude:: examples/tout_mir_venn_full_000100.yaml
 
 Resulting image:
 
-.. image:: examples/tout_mir_venn0.png
+.. image:: examples/tout_mir_venn_full_000100.png

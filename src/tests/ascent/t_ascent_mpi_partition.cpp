@@ -39,8 +39,8 @@ TEST(ascent_partition, test_mpi_partition_target_1)
     Node n;
     ascent::about(n);
 
-    // only run this test if ascent was built with hdf5 +  vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled" ||
+    // only run this test if ascent was built with hdf5 +  viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled" ||
        n["runtimes/ascent/hdf5/status"].as_string() == "disabled" )
     {
         ASCENT_INFO("Ascent Rendering and/or HDF5 support are disabled, skipping test");
@@ -153,8 +153,8 @@ TEST(ascent_partition, test_mpi_partition_target_10)
     Node n;
     ascent::about(n);
 
-    // only run this test if ascent was built with hdf5 +  vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled" ||
+    // only run this test if ascent was built with hdf5 +  viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled" ||
        n["runtimes/ascent/hdf5/status"].as_string() == "disabled" )
     {
         ASCENT_INFO("Ascent Rendering and/or HDF5 support are disabled, skipping test");
@@ -273,8 +273,8 @@ TEST(ascent_partition, test_mpi_partition_fields)
     Node n;
     ascent::about(n);
 
-    // only run this test if ascent was built with hdf5 +  vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled" ||
+    // only run this test if ascent was built with hdf5 +  viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled" ||
        n["runtimes/ascent/hdf5/status"].as_string() == "disabled" )
     {
         ASCENT_INFO("Ascent Rendering and/or HDF5 support are disabled, skipping test");

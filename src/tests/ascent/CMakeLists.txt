@@ -76,7 +76,8 @@ set(BASIC_TESTS t_ascent_smoke
                 t_ascent_sample
                 t_ascent_uniform_grid
                 t_ascent_mir
-                t_ascent_hola)
+                t_ascent_hola
+                t_ascent_tiling)
 
 set(DEVICE_TESTS  t_ascent_execution_policies
                   t_ascent_memory
@@ -103,17 +104,17 @@ set(MPI_TESTS  t_ascent_mpi_smoke
                t_ascent_mpi_statistics
                t_ascent_mpi_multi_topo
                t_ascent_mpi_slice
-               t_ascent_mpi_uniform_grid
                t_ascent_mpi_vtk_file_extract
                t_ascent_mpi_add_ranks
                t_ascent_mpi_add_domain_ids
+               t_ascent_mpi_uniform_grid
                t_ascent_mpi_unique_ids)
 
 # t_ascent_hola_mpi uses 8 mpi tasks, so its added manually
 # same for t_ascent_babelflow_pmt_mpi and t_ascent_babelflow_comp_mpi
 
 # include the "ascent" pipeline
-if(VTKM_FOUND)
+if(VISKORES_FOUND)
    list(APPEND BASIC_TESTS t_ascent_ascent_runtime)
    list(APPEND VTKH_DEP_TESTS t_ascent_vtkh_data_adapter)
    list(APPEND MPI_TESTS   t_ascent_mpi_ascent_runtime
@@ -170,9 +171,9 @@ if (ENABLE_SERIAL)
         add_cpp_test(TEST ${TEST} DEPENDS_ON ascent)
     endforeach()
 
-    if(VTKM_FOUND)
-      # special test case where we test vtkm conversions
-       vtkm_add_target_information(t_ascent_vtkh_data_adapter
+    if(VISKORES_FOUND)
+      # special test case where we test viskores conversions
+       viskores_add_target_information(t_ascent_vtkh_data_adapter
                                    DEVICE_SOURCES t_ascent_vtkh_data_adapter.cpp)
        set_target_properties(t_ascent_vtkh_data_adapter PROPERTIES CXX_VISIBILITY_PRESET hidden)
     endif()

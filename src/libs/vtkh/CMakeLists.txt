@@ -53,7 +53,7 @@ if(KOKKOS_FOUND)
 endif()
 
 if(ANARI_FOUND)
-    list(APPEND vtkh_base_deps vtkm::anari)
+    list(APPEND vtkh_base_deps viskores::anari)
 endif()
 
 add_subdirectory(utils)
@@ -89,7 +89,7 @@ install(FILES ${vtkh_core_headers}
 ###############################################################################
 if (ENABLE_SERIAL)
 
-    set(vtkh_core_deps vtkm vtkh_utils ${vtkh_base_deps})
+    set(vtkh_core_deps viskores vtkh_utils ${vtkh_base_deps})
 
     blt_add_library(NAME vtkh_core
                     SOURCES ${vtkh_core_sources}
@@ -98,7 +98,7 @@ if (ENABLE_SERIAL)
                     )
 
 
-    vtkm_add_target_information(vtkh_core DEVICE_SOURCES ${vtkh_core_sources})
+    viskores_add_target_information(vtkh_core DEVICE_SOURCES ${vtkh_core_sources})
 
     # build time only defs
     target_compile_definitions(vtkh_core PRIVATE ASCENT_EXPORTS_FLAG)
@@ -128,7 +128,7 @@ endif()
 ###############################################################################
 if(MPI_FOUND)
 
-    set(vtkh_core_mpi_deps vtkm vtkh_utils_mpi ${vtkh_base_deps})
+    set(vtkh_core_mpi_deps viskores vtkh_utils_mpi ${vtkh_base_deps})
 
     blt_add_library(NAME vtkh_core_mpi
                     SOURCES ${vtkh_core_sources}
@@ -136,7 +136,7 @@ if(MPI_FOUND)
                     DEPENDS_ON ${vtkh_core_mpi_deps} ${ascent_blt_mpi_deps}
                     )
 
-    vtkm_add_target_information(vtkh_core_mpi DEVICE_SOURCES ${vtkh_core_sources})
+    viskores_add_target_information(vtkh_core_mpi DEVICE_SOURCES ${vtkh_core_sources})
 
     # build time only defs
     target_compile_definitions(vtkh_core_mpi PRIVATE ASCENT_EXPORTS_FLAG)
@@ -167,7 +167,7 @@ if(MPI_FOUND)
             )
 endif()
 
-add_subdirectory(vtkm_filters)
+add_subdirectory(viskores_filters)
 add_subdirectory(filters)
 add_subdirectory(rendering)
 add_subdirectory(compositing)

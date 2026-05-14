@@ -50,7 +50,7 @@ As a convenience, we have created the
 `VTKHNoOp <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/flow_filters/ascent_runtime_vtkh_filters.cpp>`_
 filter as staring point and reference. Although the NoOp filter demonstrates how to use a
 VTK-h filter, the implementation is relevant to anyone developing flow filters in Ascent
-regardless of whether VTK-h or VTK-m is used.
+regardless of whether VTK-h or Viskores is used.
 
 Interface Declaration
 """""""""""""""""""""

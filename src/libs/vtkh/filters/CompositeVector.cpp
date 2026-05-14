@@ -1,6 +1,6 @@
-//#include <vtkm/filter/your_vtkm_filter.h>
+//#include <viskores/filter/your_viskores_filter.h>
 #include <vtkh/filters/CompositeVector.hpp>
-#include <vtkh/vtkm_filters/vtkmCompositeVector.hpp>
+#include <vtkh/viskores_filters/viskoresCompositeVector.hpp>
 #include <vtkh/Error.hpp>
 
 namespace vtkh
@@ -9,22 +9,22 @@ namespace vtkh
 namespace detail
 {
 
-std::string to_string(vtkm::cont::Field::Association assoc)
+std::string to_string(viskores::cont::Field::Association assoc)
 {
   std::string res = "unknown";
-  if(assoc == vtkm::cont::Field::Association::WholeDataSet)
+  if(assoc == viskores::cont::Field::Association::WholeDataSet)
   {
     res = "whole mesh";
   }
-  else if(assoc == vtkm::cont::Field::Association::Any)
+  else if(assoc == viskores::cont::Field::Association::Any)
   {
     res = "any";
   }
-  else if(assoc == vtkm::cont::Field::Association::Points)
+  else if(assoc == viskores::cont::Field::Association::Points)
   {
     res = "points";
   }
-  else if(assoc == vtkm::cont::Field::Association::Cells)
+  else if(assoc == viskores::cont::Field::Association::Cells)
   {
     res = "cell set";
   }
@@ -79,13 +79,13 @@ void CompositeVector::PreExecute()
     Filter::CheckForRequiredField(m_field_3);
   }
 
-  vtkm::Id field_1_comps = this->m_input->NumberOfComponents(m_field_1);
-  vtkm::Id field_2_comps = this->m_input->NumberOfComponents(m_field_2);
+  viskores::Id field_1_comps = this->m_input->NumberOfComponents(m_field_1);
+  viskores::Id field_2_comps = this->m_input->NumberOfComponents(m_field_2);
 
-  vtkm::Id min_comps = std::min(field_1_comps,field_2_comps);
-  vtkm::Id max_comps = std::max(field_1_comps, field_2_comps);
+  viskores::Id min_comps = std::min(field_1_comps,field_2_comps);
+  viskores::Id max_comps = std::max(field_1_comps, field_2_comps);
 
-  vtkm::Id field_3_comps;
+  viskores::Id field_3_comps;
   if(m_mode_3d)
   {
     field_3_comps = this->m_input->NumberOfComponents(m_field_3);
@@ -107,13 +107,13 @@ void CompositeVector::PreExecute()
   }
 
   bool valid;
-  vtkm::cont::Field::Association assoc_1 =
+  viskores::cont::Field::Association assoc_1 =
     this->m_input->GetFieldAssociation(m_field_1, valid);
 
-  vtkm::cont::Field::Association assoc_2 =
+  viskores::cont::Field::Association assoc_2 =
     this->m_input->GetFieldAssociation(m_field_2, valid);
 
-  vtkm::cont::Field::Association assoc_3;
+  viskores::cont::Field::Association assoc_3;
   bool same_assoc = (assoc_1 == assoc_2);
   if(m_mode_3d)
   {
@@ -151,15 +151,15 @@ void CompositeVector::DoExecute()
   this->m_output = new DataSet();
 
   const int num_domains = this->m_input->GetNumberOfDomains();
-  std::vector<vtkm::Id> domain_ids = this->m_input->GetDomainIds();
+  std::vector<viskores::Id> domain_ids = this->m_input->GetDomainIds();
 
   bool valid;
-  vtkm::cont::Field::Association assoc =
+  viskores::cont::Field::Association assoc =
     this->m_input->GetFieldAssociation(m_field_1, valid);
 
   for(int i = 0; i < num_domains; ++i)
   {
-    vtkm::cont::DataSet &dom =  this->m_input->GetDomain(i);
+    viskores::cont::DataSet &dom =  this->m_input->GetDomain(i);
     std::vector<std::string> input_field_names;
     if(!dom.HasField(m_field_1))
     {
@@ -172,14 +172,14 @@ void CompositeVector::DoExecute()
     if(m_mode_3d)
     {
       input_field_names.push_back(m_field_3);
-      vtkmCompositeVector composite3DVec;
-      vtkm::cont::DataSet output = composite3DVec.Run(dom, input_field_names, m_result_name, assoc);
+      viskoresCompositeVector composite3DVec;
+      viskores::cont::DataSet output = composite3DVec.Run(dom, input_field_names, m_result_name, assoc);
       m_output->AddDomain(output, domain_ids[i]);
     }
     else
     {
-      vtkmCompositeVector composite2DVec;
-      vtkm::cont::DataSet output = composite2DVec.Run(dom, input_field_names, m_result_name, assoc); 
+      viskoresCompositeVector composite2DVec;
+      viskores::cont::DataSet output = composite2DVec.Run(dom, input_field_names, m_result_name, assoc); 
       m_output->AddDomain(output, domain_ids[i]);
     }
   }

@@ -131,10 +131,10 @@ Array<Ray> AmbientOcclusion::gen_occlusion (const Array<IntersectionContext> int
 
 // ----------------------------------------------
 
-// These sampling methods were adapted from https://gitlab.kitware.com/mclarsen/vtk-m/blob/pathtracer/vtkm/rendering/raytracing/Sampler.h
+// These sampling methods were adapted from https://gitlab.kitware.com/mclarsen/viskores/blob/pathtracer/viskores/rendering/raytracing/Sampler.h
 // - CosineWeightedHemisphere
 // - ConstructTangentBasis (factored from CosineWeightedHemisphere).
-// TODO Convert camelCase (vtk-m) to lower_case (dray) ?
+// TODO Convert camelCase (viskores) to lower_case (dray) ?
 
 DRAY_EXEC Vec<Float, 3> AmbientOcclusion::CosineWeightedHemisphere (const int32 &sampleNum)
 {

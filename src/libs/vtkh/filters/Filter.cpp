@@ -123,9 +123,9 @@ Filter::MapAllFields()
     {
         for(int i = 0; i < num_domains; i++)
         {
-            vtkm::cont::DataSet dom = m_input->GetDomain(i);
-            vtkm::IdComponent num_fields = dom.GetNumberOfFields();
-            for(vtkm::IdComponent i = 0; i < num_fields; ++i)
+            viskores::cont::DataSet dom = m_input->GetDomain(i);
+            viskores::IdComponent num_fields = dom.GetNumberOfFields();
+            for(viskores::IdComponent i = 0; i < num_fields; ++i)
             {
                 std::string field_name = dom.GetField(i).GetName();
                 detail::addField(m_map_fields,field_name);
@@ -161,10 +161,10 @@ Filter::PropagateMetadata()
 }
 
 
-vtkm::filter::FieldSelection
+viskores::filter::FieldSelection
 Filter::GetFieldSelection() const
 {
-  vtkm::filter::FieldSelection sel;
+  viskores::filter::FieldSelection sel;
   for (const auto& str : this->m_map_fields)
   {
     sel.AddField(str);

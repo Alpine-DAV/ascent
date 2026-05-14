@@ -26,7 +26,7 @@ class Test_Ascent_Render(unittest.TestCase):
     def test_render_2d(self):
         # if we don't have ascent, simply return
         info = ascent.about()
-        if info["runtimes/ascent/vtkm/status"] != "enabled":
+        if info["runtimes/ascent/viskores/status"] != "enabled":
             return
 
         obase = "tout_python_ascent_render_2d"
@@ -71,7 +71,7 @@ class Test_Ascent_Render(unittest.TestCase):
     def test_render_3d(self):
         # if we don't have ascent, simply return
         info = ascent.about()
-        if info["runtimes/ascent/vtkm/status"] != "enabled":
+        if info["runtimes/ascent/viskores/status"] != "enabled":
             return
 
         obase = "tout_python_ascent_render_3d"
@@ -112,7 +112,7 @@ class Test_Ascent_Render(unittest.TestCase):
     def test_delete_scene(self):
         # if we don't have ascent, simply return
         info = ascent.about()
-        if info["runtimes/ascent/vtkm/status"] != "enabled":
+        if info["runtimes/ascent/viskores/status"] != "enabled":
              return
         # exec again, but this time remove a scene
         # tests regression related to internal book keeping

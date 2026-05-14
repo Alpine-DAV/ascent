@@ -22,6 +22,8 @@
 #include <runtimes/ascent_main_runtime.hpp>
 #include <utils/ascent_string_utils.hpp>
 #include <flow.hpp>
+#include <flow_schema_validator.hpp>
+#include <flow_filters/ascent_runtime_param_check.hpp>
 
 #include <conduit_fmt/conduit_fmt.h>
 
@@ -610,10 +612,10 @@ Ascent::open(const conduit::Node &options)
         else if(runtime_type == "ascent")
         {
             m_runtime = new AscentRuntime();
-            if(m_options.has_path("runtime/vtkm/backend"))
+            if(m_options.has_path("runtime/viskores/backend"))
             {
     #if defined(ASCENT_VTKH_ENABLED)
-              std::string backend = m_options["runtime/vtkm/backend"].as_string();
+              std::string backend = m_options["runtime/viskores/backend"].as_string();
               if(backend == "serial")
               {
                 vtkh::ForceSerial();
@@ -626,13 +628,17 @@ Ascent::open(const conduit::Node &options)
               {
                 vtkh::ForceCUDA();
               }
+              else if(backend == "kokkos")
+              {
+                vtkh::ForceKokkos();
+              }
               else
               {
                 ASCENT_ERROR("Ascent unrecognized backend "<<backend);
               }
     #else
-              ASCENT_ERROR("Ascent vtkm backend is disabled. "
-                          "Ascent was not built with vtk-m support");
+              ASCENT_ERROR("Ascent viskores backend is disabled. "
+                          "Ascent was not built with viskores support");
     #endif
             }
         }
@@ -648,6 +654,9 @@ Ascent::open(const conduit::Node &options)
         }
 
         m_runtime->Initialize(m_options);
+
+        // Set the flow filter expression checker:
+        runtime::filters::ascent_register_flow_schema_hooks();
 
         // don't print info messages unless we are using verbose
         // Runtimes may set their own handlers in initialize, so
@@ -1149,47 +1158,47 @@ about(conduit::Node &n)
 #endif
     
     
-// vtk-m + vtk-h
+// viskores + vtk-h
 #if defined(ASCENT_VTKH_ENABLED)
-    // call this vtkm so people don't have to know
+    // call this viskores so people don't have to know
     // about vtkh
-    n["runtimes/ascent/vtkm/status"] = "enabled";
+    n["runtimes/ascent/viskores/status"] = "enabled";
     if(vtkh::IsSerialEnabled())
     {
-        n["runtimes/ascent/vtkm/backends/serial"] = "enabled";
+        n["runtimes/ascent/viskores/backends/serial"] = "enabled";
     }
     else
     {
-        n["runtimes/ascent/vtkm/backends/serial"] = "disabled";
+        n["runtimes/ascent/viskores/backends/serial"] = "disabled";
     }
 
     if(vtkh::IsOpenMPEnabled())
     {
-        n["runtimes/ascent/vtkm/backends/openmp"] = "enabled";
+        n["runtimes/ascent/viskores/backends/openmp"] = "enabled";
     }
     else
     {
-        n["runtimes/ascent/vtkm/backends/openmp"] = "disabled";
+        n["runtimes/ascent/viskores/backends/openmp"] = "disabled";
     }
 
     if(vtkh::IsCUDAEnabled())
     {
-        n["runtimes/ascent/vtkm/backends/cuda"] = "enabled";
+        n["runtimes/ascent/viskores/backends/cuda"] = "enabled";
     }
     else
     {
-        n["runtimes/ascent/vtkm/backends/cuda"] = "disabled";
+        n["runtimes/ascent/viskores/backends/cuda"] = "disabled";
     }
     if(vtkh::IsKokkosAvailable())
     {
-        n["runtimes/ascent/vtkm/backends/kokkos"] = "enabled";
+        n["runtimes/ascent/viskores/backends/kokkos"] = "enabled";
     }
     else
     {
-        n["runtimes/ascent/vtkm/backends/kokkos"] = "disabled";
+        n["runtimes/ascent/viskores/backends/kokkos"] = "disabled";
     }
 #else
-     n["runtimes/ascent/vtkm/status"] = "disabled";
+     n["runtimes/ascent/viskores/status"] = "disabled";
 #endif
 
 #if defined(ASCENT_MFEM_ENABLED)

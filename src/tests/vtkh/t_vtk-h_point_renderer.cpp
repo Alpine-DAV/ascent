@@ -11,7 +11,7 @@
 #include <vtkh/rendering/PointRenderer.hpp>
 #include <vtkh/filters/MarchingCubes.hpp>
 #include <vtkh/rendering/Scene.hpp>
-#include "t_vtkm_test_utils.hpp"
+#include "t_viskores_test_utils.hpp"
 
 #include <iostream>
 
@@ -20,7 +20,7 @@
 //----------------------------------------------------------------------------
 TEST(vtkh_point_renderer, vtkh_point_render)
 {
-#ifdef VTKM_ENABLE_KOKKOS
+#ifdef VISKORES_ENABLE_KOKKOS
   vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
@@ -33,11 +33,11 @@ TEST(vtkh_point_renderer, vtkh_point_render)
     data_set.AddDomain(CreateTestData(i, num_blocks, base_size), i);
   }
 
-  vtkm::Bounds bounds = data_set.GetGlobalBounds();
+  viskores::Bounds bounds = data_set.GetGlobalBounds();
 
-  vtkm::rendering::Camera camera;
+  viskores::rendering::Camera camera;
   camera.ResetToBounds(bounds);
-  camera.SetPosition(vtkm::Vec<vtkm::Float64,3>(16, 36, -36));
+  camera.SetPosition(viskores::Vec<viskores::Float64,3>(16, 36, -36));
   vtkh::Render render = vtkh::MakeRender(512,
                                          512,
                                          camera,
@@ -58,7 +58,7 @@ TEST(vtkh_point_renderer, vtkh_point_render)
 
 TEST(vtkh_point_renderer, vtkh_variable_point_render)
 {
-#ifdef VTKM_ENABLE_KOKKOS
+#ifdef VISKORES_ENABLE_KOKKOS
   vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
@@ -71,11 +71,11 @@ TEST(vtkh_point_renderer, vtkh_variable_point_render)
     data_set.AddDomain(CreateTestData(i, num_blocks, base_size), i);
   }
 
-  vtkm::Bounds bounds = data_set.GetGlobalBounds();
+  viskores::Bounds bounds = data_set.GetGlobalBounds();
 
-  vtkm::rendering::Camera camera;
+  viskores::rendering::Camera camera;
   camera.ResetToBounds(bounds);
-  camera.SetPosition(vtkm::Vec<vtkm::Float64,3>(16, 36, -36));
+  camera.SetPosition(viskores::Vec<viskores::Float64,3>(16, 36, -36));
   vtkh::Render render = vtkh::MakeRender(512,
                                          512,
                                          camera,
@@ -98,7 +98,7 @@ TEST(vtkh_point_renderer, vtkh_variable_point_render)
 
 TEST(vtkh_point_renderer, vtkh_point_no_data)
 {
-#ifdef VTKM_ENABLE_KOKKOS
+#ifdef VISKORES_ENABLE_KOKKOS
   vtkh::InitializeKokkos();
 #endif
   vtkh::DataSet data_set;
@@ -127,11 +127,11 @@ TEST(vtkh_point_renderer, vtkh_point_no_data)
   data_set = *iso_output;
   delete iso_output;
 
-  vtkm::Bounds bounds = data_set.GetGlobalBounds();
+  viskores::Bounds bounds = data_set.GetGlobalBounds();
 
-  vtkm::rendering::Camera camera;
+  viskores::rendering::Camera camera;
   camera.ResetToBounds(bounds);
-  camera.SetPosition(vtkm::Vec<vtkm::Float64,3>(16, 36, -36));
+  camera.SetPosition(viskores::Vec<viskores::Float64,3>(16, 36, -36));
   vtkh::Render render = vtkh::MakeRender(512,
                                          512,
                                          camera,

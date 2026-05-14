@@ -1,7 +1,7 @@
 #include "PointRenderer.hpp"
 
-#include <vtkm/rendering/CanvasRayTracer.h>
-#include <vtkm/rendering/MapperPoint.h>
+#include <viskores/rendering/CanvasRayTracer.h>
+#include <viskores/rendering/MapperPoint.h>
 #include <vtkh/filters/ParticleMerging.hpp>
 #include <memory>
 
@@ -17,7 +17,7 @@ PointRenderer::PointRenderer()
     m_radius_mult(2.f),
     m_delete_input(false)
 {
-  typedef vtkm::rendering::MapperPoint TracerType;
+  typedef viskores::rendering::MapperPoint TracerType;
   auto mapper = std::make_shared<TracerType>();
   mapper->SetCompositeBackground(false);
   this->m_mapper = mapper;
@@ -27,10 +27,10 @@ PointRenderer::~PointRenderer()
 {
 }
 
-Renderer::vtkmCanvasPtr
+Renderer::viskoresCanvasPtr
 PointRenderer::GetNewCanvas(int width, int height)
 {
-  return std::make_shared<vtkm::rendering::CanvasRayTracer>(width, height);
+  return std::make_shared<viskores::rendering::CanvasRayTracer>(width, height);
 }
 
 std::string
@@ -52,7 +52,7 @@ PointRenderer::UsePointMerging(bool merge)
 }
 
 void
-PointRenderer::PointMergeRadiusMultiplyer(vtkm::Float32 radius_mult)
+PointRenderer::PointMergeRadiusMultiplyer(viskores::Float32 radius_mult)
 {
   m_radius_mult = radius_mult;
 }
@@ -70,14 +70,14 @@ PointRenderer::UseVariableRadius(bool useVariableRadius)
 }
 
 void
-PointRenderer::SetBaseRadius(vtkm::Float32 radius)
+PointRenderer::SetBaseRadius(viskores::Float32 radius)
 {
   m_base_radius = radius;
   m_radius_set = true;
 }
 
 void
-PointRenderer::SetRadiusDelta(vtkm::Float32 delta)
+PointRenderer::SetRadiusDelta(viskores::Float32 delta)
 {
   m_delta_radius = delta;
 }
@@ -87,7 +87,7 @@ PointRenderer::PreExecute()
 {
   Renderer::PreExecute();
 
-  typedef vtkm::rendering::MapperPoint MapperType;
+  typedef viskores::rendering::MapperPoint MapperType;
   std::shared_ptr<MapperType> mesh_mapper =
     std::dynamic_pointer_cast<MapperType>(this->m_mapper);
 
@@ -100,22 +100,22 @@ PointRenderer::PreExecute()
     mesh_mapper->SetUseCells();
   }
 
-  vtkm::Float32 radius = m_base_radius;
+  viskores::Float32 radius = m_base_radius;
   if(m_radius_set)
   {
     mesh_mapper->SetRadius(m_base_radius);
   }
   else
   {
-    vtkm::Bounds coordBounds = this->m_input->GetGlobalBounds();
+    viskores::Bounds coordBounds = this->m_input->GetGlobalBounds();
     // set a default radius
-    vtkm::Float64 lx = coordBounds.X.Length();
-    vtkm::Float64 ly = coordBounds.Y.Length();
-    vtkm::Float64 lz = coordBounds.Z.Length();
-    vtkm::Float64 mag = vtkm::Sqrt(lx * lx + ly * ly + lz * lz);
+    viskores::Float64 lx = coordBounds.X.Length();
+    viskores::Float64 ly = coordBounds.Y.Length();
+    viskores::Float64 lz = coordBounds.Z.Length();
+    viskores::Float64 mag = viskores::Sqrt(lx * lx + ly * ly + lz * lz);
     // same as used in vtk ospray
-    constexpr vtkm::Float64 heuristic = 1000.;
-    radius = static_cast<vtkm::Float32>(mag / heuristic);
+    constexpr viskores::Float64 heuristic = 1000.;
+    radius = static_cast<viskores::Float32>(mag / heuristic);
     // we likely have a data set with no cells so just set some radius
     if(radius == 0.f)
     {
@@ -126,7 +126,7 @@ PointRenderer::PreExecute()
 
   if(!m_use_nodes && this->m_input->IsPointMesh() && m_use_point_merging)
   {
-    vtkm::Float32 max_radius = radius;
+    viskores::Float32 max_radius = radius;
     if(m_use_variable_radius)
     {
       max_radius = radius + radius * m_delta_radius;

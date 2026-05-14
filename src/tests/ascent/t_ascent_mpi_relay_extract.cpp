@@ -35,9 +35,9 @@ TEST(ascent_mpi_runtime, test_relay_extract_iso)
 
     Node n;
     ascent::about(n);
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
         return;
     }
     //
@@ -302,9 +302,9 @@ TEST(ascent_mpi_runtime, test_relay_partially_empty)
 
     Node n;
     ascent::about(n);
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
         return;
     }
     //
@@ -432,9 +432,9 @@ TEST(ascent_mpi_runtime, test_relay_empty)
 
     Node n;
     ascent::about(n);
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
         return;
     }
     //

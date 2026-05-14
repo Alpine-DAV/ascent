@@ -11,7 +11,7 @@
 #include <vtkh/filters/MarchingCubes.hpp>
 #include <vtkh/rendering/RayTracer.hpp>
 #include <vtkh/rendering/Scene.hpp>
-#include "t_vtkm_test_utils.hpp"
+#include "t_viskores_test_utils.hpp"
 
 #include <iostream>
 #include <mpi.h>
@@ -20,7 +20,7 @@
 //----------------------------------------------------------------------------
 TEST(vtkh_marching_cubes_par, vtkh_parallel_marching_cubes)
 {
-#ifdef VTKM_ENABLE_KOKKOS
+#ifdef VISKORES_ENABLE_KOKKOS
   vtkh::InitializeKokkos();
 #endif
 
@@ -57,9 +57,9 @@ TEST(vtkh_marching_cubes_par, vtkh_parallel_marching_cubes)
   marcher.Update();
 
   vtkh::DataSet *iso_output = marcher.GetOutput();
-  vtkm::Bounds bounds = iso_output->GetGlobalBounds();
+  viskores::Bounds bounds = iso_output->GetGlobalBounds();
 
-  vtkm::rendering::Camera camera;
+  viskores::rendering::Camera camera;
   camera.ResetToBounds(bounds);
 
   float bg_color[4] = { 0.f, 0.f, 0.f, 1.f};

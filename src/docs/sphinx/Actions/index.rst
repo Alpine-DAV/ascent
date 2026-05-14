@@ -20,9 +20,10 @@ Ascent Actions
    PathStringFormatting
    Examples
    ExpressionsOverview
+   expression_functions
    expression_objects
    Binning
-   VTKmColorTables
+   ViskoresColorTables
    DRayColorTables
    ParaViewVisualization
 ..

@@ -4,7 +4,7 @@ module load gcc/7.3.1
 module load cuda/11.2.0
 
 export CUDA_ARCH=70
-export CUDA_ARCH_VTKM=volta
+export CUDA_ARCH_VISKORES=volta
 
 export CC=$(which gcc)
 export CXX=$(which g++)

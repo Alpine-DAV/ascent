@@ -4,6 +4,9 @@ on:
   pull_request:
     branches: [ develop ]
 
+permissions:
+  contents: read
+
 jobs:
   build_basic:
     name: Ubuntu Build Ascent GCC
@@ -45,7 +48,7 @@ jobs:
                                 libopenmpi-dev \
                                 cmake
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v4
       with:
         submodules: 'recursive'
     - name: Env Info
@@ -84,8 +87,8 @@ jobs:
         cd install/examples/ascent/using-with-cmake-mpi
         cmake -S . -B build
         cmake --build build --verbose -j2
-        export VTKM_INSTALL_DIR=`ls -d /home/runner/work/ascent/ascent/install/vtk-m-*`
-        export LD_LIBRARY_PATH=${VTKM_INSTALL_DIR}/lib/:${LD_LIBRARY_PATH}
+        export VISKORES_INSTALL_DIR=`ls -d /home/runner/work/ascent/ascent/install/viskores-*`
+        export LD_LIBRARY_PATH=${VISKORES_INSTALL_DIR}/lib/:${LD_LIBRARY_PATH}
         mpiexec -n 2 ./build/ascent_mpi_render_example
   build_basic_pyvenv:
     name: Ubuntu Build Ascent GCC with Python VENV
@@ -127,7 +130,7 @@ jobs:
                                 libopenmpi-dev \
                                 cmake
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v4
       with:
         submodules: 'recursive'
     - name: Env Info
@@ -167,6 +170,6 @@ jobs:
         cd install/examples/ascent/using-with-cmake-mpi
         cmake -S . -B build
         cmake --build build --verbose -j2
-        export VTKM_INSTALL_DIR=`ls -d /home/runner/work/ascent/ascent/install/vtk-m-*`
-        export LD_LIBRARY_PATH=${VTKM_INSTALL_DIR}/lib/:${LD_LIBRARY_PATH}
+        export VISKORES_INSTALL_DIR=`ls -d /home/runner/work/ascent/ascent/install/viskores-*`
+        export LD_LIBRARY_PATH=${VISKORES_INSTALL_DIR}/lib/:${LD_LIBRARY_PATH}
         mpiexec -n 2 ./build/ascent_mpi_render_example

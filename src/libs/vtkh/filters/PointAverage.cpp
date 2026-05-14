@@ -1,6 +1,6 @@
 #include <vtkh/filters/PointAverage.hpp>
 #include <vtkh/Error.hpp>
-#include <vtkm/filter/field_conversion/PointAverage.h>
+#include <viskores/filter/field_conversion/PointAverage.h>
 
 namespace vtkh
 {
@@ -49,8 +49,8 @@ void PointAverage::DoExecute()
 
   for(int i = 0; i < num_domains; ++i)
   {
-    vtkm::Id domain_id;
-    vtkm::cont::DataSet dom;
+    viskores::Id domain_id;
+    viskores::cont::DataSet dom;
     this->m_input->GetDomain(i, dom, domain_id);
 
     if(!dom.HasField(m_field_name))
@@ -58,7 +58,7 @@ void PointAverage::DoExecute()
       continue;
     }
 
-    vtkm::filter::field_conversion::PointAverage avg;
+    viskores::filter::field_conversion::PointAverage avg;
     avg.SetOutputFieldName(m_output_field_name);
     avg.SetActiveField(m_field_name);
     avg.SetFieldsToPass(this->GetFieldSelection());

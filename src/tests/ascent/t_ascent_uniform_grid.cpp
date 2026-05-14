@@ -38,10 +38,10 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_slice_along_y)
 {
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
         return;
     }
 
@@ -82,6 +82,14 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_slice_along_y)
             i: 10
             j: 0
             k: 10
+          origin: 
+            x: -10 
+            y: -10 
+            z: -10 
+          spacing:
+            dx: 1
+            dy: 1
+            dz: 1
           invalid_value: -10.0
 - 
   action: "add_scenes"
@@ -124,10 +132,10 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_sample_along_x)
 {
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
         return;
     }
 
@@ -169,6 +177,14 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_sample_along_x)
             i: 0
             j: 10 
             k: 10 
+          origin: 
+            x: -10 
+            y: -10 
+            z: -10 
+          spacing:
+            dx: 1
+            dy: 1
+            dz: 1
           invalid_value: -10.0
 - 
   action: "add_scenes"
@@ -211,10 +227,10 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_smaller_in_i)
 {
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
         return;
     }
 
@@ -254,6 +270,8 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_smaller_in_i)
           fields: ["braid"]
           dims: 
             i: 10 
+          spacing:
+            dx: 1
           invalid_value: -10.0
 - 
   action: "add_scenes"
@@ -292,10 +310,10 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_smaller_in_j)
 {
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
         return;
     }
 
@@ -335,6 +353,8 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_smaller_in_j)
           fields: ["braid"]
           dims: 
             j: 10 
+          spacing:
+            dy: 1
           invalid_value: -10.0
 - 
   action: "add_scenes"
@@ -373,10 +393,10 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_smaller_in_k)
 {
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
         return;
     }
 
@@ -416,6 +436,8 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_smaller_in_k)
           field: "braid"
           dims: 
             k: 10 
+          spacing:
+            dz: 1
           invalid_value: -10.0
 - 
   action: "add_scenes"
@@ -459,10 +481,10 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_smaller_by10_than_input)
 {
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
         return;
     }
 
@@ -503,6 +525,14 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_smaller_by10_than_input)
             i: 10
             j: 10
             k: 10
+          origin: 
+            x: -10 
+            y: -10 
+            z: -10 
+          spacing:
+            dx: 1
+            dy: 1
+            dz: 1
           invalid_value: -10.0
 - 
   action: "add_scenes"
@@ -542,10 +572,10 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_equal_size_input)
 {
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
         return;
     }
 
@@ -587,6 +617,14 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_equal_size_input)
             i: 20
             j: 20
             k: 20
+          origin: 
+            x: -10 
+            y: -10 
+            z: -10 
+          spacing:
+            dx: 1
+            dy: 1
+            dz: 1
           invalid_value: -10.0
 - 
   action: "add_scenes"
@@ -626,10 +664,10 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_equal_size_input_increased_s
 {
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
         return;
     }
 
@@ -721,10 +759,10 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_equal_size_input_decreased_s
 {
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
         return;
     }
 
@@ -806,10 +844,10 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_equal_size_input_shift_origi
 {
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
         return;
     }
 
@@ -901,10 +939,10 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_equal_size_input_shift_origi
 {
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
         return;
     }
 
@@ -994,10 +1032,10 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_equal_size_input_shift_origi
 {
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
         return;
     }
 
@@ -1087,10 +1125,10 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_equal_size_input_shift_origi
 {
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
         return;
     }
 
@@ -1180,10 +1218,10 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_larger_by5_than_input)
 {
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
         return;
     }
 
@@ -1225,6 +1263,14 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_larger_by5_than_input)
             i: 25
             j: 25
             k: 25
+          origin: 
+            x: -10 
+            y: -10 
+            z: -10 
+          spacing:
+            dx: 1
+            dy: 1
+            dz: 1
           invalid_value: -10.0
       f2: 
         type: "slice"
@@ -1275,10 +1321,10 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_larger_by5_than_input_large_
 {
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
         return;
     }
 
@@ -1320,6 +1366,14 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_larger_by5_than_input_large_
             i: 25
             j: 25
             k: 25
+          origin: 
+            x: -10 
+            y: -10 
+            z: -10 
+          spacing:
+            dx: 1
+            dy: 1
+            dz: 1
           invalid_value: -100.0
       f2: 
         type: "slice"
@@ -1370,10 +1424,10 @@ TEST(ascent_uniform_regular_grid, test_uniform_grid_default_values)
 {
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
         return;
     }
 
@@ -1450,10 +1504,10 @@ TEST(ascent_uniform_regular_grid, test_uniform_multiple_fields)
 {
     Node n;
     ascent::about(n);
-    // only run this test if ascent was built with vtkm support
-    if(n["runtimes/ascent/vtkm/status"].as_string() == "disabled")
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
     {
-        ASCENT_INFO("Ascent vtkm support disabled, skipping test");
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
         return;
     }
 

@@ -4,6 +4,9 @@ on:
   pull_request:
     branches: [ develop ]
 
+permissions:
+  contents: read
+
 jobs:
   build_basic:
     name: Ubuntu Build Ascent OpenAPI
@@ -49,7 +52,7 @@ jobs:
         sudo apt install -y intel-oneapi-compiler-dpcpp-cpp-and-cpp-classic-2023.1.0 \
                        intel-oneapi-compiler-fortran-2023.1.0
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v4
       with:
         submodules: 'recursive'
     - name: Build TPLs

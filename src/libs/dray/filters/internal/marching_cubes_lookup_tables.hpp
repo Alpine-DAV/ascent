@@ -12,8 +12,8 @@
 
 // Q: Is this the desired way to document this?
 // The two maching cubes lookup tables implemented in this file are based
-// off the lookup tables used in VTK-m. The two tables will be marked with comments.
-/* VTK-m license
+// off the lookup tables used in Viskores. The two tables will be marked with comments.
+/* Viskores license
 Copyright (c) 2014-2022
 Kitware Inc.,
 National Technology & Engineering Solutions of Sandia, LLC (NTESS),
@@ -73,7 +73,7 @@ namespace tet
 const int lookup_size = 7*16 + 16 + 12;
 const int ntriangles_offset = 7*16;
 const int edges_offset = 7*16 + 16;
-// Lookup table cases based off VTK-m
+// Lookup table cases based off Viskores
 const int8 lookup_table[lookup_size] = {
   // Triangle edge definitions
   X, X, X, X, X, X, X,  // Case 0
@@ -111,7 +111,7 @@ namespace hex
 const int lookup_size = 16*256 + 256 + 24;
 const int ntriangles_offset = 16*256;
 const int edges_offset = 16*256 + 256;
-// Lookup table cases based off VTK-m
+// Lookup table cases based off Viskores
 const int8 lookup_table[lookup_size] = {
   // Triangle edge definitions, these cases currently assume VTK ordering of a hex.
   // You will need to reorder the Hex dofs using [0, 1, 3, 2, 4, 5, 7, 6] to create the proper lookup index.
