@@ -1347,7 +1347,7 @@ typedef struct Hash
   unsigned short* zeros; /*length of zeros streak, used as a second hash chain*/
 } Hash;
 
-static unsigned hash_init(Hash* hash, unsigned windowsize)
+static unsigned hash_init(Hash* hash, size_t windowsize)
 {
   unsigned i;
   hash->head = (int*)lodepng_malloc(sizeof(int) * HASH_NUM_VALUES);
@@ -5612,7 +5612,7 @@ unsigned lodepng_encode(unsigned char** out, size_t* outsize,
   if(!lodepng_color_mode_equal(&state->info_raw, &info.color))
   {
     unsigned char* converted;
-    size_t size = (size_t(w) * size_t(w) * size_t(lodepng_get_bpp(&info.color)) + size_t(7)) / size_t(8);
+    size_t size = (w * h * lodepng_get_bpp(&info.color) + 7) / 8;
 
     converted = (unsigned char*)lodepng_malloc(size);
     if(!converted && size) state->error = 83; /*alloc fail*/
