@@ -27,6 +27,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ### Fixed
 - Fixed issue where the plot did not align with the 3d axes when the camera was panned (`camera/xpan` and `camera/ypan`).
+- Fixed a crash with PNG encoding of large renders (10k+ by 10k+ resolution)
 
 ## [0.9.5] - Released 2025-09-10
 ### Preferred dependency versions for ascent@0.9.5
