@@ -158,6 +158,11 @@ Python extracts can execute arbitrary python code. Python code uses Conduit's py
 to interrogate and retrieve mesh data. Code is executed on each MPI rank, and mpi4py can be
 used for collective communication.
 
+.. warning::
+    Having a file named ``ascent.py`` in the current working directory when executing an Ascent
+    Python extract can cause errors or undesired behavior. It is recomended to remove or rename 
+    all local ``ascent.py`` files before using a python extract. 
+
 .. code-block:: c++
 
   conduit::Node extracts;

@@ -350,7 +350,8 @@ Framebuffer Renderer::render(Camera &camera)
       // we want it to be in the bottom left corner
       // so 1/10th of the width and height gets converted into
       // screen space coords from -1 to 1
-      Vec<float32, 2> SS_triad_pos = {{0.1 * 2.0 - 1.0, 0.1 * 2.0 - 1.0}};
+      Vec<float32, 2> SS_triad_pos = {{static_cast<float32>(0.1 * 2.0 - 1.0),
+                                       static_cast<float32>(0.1 * 2.0 - 1.0)}};
       float32 distance_from_triad = 15.f;
       annot.draw_triad(framebuffer, SS_triad_pos, distance_from_triad, camera);
     }

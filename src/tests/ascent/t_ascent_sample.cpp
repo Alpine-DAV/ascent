@@ -453,6 +453,89 @@ TEST(ascent_sample, box_3d)
 }
 
 //-----------------------------------------------------------------------------
+TEST(ascent_sample, plane)
+{
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
+        return;
+    }
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing sampling a plane");
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_sample_plane");
+
+    data["state/cycle"] = 100;
+    //
+    // Create the actions.
+    //
+    std::string acts_str = R"xyzxyz(
+-
+  action: "add_pipelines"
+  pipelines:
+    pl1:
+      f1:
+        type: "sample"
+        params:
+          fields: ["braid"]
+          plane:
+            point:
+              x: 0.0
+              y: 0.0
+              z: 0.0
+            normal:
+              x: 0.0
+              y: 1.0
+              z: 0.0
+            dims:
+              i: 5.0
+              k: 5.0
+            spacing:
+              dx: 1.0
+              dz: 1.0
+          invalid_value: -10.0
+-
+  action: "add_extracts"
+  extracts:
+    e1:
+      pipeline: pl1
+      type: "relay"
+      params:
+        protocol: "hdf5"
+)xyzxyz";
+    conduit::Node actions;
+    actions.parse(acts_str,"yaml");
+    actions[1]["extracts/e1/params/path"] = output_file;
+
+    //
+    // Run Ascent
+    //
+    Ascent ascent;
+    ascent.open();
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    std::string msg = "An example of using the sample filter to sample points on a plane.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+}
+
+//-----------------------------------------------------------------------------
 
 TEST(ascent_sample, test_uniform_grid_slice_along_y)
 {
@@ -2055,5 +2138,3 @@ int main(int argc, char* argv[])
     result = RUN_ALL_TESTS();
     return result;
 }
-
-

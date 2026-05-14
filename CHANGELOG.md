@@ -16,6 +16,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - mfem@4.8
 
 ### Added
+- Added plane to the Sample Filter
 - Added the ability to specify "min/max" as the x/y/z point for the reflect transform filter
 - Added Uniform Grid filter as a parameter of the Sample Filter
 - Added ability to define cameras for rendering using visit camera view parameters
@@ -23,6 +24,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added support for 64 bit IDs
 - Added support for RZ meshes
 - If a `default_dir` is passed as an Ascent Option, extracts and plots will output to that directory by default now.
+- Added a warning if a `ascent.py` file exsits in the current working directory when executing a python extract. 
 
 ### Fixed
 - Fixed issue where the plot did not align with the 3d axes when the camera was panned (`camera/xpan` and `camera/ypan`).

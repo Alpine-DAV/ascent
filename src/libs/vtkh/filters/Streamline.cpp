@@ -71,10 +71,8 @@ void Streamline::DoExecute()
       this->m_input->GetDomain(i, dom, domain_id);
       if(dom.HasField(m_field_name))
       {
-        using vectorField_d = viskores::cont::ArrayHandle<viskores::Vec<viskores::Float64, 3>>;
-        using vectorField_f = viskores::cont::ArrayHandle<viskores::Vec<viskores::Float32, 3>>;
         auto field = dom.GetField(m_field_name).GetData();
-        if(field.IsType<vectorField_d>() && !field.IsType<vectorField_f>())
+        if(field.GetNumberOfComponentsFlat() == 3)
         {
           inputs.AppendPartition(dom);
         }
