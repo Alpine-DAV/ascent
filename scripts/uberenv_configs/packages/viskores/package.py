@@ -29,10 +29,15 @@ class Viskores(CMakePackage, CudaPackage, ROCmPackage):
     version("main", branch="main")
     version("release", branch="release")
     version(
+        "1.1.1",
+        tag="v1.1.1",
+        commit="1d38698019f56ef2636d7283f4cac9bc2ee6c819",
+        preferred=True,
+    )
+    version(
         "1.0.0",
         tag="v1.0.0",
         commit="82b25a885abc046b653992801e6c63b6621b2049",
-        preferred=True,
     )
 
     variant("shared", default=False, description="build shared libs")
@@ -120,6 +125,7 @@ class Viskores(CMakePackage, CudaPackage, ROCmPackage):
 
     # pan and zoom patch for viskores needed for ascent tiled rendering
     patch("2026_01_02_viskores_implent_pan_raytracing.patch")
+    patch("2026_04_10_viskores_1_1_0_volume_annotation_depth_hack.patch")
 
     def flag_handler(self, name, flags):
         return (flags, None, None)
