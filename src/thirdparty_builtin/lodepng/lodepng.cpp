@@ -2675,16 +2675,14 @@ unsigned lodepng_can_have_alpha(const LodePNGColorMode* info)
 
 size_t lodepng_get_raw_size(size_t w, size_t h, const LodePNGColorMode* color)
 {
-  /*will not overflow for any color type if roughly w * h < 268435455*/
-  int bpp = lodepng_get_bpp(color);
+  size_t bpp = lodepng_get_bpp(color);
   size_t n = w * h;
   return ((n / 8) * bpp) + ((n & 7) * bpp + 7) / 8;
 }
 
 size_t lodepng_get_raw_size_lct(size_t w, size_t h, LodePNGColorType colortype, size_t bitdepth)
 {
-  /*will not overflow for any color type if roughly w * h < 268435455*/
-  int bpp = lodepng_get_bpp_lct(colortype, bitdepth);
+  size_t bpp = lodepng_get_bpp_lct(colortype, bitdepth);
   size_t n = w * h;
   return ((n / 8) * bpp) + ((n & 7) * bpp + 7) / 8;
 }
@@ -2695,8 +2693,7 @@ size_t lodepng_get_raw_size_lct(size_t w, size_t h, LodePNGColorType colortype, 
 /*in an idat chunk, each scanline is a multiple of 8 bits, unlike the lodepng output buffer*/
 static size_t lodepng_get_raw_size_idat(size_t w, size_t h, const LodePNGColorMode* color)
 {
-  /*will not overflow for any color type if roughly w * h < 268435455*/
-  int bpp = lodepng_get_bpp(color);
+  size_t bpp = lodepng_get_bpp(color);
   size_t line = ((w / 8) * bpp) + ((w & 7) * bpp + 7) / 8;
   return h * line;
 }
