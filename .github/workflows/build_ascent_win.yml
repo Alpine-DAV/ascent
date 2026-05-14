@@ -21,7 +21,7 @@ jobs:
         submodules: 'recursive'
     - name: Setup CMake
       run: |
-          choco install cmake --version=3.31.12 --installargs 'ADD_CMAKE_TO_PATH=System' -y
+          choco install cmake --allow-downgrade --version=3.31.12 --installargs 'ADD_CMAKE_TO_PATH=System' -y
           which cmake
           cmake --version
       shell: bash
