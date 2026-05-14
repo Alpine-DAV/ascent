@@ -52,7 +52,7 @@ build_umpire="${build_umpire:=true}"
 build_mfem="${build_mfem:=true}"
 build_catalyst="${build_catalyst:=false}"
 build_anari="${build_anari:=false}"
-build_ptc="${build_barney:=false}"
+build_barney="${build_barney:=false}"
 build_ptc="${build_ptc:=false}"
 build_zfp="${build_zfp:=true}"
 
@@ -674,7 +674,7 @@ fi # if enable_hip || enable_sycl
 ################
 # anari
 ################
-anari_version=0.14.0
+anari_version=0.15.0
 anari_src_dir=$(ospath ${source_dir}/ANARI-SDK-${anari_version})
 anari_build_dir=$(ospath ${build_dir}/anari-v${anari_version})
 anari_install_dir=$(ospath ${install_dir}/anari-v${anari_version}/)
@@ -757,7 +757,9 @@ fi # build_ptc
 ################
 # anari - barney 
 ################
-barney_version=0.9.10
+#TODO:barney is now hosted on NVIDIA github
+#Currently has not tags/versions, only the main branch
+barney_version=0.10.0
 barney_src_dir=$(ospath ${source_dir}/barney-${barney_version})
 barney_build_dir=$(ospath ${build_dir}/barney-v${barney_version})
 barney_install_dir=$(ospath ${install_dir}/barney-v${barney_version}/)
@@ -772,7 +774,7 @@ if ${build_barney}; then
 # Clone Barney repo with submodules if not already present
 if [ ! -d "${barney_src_dir}" ]; then
   echo "**** Cloning Barney v${barney_version} from GitHub"
-  git clone --branch v${barney_version} --recursive https://github.com/ingowald/barney.git ${barney_src_dir}
+  git clone --branch main --recursive https://github.com/NVIDIA/barney.git ${barney_src_dir}
 fi
 #if [ ! -d ${barney_src_dir} ]; then
 #  echo "**** Downloading ${barney_tarball}"
@@ -1266,7 +1268,6 @@ if ${build_catalyst}; then
 fi
 
 if ${build_anari}; then
-    echo 'set(ENABLE_ANARI ON CACHE BOOL "")' >> ${root_dir}/ascent-config.cmake
     echo 'set(ANARI_DIR ' ${anari_install_dir}' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
 fi
 
