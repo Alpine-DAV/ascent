@@ -21,6 +21,7 @@ jobs:
         submodules: 'recursive'
     - name: Setup CMake
       run: |
+          choco uninstall strawberryperl -y
           choco uninstall cmake.install -y
           CMAKE_VERSION="3.31.12"
           INSTALLER="cmake-${CMAKE_VERSION}-windows-x86_64.msi"
@@ -32,6 +33,9 @@ jobs:
           which cmake
           cmake --version
       shell: bash
+    - name: Remove Strawberry Perl from Path
+      shell: bash
+      run: rm -rf /c/Strawberry
     - name: Build TPLs
       run: |
         env build_ascent=false `
