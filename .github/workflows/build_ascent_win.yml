@@ -11,6 +11,8 @@ jobs:
   build_windows_msvc_base:
     name: MSVC Base Release
     runs-on: windows-2025
+    env:
+      CMAKE_GENERATOR: Visual Studio 17 2022
     steps:
     - name: Setup MPI
       uses: mpi4py/setup-mpi@dbbb80b116bea57fc1788daf7dbbf7ab3df3a0f1 # v1
