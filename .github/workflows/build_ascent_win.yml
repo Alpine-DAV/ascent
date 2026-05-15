@@ -21,12 +21,12 @@ jobs:
     - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v4
       with: 
         submodules: 'recursive'
-    - name: Setup CMake
-      run: |
-           choco install cmake.install --allow-downgrade --force --version 3.31.12
-           which cmake
-           cmake --version
-      shell: bash
+    # - name: Setup CMake
+    #   run: |
+    #        choco install cmake.install --allow-downgrade --force --version 3.31.12
+    #        which cmake
+    #        cmake --version
+    #   shell: bash
     # - name: Setup CMake
     #   run: |
     #       choco uninstall strawberryperl -y
