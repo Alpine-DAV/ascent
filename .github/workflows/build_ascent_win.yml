@@ -10,7 +10,7 @@ permissions:
 jobs:
   build_windows_msvc_base:
     name: MSVC Base Release
-    runs-on: windows-2025
+    runs-on: windows-2022
     env:
       CMAKE_GENERATOR: Visual Studio 17 2022
     steps:
