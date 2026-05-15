@@ -21,7 +21,7 @@ jobs:
         submodules: 'recursive'
     - name: Setup CMake
       run: |
-          choco uninstall cmake -y
+          choco uninstall cmake.install -y
           CMAKE_VERSION="3.31.12"
           INSTALLER="cmake-${CMAKE_VERSION}-windows-x86_64.msi"
           URL="https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/${INSTALLER}"
