@@ -21,7 +21,7 @@ jobs:
         submodules: 'recursive'
     - name: Setup CMake
       run: |
-           choco uninstall cmake.install --allow-downgrade --force --version 3.31.12
+           choco install cmake.install --allow-downgrade --force --version 3.31.12
            which cmake
            cmake --version
       shell: bash
