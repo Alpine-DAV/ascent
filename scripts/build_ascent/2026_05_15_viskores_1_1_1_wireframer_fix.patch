@@ -112,12 +112,13 @@
  };
  
  } // namespace
-@@ -513,11 +525,13 @@
-     //
-     bool ortho2d = Camera.GetMode() == viskores::rendering::Camera::Mode::TwoD;
- 
+@@ -508,31 +520,32 @@
+     viskores::Id width = static_cast<viskores::Id>(Canvas->GetWidth());
+     viskores::Id height = static_cast<viskores::Id>(Canvas->GetHeight());
+     viskores::Id pixelCount = width * height;
++    bool ortho2d = Camera.GetMode() == viskores::rendering::Camera::Mode::TwoD;
 +    bool ignoreExistingDepth = this->IsOverlay && ortho2d;
-+
+ 
      if (this->ShowInternalZones && !this->IsOverlay)
      {
        viskores::cont::ArrayHandleConstant<viskores::Int64> clear(ClearValue, pixelCount);
@@ -130,7 +131,23 @@
 +      CopyIntoFrameBuffer bufferCopy(ignoreExistingDepth);
        viskores::worklet::DispatcherMapField<CopyIntoFrameBuffer>(bufferCopy)
          .Invoke(this->Canvas->GetColorBuffer(), this->SolidDepthBuffer, this->FrameBuffer);
-@@ -577,7 +591,7 @@
+     }
+     //
+     // detect a 2D camera and set the correct viewport.
+     // The View port specifies what the region of the screen
+     // to draw to which baiscally modifies the width and the
+     // height of the "canvas"
+     //
+     viskores::Id xOffset = 0;
+     viskores::Id yOffset = 0;
+     viskores::Id subsetWidth = width;
+     viskores::Id subsetHeight = height;
+ 
+-    bool ortho2d = Camera.GetMode() == viskores::rendering::Camera::Mode::TwoD;
+     if (ortho2d)
+     {
+       viskores::Float32 vl, vr, vb, vt;
+@@ -577,7 +590,7 @@
                                 viskores::rendering::raytracing::GetScalarFieldArray(ScalarField));
      }
  
