@@ -60,6 +60,14 @@ viskoresProbe::setBoxSpacing(const Vec3_f64 spacing)
 
 //---------------------------------------------------------------------------//
 void
+viskoresProbe::setGeometry(const viskores::cont::DataSet &geometry)
+{
+  m_mode = SampleMode::GEOMETRY;
+  m_geometry = geometry;
+}
+
+//---------------------------------------------------------------------------//
+void
 viskoresProbe::setInvalidValue(const viskores::Float64 invalid_value)
 {
   m_invalid_value = invalid_value;
@@ -130,6 +138,28 @@ viskoresProbe::Run(viskores::cont::DataSet &input)
       cellset.Fill(num_points, shape_id, indices_per, connectivity);
       ds_probe.SetCellSet(cellset);
   }
+  else if(m_mode == GEOMETRY)
+  {
+      const viskores::cont::CoordinateSystem coords =
+        m_geometry.GetCoordinateSystem();
+      const viskores::Id num_points = coords.GetData().GetNumberOfValues();
+
+      ds_probe.AddCoordinateSystem(coords);
+
+      viskores::UInt8 shape_id = 1;
+      viskores::IdComponent indices_per = 1;
+      viskores::cont::CellSetSingleType<> cellset;
+
+      viskores::cont::ArrayHandle<viskores::Id> connectivity;
+      connectivity.Allocate(num_points);
+      auto conn_portal = connectivity.WritePortal();
+      for(viskores::Id i = 0; i < num_points; ++i)
+      {
+          conn_portal.Set(i, i);
+      }
+      cellset.Fill(num_points, shape_id, indices_per, connectivity);
+      ds_probe.SetCellSet(cellset);
+  }
   else // error
   {
       std::ostringstream oss;
@@ -140,6 +170,20 @@ viskoresProbe::Run(viskores::cont::DataSet &input)
   probe.SetGeometry(ds_probe);
   probe.SetInvalidValue(m_invalid_value);
   auto output = probe.Execute(input);
+  if(m_mode == GEOMETRY)
+  {
+      viskores::cont::DataSet topology_output;
+      topology_output.CopyStructure(m_geometry);
+      const viskores::Id num_fields = output.GetNumberOfFields();
+      for(viskores::Id i = 0; i < num_fields; ++i)
+      {
+          viskores::cont::Field field = output.GetField(i);
+          topology_output.AddField(viskores::cont::Field(field.GetName(),
+                                                         viskores::cont::Field::Association::Points,
+                                                         field.GetData()));
+      }
+      output = topology_output;
+  }
   return output;
 }
 

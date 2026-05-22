@@ -856,7 +856,8 @@ public:
 //---------------------------------------------------------------------------//
 Sample::Sample()
 	: m_invalid_value(std::numeric_limits<double>::min()),
-    m_is_points(false)
+    m_is_points(false),
+    m_is_topology(false)
 {
 
 }
@@ -911,90 +912,151 @@ Sample::DoExecute()
 #endif
 #endif
 
-  viskores::cont::DataSet local_res;
-  for(int i = 0; i < num_domains; ++i)
+  auto sample_domain = [&](viskores::cont::DataSet *sample_geometry)
   {
-    viskores::cont::DataSet dom;
-    
-    if(this->m_input->HasDomainId(domain_ids[i]))
+    viskores::cont::DataSet local_res;
+    for(int i = 0; i < num_domains; ++i)
     {
-      dom = this->m_input->GetDomainById(domain_ids[i]);
-      for(const auto &field_name : m_fields)
+      viskores::cont::DataSet dom;
+      
+      if(this->m_input->HasDomainId(domain_ids[i]))
       {
-        vtkh::viskoresProbe probe;
-        if(m_is_points)
+        dom = this->m_input->GetDomainById(domain_ids[i]);
+        for(const auto &field_name : m_fields)
         {
-          probe.setPoints(m_points_xs,m_points_ys,m_points_zs);
-        }
-        else
-        {
-          probe.setBoxDims(m_dims);
-          probe.setBoxOrigin(m_origin);
-          probe.setBoxSpacing(m_spacing);
-        }
-        probe.setInvalidValue(m_invalid_value);
-        auto dataset = probe.Run(dom);
-        viskores::cont::Field tmp_field = dataset.GetField(field_name);
+          vtkh::viskoresProbe probe;
+          if(sample_geometry != nullptr)
+          {
+            probe.setGeometry(*sample_geometry);
+          }
+          else if(m_is_points)
+          {
+            probe.setPoints(m_points_xs,m_points_ys,m_points_zs);
+          }
+          else
+          {
+            probe.setBoxDims(m_dims);
+            probe.setBoxOrigin(m_origin);
+            probe.setBoxSpacing(m_spacing);
+          }
+          probe.setInvalidValue(m_invalid_value);
+          auto dataset = probe.Run(dom);
+          viskores::cont::Field tmp_field = dataset.GetField(field_name);
 
 #if _DEBUG 
-        std::cerr <<"UNIFORM GRID OUTPUT START: " << std::endl;
-        dataset.PrintSummary(std::cerr);
-        std::cerr <<"UNIFORM GRID OUTPUT END" << std::endl;
+          std::cerr <<"UNIFORM GRID OUTPUT START: " << std::endl;
+          dataset.PrintSummary(std::cerr);
+          std::cerr <<"UNIFORM GRID OUTPUT END" << std::endl;
 #endif
-        viskores::cont::Field valid_field;
-        if(tmp_field.IsPointField())
-        {
-          viskores::cont::Field point_field = dataset.GetPointField("HIDDEN");
-          valid_field = point_field;
-        }
-        else
-        {
-          viskores::cont::Field cell_field = dataset.GetCellField("HIDDEN");
-          valid_field = cell_field;
-        }
+          viskores::cont::Field valid_field;
+          if(tmp_field.IsPointField())
+          {
+            viskores::cont::Field point_field = dataset.GetPointField("HIDDEN");
+            valid_field = point_field;
+          }
+          else
+          {
+            viskores::cont::Field cell_field = dataset.GetCellField("HIDDEN");
+            valid_field = cell_field;
+          }
 
-        std::string cs_name = dataset.GetCoordinateSystemName();
-        if(!local_res.HasCoordinateSystem(cs_name))
-        {
-          local_res.CopyStructure(dataset);
-          local_res.AddField("valid_mask", valid_field.GetAssociation(), valid_field.GetData());
-        }
+          std::string cs_name = dataset.GetCoordinateSystemName();
+          if(!local_res.HasCoordinateSystem(cs_name))
+          {
+            local_res.CopyStructure(dataset);
+            local_res.AddField("valid_mask", valid_field.GetAssociation(), valid_field.GetData());
+          }
 
-        if(!local_res.HasField(field_name))
-        {
-          local_res.AddField(tmp_field);
-        }
-        else
-        {
-          vtkh::detail::LocalReduceField localreducefield(local_res,
-                                                          tmp_field,
-                                                          valid_field,
-                                                          field_name,
-                                                          m_invalid_value);
-          localreducefield.LocalReduce();
+          if(!local_res.HasField(field_name))
+          {
+            local_res.AddField(tmp_field);
+          }
+          else
+          {
+            vtkh::detail::LocalReduceField localreducefield(local_res,
+                                                            tmp_field,
+                                                            valid_field,
+                                                            field_name,
+                                                            m_invalid_value);
+            localreducefield.LocalReduce();
+          }
         }
       }
     }
+    return local_res;
+  };
+
+  std::vector<viskores::cont::DataSet> local_results;
+  std::vector<viskores::Id> local_result_domain_ids;
+  if(m_is_topology)
+  {
+    const int num_topology_domains = static_cast<int>(m_topology_domains.size());
+    for(int i = 0; i < num_topology_domains; ++i)
+    {
+      local_results.push_back(sample_domain(&m_topology_domains[i]));
+      local_result_domain_ids.push_back(m_topology_domain_ids[i]);
+    }
+  }
+  else
+  {
+    local_results.push_back(sample_domain(nullptr));
+    local_result_domain_ids.push_back(0);
   }
 
 #if _DEBUG 
-  std::cerr <<" LOCAL RES START" << std::endl;
-  local_res.PrintSummary(std::cerr);
-  std::cerr <<" LOCAL RES END" << std::endl;
+  for(size_t i = 0; i < local_results.size(); ++i)
+  {
+    std::cerr <<" LOCAL RES START" << std::endl;
+    local_results[i].PrintSummary(std::cerr);
+    std::cerr <<" LOCAL RES END" << std::endl;
+  }
 #endif
 
 
 #ifdef VTKH_PARALLEL
+  if(m_is_topology)
+  {
+    for(size_t i = 0; i < local_results.size(); ++i)
+    {
+      viskores::cont::DataSet reduced_output;
+      reduced_output.CopyStructure(local_results[i]);
+
+      for(const auto &field_name : m_fields)
+      {
+        viskores::cont::DataSet reduced;
+        bool valid_field;
+        viskores::Id field_id = this->m_input->GetFieldType(field_name, valid_field);
+        const int num_values =
+          static_cast<int>(local_results[i].GetField(field_name).GetData().GetNumberOfValues());
+        vtkh::detail::GlobalReduceField g_reducefield(local_results[i],
+                                                       field_name,
+                                                       m_invalid_value,
+                                                       num_values,
+                                                       field_id,
+                                                       reduced);
+        g_reducefield.Reduce();
+        viskores::cont::Field reduced_field = reduced.GetField(field_name);
+        reduced_output.AddField(reduced_field);
+      }
+
+      if(par_rank == 0)
+      {
+        this->m_output->AddDomain(reduced_output, local_result_domain_ids[i]);
+      }
+    }
+  }
+  else
+  {
   //take uniform sampled grid and reduce to root process
   viskores::cont::DataSet reduced_output;
-  reduced_output.CopyStructure(local_res);
+  reduced_output.CopyStructure(local_results[0]);
   
   for(const auto &field_name : m_fields)
   {
     viskores::cont::DataSet reduced;
     bool valid_field;
     viskores::Id field_id = this->m_input->GetFieldType(field_name, valid_field);
-    vtkh::detail::GlobalReduceField g_reducefield(local_res, field_name, m_invalid_value, m_num_samples, field_id, reduced);
+    vtkh::detail::GlobalReduceField g_reducefield(local_results[0], field_name, m_invalid_value, m_num_samples, field_id, reduced);
     g_reducefield.Reduce();
     viskores::cont::Field reduced_field = reduced.GetField(field_name);
     reduced_output.AddField(reduced_field);
@@ -1003,6 +1065,7 @@ Sample::DoExecute()
   if(par_rank == 0)
   {
     this->m_output->AddDomain(reduced_output, 0);
+  }
   }
 
 #if _DEBUG 
@@ -1018,7 +1081,10 @@ Sample::DoExecute()
     std::cerr <<" PAR RANK " << par_rank << " at the very end" << std::endl;
 #endif //end _DEBUG
 #else //serial
-  this->m_output->AddDomain(local_res,0);
+  for(size_t i = 0; i < local_results.size(); ++i)
+  {
+    this->m_output->AddDomain(local_results[i], local_result_domain_ids[i]);
+  }
 #endif
 }
 
@@ -1047,6 +1113,7 @@ Sample::Line(int num_samples,
 
 {
     m_is_points = true;
+    m_is_topology = false;
     m_num_samples = num_samples;
 
     int line_spatial_num_points = 3;
@@ -1100,7 +1167,8 @@ Sample::Box(int *num_points,
 
 {
   m_is_points = true;
-  int m_num_samples = num_points[0]*num_points[1]*num_points[2];
+  m_is_topology = false;
+  m_num_samples = num_points[0]*num_points[1]*num_points[2];
 
   // alloc array handles to hold num_samples
   // alloc xs, ys, zs
@@ -1161,6 +1229,7 @@ Sample::Plane(const Vec3_f64 point,
               const int axes[2])
 {
   m_is_points = true;
+  m_is_topology = false;
 
   const int dim_1 = dims[0] > 0 ? static_cast<int>(dims[0]) : 1;
   const int dim_2 = dims[1] > 0 ? static_cast<int>(dims[1]) : 1;
@@ -1242,6 +1311,7 @@ Sample::Points(viskores::cont::ArrayHandle<viskores::Float64> xs,
                viskores::cont::ArrayHandle<viskores::Float64> zs)
 {
   m_is_points = true;
+  m_is_topology = false;
   m_num_samples = xs.GetNumberOfValues();
   m_points_xs = xs;
   m_points_ys = ys;
@@ -1255,6 +1325,7 @@ Sample::UniformGrid(const Vec3_f64 dims,
                     const Vec3_f64 spacing)
 {
   m_is_points = false; 
+  m_is_topology = false;
   m_dims = dims;
   m_origin = origin;
   m_spacing = spacing;
@@ -1262,6 +1333,22 @@ Sample::UniformGrid(const Vec3_f64 dims,
   m_num_samples = (m_dims[1] > 0) ? m_num_samples*m_dims[1] : m_num_samples; 
   m_num_samples = (m_dims[2] > 0) ? m_num_samples*m_dims[2] : m_num_samples; 
 
+}
+
+//---------------------------------------------------------------------------//
+void
+Sample::Topology(const std::vector<viskores::cont::DataSet> &domains,
+                 const std::vector<viskores::Id> &domain_ids)
+{
+  if(domains.size() != domain_ids.size())
+  {
+    throw Error("Sample::Topology requires matching domain and domain id counts");
+  }
+
+  m_is_topology = true;
+  m_is_points = false;
+  m_topology_domains = domains;
+  m_topology_domain_ids = domain_ids;
 }
 
 //---------------------------------------------------------------------------//

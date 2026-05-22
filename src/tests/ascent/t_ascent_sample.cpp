@@ -19,6 +19,7 @@
 #include <math.h>
 
 #include <conduit_blueprint.hpp>
+#include <conduit_relay.hpp>
 
 #include "t_config.hpp"
 #include "t_utils.hpp"
@@ -532,6 +533,91 @@ TEST(ascent_sample, plane)
     ascent.close();
 
     std::string msg = "An example of using the sample filter to sample points on a plane.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_sample, topology_plane)
+{
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
+        return;
+    }
+
+    Node data, plane, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+    conduit::blueprint::mesh::examples::braid("quads", 5, 5, 0, plane);
+
+    data["topologies/sample_plane"] = plane["topologies/mesh"];
+    data["topologies/sample_plane/coordset"] = "sample_plane_coords";
+    data["coordsets/sample_plane_coords"] = plane["coordsets/coords"];
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data, verify_info));
+
+    ASCENT_INFO("Testing sampling with a topology from the input dataset");
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,
+                                                        "tout_sample_topology_plane");
+    string output_root = output_file + ".cycle_000100.root";
+    if(conduit::utils::is_file(output_root))
+    {
+        conduit::utils::remove_file(output_root);
+    }
+
+    data["state/cycle"] = 100;
+
+    std::string acts_str = R"xyzxyz(
+-
+  action: "add_pipelines"
+  pipelines:
+    pl1:
+      f1:
+        type: "sample"
+        params:
+          fields: ["braid"]
+          topology: "sample_plane"
+          invalid_value: -10.0
+-
+  action: "add_extracts"
+  extracts:
+    e1:
+      pipeline: pl1
+      type: "relay"
+      params:
+        protocol: "hdf5"
+)xyzxyz";
+    conduit::Node actions;
+    actions.parse(acts_str,"yaml");
+    actions[1]["extracts/e1/params/path"] = output_file;
+
+    Ascent ascent;
+    ascent.open();
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    EXPECT_TRUE(conduit::utils::is_file(output_root));
+
+    Node read_mesh, read_verify_info;
+    conduit::relay::io::blueprint::load_mesh(output_root, read_mesh);
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(read_mesh, read_verify_info));
+    EXPECT_EQ(conduit::blueprint::mesh::number_of_domains(read_mesh), 1);
+
+    const Node &dom = read_mesh.child(0);
+    EXPECT_TRUE(dom.has_path("topologies/sample_plane"));
+    EXPECT_TRUE(dom.has_path("fields/braid"));
+    EXPECT_EQ(dom["fields/braid/topology"].as_string(), "sample_plane");
+    EXPECT_GT(dom["fields/braid/values"].dtype().number_of_elements(), 0);
+
+    std::string msg = "An example of using the sample filter to sample on a topology from the input dataset.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
