@@ -7,7 +7,14 @@
 #include <vtkh/utils/viskores_array_utils.hpp>
 #include <vtkh/utils/viskores_dataset_info.hpp>
 #include <viskores/rendering/raytracing/Logger.h>
+#include <viskores/rendering/Camera.h>
+#include <viskores/rendering/raytracing/Camera.h>
+
 #include <viskores/rendering/ScalarRenderer.h>
+
+#include <conduit/conduit.hpp>
+#include <conduit/conduit_relay.hpp>
+#include <conduit/conduit_blueprint.hpp>
 
 #ifdef VTKH_PARALLEL
   #include <mpi.h>
@@ -17,6 +24,7 @@
 #include <algorithm>
 
 using namespace std;
+using namespace conduit;
 
 namespace vtkh
 {
@@ -114,6 +122,169 @@ ScalarRenderer::PostExecute()
 {
   Filter::PostExecute();
 }
+
+namespace detail
+{
+void
+CreateRaysMesh(ScalarRenderer::Result &srender_res,
+               conduit::Node &rays_mesh)
+{
+    // Create a Blueprint Mesh that represents the ray trace result
+
+    // Result Struct Details
+    /*
+    struct VISKORES_RENDERING_EXPORT Result
+    {
+      viskores::Int32 Width;
+      viskores::Int32 Height;
+      viskores::cont::ArrayHandle<viskores::Float32> Depths;
+      std::vector<viskores::cont::ArrayHandle<viskores::Float32>> Scalars;
+      std::vector<std::string> ScalarNames;
+      std::map<std::string, viskores::Range> Ranges;
+
+      viskores::cont::DataSet ToDataSet();
+    */
+
+    const int num_rays = srender_res.Width * srender_res.Height;
+    const int num_fields = srender_res.ScalarNames.size();
+
+    const float *depth_buffer = GetVISKORESPointer(srender_res.Depths);
+
+    rays_mesh.reset();
+    rays_mesh["coordsets/rays_coords/type"] = "explicit";
+
+    // use depth buffer to count hits and misses
+    //  hits will be represented as a line segment
+    //  misses will be represented as a single point
+
+    index_t num_hits   = 0;
+    index_t num_misses = 0;
+    index_t ray_idx = 0;
+
+    for(index_t j=0;j<srender_res.Height;j++)
+    for(index_t i=0;i<srender_res.Width;i++)
+    {
+        if(depth_buffer[ray_idx] > 0.0)
+        {
+            num_hits++;
+        }
+        else
+        {
+            num_misses++;
+        }
+        ray_idx++;
+    }
+
+    num_hits = num_hits + num_misses;
+    // npts = (number of hits * 2) + (number of misses)
+    index_t npts = num_hits * 2;// + num_misses;
+
+    rays_mesh["coordsets/rays_coords/values/x"].set(DataType::float64(npts));
+    rays_mesh["coordsets/rays_coords/values/y"].set(DataType::float64(npts));
+    rays_mesh["coordsets/rays_coords/values/z"].set(DataType::float64(npts));
+    float64_array xs = rays_mesh["coordsets/rays_coords/values/x"].value();
+    float64_array ys = rays_mesh["coordsets/rays_coords/values/y"].value();
+    float64_array zs = rays_mesh["coordsets/rays_coords/values/z"].value();
+
+    zs.fill(0);
+    ray_idx = 0;
+    index_t idx = 0;
+    for(index_t j=0;j<srender_res.Height;j++)
+    for(index_t i=0;i<srender_res.Width;i++)
+    {
+        if(depth_buffer[ray_idx] > 0.0)
+        {
+            xs[idx] = i;
+            ys[idx] = j;
+            zs[idx] = 0;
+
+            xs[idx+1] = i;
+            ys[idx+1] = j;
+            zs[idx+1] = 50.0;
+            idx+=2;
+        }
+        else
+        {
+            xs[idx] = i;
+            ys[idx] = j;
+            zs[idx] = 0;
+
+            xs[idx+1] = i;
+            ys[idx+1] = j;
+            zs[idx+1] = 0.0;
+            idx+=2;
+        }
+        ray_idx++;
+    }
+
+    rays_mesh["topologies/rays/type"] = "unstructured";
+    rays_mesh["topologies/rays/coordset"] = "rays_coords";
+    rays_mesh["topologies/rays/elements/shape"] = "line";
+    rays_mesh["topologies/rays/elements/connectivity"].set(DataType::index_t(npts));
+
+    // rays_mesh["topologies/rays/elements/shape"] = "mixed";
+    // rays_mesh["topologies/rays/elements/shapes"].set(DataType::index_t(num_rays));
+    // rays_mesh["topologies/rays/elements/sizes"].set(DataType::index_t(num_rays));
+    // rays_mesh["topologies/rays/elements/offsets"].set(DataType::index_t(num_rays));
+    // rays_mesh["topologies/rays/elements/shape_map/line"]  = 3;
+    // rays_mesh["topologies/rays/elements/shape_map/point"] = 1;
+
+    // index_t_array ray_shapes  = rays_mesh["topologies/rays/elements/shapes"].value();
+    // index_t_array ray_sizes   = rays_mesh["topologies/rays/elements/sizes"].value();
+    // index_t_array ray_offsets = rays_mesh["topologies/rays/elements/offsets"].value();
+    index_t_array ray_conn    = rays_mesh["topologies/rays/elements/connectivity"].value();
+
+    ray_idx = 0;
+    idx = 0;
+    for(index_t j=0;j<srender_res.Height;j++)
+    for(index_t i=0;i<srender_res.Width;i++)
+    {
+        if(depth_buffer[ray_idx] > 0.0)
+        {
+            // line segment case
+            // ray_shapes[ray_idx] = 3; // VTK_LINE
+            // ray_sizes[ray_idx]  = 2;
+            ray_conn[idx]       = idx;
+            ray_conn[idx+1]     = idx+1;
+            idx+=2;
+        }
+        else
+        {
+            // // point case
+            // ray_shapes[ray_idx] = 1; // VTK_VERTEX
+            // ray_sizes[ray_idx] = 1;
+            // ray_conn[idx] = idx;
+            // idx++;
+            // ray_shapes[ray_idx] = 3; // VTK_LINE
+            // ray_sizes[ray_idx]  = 2;
+            ray_conn[idx]       = idx;
+            ray_conn[idx+1]     = idx+1;
+            idx+=2;
+        }
+        ray_idx++;
+    }
+
+    rays_mesh["fields/depth/topology"] = "rays";
+    rays_mesh["fields/depth/association"] = "element";
+    rays_mesh["fields/depth/values"].set(depth_buffer, num_rays);
+
+    for(index_t i=0; i<srender_res.Scalars.size(); i++)
+    {
+        const float* scalar_buffer = GetVISKORESPointer(srender_res.Scalars[i]);
+        const std::string field_path = "fields/" + srender_res.ScalarNames[i];
+        rays_mesh[field_path + "/topology"] = "rays";
+        rays_mesh[field_path + "/association"] = "element";
+        rays_mesh[field_path + "/values"].set(scalar_buffer, num_rays);
+    }
+
+    conduit::Node info;
+    if(!conduit::blueprint::mesh::verify(rays_mesh,info))
+    {
+        std::cout << info.to_yaml() << std::endl;
+    }
+}
+};
+
 
 void
 ScalarRenderer::DoExecute()
@@ -288,11 +459,29 @@ ScalarRenderer::DoExecute()
         viskores::cont::DataSet dset = final_result.ToDataSet();
         const int domain_id = 0;
         this->m_output->AddDomain(dset, domain_id);
+
+        // create a mesh that represents the rays
+
+        // requires viskores 1.1.1
+        // create rays from camera
+        // viskores::Bounds cam_bounds(bounds);
+        // viskores::rendering::raytracing::Ray<viskores::Float32> rays;
+        // we need a ray tracing camera here, not a rendering camera
+        // viskores::rendering::raytracing::Camera ray_cam = m_camera.CreateRaytracingCamera((viskores::Int32)m_width,
+        //                                                                                   (viskores::Int32)m_height);
+        // ray_cam.CreateRays(rays, cam_bounds);
+
+        conduit::Node rays_mesh;
+        detail::CreateRaysMesh(final_result, rays_mesh); //rays, rays_mesh);
+        // TODO viskores 1.1.1.
+        //detail::CreateRaysMesh(final_result, rays, rays_mesh);
+        conduit::relay::io::blueprint::save_mesh(rays_mesh,"tout");
       }
     }
   }
 
 }
+
 
 ScalarRenderer::Result
 ScalarRenderer::Convert(PayloadImage &image, std::vector<std::string> &names)

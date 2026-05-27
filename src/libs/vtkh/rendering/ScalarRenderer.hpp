@@ -11,6 +11,9 @@
 #include <viskores/rendering/Camera.h>
 #include <viskores/rendering/ScalarRenderer.h>
 
+#include <conduit/conduit.hpp>
+
+
 namespace vtkh {
 
 class VTKH_API ScalarRenderer : public Filter
@@ -24,12 +27,22 @@ public:
   virtual void Update();
   virtual std::string GetName() const override;
 
-  void SetCamera(viskoresCamera &camera);
 
-  int GetNumberOfCameras() const;
+  // int GetNumberOfCameras() const;
   vtkh::DataSet *GetInput();
+
+  // camera use case
+  void SetCamera(viskoresCamera &camera);
   void SetHeight(const int height);
   void SetWidth(const int width);
+
+  // arb rays use case
+  void SetRays(viskores::cont::ArrayHandle<viskores::Float64> pts_xs,
+               viskores::cont::ArrayHandle<viskores::Float64> pts_ys,
+               viskores::cont::ArrayHandle<viskores::Float64> pts_zs,
+               viskores::cont::ArrayHandle<viskores::Float64> dirs_xs,
+               viskores::cont::ArrayHandle<viskores::Float64> dirs_ys,
+               viskores::cont::ArrayHandle<viskores::Float64> dirs_zs);
 
   void SetFields(const std::vector<std::string> &fields);
 
@@ -37,7 +50,10 @@ protected:
 
   int m_width;
   int m_height;
+  int m_num_points;
+
   std::vector<std::string> m_field_names;
+
   // image related data with cinema support
   viskoresCamera  m_camera;
   // methods
@@ -48,6 +64,7 @@ protected:
   PayloadImage * Convert(Result &result);
   ScalarRenderer::Result Convert(PayloadImage &image, std::vector<std::string> &names);
   //void ImageToDataSet(Image &image, viskores::rendering::Canvas &canvas, bool get_depth);
+
 };
 
 } // namespace vtkh
