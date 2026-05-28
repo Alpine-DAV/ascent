@@ -670,6 +670,13 @@ Builds an object schema that is explicitly skipped during validation (via ``cons
 This is useful when a parameter subtree is accepted but not yet formally specified, or when
 validation is handled elsewhere.
 
+.. note::
+    Ignore schema allows a parameter to be surprise checked against (when ``additionalProperties`` is false) but the actual value will not be validated against any schema.
+    This is an explicit way of saying "I want field to be a valid value passed to this filter but I am not going to worry about if it is a stirng or number or something else just yet".
+    
+.. note::
+    Generally, if a validation schema can be provided it should be instead of using an ``ignore_schem``.
+
 .. code-block:: c++
 
     conduit::Node &ignore_schema(conduit::Node &schema_node);

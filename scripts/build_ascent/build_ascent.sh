@@ -91,9 +91,12 @@ else
     build_kokkos="${build_kokkos:=false}"
 fi
 
+echo "*** OSTYPE=$OSTYPE"
+
 case "$OSTYPE" in
   win*)     build_windows="ON";;
   msys*)    build_windows="ON";;
+  cygwin*)  build_windows="ON";;
   darwin*)  build_macos="ON";;
   *)        ;;
 esac
@@ -687,8 +690,8 @@ if [ ! -d ${viskores_src_dir} ]; then
   # apply patches
   cd ${viskores_src_dir}
   echo "**** Applying Patches to ${viskores_tarball}"
-  patch -p1 < ${script_dir}/2025_06_18_viskores_z_extents_ray_culling_bugfix_viskores_mr109.patch
   patch -p1 < ${script_dir}/2026_01_02_viskores_implent_pan_raytracing.patch
+  patch -p1 < ${script_dir}/2026_04_17_viskores_clip_celloffset_increment.patch
   cd ${root_dir}
 fi
 

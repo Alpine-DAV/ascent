@@ -64,8 +64,7 @@ TEST(ascent_vtk_file_extract, basic)
     conduit::Node &extracts = add_extracts["extracts"];
 
     string output_path = prepare_output_dir();
-    string output_file = conduit::utils::join_file_path(output_path,
-                                             "tout_vtk_file_extract_test_braid_single_domain_{family:03d}");
+    string output_file = "tout_vtk_file_extract_test_braid_single_domain_{family:03d}";
     string output_file_formatted = conduit::utils::join_file_path(output_path,
                                                 "tout_vtk_file_extract_test_braid_single_domain_000");
 
@@ -78,11 +77,14 @@ TEST(ascent_vtk_file_extract, basic)
 
     std::cout << actions.to_yaml() << std::endl;
 
+    conduit::Node ascent_opts;
+    ascent_opts["default_dir"] = output_path;
+
     //
     // Run Ascent
     //
     Ascent ascent;
-    ascent.open();
+    ascent.open(ascent_opts);
     ascent.publish(data);
     ascent.execute(actions);
     ascent.close();

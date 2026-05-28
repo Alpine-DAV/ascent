@@ -43,6 +43,7 @@ CleanGrid::DoExecute()
     {
       cleaner.tolerance(m_tolerance);
     }
+    cleaner.merge_points(m_merge_points);
     auto dataset = cleaner.Run(dom, this->GetFieldSelection());
     this->m_output->AddDomain(dataset, domain_id);
   }
@@ -67,4 +68,9 @@ CleanGrid::Tolerance(const viskores::Float64 tolerance)
   m_tolerance = tolerance;
 }
 
+void
+CleanGrid::MergePoints(bool merge)
+{
+  m_merge_points = merge;
+}
 } // namespace vtkh

@@ -335,6 +335,7 @@ Threshold::DoExecute()
   }
 
   CleanGrid cleaner;
+  cleaner.MergePoints(false);
   cleaner.SetInput(&temp_data);
   cleaner.Update();
   this->m_output = cleaner.GetOutput();

@@ -23,5 +23,5 @@ a[1] = 1
 for i in range(2,10):
    a[i] = a[i-2] + a[i-1]
 
-n["fib"].set(a);
-print(n.to_yaml());
+n["fib"].set(a)
+print(n.to_yaml())

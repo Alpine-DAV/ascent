@@ -64,7 +64,7 @@ for step in range(nsteps):
     a.publish(mesh)
     
     # update image name
-    scenes["s1/image_name"] = "out_gyre_%04d" % step;
+    scenes["s1/image_name"] = "out_gyre_%04d" % step
     
     # execute the actions
     a.execute(actions)
@@ -89,7 +89,7 @@ print(info["expressions/cycle"].to_yaml())
 # view the results of the cycle query
 print(info["expressions/entropy_of_gyre"].to_yaml())
 
-# create an array with the entropy values from all 
+# create an array with the entropy values from all
 # cycles
 entropy = np.zeros(nsteps)
 # get the node that has the time history

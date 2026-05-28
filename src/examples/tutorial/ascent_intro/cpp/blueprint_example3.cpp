@@ -31,7 +31,7 @@ const float64 PI_VALUE = 3.14159265359;
 // and modify one of its fields to create a time-varying
 // example
 
-// Define a function that will calcualte a time varying field
+// Define a function that will calculate a time varying field
 void braid_time_varying(int npts_x,
                         int npts_y,
                         int npts_z,

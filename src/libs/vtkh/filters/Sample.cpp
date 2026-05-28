@@ -19,6 +19,8 @@
 #include <viskores/worklet/WorkletMapField.h>
 #include <viskores/worklet/DispatcherMapField.h>
 
+#include <cmath>
+
 /*
 reminder:
 using Scalar_i32_hnd = viskores::cont::ArrayHandle<viskores::Int32>;
@@ -1146,6 +1148,90 @@ Sample::Box(int *num_points,
 #endif
         idx++;
       }
+    }
+  }
+}
+
+//---------------------------------------------------------------------------//
+void
+Sample::Plane(const Vec3_f64 point,
+              const Vec3_f64 normal,
+              const Vec2_f64 dims,
+              const Vec2_f64 spacing,
+              const int axes[2])
+{
+  m_is_points = true;
+
+  const int dim_1 = dims[0] > 0 ? static_cast<int>(dims[0]) : 1;
+  const int dim_2 = dims[1] > 0 ? static_cast<int>(dims[1]) : 1;
+  m_num_samples = dim_1 * dim_2;
+
+  Vec3_f64 n = normal;
+  const viskores::Float64 n_mag =
+    std::sqrt(n[0] * n[0] + n[1] * n[1] + n[2] * n[2]);
+  if(n_mag == 0.0)
+  {
+    throw Error("Sample::Plane normal must not be the zero vector");
+  }
+  n[0] /= n_mag;
+  n[1] /= n_mag;
+  n[2] /= n_mag;
+
+  Vec3_f64 dirs[2];
+  for(int i = 0; i < 2; ++i)
+  {
+    Vec3_f64 axis_dir = {0.0, 0.0, 0.0};
+    axis_dir[axes[i]] = 1.0;
+
+    const viskores::Float64 projection =
+      axis_dir[0] * n[0] + axis_dir[1] * n[1] + axis_dir[2] * n[2];
+    Vec3_f64 dir = {
+      axis_dir[0] - projection * n[0],
+      axis_dir[1] - projection * n[1],
+      axis_dir[2] - projection * n[2]
+    };
+
+    const viskores::Float64 dir_mag =
+      std::sqrt(dir[0] * dir[0] + dir[1] * dir[1] + dir[2] * dir[2]);
+    if(dir_mag == 0.0)
+    {
+      throw Error("Sample::Plane axis direction is parallel to the plane normal");
+    }
+
+    dirs[i][0] = dir[0] / dir_mag;
+    dirs[i][1] = dir[1] / dir_mag;
+    dirs[i][2] = dir[2] / dir_mag;
+  }
+
+  m_points_xs.Allocate(m_num_samples);
+  m_points_ys.Allocate(m_num_samples);
+  m_points_zs.Allocate(m_num_samples);
+
+  auto x_portal = m_points_xs.WritePortal();
+  auto y_portal = m_points_ys.WritePortal();
+  auto z_portal = m_points_zs.WritePortal();
+
+  const viskores::Float64 center_1 = 0.5 * static_cast<viskores::Float64>(dim_1 - 1);
+  const viskores::Float64 center_2 = 0.5 * static_cast<viskores::Float64>(dim_2 - 1);
+
+  int idx = 0;
+  for(int i = 0; i < dim_1; ++i)
+  {
+    const viskores::Float64 i_offset =
+      (static_cast<viskores::Float64>(i) - center_1) * spacing[0];
+    for(int j = 0; j < dim_2; ++j)
+    {
+      const viskores::Float64 j_offset =
+        (static_cast<viskores::Float64>(j) - center_2) * spacing[1];
+      const Vec3_f64 p = {
+        point[0] + i_offset * dirs[0][0] + j_offset * dirs[1][0],
+        point[1] + i_offset * dirs[0][1] + j_offset * dirs[1][1],
+        point[2] + i_offset * dirs[0][2] + j_offset * dirs[1][2]
+      };
+      x_portal.Set(idx, p[0]);
+      y_portal.Set(idx, p[1]);
+      z_portal.Set(idx, p[2]);
+      ++idx;
     }
   }
 }

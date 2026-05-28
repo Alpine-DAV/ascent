@@ -844,11 +844,11 @@ bool validate_one_of(const conduit::Node &schema,
         << " schema options to match, but ";
     if(matches == 0)
     {
-        msg << "none matched";
+        msg << "input did not match any supported schema";
     }
     else
     {
-        msg << matches << " matched";
+        msg << "input matched " << matches << " options (ambiguous)";
     }
 
     add_input_error(info, path, "one of", msg.str());

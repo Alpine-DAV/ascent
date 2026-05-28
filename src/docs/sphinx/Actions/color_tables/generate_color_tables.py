@@ -27,7 +27,7 @@ for c in viskores_png_files:
     # docutils can't handle names with spaces
     if c.count(' ') != 0:
       nospace = "".join(c.split())
-      copyfile("./viskores/"+c, "./viskores/nospace/"+nospace);
+      copyfile("./viskores/"+c, "./viskores/nospace/"+nospace)
       filename = 'nospace/'+nospace
 #    print(ctable_name)
     examples += ctable_name
@@ -59,7 +59,7 @@ for c in dray_png_files:
     # docutils can't handle names with spaces
     if c.count(' ') != 0:
       nospace = "".join(c.split())
-      copyfile("./devil_ray/"+c, "./devil_ray/"+nospace);
+      copyfile("./devil_ray/"+c, "./devil_ray/"+nospace)
       filename = nospace
 #    print(ctable_name)
     examples += ctable_name

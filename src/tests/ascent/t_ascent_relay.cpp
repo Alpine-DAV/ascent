@@ -172,6 +172,69 @@ TEST(ascent_relay, test_relay_hdf5_2)
 
 }
 
+//-----------------------------------------------------------------------------
+TEST(ascent_relay, test_relay_extract_out_to_default_dir)
+{
+    Node n;
+    ascent::about(n);
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing relay extracting to a default output directory");
+
+
+    string output_path = prepare_output_dir();
+    string output_file = "tout_relay_output_to_default_dir";
+    string output_root = conduit::utils::join_file_path(output_path, output_file) + ".cycle_000100.root";
+
+    remove_test_file(output_root);
+
+    conduit::Node extracts;
+    extracts["e1/type"]  = "relay";
+
+    extracts["e1/params/path"] = output_file;
+    extracts["e1/params/protocol"] = "hdf5";
+
+    conduit::Node actions;
+    // add the extracts
+    conduit::Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    add_extracts["extracts"] = extracts;
+
+    conduit::Node &execute  = actions.append();
+    execute["action"] = "execute";
+
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    conduit::Node ascent_opts;
+    ascent_opts["default_dir"] = output_path;
+    // we use the mpi handle provided by the fortran interface
+    // since it is simply an integer
+    ascent_opts["runtime"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // make sure the expected root file exists
+    EXPECT_TRUE(conduit::utils::is_file(output_root));
+
+}
 
 //-----------------------------------------------------------------------------
 TEST(ascent_relay, test_relay_hdf5_opts)

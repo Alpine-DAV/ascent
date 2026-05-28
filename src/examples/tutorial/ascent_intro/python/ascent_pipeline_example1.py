@@ -23,7 +23,7 @@ a = ascent.Ascent()
 a.open()
 
 # publish our mesh to ascent
-a.publish(mesh);
+a.publish(mesh)
 
 # setup actions
 actions = conduit.Node()
