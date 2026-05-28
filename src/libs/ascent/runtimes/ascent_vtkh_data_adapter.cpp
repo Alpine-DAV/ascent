@@ -531,24 +531,13 @@ void ExtractVector(viskores::cont::DataSet *dset,
 
     viskores::cont::ArrayHandle<T> x_handle;
     viskores::cont::ArrayHandle<T> y_handle;
+    detail::CopyArray(x_handle, x_ptr, num_vals, zero_copy);
+    detail::CopyArray(y_handle, y_ptr, num_vals, zero_copy);
 
-    // always zero copy because we are about to make a copy
-    detail::CopyArray(x_handle, x_ptr, num_vals, true);
-    detail::CopyArray(y_handle, y_ptr, num_vals, true);
+    auto composite = make_ArrayHandleSOA(x_handle,
+                                         y_handle);
 
-
-    auto composite  = make_ArrayHandleSOA(x_handle,
-                                          y_handle);
-
-    viskores::cont::ArrayHandle<viskores::Vec<T,2>> interleaved_handle;
-    interleaved_handle.Allocate(num_vals);
-    // Calling this without forcing serial could cause serious problems
-    {
-      viskores::cont::ScopedRuntimeDeviceTracker tracker(viskores::cont::DeviceAdapterTagSerial{});
-      viskores::cont::ArrayCopy(composite, interleaved_handle);
-    }
-
-    viskores::cont::Field field(field_name, viskores_assoc, interleaved_handle);
+    viskores::cont::Field field(field_name, viskores_assoc, composite);
     dset->AddField(field);
   }
 
@@ -561,25 +550,15 @@ void ExtractVector(viskores::cont::DataSet *dset,
     viskores::cont::ArrayHandle<T> x_handle;
     viskores::cont::ArrayHandle<T> y_handle;
     viskores::cont::ArrayHandle<T> z_handle;
+    detail::CopyArray(x_handle, x_ptr, num_vals, zero_copy);
+    detail::CopyArray(y_handle, y_ptr, num_vals, zero_copy);
+    detail::CopyArray(z_handle, z_ptr, num_vals, zero_copy);
 
-    // always zero copy because we are about to make a copy
-    detail::CopyArray(x_handle, x_ptr, num_vals, true);
-    detail::CopyArray(y_handle, y_ptr, num_vals, true);
-    detail::CopyArray(z_handle, z_ptr, num_vals, true);
+    auto composite = make_ArrayHandleSOA(x_handle,
+                                         y_handle,
+                                         z_handle);
 
-    auto composite  = make_ArrayHandleSOA(x_handle,
-                                          y_handle,
-                                          z_handle);
-
-    viskores::cont::ArrayHandle<viskores::Vec<T,3>> interleaved_handle;
-    interleaved_handle.Allocate(num_vals);
-    // Calling this without forcing serial could cause serious problems
-    {
-      viskores::cont::ScopedRuntimeDeviceTracker tracker(viskores::cont::DeviceAdapterTagSerial{});
-      viskores::cont::ArrayCopy(composite, interleaved_handle);
-    }
-
-    viskores::cont::Field field(field_name, viskores_assoc, interleaved_handle);
+    viskores::cont::Field field(field_name, viskores_assoc, composite);
     dset->AddField(field);
   }
 }
@@ -2811,8 +2790,18 @@ VTKHDataAdapter::AddVectorField(const std::string &field_name,
 
 
     const Node &n_vals = n_field["values"];
-    int num_vals = n_vals.child(0).dtype().number_of_elements();
+    const int num_vals = (assoc_str == "vertex") ? nverts : neles;
     int num_components = n_field["values"].number_of_children();
+
+    if(n_vals.child(0).dtype().number_of_elements() < num_vals)
+    {
+      ASCENT_INFO("Field '"<<field_name<<"' (topology: '" << topo_name <<
+                  "') number of values "<<n_vals.child(0).dtype().number_of_elements()<<
+                  " does not match the number of "
+                  <<(assoc_str == "vertex" ? "points " : "elements ")
+                  <<num_vals<<". Skipping");
+      return;
+    }
 
     const conduit::Node &u = n_field["values"].child(0);
     bool interleaved = conduit::blueprint::mcarray::is_interleaved(n_vals);

@@ -190,14 +190,12 @@ file was created that contains the CMake variables need for an Ascent build:
 
 
 I Want To Develop Viskores and VTK-h Pipelines
----------------------------------------------
+-----------------------------------------------
 If you want to add new features to VTK-h, its source is developed inside
 the Ascent repo in the `src/libs/vtkh` directory.
 
 If your changes also require new features in Viskores, you will need to build
 and install your own version of Viskores. 
-Follow the examples in :ref:`building_manually` to create a Viskores build.
-
 
 Once built and installed, update the CMake configure file with the locations
 of the installs in the CMake variables ``VISKORES_DIR``.

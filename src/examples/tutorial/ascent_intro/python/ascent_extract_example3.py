@@ -23,11 +23,11 @@ a = ascent.Ascent()
 a.open()
 
 # publish our mesh to ascent
-a.publish(mesh);
+a.publish(mesh)
 
 # setup actions
 actions = conduit.Node()
-add_act = actions.append();
+add_act = actions.append()
 add_act["action"] = "add_pipelines"
 pipelines = add_act["pipelines"]
 
@@ -57,6 +57,6 @@ extracts["e1/params/protocol"] = "blueprint/mesh/hdf5"
 print(actions.to_yaml())
 
 # execute the actions
-a.execute(actions);
+a.execute(actions)
 
 a.close()

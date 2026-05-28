@@ -33,8 +33,8 @@ a2[1] = 1
 for i in range(2,10):
    a2[i] = a2[i-2] + a2[i-1]
 
-n["fib_deep_copy"].set(a1);
-n["fib_shallow_copy"].set_external(a2);
+n["fib_deep_copy"].set(a1)
+n["fib_shallow_copy"].set_external(a2)
 
 a1[-1] = -1
 a2[-1] = -1
