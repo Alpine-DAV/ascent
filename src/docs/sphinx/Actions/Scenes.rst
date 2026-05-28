@@ -510,10 +510,10 @@ A user can specify the number of camera samples (``auto_camera/samples``) to con
 The user also specifies the field data (``auto_camera/field``) the VQ metric will operate on, as well as the VQ metric (``auto_camera/metric``). 
 The current VQ metrics and respective keywords are:
   
-  Data Entropy : ``data_entropy``
-  Depth Entropy : ``depth_entropy``
-  Shading Entropy : ``shading_entropy``
-  DDS Entropy : ``dds_entropy``
+- Data Entropy : ``data_entropy``
+- Depth Entropy : ``depth_entropy``
+- Shading Entropy : ``shading_entropy``
+- DDS Entropy : ``dds_entropy``
 
 There are also several optional parameters a user can specify, such as the number of bins (``auto_camera/bins=256``) to be used in the entropy calculations, as well as height (``auto_camera/height=1024``) and width (``auto_camera/width=1024``).
 
