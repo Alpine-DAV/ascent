@@ -242,7 +242,7 @@ Supported Keywords
 
   .. code-block:: text
 
-    Validation failed at '<root>' (all of): expected all of the 2 schema optioons to mathc, but only one matched
+    Validation failed at '<root>' (all of): expected all of the 2 schema options to match, but only one matched
         Option 0 hint: Validation failed at '<root>' (enum): 'furthest' is not one of the allowed enum entries. Expected one of {nearest, linear}.
 
   .. raw:: html
