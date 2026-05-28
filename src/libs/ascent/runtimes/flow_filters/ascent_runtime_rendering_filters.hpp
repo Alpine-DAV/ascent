@@ -52,8 +52,6 @@ public:
     virtual ~CreateRenders();
 
     virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
     virtual void   execute();
 };
 
@@ -87,8 +85,6 @@ public:
     virtual ~CreatePlot();
 
     virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
     virtual void   execute();
 
 };

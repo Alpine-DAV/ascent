@@ -78,57 +78,18 @@ Command::declare_interface(Node &i)
     i["type_name"] = "command";
     i["port_names"].append() = "in";
     i["output_port"] = "false";
-}
 
-//-----------------------------------------------------------------------------
-bool
-Command::verify_params(const conduit::Node &params,
-                       conduit::Node &info)
-{
-    info.reset();
+    // ----------- Define Param Schema -----------
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
+    param_schema["constraints/exclusiveChildren"].append() = "callback";
+    param_schema["constraints/exclusiveChildren"].append() = "shell_command";
+    param_schema["constraints/allowNoneInExclusiveGroup"] = false;
 
-    bool has_callback = params.has_path("callback");
-    bool has_shell_command = params.has_path("shell_command");
-
-    bool res = false;
-    if (!has_callback && !has_shell_command)
-    {
-        info["errors"].append() = "There was no callback or shell command defined";
-    }
-    else if (has_callback && has_shell_command)
-    {
-        info["errors"].append() = "Both a callback and shell command are "
-                                  "present. Choose one or the other.";
-    }
-    else if(has_callback && !params["callback"].dtype().is_string())
-    {
-        info["errors"].append() = "Callbacks must be a string";  
-    }
-    else if(has_shell_command && !params["shell_command"].dtype().is_string())
-    {
-        info["errors"].append() = "Shell commands must be a string";  
-    }
-    else
-    {
-        res = true;
-    }
-
-    std::vector<std::string> valid_paths;
-    valid_paths.push_back("callback");
-    valid_paths.push_back("shell_command");
-    valid_paths.push_back("mpi_behavior");
-
-    std::vector<std::string> ignore_paths;
-
-    std::string surprises = surprise_check(valid_paths, ignore_paths, params);
-
-    if (surprises != "")
-    {
-        res = false;
-        info["errors"].append() = surprises;
-    }
-
-    return res;
+    string_schema(param_schema["properties/callback"]);
+    string_schema(param_schema["properties/shell_command"]);
+    string_schema(param_schema["properties/mpi_behavior"]);
 }
 
 //-----------------------------------------------------------------------------

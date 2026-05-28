@@ -235,18 +235,6 @@ Learn::declare_interface(Node &i)
     i["output_port"] = "false";
 }
 
-
-//-----------------------------------------------------------------------------
-bool
-Learn::verify_params(const conduit::Node &params,
-                     conduit::Node &info)
-{
-    info.reset();
-    // TODO: Anything goes right now :-)
-    bool res = true;
-    return res;
-}
-
 //-----------------------------------------------------------------------------
 void
 Learn::execute()

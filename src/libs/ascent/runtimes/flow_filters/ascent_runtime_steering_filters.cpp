@@ -73,25 +73,12 @@ Steering::declare_interface(Node &i)
     i["type_name"] = "steering";
     i["port_names"].append() = "in";
     i["output_port"] = "false";
-}
 
-//-----------------------------------------------------------------------------
-bool
-Steering::verify_params(const conduit::Node &params,
-                        conduit::Node &info)
-{
-    bool res = true;
-    // This optional parameter exists for automated testing purposes
-    if(params.has_child("explicit_command"))
-    {
-        if(!params["explicit_command"].dtype().is_string())
-        {
-            info["errors"].append() = "optional entry 'explicit_command' must"
-                                      " be a string";
-            res = false;
-        }
-    }
-    return res;
+    // ----------- Define Param Schema -----------
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+
+    string_schema(param_schema["properties/explicit_command"]);
 }
 
 //-----------------------------------------------------------------------------

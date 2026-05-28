@@ -37,8 +37,6 @@ public:
     virtual ~BFlowPmt() {}
 
     virtual void   declare_interface(conduit::Node &i) override;
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info) override;
     virtual void   execute() override;
 };
 
@@ -53,8 +51,6 @@ public:
     virtual ~BFlowCompose() {}
 
     virtual void   declare_interface(conduit::Node &i) override;
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info) override;
     virtual void   execute() override;
 };
 
@@ -67,8 +63,6 @@ public:
     virtual ~BFlowIso() {}
 
     virtual void   declare_interface(conduit::Node &i) override;
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info) override;
     virtual void   execute() override;
 };
 

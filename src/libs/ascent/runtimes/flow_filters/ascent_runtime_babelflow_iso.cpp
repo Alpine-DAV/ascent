@@ -530,25 +530,21 @@ void ascent::runtime::filters::BFlowIso::declare_interface(conduit::Node &i)
   i["type_name"] = "bflow_iso";
   i["port_names"].append() = "in";
   i["output_port"] = "false";  // true -- means filter, false -- means extract
-}
 
-//-----------------------------------------------------------------------------
+  // ----------- Define Param Schema -----------
+  conduit::Node &param_schema = i["param_schema"];
+  param_schema["type"] = "object";
 
-bool ascent::runtime::filters::BFlowIso::verify_params(const conduit::Node &params, conduit::Node &info) 
-{
-  info.reset();
+  string_schema(param_schema["properties/field"]);
+  number_schema(param_schema["properties/iso_values"]);
+  string_schema(param_schema["properties/image_name"]);
+  number_schema(param_schema["properties/radices"]);
+  number_schema(param_schema["properties/width"]);
+  number_schema(param_schema["properties/height"]);
 
-  bool res = true;
-
-  res &= check_string("field", params, info, true);
-  res &= check_numeric("iso_values", params, info, true);
-  res &= check_string("image_name", params, info, true);
-  res &= check_numeric("radices", params, info, false);
-  res &= check_numeric("width", params, info, false);
-  res &= check_numeric("height", params, info, false);
-  // res &= check_string("col_field", params, info, true);
-  
-  return res;
+  param_schema["required"].append() = "field";
+  param_schema["required"].append() = "iso_values";
+  param_schema["required"].append() = "image_name";
 }
 
 //-----------------------------------------------------------------------------

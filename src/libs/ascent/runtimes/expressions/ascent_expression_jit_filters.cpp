@@ -149,9 +149,7 @@ ExprJitFilter::declare_interface(Node &i)
   filters::string_schema(param_schema["properties/func"]);
   filters::string_schema(param_schema["properties/filter_name"]);
 
-  conduit::Node &inputs_schema = filters::array_schema(param_schema["properties/inputs"]);
-  inputs_schema["minItems"] = num_inputs;
-  inputs_schema["maxItems"] = num_inputs;
+  conduit::Node &inputs_schema = filters::array_schema(param_schema["properties/inputs"], conduit::Node(), num_inputs, num_inputs);
 
   param_schema["required"].append() = "func";
   param_schema["required"].append() = "filter_name";
