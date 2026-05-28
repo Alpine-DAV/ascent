@@ -415,7 +415,7 @@ Both formats provide control over how scenes are rendered, but they differ in te
 - ``2d`` or ``windowCoords``: Enables 2D rendering mode. Expects a 4-element array defining the 2D view bounds [x0 (left), x1 (right), y0 (bottom), y1 (top)].
 
 Ascent Native (Viskores Style) Camera
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 The native Ascent camera follows the Viskores camera model which focuses on defining the camera's physical parameters and orientation in 3D space.
 This camera-centric approach specifies where the camera is located, what it is looking at, and how it is oriented.
 The following parameters are supported:
@@ -509,6 +509,7 @@ Given the number of cameras, the camera placements are determined using Fibonacc
 A user can specify the number of camera samples (``auto_camera/samples``) to consider when determining the best camera placement. 
 The user also specifies the field data (``auto_camera/field``) the VQ metric will operate on, as well as the VQ metric (``auto_camera/metric``). 
 The current VQ metrics and respective keywords are:
+  
   Data Entropy : ``data_entropy``
   Depth Entropy : ``depth_entropy``
   Shading Entropy : ``shading_entropy``
@@ -525,6 +526,7 @@ The code below creates a pipeline that first applies a contour filter and then a
 
 
 .. code-block:: c++
+
     conduit::Node pipelines;
     // pipeline 1
     pipelines["pl1/f1/type"] = "isovolume";

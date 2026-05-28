@@ -138,6 +138,7 @@ Ascent Documentation
    developer_docs/BuildEnvironment
    developer_docs/VTKh_Filter
    developer_docs/Flow_Filter
+   developer_docs/Parameter_Schemas
    developer_docs/CI
 
 .. toctree::
