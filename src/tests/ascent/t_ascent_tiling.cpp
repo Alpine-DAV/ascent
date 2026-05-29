@@ -91,6 +91,17 @@ TEST(ascent_tiling, test_tiling)
     string output_path = prepare_output_dir();
     string output_file = conduit::utils::join_file_path(output_path,"tout_tiled_rendering");
 
+    // remove the old test images and outputs before testing
+    std::vector<std::string> contents;
+    conduit::utils::list_directory_contents(output_path, contents);
+    for (string& elm : contents)
+    {
+        if (elm.compare(0, output_file.length(), output_file) == 0)
+        {
+            remove_test_file(elm);
+        }
+    }
+
     //
     // Create the actions.
     //
@@ -154,10 +165,7 @@ TEST(ascent_tiling, test_tiling)
     scenes["s1/renders/r1/tiled_rendering_type"] = "square_tiles";
     for (int i = 0; i < image_widths.size(); ++i)
     {
-        // remove the old image before rendering
-        remove_test_image(output_file, i);
-
-	// render the image
+	    // render the image
         scenes["s1/renders/r1/image_width"] = image_widths[i];
         scenes["s1/renders/r1/image_height"] = image_heights[i];
         scenes["s1/renders/r1/tile_width"] = tile_widths[i];
@@ -182,10 +190,7 @@ TEST(ascent_tiling, test_tiling)
     scenes["s1/renders/r1/tiled_rendering_type"] = "rectangular_tiles";
     for (int i = 0; i < image_widths2.size(); ++i)
     {
-        // remove the old image before rendering
-        remove_test_image(output_file, i);
-
-	// render the image
+	    // render the image
         scenes["s1/renders/r1/image_width"] = image_widths2[i];
         scenes["s1/renders/r1/image_height"] = image_heights2[i];
         scenes["s1/renders/r1/tile_width"] = tile_widths2[i];
@@ -210,10 +215,7 @@ TEST(ascent_tiling, test_tiling)
     scenes["s1/renders/r1/tiled_rendering_type"] = "horizontal_strips";
     for (int i = 0; i < image_widths3.size(); ++i)
     {
-        // remove the old image before rendering
-        remove_test_image(output_file, i);
-
-	// render the image
+	    // render the image
         scenes["s1/renders/r1/image_width"] = image_widths3[i];
         scenes["s1/renders/r1/image_height"] = image_heights3[i];
         scenes["s1/renders/r1/tile_height"] = tile_heights3[i];
@@ -237,10 +239,7 @@ TEST(ascent_tiling, test_tiling)
     scenes["s1/renders/r1/tiled_rendering_type"] = "vertical_strips";
     for (int i = 0; i < image_widths4.size(); ++i)
     {
-        // remove the old image before rendering
-        remove_test_image(output_file, i);
-
-	// render the image
+	    // render the image
         scenes["s1/renders/r1/image_width"] = image_widths4[i];
         scenes["s1/renders/r1/image_height"] = image_heights4[i];
         scenes["s1/renders/r1/tile_width"] = tile_widths4[i];
@@ -265,10 +264,7 @@ TEST(ascent_tiling, test_tiling)
     scenes["s1/renders/r1/tiled_rendering_type"] = "optimized_tiles";
     for (int i = 0; i < image_widths5.size(); ++i)
     {
-        // remove the old image before rendering
-        remove_test_image(output_file, i);
-
-	// render the image
+	    // render the image
         scenes["s1/renders/r1/image_width"] = image_widths5[i];
         scenes["s1/renders/r1/image_height"] = image_heights5[i];
         scenes["s1/renders/r1/tile_width"] = tile_widths5[i];
