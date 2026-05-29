@@ -45,33 +45,50 @@ bool ASCENT_API is_valid_expression(const std::string &expr, std::string &err_ms
 
 void ASCENT_API ascent_register_flow_schema_hooks();
 
-conduit::Node ASCENT_API &string_schema(conduit::Node &schema_node);
+conduit::Node ASCENT_API &string_schema(conduit::Node &schema_node,
+                                        const std::size_t minLength = 0,
+                                        const std::size_t maxLength = std::numeric_limits<std::size_t>::max());
+
+conduit::Node ASCENT_API &string_enum_schema(conduit::Node &schema_node, const std::vector<std::string> &options);
+
+conduit::Node ASCENT_API &bool_schema(conduit::Node &schema_node);
 
 conduit::Node ASCENT_API &number_schema(conduit::Node &schema_node,
-                                        bool supports_expressions = false);
+                                        const bool supports_expressions = false,
+                                        const int minimum = std::numeric_limits<int>::lowest(),
+                                        const int maximum = std::numeric_limits<int>::max(),
+                                        const int exclusiveMinimum = std::numeric_limits<int>::lowest(),
+                                        const int exclusiveMaximum = std::numeric_limits<int>::max());
+
+conduit::Node ASCENT_API &integer_schema(conduit::Node &schema_node,
+                                         const bool supports_expressions = false,
+                                         const int minimum = std::numeric_limits<int>::lowest(),
+                                         const int maximum = std::numeric_limits<int>::max(),
+                                         const int exclusiveMinimum = std::numeric_limits<int>::lowest(),
+                                         const int exclusiveMaximum = std::numeric_limits<int>::max());
 
 conduit::Node ASCENT_API &vec3_schema(conduit::Node &schema_node,
-                                      bool supports_expressions = false);
+                                      const bool supports_expressions = false);
 
 conduit::Node ASCENT_API &vec3_schema(conduit::Node &schema_node,
                                       const std::string var1,
                                       const std::string var2,
                                       const std::string var3,
-                                      bool supports_expressions = false);
+                                      const bool supports_expressions = false);
 
 conduit::Node ASCENT_API &vec3_schema_anyOf(conduit::Node &schema_node,
-                                            bool supports_expressions = false);
+                                            const bool supports_expressions = false);
 
 conduit::Node ASCENT_API &vec3_schema_anyOf(conduit::Node &schema_node,
                                             const std::string var1,
                                             const std::string var2,
                                             const std::string var3,
-                                            bool supports_expressions = false);
-
-conduit::Node ASCENT_API &array_schema(conduit::Node &schema_node);
+                                            const bool supports_expressions = false);
 
 conduit::Node ASCENT_API &array_schema(conduit::Node &schema_node,
-                                       const conduit::Node &item_schema);
+                                       const conduit::Node &item_schema = conduit::Node(),
+                                       const std::size_t minItems = 0,
+                                       const std::size_t maxItems = std::numeric_limits<std::size_t>::max());
 
 conduit::Node ASCENT_API &ignore_schema(conduit::Node &schema_node);
 

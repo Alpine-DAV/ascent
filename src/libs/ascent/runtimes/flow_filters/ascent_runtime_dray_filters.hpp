@@ -50,8 +50,6 @@ public:
     virtual ~DRayPseudocolor();
 
     virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
     virtual void   execute();
 };
 
@@ -63,8 +61,6 @@ public:
     virtual ~DRay3Slice();
 
     virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
     virtual void   execute();
 };
 
@@ -76,8 +72,6 @@ public:
     virtual ~DRayVolume();
 
     virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
     virtual void   execute();
 };
 
@@ -88,8 +82,6 @@ public:
     DRayProject2d();
     virtual ~DRayProject2d();
     virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
     virtual void   execute();
 };
 
@@ -100,8 +92,6 @@ public:
     DRayProjectColors2d();
     virtual ~DRayProjectColors2d();
     virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
     virtual void   execute();
 };
 
@@ -113,8 +103,6 @@ public:
     virtual ~DRayReflect();
 
     virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
     virtual void   execute();
 };
 
@@ -126,8 +114,6 @@ public:
     virtual ~DRayVectorComponent();
 
     virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
     virtual void   execute();
 };
 

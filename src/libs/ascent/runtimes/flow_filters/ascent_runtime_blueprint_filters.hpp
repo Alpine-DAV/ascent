@@ -51,8 +51,6 @@ public:
    ~BlueprintVerify();
 
     virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
     virtual void   execute();
 };
 
@@ -66,8 +64,6 @@ public:
    ~ConduitExtract();
 
     virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
     virtual void   execute();
 };
 
@@ -80,8 +76,6 @@ public:
    ~BlueprintPartition();
 
     virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
     virtual void   execute();
 };
 
@@ -93,8 +87,6 @@ public:
    ~DataBinning();
 
     virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
     virtual void   execute();
 };
 
@@ -106,8 +98,6 @@ public:
    ~AddFields();
 
     virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
     virtual void   execute();
 };
 
@@ -119,8 +109,6 @@ public:
    ~PowerOfField();
 
     virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
     virtual void   execute();
 };
 

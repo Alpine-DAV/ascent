@@ -87,192 +87,46 @@ namespace filters
 //-----------------------------------------------------------------------------
 namespace detail
 {
-std::string
-check_color_table_surprises(const conduit::Node &color_table)
-{
-  std::string surprises;
 
-  std::vector<std::string> valid_paths;
-  valid_paths.push_back("name");
-  valid_paths.push_back("reverse");
-  valid_paths.push_back("annotation");
-  valid_paths.push_back("discrete");
+void color_table_schema(conduit::Node &param_schema) {
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
-  std::vector<std::string> ignore_paths;
-  ignore_paths.push_back("control_points");
+    string_schema(param_schema["properties/name"]);
+    bool_schema(param_schema["properties/reverse"]);
+    string_schema(param_schema["properties/annotation"]);
+    string_schema(param_schema["properties/discrete"]);
 
-  surprises += surprise_check(valid_paths, ignore_paths, color_table);
-  if(color_table.has_path("control_points"))
-  {
-    const Node &control_points_node = color_table.fetch("control_points");
-
-    if (control_points_node.dtype().is_list())
+    // --- Control Points ---
     {
-        // Valid path options for the expanded control points input format
-        std::vector<std::string> c_valid_paths;
-        c_valid_paths.push_back("type");
-        c_valid_paths.push_back("alpha");
-        c_valid_paths.push_back("color");
-        c_valid_paths.push_back("position");
+        conduit::Node &control_points_schema = param_schema["properties/control_points"];
 
-        const int num_points = control_points_node.number_of_children();
-        for(int i = 0; i < num_points; ++i)
-        {
-            const conduit::Node &point = control_points_node.child(i);
-            surprises += surprise_check(c_valid_paths, point);
-        }
+        conduit::Node &cp_compressed_schema = control_points_schema["oneOf"].append();
+        cp_compressed_schema["type"] = "object";
+        cp_compressed_schema["additionalProperties"] = false;
+        ignore_schema(cp_compressed_schema["properties/r"]);
+        ignore_schema(cp_compressed_schema["properties/g"]);
+        ignore_schema(cp_compressed_schema["properties/b"]);
+        ignore_schema(cp_compressed_schema["properties/a"]);
+        ignore_schema(cp_compressed_schema["properties/position"]);
+        cp_compressed_schema["constraints/forbid"].append() = "type";
+        cp_compressed_schema["constraints/forbid"].append() = "alpha";
+        cp_compressed_schema["constraints/forbid"].append() = "color";
+
+        conduit::Node cp_list_item_schema;
+        cp_list_item_schema["type"] = "object";
+        cp_list_item_schema["additionalProperties"] = false;
+        ignore_schema(cp_list_item_schema["properties/type"]);
+        ignore_schema(cp_list_item_schema["properties/alpha"]);
+        ignore_schema(cp_list_item_schema["properties/color"]);
+        ignore_schema(cp_list_item_schema["properties/position"]);
+        cp_list_item_schema["constraints/forbid"].append() = "r";
+        cp_list_item_schema["constraints/forbid"].append() = "g";
+        cp_list_item_schema["constraints/forbid"].append() = "b";
+        cp_list_item_schema["constraints/forbid"].append() = "a";
+
+        array_schema(control_points_schema["oneOf"].append(), cp_list_item_schema);
     }
-    else if (control_points_node.dtype().is_object())
-    {
-        // Valid path options for the compressed control points input format
-        std::vector<std::string> c_valid_paths;
-        c_valid_paths.push_back("r");
-        c_valid_paths.push_back("g");
-        c_valid_paths.push_back("b");
-        c_valid_paths.push_back("a");
-        c_valid_paths.push_back("position");
-
-
-        surprises += surprise_check(c_valid_paths, control_points_node);
-    }
-  }
-
-  return surprises;
-}
-
-std::string
-check_renders_surprises(const conduit::Node &renders_node)
-{
-  std::string surprises;
-  const int num_renders = renders_node.number_of_children();
-  // render paths
-  std::vector<std::string> r_valid_paths;
-  r_valid_paths.push_back("camera/2d");
-  r_valid_paths.push_back("image_name");
-  r_valid_paths.push_back("image_prefix");
-  r_valid_paths.push_back("image_width");
-  r_valid_paths.push_back("image_height");
-  r_valid_paths.push_back("scene_bounds");
-  r_valid_paths.push_back("type");
-  r_valid_paths.push_back("phi");
-  r_valid_paths.push_back("phi_range");
-  r_valid_paths.push_back("dphi");
-  r_valid_paths.push_back("phi_num_angles");
-  r_valid_paths.push_back("phi_angles");
-  r_valid_paths.push_back("theta");
-  r_valid_paths.push_back("theta_range");
-  r_valid_paths.push_back("dtheta");
-  r_valid_paths.push_back("theta_num_angles");
-  r_valid_paths.push_back("theta_angles");
-  r_valid_paths.push_back("phi_theta_positions");
-  r_valid_paths.push_back("db_name");
-  r_valid_paths.push_back("output_path");
-  r_valid_paths.push_back("render_bg");
-  r_valid_paths.push_back("annotations");
-  r_valid_paths.push_back("world_annotations");
-  r_valid_paths.push_back("screen_annotations");
-  r_valid_paths.push_back("axis_scale_x");
-  r_valid_paths.push_back("axis_scale_y");
-  r_valid_paths.push_back("axis_scale_z");
-  r_valid_paths.push_back("fg_color");
-  r_valid_paths.push_back("bg_color");
-  r_valid_paths.push_back("shading");
-  r_valid_paths.push_back("use_original_bounds");
-  r_valid_paths.push_back("dataset_bounds");
-  r_valid_paths.push_back("auto_camera/metric");
-  r_valid_paths.push_back("auto_camera/field");
-  r_valid_paths.push_back("auto_camera/samples");
-  r_valid_paths.push_back("auto_camera/bins");
-  r_valid_paths.push_back("auto_camera/height");
-  r_valid_paths.push_back("auto_camera/width");
-  r_valid_paths.push_back("color_bar_position");
-  r_valid_paths.push_back("tiled_rendering");
-  r_valid_paths.push_back("tiled_rendering_type");
-  r_valid_paths.push_back("tile_width");
-  r_valid_paths.push_back("tile_height");
-
-  std::vector<std::string> r_ignore_paths;
-  r_ignore_paths.push_back("phi_theta_positions");
-  r_ignore_paths.push_back("camera");
-
-  // Valid Ascent input camera format
-  std::vector<std::string> c_ascent_valid_paths;
-  c_ascent_valid_paths.push_back("2d");
-  c_ascent_valid_paths.push_back("look_at");
-  c_ascent_valid_paths.push_back("position");
-  c_ascent_valid_paths.push_back("up");
-  c_ascent_valid_paths.push_back("fov");
-  c_ascent_valid_paths.push_back("xpan");
-  c_ascent_valid_paths.push_back("ypan");
-  c_ascent_valid_paths.push_back("zoom");
-  c_ascent_valid_paths.push_back("near_plane");
-  c_ascent_valid_paths.push_back("far_plane");
-  c_ascent_valid_paths.push_back("azimuth");
-  c_ascent_valid_paths.push_back("elevation");
-
-  // Valid Visit input camera format
-  std::vector<std::string> c_visit_valid_paths;
-  c_visit_valid_paths.push_back("windowCoords");
-  c_visit_valid_paths.push_back("view_normal");
-  c_visit_valid_paths.push_back("focus");
-  c_visit_valid_paths.push_back("view_up");
-  c_visit_valid_paths.push_back("view_angle");
-  c_visit_valid_paths.push_back("parallel_scale");
-  c_visit_valid_paths.push_back("near_plane");
-  c_visit_valid_paths.push_back("far_plane");
-  c_visit_valid_paths.push_back("image_pan");
-  c_visit_valid_paths.push_back("image_zoom");
-  c_visit_valid_paths.push_back("perspective");
-  c_visit_valid_paths.push_back("eye_angle");
-  c_visit_valid_paths.push_back("center_of_rotation_set");
-  c_visit_valid_paths.push_back("center_of_rotation");
-  c_visit_valid_paths.push_back("axis_3d_scale_flag");
-  c_visit_valid_paths.push_back("axis_3d_scale");
-  c_visit_valid_paths.push_back("shear");
-  c_visit_valid_paths.push_back("window_valid");
-
-  std::vector<std::string> c_ignore_paths;
-
-  for(int i = 0; i < num_renders; ++i)
-  {
-    const conduit::Node &render_node = renders_node.child(i);
-    surprises += surprise_check(r_valid_paths, r_ignore_paths, render_node);
-
-    if(render_node.has_path("phi_theta_positions"))
-    {
-      const conduit::Node &phi_theta_positions = render_node["phi_theta_positions"];
-      const int num_positions = phi_theta_positions.number_of_children();
-      for(int i = 0; i < num_positions; ++i)
-      {
-        const conduit::Node &position = phi_theta_positions.child(i);
-        std::stringstream ss;
-        ss << "[" << i << "]";
-        if (position.name() != ss.str())
-        {
-          surprises += "Surprise parameter '";
-          surprises += position.name();
-          surprises += "'\n";
-        }
-      }
-    }
-
-    if(render_node.has_path("camera"))
-    {
-        const conduit::Node &camera_node = render_node["camera"];
-        std::string c_ascent_surprises = surprise_check(c_ascent_valid_paths, c_ignore_paths, camera_node);
-        std::string c_visit_surprises = surprise_check(c_visit_valid_paths, c_ignore_paths, camera_node);
-
-        if(!c_ascent_surprises.empty() && !c_visit_surprises.empty())
-        {
-            surprises += "Cameras must follow either an ascent format or a visit format, not both.\n";
-            surprises += "\nAscent camera surpises:\n";
-            surprises += c_ascent_surprises;
-            surprises += "\nVisit camera surprises:\n";
-            surprises += c_visit_surprises;
-        }
-    }
-  }
-  return surprises;
 }
 
 void viskores_bounds_to_conduit_node(const viskores::Bounds &bounds,
@@ -1205,41 +1059,109 @@ CreateRenders::declare_interface(Node &i)
     i["port_names"].append() = "scene";
     i["port_names"].append() = "bounds";
     i["output_port"] = "true";
-}
 
-//-----------------------------------------------------------------------------
-bool
-CreateRenders::verify_params(const conduit::Node &params,
-                             conduit::Node &info)
-{
-    info.reset();
-    bool res = check_string("image_name",params, info, false);
-    res &= check_string("image_prefix",params, info, false);
+    // ----------- Define Param Schema -----------
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
-    std::vector<std::string> valid_paths;
-    valid_paths.push_back("image_prefix");
-    valid_paths.push_back("image_name");
+    string_schema(param_schema["properties/image_name"]);
+    string_schema(param_schema["properties/image_prefix"]);
 
-    std::vector<std::string> ignore_paths;
-    ignore_paths.push_back("renders");
+    // --- render ---
+    conduit::Node render_schema;
+    render_schema["type"] = "object";
+    render_schema["additionalProperties"] = false;
+    string_schema(render_schema["properties/image_name"]);
+    string_schema(render_schema["properties/image_prefix"]);
+    integer_schema(render_schema["properties/image_width"], true, 0, std::numeric_limits<int>::max(), 0);
+    integer_schema(render_schema["properties/image_height"], true, 0, std::numeric_limits<int>::max(), 0);
+    ignore_schema(render_schema["properties/scene_bounds"]);
+    ignore_schema(render_schema["properties/type"]);
+    ignore_schema(render_schema["properties/phi"]);
+    ignore_schema(render_schema["properties/phi_range"]);
+    ignore_schema(render_schema["properties/dphi"]);
+    ignore_schema(render_schema["properties/phi_num_angles"]);
+    ignore_schema(render_schema["properties/phi_angles"]);
+    ignore_schema(render_schema["properties/theta"]);
+    ignore_schema(render_schema["properties/theta_range"]);
+    ignore_schema(render_schema["properties/dtheta"]);
+    ignore_schema(render_schema["properties/theta_num_angles"]);
+    ignore_schema(render_schema["properties/theta_angles"]);
+    ignore_schema(render_schema["properties/phi_theta_positions"]);
+    ignore_schema(render_schema["properties/db_name"]);
+    ignore_schema(render_schema["properties/output_path"]);
+    ignore_schema(render_schema["properties/render_bg"]);
+    ignore_schema(render_schema["properties/annotations"]);
+    ignore_schema(render_schema["properties/world_annotations"]);
+    ignore_schema(render_schema["properties/screen_annotations"]);
+    ignore_schema(render_schema["properties/axis_scale_x"]);
+    ignore_schema(render_schema["properties/axis_scale_y"]);
+    ignore_schema(render_schema["properties/axis_scale_z"]);
+    ignore_schema(render_schema["properties/fg_color"]);
+    ignore_schema(render_schema["properties/bg_color"]);
+    ignore_schema(render_schema["properties/shading"]);
+    ignore_schema(render_schema["properties/use_original_bounds"]);
+    ignore_schema(render_schema["properties/dataset_bounds"]);
+    ignore_schema(render_schema["properties/color_bar_position"]);
+    ignore_schema(render_schema["properties/tiled_rendering"]);
+    ignore_schema(render_schema["properties/tiled_rendering_type"]);
+    ignore_schema(render_schema["properties/tile_width"]);
+    ignore_schema(render_schema["properties/tile_height"]);
 
-    std::string surprises = surprise_check(valid_paths, ignore_paths, params);
+    conduit::Node &auto_camera_schema = render_schema["properties/auto_camera"];
+    auto_camera_schema["type"] = "object";
+    auto_camera_schema["additionalProperties"] = false;
+    ignore_schema(auto_camera_schema["properties/metric"]);
+    ignore_schema(auto_camera_schema["properties/field"]);
+    ignore_schema(auto_camera_schema["properties/samples"]);
+    ignore_schema(auto_camera_schema["properties/bins"]);
+    ignore_schema(auto_camera_schema["properties/height"]);
+    ignore_schema(auto_camera_schema["properties/width"]);
 
+    // --- Camera ---
+    conduit::Node &camera_schema = render_schema["properties/camera"];
+    camera_schema["type"] = "object";
 
-    // parse render surprises
-    if(params.has_path("renders"))
-    {
-      const conduit::Node &renders_node = params["renders"];
-      surprises += detail::check_renders_surprises(renders_node);
-    }
+    conduit::Node &ascent_camera_schema = camera_schema["oneOf"].append();
+    ascent_camera_schema["type"] = "object";
+    ascent_camera_schema["additionalProperties"] = false;
+    ignore_schema(ascent_camera_schema["properties/2d"]);
+    ignore_schema(ascent_camera_schema["properties/look_at"]);
+    ignore_schema(ascent_camera_schema["properties/position"]);
+    ignore_schema(ascent_camera_schema["properties/up"]);
+    ignore_schema(ascent_camera_schema["properties/fov"]);
+    ignore_schema(ascent_camera_schema["properties/xpan"]);
+    ignore_schema(ascent_camera_schema["properties/ypan"]);
+    ignore_schema(ascent_camera_schema["properties/zoom"]);
+    ignore_schema(ascent_camera_schema["properties/near_plane"]);
+    ignore_schema(ascent_camera_schema["properties/far_plane"]);
+    ignore_schema(ascent_camera_schema["properties/azimuth"]);
+    ignore_schema(ascent_camera_schema["properties/elevation"]);
 
-    if(surprises != "")
-    {
-      res = false;
-      info["errors"].append() = surprises;
-    }
+    conduit::Node &visit_camera_schema = camera_schema["oneOf"].append();
+    visit_camera_schema["type"] = "object";
+    visit_camera_schema["additionalProperties"] = false;
+    ignore_schema(visit_camera_schema["properties/windowCoords"]);
+    ignore_schema(visit_camera_schema["properties/view_normal"]);
+    ignore_schema(visit_camera_schema["properties/focus"]);
+    ignore_schema(visit_camera_schema["properties/view_up"]);
+    ignore_schema(visit_camera_schema["properties/view_angle"]);
+    ignore_schema(visit_camera_schema["properties/parallel_scale"]);
+    ignore_schema(visit_camera_schema["properties/near_plane"]);
+    ignore_schema(visit_camera_schema["properties/far_plane"]);
+    ignore_schema(visit_camera_schema["properties/image_pan"]);
+    ignore_schema(visit_camera_schema["properties/image_zoom"]);
+    ignore_schema(visit_camera_schema["properties/perspective"]);
+    ignore_schema(visit_camera_schema["properties/eye_angle"]);
+    ignore_schema(visit_camera_schema["properties/center_of_rotation_set"]);
+    ignore_schema(visit_camera_schema["properties/center_of_rotation"]);
+    ignore_schema(visit_camera_schema["properties/axis_3d_scale_flag"]);
+    ignore_schema(visit_camera_schema["properties/axis_3d_scale"]);
+    ignore_schema(visit_camera_schema["properties/shear"]);
+    ignore_schema(visit_camera_schema["properties/window_valid"]);
 
-    return res;
+    array_schema(param_schema["properties/renders"], render_schema);
 }
 
 //-----------------------------------------------------------------------------
@@ -1828,69 +1750,57 @@ CreatePlot::declare_interface(Node &i)
     i["type_name"] = "create_plot";
     i["port_names"].append() = "a";
     i["output_port"] = "true";
-}
 
+    // ----------- Define Param Schema -----------
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
-//-----------------------------------------------------------------------------
-bool
-CreatePlot::verify_params(const conduit::Node &params,
-                          conduit::Node &info)
-{
-    info.reset();
+    string_schema(param_schema["properties/type"]);
+    ignore_schema(param_schema["properties/pipeline"]);
+    string_schema(param_schema["properties/topology"]);
 
-    bool res = check_string("type",params, info, true);
+    detail::color_table_schema(param_schema["properties/color_table"]);
 
-    bool is_mesh = false;
+    param_schema["required"].append() = "type";
 
-    std::vector<std::string> valid_paths;
-    valid_paths.push_back("type");
-    valid_paths.push_back("pipeline");
-
-    res &= check_string("topology",params, info, false);
-    valid_paths.push_back("topology");
-
-    if(res)
-   {
-      if(params["type"].as_string() == "mesh")
-      {
-        is_mesh = true;
-      }
-    }
-
-    if(!is_mesh)
+    // --- Is Mesh ---
     {
-      res &= check_string("field", params, info, true);
-      valid_paths.push_back("field");
-      valid_paths.push_back("points/radius");
-      valid_paths.push_back("points/radius_delta");
-      valid_paths.push_back("min_value");
-      valid_paths.push_back("max_value");
-      valid_paths.push_back("samples");
+        // properties are still added at the root level and then limited through forbids
+        ignore_schema(param_schema["properties/overlay"]);
+        ignore_schema(param_schema["properties/show_internal"]);
+
+        conduit::Node &mesh_schema = param_schema["oneOf"].append();
+        mesh_schema["type"] = "object";
+        mesh_schema["properties/type/constraints/const"] = "mesh";
+        mesh_schema["constraints/forbid"] = "field";
+        mesh_schema["constraints/forbid"] = "min_value";
+        mesh_schema["constraints/forbid"] = "max_value";
+        mesh_schema["constraints/forbid"] = "samples";
+        mesh_schema["constraints/forbid"] = "points";
     }
-    else
+
+    // --- Is not Mesh ---
     {
-      valid_paths.push_back("overlay");
-      valid_paths.push_back("show_internal");
+        // properties are still added at the root level and then limited through forbids
+        ignore_schema(param_schema["properties/field"]);
+        ignore_schema(param_schema["properties/min_value"]);
+        ignore_schema(param_schema["properties/max_value"]);
+        ignore_schema(param_schema["properties/samples"]);
+        
+        conduit::Node &points_schema = param_schema["properties/points"];
+        points_schema["type"] = "object";
+        points_schema["additionalProperties"] = false;
+        ignore_schema(points_schema["properties/radius"]);
+        ignore_schema(points_schema["properties/radius_delta"]);
+
+        conduit::Node &not_mesh_schema = param_schema["oneOf"].append();
+        not_mesh_schema["type"] = "object";
+        not_mesh_schema["constraints/not_const/type"] = "mesh";
+        not_mesh_schema["constraints/forbid"] = "overlay";
+        not_mesh_schema["constraints/forbid"] = "show_internal";
+        not_mesh_schema["required"].append() = "field";
     }
-
-
-    std::vector<std::string> ignore_paths;
-    ignore_paths.push_back("color_table");
-
-    std::string surprises = surprise_check(valid_paths, ignore_paths, params);
-
-    if(params.has_path("color_table"))
-    {
-      surprises += detail::check_color_table_surprises(params["color_table"]);
-    }
-
-    if(surprises != "")
-    {
-      res = false;
-      info["errors"].append() = surprises;
-    }
-
-    return res;
 }
 
 //-----------------------------------------------------------------------------

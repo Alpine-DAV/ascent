@@ -13,6 +13,7 @@
 #include "ascent_string_utils.hpp"
 #include <ascent.hpp>
 #include <ascent_metadata.hpp>
+#include <ascent_runtime_utils.hpp>
 
 #include <map>
 #include <ctime>
@@ -308,7 +309,7 @@ std::string expand_path_special_variables(const std::string &path_string,
       }
     }
 
-    std::string result_string = path_string;
+    std::string result_string = ascent::runtime::filters::output_dir(path_string);
 
     conduit::Node meta = Metadata::n_metadata;
 
@@ -330,7 +331,7 @@ std::string expand_path_special_variables(const std::string &path_string,
     {
         family_value = meta["family_value_seed"].to_value();
     }
-    family_value = get_family_value(path_string, file_extension, mpi_comm_id, family_value);
+    family_value = get_family_value(result_string, file_extension, mpi_comm_id, family_value);
     result_string = expand_generic_variable(result_string, "family", family_value, "06d");
 
     int cycle = 0;

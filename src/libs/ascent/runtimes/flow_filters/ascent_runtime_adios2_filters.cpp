@@ -24,6 +24,7 @@
 //-----------------------------------------------------------------------------
 #include <ascent_runtime_utils.hpp>
 #include <ascent_string_utils.hpp>
+#include <ascent_runtime_param_check.hpp>
 #include <ascent_logging.hpp>
 #include <ascent_data_object.hpp>
 
@@ -114,43 +115,26 @@ ADIOS2::declare_interface(Node &i)
     i["type_name"]   = "adios2";
     i["port_names"].append() = "in";
     i["output_port"] = "false";
-}
 
-//-----------------------------------------------------------------------------
-bool
-ADIOS2::verify_params(const conduit::Node &params,
-                     conduit::Node &info)
-{
-  bool res = true;
-  if (!params.has_child("filename") ||
-      !params["filename"].dtype().is_string())
-  {
-    info["errors"].append() = "missing required entry 'filename'";
-    res = false;
-  }
+    // ----------- Define Param Schema -----------
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
 
-  if (!params.has_child("engine") ||
-      !params["engine"].dtype().is_string())
-  {
-    info["errors"].append() = "missing required entry 'engine'";
-    res = false;
-  }
+    string_schema(param_schema["properties/filename"]);
+    string_schema(param_schema["properties/engine"]);
 
-  std::string engineType = params["engine"].as_string();
-  if (engineType != "BPFile" && engineType != "SST")
-  {
-    info["errors"].append() = "unsupported engine type: " + engineType;
-    res = false;
-  }
+    conduit::Node &bpfile_schema = param_schema["oneOf"].append();
+    bpfile_schema["type"] = "object";
+    string_schema(bpfile_schema["properties/engine"]);
+    bpfile_schema["properties/engine/constraints/const"] = "BPFile";
 
-  std::string fileName = params["filename"].as_string();
-  if (engineType == "SST" && fileName.find("/") != std::string::npos )
-  {
-    info["errors"].append() = "filename with directory not supported for SST engine";
-    res = false;
-  }
+    conduit::Node &sst_schema = param_schema["oneOf"].append();
+    sst_schema["type"] = "object";
+    string_schema(sst_schema["properties/engine"]);
+    sst_schema["properties/engine/constraints/const"] = "SST";
 
-  return res;
+    conduit::Node &fname = string_schema(sst_schema["properties/filename"]);
+    fname["pattern"] = "^[^/]*$";
 }
 
 //-----------------------------------------------------------------------------
