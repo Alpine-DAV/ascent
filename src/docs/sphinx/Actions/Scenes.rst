@@ -321,7 +321,7 @@ Here is an example of adding a custom color table to the volume plot:
   add_plots["action"] = "add_scenes";
   add_plots["scenes"] = scenes;
 
-Monochrome Plotting
+Monochrome / Solid Color Plotting
 ^^^^^^^^^^^^^^^^^^^
 
 Generally, plotting is done using a range of colors from a color table; however, in some cases
@@ -332,7 +332,7 @@ RGB or RGBA percentages values between 0 and 1 to the ``color`` node.
   conduit::Node scenes;
   scenes["s1/plots/p1/type"]  = "volume";
   scenes["s1/plots/p1/field"] = "braid";
-  scenes["s1/plots/p1/color"] = {0.0, .184, .655};
+  scenes["s1/plots/p1/color_table/solid"] = {0.0, .184, .655};
 
   conduit::Node actions;
   conduit::Node &add_plots = actions.append();

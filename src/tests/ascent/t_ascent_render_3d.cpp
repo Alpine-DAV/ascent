@@ -2183,7 +2183,7 @@ TEST(ascent_render_3d, test_render_3d_Yves_Klein)
     conduit::Node scenes;
     scenes["s1/plots/p1/type"]  = "pseudocolor";
     scenes["s1/plots/p1/field"] = "braid";
-    scenes["s1/plots/p1/color"] = {0.0, .184, .655}; // {0.748, 0.004, 0.008}
+    scenes["s1/plots/p1/color_table/solid"] = {0.0, .184, .655};
 
     scenes["s1/image_prefix"] = output_file;
 

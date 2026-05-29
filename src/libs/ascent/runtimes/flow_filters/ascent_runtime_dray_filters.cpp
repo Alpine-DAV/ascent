@@ -161,6 +161,9 @@ void dray_color_table_schema(conduit::Node &param_schema) {
 
     string_schema(param_schema["properties/name"]);
     bool_schema(param_schema["properties/reverse"]);
+    
+    conduit::Node solid_schema;
+    array_schema(param_schema["properties/solid"], number_schema(solid_schema), 3, 4);
 
     // --- Control Points ---
     {
@@ -192,6 +195,10 @@ void dray_color_table_schema(conduit::Node &param_schema) {
 
         array_schema(control_points_schema["oneOf"].append(), cp_list_item_schema);
     }
+
+    param_schema["constraints/exclusiveChildren"].append() = "solid";
+    param_schema["constraints/exclusiveChildren"].append() = "control_points";
+    param_schema["constraints/allowNoneInExclusiveGroup"] = true;
 }
 
 void dray_load_balance_schema(conduit::Node &param_schema) {
@@ -377,6 +384,33 @@ parse_color_table(const conduit::Node &color_table_node)
   {
     ASCENT_INFO("Color table node is empty (no children). Defaulting to "
                 <<color_map_name);
+  }
+
+  if(color_table_node.has_child("solid"))
+  {
+    dray::ColorTable color_table;
+    color_table.clear_colors();
+    color_table.clear_alphas();
+
+    conduit::Node color_vals_node;
+    color_table_node["solid"].to_float32_array(color_vals_node);
+    float32_array color_vals = color_vals_node.as_float32_array();
+
+    dray::Vec<dray::float32,3> ecolor({color_vals[0], color_vals[1], color_vals[2]});
+            
+    for (int e = 0; e < 3; ++e)
+    {
+        ecolor[e] = std::min(1.f, std::max(ecolor[e], 0.f));
+    }
+
+    color_table.add_point(0.f, ecolor);
+
+    if (color_vals.number_of_elements() == 4)
+    {
+      color_table.add_alpha(0.f, std::min(1.f, std::max(color_vals[3], 0.f)));
+    }
+
+    return color_table;
   }
 
   bool name_provided = false;
@@ -1200,24 +1234,6 @@ parse_params(const conduit::Node &params,
   {
     color_map.color_table(parse_color_table(params["color_table"]));
   }
-  else if(params.has_path("color"))
-  {
-    conduit::Node color_vals_node;
-    params["color"].to_float32_array(color_vals_node);
-    float32_array color_vals = color_vals_node.as_float32_array();
-
-    conduit::Node mono_color_table;
-    mono_color_table["control_points/r"] = {color_vals[0]};
-    mono_color_table["control_points/g"] = {color_vals[1]};
-    mono_color_table["control_points/b"] = {color_vals[2]};
-    if (color_vals.number_of_elements() == 4)
-    {
-        mono_color_table["control_points/a"] = {color_vals[3]};
-    }
-    mono_color_table["control_points/position"] = {0.0};
-
-    color_map.color_table(parse_color_table(mono_color_table));
-  }
 }
 
 }; // namespace detail
@@ -1264,7 +1280,6 @@ DRayPseudocolor::declare_interface(Node &i)
     ignore_schema(param_schema["properties/camera"]);
 
     conduit::Node mono_color_schema;
-    array_schema(param_schema["properties/color"], number_schema(mono_color_schema), 3, 4);
     detail::dray_color_table_schema(param_schema["properties/color_table"]);
     
     param_schema["required"].append() = "field";

@@ -97,6 +97,9 @@ void color_table_schema(conduit::Node &param_schema) {
     string_schema(param_schema["properties/annotation"]);
     string_schema(param_schema["properties/discrete"]);
 
+    conduit::Node solid_schema;
+    array_schema(param_schema["properties/solid"], number_schema(solid_schema), 3, 4);
+
     // --- Control Points ---
     {
         conduit::Node &control_points_schema = param_schema["properties/control_points"];
@@ -127,6 +130,10 @@ void color_table_schema(conduit::Node &param_schema) {
 
         array_schema(control_points_schema["oneOf"].append(), cp_list_item_schema);
     }
+
+    param_schema["constraints/exclusiveChildren"].append() = "solid";
+    param_schema["constraints/exclusiveChildren"].append() = "control_points";
+    param_schema["constraints/allowNoneInExclusiveGroup"] = true;
 }
 
 void viskores_bounds_to_conduit_node(const viskores::Bounds &bounds,
@@ -1755,15 +1762,11 @@ CreatePlot::declare_interface(Node &i)
     conduit::Node &param_schema = i["param_schema"];
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
-    param_schema["constraints/exclusiveChildren"].append() = "color";
-    param_schema["constraints/exclusiveChildren"].append() = "color_table";
 
     string_schema(param_schema["properties/type"]);
     ignore_schema(param_schema["properties/pipeline"]);
     string_schema(param_schema["properties/topology"]);
     
-    conduit::Node mono_color_schema;
-    array_schema(param_schema["properties/color"], number_schema(mono_color_schema), 3, 4);
     detail::color_table_schema(param_schema["properties/color_table"]);
 
     param_schema["required"].append() = "type";
@@ -1951,23 +1954,11 @@ CreatePlot::execute()
           }
         }
       }
-      renderer->SetColorTable(color_table);
-    }
-    else if(plot_params.has_path("color"))
-    {
-      viskores::cont::ColorTable color_table;
-      color_table.ClearColors();
 
-      float64_array color_vals = plot_params.fetch("color").value();
-      viskores::Vec<viskores::Float64,3> ecolor(color_vals[0], color_vals[1], color_vals[2]);
-      color_table.AddPoint(0.0, ecolor);
-
-      if (color_vals.number_of_elements() == 4)
+      if(plot_params["color_table"].has_path("solid"))
       {
-        color_table.AddPointAlpha(0.0, std::min(1., std::max(color_vals[3], 0.)));
+        renderer->DisableColorBar();
       }
-
-      renderer->DisableColorBar();
       renderer->SetColorTable(color_table);
     }
 

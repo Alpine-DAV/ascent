@@ -998,7 +998,7 @@ TEST(ascent_devil_ray, test_dray_Kazimir_Malevich)
     conduit::Node extracts;
     extracts["e1/type"]  = "dray_pseudocolor";
     extracts["e1/params/field"] = "braid";
-    extracts["e1/params/color"] = {0.748, 0.004, 0.008};
+    extracts["e1/params/color_table/solid"] = {0.748, 0.004, 0.008};
     extracts["e1/params/image_width"]  = 512;
     extracts["e1/params/image_height"] = 512;
     extracts["e1/params/image_prefix"]   = output_file;
