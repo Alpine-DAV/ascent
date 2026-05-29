@@ -3451,18 +3451,6 @@ VTKHSample::execute()
     std::string output_topo_name = topo_name;
 
     const bool has_topology = params().has_path("topology");
-    int num_sample_specs = 0;
-    num_sample_specs += has_topology ? 1 : 0;
-    num_sample_specs += params().has_path("line") ? 1 : 0;
-    num_sample_specs += params().has_path("points") ? 1 : 0;
-    num_sample_specs += params().has_path("plane") ? 1 : 0;
-    num_sample_specs += params().has_path("uniform_grid") ? 1 : 0;
-    num_sample_specs += params().has_path("box") ? 1 : 0;
-    if(num_sample_specs > 1)
-    {
-      ASCENT_ERROR("vtkh_sample must specify only one sampling geometry");
-    }
-
     if(has_topology)
     {
       std::string sample_topo_name = params()["topology"].as_string();
@@ -3484,11 +3472,11 @@ VTKHSample::execute()
       if(rank == 0)
       {
         std::vector<const conduit::Node*> domains;
-        if(blueprint_data->has_path("topologies"))
+        if(blueprint_data->has_path("topologies")) //single domain
         {
           domains.push_back(blueprint_data.get());
         }
-        else
+        else //multi domain
         {
           const int num_domains = blueprint_data->number_of_children();
           for(int i = 0; i < num_domains; ++i)
@@ -3497,6 +3485,7 @@ VTKHSample::execute()
           }
         }
 
+		//make a conduit::Node sample mesh with input topo
         for(size_t i = 0; i < domains.size(); ++i)
         {
           const conduit::Node &src_dom = *domains[i];
@@ -3510,10 +3499,8 @@ VTKHSample::execute()
             }
 
             dst_dom[topo_path].set(src_dom[topo_path]);
-            const std::string coordset_name =
-              src_dom[topo_path + "/coordset"].as_string();
-            dst_dom["coordsets/" + coordset_name].
-              set(src_dom["coordsets/" + coordset_name]);
+            const std::string coordset_name = src_dom[topo_path + "/coordset"].as_string();
+            dst_dom["coordsets/" + coordset_name].set(src_dom["coordsets/" + coordset_name]);
           }
         }
 
@@ -3523,6 +3510,7 @@ VTKHSample::execute()
                        << "' must be present on rank 0 for MPI topology sampling");
         }
       }
+	  //broadcast created sample node and convert back to vtkh
       conduit::relay::mpi::broadcast_using_schema(sample_mesh, 0, mpi_comm);
       sample_collection.reset(VTKHDataAdapter::BlueprintToVTKHCollection(sample_mesh,
                                                                          false));
