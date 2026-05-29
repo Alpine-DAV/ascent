@@ -21,31 +21,9 @@ jobs:
     - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v4
       with: 
         submodules: 'recursive'
-    # - name: Setup CMake
-    #   run: |
-    #        choco install cmake.install --allow-downgrade --force --version 3.31.12
-    #        which cmake
-    #        cmake --version
-    #   shell: bash
-    # - name: Setup CMake
-    #   run: |
-    #       choco uninstall strawberryperl -y
-    #       choco uninstall cmake.install -y
-    #       CMAKE_VERSION="3.31.12"
-    #       INSTALLER="cmake-${CMAKE_VERSION}-windows-x86_64.msi"
-    #       URL="https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/${INSTALLER}"
-    #       DOWNLOAD_DIR="${TEMP:-/tmp}/cmake_install"
-    #       INSTALLER_PATH="${DOWNLOAD_DIR}/${INSTALLER}"
-    #       curl -L --fail -o "${INSTALLER}" "${URL}"
-    #       cmd.exe /c msiexec /i "$(cygpath -w "${INSTALLER_PATH}")" /qn ADD_CMAKE_TO_PATH=System
-    #       which cmake
-    #       cmake --version
-    #   shell: bash
-    # - name: Remove Strawberry Perl from Path
-    #   shell: bash
-    #   run: rm -rf /c/Strawberry
     - name: Build TPLs
       run: |
+        cmake --version
         env build_ascent=false `
             enable_tests=OFF `
             ./scripts/build_ascent/build_ascent.sh
