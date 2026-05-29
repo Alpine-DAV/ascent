@@ -720,7 +720,7 @@ bool validate_exclusive_children(const conduit::Node &schema,
         if(input.has_child(k))
         {
             count++;
-            if(count > 0) 
+            if(count > 1) 
             {
                 found << ", ";
             }
