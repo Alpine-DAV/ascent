@@ -140,8 +140,7 @@ viskoresProbe::Run(viskores::cont::DataSet &input)
   }
   else if(m_mode == GEOMETRY)
   {
-      const viskores::cont::CoordinateSystem coords =
-        m_geometry.GetCoordinateSystem();
+      const viskores::cont::CoordinateSystem coords = m_geometry.GetCoordinateSystem();
       const viskores::Id num_points = coords.GetData().GetNumberOfValues();
 
       ds_probe.AddCoordinateSystem(coords);
