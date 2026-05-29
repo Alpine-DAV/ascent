@@ -17,6 +17,7 @@
 
 #include <iostream>
 #include <math.h>
+#include <vector>
 
 #include <conduit_blueprint.hpp>
 #include <conduit_relay.hpp>
@@ -33,6 +34,123 @@ using namespace ascent;
 
 
 index_t EXAMPLE_MESH_SIDE_DIM = 20;
+
+namespace
+{
+
+//-----------------------------------------------------------------------------
+index_t
+add_sample_sphere_topology(Node &data,
+                           const std::string &topo_name,
+                           const std::string &coordset_name,
+                           const double radius,
+                           const int num_lat,
+                           const int num_lon)
+{
+    std::vector<double> x_vals;
+    std::vector<double> y_vals;
+    std::vector<double> z_vals;
+    std::vector<int32> conn;
+
+    const double pi = acos(-1.0);
+
+    x_vals.push_back(0.0);
+    y_vals.push_back(0.0);
+    z_vals.push_back(radius);
+
+    for(int lat = 1; lat < num_lat; ++lat)
+    {
+        const double theta = pi * static_cast<double>(lat) /
+                             static_cast<double>(num_lat);
+        const double sin_theta = sin(theta);
+        const double cos_theta = cos(theta);
+
+        for(int lon = 0; lon < num_lon; ++lon)
+        {
+            const double phi = 2.0 * pi * static_cast<double>(lon) /
+                               static_cast<double>(num_lon);
+            x_vals.push_back(radius * sin_theta * cos(phi));
+            y_vals.push_back(radius * sin_theta * sin(phi));
+            z_vals.push_back(radius * cos_theta);
+        }
+    }
+
+    const int32 south_pole = static_cast<int32>(x_vals.size());
+    x_vals.push_back(0.0);
+    y_vals.push_back(0.0);
+    z_vals.push_back(-radius);
+
+    auto ring_index = [num_lon](const int lat, const int lon)
+    {
+        return static_cast<int32>(1 + (lat - 1) * num_lon +
+                                  (lon + num_lon) % num_lon);
+    };
+
+    for(int lon = 0; lon < num_lon; ++lon)
+    {
+        conn.push_back(0);
+        conn.push_back(ring_index(1, lon));
+        conn.push_back(ring_index(1, lon + 1));
+    }
+
+    for(int lat = 1; lat < num_lat - 1; ++lat)
+    {
+        for(int lon = 0; lon < num_lon; ++lon)
+        {
+            const int32 lower_left = ring_index(lat, lon);
+            const int32 lower_right = ring_index(lat, lon + 1);
+            const int32 upper_left = ring_index(lat + 1, lon);
+            const int32 upper_right = ring_index(lat + 1, lon + 1);
+
+            conn.push_back(lower_left);
+            conn.push_back(upper_left);
+            conn.push_back(lower_right);
+
+            conn.push_back(lower_right);
+            conn.push_back(upper_left);
+            conn.push_back(upper_right);
+        }
+    }
+
+    for(int lon = 0; lon < num_lon; ++lon)
+    {
+        conn.push_back(ring_index(num_lat - 1, lon));
+        conn.push_back(south_pole);
+        conn.push_back(ring_index(num_lat - 1, lon + 1));
+    }
+
+    Node &coords = data["coordsets/" + coordset_name];
+    coords["type"] = "explicit";
+    coords["values/x"].set(DataType::float64(x_vals.size()));
+    coords["values/y"].set(DataType::float64(y_vals.size()));
+    coords["values/z"].set(DataType::float64(z_vals.size()));
+
+    float64_array xs = coords["values/x"].value();
+    float64_array ys = coords["values/y"].value();
+    float64_array zs = coords["values/z"].value();
+    for(index_t i = 0; i < static_cast<index_t>(x_vals.size()); ++i)
+    {
+        xs[i] = x_vals[i];
+        ys[i] = y_vals[i];
+        zs[i] = z_vals[i];
+    }
+
+    Node &topo = data["topologies/" + topo_name];
+    topo["type"] = "unstructured";
+    topo["coordset"] = coordset_name;
+    topo["elements/shape"] = "tri";
+    topo["elements/connectivity"].set(DataType::int32(conn.size()));
+
+    int32_array topo_conn = topo["elements/connectivity"].value();
+    for(index_t i = 0; i < static_cast<index_t>(conn.size()); ++i)
+    {
+        topo_conn[i] = conn[i];
+    }
+
+    return static_cast<index_t>(x_vals.size());
+}
+
+} // namespace
 
 //-----------------------------------------------------------------------------
 TEST(ascent_sample, line_2d)
@@ -618,6 +736,91 @@ TEST(ascent_sample, topology_plane)
     EXPECT_GT(dom["fields/braid/values"].dtype().number_of_elements(), 0);
 
     std::string msg = "An example of using the sample filter to sample on a topology from the input dataset.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_sample, topology_sphere)
+{
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
+        return;
+    }
+
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+    const index_t num_sphere_points =
+        add_sample_sphere_topology(data, "sample_sphere", "sample_sphere_coords",
+                                   4.0, 6, 12);
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data, verify_info));
+
+    ASCENT_INFO("Testing sampling with a spherical surface topology from the input dataset");
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,
+                                                        "tout_sample_topology_sphere");
+    string output_root = output_file + ".cycle_000100.root";
+    if(conduit::utils::is_file(output_root))
+    {
+        conduit::utils::remove_file(output_root);
+    }
+
+    data["state/cycle"] = 100;
+
+    std::string acts_str = R"xyzxyz(
+-
+  action: "add_pipelines"
+  pipelines:
+    pl1:
+      f1:
+        type: "sample"
+        params:
+          fields: ["braid"]
+          topology: "sample_sphere"
+          invalid_value: -10.0
+-
+  action: "add_extracts"
+  extracts:
+    e1:
+      pipeline: pl1
+      type: "relay"
+      params:
+        protocol: "hdf5"
+)xyzxyz";
+    conduit::Node actions;
+    actions.parse(acts_str,"yaml");
+    actions[1]["extracts/e1/params/path"] = output_file;
+
+    Ascent ascent;
+    ascent.open();
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    EXPECT_TRUE(conduit::utils::is_file(output_root));
+
+    Node read_mesh, read_verify_info;
+    conduit::relay::io::blueprint::load_mesh(output_root, read_mesh);
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(read_mesh, read_verify_info));
+    EXPECT_EQ(conduit::blueprint::mesh::number_of_domains(read_mesh), 1);
+
+    const Node &dom = read_mesh.child(0);
+    EXPECT_TRUE(dom.has_path("topologies/sample_sphere"));
+    EXPECT_TRUE(dom.has_path("coordsets/sample_sphere_coords"));
+    EXPECT_TRUE(dom.has_path("fields/braid"));
+    EXPECT_EQ(dom["fields/braid/topology"].as_string(), "sample_sphere");
+    EXPECT_EQ(dom["fields/braid/values"].dtype().number_of_elements(),
+              num_sphere_points);
+
+    std::string msg = "An example of using the sample filter to sample on a sphere surface topology from the input dataset.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 

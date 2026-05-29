@@ -820,6 +820,20 @@ YAML actions:
 
 .. literalinclude:: examples/tout_sample_plane_000100.yaml
 
+An example of using the sample filter to sample on a plane topology from the input dataset.
+-------------------------------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_sample_topology_plane_000100.yaml
+
+An example of using the sample filter to sample on a sphere surface topology from the input dataset.
+----------------------------------------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_sample_topology_sphere_000100.yaml
+
 An example of using the sample filter to sample a list of 3D points.
 ---------------------------------------------------------------------
 
