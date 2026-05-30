@@ -52,8 +52,6 @@ public:
    ~ADIOS2();
     
     virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
     virtual void   execute();
 
 private:

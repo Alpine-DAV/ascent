@@ -86,12 +86,48 @@ void ascent_register_flow_schema_hooks()
     flow::schema::register_format_checker("expression", &is_valid_expression);
 }
 
-conduit::Node &string_schema(conduit::Node &schema_node)
+//-----------------------------------------------------------------------------
+
+conduit::Node &string_schema(conduit::Node &schema_node,
+                             size_t minLength,
+                             size_t maxLength)
 {
   schema_node.reset();
   schema_node["type"] = "string";
+
+  if(minLength != 0)
+  {
+    schema_node["minLength"] = minLength;
+  }
+
+  if(maxLength != std::numeric_limits<std::size_t>::max())
+  {
+    schema_node["maxLength"] = maxLength;
+  }
+
   return schema_node;
 }
+
+//-----------------------------------------------------------------------------
+
+conduit::Node &string_enum_schema(conduit::Node &schema_node, const std::vector<std::string> &options)
+{
+  string_schema(schema_node);
+
+  for (const auto& value: options)
+  {
+    schema_node["enum"].append() = value;
+  }
+
+  return schema_node;
+}
+
+conduit::Node &bool_schema(conduit::Node &schema_node)
+{
+    return string_enum_schema(schema_node, {"true", "false"});
+}
+
+//-----------------------------------------------------------------------------
 
 conduit::Node &expression_schema(conduit::Node &schema_node)
 {
@@ -100,20 +136,89 @@ conduit::Node &expression_schema(conduit::Node &schema_node)
   return schema_node;
 }
 
-conduit::Node &number_schema(conduit::Node &schema_node, bool supports_expressions)
+//-----------------------------------------------------------------------------
+
+conduit::Node &number_schema(conduit::Node &schema_node,
+                             const bool supports_expressions,
+                             const int minimum,
+                             const int maximum,
+                             const int exclusiveMinimum,
+                             const int exclusiveMaximum)
 {
   schema_node.reset();
+
   if (supports_expressions)
   {
-    number_schema(schema_node["oneOf"].append());
+    number_schema(schema_node["oneOf"].append(), false, minimum, maximum, exclusiveMinimum, exclusiveMaximum);
     expression_schema(schema_node["oneOf"].append());
   }
   else
   {
     schema_node["type"] = "number";
+
+    if(exclusiveMinimum != std::numeric_limits<int>::lowest())
+    {
+        schema_node["exclusiveMinimum"] = exclusiveMinimum;
+    }
+    else if(minimum != std::numeric_limits<int>::lowest())
+    {
+        schema_node["minimum"] = minimum;
+    }
+
+    if(exclusiveMaximum != std::numeric_limits<int>::max())
+    {
+        schema_node["exclusiveMaximum"] = exclusiveMaximum;
+    }
+    else if(maximum != std::numeric_limits<int>::max())
+    {
+        schema_node["maximum"] = maximum;
+    }
   }
+
   return schema_node;
 }
+
+conduit::Node &integer_schema(conduit::Node &schema_node,
+                             const bool supports_expressions,
+                             const int minimum,
+                             const int maximum,
+                             const int exclusiveMinimum,
+                             const int exclusiveMaximum)
+{
+  schema_node.reset();
+  
+  if (supports_expressions)
+  {
+    integer_schema(schema_node["oneOf"].append(), false, minimum, maximum, exclusiveMinimum, exclusiveMaximum);
+    expression_schema(schema_node["oneOf"].append());
+  }
+  else
+  {
+    schema_node["type"] = "integer";
+
+    if(exclusiveMinimum != std::numeric_limits<int>::lowest())
+    {
+        schema_node["exclusiveMinimum"] = exclusiveMinimum;
+    }
+    else if(minimum != std::numeric_limits<int>::lowest())
+    {
+        schema_node["minimum"] = minimum;
+    }
+
+    if(exclusiveMaximum != std::numeric_limits<int>::max())
+    {
+        schema_node["exclusiveMaximum"] = exclusiveMaximum;
+    }
+    else if(maximum != std::numeric_limits<int>::max())
+    {
+        schema_node["maximum"] = maximum;
+    }
+  }
+  
+  return schema_node;
+}
+
+//-----------------------------------------------------------------------------
 
 conduit::Node &vec3_schema(conduit::Node &schema_node,
                            const std::string var1,
@@ -159,15 +264,15 @@ conduit::Node &vec3_schema_anyOf(conduit::Node &schema_node,
 
   conduit::Node &var1_required = schema_node["anyOf"].append();
   var1_required["type"] = "object";
-  var1_required["required"] = var1;
+  var1_required["required"].append() = var1;
 
   conduit::Node &var2_required = schema_node["anyOf"].append();
   var2_required["type"] = "object";
-  var2_required["required"] = var2;
+  var2_required["required"].append() = var2;
 
   conduit::Node &var3_required = schema_node["anyOf"].append();
   var3_required["type"] = "object";
-  var3_required["required"] = var3;
+  var3_required["required"].append() = var3;
 
   return schema_node;
 }
@@ -177,11 +282,27 @@ conduit::Node &vec3_schema_anyOf(conduit::Node &schema_node, bool supports_expre
   return vec3_schema_anyOf(schema_node, "x", "y", "z", supports_expressions);
 }
 
-conduit::Node &array_schema(conduit::Node &schema_node, const conduit::Node &item_schema)
+//-----------------------------------------------------------------------------
+
+conduit::Node &array_schema(conduit::Node &schema_node,
+                            const conduit::Node &item_schema,
+                            const std::size_t minItems,
+                            const std::size_t maxItems)
 {
   schema_node.reset();
   
   schema_node["type"] = "array";
+
+  if(minItems != 0)
+  {
+    schema_node["minItems"] = minItems;
+  }
+
+  if(maxItems != std::numeric_limits<std::size_t>::max())
+  {
+    schema_node["maxItems"] = maxItems;
+  }
+
   if (!item_schema.dtype().is_empty())
   {
     schema_node["items"].set(item_schema);
@@ -190,12 +311,7 @@ conduit::Node &array_schema(conduit::Node &schema_node, const conduit::Node &ite
   return schema_node;
 }
 
-conduit::Node &array_schema(conduit::Node &schema_node)
-{
-  schema_node.reset();
-  schema_node["type"] = "array";
-  return schema_node;
-}
+//-----------------------------------------------------------------------------
 
 conduit::Node &ignore_schema(conduit::Node &schema_node)
 {

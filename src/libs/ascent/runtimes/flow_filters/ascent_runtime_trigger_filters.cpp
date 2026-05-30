@@ -85,86 +85,34 @@ BasicTrigger::declare_interface(Node &i)
     i["type_name"]   = "basic_trigger";
     i["port_names"].append() = "in";
     i["output_port"] = "false";
+
+    // ----------- Define Param Schema -----------
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
+
+    {
+        string_schema(param_schema["properties/condition"]);
+        string_schema(param_schema["properties/callback"]);
+
+        conduit::Node &trigger_schema = param_schema["allOf"].append();
+        trigger_schema["constraints/exclusiveChildren"].append() = "condition";
+        trigger_schema["constraints/exclusiveChildren"].append() = "callback";
+        trigger_schema["constraints/allowNoneInExclusiveGroup"] = false;
+    }
+    {
+        conduit::Node actions_string_schema;
+        array_schema(param_schema["properties/actions_files"], string_schema(actions_string_schema));
+        array_schema(param_schema["properties/actions"]);
+        string_schema(param_schema["properties/actions_file"]);
+
+        conduit::Node &action_schema = param_schema["allOf"].append();
+        action_schema["constraints/exclusiveChildren"].append() = "actions_file";
+        action_schema["constraints/exclusiveChildren"].append() = "actions_files";
+        action_schema["constraints/exclusiveChildren"].append() = "actions";
+        action_schema["constraints/allowNoneInExclusiveGroup"] = false;
+    }
 }
-
-//-----------------------------------------------------------------------------
-bool
-BasicTrigger::verify_params(const conduit::Node &params,
-                            conduit::Node &info)
-{
-    info.reset();
-    bool res = check_string("condition",params, info, false);
-    res &= check_string("callback",params, info, false);
-    res &= check_string("actions_file",params, info, false);
-    res &= check_list("actions_files",params, info, false);
-    res &= check_list("actions",params, info, false);
-
-    bool has_condition = params.has_child("condition");
-    bool has_callback  = params.has_child("callback");
-    bool has_actions   = params.has_child("actions");
-    bool has_actions_file  = params.has_child("actions_file");
-    bool has_actions_files = params.has_child("actions_files");
-
-    if( has_condition && has_callback )
-    {
-      res = false;
-      info["errors"].append() = "Both `condition` and `callback` are "
-                                "present. Choose one or the other.";
-    }
-
-    if( ! (has_condition || has_callback) )
-    {
-      res = false;
-      info["errors"].append() = "No `condition` or `callback` provided. "
-                                "Choose please provide trigger `condition`"
-                                " or `callback`";
-    }
-
-    if( has_actions_file && has_actions_files )
-    {
-      res = false;
-      info["errors"].append() = "Both `actions_file` and `actions_files` are "
-                                "present. Choose one or the other.";
-    }
-
-    if(has_actions && (has_actions_file || has_actions_files))
-    {
-      res = false;
-      info["errors"].append() = "Both `actions` and `actions_file(s)` are "
-                                "present. Choose one or the other.";
-    }
-
-    if(!has_actions && !(has_actions_file || has_actions_files))
-    {
-      res = false;
-      info["errors"].append() = "No trigger actions provided. Please "
-                                "specify either 'actions_file(s)' or "
-                                "'actions'.";
-    }
-
-    std::vector<std::string> valid_paths;
-    valid_paths.push_back("condition");
-    valid_paths.push_back("callback");
-    valid_paths.push_back("actions_file");
-    valid_paths.push_back("actions_files");
-    valid_paths.push_back("actions");
-
-    std::vector<std::string> ignore_paths;
-    // don't go down the actions or actions_files path
-    ignore_paths.push_back("actions");
-    ignore_paths.push_back("actions_files");
-
-    std::string surprises = surprise_check(valid_paths, ignore_paths,params);
-
-    if(surprises != "")
-    {
-        res = false;
-        info["errors"].append() = surprises;
-    }
-
-    return res;
-}
-
 
 //-----------------------------------------------------------------------------
 void
