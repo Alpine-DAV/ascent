@@ -155,71 +155,53 @@ dray::Collection boundary(dray::Collection &collection)
   return bounder.execute(collection);
 }
 
-std::string
-dray_color_table_surprises(const conduit::Node &color_table)
-{
-  std::string surprises;
+void dray_color_table_schema(conduit::Node &param_schema) {
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
-  std::vector<std::string> valid_paths;
-  valid_paths.push_back("name");
-  valid_paths.push_back("reverse");
+    string_schema(param_schema["properties/name"]);
+    bool_schema(param_schema["properties/reverse"]);
 
-  std::vector<std::string> ignore_paths;
-  ignore_paths.push_back("control_points");
-
-  surprises += surprise_check(valid_paths, ignore_paths, color_table);
-  if(color_table.has_path("control_points"))
-  {
-    const Node &control_points_node = color_table.fetch("control_points");
-
-    if (control_points_node.dtype().is_list())
+    // --- Control Points ---
     {
-        std::vector<std::string> c_valid_paths;
-        c_valid_paths.push_back("type");
-        c_valid_paths.push_back("alpha");
-        c_valid_paths.push_back("color");
-        c_valid_paths.push_back("position");
+        conduit::Node &control_points_schema = param_schema["properties/control_points"];
 
-        const conduit::Node &control_points = color_table["control_points"];
-        const int num_points = control_points.number_of_children();
-        for(int i = 0; i < num_points; ++i)
-        {
-            const conduit::Node &point = control_points.child(i);
-            surprises += surprise_check(c_valid_paths, point);
-        }
+        conduit::Node &cp_compressed_schema = control_points_schema["oneOf"].append();
+        cp_compressed_schema["type"] = "object";
+        cp_compressed_schema["additionalProperties"] = false;
+        ignore_schema(cp_compressed_schema["properties/r"]);
+        ignore_schema(cp_compressed_schema["properties/g"]);
+        ignore_schema(cp_compressed_schema["properties/b"]);
+        ignore_schema(cp_compressed_schema["properties/a"]);
+        ignore_schema(cp_compressed_schema["properties/position"]);
+        cp_compressed_schema["constraints/forbid"].append() = "type";
+        cp_compressed_schema["constraints/forbid"].append() = "alpha";
+        cp_compressed_schema["constraints/forbid"].append() = "color";
+
+        conduit::Node cp_list_item_schema;
+        cp_list_item_schema["type"] = "object";
+        cp_list_item_schema["additionalProperties"] = false;
+        ignore_schema(cp_list_item_schema["properties/type"]);
+        ignore_schema(cp_list_item_schema["properties/alpha"]);
+        ignore_schema(cp_list_item_schema["properties/color"]);
+        ignore_schema(cp_list_item_schema["properties/position"]);
+        cp_list_item_schema["constraints/forbid"].append() = "r";
+        cp_list_item_schema["constraints/forbid"].append() = "g";
+        cp_list_item_schema["constraints/forbid"].append() = "b";
+        cp_list_item_schema["constraints/forbid"].append() = "a";
+
+        array_schema(control_points_schema["oneOf"].append(), cp_list_item_schema);
     }
-    else if (control_points_node.dtype().is_object())
-    {
-        // Valid path options for the compressed control points input format
-        std::vector<std::string> c_valid_paths;
-        c_valid_paths.push_back("r");
-        c_valid_paths.push_back("g");
-        c_valid_paths.push_back("b");
-        c_valid_paths.push_back("a");
-        c_valid_paths.push_back("position");
-
-
-        surprises += surprise_check(c_valid_paths, control_points_node);
-    }
-  }
-
-  return surprises;
 }
 
-std::string
-dray_load_balance_surprises(const conduit::Node &load_balance)
-{
-  std::string surprises;
+void dray_load_balance_schema(conduit::Node &param_schema) {
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
-  std::vector<std::string> valid_paths;
-  valid_paths.push_back("enabled");
-  valid_paths.push_back("factor");
-  valid_paths.push_back("threshold");
-  valid_paths.push_back("use_prefix");
-
-  surprises += surprise_check(valid_paths, load_balance);
-
-  return surprises;
+    bool_schema(param_schema["properties/enabled"]);
+    number_schema(param_schema["properties/factor"]);
+    number_schema(param_schema["properties/threshold"]);
+    bool_schema(param_schema["properties/use_prefix"]);
 }
 
 dray::Vec<float,3>
@@ -1079,30 +1061,6 @@ public:
 
 std::map<std::string, DrayCinemaManager> DrayCinemaDatabases::m_databases;
 
-
-
-bool check_image_names(const conduit::Node &params, conduit::Node &info)
-{
-  bool res = true;
-  if(!params.has_path("image_prefix") &&
-     !params.has_path("camera/db_name"))
-  {
-    res = false;
-    info.append() = "Devil ray rendering paths must include either "
-                    "a 'image_prefix' (if its a single image) or a "
-                    "'camera/db_name' (if using a cinema camere)";
-  }
-  if(params.has_path("image_prefix") &&
-     params.has_path("camera/db_name"))
-  {
-    res = false;
-    info.append() = "Devil ray rendering paths cannot use both "
-                    "a 'image_prefix' (if its a single image) and a "
-                    "'camera/db_name' (if using a cinema camere)";
-  }
-  return res;
-}
-
 void
 parse_params(const conduit::Node &params,
              dray::Collection *dcol,
@@ -1268,62 +1226,49 @@ DRayPseudocolor::declare_interface(Node &i)
     i["type_name"]   = "dray_pseudocolor";
     i["port_names"].append() = "in";
     i["output_port"] = "false";
-}
 
-//-----------------------------------------------------------------------------
-bool
-DRayPseudocolor::verify_params(const conduit::Node &params,
-                                 conduit::Node &info)
-{
-    info.reset();
+    // ----------- Define Param Schema -----------
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
-    bool res = true;
+    string_schema(param_schema["properties/field"]);
+    string_schema(param_schema["properties/image_prefix"]);
+    number_schema(param_schema["properties/min_value"]);
+    number_schema(param_schema["properties/max_value"]);
+    number_schema(param_schema["properties/image_width"]);
+    number_schema(param_schema["properties/image_height"]);
+    string_schema(param_schema["properties/log_scale"]);
+    string_schema(param_schema["properties/annotations"]);
+    string_schema(param_schema["properties/draw_mesh"]);
+    number_schema(param_schema["properties/line_thickness"]);
+    number_schema(param_schema["properties/line_color"]);
+    ignore_schema(param_schema["properties/camera"]);
 
-    res &= check_string("field",params, info, true);
-    res &= detail::check_image_names(params, info);
-    res &= check_numeric("min_value",params, info, false);
-    res &= check_numeric("max_value",params, info, false);
-    res &= check_numeric("image_width",params, info, false);
-    res &= check_numeric("image_height",params, info, false);
-    res &= check_string("log_scale",params, info, false);
-    res &= check_string("annotations",params, info, false);
+    detail::dray_color_table_schema(param_schema["properties/color_table"]);
+    
+    param_schema["required"].append() = "field";
 
-    std::vector<std::string> valid_paths;
-    std::vector<std::string> ignore_paths;
-
-    valid_paths.push_back("field");
-    valid_paths.push_back("image_prefix");
-    valid_paths.push_back("min_value");
-    valid_paths.push_back("max_value");
-    valid_paths.push_back("image_width");
-    valid_paths.push_back("image_height");
-    valid_paths.push_back("log_scale");
-    valid_paths.push_back("annotations");
-
-    // filter knobs
-    valid_paths.push_back("draw_mesh");
-    valid_paths.push_back("line_thickness");
-    valid_paths.push_back("line_color");
-    res &= check_numeric("line_color",params, info, false);
-    res &= check_numeric("line_thickness",params, info, false);
-    res &= check_string("draw_mesh",params, info, false);
-
-    ignore_paths.push_back("camera");
-    ignore_paths.push_back("color_table");
-
-    std::string surprises = surprise_check(valid_paths, ignore_paths, params);
-
-    if(params.has_path("color_table"))
+    // --- check image name ---
     {
-      surprises += detail::dray_color_table_surprises(params["color_table"]);
-    }
+        conduit::Node &db_name_schema = param_schema["oneOf"].append();
+        db_name_schema["type"] = "object";
+        db_name_schema["required"].append() = "camera";
+        db_name_schema["constraints/forbid"].append() = "image_prefix";
 
-    if(surprises != "")
-    {
-      res = false;
-      info["errors"].append() = surprises;
+        conduit::Node &camera_schema_1 = db_name_schema["properties/camera"].append();
+        camera_schema_1["type"] = "object";
+        camera_schema_1["required"].append() = "db_name";
     }
-    return res;
+    {
+        conduit::Node &image_prefix_schema = param_schema["oneOf"].append();
+        image_prefix_schema["type"] = "object";
+        image_prefix_schema["required"].append() = "image_prefix";
+
+        conduit::Node &camera_schema_2 = image_prefix_schema["properties/camera"].append();
+        camera_schema_2["type"] = "object";
+        camera_schema_2["constraints/forbid"].append() = "db_name";
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -1453,71 +1398,57 @@ DRay3Slice::declare_interface(Node &i)
     i["type_name"]   = "dray_3slice";
     i["port_names"].append() = "in";
     i["output_port"] = "false";
-}
 
-//-----------------------------------------------------------------------------
-bool
-DRay3Slice::verify_params(const conduit::Node &params,
-                          conduit::Node &info)
-{
-    info.reset();
+    // ----------- Define Param Schema -----------
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
-    bool res = true;
+    string_schema(param_schema["properties/field"]);
+    string_schema(param_schema["properties/image_prefix"]);
+    number_schema(param_schema["properties/min_value"]);
+    number_schema(param_schema["properties/max_value"]);
+    number_schema(param_schema["properties/image_width"]);
+    number_schema(param_schema["properties/image_height"]);
+    string_schema(param_schema["properties/log_scale"]);
+    string_schema(param_schema["properties/annotations"]);
+    number_schema(param_schema["properties/x_offset"]);
+    number_schema(param_schema["properties/y_offset"]);
+    number_schema(param_schema["properties/z_offset"]);
+    ignore_schema(param_schema["properties/camera"]);
+    
+    detail::dray_color_table_schema(param_schema["properties/color_table"]);
 
-    res &= check_string("field",params, info, true);
-    res &= detail::check_image_names(params, info);
-    res &= check_numeric("min_value",params, info, false);
-    res &= check_numeric("max_value",params, info, false);
-    res &= check_numeric("image_width",params, info, false);
-    res &= check_numeric("image_height",params, info, false);
-    res &= check_string("log_scale",params, info, false);
-    res &= check_string("annotations",params, info, false);
+    // --- sweep ---
+    conduit::Node &sweep_schema = param_schema["properties/sweep"];
+    sweep_schema["type"] = "object";
+    sweep_schema["additionalProperties"] = false;
+    number_schema(sweep_schema["properties/count"]);
+    string_schema(sweep_schema["properties/axis"]);
+    
+    param_schema["required"].append() = "field";
 
-    std::vector<std::string> valid_paths;
-    std::vector<std::string> ignore_paths;
-
-    valid_paths.push_back("field");
-    valid_paths.push_back("image_prefix");
-    valid_paths.push_back("min_value");
-    valid_paths.push_back("max_value");
-    valid_paths.push_back("annotations");
-    valid_paths.push_back("image_width");
-    valid_paths.push_back("image_height");
-    valid_paths.push_back("log_scale");
-
-    // filter knobs
-    res &= check_numeric("x_offset",params, info, false);
-    res &= check_numeric("y_offset",params, info, false);
-    res &= check_numeric("z_offset",params, info, false);
-
-    res &= check_numeric("sweep/count",params, info, false);
-    res &= check_string("sweep/axis",params, info, false);
-
-    valid_paths.push_back("x_offset");
-    valid_paths.push_back("y_offset");
-    valid_paths.push_back("z_offset");
-
-    valid_paths.push_back("sweep/count");
-    valid_paths.push_back("sweep/axis");
-
-    ignore_paths.push_back("camera");
-    ignore_paths.push_back("color_table");
-
-    std::string surprises = surprise_check(valid_paths, ignore_paths, params);
-
-    if(params.has_path("color_table"))
+    // --- check image name ---
     {
-      surprises += detail::dray_color_table_surprises(params["color_table"]);
-    }
+        conduit::Node &db_name_schema = param_schema["oneOf"].append();
+        db_name_schema["type"] = "object";
+        db_name_schema["required"].append() = "camera";
+        db_name_schema["constraints/forbid"].append() = "image_prefix";
 
-    if(surprises != "")
+        conduit::Node &camera_schema_1 = db_name_schema["properties/camera"].append();
+        camera_schema_1["type"] = "object";
+        camera_schema_1["required"].append() = "db_name";
+    }
     {
-      res = false;
-      info["errors"].append() = surprises;
-    }
-    return res;
-}
+        conduit::Node &image_prefix_schema = param_schema["oneOf"].append();
+        image_prefix_schema["type"] = "object";
+        image_prefix_schema["required"].append() = "image_prefix";
 
+        conduit::Node &camera_schema_2 = image_prefix_schema["properties/camera"].append();
+        camera_schema_2["type"] = "object";
+        camera_schema_2["constraints/forbid"].append() = "db_name";
+    }
+}
 
 //-----------------------------------------------------------------------------
 void
@@ -1848,67 +1779,49 @@ DRayVolume::declare_interface(Node &i)
     i["type_name"]   = "dray_volume";
     i["port_names"].append() = "in";
     i["output_port"] = "false";
-}
 
-//-----------------------------------------------------------------------------
-bool
-DRayVolume::verify_params(const conduit::Node &params,
-                               conduit::Node &info)
-{
-    info.reset();
+    // ----------- Define Param Schema -----------
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
-    bool res = true;
+    string_schema(param_schema["properties/field"]);
+    string_schema(param_schema["properties/image_prefix"]);
+    number_schema(param_schema["properties/min_value"]);
+    number_schema(param_schema["properties/max_value"]);
+    number_schema(param_schema["properties/image_width"]);
+    number_schema(param_schema["properties/image_height"]);
+    string_schema(param_schema["properties/log_scale"]);
+    string_schema(param_schema["properties/annotations"]);
+    number_schema(param_schema["properties/samples"]);
+    bool_schema(param_schema["properties/use_lighing"]);
+    ignore_schema(param_schema["properties/camera"]);
+    
+    detail::dray_color_table_schema(param_schema["properties/color_table"]);
+    detail::dray_load_balance_schema(param_schema["properties/load_balancing"]);
+    
+    param_schema["required"].append() = "field";
 
-    res &= check_string("field",params, info, true);
-    res &= detail::check_image_names(params, info);
-    res &= check_numeric("min_value",params, info, false);
-    res &= check_numeric("max_value",params, info, false);
-    res &= check_numeric("image_width",params, info, false);
-    res &= check_numeric("image_height",params, info, false);
-    res &= check_string("log_scale",params, info, false);
-    res &= check_string("annotations",params, info, false);
-
-    std::vector<std::string> valid_paths;
-    std::vector<std::string> ignore_paths;
-
-    valid_paths.push_back("field");
-    valid_paths.push_back("image_prefix");
-    valid_paths.push_back("min_value");
-    valid_paths.push_back("max_value");
-    valid_paths.push_back("image_width");
-    valid_paths.push_back("image_height");
-    valid_paths.push_back("log_scale");
-    valid_paths.push_back("annotations");
-
-    // filter knobs
-    res &= check_numeric("samples",params, info, false);
-    res &= check_string("use_lighing",params, info, false);
-
-    valid_paths.push_back("samples");
-    valid_paths.push_back("use_lighting");
-
-    ignore_paths.push_back("camera");
-    ignore_paths.push_back("color_table");
-    ignore_paths.push_back("load_balancing");
-
-    std::string surprises = surprise_check(valid_paths, ignore_paths, params);
-
-    if(params.has_path("color_table"))
+    // --- check image name ---
     {
-      surprises += detail::dray_color_table_surprises(params["color_table"]);
-    }
+        conduit::Node &db_name_schema = param_schema["oneOf"].append();
+        db_name_schema["type"] = "object";
+        db_name_schema["required"].append() = "camera";
+        db_name_schema["constraints/forbid"].append() = "image_prefix";
 
-    if(params.has_path("load_balancing"))
-    {
-      surprises += detail::dray_load_balance_surprises(params["load_balancing"]);
+        conduit::Node &camera_schema_1 = db_name_schema["properties/camera"].append();
+        camera_schema_1["type"] = "object";
+        camera_schema_1["required"].append() = "db_name";
     }
+    {
+        conduit::Node &image_prefix_schema = param_schema["oneOf"].append();
+        image_prefix_schema["type"] = "object";
+        image_prefix_schema["required"].append() = "image_prefix";
 
-    if(surprises != "")
-    {
-      res = false;
-      info["errors"].append() = surprises;
+        conduit::Node &camera_schema_2 = image_prefix_schema["properties/camera"].append();
+        camera_schema_2["type"] = "object";
+        camera_schema_2["constraints/forbid"].append() = "db_name";
     }
-    return res;
 }
 
 //-----------------------------------------------------------------------------
@@ -2062,43 +1975,31 @@ DRayReflect::declare_interface(Node &i)
     i["type_name"]   = "dray_reflect";
     i["port_names"].append() = "in";
     i["output_port"] = "true";
-}
 
-//-----------------------------------------------------------------------------
-bool
-DRayReflect::verify_params(const conduit::Node &params,
-                           conduit::Node &info)
-{
-    info.reset();
+    // ----------- Define Param Schema -----------
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
-    bool res = true;
+    // --- point ---
+    conduit::Node &point_schema = param_schema["properties/point"];
+    point_schema["type"] = "object";
+    point_schema["additionalProperties"] = false;
+    number_schema(point_schema["properties/x"]);
+    number_schema(point_schema["properties/y"]);
+    number_schema(point_schema["properties/z"]);
+    point_schema["required"].append() = "x";
+    point_schema["required"].append() = "y";
 
-    res &= check_numeric("point/x",params, info, true);
-    res &= check_numeric("point/y",params, info, true);
-    res &= check_numeric("point/z",params, info, false);
-    res &= check_numeric("normal/x",params, info, true);
-    res &= check_numeric("normal/y",params, info, true);
-    res &= check_numeric("normal/z",params, info, false);
-
-    std::vector<std::string> valid_paths;
-    std::vector<std::string> ignore_paths;
-
-    valid_paths.push_back("point/x");
-    valid_paths.push_back("point/y");
-    valid_paths.push_back("point/z");
-    valid_paths.push_back("normal/x");
-    valid_paths.push_back("normal/y");
-    valid_paths.push_back("normal/z");
-
-
-    std::string surprises = surprise_check(valid_paths, params);
-
-    if(surprises != "")
-    {
-      res = false;
-      info["errors"].append() = surprises;
-    }
-    return res;
+    // --- normal ---
+    conduit::Node &normal_schema = param_schema["properties/normal"];
+    normal_schema["type"] = "object";
+    normal_schema["additionalProperties"] = false;
+    number_schema(normal_schema["properties/x"]);
+    number_schema(normal_schema["properties/y"]);
+    number_schema(normal_schema["properties/z"]);
+    normal_schema["required"].append() = "x";
+    normal_schema["required"].append() = "y";
 }
 
 //-----------------------------------------------------------------------------
@@ -2174,39 +2075,17 @@ DRayProject2d::declare_interface(Node &i)
     i["type_name"]   = "dray_project_2d";
     i["port_names"].append() = "in";
     i["output_port"] = "true";
-}
 
-//-----------------------------------------------------------------------------
-bool
-DRayProject2d::verify_params(const conduit::Node &params,
-                               conduit::Node &info)
-{
-    info.reset();
+    // ----------- Define Param Schema -----------
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
-    bool res = true;
-
-    res &= check_numeric("image_width",params, info, false);
-    res &= check_numeric("image_height",params, info, false);
-
-    std::vector<std::string> valid_paths;
-    std::vector<std::string> ignore_paths;
-
-    valid_paths.push_back("image_width");
-    valid_paths.push_back("image_height");
-    valid_paths.push_back("fields");
-
-    ignore_paths.push_back("camera");
-    ignore_paths.push_back("plane");
-    ignore_paths.push_back("fields");
-
-    std::string surprises = surprise_check(valid_paths, ignore_paths, params);
-
-    if(surprises != "")
-    {
-      res = false;
-      info["errors"].append() = surprises;
-    }
-    return res;
+    ignore_schema(param_schema["properties/fields"]);
+    number_schema(param_schema["properties/image_width"]);
+    number_schema(param_schema["properties/image_height"]);
+    ignore_schema(param_schema["properties/camera"]);
+    ignore_schema(param_schema["properties/plane"]);
 }
 
 //-----------------------------------------------------------------------------
@@ -2362,53 +2241,23 @@ DRayProjectColors2d::declare_interface(Node &i)
     i["type_name"]   = "dray_project_colors_2d";
     i["port_names"].append() = "in";
     i["output_port"] = "true";
-}
 
-//-----------------------------------------------------------------------------
-bool
-DRayProjectColors2d::verify_params(const conduit::Node &params,
-                               conduit::Node &info)
-{
-    info.reset();
+    // ----------- Define Param Schema -----------
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
-    bool res = true;
-
-    res &= check_numeric("image_width",params, info, false);
-    res &= check_numeric("image_height",params, info, false);
-    res &= check_string("field",params, info, true);
-
-    res &= check_numeric("min_value",params, info, false);
-    res &= check_numeric("max_value",params, info, false);
-    res &= check_numeric("image_width",params, info, false);
-    res &= check_numeric("image_height",params, info, false);
-    res &= check_string("log_scale",params, info, false);
-
-    std::vector<std::string> valid_paths;
-    std::vector<std::string> ignore_paths;
-
-    valid_paths.push_back("image_width");
-    valid_paths.push_back("image_height");
-    valid_paths.push_back("min_value");
-    valid_paths.push_back("max_value");
-    valid_paths.push_back("log_scale");
-    valid_paths.push_back("field");
-
-    ignore_paths.push_back("camera");
-    ignore_paths.push_back("color_table");
-
-    std::string surprises = surprise_check(valid_paths, ignore_paths, params);
-
-    if(params.has_path("color_table"))
-    {
-      surprises += detail::dray_color_table_surprises(params["color_table"]);
-    }
-
-    if(surprises != "")
-    {
-      res = false;
-      info["errors"].append() = surprises;
-    }
-    return res;
+    string_schema(param_schema["properties/field"]);
+    number_schema(param_schema["properties/min_value"]);
+    number_schema(param_schema["properties/max_value"]);
+    number_schema(param_schema["properties/image_width"]);
+    number_schema(param_schema["properties/image_height"]);
+    string_schema(param_schema["properties/log_scale"]);
+    ignore_schema(param_schema["properties/camera"]);
+    
+    detail::dray_color_table_schema(param_schema["properties/color_table"]);
+    
+    param_schema["required"].append() = "field";
 }
 
 //-----------------------------------------------------------------------------
@@ -2505,33 +2354,19 @@ DRayVectorComponent::declare_interface(Node &i)
     i["type_name"]   = "dray_vector_component";
     i["port_names"].append() = "in";
     i["output_port"] = "true";
-}
 
-//-----------------------------------------------------------------------------
-bool
-DRayVectorComponent::verify_params(const conduit::Node &params,
-                                   conduit::Node &info)
-{
-    info.reset();
+    // ----------- Define Param Schema -----------
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
 
-    bool res = check_string("field",params, info, true);
-    res &= check_numeric("component",params, info, true);
-    res &= check_string("output_name",params, info, true);
+    string_schema(param_schema["properties/field"]);
+    number_schema(param_schema["properties/component"]);
+    string_schema(param_schema["properties/output_name"]);
 
-    std::vector<std::string> valid_paths;
-    valid_paths.push_back("field");
-    valid_paths.push_back("component");
-    valid_paths.push_back("output_name");
-
-    std::string surprises = surprise_check(valid_paths, params);
-
-    if(surprises != "")
-    {
-      res = false;
-      info["errors"].append() = surprises;
-    }
-
-    return res;
+    param_schema["required"].append() = "field";
+    param_schema["required"].append() = "component";
+    param_schema["required"].append() = "output_name";
 }
 
 //-----------------------------------------------------------------------------

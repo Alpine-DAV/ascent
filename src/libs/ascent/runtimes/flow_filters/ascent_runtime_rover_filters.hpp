@@ -50,8 +50,6 @@ public:
     virtual ~RoverXRay();
 
     virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
     virtual void   execute();
 };
 
@@ -63,8 +61,6 @@ public:
     virtual ~RoverVolume();
 
     virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
     virtual void   execute();
 };
 #endif

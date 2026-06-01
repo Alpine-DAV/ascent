@@ -4,7 +4,7 @@ set -ev
 # variants
 # NOTES:
 # (+genten) genten currently disabled, wait for genten to gain spack package
-export SPACK_SPEC="%gcc+mpi+cuda+vtkh+dray+mfem+occa~python~openmp~shared cuda_arch=70"
+export SPACK_SPEC="%gcc+mpi+cuda+vtkh+dray+mfem~occa~python~openmp~shared cuda_arch=70"
 # constraints
 # note: silo static build with spack will fail unless you disable python
 export SPACK_SPEC="${SPACK_SPEC} ^raja+cuda~openmp cuda_arch=70 ^umpire+cuda~openmp cuda_arch=70 ^camp+cuda~openmp cuda_arch=70 ^hdf5~mpi ^mfem~cuda~petsc~sundials~slepc ^hypre~cuda ^viskores+cuda~kokkos cuda_arch=70 ^silo~python~mpi"

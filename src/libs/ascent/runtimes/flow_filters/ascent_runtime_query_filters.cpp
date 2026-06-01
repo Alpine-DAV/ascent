@@ -81,24 +81,18 @@ BasicQuery::declare_interface(Node &i)
     // adding an output port to chain queries together
     // so they execute in order of declaration
     i["output_port"] = "true";
+
+    // ----------- Define Param Schema -----------
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
+
+    string_schema(param_schema["properties/expression"]);
+    string_schema(param_schema["properties/name"]);
+
+    param_schema["required"].append() = "expression";
+    param_schema["required"].append() = "name";
 }
-
-//-----------------------------------------------------------------------------
-bool
-BasicQuery::verify_params(const conduit::Node &params,
-                            conduit::Node &info)
-{
-    info.reset();
-    bool res = check_string("expression",params, info, true);
-    res &= check_string("name",params, info, true);
-
-    std::vector<std::string> valid_paths;
-    valid_paths.push_back("expression");
-    valid_paths.push_back("name");
-
-    return res;
-}
-
 
 //-----------------------------------------------------------------------------
 void
@@ -152,24 +146,18 @@ FilterQuery::declare_interface(Node &i)
     i["type_name"]   = "expression";
     i["port_names"].append() = "in";
     i["output_port"] = "true";
+
+    // ----------- Define Param Schema -----------
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
+
+    string_schema(param_schema["properties/expression"]);
+    string_schema(param_schema["properties/name"]);
+
+    param_schema["required"].append() = "expression";
+    param_schema["required"].append() = "name";
 }
-
-//-----------------------------------------------------------------------------
-bool
-FilterQuery::verify_params(const conduit::Node &params,
-                            conduit::Node &info)
-{
-    info.reset();
-    bool res = check_string("expression",params, info, true);
-    res &= check_string("name",params, info, true);
-
-    std::vector<std::string> valid_paths;
-    valid_paths.push_back("expression");
-    valid_paths.push_back("name");
-
-    return res;
-}
-
 
 //-----------------------------------------------------------------------------
 void

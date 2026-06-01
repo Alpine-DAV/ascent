@@ -29,6 +29,7 @@
 //-----------------------------------------------------------------------------
 #include <ascent_logging.hpp>
 #include <ascent_data_object.hpp>
+#include <ascent_runtime_param_check.hpp>
 #include <flow_graph.hpp>
 #include <flow_workspace.hpp>
 
@@ -76,31 +77,18 @@ HolaMPIExtract::declare_interface(Node &i)
     i["type_name"]   = "hola_mpi";
     i["port_names"].append() = "in";
     i["output_port"] = "false";
+
+    // ----------- Define Param Schema -----------
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
+
+    integer_schema(param_schema["properties/mpi_comm"]);
+    integer_schema(param_schema["properties/rank_split"]);
+
+    param_schema["required"].append() = "mpi_comm";
+    param_schema["required"].append() = "rank_split";
 }
-
-//-----------------------------------------------------------------------------
-bool
-HolaMPIExtract::verify_params(const conduit::Node &params,
-                               conduit::Node &info)
-{
-    info.reset();
-    bool res = true;
-
-    if(! params.has_child("mpi_comm") ||
-       ! params["mpi_comm"].dtype().is_integer() )
-    {
-        info["errors"].append() = "Missing required integer parameter 'mpi_comm'";
-    }
-
-    if(! params.has_child("rank_split") ||
-       ! params["rank_split"].dtype().is_integer() )
-    {
-        info["errors"].append() = "Missing required integer parameter 'rank_split'";
-    }
-
-    return res;
-}
-
 
 //-----------------------------------------------------------------------------
 void
