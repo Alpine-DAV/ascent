@@ -406,6 +406,37 @@ TEST(ascent_data_adapter, non_interleaved_vector_field_zero_copy_round_trip)
     delete ds;
 }
 
+//-----------------------------------------------------------------------------
+TEST(ascent_data_adapter, strided_structured_to_viskores)
+{
+    Node n;
+    ascent::about(n);
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
+        return;
+    }
+
+    Node data, desc, verify_info;
+    conduit::blueprint::mesh::examples::strided_structured(desc, 4, 3, 0, data);
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data, verify_info));
+
+    const std::string topo_name = "mesh";
+    viskores::cont::DataSet *ds =
+        VTKHDataAdapter::BlueprintToViskoresDataSet(data, true, topo_name);
+
+    ASSERT_NE(ds, nullptr);
+    EXPECT_EQ(ds->GetCoordinateSystem().GetData().GetNumberOfValues(), 12);
+    EXPECT_EQ(ds->GetCellSet().GetNumberOfPoints(), 12);
+    EXPECT_EQ(ds->GetCellSet().GetNumberOfCells(), 6);
+    EXPECT_TRUE(ds->HasField("vert_vals"));
+    EXPECT_TRUE(ds->HasField("ele_vals"));
+    EXPECT_EQ(ds->GetField("vert_vals").GetData().GetNumberOfValues(), 12);
+    EXPECT_EQ(ds->GetField("ele_vals").GetData().GetNumberOfValues(), 6);
+
+    delete ds;
+}
+
 
 //-----------------------------------------------------------------------------
 TEST(ascent_data_adapter, consistent_domain_ids_check)
