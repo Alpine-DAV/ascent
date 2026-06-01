@@ -1,0 +1,158 @@
+--- a/viskores/rendering/MapperWireframer.cxx
++++ b/viskores/rendering/MapperWireframer.cxx
+@@ -101,6 +101,43 @@
+   }
+ }; // convert coords
+ 
++bool IsTwoDimensionalCellShape(viskores::UInt8 cellShape)
++{
++  switch (cellShape)
++  {
++    case viskores::CELL_SHAPE_TRIANGLE:
++    case viskores::CELL_SHAPE_POLYGON:
++    case viskores::CELL_SHAPE_QUAD:
++      return true;
++    default:
++      return false;
++  }
++}
++
++bool IsTwoDimensionalCellSet(const viskores::cont::UnknownCellSet& cellSet)
++{
++  if (cellSet.CanConvert<viskores::cont::CellSetStructured<2>>())
++  {
++    return true;
++  }
++
++  const viskores::Id numCells = cellSet.GetNumberOfCells();
++  if (numCells < 1)
++  {
++    return false;
++  }
++
++  for (viskores::Id cellIndex = 0; cellIndex < numCells; ++cellIndex)
++  {
++    if (!IsTwoDimensionalCellShape(cellSet.GetCellShape(cellIndex)))
++    {
++      return false;
++    }
++  }
++
++  return true;
++}
++
+ #if defined(VISKORES_MSVC)
+ #pragma warning(push)
+ #pragma warning(disable : 4127) //conditional expression is constant
+@@ -249,7 +286,7 @@
+   viskores::cont::UnknownCellSet cellSet = inCellSet;
+ 
+   bool is1D = cellSet.CanConvert<viskores::cont::CellSetStructured<1>>();
+-  bool is2D = cellSet.CanConvert<viskores::cont::CellSetStructured<2>>();
++  bool is2D = IsTwoDimensionalCellSet(cellSet);
+ 
+   viskores::cont::CoordinateSystem actualCoords = coords;
+   viskores::cont::Field actualField = inScalarField;
+--- a/viskores/rendering/Wireframer.h
++++ b/viskores/rendering/Wireframer.h
+@@ -144,7 +144,10 @@
+   using ExecutionSignature = void(_1, _2, _3);
+ 
+   VISKORES_CONT
+-  CopyIntoFrameBuffer() {}
++  CopyIntoFrameBuffer(bool clearDepth)
++    : ClearExistingDepth(clearDepth)
++  {
++  }
+ 
+   VISKORES_EXEC
+   void operator()(const viskores::Vec4f_32& color,
+@@ -153,9 +156,11 @@
+   {
+     PackedValue packed;
+     packed.Ints.Color = PackColor(color);
+-    packed.Floats.Depth = depth;
++    packed.Floats.Depth = this->ClearExistingDepth ? 1.0f : depth;
+     outValue = packed.Raw;
+   }
++
++  bool ClearExistingDepth;
+ }; //struct CopyIntoFrameBuffer
+ 
+ template <typename DeviceTag>
+@@ -414,7 +419,10 @@
+ {
+ public:
+   VISKORES_CONT
+-  BufferConverter() {}
++  BufferConverter(bool ignoreExistingDepth)
++    : IgnoreExistingDepth(ignoreExistingDepth)
++  {
++  }
+ 
+   using ControlSignature = void(FieldIn, WholeArrayOut, WholeArrayOut);
+   using ExecutionSignature = void(_1, _2, _3, WorkIndex);
+@@ -428,7 +436,9 @@
+     PackedValue packed;
+     packed.Raw = packedValue;
+     float depth = packed.Floats.Depth;
+-    if (depth <= depthBuffer.Get(index))
++    if ((this->IgnoreExistingDepth &&
++         packed.Ints.Depth != static_cast<viskores::UInt32>(ClearDepth)) ||
++        (!this->IgnoreExistingDepth && depth <= depthBuffer.Get(index)))
+     {
+       viskores::Vec4f_32 color;
+       UnpackColor(packed.Ints.Color, color);
+@@ -436,6 +446,8 @@
+       depthBuffer.Set(index, depth);
+     }
+   }
++
++  bool IgnoreExistingDepth;
+ };
+ 
+ } // namespace
+@@ -508,31 +520,32 @@
+     viskores::Id width = static_cast<viskores::Id>(Canvas->GetWidth());
+     viskores::Id height = static_cast<viskores::Id>(Canvas->GetHeight());
+     viskores::Id pixelCount = width * height;
++    bool ortho2d = Camera.GetMode() == viskores::rendering::Camera::Mode::TwoD;
++    bool ignoreExistingDepth = this->IsOverlay && ortho2d;
+ 
+     if (this->ShowInternalZones && !this->IsOverlay)
+     {
+       viskores::cont::ArrayHandleConstant<viskores::Int64> clear(ClearValue, pixelCount);
+       viskores::cont::Algorithm::Copy(clear, this->FrameBuffer);
+     }
+     else
+     {
+       VISKORES_ASSERT(this->SolidDepthBuffer.GetNumberOfValues() == pixelCount);
+-      CopyIntoFrameBuffer bufferCopy;
++      CopyIntoFrameBuffer bufferCopy(ignoreExistingDepth);
+       viskores::worklet::DispatcherMapField<CopyIntoFrameBuffer>(bufferCopy)
+         .Invoke(this->Canvas->GetColorBuffer(), this->SolidDepthBuffer, this->FrameBuffer);
+     }
+     //
+     // detect a 2D camera and set the correct viewport.
+     // The View port specifies what the region of the screen
+     // to draw to which baiscally modifies the width and the
+     // height of the "canvas"
+     //
+     viskores::Id xOffset = 0;
+     viskores::Id yOffset = 0;
+     viskores::Id subsetWidth = width;
+     viskores::Id subsetHeight = height;
+ 
+-    bool ortho2d = Camera.GetMode() == viskores::rendering::Camera::Mode::TwoD;
+     if (ortho2d)
+     {
+       viskores::Float32 vl, vr, vb, vt;
+@@ -577,7 +590,7 @@
+                                viskores::rendering::raytracing::GetScalarFieldArray(ScalarField));
+     }
+ 
+-    BufferConverter converter;
++    BufferConverter converter(ignoreExistingDepth);
+     viskores::worklet::DispatcherMapField<BufferConverter> converterDispatcher(converter);
+     converterDispatcher.SetDevice(DeviceTag());
+     converterDispatcher.Invoke(FrameBuffer, Canvas->GetDepthBuffer(), Canvas->GetColorBuffer());

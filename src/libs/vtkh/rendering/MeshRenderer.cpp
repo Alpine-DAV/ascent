@@ -57,7 +57,7 @@ MeshRenderer::SetIsOverlay(bool on)
 void
 MeshRenderer::SetShowInternal(bool on)
 {
-  m_is_overlay = on;
+  m_show_internal = on;
 }
 
 void

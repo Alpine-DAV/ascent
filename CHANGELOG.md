@@ -8,7 +8,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ### Preferred dependency versions for ascent@develop
 - cmake@3.23 or newer
 - conduit@0.9.5
-- viskores@1.0.0
+- viskores@1.1.1
 - raja@v2025.09.0
 - umpire@v2025.09.0
 - camp@v2025.09.2
@@ -26,6 +26,9 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - If a `default_dir` is passed as an Ascent Option, extracts and plots will output to that directory by default now.
 - Added a warning if a `ascent.py` file exsits in the current working directory when executing a python extract. 
 - Added support for monochrome plotting 
+
+### Changed
+- Redefined the parameter varification and surprise checking behavior for Filters to instead use a conduit based JSON Schema style verification schema. Implimented for all existing filters. 
 
 ### Changed
 - Redefined the parameter varification and surprise checking behavior for Filters to instead use a conduit based JSON Schema style verification schema. Implimented for all existing filters. 
