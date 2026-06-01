@@ -326,7 +326,7 @@ Monochrome / Solid Color Plotting
 
 Generally, plotting is done using a range of colors from a color table; however, in some cases
 monochrome coloring is desirable. In these cases, the single color can be passed as a list of
-RGB or RGBA percentages values between 0 and 1 to the ``color`` node.
+RGB or RGBA percentages values between 0 and 1 to the ``color_table/solid`` node.
 
 .. code-block:: c++
   conduit::Node scenes;

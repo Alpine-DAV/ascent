@@ -1766,7 +1766,7 @@ CreatePlot::declare_interface(Node &i)
     string_schema(param_schema["properties/type"]);
     ignore_schema(param_schema["properties/pipeline"]);
     string_schema(param_schema["properties/topology"]);
-    
+
     detail::color_table_schema(param_schema["properties/color_table"]);
 
     param_schema["required"].append() = "type";

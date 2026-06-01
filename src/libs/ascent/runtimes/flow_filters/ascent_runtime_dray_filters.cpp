@@ -2286,7 +2286,7 @@ DRayProjectColors2d::declare_interface(Node &i)
     number_schema(param_schema["properties/image_height"]);
     string_schema(param_schema["properties/log_scale"]);
     ignore_schema(param_schema["properties/camera"]);
-
+    
     detail::dray_color_table_schema(param_schema["properties/color_table"]);
     
     param_schema["required"].append() = "field";
