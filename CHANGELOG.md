@@ -26,6 +26,9 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - If a `default_dir` is passed as an Ascent Option, extracts and plots will output to that directory by default now.
 - Added a warning if a `ascent.py` file exsits in the current working directory when executing a python extract. 
 
+### Changed
+- Redefined the parameter varification and surprise checking behavior for Filters to instead use a conduit based JSON Schema style verification schema. Implimented for all existing filters. 
+
 ### Fixed
 - Fixed issue where the plot did not align with the 3d axes when the camera was panned (`camera/xpan` and `camera/ypan`).
 - Fixed a crash with PNG encoding of large renders (10k+ by 10k+ resolution)
