@@ -76,58 +76,6 @@ namespace detail
 //-----------------------------------------------------------------------------
 // helper used by io save
 //-----------------------------------------------------------------------------
-bool
-verify_htg_params(const conduit::Node &params,
-                  conduit::Node &info)
-{
-    bool res = true;
-
-    if( !params.has_child("path") )
-    {
-        info["errors"].append() = "missing required entry 'path'";
-        res = false;
-    }
-    else if(!params["path"].dtype().is_string())
-    {
-        info["errors"].append() = "'path' must be a string";
-        res = false;
-    }
-    else if(params["path"].as_string().empty())
-    {
-        info["errors"].append() = "'path' is an empty string";
-        res = false;
-    }
-
-    if( !params.has_child("blank_value") )
-    {
-        info["errors"].append() = "missing required entry 'blank_value'";
-        res = false;
-    }
-    else if(!params["blank_value"].dtype().is_number())
-    {
-        info["errors"].append() = "'blank_value' must be a number";
-        res = false;
-    }
-
-    std::vector<std::string> valid_paths;
-    std::vector<std::string> ignore_paths;
-    valid_paths.push_back("path");
-    valid_paths.push_back("fields");
-    valid_paths.push_back("blank_value");
-    ignore_paths.push_back("fields");
-
-    std::string surprises = surprise_check(valid_paths, ignore_paths, params);
-
-    if(surprises != "")
-    {
-        info["errors"].append() = surprises;
-        res = false;
-    }
-
-    return res;
-}
-
-//-----------------------------------------------------------------------------
 float htg_create(const float *var_in,
                  float *var_out,
                  int *mask,
@@ -659,14 +607,18 @@ HTGIOSave::declare_interface(Node &i)
     i["type_name"]   = "htg_io_save";
     i["port_names"].append() = "in";
     i["output_port"] = "false";
-}
 
-//-----------------------------------------------------------------------------
-bool
-HTGIOSave::verify_params(const conduit::Node &params,
-                         conduit::Node &info)
-{
-    return verify_htg_params(params,info);
+    // ----------- Define Param Schema -----------
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
+
+    string_schema(param_schema["properties/path"], 1);
+    number_schema(param_schema["properties/blank_value"]);
+    ignore_schema(param_schema["properties/fields"]);
+
+    param_schema["required"].append() = "path";
+    param_schema["required"].append() = "blank_value";
 }
 
 //-----------------------------------------------------------------------------

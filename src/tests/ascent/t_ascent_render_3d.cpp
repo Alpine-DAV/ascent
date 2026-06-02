@@ -4014,22 +4014,23 @@ TEST(ascent_render_3d, test_render_invalid_camera)
     ascent.publish(data);
 
     bool error_occured = false;
+    std::string expected_error = "Validation failed at 'renders[0]/camera/viewNormal' (additionalProperties): unexpected additional field is not allowed here.";
     try
     {
         ascent.execute(actions);
     }
     catch(conduit::Error &err)
     {
-        if (err.message().find("Cameras must follow either an ascent format or a visit format, not both.") != std::string::npos)
+        std::cout << err.message() << std::endl;
+
+        if (err.message().find(expected_error) != std::string::npos)
         {
             error_occured = true;
         }
         else
         {
             std::cout << "The error that was thrown did not match the expected "
-                      << "'Cameras must follow either an ascent format or a visit format, not both.' error" << std::endl;
-
-            std::cout << err.message() << std::endl;
+                      << "'" << expected_error << "' error" << std::endl;
         }
     }
 

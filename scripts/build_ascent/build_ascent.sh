@@ -818,7 +818,7 @@ fi # build_barney
 ################
 # Viskores
 ################
-viskores_version=1.0.0
+viskores_version=1.1.1
 viskores_src_dir=$(ospath ${source_dir}/viskores-${viskores_version})
 viskores_build_dir=$(ospath ${build_dir}/viskores-${viskores_version})
 viskores_install_dir=$(ospath ${install_dir}/viskores-${viskores_version}/)
@@ -841,7 +841,8 @@ if [ ! -d ${viskores_src_dir} ]; then
   patch -p1 < ${script_dir}/2025_06_18_viskores_z_extents_ray_culling_bugfix_viskores_mr109.patch
   patch -p1 < ${script_dir}/2025_07_07_vtkm_anari_mapper_triangles_parameter_fix.patch
   patch -p1 < ${script_dir}/2026_01_02_viskores_implent_pan_raytracing.patch
-  patch -p1 < ${script_dir}/2026_04_17_viskores_clip_celloffset_increment.patch
+  patch -p1 < ${script_dir}/2026_04_10_viskores_1_1_0_volume_annotation_depth_hack.patch
+  patch -p1 < ${script_dir}/2026_05_15_viskores_1_1_1_wireframer_fix.patch
   cd ${root_dir}
 fi
 

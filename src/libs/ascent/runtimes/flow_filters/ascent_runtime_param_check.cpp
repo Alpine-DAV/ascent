@@ -86,12 +86,48 @@ void ascent_register_flow_schema_hooks()
     flow::schema::register_format_checker("expression", &is_valid_expression);
 }
 
-conduit::Node &string_schema(conduit::Node &schema_node)
+//-----------------------------------------------------------------------------
+
+conduit::Node &string_schema(conduit::Node &schema_node,
+                             size_t minLength,
+                             size_t maxLength)
 {
   schema_node.reset();
   schema_node["type"] = "string";
+
+  if(minLength != 0)
+  {
+    schema_node["minLength"] = minLength;
+  }
+
+  if(maxLength != std::numeric_limits<std::size_t>::max())
+  {
+    schema_node["maxLength"] = maxLength;
+  }
+
   return schema_node;
 }
+
+//-----------------------------------------------------------------------------
+
+conduit::Node &string_enum_schema(conduit::Node &schema_node, const std::vector<std::string> &options)
+{
+  string_schema(schema_node);
+
+  for (const auto& value: options)
+  {
+    schema_node["enum"].append() = value;
+  }
+
+  return schema_node;
+}
+
+conduit::Node &bool_schema(conduit::Node &schema_node)
+{
+    return string_enum_schema(schema_node, {"true", "false"});
+}
+
+//-----------------------------------------------------------------------------
 
 conduit::Node &expression_schema(conduit::Node &schema_node)
 {
@@ -100,20 +136,89 @@ conduit::Node &expression_schema(conduit::Node &schema_node)
   return schema_node;
 }
 
-conduit::Node &number_schema(conduit::Node &schema_node, bool supports_expressions)
+//-----------------------------------------------------------------------------
+
+conduit::Node &number_schema(conduit::Node &schema_node,
+                             const bool supports_expressions,
+                             const int minimum,
+                             const int maximum,
+                             const int exclusiveMinimum,
+                             const int exclusiveMaximum)
 {
   schema_node.reset();
+
   if (supports_expressions)
   {
-    number_schema(schema_node["oneOf"].append());
+    number_schema(schema_node["oneOf"].append(), false, minimum, maximum, exclusiveMinimum, exclusiveMaximum);
     expression_schema(schema_node["oneOf"].append());
   }
   else
   {
     schema_node["type"] = "number";
+
+    if(exclusiveMinimum != std::numeric_limits<int>::lowest())
+    {
+        schema_node["exclusiveMinimum"] = exclusiveMinimum;
+    }
+    else if(minimum != std::numeric_limits<int>::lowest())
+    {
+        schema_node["minimum"] = minimum;
+    }
+
+    if(exclusiveMaximum != std::numeric_limits<int>::max())
+    {
+        schema_node["exclusiveMaximum"] = exclusiveMaximum;
+    }
+    else if(maximum != std::numeric_limits<int>::max())
+    {
+        schema_node["maximum"] = maximum;
+    }
   }
+
   return schema_node;
 }
+
+conduit::Node &integer_schema(conduit::Node &schema_node,
+                             const bool supports_expressions,
+                             const int minimum,
+                             const int maximum,
+                             const int exclusiveMinimum,
+                             const int exclusiveMaximum)
+{
+  schema_node.reset();
+  
+  if (supports_expressions)
+  {
+    integer_schema(schema_node["oneOf"].append(), false, minimum, maximum, exclusiveMinimum, exclusiveMaximum);
+    expression_schema(schema_node["oneOf"].append());
+  }
+  else
+  {
+    schema_node["type"] = "integer";
+
+    if(exclusiveMinimum != std::numeric_limits<int>::lowest())
+    {
+        schema_node["exclusiveMinimum"] = exclusiveMinimum;
+    }
+    else if(minimum != std::numeric_limits<int>::lowest())
+    {
+        schema_node["minimum"] = minimum;
+    }
+
+    if(exclusiveMaximum != std::numeric_limits<int>::max())
+    {
+        schema_node["exclusiveMaximum"] = exclusiveMaximum;
+    }
+    else if(maximum != std::numeric_limits<int>::max())
+    {
+        schema_node["maximum"] = maximum;
+    }
+  }
+  
+  return schema_node;
+}
+
+//-----------------------------------------------------------------------------
 
 conduit::Node &vec3_schema(conduit::Node &schema_node,
                            const std::string var1,
@@ -159,15 +264,15 @@ conduit::Node &vec3_schema_anyOf(conduit::Node &schema_node,
 
   conduit::Node &var1_required = schema_node["anyOf"].append();
   var1_required["type"] = "object";
-  var1_required["required"] = var1;
+  var1_required["required"].append() = var1;
 
   conduit::Node &var2_required = schema_node["anyOf"].append();
   var2_required["type"] = "object";
-  var2_required["required"] = var2;
+  var2_required["required"].append() = var2;
 
   conduit::Node &var3_required = schema_node["anyOf"].append();
   var3_required["type"] = "object";
-  var3_required["required"] = var3;
+  var3_required["required"].append() = var3;
 
   return schema_node;
 }
@@ -177,11 +282,27 @@ conduit::Node &vec3_schema_anyOf(conduit::Node &schema_node, bool supports_expre
   return vec3_schema_anyOf(schema_node, "x", "y", "z", supports_expressions);
 }
 
-conduit::Node &array_schema(conduit::Node &schema_node, const conduit::Node &item_schema)
+//-----------------------------------------------------------------------------
+
+conduit::Node &array_schema(conduit::Node &schema_node,
+                            const conduit::Node &item_schema,
+                            const std::size_t minItems,
+                            const std::size_t maxItems)
 {
   schema_node.reset();
   
   schema_node["type"] = "array";
+
+  if(minItems != 0)
+  {
+    schema_node["minItems"] = minItems;
+  }
+
+  if(maxItems != std::numeric_limits<std::size_t>::max())
+  {
+    schema_node["maxItems"] = maxItems;
+  }
+
   if (!item_schema.dtype().is_empty())
   {
     schema_node["items"].set(item_schema);
@@ -190,12 +311,7 @@ conduit::Node &array_schema(conduit::Node &schema_node, const conduit::Node &ite
   return schema_node;
 }
 
-conduit::Node &array_schema(conduit::Node &schema_node)
-{
-  schema_node.reset();
-  schema_node["type"] = "array";
-  return schema_node;
-}
+//-----------------------------------------------------------------------------
 
 conduit::Node &ignore_schema(conduit::Node &schema_node)
 {
@@ -205,321 +321,6 @@ conduit::Node &ignore_schema(conduit::Node &schema_node)
   schema_node["constraints/skip"] = true;
 
   return schema_node;
-}
-
-//-----------------------------------------------------------------------------
-bool
-check_numeric(const std::string path,
-              const conduit::Node &params,
-              conduit::Node &info,
-              bool required,
-              bool supports_expressions)
-{
-  bool res = true;
-  if(!params.has_path(path) && required)
-  {
-    info["errors"].append() = "Missing required numeric parameter '" + path + "'";
-    res = false;
-  }
-
-  if(params.has_path(path))
-  {
-
-    bool is_expr = false;
-    std::string err_msg;
-    if(params[path].dtype().is_string() && supports_expressions)
-    {
-      // check to see if this is a valid expression
-
-      is_expr = is_valid_expression(params[path].as_string(), err_msg);
-    }
-
-    if(!params[path].dtype().is_number() && !is_expr)
-    {
-      if(supports_expressions)
-      {
-        std::string msg = "Expected numeric parameter '" + path +
-                          " : " + params[path].to_yaml()
-                             + "'  is not numeric and is not a valid expression."
-                             + " Error message '" + err_msg + "'";
-        info["errors"].append() = msg;
-      }
-      else
-      {
-        std::string msg = "Expected numeric parameter '" + path +
-                          " : " + params[path].to_yaml()
-                             + "'  is not numeric and does not support expressions";
-      }
-      res = false;
-    }
-  }
-  return res;
-}
-
-//-----------------------------------------------------------------------------
-bool
-check_string(const std::string path,
-             const conduit::Node &params,
-             conduit::Node &info,
-             bool required)
-{
-  bool res = true;
-  if(!params.has_path(path) && required)
-  {
-    info["errors"].append() = "Missing required string parameter '" +
-                              path + "'";
-    res = false;
-  }
-
-  if(params.has_path(path) && !params[path].dtype().is_string())
-  {
-    std::string msg = "Expected string parameter '" + path +
-                      "' is not a string'";
-    info["errors"].append() = msg;
-    res = false;
-  }
-  return res;
-}
-
-//-----------------------------------------------------------------------------
-// bools are a string with "true" or "false"
-bool
-check_bool(const std::string path,
-           const conduit::Node &params,
-           conduit::Node &info,
-           bool required)
-{
-  bool res = true;
-  if(!params.has_path(path) && required)
-  {
-    info["errors"].append() = "Missing required bool string parameter '" +
-                              path + "'";
-    res = false;
-  }
-
-    if(params.has_path(path))
-    {
-        if(!params[path].dtype().is_string())
-        {
-          std::string msg = "Expected bool string parameter '" + path +
-                            "' is not a string";
-          info["errors"].append() = msg;
-          res = false;
-        }
-        else
-        {
-            // get value and check true or false
-            std::string value = params[path].as_string();
-            if( value != "true" && value != "false" )
-            {
-                std::string msg = "Expected bool string parameter '" + path +
-                                  "' is not \"true\" or \"false\", " +
-                                  " value = \"" + value + "\"";
-                info["errors"].append() = msg;
-                res = false;
-            }
-        }
-    }
-
-  return res;
-}
-
-//-----------------------------------------------------------------------------
-bool
-check_object(const std::string path,
-             const conduit::Node &params,
-             conduit::Node &info,
-             bool required)
-{
-    bool res = true;
-    if(!params.has_path(path) && required)
-    {
-        info["errors"].append() = "Missing required object parameter '" + path + "'";
-        res = false;
-    }
-
-    if(params.has_path(path))
-    {
-        if(!params[path].dtype().is_object())
-        {
-            std::string msg = "Expected object parameter '" + path +
-                              "' is not an object";
-            info["errors"].append() = msg;
-            res = false;
-        }
-        else if(params[path].number_of_children() == 0)
-        {
-            std::string msg = "Expected object parameter '" + path +
-                          "' has no children";
-            info["errors"].append() = msg;
-            res = false;
-        }
-    }
-
-  return res;
-}
-
-
-//-----------------------------------------------------------------------------
-bool
-check_list(const std::string path,
-             const conduit::Node &params,
-             conduit::Node &info,
-             bool required)
-{
-    bool res = true;
-    if(!params.has_path(path) && required)
-    {
-        info["errors"].append() = "Missing required list parameter '" + path + "'";
-        res = false;
-    }
-
-    if(params.has_path(path))
-    {
-        if(!params[path].dtype().is_list())
-        {
-            std::string msg = "Expected list parameter '" + path +
-                              "' is not a list";
-            info["errors"].append() = msg;
-            res = false;
-        }
-        else if(params[path].number_of_children() == 0)
-        {
-            std::string msg = "Expected list parameter '" + path +
-                          "' has no children";
-            info["errors"].append() = msg;
-            res = false;
-        }
-    }
-
-  return res;
-}
-
-//-----------------------------------------------------------------------------
-std::string
-surprise_check(const std::vector<std::string> &valid_paths,
-               const std::vector<std::string> &ignore_paths,
-               const conduit::Node &params)
-{
-  // only children can surprise us
-  if(params.number_of_children() == 0)
-  {
-      return "";
-  }
-
-  std::stringstream ss;
-  std::vector<std::string> paths;
-  std::string curr_path = params.path() == "" ? "" :params.path() + "/";
-  path_helper(paths, ignore_paths, params, curr_path);
-  const int num_paths = static_cast<int>(paths.size());
-  const int num_valid_paths = static_cast<int>(valid_paths.size());
-  for(int i = 0; i < num_paths; ++i)
-  {
-    bool found = false;
-    for(int f = 0; f < num_valid_paths; ++f)
-    {
-      if(curr_path + valid_paths[f] == paths[i])
-      {
-        found = true;
-        break;
-      }
-    }
-
-    if(!found)
-    {
-      ss<<"Surprise parameter '"<<paths[i]<<"'\n";
-    }
-  }
-  return ss.str();
-}
-
-//-----------------------------------------------------------------------------
-std::string
-surprise_check(const std::vector<std::string> &valid_paths,
-               const conduit::Node &params)
-{
-  // only children can surprise us
-  if(params.number_of_children() == 0)
-  {
-      return "";
-  }
-
-  std::stringstream ss;
-  std::vector<std::string> paths;
-  path_helper(paths, params);
-  const int num_paths = static_cast<int>(paths.size());
-  const int num_valid_paths = static_cast<int>(valid_paths.size());
-  std::string curr_path = params.path() == "" ? "" :params.path() + "/";
-  for(int i = 0; i < num_paths; ++i)
-  {
-    bool found = false;
-    for(int f = 0; f < num_valid_paths; ++f)
-    {
-      if(curr_path + valid_paths[f] == paths[i])
-      {
-        found = true;
-        break;
-      }
-    }
-
-    if(!found)
-    {
-      ss<<"Surprise parameter '"<<paths[i]<<"'\n";
-    }
-  }
-
-  return ss.str();
-}
-
-//-----------------------------------------------------------------------------
-void
-path_helper(std::vector<std::string> &paths, const conduit::Node &node)
-{
-  const int num_children = static_cast<int>(node.number_of_children());
-
-  if(num_children == 0)
-  {
-    paths.push_back(node.path());
-    return;
-  }
-  for(int i = 0; i < num_children; ++i)
-  {
-    const conduit::Node &child = node.child(i);
-    path_helper(paths, child);
-  }
-
-}
-
-//-----------------------------------------------------------------------------
-void
-path_helper(std::vector<std::string> &paths,
-            const std::vector<std::string> &ignore,
-            const conduit::Node &params,
-            const std::string path_prefix)
-{
-  const int num_children = static_cast<int>(params.number_of_children());
-  const int num_ignore_paths = static_cast<int>(ignore.size());
-
-  for(int i = 0; i < num_children; ++i)
-  {
-    bool skip = false;
-    const conduit::Node &child = params.child(i);
-    for(int p = 0; p < num_ignore_paths; ++p)
-    {
-      const std::string ignore_path = path_prefix + ignore[p];
-      if(child.path().compare(0, ignore_path.length(), ignore_path) == 0)
-      {
-        skip = true;
-        break;
-      }
-    }
-
-    if(!skip)
-    {
-      path_helper(paths, child);
-    }
-  }
-
 }
 
 //-----------------------------------------------------------------------------
@@ -634,7 +435,6 @@ int get_int32(const conduit::Node &node, DataObject *dataset)
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
-
 
 
 

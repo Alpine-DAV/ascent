@@ -42,23 +42,21 @@ void ascent::runtime::filters::BFlowCompose::declare_interface(conduit::Node &i)
   i["type_name"] = "bflow_comp";
   i["port_names"].append() = "in";
   i["output_port"] = "false";  // true -- means filter, false -- means extract
-}
 
-//-----------------------------------------------------------------------------
+  // ----------- Define Param Schema -----------
+  conduit::Node &param_schema = i["param_schema"];
+  param_schema["type"] = "object";
 
-bool ascent::runtime::filters::BFlowCompose::verify_params(const conduit::Node &params, conduit::Node &info)
-{
-  info.reset();
+  string_schema(param_schema["properties/color_field"]);
+  string_schema(param_schema["properties/depth_field"]);
+  string_schema(param_schema["properties/image_prefix"]);
+  number_schema(param_schema["properties/compositing"]);
+  number_schema(param_schema["properties/fanin"]);
 
-  bool res = true;
-
-  res &= check_string("color_field", params, info, true);
-  res &= check_string("depth_field", params, info, true);
-  res &= check_string("image_prefix", params, info, true);
-  res &= check_numeric("compositing", params, info, true);
-  res &= check_numeric("fanin", params, info, false);
-
-  return res;
+  param_schema["required"].append() = "color_field";
+  param_schema["required"].append() = "depth_field";
+  param_schema["required"].append() = "image_prefix";
+  param_schema["required"].append() = "compositing";
 }
 
 //-----------------------------------------------------------------------------

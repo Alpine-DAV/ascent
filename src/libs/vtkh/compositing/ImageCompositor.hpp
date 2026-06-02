@@ -61,12 +61,16 @@ void ZBufferComposite(vtkh::Image &front, const vtkh::Image &image)
 #endif
   for(int i = 0; i < size; ++i)
   {
-    const float depth = image.m_depths[i];
-    if(depth > 1.f  || front.m_depths[i] < depth)
+    const int offset = i * 4;
+    if(image.m_pixels[offset + 3] == 0)
     {
       continue;
     }
-    const int offset = i * 4;
+    const float depth = image.m_depths[i];
+    if(front.m_pixels[offset + 3] != 0 && front.m_depths[i] < depth)
+    {
+      continue;
+    }
     front.m_depths[i] = abs(depth);
     front.m_pixels[offset + 0] = image.m_pixels[offset + 0];
     front.m_pixels[offset + 1] = image.m_pixels[offset + 1];

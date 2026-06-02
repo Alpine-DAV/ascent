@@ -62,12 +62,14 @@ Interface Declaration
         i["type_name"]   = "vtkh_no_op";
         i["port_names"].append() = "in";
         i["output_port"] = "true";
+        i["param_schema"] = conduit::Node();
     }
 
 
 * ``type_name``: declares the name of the filter to flow, and the only requirement is that this name be unique.
 * ``port_names``: declares a list of input port names.
 * ``output_port``: declares if this filter has an output of not. Valid values are ``true`` and ``false``.
+* ``param_schema``: defines a parameter schema as a conduit node expressing the required and optional parameters and their types.
 
 The ``port_names`` parameter is a list of input port names that can be referenced by name or index
 when creating the filter within the runtime. The typical number of inputs is one, but there is no
@@ -116,78 +118,604 @@ or equivalently in yaml:
 The Ascent runtime looks for the ``params`` node and passes it to the filter
 upon creation. Parameters are verified when the filter is created during execution.
 
-Filter Parameter Verification
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The ``verify_params`` method allow the filter creator to verify the expected parameters
-and parameter types before the filter is executed. If the verification fails, error messages
-are shown to the user. The method has two parameters: a Conduit node holding the parameters
-of the filter and a Conduit node that is populated with error information that flow will
-show if the result of the verification is false (error state).
+Filter Parameter Verification Schemas
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Filter parameters are validated and checked for any surprises using :ref:`param_schema`.
+In practice, a filter's interface ``param_schema`` describes the expected structure of the ``params``
+node that users provide when creating a filter.
+
+.. note::
+    In prior versions of Ascent, the ``verify_params`` method was used to allow the filter creator
+    to define parameter verification and surprise checking for each individual flow filter.
+    The base implementation of ``verify_params`` now uses the ``param_schema`` defined in the filter interface
+    to validate parameters and check for surprises against the expected schema
+    using :ref:`param_schema`.
+
+Ascent Parameter Schema Helpers
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+To assist in constructing parameter schemas, Ascent has a number of  small schema
+builder helpers defined in:
+
+- ``src/libs/ascent/runtimes/flow_filters/ascent_runtime_param_check.hpp``
+- ``src/libs/ascent/runtimes/flow_filters/ascent_runtime_param_check.cpp``
+
+Each helper returns a Conduit node that represents a schema fragment (see :ref:`param_schema`).
+These fragments are typically inserted under ``param_schema["properties/<param_name>"]``.
+
+Example pattern:
 
 .. code-block:: c++
-    :caption: Example parameter verification
-    :name: verify
-    :linenos:
 
-    bool
-    VTKHNoOp::verify_params(const conduit::Node &params,
-                            conduit::Node &info)
+    using namespace ascent::runtime::filters;
+
+    void MyFilter::declare_interface(conduit::Node &i)
     {
-        info.reset();
+        i["type_name"] = "my_filter";
+        i["port_names"].append() = "in";
+        i["output_port"] = "true";
 
-        bool res = check_string("field",params, info, true);
+        conduit::Node &param_schema = i["param_schema"];
+        param_schema["type"] = "object";
+        param_schema["additionalProperties"] = false;
 
-        std::vector<std::string> valid_paths;
-        valid_paths.push_back("field");
-
-        std::string surprises = surprise_check(valid_paths, params);
-
-        if(surprises != "")
-        {
-          res = false;
-          info["errors"].append() = surprises;
-        }
-
-        return res;
+        string_schema(param_schema["properties/field"], 1); // non-empty string
+        param_schema["required"].append() = "field";
     }
 
-Check Parameters
-++++++++++++++++
-While you can use the Conduit API to check for expected paths and types of values, we
-provide a number of methods to streamline common checks. These
-`parameter checking helpers <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/flow_filters/ascent_runtime_param_check.hpp>`_
-provide two basic checking mechanisms:
+string_schema
+#############
 
-* ``check_string``: checks for the presence of a string parameter
-* ``check_numeric``: checks for the presence of a numeric parameter
-
-Both functions have the same signature:
+Builds a string schema with optional length bounds.
 
 .. code-block:: c++
 
-    bool check_numeric(const std::string path,
-                       const conduit::Node &params,
-                       conduit::Node &info,
-                       bool required);
+    conduit::Node &string_schema(conduit::Node &schema_node,
+                                 const std::size_t minLength = 0,
+                                 const std::size_t maxLength = std::numeric_limits<std::size_t>::max());
 
-* ``path``: the expected path to the parameter in the Conduit node
-* ``params``: the parameters passed into verify
-* ``info``: the info node passed into verify
-* ``required``: indication that the parameter is required or optional
+.. raw:: html
 
-These helper functions return ``false`` if the parameter check fails.
+  <details><summary><strong>Example: Using ``string_schema`` (with length bounds)</strong></summary>
 
-Surprises
-+++++++++
-A common user error is to set a parameter at the wrong path.z
-For example the filter expects a parameter ``field`` but the user
-adds the path ``field_name``, the verification will fail and complain about a
-missing parameter. In order to provide a better error message, we provide
-a surprise parameter checking mechanism that reports unknown paths.
-Lines 9-18 in :ref:`verify` show how to use the surprise_check function to
-declare a set of known parameters and check for the existence of surprises.
-``surpise_check`` also allows you to ignore certain paths, which enables
-hierarchical surprise checking.
+.. code-block:: c++
+
+    // Example: require a non-empty string with a max length
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
+
+    string_schema(param_schema["properties/field"], 1, 64);
+    param_schema["required"].append() = "field";
+
+Resulting schema fragment:
+
+.. code-block:: yaml
+
+  type: string
+  minLength: 1
+  maxLength: 64
+
+Example input accepted by this schema:
+
+.. code-block:: yaml
+
+  params:
+    field: "pressure"
+
+.. raw:: html
+  
+  </details>
+  <br>
+
+
+string_enum_schema
+##################
+
+Builds a string schema restricted to an enumerated set of allowed values.
+
+.. code-block:: c++
+
+    conduit::Node &string_enum_schema(conduit::Node &schema_node, 
+                                      const std::vector<std::string> &options);
+
+.. raw:: html
+
+  <details><summary><strong>Example: Using ``string_enum_schema`` (string enum)</strong></summary>
+
+.. code-block:: c++
+
+    // Example: restrict a string parameter to a fixed set of values
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
+
+    string_enum_schema(param_schema["properties/interpolation"], {"nearest", "linear"});
+    param_schema["required"].append() = "interpolation";
+
+Resulting schema fragment:
+
+.. code-block:: yaml
+
+  type: string
+  enum: ["nearest", "linear"]
+
+Example input accepted by this schema:
+
+.. code-block:: yaml
+
+  params:
+    interpolation: "nearest"
+
+.. raw:: html
+
+  </details>
+  <br>
+
+bool_schema
+###########
+
+Builds a boolean-like schema represented as a *string* enum: ``"true"`` or ``"false"``.
+
+.. code-block:: c++
+
+    conduit::Node &bool_schema(conduit::Node &schema_node);
+
+.. raw:: html
+
+  <details><summary><strong>Example: Using ``bool_schema`` ("true"/"false" string enum)</strong></summary>
+
+.. code-block:: c++
+
+    // Example: model a boolean-like parameter as "true"/"false" strings
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
+
+    bool_schema(param_schema["properties/enabled"]);
+    param_schema["required"].append() = "enabled";
+
+Resulting schema fragment:
+
+.. code-block:: yaml
+
+  type: string
+  enum: ["true", "false"]
+
+Example input accepted by this schema:
+
+.. code-block:: yaml
+
+  # Note: the values must be strings, so quote them in YAML.
+  params:
+    enabled: "true"
+
+.. raw:: html
+
+  </details>
+  <br>
+
+number_schema
+#############
+
+Builds a numeric schema, optionally with bounds. If ``supports_expressions`` is ``true``,
+the schema accepts either a number *or* an expression string (via ``oneOf``).
+
+.. code-block:: c++
+
+    conduit::Node &number_schema(conduit::Node &schema_node,
+                                 const bool supports_expressions = false,
+                                 const int minimum = std::numeric_limits<int>::lowest(),
+                                 const int maximum = std::numeric_limits<int>::max(),
+                                 const int exclusiveMinimum = std::numeric_limits<int>::lowest(),
+                                 const int exclusiveMaximum = std::numeric_limits<int>::max());
+
+.. raw:: html
+
+  <details><summary><strong>Example: Using ``number_schema`` (bounded number)</strong></summary>
+
+.. code-block:: c++
+
+    // Example: accept a number in [0, 10]
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
+
+    number_schema(param_schema["properties/threshold"], false, 0, 10);
+    param_schema["required"].append() = "threshold";
+
+Resulting schema fragment:
+
+.. code-block:: yaml
+
+  # Example: bounded number (no expressions)
+  type: number
+  minimum: 0
+  maximum: 10
+
+Example input accepted by this schema:
+
+.. code-block:: yaml
+
+  params:
+    threshold: 3.5
+
+.. raw:: html
+
+  </details>
+  <br>
+
+.. raw:: html
+
+  <details><summary><strong>Example: Using ``number_schema`` (number or expression)</strong></summary>
+
+.. code-block:: c++
+
+    // Example: accept either a numeric value or an expression string
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
+
+    number_schema(param_schema["properties/threshold"], true, 0, 10);
+    param_schema["required"].append() = "threshold";
+
+Resulting schema fragment:
+
+.. code-block:: yaml
+
+  # Example: number OR expression string
+  oneOf:
+    - {type: number, minimum: 0, maximum: 10}
+    - {type: string, format: expression}
+
+Example input accepted by this schema:
+
+.. code-block:: yaml
+
+  params:
+    threshold: "1 + 2"
+
+.. raw:: html
+
+  </details>
+  <br>
+
+integer_schema
+##############
+
+Builds an integer schema, optionally with bounds. If ``supports_expressions`` is ``true``,
+the schema accepts either an integer *or* an expression string (via ``oneOf``).
+
+.. code-block:: c++
+
+    conduit::Node &integer_schema(conduit::Node &schema_node,
+                                  const bool supports_expressions = false,
+                                  const int minimum = std::numeric_limits<int>::lowest(),
+                                  const int maximum = std::numeric_limits<int>::max(),
+                                  const int exclusiveMinimum = std::numeric_limits<int>::lowest(),
+                                  const int exclusiveMaximum = std::numeric_limits<int>::max());
+
+.. raw:: html
+
+  <details><summary><strong>Example: Using ``integer_schema`` (bounded integer)</strong></summary>
+
+.. code-block:: c++
+
+    // Example: accept an integer >= 1
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
+
+    integer_schema(param_schema["properties/levels"], false, 1);
+    param_schema["required"].append() = "levels";
+
+Resulting schema fragment:
+
+.. code-block:: yaml
+
+  type: integer
+  minimum: 1
+
+Example input accepted by this schema:
+
+.. code-block:: yaml
+
+  params:
+    levels: 8
+
+.. raw:: html
+
+  </details>
+  <br>
+
+.. raw:: html
+
+  <details><summary><strong>Example: Using ``integer_schema`` (integer or expression)</strong></summary>
+
+.. code-block:: c++
+
+    // Example: accept either an integer value or an expression string
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
+
+    integer_schema(param_schema["properties/levels"], true, 1);
+    param_schema["required"].append() = "levels";
+
+Resulting schema fragment:
+
+.. code-block:: yaml
+
+  oneOf:
+    - {type: integer, minimum: 1}
+    - {type: string, format: expression}
+
+Example input accepted by this schema:
+
+.. code-block:: yaml
+
+  params:
+    levels: "2 + 2"
+
+.. raw:: html
+
+  </details>
+  <br>
+
+vec3_schema
+###########
+
+Builds an object schema that requires three numeric components. The default component
+names are ``x``, ``y``, and ``z``.
+
+.. code-block:: c++
+
+    conduit::Node &vec3_schema(conduit::Node &schema_node,
+                               const bool supports_expressions = false);
+
+    conduit::Node &vec3_schema(conduit::Node &schema_node,
+                               const std::string var1,
+                               const std::string var2,
+                               const std::string var3,
+                               const bool supports_expressions = false);
+
+.. raw:: html
+
+  <details><summary><strong>Example: Using ``vec3_schema`` (required x/y/z object)</strong></summary>
+
+.. code-block:: c++
+
+    // Example: require all 3 components: x, y, z
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
+
+    vec3_schema(param_schema["properties/offset"]);
+    param_schema["required"].append() = "offset";
+
+Resulting schema fragment:
+
+.. code-block:: yaml
+
+  type: object
+  additionalProperties: false
+  required: ["x", "y", "z"]
+  properties:
+    x: {type: number}
+    y: {type: number}
+    z: {type: number}
+
+Example input accepted by this schema:
+
+.. code-block:: yaml
+
+  params:
+    offset: {x: 0.0, y: 1.0, z: 2.0}
+
+.. raw:: html
+
+  </details>
+  <br>
+
+.. raw:: html
+
+  <details><summary><strong>Example: Using ``vec3_schema`` with custom param names</strong></summary>
+
+.. code-block:: c++
+
+    // Example: require all 3 components: x, y, z
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
+
+    vec3_schema(param_schema["properties/offset"], "var_i", "var_j", "var_k");
+    param_schema["required"].append() = "offset";
+
+Resulting schema fragment:
+
+.. code-block:: yaml
+
+  type: object
+  additionalProperties: false
+  required: ["var_i", "var_j", "var_k"]
+  properties:
+    var_i: {type: number}
+    var_j: {type: number}
+    var_k: {type: number}
+
+Example input accepted by this schema:
+
+.. code-block:: yaml
+
+  params:
+    offset: {var_i: 0.0, var_j: 1.0, var_k: 2.0}
+
+.. raw:: html
+
+  </details>
+  <br>
+
+vec3_schema_anyOf
+#################
+
+Builds an object schema that allows any subset of three numeric components, but requires
+that *at least one* of them is present (via ``anyOf``). The default component names are
+``x``, ``y``, and ``z``.
+
+.. code-block:: c++
+
+    conduit::Node &vec3_schema_anyOf(conduit::Node &schema_node,
+                                     const bool supports_expressions = false);
+
+    conduit::Node &vec3_schema_anyOf(conduit::Node &schema_node,
+                                     const std::string var1,
+                                     const std::string var2,
+                                     const std::string var3,
+                                     const bool supports_expressions = false);
+
+.. raw:: html
+
+  <details><summary><strong>Example: Using ``vec3_schema_anyOf`` (x/y/z object, at least one required)</strong></summary>
+
+.. code-block:: c++
+
+    // Example: allow x/y/z, but require at least one component to be present
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
+
+    vec3_schema_anyOf(param_schema["properties/origin"]);
+    param_schema["required"].append() = "origin";
+
+Resulting schema fragment:
+
+.. code-block:: yaml
+
+  type: object
+  additionalProperties: false
+  properties:
+    x: {type: number}
+    y: {type: number}
+    z: {type: number}
+  anyOf:
+    - {type: object, required: ["x"]}
+    - {type: object, required: ["y"]}
+    - {type: object, required: ["z"]}
+
+Example input accepted by this schema:
+
+.. code-block:: yaml
+
+  params:
+    origin: {x: 0.0}  # or {y: 1.0} / {z: 2.0} / {x: 0.0, y: 1.0}, etc.
+
+.. raw:: html
+
+  </details>
+  <br>
+
+array_schema
+############
+
+Builds an array schema. With ``item_schema``, each element is validated against the
+provided schema.
+
+.. code-block:: c++
+
+    conduit::Node &array_schema(conduit::Node &schema_node,
+                                const conduit::Node &item_schema = conduit::Node(),
+                                const std::size_t minItems = 0,
+                                const std::size_t maxItems = std::numeric_limits<std::size_t>::max());
+
+.. raw:: html
+
+  <details><summary><strong>Example: Using ``array_schema`` (array of numbers)</strong></summary>
+
+.. code-block:: c++
+
+    // Example: require an array where each item is a number
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
+
+    conduit::Node num_schema;
+    array_schema(param_schema["properties/iso_values"], number_schema(num_schema));
+    param_schema["required"].append() = "iso_values";
+
+Resulting schema fragment:
+
+.. code-block:: yaml
+
+  # Array of numbers
+  type: array
+  items: {type: number}
+
+Example input accepted by this schema:
+
+.. code-block:: yaml
+
+  params:
+    iso_values: [0.1, 0.2, 0.3]
+
+.. raw:: html
+
+  </details>
+  <br>
+
+ignore_schema
+#############
+
+Builds an object schema that is explicitly skipped during validation (via ``constraints/skip``).
+This is useful when a parameter subtree is accepted but not yet formally specified, or when
+validation is handled elsewhere.
+
+.. note::
+    Ignore schema allows a parameter to be surprise checked against (when ``additionalProperties`` is false) but the actual value will not be validated against any schema.
+    This is an explicit way of saying "I want field to be a valid value passed to this filter but I am not going to worry about if it is a stirng or number or something else just yet".
+    
+.. note::
+    Generally, if a validation schema can be provided it should be instead of using an ``ignore_schem``.
+
+.. code-block:: c++
+
+    conduit::Node &ignore_schema(conduit::Node &schema_node);
+
+.. raw:: html
+
+  <details><summary><strong>Example: Using ``ignore_schema`` (skip validation for a subtree)</strong></summary>
+
+.. code-block:: c++
+
+    // Example: accept a subtree but skip validating it
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
+
+    ignore_schema(param_schema["properties/options"]);
+    param_schema["required"].append() = "options";
+
+Resulting schema fragment:
+
+.. code-block:: yaml
+
+  type: object
+  constraints:
+    skip: true
+
+Example input accepted by this schema:
+
+.. code-block:: yaml
+
+  params:
+    options:
+      any_subtree: "is accepted"
+      nested: {a: 1, b: [1, 2, 3]}
+
+.. raw:: html
+
+  </details>
+  <br>
 
 Execute
 """""""
@@ -376,5 +904,3 @@ retrieved from the ``flow::Workspace`` which is accessible from inside a flow fi
       int rank;
       MPI_Comm_rank(comm, &rank);
     #endif
-
-

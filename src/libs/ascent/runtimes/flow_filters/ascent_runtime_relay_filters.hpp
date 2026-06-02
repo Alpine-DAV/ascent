@@ -58,8 +58,6 @@ public:
    ~RelayIOSave();
 
     virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
     virtual void   execute();
 };
 
@@ -71,8 +69,6 @@ public:
    ~RelayIOLoad();
 
     virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
     virtual void   execute();
 };
 //-----------------------------------------------------------------------------
@@ -83,8 +79,6 @@ public:
    ~BlueprintFlatten();
 
     virtual void   declare_interface(conduit::Node &i);
-    virtual bool   verify_params(const conduit::Node &params,
-                                 conduit::Node &info);
     virtual void   execute();
 };
 
