@@ -133,6 +133,17 @@ function abs_path()
   fi
 }
 
+function merge_install_tree()
+{
+  local src_dir="$1"
+  local dst_dir="$2"
+  if [ -d ${src_dir} ]; then
+    echo "**** Merging install tree ${src_dir} -> ${dst_dir}"
+    cmake -E make_directory ${dst_dir}
+    cmake -E copy_directory ${src_dir} ${dst_dir}
+  fi
+}
+
 root_dir=$(pwd)
 root_dir="${prefix:=${root_dir}}"
 root_dir=$(ospath ${root_dir})
@@ -200,9 +211,9 @@ mpicxx_exe="${mpicxx_exe:=mpic++}"
 # print all build_ZZZ and enable_ZZZ options
 ################
 echo "*** cmake_compiler_settings: ${cmake_compiler_settings}"
-echo "*** build_ascent `enable` settings:"
+echo "*** build_ascent enable settings:"
 set | grep enable_
-echo "*** build_ascent `build` settings:"
+echo "*** build_ascent build settings:"
 set | grep build_
 
 ################
@@ -693,9 +704,13 @@ echo "**** Configuring anari ${anari_version}"
 cmake -S ${anari_src_dir} -B ${anari_build_dir} ${cmake_compiler_settings} \
   -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose}\
   -DCMAKE_BUILD_TYPE=${build_config} \
+  -DBUILD_EXAMPLES=OFF \
   -DBUILD_VIEWER=OFF \
   -DBUILD_CTS=OFF \
+  -DBUILD_CAT=OFF \
+  -DBUILD_HELIDE_DEVICE=ON \
   -Danari_BUILD_TESTING=OFF \
+  -DBUILD_TESTING=OFF \
   -DCMAKE_INSTALL_PREFIX=${anari_install_dir} \
 
 echo "**** Building anari ${anari_version}"
@@ -718,7 +733,6 @@ ptc_install_dir=$(ospath ${install_dir}/ptc-v${ptc_version}/)
 ptc_tarball=$(ospath ${source_dir}/ptc-v${ptc_version}.tar.gz)
 
 # build only if install doesn't exist
-#CAVEAT/TODO: Installs in anari_install_dir
 if [ ! -d ${ptc_install_dir} ]; then
 if ${build_ptc}; then
 if [ ! -d ${ptc_src_dir} ]; then
@@ -741,8 +755,10 @@ cmake -S ${ptc_src_dir} -B ${ptc_build_dir} ${cmake_compiler_settings} \
   -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose}\
   -DCMAKE_BUILD_TYPE=${build_config} \
   -DANARI_SDK=${anari_install_dir} \
+  -Danari_DIR=${anari_install_dir}/lib/cmake/anari-${anari_version} \
+  -DCMAKE_PREFIX_PATH=${anari_install_dir} \
   -DPTC_BUILD_TESTING=OFF ${ptc_extra_cmake_args}\
-  -DCMAKE_INSTALL_PREFIX=${anari_install_dir} \
+  -DCMAKE_INSTALL_PREFIX=${ptc_install_dir} \
 
 echo "**** Building ptc ${ptc_version}"
 cmake --build ${ptc_build_dir} --config ${build_config} -j${build_jobs}
@@ -753,6 +769,9 @@ fi
 else
   echo "**** Skipping ptc build, install found at: ${ptc_install_dir}"
 fi # build_ptc
+if ${build_ptc}; then
+  merge_install_tree ${ptc_install_dir} ${anari_install_dir}
+fi
 
 ################
 # anari - barney 
@@ -768,7 +787,6 @@ barney_src_dir="${source_dir}/barney-${barney_version}"
 
 
 # build only if install doesn't exist
-#CAVEAT/TODO: Installs in anari_install_dir
 if [ ! -d ${barney_install_dir} ]; then
 if ${build_barney}; then
 # Clone Barney repo with submodules if not already present
@@ -801,8 +819,10 @@ cmake -S ${barney_src_dir} -B ${barney_build_dir} ${cmake_compiler_settings} \
   -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose}\
   -DCMAKE_BUILD_TYPE=${build_config} \
   -DANARI_SDK=${anari_install_dir} \
+  -Danari_DIR=${anari_install_dir}/lib/cmake/anari-${anari_version} \
+  -DCMAKE_PREFIX_PATH=${anari_install_dir} \
   -Dbarney_BUILD_TESTING=OFF ${barney_extra_cmake_args}\
-  -DCMAKE_INSTALL_PREFIX=${anari_install_dir} \
+  -DCMAKE_INSTALL_PREFIX=${barney_install_dir} \
 
 echo "**** Building barney ${barney_version}"
 cmake --build ${barney_build_dir} --config ${build_config} -j${build_jobs}
@@ -813,6 +833,9 @@ fi
 else
   echo "**** Skipping barney build, install found at: ${barney_install_dir}"
 fi # build_barney
+if ${build_barney}; then
+  merge_install_tree ${barney_install_dir} ${anari_install_dir}
+fi
 
 
 ################
@@ -825,7 +848,15 @@ viskores_install_dir=$(ospath ${install_dir}/viskores-${viskores_version}/)
 viskores_tarball=$(ospath ${source_dir}/v${viskores_version}.tar.gz)
 
 # build only if install doesn't exist
+viskores_needs_build=false
 if [ ! -d ${viskores_install_dir} ]; then
+  viskores_needs_build=true
+elif ${build_anari} && [ ! -f ${viskores_install_dir}/include/viskores-${viskores_version%.*}/viskores/interop/anari/ANARIMapperVolume.h ]; then
+  echo "**** Existing Viskores install does not include ANARI interop; rebuilding Viskores"
+  viskores_needs_build=true
+fi
+
+if ${viskores_needs_build}; then
 if ${build_viskores}; then
 if [ ! -f ${viskores_tarball} ]; then
   echo "**** Downloading ${viskores_tarball}"
@@ -838,7 +869,6 @@ if [ ! -d ${viskores_src_dir} ]; then
   # apply patches
   cd ${viskores_src_dir}
   echo "**** Applying Patches to ${viskores_tarball}"
-  patch -p1 < ${script_dir}/2025_06_18_viskores_z_extents_ray_culling_bugfix_viskores_mr109.patch
   patch -p1 < ${script_dir}/2025_07_07_vtkm_anari_mapper_triangles_parameter_fix.patch
   patch -p1 < ${script_dir}/2026_01_02_viskores_implent_pan_raytracing.patch
   patch -p1 < ${script_dir}/2026_04_10_viskores_1_1_0_volume_annotation_depth_hack.patch
@@ -1269,6 +1299,7 @@ if ${build_catalyst}; then
 fi
 
 if ${build_anari}; then
+    echo 'set(ENABLE_ANARI ON CACHE BOOL "")' >> ${root_dir}/ascent-config.cmake
     echo 'set(ANARI_DIR ' ${anari_install_dir}' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
 fi
 
