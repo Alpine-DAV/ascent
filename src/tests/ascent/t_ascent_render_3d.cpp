@@ -3342,20 +3342,15 @@ TEST(ascent_render_3d, test_render_3d_camera_frustum_meshes)
 
     conduit::Node &aspect_image_node = ascent_info["images"][5];
     conduit::Node aspect_camera_data = aspect_image_node["camera/camera_frustum_mesh"];
-    conduit::float64_accessor x_vals =
-      aspect_camera_data["coordsets/camera_frustum_coords/values/x"].value();
-    conduit::float64_accessor y_vals =
-      aspect_camera_data["coordsets/camera_frustum_coords/values/y"].value();
-    conduit::float64_accessor z_vals =
-      aspect_camera_data["coordsets/camera_frustum_coords/values/z"].value();
-    const double width_edge =
-      sqrt(pow(x_vals[1] - x_vals[0], 2.0) +
-           pow(y_vals[1] - y_vals[0], 2.0) +
-           pow(z_vals[1] - z_vals[0], 2.0));
-    const double height_edge =
-      sqrt(pow(x_vals[2] - x_vals[1], 2.0) +
-           pow(y_vals[2] - y_vals[1], 2.0) +
-           pow(z_vals[2] - z_vals[1], 2.0));
+    conduit::float64_accessor x_vals = aspect_camera_data["coordsets/camera_frustum_coords/values/x"].value();
+    conduit::float64_accessor y_vals = aspect_camera_data["coordsets/camera_frustum_coords/values/y"].value();
+    conduit::float64_accessor z_vals = aspect_camera_data["coordsets/camera_frustum_coords/values/z"].value();
+    const double width_edge = sqrt(pow(x_vals[1] - x_vals[0], 2.0) +
+                              pow(y_vals[1] - y_vals[0], 2.0) +
+                              pow(z_vals[1] - z_vals[0], 2.0));
+    const double height_edge = sqrt(pow(x_vals[2] - x_vals[1], 2.0) +
+                               pow(y_vals[2] - y_vals[1], 2.0) +
+                               pow(z_vals[2] - z_vals[1], 2.0));
     EXPECT_NEAR(width_edge / height_edge, 2.0, 1e-6);
 
     //
