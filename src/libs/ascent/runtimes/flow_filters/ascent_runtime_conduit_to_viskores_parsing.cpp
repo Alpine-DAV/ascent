@@ -15,6 +15,10 @@
 
 #include <ascent_logging.hpp>
 #include <ascent_logging_old.hpp>
+
+#include <cerrno>
+#include <cstdlib>
+#include <limits>
 using namespace conduit;
 
 //-----------------------------------------------------------------------------
@@ -34,6 +38,56 @@ namespace runtime
 //-----------------------------------------------------------------------------
 namespace filters
 {
+
+namespace
+{
+
+int
+parse_integer_dimension(const conduit::Node &node, const std::string &name)
+{
+  if(node.dtype().is_integer())
+  {
+    const int64 value = node.to_int64();
+    if(value < std::numeric_limits<int>::min() ||
+       value > std::numeric_limits<int>::max())
+    {
+      ASCENT_ERROR(name << " value " << value
+                   << " is outside the supported integer range");
+      return 0;
+    }
+    return static_cast<int>(value);
+  }
+
+  if(node.dtype().is_string())
+  {
+    const std::string value_str = node.as_string();
+    char *end = nullptr;
+    errno = 0;
+    const long long value = std::strtoll(value_str.c_str(), &end, 10);
+
+    if(end == value_str.c_str() || *end != '\0' || errno == ERANGE)
+    {
+      ASCENT_ERROR(name << " must be an integer value, got '"
+                   << value_str << "'");
+      return 0;
+    }
+
+    if(value < std::numeric_limits<int>::min() ||
+       value > std::numeric_limits<int>::max())
+    {
+      ASCENT_ERROR(name << " value " << value_str
+                   << " is outside the supported integer range");
+      return 0;
+    }
+
+    return static_cast<int>(value);
+  }
+
+  ASCENT_ERROR(name << " must be an integer value");
+  return 0;
+}
+
+}
 
 bool string_equal(const std::string& str1, const std::string& str2)
 {
@@ -77,12 +131,12 @@ parse_image_dims(const conduit::Node &node, int &width, int &height)
 
   if(node.has_path("image_width"))
   {
-    width = node["image_width"].to_int32();
+    width = parse_integer_dimension(node["image_width"], "image_width");
   }
 
   if(node.has_path("image_height"))
   {
-    height = node["image_height"].to_int32();
+    height = parse_integer_dimension(node["image_height"], "image_height");
   }
 
 }
@@ -549,8 +603,6 @@ parse_color_table(const conduit::Node &color_table_node)
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
-
-
 
 
 

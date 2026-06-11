@@ -63,6 +63,8 @@
 #endif
 
 // std includes
+#include <algorithm>
+#include <cctype>
 #include <limits>
 #include <set>
 #include <numeric>
@@ -104,6 +106,40 @@ namespace filters
 namespace detail
 {
 
+bool
+is_visit_material_companion_field(const std::string &field_name)
+{
+  return field_name.rfind("volume_fraction_", 0) == 0 ||
+         field_name.find("material_attribute") != std::string::npos;
+}
+
+bool
+visit_material_family_base(const std::string &field_name, std::string &base_name)
+{
+  const size_t underscore = field_name.rfind('_');
+  if(underscore == std::string::npos || underscore + 1 == field_name.size())
+  {
+    return false;
+  }
+
+  for(size_t i = underscore + 1; i < field_name.size(); ++i)
+  {
+    if(!std::isdigit(static_cast<unsigned char>(field_name[i])))
+    {
+      return false;
+    }
+  }
+
+  base_name = field_name.substr(0, underscore);
+  return !base_name.empty();
+}
+
+bool
+is_requested_visit_material_family_field(const std::string &field_name, const std::vector<std::string> &field_names)
+{
+  std::string base_name;
+  return visit_material_family_base(field_name, base_name) && std::find(field_names.begin(), field_names.end(), base_name) != field_names.end();
+}
 
 //-----------------------------------------------------------------------------
 // mfem needs special fields so look for them
@@ -112,6 +148,8 @@ void
 check_for_attributes(const conduit::Node &input,
                      std::vector<std::string> &field_names)
 {
+  const bool keep_visit_material_companions = std::find(field_names.begin(), field_names.end(), "materials") != field_names.end();
+
   const int num_doms = input.number_of_children();
   std::set<std::string> specials;
   for(int d = 0; d < num_doms; ++d)
@@ -124,6 +162,15 @@ check_for_attributes(const conduit::Node &input,
       for(int i = 0; i < fnames.size(); ++i)
       {
         if(fnames[i].find("_attribute") != std::string::npos)
+        {
+          specials.insert(fnames[i]);
+        }
+        if(keep_visit_material_companions &&
+           is_visit_material_companion_field(fnames[i]))
+        {
+          specials.insert(fnames[i]);
+        }
+        if(is_requested_visit_material_family_field(fnames[i], field_names))
         {
           specials.insert(fnames[i]);
         }
@@ -1180,8 +1227,3 @@ BlueprintFlatten::execute()
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
-
-
-
-
-

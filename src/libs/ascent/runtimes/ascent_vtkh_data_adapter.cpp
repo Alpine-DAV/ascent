@@ -16,9 +16,13 @@
 #include <iostream>
 #include <string.h>
 #include <limits.h>
+#include <algorithm>
+#include <cctype>
 #include <cstdlib>
 #include <sstream>
 #include <type_traits>
+#include <utility>
+#include <vector>
 
 // third party includes
 
@@ -858,6 +862,124 @@ void GetMatSetFields(const conduit::Node &node, //materials["matset"]
 // VTKHDataAdapter public methods
 //-----------------------------------------------------------------------------
 
+namespace
+{
+
+bool
+visit_volume_fraction_suffix(const std::string &field_name, std::string &suffix)
+{
+    const std::string prefix = "volume_fraction_";
+    if(field_name.rfind(prefix, 0) != 0 || field_name.size() == prefix.size())
+    {
+        return false;
+    }
+
+    suffix = field_name.substr(prefix.size());
+    for(size_t i = 0; i < suffix.size(); ++i)
+    {
+        if(!std::isdigit(static_cast<unsigned char>(suffix[i])))
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+const conduit::Node *
+scalar_field_values(const conduit::Node &field)
+{
+    if(!field.has_child("values"))
+    {
+        return NULL;
+    }
+
+    const conduit::Node &values = field["values"];
+    if(values.number_of_children() == 0)
+    {
+        return &values;
+    }
+
+    if(values.number_of_children() == 1)
+    {
+        return &values.child(0);
+    }
+
+    return NULL;
+}
+
+bool
+build_visit_style_matset(const conduit::Node &node,
+                         const std::string &topo_name,
+                         int neles,
+                         conduit::Node &matsets)
+{
+    if(!node.has_child("fields"))
+    {
+        return false;
+    }
+
+    std::vector<std::pair<std::string, const conduit::Node *> > materials;
+    conduit::NodeConstIterator itr = node["fields"].children();
+    while(itr.has_next())
+    {
+        const conduit::Node &field = itr.next();
+        std::string suffix;
+        if(!visit_volume_fraction_suffix(itr.name(), suffix))
+        {
+            continue;
+        }
+
+        if(!field.has_child("topology") || field["topology"].as_string() != topo_name)
+        {
+            continue;
+        }
+
+        if(field.has_child("association") &&
+           field["association"].as_string() != "element")
+        {
+            continue;
+        }
+
+        const conduit::Node *values = scalar_field_values(field);
+        if(values == NULL)
+        {
+            continue;
+        }
+
+        if(!values->dtype().is_float32() && !values->dtype().is_float64())
+        {
+            continue;
+        }
+
+        if(values->dtype().number_of_elements() != neles)
+        {
+            continue;
+        }
+
+        materials.push_back(std::make_pair(suffix, values));
+    }
+
+    if(materials.empty())
+    {
+        return false;
+    }
+
+    std::sort(materials.begin(), materials.end());
+
+    conduit::Node &matset = matsets["materials"];
+    matset["topology"] = topo_name;
+    for(size_t i = 0; i < materials.size(); ++i)
+    {
+        const std::string material_name = "material_" + materials[i].first;
+        matset["volume_fractions"][material_name].set_external(*materials[i].second);
+    }
+
+    return true;
+}
+
+} // namespace
+
 VTKHCollection*
 VTKHDataAdapter::BlueprintToVTKHCollection(const conduit::Node &n,
                                            bool zero_copy)
@@ -1127,10 +1249,21 @@ VTKHDataAdapter::BlueprintToViskoresDataSet(const Node &node,
         }
     }
 
+    conduit::Node visit_style_matsets;
+    const conduit::Node *matsets = NULL;
     if(node.has_child("matsets"))
     {
+        matsets = &node["matsets"];
+    }
+    else if(build_visit_style_matset(node, topo_name, neles, visit_style_matsets))
+    {
+        matsets = &visit_style_matsets;
+    }
+
+    if(matsets != NULL)
+    {
         // add all of the materials:
-        NodeConstIterator itr = node["matsets"].children();
+        NodeConstIterator itr = matsets->children();
         std::string matset_name;
         while(itr.has_next())
         {
