@@ -4067,6 +4067,80 @@ TEST(ascent_render_3d, test_render_invalid_camera)
 }
 
 //-----------------------------------------------------------------------------
+TEST(ascent_render_3d, test_render_3d_non_integer_image_dims)
+{
+    // the ascent runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping 3D non-integer "
+                    "image dimension test");
+
+        return;
+    }
+
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data, verify_info));
+
+    string output_path = prepare_output_dir();
+    string output_file =
+        conduit::utils::join_file_path(output_path,
+                                       "tout_render_3d_non_integer_image_dims");
+
+    conduit::Node scenes;
+    scenes["s1/plots/p1/type"] = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "braid";
+    scenes["s1/renders/r1/image_prefix"] = output_file;
+    scenes["s1/renders/r1/image_width"] = "512.5";
+    scenes["s1/renders/r1/image_height"] = 512;
+
+    conduit::Node actions;
+    conduit::Node &add_plots = actions.append();
+    add_plots["action"] = "add_scenes";
+    add_plots["scenes"] = scenes;
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent_opts["exceptions"] = "forward";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+
+    bool error_occured = false;
+    std::string expected_error = "image_width must be an integer value";
+    try
+    {
+        ascent.execute(actions);
+    }
+    catch(conduit::Error &err)
+    {
+        if(err.message().find(expected_error) != std::string::npos)
+        {
+            error_occured = true;
+        }
+        else
+        {
+            std::cout << "The error that was thrown did not match the expected "
+                      << "'" << expected_error << "' error" << std::endl;
+            std::cout << err.message() << std::endl;
+        }
+    }
+
+    ascent.close();
+
+    EXPECT_TRUE(error_occured);
+}
+
+//-----------------------------------------------------------------------------
 TEST(ascent_render_3d, test_render_3d_mesh_bg_fg_color)
 {
     // the ascent runtime is currently our only rendering runtime
@@ -4159,4 +4233,3 @@ int main(int argc, char* argv[])
     result = RUN_ALL_TESTS();
     return result;
 }
-
