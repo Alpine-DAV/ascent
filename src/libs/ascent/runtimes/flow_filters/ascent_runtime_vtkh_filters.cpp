@@ -3983,8 +3983,8 @@ VTKHProject2d::declare_interface(Node &i)
     param_schema["additionalProperties"] = false;
 
     string_schema(param_schema["properties/topology"]);
-    number_schema(param_schema["properties/image_width"]);
-    number_schema(param_schema["properties/image_height"]);
+    integer_schema(param_schema["properties/image_width"]);
+    integer_schema(param_schema["properties/image_height"]);
     ignore_schema(param_schema["properties/dataset_bounds"]);
     ignore_schema(param_schema["properties/camera"]);
     array_schema(param_schema["properties/fields"]);

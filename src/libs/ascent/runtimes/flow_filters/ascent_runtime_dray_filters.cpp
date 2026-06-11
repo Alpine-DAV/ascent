@@ -1236,8 +1236,8 @@ DRayPseudocolor::declare_interface(Node &i)
     string_schema(param_schema["properties/image_prefix"]);
     number_schema(param_schema["properties/min_value"]);
     number_schema(param_schema["properties/max_value"]);
-    number_schema(param_schema["properties/image_width"]);
-    number_schema(param_schema["properties/image_height"]);
+    integer_schema(param_schema["properties/image_width"]);
+    integer_schema(param_schema["properties/image_height"]);
     string_schema(param_schema["properties/log_scale"]);
     string_schema(param_schema["properties/annotations"]);
     string_schema(param_schema["properties/draw_mesh"]);
@@ -1408,8 +1408,8 @@ DRay3Slice::declare_interface(Node &i)
     string_schema(param_schema["properties/image_prefix"]);
     number_schema(param_schema["properties/min_value"]);
     number_schema(param_schema["properties/max_value"]);
-    number_schema(param_schema["properties/image_width"]);
-    number_schema(param_schema["properties/image_height"]);
+    integer_schema(param_schema["properties/image_width"]);
+    integer_schema(param_schema["properties/image_height"]);
     string_schema(param_schema["properties/log_scale"]);
     string_schema(param_schema["properties/annotations"]);
     number_schema(param_schema["properties/x_offset"]);
@@ -1789,8 +1789,8 @@ DRayVolume::declare_interface(Node &i)
     string_schema(param_schema["properties/image_prefix"]);
     number_schema(param_schema["properties/min_value"]);
     number_schema(param_schema["properties/max_value"]);
-    number_schema(param_schema["properties/image_width"]);
-    number_schema(param_schema["properties/image_height"]);
+    integer_schema(param_schema["properties/image_width"]);
+    integer_schema(param_schema["properties/image_height"]);
     string_schema(param_schema["properties/log_scale"]);
     string_schema(param_schema["properties/annotations"]);
     number_schema(param_schema["properties/samples"]);
@@ -2082,8 +2082,8 @@ DRayProject2d::declare_interface(Node &i)
     param_schema["additionalProperties"] = false;
 
     ignore_schema(param_schema["properties/fields"]);
-    number_schema(param_schema["properties/image_width"]);
-    number_schema(param_schema["properties/image_height"]);
+    integer_schema(param_schema["properties/image_width"]);
+    integer_schema(param_schema["properties/image_height"]);
     ignore_schema(param_schema["properties/camera"]);
     ignore_schema(param_schema["properties/plane"]);
 }
@@ -2250,8 +2250,8 @@ DRayProjectColors2d::declare_interface(Node &i)
     string_schema(param_schema["properties/field"]);
     number_schema(param_schema["properties/min_value"]);
     number_schema(param_schema["properties/max_value"]);
-    number_schema(param_schema["properties/image_width"]);
-    number_schema(param_schema["properties/image_height"]);
+    integer_schema(param_schema["properties/image_width"]);
+    integer_schema(param_schema["properties/image_height"]);
     string_schema(param_schema["properties/log_scale"]);
     ignore_schema(param_schema["properties/camera"]);
     
@@ -2435,7 +2435,6 @@ DRayVectorComponent::execute()
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
-
 
 
 
