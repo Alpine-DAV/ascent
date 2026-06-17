@@ -435,7 +435,7 @@ stages:
           containerImage: ${{ variables.ubuntu_22_04_cuda_12_8_1_tag }}
           BUILD_SHARED_LIBS: OFF
           CMAKE_BUILD_TYPE: MinSizeRel
-          ENABLE_DRAY: ON
+          ENABLE_DRAY: OFF
           ENABLE_MFEM: ON
           BLT_CXX_STD: c++17
           # static linking unit tests + examples eats up alot of disk space,
