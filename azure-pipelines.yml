@@ -573,18 +573,18 @@ stages:
     pool:
       vmImage: 'ubuntu-latest'
     timeoutInMinutes: 0
-    variables:
-      CMAKE_EXE: /cmake-3.24.4-linux-x86_64/bin/cmake
     strategy:
       matrix:
         ubuntu_22.04_rocm_6.3.4_build_ascent:
           containerImage: ${{ variables.ubuntu_22_04_rocm_6_3_4_tag }}
           BUILD_SHARED_LIBS: ON
+          CMAKE_EXE: /cmake-3.24.4-linux-x86_64/bin/cmake
           CMAKE_BUILD_TYPE: Release
           BLT_CXX_STD: c++17
           ENABLE_TESTS: ON
         ubuntu_22.04_rocm_7.2.4_build_ascent:
           containerImage: ${{ variables.ubuntu_22_04_rocm_7_2_4_tag }}
+          CMAKE_EXE: /cmake-3.31.12-linux-x86_64/bin/cmake
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Release
           BLT_CXX_STD: c++17
