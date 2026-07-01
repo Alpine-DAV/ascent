@@ -81,12 +81,21 @@ bool
 is_visit_material_companion_field(const std::string &field_name)
 {
   return field_name.rfind("volume_fraction_", 0) == 0 ||
+         field_name.rfind("vol_frac_", 0) == 0 ||
          field_name.find("material_attribute") != std::string::npos;
 }
 
 bool
 visit_material_family_base(const std::string &field_name, std::string &base_name)
 {
+  const std::string axom_prefix = "vol_frac_";
+  if(field_name.rfind(axom_prefix, 0) == 0 &&
+     field_name.size() > axom_prefix.size())
+  {
+    base_name = "vol_frac";
+    return true;
+  }
+
   const size_t underscore = field_name.rfind('_');
   if(underscore == std::string::npos || underscore + 1 == field_name.size())
   {

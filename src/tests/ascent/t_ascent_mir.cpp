@@ -19,6 +19,7 @@
 #include <math.h>
 
 #include <conduit_blueprint.hpp>
+#include <conduit_relay_io_blueprint.hpp>
 
 #include "t_config.hpp"
 #include "t_utils.hpp"
@@ -315,6 +316,107 @@ TEST(ascent_mir, venn_viskores_mir_sparse_by_material)
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 
 }
+
+//-----------------------------------------------------------------------------
+TEST(ascent_mir, axom_q7o5_material_boundary)
+{
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent viskores support disabled, skipping test");
+        return;
+    }
+
+    auto mesh_domain = [](Node &mesh) -> Node *
+    {
+        if(mesh.has_path("fields") && mesh.has_path("topologies"))
+        {
+            return &mesh;
+        }
+
+        for(index_t i = 0; i < mesh.number_of_children(); ++i)
+        {
+            Node &candidate = mesh.child(i);
+            if(candidate.has_path("fields") && candidate.has_path("topologies"))
+            {
+                return &candidate;
+            }
+        }
+
+        return nullptr;
+    };
+
+    Node data, verify_info;
+    const std::string root_file =
+        conduit::utils::join_file_path(std::string(ASCENT_T_DATA_DIR),
+                                       "axom_klee_test_data/balls_and_jacks_q7o5/shaping.root");
+
+    conduit::relay::io::blueprint::load_mesh(root_file, data);
+    Node *dom = mesh_domain(data);
+    ASSERT_TRUE(dom != nullptr);
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(*dom, verify_info));
+
+    ASCENT_INFO("Testing the MIR filter with Axom balls_and_jacks_q7o5 material data");
+
+    (*dom)["state/cycle"] = 100;
+    string output_path = prepare_output_dir();
+    string output_file =
+        conduit::utils::join_file_path(output_path,
+                                       "tout_mir_axom_q7o5_material_boundary");
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+    //
+    // Create the actions.
+    //
+
+    conduit::Node pipelines;
+    pipelines["pl1/f1/type"] = "mir";
+    conduit::Node &params = pipelines["pl1/f1/params"];
+    params["matset"] = "materials";
+    params["error_scaling"] = 0.0;
+    params["scaling_decay"] = 0.0;
+    params["iterations"] = 0;
+    params["max_error"] = 0.00001;
+    params["output_name"] = "materials";
+
+    conduit::Node scenes;
+    scenes["s1/plots/p1/type"] = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "materials";
+    scenes["s1/plots/p1/color_table/discrete"] = "true";
+    scenes["s1/plots/p1/pipeline"] = "pl1";
+    scenes["s1/image_prefix"] = output_file;
+
+    conduit::Node actions;
+    conduit::Node &add_pipelines = actions.append();
+    add_pipelines["action"] = "add_pipelines";
+    add_pipelines["pipelines"] = pipelines;
+    conduit::Node &add_scenes= actions.append();
+    add_scenes["action"] = "add_scenes";
+    add_scenes["scenes"] = scenes;
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(*dom);
+    ascent.execute(actions);
+    ascent.close();
+
+    // check that we created an image
+    EXPECT_TRUE(check_test_file(output_file + "_000100.png"));
+    std::string msg = "An example of using the MIR filter "
+                      "with Axom balls_and_jacks_q7o5 material data.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+}
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {
@@ -331,5 +433,4 @@ int main(int argc, char* argv[])
     result = RUN_ALL_TESTS();
     return result;
 }
-
 

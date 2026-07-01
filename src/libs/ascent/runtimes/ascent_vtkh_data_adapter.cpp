@@ -666,8 +666,47 @@ void GetMatSetFields(const conduit::Node &node, //materials["matset"]
   }
   else
   {
+    const S vf_tolerance = static_cast<S>(1e-6);
+    const S vf_dust = static_cast<S>(1e-4);
+    const S one = static_cast<S>(1);
+    std::vector<S> v_sums(neles, static_cast<S>(0));
+    std::vector<S> v_kept_sums(neles, static_cast<S>(0));
+
     NodeConstIterator itr = node["volume_fractions"].children();
     std::string material_name;
+    while(itr.has_next())
+    {
+
+      const conduit::Node * n_material;
+      const conduit::Node &n_next = itr.next();
+      //n_next is not leaf i.e. has values: [v0,v1,...,vn] 
+      if(n_next.number_of_children() != 0)
+      {
+        n_material = &n_next.child(0);
+      }
+      else
+        n_material = &n_next;
+      const S *data = n_material->value();
+      for(index_t i = 0; i < neles; ++i)
+      {
+        if(data[i] > static_cast<S>(0))
+        {
+          v_sums[i] += data[i];
+        }
+      }
+    }
+
+    bool add_implicit_background = false;
+    for(index_t i = 0; i < neles; ++i)
+    {
+      if(v_sums[i] < one - vf_tolerance)
+      {
+        add_implicit_background = true;
+        break;
+      }
+    }
+
+    itr = node["volume_fractions"].children();
     while(itr.has_next())
     {
 
@@ -684,8 +723,22 @@ void GetMatSetFields(const conduit::Node &node, //materials["matset"]
       //increase length when a material vf value > 0
       for(index_t i = 0; i < neles; ++i)
       {
-        if(data[i] > 0)
+        if(data[i] > (add_implicit_background ? vf_dust : static_cast<S>(0)))
+        {
           v_length[i] += 1;
+          v_kept_sums[i] += data[i];
+        }
+      }
+    }
+
+    if(add_implicit_background)
+    {
+      for(index_t i = 0; i < neles; ++i)
+      {
+        if(v_kept_sums[i] < one - vf_dust)
+        {
+          v_length[i] += 1;
+        }
       }
     }
   }
@@ -755,6 +808,47 @@ void GetMatSetFields(const conduit::Node &node, //materials["matset"]
   else
   {
     int num_materials = node["volume_fractions"].number_of_children();
+    const S vf_tolerance = static_cast<S>(1e-6);
+    const S vf_dust = static_cast<S>(1e-4);
+    const S one = static_cast<S>(1);
+    std::vector<S> v_sums(neles, static_cast<S>(0));
+    std::vector<S> v_kept_sums(neles, static_cast<S>(0));
+    bool add_implicit_background = false;
+
+    for(index_t i = 0; i < num_materials; ++i)
+    {
+      const Node &n_materials = node["volume_fractions"];
+      const Node &n_child = n_materials.child(i);
+
+      const Node * n_material;
+      //n_child is not leaf i.e. has values: [v0,v1,...,vn] 
+      if(n_child.number_of_children() != 0)
+      {
+        n_material = &n_child.child(0);
+      }
+      else
+        n_material = &n_child;
+
+      const S *data = n_material->value();
+
+      for(index_t j = 0; j < neles; ++j)
+      {
+        if(data[j] > static_cast<S>(0))
+        {
+          v_sums[j] += data[j];
+        }
+      }
+    }
+
+    for(index_t j = 0; j < neles; ++j)
+    {
+      if(v_sums[j] < one - vf_tolerance)
+      {
+        add_implicit_background = true;
+        break;
+      }
+    }
+
     for(index_t i = 0; i < num_materials; ++i)
     {
       const Node &n_materials = node["volume_fractions"];
@@ -774,12 +868,28 @@ void GetMatSetFields(const conduit::Node &node, //materials["matset"]
       for(index_t j = 0; j < neles; ++j)
       {
         index_t offset = v_offsets[j];
-        if(data[j] > 0)
+        if(data[j] > (add_implicit_background ? vf_dust : static_cast<S>(0)))
         {
           v_length[j] -= 1;
           index_t length = v_length[j];
           v_ids[offset + length] = i + 1; //IDs cannot start at 0
           v_vfs[offset + length] = data[j];
+          v_kept_sums[j] += data[j];
+        }
+      }
+    }
+
+    if(add_implicit_background)
+    {
+      for(index_t j = 0; j < neles; ++j)
+      {
+        if(v_kept_sums[j] < one - vf_dust)
+        {
+          index_t offset = v_offsets[j];
+          v_length[j] -= 1;
+          index_t length = v_length[j];
+          v_ids[offset + length] = num_materials + 1; //implicit background material
+          v_vfs[offset + length] = one - v_kept_sums[j];
         }
       }
     }
@@ -866,24 +976,35 @@ namespace
 {
 
 bool
-visit_volume_fraction_suffix(const std::string &field_name, std::string &suffix)
+material_volume_fraction_name(const std::string &field_name,
+                              std::string &material_name)
 {
-    const std::string prefix = "volume_fraction_";
-    if(field_name.rfind(prefix, 0) != 0 || field_name.size() == prefix.size())
+    const std::string visit_prefix = "volume_fraction_";
+    if(field_name.rfind(visit_prefix, 0) == 0 &&
+       field_name.size() > visit_prefix.size())
     {
-        return false;
-    }
-
-    suffix = field_name.substr(prefix.size());
-    for(size_t i = 0; i < suffix.size(); ++i)
-    {
-        if(!std::isdigit(static_cast<unsigned char>(suffix[i])))
+        const std::string suffix = field_name.substr(visit_prefix.size());
+        for(size_t i = 0; i < suffix.size(); ++i)
         {
-            return false;
+            if(!std::isdigit(static_cast<unsigned char>(suffix[i])))
+            {
+                return false;
+            }
         }
+
+        material_name = "material_" + suffix;
+        return true;
     }
 
-    return true;
+    const std::string axom_prefix = "vol_frac_";
+    if(field_name.rfind(axom_prefix, 0) == 0 &&
+       field_name.size() > axom_prefix.size())
+    {
+        material_name = field_name.substr(axom_prefix.size());
+        return true;
+    }
+
+    return false;
 }
 
 const conduit::Node *
@@ -924,8 +1045,8 @@ build_visit_style_matset(const conduit::Node &node,
     while(itr.has_next())
     {
         const conduit::Node &field = itr.next();
-        std::string suffix;
-        if(!visit_volume_fraction_suffix(itr.name(), suffix))
+        std::string material_name;
+        if(!material_volume_fraction_name(itr.name(), material_name))
         {
             continue;
         }
@@ -957,7 +1078,7 @@ build_visit_style_matset(const conduit::Node &node,
             continue;
         }
 
-        materials.push_back(std::make_pair(suffix, values));
+        materials.push_back(std::make_pair(material_name, values));
     }
 
     if(materials.empty())
@@ -971,8 +1092,7 @@ build_visit_style_matset(const conduit::Node &node,
     matset["topology"] = topo_name;
     for(size_t i = 0; i < materials.size(); ++i)
     {
-        const std::string material_name = "material_" + materials[i].first;
-        matset["volume_fractions"][material_name].set_external(*materials[i].second);
+        matset["volume_fractions"][materials[i].first].set_external(*materials[i].second);
     }
 
     return true;
