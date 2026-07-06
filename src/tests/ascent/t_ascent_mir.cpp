@@ -386,6 +386,12 @@ TEST(ascent_mir, axom_q7o5_material_boundary)
         ASCENT_INFO("Ascent viskores support disabled, skipping test");
         return;
     }
+    // only run this test if ascent was built with mfem support
+    if(n["runtimes/ascent/mfem/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent mfem support disabled, skipping test");
+        return;
+    }
 
     auto mesh_domain = [](Node &mesh) -> Node *
     {
