@@ -1026,8 +1026,7 @@ Sample::DoExecute()
         viskores::cont::DataSet reduced;
         bool valid_field;
         viskores::Id field_id = this->m_input->GetFieldType(field_name, valid_field);
-        const int num_values =
-          static_cast<int>(local_results[i].GetField(field_name).GetData().GetNumberOfValues());
+        const int num_values = static_cast<int>(local_results[i].GetField(field_name).GetData().GetNumberOfValues());
         vtkh::detail::GlobalReduceField g_reducefield(local_results[i],
                                                        field_name,
                                                        m_invalid_value,
@@ -1047,25 +1046,25 @@ Sample::DoExecute()
   }
   else
   {
-  //take uniform sampled grid and reduce to root process
-  viskores::cont::DataSet reduced_output;
-  reduced_output.CopyStructure(local_results[0]);
+    //take uniform sampled grid and reduce to root process
+    viskores::cont::DataSet reduced_output;
+    reduced_output.CopyStructure(local_results[0]);
   
-  for(const auto &field_name : m_fields)
-  {
-    viskores::cont::DataSet reduced;
-    bool valid_field;
-    viskores::Id field_id = this->m_input->GetFieldType(field_name, valid_field);
-    vtkh::detail::GlobalReduceField g_reducefield(local_results[0], field_name, m_invalid_value, m_num_samples, field_id, reduced);
-    g_reducefield.Reduce();
-    viskores::cont::Field reduced_field = reduced.GetField(field_name);
-    reduced_output.AddField(reduced_field);
-  }
+    for(const auto &field_name : m_fields)
+    {
+      viskores::cont::DataSet reduced;
+      bool valid_field;
+      viskores::Id field_id = this->m_input->GetFieldType(field_name, valid_field);
+      vtkh::detail::GlobalReduceField g_reducefield(local_results[0], field_name, m_invalid_value, m_num_samples, field_id, reduced);
+      g_reducefield.Reduce();
+      viskores::cont::Field reduced_field = reduced.GetField(field_name);
+      reduced_output.AddField(reduced_field);
+    }
   
-  if(par_rank == 0)
-  {
-    this->m_output->AddDomain(reduced_output, 0);
-  }
+    if(par_rank == 0)
+    {
+      this->m_output->AddDomain(reduced_output, 0);
+    }
   }
 
 #if _DEBUG 
