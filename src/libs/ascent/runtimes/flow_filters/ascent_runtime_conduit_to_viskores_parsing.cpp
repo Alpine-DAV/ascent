@@ -15,6 +15,11 @@
 
 #include <ascent_logging.hpp>
 #include <ascent_logging_old.hpp>
+#include <cerrno>
+#include <cmath>
+#include <cctype>
+#include <cstdlib>
+#include <limits>
 using namespace conduit;
 
 //-----------------------------------------------------------------------------
@@ -34,6 +39,66 @@ namespace runtime
 //-----------------------------------------------------------------------------
 namespace filters
 {
+
+namespace
+{
+
+bool
+parse_numeric_string(const std::string &str, double &value)
+{
+  errno = 0;
+  char *end = nullptr;
+  value = std::strtod(str.c_str(), &end);
+
+  if(end == str.c_str() || errno == ERANGE)
+  {
+    return false;
+  }
+
+  while(end != nullptr && std::isspace(static_cast<unsigned char>(*end)))
+  {
+    ++end;
+  }
+
+  return end != nullptr && *end == '\0';
+}
+
+int
+parse_image_dim(const conduit::Node &node, const std::string &name)
+{
+  double value = 0.;
+  bool check_value = false;
+
+  if(node.dtype().is_string())
+  {
+    check_value = parse_numeric_string(node.as_string(), value);
+  }
+  else if(node.dtype().is_float32() || node.dtype().is_float64())
+  {
+    value = node.to_float64();
+    check_value = true;
+  }
+
+  if(check_value)
+  {
+    if(!std::isfinite(value) || std::floor(value) != value)
+    {
+      ASCENT_ERROR(name << " must be an integer value");
+    }
+
+    if(value < static_cast<double>(std::numeric_limits<int>::min()) ||
+       value > static_cast<double>(std::numeric_limits<int>::max()))
+    {
+      ASCENT_ERROR(name << " must fit in an int value");
+    }
+
+    return static_cast<int>(value);
+  }
+
+  return node.to_int32();
+}
+
+} // namespace
 
 bool string_equal(const std::string& str1, const std::string& str2)
 {
@@ -77,12 +142,12 @@ parse_image_dims(const conduit::Node &node, int &width, int &height)
 
   if(node.has_path("image_width"))
   {
-    width = node["image_width"].to_int32();
+    width = parse_image_dim(node["image_width"], "image_width");
   }
 
   if(node.has_path("image_height"))
   {
-    height = node["image_height"].to_int32();
+    height = parse_image_dim(node["image_height"], "image_height");
   }
 
 }
@@ -549,8 +614,6 @@ parse_color_table(const conduit::Node &color_table_node)
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
-
-
 
 
 

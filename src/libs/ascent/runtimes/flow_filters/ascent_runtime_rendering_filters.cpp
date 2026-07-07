@@ -2133,7 +2133,7 @@ void generate_camera_meshes(conduit::Node &image_data)
   // Calculating the bounds of the camera frustums
   int image_height = image_data["image_height"].to_value();
   int image_width = image_data["image_width"].to_value();
-  double image_aspect = image_height/image_width;
+  double image_aspect = static_cast<double>(image_width) / static_cast<double>(image_height);
   double fov = camera["fov"].to_value();
   double zoom = camera["zoom"].to_value();
   // Near frustum

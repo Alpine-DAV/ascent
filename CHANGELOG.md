@@ -30,6 +30,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Redefined the parameter varification and surprise checking behavior for Filters to instead use a conduit based JSON Schema style verification schema. Implimented for all existing filters. 
 
 ### Fixed
+- Fixed the aspect ratio for frustum renderings
 - Fixed issue where the plot did not align with the 3d axes when the camera was panned (`camera/xpan` and `camera/ypan`).
 - Fixed a crash with PNG encoding of large renders (10k+ by 10k+ resolution)
 
