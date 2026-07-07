@@ -28,9 +28,9 @@
 variables:
   ubuntu_22_04_tag: alpinedav/ascent-devel:ubuntu-22.04-x86_64-tpls_2026-05-28-shae1ffd4
   ubuntu_22_04_cuda_11_8_0_tag: alpinedav/ascent-devel:ubuntu-22.04-cuda-11.8.0-x86_64-tpls_2026-05-28-shae1ffd4
-  ubuntu_22_04_cuda_12_8_1_tag: alpinedav/ascent-devel:ubuntu-22.04-cuda-12.8.1-x86_64-tpls_2026-05-28-shae1ffd4
+  ubuntu_22_04_cuda_12_8_1_tag: alpinedav/ascent-devel:ubuntu-22.04-cuda-12.8.1-x86_64-tpls_2026-06-17-sha796e65
   ubuntu_22_04_rocm_6_3_4_tag:  alpinedav/ascent-devel:ubuntu-22.04-rocm-6.3.4-x86_64-build-ascent-tpls_2026-05-28-shae1ffd4
-
+  ubuntu_22_04_rocm_7_2_4_tag:  alpinedav/ascent-devel:ubuntu-22.04-rocm-7.2.4-x86_64-build-ascent-tpls_2026-06-17-sha723741
 
 # only build merge target pr to develop
 trigger: none
@@ -573,12 +573,18 @@ stages:
     pool:
       vmImage: 'ubuntu-latest'
     timeoutInMinutes: 0
-    variables:
-      CMAKE_EXE: /cmake-3.24.4-linux-x86_64/bin/cmake
     strategy:
       matrix:
         ubuntu_22.04_rocm_6.3.4_build_ascent:
           containerImage: ${{ variables.ubuntu_22_04_rocm_6_3_4_tag }}
+          BUILD_SHARED_LIBS: ON
+          CMAKE_EXE: /cmake-3.24.4-linux-x86_64/bin/cmake
+          CMAKE_BUILD_TYPE: Release
+          BLT_CXX_STD: c++17
+          ENABLE_TESTS: ON
+        ubuntu_22.04_rocm_7.2.4_build_ascent:
+          containerImage: ${{ variables.ubuntu_22_04_rocm_7_2_4_tag }}
+          CMAKE_EXE: /cmake-3.31.12-linux-x86_64/bin/cmake
           BUILD_SHARED_LIBS: ON
           CMAKE_BUILD_TYPE: Release
           BLT_CXX_STD: c++17
