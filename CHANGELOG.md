@@ -16,6 +16,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - mfem@4.8
 
 ### Added
+- Added a `gltf` extract that exports surface geometry (points, lines, and triangles) as GLB files, with optional scalar field coloring.
 - Added plane to the Sample Filter
 - Added the ability to specify "min/max" as the x/y/z point for the reflect transform filter
 - Added Uniform Grid filter as a parameter of the Sample Filter

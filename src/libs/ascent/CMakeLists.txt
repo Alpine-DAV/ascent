@@ -271,6 +271,7 @@ if(VISKORES_FOUND)
         runtimes/flow_filters/ascent_runtime_rendering_filters.hpp
         runtimes/flow_filters/ascent_runtime_rover_filters.hpp
         runtimes/flow_filters/ascent_runtime_conduit_to_viskores_parsing.hpp
+        runtimes/flow_filters/ascent_runtime_gltf_extract.hpp
         runtimes/flow_filters/ascent_runtime_filters.hpp
         runtimes/ascent_main_runtime.hpp)
 
@@ -283,6 +284,7 @@ if(VISKORES_FOUND)
         runtimes/flow_filters/ascent_runtime_rendering_filters.cpp
         runtimes/flow_filters/ascent_runtime_rover_filters.cpp
         runtimes/flow_filters/ascent_runtime_conduit_to_viskores_parsing.cpp
+        runtimes/flow_filters/ascent_runtime_gltf_extract.cpp
         runtimes/flow_filters/ascent_runtime_filters.cpp
         runtimes/ascent_main_runtime.cpp)
 
