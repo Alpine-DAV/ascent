@@ -330,7 +330,7 @@ RGB or RGBA percentages values between 0 and 1 to the ``color_table/solid`` node
 
 .. code-block:: c++
   conduit::Node scenes;
-  scenes["s1/plots/p1/type"]  = "volume";
+  scenes["s1/plots/p1/type"]  = "pseudocolor";
   scenes["s1/plots/p1/field"] = "braid";
   scenes["s1/plots/p1/color_table/solid"] = {0.0, .184, .655};
 
