@@ -685,12 +685,14 @@ TEST(ascent_sample, topology_plane)
     string output_file = conduit::utils::join_file_path(output_path,
                                                         "tout_sample_topology_plane");
     string output_root = output_file + ".cycle_000100.root";
+    remove_test_image(output_file);
     if(conduit::utils::is_file(output_root))
     {
         conduit::utils::remove_file(output_root);
     }
 
     data["state/cycle"] = 100;
+    data["state/domain_id"] = 0;
 
     std::string acts_str = R"xyzxyz(
 -
@@ -711,10 +713,20 @@ TEST(ascent_sample, topology_plane)
       type: "relay"
       params:
         protocol: "hdf5"
+-
+  action: "add_scenes"
+  scenes:
+    s1:
+      plots:
+        p1:
+          type: "pseudocolor"
+          field: "braid"
+          pipeline: pl1
 )xyzxyz";
     conduit::Node actions;
     actions.parse(acts_str,"yaml");
     actions[1]["extracts/e1/params/path"] = output_file;
+    actions[2]["scenes/s1/image_prefix"] = output_file;
 
     Ascent ascent;
     ascent.open();
@@ -734,6 +746,7 @@ TEST(ascent_sample, topology_plane)
     EXPECT_TRUE(dom.has_path("fields/braid"));
     EXPECT_EQ(dom["fields/braid/topology"].as_string(), "sample_plane");
     EXPECT_GT(dom["fields/braid/values"].dtype().number_of_elements(), 0);
+    EXPECT_TRUE(check_test_image(output_file));
 
     std::string msg = "An example of using the sample filter to sample on a topology from the input dataset.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
@@ -768,12 +781,14 @@ TEST(ascent_sample, topology_sphere)
     string output_file = conduit::utils::join_file_path(output_path,
                                                         "tout_sample_topology_sphere");
     string output_root = output_file + ".cycle_000100.root";
+    remove_test_image(output_file);
     if(conduit::utils::is_file(output_root))
     {
         conduit::utils::remove_file(output_root);
     }
 
     data["state/cycle"] = 100;
+    data["state/domain_id"] = 0;
 
     std::string acts_str = R"xyzxyz(
 -
@@ -794,10 +809,20 @@ TEST(ascent_sample, topology_sphere)
       type: "relay"
       params:
         protocol: "hdf5"
+-
+  action: "add_scenes"
+  scenes:
+    s1:
+      plots:
+        p1:
+          type: "pseudocolor"
+          field: "braid"
+          pipeline: pl1
 )xyzxyz";
     conduit::Node actions;
     actions.parse(acts_str,"yaml");
     actions[1]["extracts/e1/params/path"] = output_file;
+    actions[2]["scenes/s1/image_prefix"] = output_file;
 
     Ascent ascent;
     ascent.open();
@@ -819,6 +844,7 @@ TEST(ascent_sample, topology_sphere)
     EXPECT_EQ(dom["fields/braid/topology"].as_string(), "sample_sphere");
     EXPECT_EQ(dom["fields/braid/values"].dtype().number_of_elements(),
               num_sphere_points);
+    EXPECT_TRUE(check_test_image(output_file));
 
     std::string msg = "An example of using the sample filter to sample on a sphere surface topology from the input dataset.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);

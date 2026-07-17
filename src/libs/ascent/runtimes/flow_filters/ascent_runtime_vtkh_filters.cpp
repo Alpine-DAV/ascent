@@ -3471,19 +3471,7 @@ VTKHSample::execute()
       conduit::Node sample_mesh;
       if(rank == 0)
       {
-        std::vector<const conduit::Node*> domains;
-        if(blueprint_data->has_path("topologies")) //single domain
-        {
-          domains.push_back(blueprint_data.get());
-        }
-        else //multi domain
-        {
-          const int num_domains = blueprint_data->number_of_children();
-          for(int i = 0; i < num_domains; ++i)
-          {
-            domains.push_back(&blueprint_data->child(i));
-          }
-        }
+        const std::vector<const Node *> domains = blueprint::mesh::domains(*blueprint_data);
 
 		//make a conduit::Node sample mesh with input topo
         for(size_t i = 0; i < domains.size(); ++i)
