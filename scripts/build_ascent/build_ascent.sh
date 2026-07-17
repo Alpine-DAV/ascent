@@ -670,7 +670,7 @@ fi # if enable_hip || enable_sycl
 ################
 # Viskores
 ################
-viskores_version=1.1.1
+viskores_version=1.2.0-rc1
 viskores_src_dir=$(ospath ${source_dir}/viskores-${viskores_version})
 viskores_build_dir=$(ospath ${build_dir}/viskores-${viskores_version})
 viskores_install_dir=$(ospath ${install_dir}/viskores-${viskores_version}/)
@@ -690,9 +690,9 @@ if [ ! -d ${viskores_src_dir} ]; then
   # apply patches
   cd ${viskores_src_dir}
   echo "**** Applying Patches to ${viskores_tarball}"
-  patch -p1 < ${script_dir}/2026_01_02_viskores_implent_pan_raytracing.patch
   patch -p1 < ${script_dir}/2026_04_10_viskores_1_1_0_volume_annotation_depth_hack.patch
   patch -p1 < ${script_dir}/2026_05_15_viskores_1_1_1_wireframer_fix.patch
+  patch -p1 < ${script_dir}/2026_07_08_viskores_2d_raytracing_real_viewport.patch
   cd ${root_dir}
 fi
 

@@ -14,6 +14,7 @@
 #include <viskores/cont/DataSet.h>
 #include <viskores/cont/Timer.h>
 #include <viskores/cont/ColorTable.h>
+#include <viskores/rendering/Camera.h>
 #include <viskores/rendering/raytracing/Camera.h>
 #include <viskores/rendering/raytracing/Ray.h>
 #include <viskores/rendering/raytracing/Logger.h>
