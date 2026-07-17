@@ -1992,7 +1992,11 @@ CreatePlot::execute()
         const std::string fname = "constant_mesh_field";
         data.AddConstantPointField(0.f, fname);
         renderer->SetField(fname);
-        mesh->SetUseForegroundColor(true);
+        // Use user provided color table instead of overriding with the foreground color.
+        if(!plot_params.has_path("color_table"))
+        {
+          mesh->SetUseForegroundColor(true);
+        }
       }
 
       mesh->SetIsOverlay(true);
