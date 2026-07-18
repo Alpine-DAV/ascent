@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   build:
-    name: Ascent CUDA Static Build Test
+    name: Ascent CUDA Static
     runs-on: ubuntu-latest
     container: ${{ matrix.container }}
     strategy:
