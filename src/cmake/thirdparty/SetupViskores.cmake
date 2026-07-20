@@ -29,7 +29,7 @@ endif()
 set(VISKORES_FOUND TRUE)
 
 set(VISKORES_TARGETS viskores::cont viskores::filter viskores::rendering)
-message(STATUS "viskores enalbe mpi:  ${Viskores_ENABLE_MPI}")
+message(STATUS "viskores enable mpi:  ${Viskores_ENABLE_MPI}")
 message(STATUS "mpi found:  ${MPI_FOUND}")
 
 # add mpi if mfem uses mpi
