@@ -97,8 +97,17 @@ void color_table_schema(conduit::Node &param_schema) {
     string_schema(param_schema["properties/annotation"]);
     string_schema(param_schema["properties/discrete"]);
 
-    conduit::Node solid_schema;
-    array_schema(param_schema["properties/solid"], number_schema(solid_schema), 3, 4);
+    conduit::Node solid_array_item_schema;
+    conduit::Node solid_array_schema;
+    array_schema(solid_array_schema, number_schema(solid_array_item_schema), 3, 4);
+
+    conduit::Node solid_string_schema;
+    string_schema(solid_string_schema);
+
+    conduit::Node &solid_schema = param_schema["properties/solid"];
+    solid_schema.reset();
+    solid_schema["oneOf"].append().set(solid_array_schema);
+    solid_schema["oneOf"].append().set(solid_string_schema);
 
     // --- Control Points ---
     {

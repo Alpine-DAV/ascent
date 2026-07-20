@@ -27,6 +27,7 @@
 #include <ascent_logging.hpp>
 #include <ascent_string_utils.hpp>
 #include <ascent_runtime_param_check.hpp>
+#include <ascent_runtime_color_utils.hpp>
 #include <ascent_metadata.hpp>
 #include <ascent_runtime_utils.hpp>
 #include <ascent_resources.hpp>
@@ -162,8 +163,17 @@ void dray_color_table_schema(conduit::Node &param_schema) {
     string_schema(param_schema["properties/name"]);
     bool_schema(param_schema["properties/reverse"]);
     
-    conduit::Node solid_schema;
-    array_schema(param_schema["properties/solid"], number_schema(solid_schema), 3, 4);
+    conduit::Node solid_array_item_schema;
+    conduit::Node solid_array_schema;
+    array_schema(solid_array_schema, number_schema(solid_array_item_schema), 3, 4);
+
+    conduit::Node solid_string_schema;
+    string_schema(solid_string_schema);
+
+    conduit::Node &solid_schema = param_schema["properties/solid"];
+    solid_schema.reset();
+    solid_schema["oneOf"].append().set(solid_array_schema);
+    solid_schema["oneOf"].append().set(solid_string_schema);
 
     // --- Control Points ---
     {
@@ -392,11 +402,37 @@ parse_color_table(const conduit::Node &color_table_node)
     color_table.clear_colors();
     color_table.clear_alphas();
 
-    conduit::Node color_vals_node;
-    color_table_node["solid"].to_float32_array(color_vals_node);
-    float32_array color_vals = color_vals_node.as_float32_array();
+    double r = 0., g = 0., b = 0., a = 1.;
+    bool has_alpha = false;
 
-    dray::Vec<dray::float32,3> ecolor({color_vals[0], color_vals[1], color_vals[2]});
+    const conduit::Node &solid_node = color_table_node["solid"];
+    if(solid_node.dtype().is_string())
+    {
+      std::string err;
+      const std::string s = solid_node.as_string();
+      if(!detail::parse_hex_color_string(s, r, g, b, a, has_alpha, err))
+      {
+        ASCENT_ERROR("Invalid hex color for color_table/solid: '" << s << "' (" << err << ")");
+      }
+    }
+    else
+    {
+      conduit::Node color_vals_node;
+      solid_node.to_float32_array(color_vals_node);
+      float32_array color_vals = color_vals_node.as_float32_array();
+      r = color_vals[0];
+      g = color_vals[1];
+      b = color_vals[2];
+      if(color_vals.number_of_elements() == 4)
+      {
+        a = color_vals[3];
+        has_alpha = true;
+      }
+    }
+
+    dray::Vec<dray::float32,3> ecolor({static_cast<dray::float32>(r),
+                                      static_cast<dray::float32>(g),
+                                      static_cast<dray::float32>(b)});
             
     for (int e = 0; e < 3; ++e)
     {
@@ -405,9 +441,9 @@ parse_color_table(const conduit::Node &color_table_node)
 
     color_table.add_point(0.f, ecolor);
 
-    if (color_vals.number_of_elements() == 4)
+    if (has_alpha)
     {
-      color_table.add_alpha(0.f, std::min(1.f, std::max(color_vals[3], 0.f)));
+      color_table.add_alpha(0.f, std::min(1.f, std::max(static_cast<float>(a), 0.f)));
     }
 
     return color_table;
@@ -519,11 +555,33 @@ parse_color_table(const conduit::Node &color_table_node)
 
             if (peg["type"].as_string() == "rgb")
             {
-                conduit::Node n;
-                peg["color"].to_float32_array(n);
-                const float *color = n.as_float32_ptr();
+                double r = 0., g = 0., b = 0., a = 1.;
+                bool has_alpha = false;
 
-                dray::Vec<float,3> ecolor({color[0], color[1], color[2]});
+                const conduit::Node &color_node = peg["color"];
+                if(color_node.dtype().is_string())
+                {
+                  std::string err;
+                  const std::string s = color_node.as_string();
+                  if(!detail::parse_hex_color_string(s, r, g, b, a, has_alpha, err))
+                  {
+                    ASCENT_ERROR("Invalid hex color for color_table/control_points/color: '" << s
+                                 << "' (" << err << ")");
+                  }
+                }
+                else
+                {
+                  conduit::Node n;
+                  color_node.to_float32_array(n);
+                  const float *color = n.as_float32_ptr();
+                  r = color[0];
+                  g = color[1];
+                  b = color[2];
+                }
+
+                dray::Vec<float,3> ecolor({static_cast<float>(r),
+                                           static_cast<float>(g),
+                                           static_cast<float>(b)});
 
                 for (int i = 0; i < 3; ++i)
                 {
@@ -531,6 +589,10 @@ parse_color_table(const conduit::Node &color_table_node)
                 }
 
                 color_table.add_point(position, ecolor);
+                if(has_alpha)
+                {
+                  color_table.add_alpha(position, std::min(1.f, std::max(static_cast<float>(a), 0.f)));
+                }
             }
             else if (peg["type"].as_string() == "alpha")
             {
@@ -2467,7 +2529,5 @@ DRayVectorComponent::execute()
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
-
-
 
 

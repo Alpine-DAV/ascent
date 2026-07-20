@@ -15,6 +15,7 @@
 
 #include <ascent.hpp>
 #include <ascent_hola.hpp>
+#include <ascent_runtime_color_utils.hpp>
 
 #include <iostream>
 #include <math.h>
@@ -1028,6 +1029,99 @@ TEST(ascent_devil_ray, test_dray_Kazimir_Malevich)
 }
 
 //-----------------------------------------------------------------------------
+TEST(ascent_devil_ray, test_hex_color_parsing_helper)
+{
+    double r = 0., g = 0., b = 0., a = 0.;
+    bool has_alpha = false;
+    std::string err;
+
+    EXPECT_TRUE(ascent::runtime::filters::detail::parse_hex_color_string("ff00aa80",
+                                                                         r,
+                                                                         g,
+                                                                         b,
+                                                                         a,
+                                                                         has_alpha,
+                                                                         err));
+    EXPECT_TRUE(has_alpha);
+    EXPECT_NEAR(r, 1.0, 1e-12);
+    EXPECT_NEAR(g, 0.0, 1e-12);
+    EXPECT_NEAR(b, 170.0 / 255.0, 1e-12);
+    EXPECT_NEAR(a, 128.0 / 255.0, 1e-12);
+
+    EXPECT_FALSE(ascent::runtime::filters::detail::parse_hex_color_string("#GG00AA",
+                                                                          r,
+                                                                          g,
+                                                                          b,
+                                                                          a,
+                                                                          has_alpha,
+                                                                          err));
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_devil_ray, test_dray_hex_Kazimir_Malevich)
+{
+    // the ascent runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              10,
+                                              10,
+                                              10,
+                                              data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+
+    ASCENT_INFO("Testing Devil Ray Rendering with a Single Color");
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_dray_monochrome_hex");
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+    //
+    // Create the actions.
+    // 
+
+    conduit::Node extracts;
+    extracts["e1/type"]  = "dray_pseudocolor";
+    extracts["e1/params/field"] = "braid";
+    extracts["e1/params/color_table/solid"] = "#bf0101";
+    extracts["e1/params/image_width"]  = 512;
+    extracts["e1/params/image_height"] = 512;
+    extracts["e1/params/image_prefix"]   = output_file;
+
+    conduit::Node actions;
+    conduit::Node &add_plots = actions.append();
+    add_plots["action"] = "add_extracts";
+    add_plots["extracts"] = extracts;
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example of using dray to render with a single color.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+}
+
+//-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {
     int result = 0;
@@ -1038,5 +1132,3 @@ int main(int argc, char* argv[])
     result = RUN_ALL_TESTS();
     return result;
 }
-
-

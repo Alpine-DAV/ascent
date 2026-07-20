@@ -15,6 +15,7 @@
 
 #include <ascent_logging.hpp>
 #include <ascent_logging_old.hpp>
+#include <ascent_runtime_color_utils.hpp>
 #include <cerrno>
 #include <cmath>
 #include <cctype>
@@ -418,13 +419,38 @@ parse_color_table(const conduit::Node &color_table_node)
     viskores::cont::ColorTable color_table;
     color_table.ClearColors();
 
-    float64_array color_vals = color_table_node.fetch("solid").value();
-    viskores::Vec<viskores::Float64,3> ecolor(color_vals[0], color_vals[1], color_vals[2]);
+    double r = 0., g = 0., b = 0., a = 1.;
+    bool has_alpha = false;
+
+    const conduit::Node &solid_node = color_table_node.fetch("solid");
+    if(solid_node.dtype().is_string())
+    {
+      std::string err;
+      const std::string s = solid_node.as_string();
+      if(!detail::parse_hex_color_string(s, r, g, b, a, has_alpha, err))
+      {
+        ASCENT_ERROR("Invalid hex color for color_table/solid: '" << s << "' (" << err << ")");
+      }
+    }
+    else
+    {
+      float64_array color_vals = solid_node.value();
+      r = color_vals[0];
+      g = color_vals[1];
+      b = color_vals[2];
+      if(color_vals.number_of_elements() == 4)
+      {
+        a = color_vals[3];
+        has_alpha = true;
+      }
+    }
+
+    viskores::Vec<viskores::Float64,3> ecolor(r, g, b);
     color_table.AddPoint(0.0, ecolor);
 
-    if (color_vals.number_of_elements() == 4)
+    if(has_alpha)
     {
-      color_table.AddPointAlpha(0.0, std::min(1., std::max(color_vals[3], 0.)));
+      color_table.AddPointAlpha(0.0, std::min(1., std::max(a, 0.)));
     }
 
     return color_table;
@@ -505,11 +531,31 @@ parse_color_table(const conduit::Node &color_table_node)
 
             if (peg["type"].as_string() == "rgb")
             {
-                conduit::Node n;
-                peg["color"].to_float64_array(n);
-                const float64 *color = n.as_float64_ptr();
+                double r = 0., g = 0., b = 0., a = 1.;
+                bool has_alpha = false;
 
-                viskores::Vec<viskores::Float64,3> ecolor(color[0], color[1], color[2]);
+                const conduit::Node &color_node = peg["color"];
+                if(color_node.dtype().is_string())
+                {
+                  std::string err;
+                  const std::string s = color_node.as_string();
+                  if(!detail::parse_hex_color_string(s, r, g, b, a, has_alpha, err))
+                  {
+                    ASCENT_ERROR("Invalid hex color for color_table/control_points/color: '" << s
+                                 << "' (" << err << ")");
+                  }
+                }
+                else
+                {
+                  conduit::Node n;
+                  color_node.to_float64_array(n);
+                  const float64 *color = n.as_float64_ptr();
+                  r = color[0];
+                  g = color[1];
+                  b = color[2];
+                }
+
+                viskores::Vec<viskores::Float64,3> ecolor(r, g, b);
 
                 for(int i = 0; i < 3; ++i)
                 {
@@ -517,6 +563,10 @@ parse_color_table(const conduit::Node &color_table_node)
                 }
 
                 color_table.AddPoint(position, ecolor);
+                if(has_alpha)
+                {
+                  color_table.AddPointAlpha(position, std::min(1., std::max(a, 0.)));
+                }
             }
             else if (peg["type"].as_string() == "alpha")
             {
@@ -631,6 +681,4 @@ parse_color_table(const conduit::Node &color_table_node)
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
-
-
 
