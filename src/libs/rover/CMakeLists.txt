@@ -91,7 +91,12 @@ set(rover_host_sources
     utils/vtk_dataset_reader.cpp
 )
 
-set(rover_sources ${rover_device_sources} ${rover_host_sources})
+
+# Only a subset of Rover sources need to be compiled as device code. In HIP
+# builds, compiling everything as HIP can trigger device compilation/linking of
+# control-side types (e.g. VTK-m control objects), which breaks under C++20.
+set(rover_device_sources ${rover_sources})
+list(REMOVE_ITEM rover_device_sources typed_scheduler.cpp)
 
 ###############################################################################
 if (ENABLE_SERIAL)
@@ -100,6 +105,10 @@ if (ENABLE_SERIAL)
                     HEADERS ${rover_headers}
                     DEPENDS_ON ${rover_thirdparty_deps}
                     )
+
+    # Override BLT/HIP behavior for this single translation unit: it is host-only.
+    set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/typed_scheduler.cpp
+                                PROPERTIES LANGUAGE CXX)
 
     viskores_add_target_information(rover DEVICE_SOURCES ${rover_device_sources})
 
@@ -142,6 +151,10 @@ if(MPI_FOUND)
                   HEADERS ${rover_headers}
                   DEPENDS_ON ${rover_mpi_thirdparty_deps}
                   )
+
+  # Override BLT/HIP behavior for this single translation unit: it is host-only.
+  set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/typed_scheduler.cpp
+                              PROPERTIES LANGUAGE CXX)
 
   viskores_add_target_information(rover_mpi DEVICE_SOURCES ${rover_device_sources})
 
