@@ -3471,9 +3471,10 @@ VTKHSample::execute()
       conduit::Node sample_mesh;
       if(rank == 0)
       {
-        const std::vector<const Node *> domains = blueprint::mesh::domains(*blueprint_data);
+        const conduit::Node &bp = *blueprint_data;
+        const auto domains = blueprint::mesh::domains(bp);
 
-		//make a conduit::Node sample mesh with input topo
+        //make a conduit::Node sample mesh with input topo
         for(size_t i = 0; i < domains.size(); ++i)
         {
           const conduit::Node &src_dom = *domains[i];
