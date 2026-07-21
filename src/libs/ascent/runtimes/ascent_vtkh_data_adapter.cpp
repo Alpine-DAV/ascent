@@ -1959,6 +1959,9 @@ VTKHDataAdapter::StructuredBlueprintToViskoresDataSet
     string coords_type = n_coords["type"].as_string();
     viskores::cont::CoordinateSystem coords;
     int ndims = 0;
+    const bool has_strided_topology =
+      n_topo.has_path("elements/dims/offsets") &&
+      n_topo.has_path("elements/dims/strides");
 
     const bool is_rz = n_coords["values"].has_child("r") && n_coords["values"].has_child("z");
     const bool is_cartesian = n_coords["values"].has_child("x") && n_coords["values"].has_child("y");
@@ -1978,7 +1981,7 @@ VTKHDataAdapter::StructuredBlueprintToViskoresDataSet
         nverts = n_coords["values/x"].dtype().number_of_elements();
         if(n_coords["values/x"].dtype().is_float64())
         {
-            if(coords_type == "explicit")
+            if(coords_type == "explicit" && has_strided_topology)
             {
                 coords = detail::GetStructuredExplicitCoordinateSystem<float64>(n_coords,
                                                                                 n_topo,
@@ -2011,7 +2014,7 @@ VTKHDataAdapter::StructuredBlueprintToViskoresDataSet
         }
         else if(n_coords["values/x"].dtype().is_float32())
         {
-            if(coords_type == "explicit")
+            if(coords_type == "explicit" && has_strided_topology)
             {
                 coords = detail::GetStructuredExplicitCoordinateSystem<float32>(n_coords,
                                                                                 n_topo,
