@@ -1815,7 +1815,6 @@ CreatePlot::declare_interface(Node &i)
         not_mesh_schema["constraints/not_const/type"] = "mesh";
         not_mesh_schema["constraints/forbid"] = "overlay";
         not_mesh_schema["constraints/forbid"] = "show_internal";
-        not_mesh_schema["required"].append() = "field";
     }
 }
 
@@ -1858,9 +1857,8 @@ CreatePlot::execute()
                                            this->name(),
                                            collection,
                                            throw_error);
-      if(type != "mesh")
+      if(topo_name == "")
       {
-        // don't crash everything, just warn the user and continue
         detail::RendererContainer *container = new detail::RendererContainer();
         set_output<detail::RendererContainer>(container);
         return;
@@ -1988,24 +1986,20 @@ CreatePlot::execute()
     {
       renderer->SetField(field_name);
     }
+    else
+    {
+      const std::string fname = "constant_mesh_field";
+      data.AddConstantPointField(0.f, fname);
+      renderer->SetField(fname);
+    }
 
 
     if(type == "mesh")
     {
       vtkh::MeshRenderer *mesh = dynamic_cast<vtkh::MeshRenderer*>(renderer);
-      if(!plot_params.has_path("field"))
+      if(field_name == "" && !plot_params.has_path("color_table"))
       {
-        // The renderer needs a field, so add one if
-        // needed. This will eventually go away once
-        // the mesh mapper in viskores can handle no field
-        const std::string fname = "constant_mesh_field";
-        data.AddConstantPointField(0.f, fname);
-        renderer->SetField(fname);
-        // Use user provided color table instead of overriding with the foreground color.
-        if(!plot_params.has_path("color_table"))
-        {
-          mesh->SetUseForegroundColor(true);
-        }
+        mesh->SetUseForegroundColor(true);
       }
 
       mesh->SetIsOverlay(true);

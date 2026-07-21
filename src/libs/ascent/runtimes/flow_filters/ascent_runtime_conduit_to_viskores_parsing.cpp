@@ -445,12 +445,16 @@ parse_color_table(const conduit::Node &color_table_node)
       }
     }
 
+    // Create a truly constant color map by specifying both endpoints.
     viskores::Vec<viskores::Float64,3> ecolor(r, g, b);
     color_table.AddPoint(0.0, ecolor);
+    color_table.AddPoint(1.0, ecolor);
 
     if(has_alpha)
     {
-      color_table.AddPointAlpha(0.0, std::min(1., std::max(a, 0.)));
+      const auto alpha = std::min(1., std::max(a, 0.));
+      color_table.AddPointAlpha(0.0, alpha);
+      color_table.AddPointAlpha(1.0, alpha);
     }
 
     return color_table;
