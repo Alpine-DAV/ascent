@@ -511,6 +511,62 @@ TEST(ascent_render_3d, test_render_3d_points_variable_radius)
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
+TEST(ascent_render_3d, test_render_3d_point_glyph_types)
+{
+    Node n;
+    ascent::about(n);
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent viskores support disabled, skipping point glyph test");
+        return;
+    }
+
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("points",
+                                              10,
+                                              10,
+                                              10,
+                                              data);
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    string output_path = prepare_output_dir();
+    string cube_output = conduit::utils::join_file_path(output_path,
+                                                        "tout_render_3d_points_cube");
+    string axes_output = conduit::utils::join_file_path(output_path,
+                                                        "tout_render_3d_points_axes");
+    remove_test_image(cube_output);
+    remove_test_image(axes_output);
+
+    conduit::Node scenes;
+    scenes["cube/plots/p1/type"] = "pseudocolor";
+    scenes["cube/plots/p1/field"] = "braid";
+    scenes["cube/plots/p1/points/glyph_type"] = "cube";
+    scenes["cube/plots/p1/points/radius"] = 0.4f;
+    scenes["cube/image_prefix"] = cube_output;
+
+    scenes["axes/plots/p1/type"] = "pseudocolor";
+    scenes["axes/plots/p1/field"] = "braid";
+    scenes["axes/plots/p1/points/glyph_type"] = "axes";
+    scenes["axes/plots/p1/points/radius"] = 0.4f;
+    scenes["axes/image_prefix"] = axes_output;
+
+    conduit::Node actions;
+    conduit::Node &add_scenes = actions.append();
+    add_scenes["action"] = "add_scenes";
+    add_scenes["scenes"] = scenes;
+
+    Ascent ascent;
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    EXPECT_TRUE(check_test_image(cube_output, 0.01f));
+    EXPECT_TRUE(check_test_image(axes_output, 0.01f));
+}
+
 TEST(ascent_render_3d, test_render_3d_bg_fg_color)
 {
     // the ascent runtime is currently our only rendering runtime
