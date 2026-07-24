@@ -474,8 +474,8 @@ TEST(ascent_mir, axom_q7o5_material_boundary)
     ascent.execute(actions);
     ascent.close();
 
-    // check that we created an image
-    EXPECT_TRUE(check_test_file(output_file + "_000100.png"));
+    // check that we created an image and that it matches the baseline
+    EXPECT_TRUE(check_test_image(output_file));
     std::string msg = "An example of using the MIR filter "
                       "with Axom balls_and_jacks_q7o5 material data.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
