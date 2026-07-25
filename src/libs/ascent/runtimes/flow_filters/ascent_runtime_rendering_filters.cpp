@@ -1793,6 +1793,8 @@ CreatePlot::declare_interface(Node &i)
         points_schema["additionalProperties"] = false;
         ignore_schema(points_schema["properties/radius"]);
         ignore_schema(points_schema["properties/radius_delta"]);
+        string_enum_schema(points_schema["properties/glyph_type"],
+                           {"sphere", "cube", "axes"});
 
         conduit::Node &not_mesh_schema = param_schema["oneOf"].append();
         not_mesh_schema["type"] = "object";
@@ -1882,6 +1884,18 @@ CreatePlot::execute()
       {
         vtkh::PointRenderer *p_renderer = new vtkh::PointRenderer();
         p_renderer->UseCells();
+        if(plot_params.has_path("points/glyph_type"))
+        {
+          const std::string glyph_type = plot_params["points/glyph_type"].as_string();
+          if(glyph_type == "cube")
+          {
+            p_renderer->SetGlyphType(viskores::rendering::GlyphType::Cube);
+          }
+          else if(glyph_type == "axes")
+          {
+            p_renderer->SetGlyphType(viskores::rendering::GlyphType::Axes);
+          }
+        }
         if(plot_params.has_path("points/radius"))
         {
           float radius = plot_params["points/radius"].to_float32();

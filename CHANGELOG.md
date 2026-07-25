@@ -17,6 +17,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ### Added
 - Added a `gltf` extract that exports surface geometry (points, lines, and triangles) as GLB files, with optional scalar field coloring.
+- Added the `points/glyph_type` scene option for rendering point meshes with sphere, cube, or axes glyphs.
 - Added plane to the Sample Filter
 - Added the ability to specify "min/max" as the x/y/z point for the reflect transform filter
 - Added Uniform Grid filter as a parameter of the Sample Filter
