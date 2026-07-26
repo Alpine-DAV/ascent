@@ -320,3 +320,49 @@ Optional parameters include ``protocol`` for the type of output file (default is
 .. ADIOS
 .. -----
 .. The current ADIOS extract is experimental and this section is under construction.
+
+GLTF Extract
+------------
+
+When Ascent is built with VisKores, the ``gltf`` extract writes visualization-ready
+surface geometry to a self-contained package. The required ``path`` parameter names
+the package directory. Each global domain is stored as
+``domains/domain_XXXXXXXX.glb`` and ``manifest.json`` describes the complete set.
+
+.. code-block:: yaml
+
+  extracts:
+    e1:
+      type: gltf
+      pipeline: surface_pipeline
+      params:
+        path: output/density_{cycle:06d}
+        field: density
+        topology: topo
+        min_value: 0.0
+        max_value: 1.0
+        color_table:
+          name: Viridis
+          reverse: "false"
+
+The input must contain Cartesian points, lines, or triangles. Apply
+``external_surfaces``, ``contour``, or ``slice`` to volume data and then
+``triangulate`` when needed. Scalar coloring requires a numeric scalar field with
+``vertex`` association; use ``recenter`` for element fields and
+``vector_component`` or ``vector_magnitude`` for vector fields.
+
+Positions, texture coordinates, and scalar reconstruction metadata use float32,
+so this is a visualization export rather than a lossless Blueprint round trip.
+Finite scalar values use the first row of an embedded 256 by 2 color-table PNG;
+NaN and both infinities share the second row and their combined count is recorded.
+The manifest and each GLB record the affine normalization range. Values outside a
+manually selected range remain recoverable from their unclamped texture coordinate,
+while clamp-to-edge texture sampling limits their displayed color.
+Continuous color tables use linear filtering between the 256 stored samples.
+Setting ``color_table/discrete`` to ``"true"`` uses nearest-neighbor filtering,
+producing fixed color bands without viewer-dependent interpolation.
+
+When running with MPI, each rank writes one GLB per local domain and rank 0
+writes ``manifest.json``. Repeated output to the same path overwrites the package
+files in place. Point size and line width are viewer-dependent because core glTF
+does not specify either setting.
