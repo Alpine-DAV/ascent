@@ -28,9 +28,9 @@
 ########################
 
 variables:
-  ubuntu_22_04_tag: alpinedav/ascent-devel:ubuntu-22.04-x86_64-tpls_2026-05-28-shae1ffd4
-  ubuntu_22_04_rocm_6_3_4_tag:  alpinedav/ascent-devel:ubuntu-22.04-rocm-6.3.4-x86_64-build-ascent-tpls_2026-05-28-shae1ffd4
-  ubuntu_22_04_rocm_7_2_4_tag:  alpinedav/ascent-devel:ubuntu-22.04-rocm-7.2.4-x86_64-build-ascent-tpls_2026-06-17-sha723741
+  ubuntu_22_04_tag: alpinedav/ascent-devel:ubuntu-22.04-x86_64-tpls_2026-07-25-sha50de5c
+  ubuntu_22_04_rocm_6_3_4_tag:  alpinedav/ascent-devel:ubuntu-22.04-rocm-6.3.4-x86_64-build-ascent-tpls_2026-07-25-shaf13d7d
+  ubuntu_22_04_rocm_7_2_4_tag:  alpinedav/ascent-devel:ubuntu-22.04-rocm-7.2.4-x86_64-build-ascent-tpls_2026-07-25-sha50de5c
 
 # only build merge target pr to develop
 trigger: none
