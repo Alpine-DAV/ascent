@@ -530,8 +530,8 @@ if [ ! -d ${conduit_src_dir} ]; then
   echo "**** Extracting ${conduit_tarball}"
   # untar and avoid symlinks (which windows despises)
   tar ${tar_extra_args} -xzf ${conduit_tarball} -C ${source_dir} \
-      --exclude="conduit-${conduit_version}/src/tests/relay/data/silo/*"
-
+      --exclude="conduit-${conduit_version}/src/tests/relay/data/silo/*" \
+      --exclude="conduit-${conduit_version}/AGENTS.md"
 fi
 
 #
