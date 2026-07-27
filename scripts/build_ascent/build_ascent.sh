@@ -674,14 +674,14 @@ viskores_version=1.2.0-rc1
 viskores_src_dir=$(ospath ${source_dir}/viskores-${viskores_version})
 viskores_build_dir=$(ospath ${build_dir}/viskores-${viskores_version})
 viskores_install_dir=$(ospath ${install_dir}/viskores-${viskores_version}/)
-viskores_tarball=$(ospath ${source_dir}/v${viskores_version}.tar.gz)
+viskores_tarball=$(ospath ${source_dir}/viskores-v${viskores_version}.tar.gz)
 
 # build only if install doesn't exist
 if [ ! -d ${viskores_install_dir} ]; then
 if ${build_viskores}; then
 if [ ! -f ${viskores_tarball} ]; then
   echo "**** Downloading ${viskores_tarball}"
-  curl -L https://github.com/Viskores/viskores/archive/refs/tags/v${viskores_version}.tar.gz -o ${viskores_tarball}
+  curl -L https://github.com/Viskores/viskores/archive/refs/tags/viskores-v${viskores_version}.tar.gz -o ${viskores_tarball}
 fi
 if [ ! -d ${viskores_src_dir} ]; then
   echo "**** Extracting ${viskores_tarball}"
@@ -690,9 +690,7 @@ if [ ! -d ${viskores_src_dir} ]; then
   # apply patches
   cd ${viskores_src_dir}
   echo "**** Applying Patches to ${viskores_tarball}"
-  patch -p1 < ${script_dir}/2026_04_10_viskores_1_1_0_volume_annotation_depth_hack.patch
-  patch -p1 < ${script_dir}/2026_05_15_viskores_1_1_1_wireframer_fix.patch
-  patch -p1 < ${script_dir}/2026_07_08_viskores_2d_raytracing_real_viewport.patch
+  # patches go here
   cd ${root_dir}
 fi
 
