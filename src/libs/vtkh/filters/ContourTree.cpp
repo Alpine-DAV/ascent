@@ -8,7 +8,9 @@
 #include <viskores/cont/Storage.h>
 #include <viskores/internal/Configure.h>
 #include <viskores/thirdparty/diy/diy.h>
+#ifdef VTKH_PARALLEL
 #include <viskores/thirdparty/diy/mpi-cast.h>
+#endif
 #include <viskores/filter/scalar_topology/worklet/contourtree_augmented/PrintVectors.h>
 #include <viskores/filter/scalar_topology/worklet/contourtree_augmented/ProcessContourTree.h>
 #include <viskores/filter/scalar_topology/worklet/contourtree_augmented/processcontourtree/Branch.h>
@@ -20,6 +22,7 @@
 
 namespace caugmented_ns = viskores::worklet::contourtree_augmented;
 
+#ifdef VTKH_PARALLEL
 static void ShiftLogicalOriginToZero(viskores::cont::PartitionedDataSet& pds)
 {
   // Shift the logical origin (minimum of LocalPointIndexStart) to zero
@@ -72,7 +75,9 @@ static void ShiftLogicalOriginToZero(viskores::cont::PartitionedDataSet& pds)
       });
   }
 }
+#endif
 
+#ifdef VTKH_PARALLEL
 static void ComputeGlobalPointSize(viskores::cont::PartitionedDataSet& pds)
 {
   // Compute GlobalPointDimensions as maximum of GlobalPointIndexStart + PointDimensions
@@ -120,6 +125,7 @@ static void ComputeGlobalPointSize(viskores::cont::PartitionedDataSet& pds)
       });
   }
 }
+#endif
 
 namespace vtkh
 {
