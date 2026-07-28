@@ -681,7 +681,7 @@ if [ ! -d ${viskores_install_dir} ]; then
 if ${build_viskores}; then
 if [ ! -f ${viskores_tarball} ]; then
   echo "**** Downloading ${viskores_tarball}"
-  curl -L https://github.com/Viskores/viskores/archive/refs/tags/viskores-v${viskores_version}.tar.gz -o ${viskores_tarball}
+  curl -L https://github.com/Viskores/viskores/archive/refs/tags/v${viskores_version}.tar.gz -o ${viskores_tarball}
 fi
 if [ ! -d ${viskores_src_dir} ]; then
   echo "**** Extracting ${viskores_tarball}"
