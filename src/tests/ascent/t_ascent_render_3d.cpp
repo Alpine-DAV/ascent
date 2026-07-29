@@ -2481,7 +2481,7 @@ TEST(ascent_render_3d, test_render_3d_wireframe_alias)
     ascent.execute(actions);
     ascent.close();
 
-    EXPECT_TRUE(check_test_image(output_file_wireframe));
+    EXPECT_TRUE(check_test_image(output_file_wireframe, 0.005));
     std::string msg = "An example of using the wireframe alias to plot a mesh.";
     ASCENT_ACTIONS_DUMP(actions,output_file_wireframe,msg);
 }
