@@ -2366,6 +2366,128 @@ TEST(ascent_render_3d, test_render_3d_solid_color_no_field)
 }
 
 //-----------------------------------------------------------------------------
+TEST(ascent_render_3d, test_render_3d_surface_alias)
+{
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping surface alias test");
+        return;
+    }
+
+    // Create an example mesh.
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    string output_path = prepare_output_dir();
+    string output_file_surface =
+      conduit::utils::join_file_path(output_path,"tout_render_3d_surface_alias");
+
+    remove_test_image(output_file_surface);
+
+    conduit::Node scenes;
+
+    // Surface alias plot with a non-solid color table
+    scenes["s_surface/plots/p1/type"] = "surface";
+    scenes["s_surface/plots/p1/field"] = "braid";
+    scenes["s_surface/plots/p1/color_table/name"] = "Cool to Warm";
+    scenes["s_surface/renders/r1/image_prefix"] = output_file_surface;
+    scenes["s_surface/renders/r1/annotations"] = "false";
+    float bg_color[3] = {1.f, 1.f, 1.f};
+    float fg_color[3] = {0.f, 0.f, 0.f};
+    scenes["s_surface/renders/r1/bg_color"].set(bg_color,3);
+    scenes["s_surface/renders/r1/fg_color"].set(fg_color,3);
+    scenes["s_surface/renders/r1/camera/azimuth"] = 30.0;
+    scenes["s_surface/renders/r1/camera/elevation"] = 30.0;
+
+    conduit::Node actions;
+    conduit::Node &add_scenes = actions.append();
+    add_scenes["action"] = "add_scenes";
+    add_scenes["scenes"] = scenes;
+
+    Ascent ascent;
+    Node ascent_opts;
+    ascent_opts["timings"] = "true";
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    EXPECT_TRUE(check_test_image(output_file_surface));
+    std::string msg = "An example of using the surface alias to plot a solid color pseudocolor plot.";
+    ASCENT_ACTIONS_DUMP(actions,output_file_surface,msg);
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_render_3d, test_render_3d_wireframe_alias)
+{
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping wireframe alias test");
+        return;
+    }
+
+    // Create an example mesh.
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    string output_path = prepare_output_dir();
+    string output_file_wireframe =
+      conduit::utils::join_file_path(output_path,"tout_render_3d_wireframe_alias");
+
+    remove_test_image(output_file_wireframe);
+
+    conduit::Node scenes;
+
+    // wireframe alias plot with a non-solid color table
+    scenes["s_wireframe/plots/p1/type"] = "wireframe";
+    scenes["s_wireframe/plots/p1/field"] = "braid";
+    scenes["s_wireframe/plots/p1/color_table/name"] = "Cool to Warm";
+    scenes["s_wireframe/renders/r1/image_prefix"] = output_file_wireframe;
+    scenes["s_wireframe/renders/r1/annotations"] = "false";
+    float bg_color[3] = {0.f, 0.f, 0.f};
+    float fg_color[3] = {0.f, 0.f, 0.f};
+    scenes["s_wireframe/renders/r1/bg_color"].set(bg_color,3);
+    scenes["s_wireframe/renders/r1/fg_color"].set(fg_color,3);
+    scenes["s_wireframe/renders/r1/camera/azimuth"] = 30.0;
+    scenes["s_wireframe/renders/r1/camera/elevation"] = 30.0;
+
+    conduit::Node actions;
+    conduit::Node &add_scenes = actions.append();
+    add_scenes["action"] = "add_scenes";
+    add_scenes["scenes"] = scenes;
+
+    Ascent ascent;
+    Node ascent_opts;
+    ascent_opts["timings"] = "true";
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    EXPECT_TRUE(check_test_image(output_file_wireframe, 0.005));
+    std::string msg = "An example of using the wireframe alias to plot a mesh.";
+    ASCENT_ACTIONS_DUMP(actions,output_file_wireframe,msg);
+}
+
+//-----------------------------------------------------------------------------
 TEST(ascent_render_3d, test_hex_color_parsing_helper)
 {
     double r = 0., g = 0., b = 0., a = 0.;

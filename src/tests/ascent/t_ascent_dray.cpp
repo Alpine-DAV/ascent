@@ -1029,6 +1029,74 @@ TEST(ascent_devil_ray, test_dray_Kazimir_Malevich)
 }
 
 //-----------------------------------------------------------------------------
+TEST(ascent_devil_ray, test_dray_surface_alias)
+{
+    // the ascent runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+
+    Node data, hola_opts, verify_info;
+    hola_opts["root_file"] = test_data_file("taylor_green.cycle_001860.root");
+    ascent::hola("relay/blueprint/mesh", hola_opts, data);
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+
+    ASCENT_INFO("Testing Devil Ray Rendering using the Surface Alias");
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_dray_surface_alias");
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+    //
+    // Create the actions.
+    // 
+
+    conduit::Node extracts;
+    extracts["e1/type"]  = "dray_surface";
+
+    // filter knobs
+    conduit::Node &params = extracts["e1/params/"];
+    params["field"] = "density";
+    params["min_value"] = 0.99;
+    params["max_value"] = 1.0;
+    params["log_scale"] = "false";
+    params["image_prefix"] = output_file;
+    params["camera/azimuth"] = -30;
+    params["camera/elevation"] = 35;
+
+    params["draw_mesh"] = "true";
+    params["line_thickness"] = 0.1;
+    float line_color[4] = {0.f, 0.f, 0.f, 1.0f};
+    params["line_color"].set(line_color, 4);
+
+    conduit::Node actions;
+    // add the extracts
+    conduit::Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    add_extracts["extracts"] = extracts;
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file, 0.1, 1860));
+    std::string msg = "An example of using the dray_surface alias to render with a single color.";
+    ASCENT_ACTIONS_DUMP_CYCLE(actions,output_file,msg,1860);
+}
+
+//-----------------------------------------------------------------------------
 TEST(ascent_devil_ray, test_hex_color_parsing_helper)
 {
     double r = 0., g = 0., b = 0., a = 0.;
