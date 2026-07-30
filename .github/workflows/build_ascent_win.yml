@@ -15,10 +15,10 @@ jobs:
       CMAKE_GENERATOR: Visual Studio 17 2022
     steps:
     - name: Setup MPI
-      uses: mpi4py/setup-mpi@dbbb80b116bea57fc1788daf7dbbf7ab3df3a0f1 # v1
+      uses: mpi4py/setup-mpi@f200dce75b64188be849b46657dcf86c721937b2 # v1
     - name: Setup Python Env
       run: python3 -m pip install --upgrade pip numpy mpi4py wheel
-    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v4
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
       with: 
         submodules: 'recursive'
     - name: Build TPLs
