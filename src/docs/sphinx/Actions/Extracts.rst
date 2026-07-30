@@ -69,11 +69,15 @@ the number of files written (aggregating multiple domains per file) using the
 
 Additionally, Relay supports saving out only a subset of the data. The ``fields`` parameter is a list of
 strings that indicate which fields should be saved. Each selected field's associated topology is also saved.
+The special field name ``materials`` saves material-related fields and matsets for the selected topology,
+including VisIt-style material fields such as ``volume_fraction_*``, ``vol_frac_*``, and
+``*material_attribute`` fields.
 
 .. code-block:: c++
 
     extracts["e1/params/fields"].append("density");
     extracts["e1/params/fields"].append("pressure");
+    extracts["e1/params/fields"].append("materials");
 
 The ``topologies`` parameter is a list of strings that indicate which topologies should be saved.
 When selected, the topology and all of its associated data (fields, matsets, etc) are saved.

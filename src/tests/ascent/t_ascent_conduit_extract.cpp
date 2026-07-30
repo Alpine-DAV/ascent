@@ -63,6 +63,7 @@ bool
 stage_axom_klee_fixture(const std::string &fixture_name,
                         std::string &root_file)
 {
+    // Stage the fixture beside test output so relative HDF5 links resolve.
     const std::string input_dir =
         conduit::utils::join_file_path(
             conduit::utils::join_file_path(std::string(ASCENT_T_DATA_DIR),
@@ -248,6 +249,7 @@ TEST(ascent_conduit_extract, test_pipeline_result)
 //-----------------------------------------------------------------------------
 TEST(ascent_conduit_extract, test_material_field_selection)
 {
+    // Verify the "materials" field selection keeps material fields and matsets.
     auto mesh_domain = [](Node &mesh) -> Node *
     {
         if(mesh.has_path("fields"))

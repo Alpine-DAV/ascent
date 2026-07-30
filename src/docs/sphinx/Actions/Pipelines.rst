@@ -1116,6 +1116,10 @@ The Material Interface Reconstruction (MIR) filter can be used to represent and 
 The user must specify the name of the material set (`matset`) they wish to use.  
 Optional parameters include the field name for the filter's output (`output_name`), error scaling (`error_scaling`), scaling decay (`scaling_decay`), maximum iterations (`iterations`), and maximum error percentage (`max_error`).
 The output field of the MIR Filter will be the name of the material set and can be used further in scenes or pipelines. 
+For VisIt-style material data, Ascent can build a matset named ``materials``
+from material volume fraction fields such as ``volume_fraction_*`` or
+``vol_frac_*``. Use ``params["matset"] = "materials"`` to run MIR on that
+material set.
 
 .. code-block:: c++
 
@@ -1130,6 +1134,14 @@ The output field of the MIR Filter will be the name of the material set and can 
   params["scaling_decay"] = 1.0;       //default: 0.0
   params["iterations"] = 8;            //default: 0
   params["max_error"] = 0.00001;       //default: 0.00001
+
+.. code-block:: c++
+
+  // MIR using a VisIt-style material set detected by Ascent
+  pipelines["pl1/f1/type"] = "mir";
+  conduit::Node &visit_params = pipelines["pl1/f1/params"];
+  visit_params["matset"] = "materials";
+  visit_params["output_name"] = "materials";
 
 Add MPI Ranks as Field Data
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1481,4 +1493,3 @@ integer values to limit the set of domains over which the selection will be appl
   pipelines["pl1/f1/params/selections/type"] = "field";
   pipelines["pl1/f1/params/selections/domain_id"] = "any";
   pipelines["pl1/f1/params/selections/field"] = "padam_padam"; 
-

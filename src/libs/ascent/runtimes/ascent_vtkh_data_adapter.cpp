@@ -666,6 +666,7 @@ void GetMatSetFields(const conduit::Node &node, //materials["matset"]
   }
   else
   {
+    // Check whether the provided volume fractions leave implicit background material.
     const S vf_tolerance = static_cast<S>(1e-6);
     const S vf_dust = static_cast<S>(1e-4);
     const S one = static_cast<S>(1);
@@ -696,6 +697,7 @@ void GetMatSetFields(const conduit::Node &node, //materials["matset"]
       }
     }
 
+    // If fractions do not sum to one, add a background material for the remainder.
     bool add_implicit_background = false;
     for(index_t i = 0; i < neles; ++i)
     {
@@ -808,6 +810,7 @@ void GetMatSetFields(const conduit::Node &node, //materials["matset"]
   else
   {
     int num_materials = node["volume_fractions"].number_of_children();
+    // Check whether the provided volume fractions leave implicit background material.
     const S vf_tolerance = static_cast<S>(1e-6);
     const S vf_dust = static_cast<S>(1e-4);
     const S one = static_cast<S>(1);
@@ -840,6 +843,7 @@ void GetMatSetFields(const conduit::Node &node, //materials["matset"]
       }
     }
 
+    // If fractions do not sum to one, add a background material for the remainder.
     for(index_t j = 0; j < neles; ++j)
     {
       if(v_sums[j] < one - vf_tolerance)
@@ -979,6 +983,7 @@ bool
 material_volume_fraction_name(const std::string &field_name,
                               std::string &material_name)
 {
+    // Convert supported VisIt volume fraction field names into material names.
     const std::string visit_prefix = "volume_fraction_";
     if(field_name.rfind(visit_prefix, 0) == 0 &&
        field_name.size() > visit_prefix.size())
@@ -1010,6 +1015,7 @@ material_volume_fraction_name(const std::string &field_name,
 const conduit::Node *
 scalar_field_values(const conduit::Node &field)
 {
+    // Return scalar values, allowing either direct values or one named component.
     if(!field.has_child("values"))
     {
         return NULL;
@@ -1035,6 +1041,7 @@ build_visit_style_matset(const conduit::Node &node,
                          int neles,
                          conduit::Node &matsets)
 {
+    // Build a temporary matset from VisIt volume fraction fields.
     if(!node.has_child("fields"))
     {
         return false;
@@ -1371,6 +1378,7 @@ VTKHDataAdapter::BlueprintToViskoresDataSet(const Node &node,
 
     conduit::Node visit_style_matsets;
     const conduit::Node *matsets = NULL;
+    // Use explicit matsets when present; otherwise try to synthesize one from fields.
     if(node.has_child("matsets"))
     {
         matsets = &node["matsets"];

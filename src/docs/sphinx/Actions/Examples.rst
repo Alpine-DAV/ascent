@@ -326,6 +326,13 @@ Resulting image:
 
 .. image:: examples/tout_field_filtering100.png
 
+An example of selecting material fields and matsets with field filtering.
+------------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_material_field_selection.yaml
+
 An example of using the gradient filter on a element centered field and plotting the magnitude.
 -----------------------------------------------------------------------------------------------
 
@@ -1263,3 +1270,14 @@ YAML actions:
 Resulting image:
 
 .. image:: examples/tout_mir_venn_full_000100.png
+
+An example of using the Material Interface Reconstruction filter with VisIt-style material fields.
+-------------------------------------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_mir_axom_q7o5_material_boundary_000100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_mir_axom_q7o5_material_boundary_000100.png

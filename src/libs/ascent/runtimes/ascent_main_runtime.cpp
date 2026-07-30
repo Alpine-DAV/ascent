@@ -80,6 +80,7 @@ namespace
 bool
 is_visit_material_companion_field(const std::string &field_name)
 {
+  // Recognize material helper fields used by VisIt material data.
   return field_name.rfind("volume_fraction_", 0) == 0 ||
          field_name.rfind("vol_frac_", 0) == 0 ||
          field_name.find("material_attribute") != std::string::npos;
@@ -88,6 +89,7 @@ is_visit_material_companion_field(const std::string &field_name)
 bool
 visit_material_family_base(const std::string &field_name, std::string &base_name)
 {
+  // Find the base name for material field families such as vol_frac_* or field_0.
   const std::string axom_prefix = "vol_frac_";
   if(field_name.rfind(axom_prefix, 0) == 0 &&
      field_name.size() > axom_prefix.size())
@@ -2383,6 +2385,7 @@ void AscentRuntime::SourceFieldFilter()
   }
 
   bool high_order = m_data_object.source() == DataObject::Source::HIGH_BP;
+  // The "materials" keyword keeps material helper fields during source filtering.
   bool keep_visit_material_companions = m_field_list.find("materials") != m_field_list.end();
   conduit::Node *data = m_data_object.as_node().get();
   const int num_domains = data->number_of_children();
@@ -2407,6 +2410,7 @@ void AscentRuntime::SourceFieldFilter()
             continue;
           }
         }
+        // Keep material companion fields and requested material field families.
         if(keep_visit_material_companions &&
            is_visit_material_companion_field(names[f]))
         {

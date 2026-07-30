@@ -65,6 +65,7 @@ bool
 stage_axom_klee_fixture(const std::string &fixture_name,
                         std::string &root_file)
 {
+    // Stage the fixture beside test output so relative HDF5 links resolve.
     const std::string input_dir =
         conduit::utils::join_file_path(
             conduit::utils::join_file_path(std::string(ASCENT_T_DATA_DIR),
@@ -378,6 +379,7 @@ TEST(ascent_mir, venn_viskores_mir_sparse_by_material)
 //-----------------------------------------------------------------------------
 TEST(ascent_mir, axom_q7o5_material_boundary)
 {
+    // Verify MIR can render a matset synthesized from VisIt material fields.
     Node n;
     ascent::about(n);
     // only run this test if ascent was built with viskores support

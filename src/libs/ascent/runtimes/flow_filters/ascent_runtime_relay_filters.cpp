@@ -109,6 +109,7 @@ namespace detail
 bool
 is_visit_material_companion_field(const std::string &field_name)
 {
+  // Recognize material helper fields used by VisIt material data.
   return field_name.rfind("volume_fraction_", 0) == 0 ||
          field_name.rfind("vol_frac_", 0) == 0 ||
          field_name.find("material_attribute") != std::string::npos;
@@ -117,6 +118,7 @@ is_visit_material_companion_field(const std::string &field_name)
 bool
 visit_material_family_base(const std::string &field_name, std::string &base_name)
 {
+  // Find the base name for material field families such as vol_frac_* or field_0.
   const std::string axom_prefix = "vol_frac_";
   if(field_name.rfind(axom_prefix, 0) == 0 &&
      field_name.size() > axom_prefix.size())
@@ -157,6 +159,7 @@ void
 check_for_attributes(const conduit::Node &input,
                      std::vector<std::string> &field_names)
 {
+  // Expand "materials" into the material helper fields found in the input.
   const bool keep_visit_material_companions = std::find(field_names.begin(), field_names.end(), "materials") != field_names.end();
 
   const int num_doms = input.number_of_children();
@@ -311,6 +314,7 @@ filter_fields(const conduit::Node &input,
   // assume this is multi-domain
   //
   check_for_attributes(input, field_names);
+  // When "materials" is requested, keep matsets on selected topologies.
   const bool keep_materials =
       std::find(field_names.begin(), field_names.end(), "materials") != field_names.end();
 
@@ -392,6 +396,7 @@ filter_fields(const conduit::Node &input,
       {
         const conduit::Node &matt = dom["matsets"].child(i);
         const bool selected_by_name = matsets.find(matt_names[i]) != matsets.end();
+        // A material selection keeps matsets attached to any selected topology.
         const bool selected_by_topology =
             keep_materials &&
             matt.has_path("topology") &&
