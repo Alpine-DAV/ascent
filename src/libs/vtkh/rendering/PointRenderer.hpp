@@ -2,6 +2,7 @@
 #define VTK_H_RENDERER_POINTS_HPP
 
 #include <vtkh/rendering/Renderer.hpp>
+#include <viskores/rendering/GlyphType.h>
 
 namespace vtkh {
 
@@ -20,6 +21,7 @@ public:
   void UseVariableRadius(bool useVariableRadius);
   void SetBaseRadius(viskores::Float32 radius);
   void SetRadiusDelta(viskores::Float32 delta);
+  void SetGlyphType(viskores::rendering::GlyphType glyph_type);
   void UsePointMerging(bool merge);
   // sets the number or radii to merge points
   // defualts to 2 * radius

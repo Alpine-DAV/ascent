@@ -154,7 +154,7 @@ struct HipExec
 struct OpenMPExec
 {
   using for_policy = RAJA::omp_parallel_for_exec;
-#if defined(ASCENT_CUDA_ENABLE)
+#if defined(ASCENT_CUDA_ENABLED)
   // the cuda policy for reductions can be used
   // by other backends, and this should suppress
   // erroneous host device warnings
