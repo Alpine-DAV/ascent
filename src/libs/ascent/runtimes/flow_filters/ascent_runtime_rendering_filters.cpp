@@ -490,8 +490,16 @@ vtkh::Render parse_render(const conduit::Node &render_node,
       ASCENT_ERROR("render/tiled_rendering node must be a string value");
     }
     const std::string tiled_rendering = render_node["tiled_rendering"].as_string();
-    // default is always tiled rendering
-    if(tiled_rendering == "false")
+
+    // https://github.com/Alpine-DAV/ascent/issues/1754
+    // current default is tiled rendering is OFF
+
+    // plumb both settings, so logic will be same regardless of default
+    if(tiled_rendering == "true")
+    {
+      render.SetTiledRendering(true);
+    }
+    else if(tiled_rendering == "false")
     {
       render.SetTiledRendering(false);
     }
