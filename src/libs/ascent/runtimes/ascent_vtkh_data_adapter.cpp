@@ -483,20 +483,12 @@ GetStructuredExplicitCoordinateSystem(const conduit::Node &n_coords,
                                                strides,
                                                z_element_stride,
                                                zero_copy);
-    return viskores::cont::CoordinateSystem(
-      name,
-      viskores::cont::make_ArrayHandleCompositeVector(x_coords_handle,
-                                                      y_coords_handle,
-                                                      z_coords_handle));
+    return viskores::cont::CoordinateSystem(name,viskores::cont::make_ArrayHandleCompositeVector(x_coords_handle,y_coords_handle,z_coords_handle));
   }
 
   viskores::cont::ArrayHandle<T> z_coords_handle;
   z_coords_handle.AllocateAndFill(nverts, 0.0);
-  return viskores::cont::CoordinateSystem(
-    name,
-    viskores::cont::make_ArrayHandleCompositeVector(x_coords_handle,
-                                                    y_coords_handle,
-                                                    z_coords_handle));
+  return viskores::cont::CoordinateSystem(name,viskores::cont::make_ArrayHandleCompositeVector(x_coords_handle,y_coords_handle,z_coords_handle));
 }
 
 template<typename T>
