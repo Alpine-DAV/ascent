@@ -19,6 +19,8 @@
 #include <iostream>
 #include <math.h>
 
+#include <viskores/cont/ArrayCopy.h>
+
 #include <conduit_blueprint.hpp>
 #include <conduit_relay.hpp>
 
@@ -433,6 +435,23 @@ TEST(ascent_data_adapter, strided_structured_to_viskores)
     EXPECT_TRUE(ds->HasField("ele_vals"));
     EXPECT_EQ(ds->GetField("vert_vals").GetData().GetNumberOfValues(), 12);
     EXPECT_EQ(ds->GetField("ele_vals").GetData().GetNumberOfValues(), 6);
+
+    viskores::cont::ArrayHandle<viskores::Float64> vert_vals;
+    viskores::cont::ArrayHandle<viskores::Float64> ele_vals;
+    viskores::cont::ArrayCopy(ds->GetField("vert_vals").GetData(), vert_vals);
+    viskores::cont::ArrayCopy(ds->GetField("ele_vals").GetData(), ele_vals);
+
+    auto vert_portal = vert_vals.ReadPortal();
+    for(viskores::Id i = 0; i < vert_vals.GetNumberOfValues(); ++i)
+    {
+        EXPECT_EQ(vert_portal.Get(i), static_cast<viskores::Float64>(i + 1));
+    }
+
+    auto ele_portal = ele_vals.ReadPortal();
+    for(viskores::Id i = 0; i < ele_vals.GetNumberOfValues(); ++i)
+    {
+        EXPECT_EQ(ele_portal.Get(i), static_cast<viskores::Float64>(i + 1));
+    }
 
     delete ds;
 }

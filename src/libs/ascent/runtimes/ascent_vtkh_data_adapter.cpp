@@ -137,6 +137,7 @@ void CopyArray(viskores::cont::ArrayHandle<T> &viskores_handle, const T* vals_pt
   viskores_handle = viskores::cont::make_ArrayHandle(vals_ptr, size, copy);
 }
 
+// Convert a Conduit integer array into a standard vector.
 std::vector<index_t>
 IndexVector(const conduit::Node &node)
 {
@@ -152,12 +153,14 @@ IndexVector(const conduit::Node &node)
   return res;
 }
 
+// Check for Blueprint strided layout metadata.
 bool
 HasStridedLayout(const conduit::Node &node)
 {
   return node.has_child("offsets") && node.has_child("strides");
 }
 
+// Get logical field or coordinate dimensions from topology dimensions.
 std::vector<index_t>
 LogicalDims(const conduit::Node &n_topo, const std::string &assoc)
 {
@@ -180,6 +183,7 @@ LogicalDims(const conduit::Node &n_topo, const std::string &assoc)
   return dims;
 }
 
+// Build logical-to-source indices for a strided Blueprint window.
 viskores::cont::ArrayHandle<viskores::Id>
 LogicalIndexArray(const std::vector<index_t> &logical_dims,
                   const std::vector<index_t> &offsets,
@@ -212,11 +216,10 @@ LogicalIndexArray(const std::vector<index_t> &logical_dims,
     {
       for(index_t i = 0; i < ni; ++i)
       {
-        const viskores::Id src_idx =
-          static_cast<viskores::Id>((ok + k) * sk +
-                                    (oj + j) * sj +
-                                    (oi + i) * si) *
-          static_cast<viskores::Id>(element_stride);
+        const viskores::Id src_idx = static_cast<viskores::Id>((ok + k) * sk +
+                                                               (oj + j) * sj +
+                                                               (oi + i) * si) *
+                                     static_cast<viskores::Id>(element_stride);
         portal.Set(out_idx++, src_idx);
         max_idx = std::max(max_idx, src_idx);
       }
@@ -227,6 +230,7 @@ LogicalIndexArray(const std::vector<index_t> &logical_dims,
   return index_array;
 }
 
+// Wrap strided storage as a logical Viskores permutation array.
 template<typename T>
 auto
 GetPermutedArray(const conduit::Node &node,
@@ -242,12 +246,16 @@ GetPermutedArray(const conduit::Node &node,
   viskores::CopyFlag copy = zero_copy ? viskores::CopyFlag::Off
                                       : viskores::CopyFlag::On;
   viskores::Id source_size = 0;
-  viskores::cont::ArrayHandle<viskores::Id> index_array =
-    LogicalIndexArray(logical_dims, offsets, strides, element_stride, source_size);
+  viskores::cont::ArrayHandle<viskores::Id> index_array = LogicalIndexArray(logical_dims,
+                                                                            offsets,
+                                                                            strides,
+                                                                            element_stride,
+                                                                            source_size);
 
   const T *values_ptr = node.value();
-  viskores::cont::ArrayHandle<T> source_array =
-    viskores::cont::make_ArrayHandle(values_ptr, source_size, copy);
+  viskores::cont::ArrayHandle<T> source_array = viskores::cont::make_ArrayHandle(values_ptr,
+                                                                                 source_size,
+                                                                                 copy);
 
   return viskores::cont::make_ArrayHandlePermutation(index_array, source_array);
 }
@@ -426,6 +434,7 @@ GetExplicitCoordinateSystem(const conduit::Node &n_coords,
 
 }
 
+// Build explicit structured coordinates from strided Blueprint topology metadata.
 template<typename T>
 viskores::cont::CoordinateSystem
 GetStructuredExplicitCoordinateSystem(const conduit::Node &n_coords,
@@ -436,14 +445,12 @@ GetStructuredExplicitCoordinateSystem(const conduit::Node &n_coords,
                                       bool zero_copy)
 {
   const std::vector<index_t> point_dims = LogicalDims(n_topo, "vertex");
-  const std::vector<index_t> offsets =
-    n_topo.has_path("elements/dims/offsets")
-      ? IndexVector(n_topo["elements/dims/offsets"])
-      : std::vector<index_t>(point_dims.size(), 0);
-  const std::vector<index_t> strides =
-    n_topo.has_path("elements/dims/strides")
-      ? IndexVector(n_topo["elements/dims/strides"])
-      : std::vector<index_t>();
+  const std::vector<index_t> offsets = n_topo.has_path("elements/dims/offsets")
+                                       ? IndexVector(n_topo["elements/dims/offsets"])
+                                       : std::vector<index_t>(point_dims.size(), 0);
+  const std::vector<index_t> strides = n_topo.has_path("elements/dims/strides")
+                                       ? IndexVector(n_topo["elements/dims/strides"])
+                                       : std::vector<index_t>();
 
   nverts = 1;
   for(size_t i = 0; i < point_dims.size(); ++i)
@@ -634,6 +641,7 @@ viskores::cont::Field GetField(const conduit::Node &node,
   return field;
 }
 
+// Build a field from strided Blueprint values.
 template<typename T>
 viskores::cont::Field GetStridedField(const conduit::Node &node,
                                       const std::string &field_name,
@@ -644,8 +652,7 @@ viskores::cont::Field GetStridedField(const conduit::Node &node,
                                       const index_t element_stride,
                                       const bool zero_copy)
 {
-  viskores::cont::Field::Association viskores_assoc =
-    viskores::cont::Field::Association::Any;
+  viskores::cont::Field::Association viskores_assoc = viskores::cont::Field::Association::Any;
   if(assoc_str == "vertex")
   {
     viskores_assoc = viskores::cont::Field::Association::Points;
@@ -1981,6 +1988,7 @@ VTKHDataAdapter::StructuredBlueprintToViskoresDataSet
         nverts = n_coords["values/x"].dtype().number_of_elements();
         if(n_coords["values/x"].dtype().is_float64())
         {
+            // Use topology offsets and strides for structured explicit coordinates.
             if(coords_type == "explicit" && has_strided_topology)
             {
                 coords = detail::GetStructuredExplicitCoordinateSystem<float64>(n_coords,
@@ -2014,6 +2022,7 @@ VTKHDataAdapter::StructuredBlueprintToViskoresDataSet
         }
         else if(n_coords["values/x"].dtype().is_float32())
         {
+            // Use topology offsets and strides for structured explicit coordinates.
             if(coords_type == "explicit" && has_strided_topology)
             {
                 coords = detail::GetStructuredExplicitCoordinateSystem<float32>(n_coords,
@@ -2574,6 +2583,7 @@ VTKHDataAdapter::AddField(const std::string &field_name,
     bool is_values = n_field["values"].number_of_children() == 0;
     const Node &n_vals = is_values ? n_field["values"] : n_field["values"].child(0);
     int num_vals = n_vals.dtype().number_of_elements();
+    // Strided fields can have padded storage larger than the logical mesh.
     const bool has_strided_layout = detail::HasStridedLayout(n_field);
 
     if(!has_strided_layout && assoc_str == "vertex" && nverts != num_vals)
@@ -2601,6 +2611,7 @@ VTKHDataAdapter::AddField(const std::string &field_name,
         std::vector<index_t> logical_dims;
         std::vector<index_t> offsets;
         std::vector<index_t> strides;
+        // Read field offsets and strides for logical value mapping.
         if(has_strided_layout)
         {
             logical_dims = detail::LogicalDims(n_topo, assoc_str);
@@ -2624,7 +2635,7 @@ VTKHDataAdapter::AddField(const std::string &field_name,
             // use vtk m array handles
             if( stride % sizeof(float32) == 0 )
             {
-                // in this case we can use a strided array handle
+                // Build a logical field view when Blueprint stride metadata is present.
                 if(has_strided_layout)
                 {
                     dset->AddField(detail::GetStridedField<float32>(n_vals,
@@ -2660,7 +2671,7 @@ VTKHDataAdapter::AddField(const std::string &field_name,
             // use vtk m array handles
             if( stride % sizeof(float64) == 0 )
             {
-                // in this case we can use a strided array handle
+                // Build a logical field view when Blueprint stride metadata is present.
                 if(has_strided_layout)
                 {
                     dset->AddField(detail::GetStridedField<float64>(n_vals,
