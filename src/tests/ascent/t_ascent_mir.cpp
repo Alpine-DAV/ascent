@@ -42,54 +42,54 @@ namespace
 bool
 copy_test_file(const std::string &src, const std::string &dest)
 {
-    std::ifstream input(src.c_str(), std::ios::binary);
-    std::ofstream output(dest.c_str(), std::ios::binary);
+  std::ifstream input(src.c_str(), std::ios::binary);
+  std::ofstream output(dest.c_str(), std::ios::binary);
 
-    if(!input || !output)
-    {
-        return false;
-    }
+  if(!input || !output)
+  {
+    return false;
+  }
 
-    output << input.rdbuf();
-    return output.good();
+  output << input.rdbuf();
+  return output.good();
 }
 
 bool
 ensure_directory(const std::string &path)
 {
-    return conduit::utils::is_directory(path) ||
-      conduit::utils::create_directory(path);
+  return conduit::utils::is_directory(path) ||
+         conduit::utils::create_directory(path);
 }
 
 bool
 stage_axom_klee_fixture(const std::string &fixture_name,
                         std::string &root_file)
 {
-    // Stage the fixture beside test output so relative HDF5 links resolve.
-    const std::string input_dir =
-      conduit::utils::join_file_path(
-        conduit::utils::join_file_path(std::string(ASCENT_T_DATA_DIR),
-                                       "axom_klee_test_data"),
-        fixture_name);
-    const std::string staged_dir =
-      conduit::utils::join_file_path(prepare_output_dir(),
-                                     "axom_klee_test_data_" + fixture_name);
-    const std::string input_shaping_dir =
-      conduit::utils::join_file_path(input_dir, "shaping");
-    const std::string staged_shaping_dir =
-      conduit::utils::join_file_path(staged_dir, "shaping");
+  // Stage the fixture beside test output so relative HDF5 links resolve.
+  const std::string input_dir =
+    conduit::utils::join_file_path(
+      conduit::utils::join_file_path(std::string(ASCENT_T_DATA_DIR),
+                                     "axom_klee_test_data"),
+      fixture_name);
+  const std::string staged_dir =
+    conduit::utils::join_file_path(prepare_output_dir(),
+                                   "axom_klee_test_data_" + fixture_name);
+  const std::string input_shaping_dir =
+    conduit::utils::join_file_path(input_dir, "shaping");
+  const std::string staged_shaping_dir =
+    conduit::utils::join_file_path(staged_dir, "shaping");
 
-    root_file = conduit::utils::join_file_path(staged_dir, "shaping.root");
+  root_file = conduit::utils::join_file_path(staged_dir, "shaping.root");
 
-    return ensure_directory(staged_dir) &&
-      ensure_directory(staged_shaping_dir) &&
-      copy_test_file(conduit::utils::join_file_path(input_dir,
-                                                    "shaping.root"),
-                     root_file) &&
-      copy_test_file(conduit::utils::join_file_path(input_shaping_dir,
-                                                    "shaping_0000000.hdf5"),
-                     conduit::utils::join_file_path(staged_shaping_dir,
-                                                    "shaping_0000000.hdf5"));
+  return ensure_directory(staged_dir) &&
+         ensure_directory(staged_shaping_dir) &&
+         copy_test_file(conduit::utils::join_file_path(input_dir,
+                                                       "shaping.root"),
+                        root_file) &&
+         copy_test_file(conduit::utils::join_file_path(input_shaping_dir,
+                                                       "shaping_0000000.hdf5"),
+                        conduit::utils::join_file_path(staged_shaping_dir,
+                                                       "shaping_0000000.hdf5"));
 }
 
 }
@@ -379,108 +379,108 @@ TEST(ascent_mir, venn_viskores_mir_sparse_by_material)
 //-----------------------------------------------------------------------------
 TEST(ascent_mir, axom_q7o5_material_boundary)
 {
-    // Verify MIR can render a matset synthesized from VisIt material fields.
-    Node n;
-    ascent::about(n);
-    // only run this test if ascent was built with viskores support
-    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
+  // Verify MIR can render a matset synthesized from VisIt material fields.
+  Node n;
+  ascent::about(n);
+  // only run this test if ascent was built with viskores support
+  if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
+  {
+    ASCENT_INFO("Ascent viskores support disabled, skipping test");
+    return;
+  }
+  // only run this test if ascent was built with mfem support
+  if(n["runtimes/ascent/mfem/status"].as_string() == "disabled")
+  {
+    ASCENT_INFO("Ascent mfem support disabled, skipping test");
+    return;
+  }
+
+  auto mesh_domain = [](Node &mesh) -> Node *
+  {
+    if(mesh.has_path("fields") && mesh.has_path("topologies"))
     {
-        ASCENT_INFO("Ascent viskores support disabled, skipping test");
-        return;
+      return &mesh;
     }
-    // only run this test if ascent was built with mfem support
-    if(n["runtimes/ascent/mfem/status"].as_string() == "disabled")
+
+    for(index_t i = 0; i < mesh.number_of_children(); ++i)
     {
-        ASCENT_INFO("Ascent mfem support disabled, skipping test");
-        return;
+      Node &candidate = mesh.child(i);
+      if(candidate.has_path("fields") && candidate.has_path("topologies"))
+      {
+        return &candidate;
+      }
     }
 
-    auto mesh_domain = [](Node &mesh) -> Node *
-    {
-        if(mesh.has_path("fields") && mesh.has_path("topologies"))
-        {
-            return &mesh;
-        }
+    return nullptr;
+  };
 
-        for(index_t i = 0; i < mesh.number_of_children(); ++i)
-        {
-            Node &candidate = mesh.child(i);
-            if(candidate.has_path("fields") && candidate.has_path("topologies"))
-            {
-                return &candidate;
-            }
-        }
+  Node data, verify_info;
+  std::string root_file;
+  ASSERT_TRUE(stage_axom_klee_fixture("balls_and_jacks_q7o5", root_file));
 
-        return nullptr;
-    };
+  conduit::relay::io::blueprint::load_mesh(root_file, data);
+  Node *dom = mesh_domain(data);
+  ASSERT_TRUE(dom != nullptr);
+  EXPECT_TRUE(conduit::blueprint::mesh::verify(*dom, verify_info));
 
-    Node data, verify_info;
-    std::string root_file;
-    ASSERT_TRUE(stage_axom_klee_fixture("balls_and_jacks_q7o5", root_file));
+  ASCENT_INFO("Testing the MIR filter with Axom balls_and_jacks_q7o5 material data");
 
-    conduit::relay::io::blueprint::load_mesh(root_file, data);
-    Node *dom = mesh_domain(data);
-    ASSERT_TRUE(dom != nullptr);
-    EXPECT_TRUE(conduit::blueprint::mesh::verify(*dom, verify_info));
+  (*dom)["state/cycle"] = 100;
+  string output_path = prepare_output_dir();
+  string output_file =
+    conduit::utils::join_file_path(output_path,
+                                   "tout_mir_axom_q7o5_material_boundary");
 
-    ASCENT_INFO("Testing the MIR filter with Axom balls_and_jacks_q7o5 material data");
+  // remove old images before rendering
+  remove_test_image(output_file);
 
-    (*dom)["state/cycle"] = 100;
-    string output_path = prepare_output_dir();
-    string output_file =
-      conduit::utils::join_file_path(output_path,
-                                     "tout_mir_axom_q7o5_material_boundary");
+  //
+  // Create the actions.
+  //
 
-    // remove old images before rendering
-    remove_test_image(output_file);
+  conduit::Node pipelines;
+  pipelines["pl1/f1/type"] = "mir";
+  conduit::Node &params = pipelines["pl1/f1/params"];
+  params["matset"] = "materials";
+  params["error_scaling"] = 0.0;
+  params["scaling_decay"] = 0.0;
+  params["iterations"] = 0;
+  params["max_error"] = 0.00001;
+  params["output_name"] = "materials";
 
-    //
-    // Create the actions.
-    //
+  conduit::Node scenes;
+  scenes["s1/plots/p1/type"] = "pseudocolor";
+  scenes["s1/plots/p1/field"] = "materials";
+  scenes["s1/plots/p1/color_table/discrete"] = "true";
+  scenes["s1/plots/p1/pipeline"] = "pl1";
+  scenes["s1/image_prefix"] = output_file;
 
-    conduit::Node pipelines;
-    pipelines["pl1/f1/type"] = "mir";
-    conduit::Node &params = pipelines["pl1/f1/params"];
-    params["matset"] = "materials";
-    params["error_scaling"] = 0.0;
-    params["scaling_decay"] = 0.0;
-    params["iterations"] = 0;
-    params["max_error"] = 0.00001;
-    params["output_name"] = "materials";
+  conduit::Node actions;
+  conduit::Node &add_pipelines = actions.append();
+  add_pipelines["action"] = "add_pipelines";
+  add_pipelines["pipelines"] = pipelines;
+  conduit::Node &add_scenes= actions.append();
+  add_scenes["action"] = "add_scenes";
+  add_scenes["scenes"] = scenes;
 
-    conduit::Node scenes;
-    scenes["s1/plots/p1/type"] = "pseudocolor";
-    scenes["s1/plots/p1/field"] = "materials";
-    scenes["s1/plots/p1/color_table/discrete"] = "true";
-    scenes["s1/plots/p1/pipeline"] = "pl1";
-    scenes["s1/image_prefix"] = output_file;
+  //
+  // Run Ascent
+  //
 
-    conduit::Node actions;
-    conduit::Node &add_pipelines = actions.append();
-    add_pipelines["action"] = "add_pipelines";
-    add_pipelines["pipelines"] = pipelines;
-    conduit::Node &add_scenes= actions.append();
-    add_scenes["action"] = "add_scenes";
-    add_scenes["scenes"] = scenes;
+  Ascent ascent;
 
-    //
-    // Run Ascent
-    //
+  Node ascent_opts;
+  ascent_opts["runtime/type"] = "ascent";
+  ascent.open(ascent_opts);
+  ascent.publish(*dom);
+  ascent.execute(actions);
+  ascent.close();
 
-    Ascent ascent;
-
-    Node ascent_opts;
-    ascent_opts["runtime/type"] = "ascent";
-    ascent.open(ascent_opts);
-    ascent.publish(*dom);
-    ascent.execute(actions);
-    ascent.close();
-
-    // check that we created an image and that it matches the baseline
-    EXPECT_TRUE(check_test_image(output_file));
-    std::string msg = "An example of using the MIR filter "
-                      "with Axom balls_and_jacks_q7o5 material data.";
-    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+  // check that we created an image and that it matches the baseline
+  EXPECT_TRUE(check_test_image(output_file));
+  std::string msg = "An example of using the MIR filter "
+                    "with Axom balls_and_jacks_q7o5 material data.";
+  ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])

@@ -686,7 +686,9 @@ void GetMatSetFields(const conduit::Node &node, //materials["matset"]
         n_material = &n_next.child(0);
       }
       else
+      {
         n_material = &n_next;
+      }
       const S *data = n_material->value();
       for(index_t i = 0; i < neles; ++i)
       {
@@ -720,9 +722,11 @@ void GetMatSetFields(const conduit::Node &node, //materials["matset"]
         n_material = &n_next.child(0);
       }
       else
+      {
         n_material = &n_next;
+      }
       const S *data = n_material->value();
-      //increase length when a material vf value > 0
+      // increase length when a material vf value > 0
       for(index_t i = 0; i < neles; ++i)
       {
         if(data[i] > (add_implicit_background ? vf_dust : static_cast<S>(0)))
@@ -830,7 +834,9 @@ void GetMatSetFields(const conduit::Node &node, //materials["matset"]
         n_material = &n_child.child(0);
       }
       else
+      {
         n_material = &n_child;
+      }
 
       const S *data = n_material->value();
 
@@ -859,13 +865,15 @@ void GetMatSetFields(const conduit::Node &node, //materials["matset"]
       const Node &n_child = n_materials.child(i);
 
       const Node * n_material;
-      //n_child is not leaf i.e. has values: [v0,v1,...,vn] 
+      // n_child is not leaf i.e. has values: [v0,v1,...,vn]
       if(n_child.number_of_children() != 0)
       {
         n_material = &n_child.child(0);
       }
       else
+      {
         n_material = &n_child;
+      }
 
       const S *data = n_material->value();
 
@@ -983,56 +991,56 @@ bool
 material_volume_fraction_name(const std::string &field_name,
                               std::string &material_name)
 {
-    // Convert supported VisIt volume fraction field names into material names.
-    const std::string visit_prefix = "volume_fraction_";
-    if(field_name.rfind(visit_prefix, 0) == 0 &&
-      field_name.size() > visit_prefix.size())
+  // Convert supported VisIt volume fraction field names into material names.
+  const std::string visit_prefix = "volume_fraction_";
+  if(field_name.rfind(visit_prefix, 0) == 0 &&
+     field_name.size() > visit_prefix.size())
+  {
+    const std::string suffix = field_name.substr(visit_prefix.size());
+    for(size_t i = 0; i < suffix.size(); ++i)
     {
-        const std::string suffix = field_name.substr(visit_prefix.size());
-        for(size_t i = 0; i < suffix.size(); ++i)
-        {
-            if(!std::isdigit(static_cast<unsigned char>(suffix[i])))
-            {
-                return false;
-            }
-        }
-
-        material_name = "material_" + suffix;
-        return true;
+      if(!std::isdigit(static_cast<unsigned char>(suffix[i])))
+      {
+        return false;
+      }
     }
 
-    const std::string axom_prefix = "vol_frac_";
-    if(field_name.rfind(axom_prefix, 0) == 0 &&
-      field_name.size() > axom_prefix.size())
-    {
-        material_name = field_name.substr(axom_prefix.size());
-        return true;
-    }
+    material_name = "material_" + suffix;
+    return true;
+  }
 
-    return false;
+  const std::string axom_prefix = "vol_frac_";
+  if(field_name.rfind(axom_prefix, 0) == 0 &&
+     field_name.size() > axom_prefix.size())
+  {
+    material_name = field_name.substr(axom_prefix.size());
+    return true;
+  }
+
+  return false;
 }
 
 const conduit::Node *
 scalar_field_values(const conduit::Node &field)
 {
-    // Return scalar values, allowing either direct values or one named component.
-    if(!field.has_child("values"))
-    {
-        return NULL;
-    }
-
-    const conduit::Node &values = field["values"];
-    if(values.number_of_children() == 0)
-    {
-        return &values;
-    }
-
-    if(values.number_of_children() == 1)
-    {
-        return &values.child(0);
-    }
-
+  // Return scalar values, allowing either direct values or one named component.
+  if(!field.has_child("values"))
+  {
     return NULL;
+  }
+
+  const conduit::Node &values = field["values"];
+  if(values.number_of_children() == 0)
+  {
+    return &values;
+  }
+
+  if(values.number_of_children() == 1)
+  {
+    return &values.child(0);
+  }
+
+  return NULL;
 }
 
 bool
@@ -1041,68 +1049,69 @@ build_visit_style_matset(const conduit::Node &node,
                          int neles,
                          conduit::Node &matsets)
 {
-    // Build a temporary matset from VisIt volume fraction fields.
-    if(!node.has_child("fields"))
+  // Build a temporary matset from VisIt volume fraction fields.
+  if(!node.has_child("fields"))
+  {
+    return false;
+  }
+
+  std::vector<std::pair<std::string, const conduit::Node *> > materials;
+  conduit::NodeConstIterator itr = node["fields"].children();
+  while(itr.has_next())
+  {
+    const conduit::Node &field = itr.next();
+    std::string material_name;
+    if(!material_volume_fraction_name(itr.name(), material_name))
     {
-        return false;
+      continue;
     }
 
-    std::vector<std::pair<std::string, const conduit::Node *> > materials;
-    conduit::NodeConstIterator itr = node["fields"].children();
-    while(itr.has_next())
+    if(!field.has_child("topology") ||
+       field["topology"].as_string() != topo_name)
     {
-        const conduit::Node &field = itr.next();
-        std::string material_name;
-        if(!material_volume_fraction_name(itr.name(), material_name))
-        {
-            continue;
-        }
-
-        if(!field.has_child("topology") || field["topology"].as_string() != topo_name)
-        {
-            continue;
-        }
-
-        if(field.has_child("association") &&
-          field["association"].as_string() != "element")
-        {
-            continue;
-        }
-
-        const conduit::Node *values = scalar_field_values(field);
-        if(values == NULL)
-        {
-            continue;
-        }
-
-        if(!values->dtype().is_float32() && !values->dtype().is_float64())
-        {
-            continue;
-        }
-
-        if(values->dtype().number_of_elements() != neles)
-        {
-            continue;
-        }
-
-        materials.push_back(std::make_pair(material_name, values));
+      continue;
     }
 
-    if(materials.empty())
+    if(field.has_child("association") &&
+       field["association"].as_string() != "element")
     {
-        return false;
+      continue;
     }
 
-    std::sort(materials.begin(), materials.end());
-
-    conduit::Node &matset = matsets["materials"];
-    matset["topology"] = topo_name;
-    for(size_t i = 0; i < materials.size(); ++i)
+    const conduit::Node *values = scalar_field_values(field);
+    if(values == NULL)
     {
-        matset["volume_fractions"][materials[i].first].set_external(*materials[i].second);
+      continue;
     }
 
-    return true;
+    if(!values->dtype().is_float32() && !values->dtype().is_float64())
+    {
+      continue;
+    }
+
+    if(values->dtype().number_of_elements() != neles)
+    {
+      continue;
+    }
+
+    materials.push_back(std::make_pair(material_name, values));
+  }
+
+  if(materials.empty())
+  {
+    return false;
+  }
+
+  std::sort(materials.begin(), materials.end());
+
+  conduit::Node &matset = matsets["materials"];
+  matset["topology"] = topo_name;
+  for(size_t i = 0; i < materials.size(); ++i)
+  {
+    matset["volume_fractions"][materials[i].first].set_external(*materials[i].second);
+  }
+
+  return true;
 }
 
 } // namespace
