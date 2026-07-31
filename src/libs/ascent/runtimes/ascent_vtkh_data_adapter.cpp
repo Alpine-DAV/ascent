@@ -986,7 +986,7 @@ material_volume_fraction_name(const std::string &field_name,
     // Convert supported VisIt volume fraction field names into material names.
     const std::string visit_prefix = "volume_fraction_";
     if(field_name.rfind(visit_prefix, 0) == 0 &&
-       field_name.size() > visit_prefix.size())
+      field_name.size() > visit_prefix.size())
     {
         const std::string suffix = field_name.substr(visit_prefix.size());
         for(size_t i = 0; i < suffix.size(); ++i)
@@ -1003,7 +1003,7 @@ material_volume_fraction_name(const std::string &field_name,
 
     const std::string axom_prefix = "vol_frac_";
     if(field_name.rfind(axom_prefix, 0) == 0 &&
-       field_name.size() > axom_prefix.size())
+      field_name.size() > axom_prefix.size())
     {
         material_name = field_name.substr(axom_prefix.size());
         return true;
@@ -1064,7 +1064,7 @@ build_visit_style_matset(const conduit::Node &node,
         }
 
         if(field.has_child("association") &&
-           field["association"].as_string() != "element")
+          field["association"].as_string() != "element")
         {
             continue;
         }

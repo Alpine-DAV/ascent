@@ -67,11 +67,11 @@ stage_axom_klee_fixture(const std::string &fixture_name,
     const std::string input_dir =
       conduit::utils::join_file_path(
         conduit::utils::join_file_path(std::string(ASCENT_T_DATA_DIR),
-          "axom_klee_test_data"),
+                                       "axom_klee_test_data"),
         fixture_name);
     const std::string staged_dir =
       conduit::utils::join_file_path(prepare_output_dir(),
-        "axom_klee_test_data_" + fixture_name);
+                                     "axom_klee_test_data_" + fixture_name);
     const std::string input_shaping_dir =
       conduit::utils::join_file_path(input_dir, "shaping");
     const std::string staged_shaping_dir =
@@ -82,12 +82,12 @@ stage_axom_klee_fixture(const std::string &fixture_name,
     return ensure_directory(staged_dir) &&
       ensure_directory(staged_shaping_dir) &&
       copy_test_file(conduit::utils::join_file_path(input_dir,
-        "shaping.root"),
-        root_file) &&
+                                                    "shaping.root"),
+                     root_file) &&
       copy_test_file(conduit::utils::join_file_path(input_shaping_dir,
-        "shaping_0000000.hdf5"),
-        conduit::utils::join_file_path(staged_shaping_dir,
-          "shaping_0000000.hdf5"));
+                                                    "shaping_0000000.hdf5"),
+                     conduit::utils::join_file_path(staged_shaping_dir,
+                                                    "shaping_0000000.hdf5"));
 }
 
 }
@@ -284,7 +284,7 @@ TEST(ascent_conduit_extract, test_material_field_selection)
     const std::string output_path = prepare_output_dir();
     const std::string output_file =
       conduit::utils::join_file_path(output_path,
-        "tout_material_field_selection");
+                                     "tout_material_field_selection");
     const std::string output_root_file = output_file + ".cycle_000000.root";
 
     if(conduit::utils::is_file(output_root_file))
@@ -323,7 +323,7 @@ TEST(ascent_conduit_extract, test_material_field_selection)
     const Node &material_values = dom["fields/mesh_material_attribute/values"];
     ASSERT_EQ(material_values.dtype().number_of_elements(), 1);
     ASSERT_TRUE(material_values.dtype().is_int32() ||
-                material_values.dtype().is_int64());
+      material_values.dtype().is_int64());
     if(material_values.dtype().is_int32())
     {
         EXPECT_EQ(material_values.as_int32_ptr()[0], 1);
@@ -335,9 +335,9 @@ TEST(ascent_conduit_extract, test_material_field_selection)
 
     const Node &inner_values = dom["fields/vol_frac_inner/values"];
     ASSERT_TRUE(inner_values.dtype().is_float64() ||
-                inner_values.dtype().is_float32());
+      inner_values.dtype().is_float32());
 
-    double inner_min =  std::numeric_limits<double>::max();
+    double inner_min = std::numeric_limits<double>::max();
     double inner_max = -std::numeric_limits<double>::max();
     const index_t num_inner_values = inner_values.dtype().number_of_elements();
     if(inner_values.dtype().is_float64())

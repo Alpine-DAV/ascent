@@ -69,11 +69,11 @@ stage_axom_klee_fixture(const std::string &fixture_name,
     const std::string input_dir =
       conduit::utils::join_file_path(
         conduit::utils::join_file_path(std::string(ASCENT_T_DATA_DIR),
-          "axom_klee_test_data"),
+                                       "axom_klee_test_data"),
         fixture_name);
     const std::string staged_dir =
       conduit::utils::join_file_path(prepare_output_dir(),
-        "axom_klee_test_data_" + fixture_name);
+                                     "axom_klee_test_data_" + fixture_name);
     const std::string input_shaping_dir =
       conduit::utils::join_file_path(input_dir, "shaping");
     const std::string staged_shaping_dir =
@@ -84,12 +84,12 @@ stage_axom_klee_fixture(const std::string &fixture_name,
     return ensure_directory(staged_dir) &&
       ensure_directory(staged_shaping_dir) &&
       copy_test_file(conduit::utils::join_file_path(input_dir,
-        "shaping.root"),
-        root_file) &&
+                                                    "shaping.root"),
+                     root_file) &&
       copy_test_file(conduit::utils::join_file_path(input_shaping_dir,
-        "shaping_0000000.hdf5"),
-        conduit::utils::join_file_path(staged_shaping_dir,
-          "shaping_0000000.hdf5"));
+                                                    "shaping_0000000.hdf5"),
+                     conduit::utils::join_file_path(staged_shaping_dir,
+                                                    "shaping_0000000.hdf5"));
 }
 
 }
@@ -429,7 +429,7 @@ TEST(ascent_mir, axom_q7o5_material_boundary)
     string output_path = prepare_output_dir();
     string output_file =
       conduit::utils::join_file_path(output_path,
-        "tout_mir_axom_q7o5_material_boundary");
+                                     "tout_mir_axom_q7o5_material_boundary");
 
     // remove old images before rendering
     remove_test_image(output_file);
