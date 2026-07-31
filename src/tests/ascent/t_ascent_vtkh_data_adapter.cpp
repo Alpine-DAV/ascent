@@ -424,8 +424,7 @@ TEST(ascent_data_adapter, strided_structured_to_viskores)
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data, verify_info));
 
     const std::string topo_name = "mesh";
-    viskores::cont::DataSet *ds =
-        VTKHDataAdapter::BlueprintToViskoresDataSet(data, true, topo_name);
+    viskores::cont::DataSet *ds = VTKHDataAdapter::BlueprintToViskoresDataSet(data, true, topo_name);
 
     ASSERT_NE(ds, nullptr);
     EXPECT_EQ(ds->GetCoordinateSystem().GetData().GetNumberOfValues(), 12);
