@@ -680,7 +680,7 @@ void GetMatSetFields(const conduit::Node &node, //materials["matset"]
 
       const conduit::Node * n_material;
       const conduit::Node &n_next = itr.next();
-      //n_next is not leaf i.e. has values: [v0,v1,...,vn] 
+      // n_next is not leaf i.e. has values: [v0,v1,...,vn]
       if(n_next.number_of_children() != 0)
       {
         n_material = &n_next.child(0);
@@ -714,7 +714,7 @@ void GetMatSetFields(const conduit::Node &node, //materials["matset"]
 
       const conduit::Node * n_material;
       const conduit::Node &n_next = itr.next();
-      //n_next is not leaf i.e. has values: [v0,v1,...,vn] 
+      // n_next is not leaf i.e. has values: [v0,v1,...,vn]
       if(n_next.number_of_children() != 0)
       {
         n_material = &n_next.child(0);
@@ -785,7 +785,7 @@ void GetMatSetFields(const conduit::Node &node, //materials["matset"]
     {
       const conduit::Node * n_vol_frac;	    
       const conduit::Node &n_child = n_vol_fracs.child(i);
-      //n_child is not leaf i.e. has values: [v0,v1,...,vn] 
+      // n_child is not leaf i.e. has values: [v0,v1,...,vn]
       if(n_child.number_of_children() != 0)
       {
         n_vol_frac = &n_child.child(0);
@@ -824,7 +824,7 @@ void GetMatSetFields(const conduit::Node &node, //materials["matset"]
       const Node &n_child = n_materials.child(i);
 
       const Node * n_material;
-      //n_child is not leaf i.e. has values: [v0,v1,...,vn] 
+      // n_child is not leaf i.e. has values: [v0,v1,...,vn]
       if(n_child.number_of_children() != 0)
       {
         n_material = &n_child.child(0);

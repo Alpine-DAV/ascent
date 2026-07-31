@@ -315,8 +315,7 @@ filter_fields(const conduit::Node &input,
   //
   check_for_attributes(input, field_names);
   // When "materials" is requested, keep matsets on selected topologies.
-  const bool keep_materials =
-      std::find(field_names.begin(), field_names.end(), "materials") != field_names.end();
+  const bool keep_materials = std::find(field_names.begin(), field_names.end(), "materials") != field_names.end();
 
   const int num_doms = input.number_of_children();
   for(int d = 0; d < num_doms; ++d)
@@ -397,10 +396,7 @@ filter_fields(const conduit::Node &input,
         const conduit::Node &matt = dom["matsets"].child(i);
         const bool selected_by_name = matsets.find(matt_names[i]) != matsets.end();
         // A material selection keeps matsets attached to any selected topology.
-        const bool selected_by_topology =
-            keep_materials &&
-            matt.has_path("topology") &&
-            topos.find(matt["topology"].as_string()) != topos.end();
+        const bool selected_by_topology = keep_materials && matt.has_path("topology") && topos.find(matt["topology"].as_string()) != topos.end();
         if(selected_by_name || selected_by_topology)
         {
           out_dom["matsets/"+matt_names[i]].set_external(matt);
