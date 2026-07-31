@@ -66,30 +66,16 @@ stage_axom_klee_fixture(const std::string &fixture_name,
                         std::string &root_file)
 {
   // Stage the fixture beside test output so relative HDF5 links resolve.
-  const std::string input_dir =
-    conduit::utils::join_file_path(
-      conduit::utils::join_file_path(std::string(ASCENT_T_DATA_DIR),
-                                     "axom_klee_test_data"),
-      fixture_name);
-  const std::string staged_dir =
-    conduit::utils::join_file_path(prepare_output_dir(),
-                                   "axom_klee_test_data_" + fixture_name);
-  const std::string input_shaping_dir =
-    conduit::utils::join_file_path(input_dir, "shaping");
-  const std::string staged_shaping_dir =
-    conduit::utils::join_file_path(staged_dir, "shaping");
+  const std::string input_dir = conduit::utils::join_file_path(conduit::utils::join_file_path(std::string(ASCENT_T_DATA_DIR),"axom_klee_test_data"),fixture_name);
+  const std::string staged_dir = conduit::utils::join_file_path(prepare_output_dir(),"axom_klee_test_data_" + fixture_name);
+  const std::string input_shaping_dir = conduit::utils::join_file_path(input_dir, "shaping");
+  const std::string staged_shaping_dir = conduit::utils::join_file_path(staged_dir, "shaping");
 
   root_file = conduit::utils::join_file_path(staged_dir, "shaping.root");
 
-  return ensure_directory(staged_dir) &&
-         ensure_directory(staged_shaping_dir) &&
-         copy_test_file(conduit::utils::join_file_path(input_dir,
-                                                       "shaping.root"),
-                        root_file) &&
-         copy_test_file(conduit::utils::join_file_path(input_shaping_dir,
-                                                       "shaping_0000000.hdf5"),
-                        conduit::utils::join_file_path(staged_shaping_dir,
-                                                       "shaping_0000000.hdf5"));
+  return ensure_directory(staged_dir) && ensure_directory(staged_shaping_dir) &&
+                                         copy_test_file(conduit::utils::join_file_path(input_dir,"shaping.root"),root_file) &&
+                                         copy_test_file(conduit::utils::join_file_path(input_shaping_dir,"shaping_0000000.hdf5"),conduit::utils::join_file_path(staged_shaping_dir,"shaping_0000000.hdf5"));
 }
 
 }
@@ -143,7 +129,7 @@ TEST(ascent_mir, venn_viskores_mir_full)
     params["output_name"] = "matset";   // name of the output field; default is `matset` param
 
     conduit::Node scenes;
-    scenes["s1/plots/p1/type"]         = "pseudocolor";
+    scenes["s1/plots/p1/type"] = "pseudocolor";
     scenes["s1/plots/p1/field"] = "matset";
     scenes["s1/plots/p1/color_table/discrete"] = "true";
     scenes["s1/plots/p1/pipeline"] = "pl1";
