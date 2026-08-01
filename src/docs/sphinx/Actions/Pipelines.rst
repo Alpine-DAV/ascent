@@ -672,6 +672,38 @@ Matrix Example:
           params:
             matrix: [2.0, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 50.0, 0.0, 0.0, 2.0, 0.0, 0.0, 0.0, 0.0, 1.0]
 
+Revolve
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The revolve filter creates a rotational extrusion by revolving the input geometry around an axis.
+
+Key parameters:
+
+  - ``axis``: The axis direction for rotation (x,y,z). Default is (1,0,0).
+  - ``point``: A point on the axis (x,y,z). Default is (0,0,0).
+  - ``angle``: Rotation angle in degrees. Default is 360.
+  - ``num_steps``: Number of rotational steps. Default is 16.
+  - ``capping``: ``"true"`` or ``"false"`` to cap open ends. Default is ``"false"``.
+
+Example:
+
+.. code-block:: yaml
+
+  -
+    action: "add_pipelines"
+    pipelines:
+      pl1:
+        f1:
+          type: "revolve"
+          params:
+            topology: "mesh"
+            axis:
+              x: 1.0
+              y: 0.0
+              z: 0.0
+            angle: 360.0
+            num_steps: 24
+            capping: "false"
+
 
 Particle Advection
 ~~~~~~~~~~~~~~~~~~~~
@@ -1481,4 +1513,3 @@ integer values to limit the set of domains over which the selection will be appl
   pipelines["pl1/f1/params/selections/type"] = "field";
   pipelines["pl1/f1/params/selections/domain_id"] = "any";
   pipelines["pl1/f1/params/selections/field"] = "padam_padam"; 
-

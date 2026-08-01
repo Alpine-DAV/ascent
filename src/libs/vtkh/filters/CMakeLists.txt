@@ -26,6 +26,7 @@ set(vtkh_filters_headers
     PointAverage.hpp
     PointTransform.hpp
     Recenter.hpp
+    Revolve.hpp
     Tetrahedralize.hpp
     Threshold.hpp
     Triangulate.hpp
@@ -66,6 +67,7 @@ set(vtkh_filters_sources
     PointAverage.cpp
     PointTransform.cpp
     Recenter.cpp
+    Revolve.cpp
     Tetrahedralize.cpp
     Threshold.cpp
     Triangulate.cpp

@@ -197,6 +197,12 @@ These tables provides an inventory of Ascent's features and the programming and 
      - VTK-h and Viskores APIs
      - `VTKHTriangulate <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/flow_filters/ascent_runtime_vtkh_filters.hpp#L374>`_
 
+   * - VTK-h Revolve
+     - Transform
+     - Viskores (Serial, OpenMP, Cuda, Kokkos)
+     - VTK-h and Viskores APIs
+     - `VTKHRevolve <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/flow_filters/ascent_runtime_vtkh_filters.hpp#L436>`_
+
    * - VTK-h Particle Advection 
      - Transform
      - Viskores (Serial, OpenMP, Cuda, Kokkos) + MPI
@@ -769,4 +775,3 @@ Binning Expressions
      - C++
      - Conduit Node
      - `MaxFromPoint <https://github.com/Alpine-DAV/ascent/blob/develop/src/libs/ascent/runtimes/expressions/ascent_expression_filters.hpp>`_
-

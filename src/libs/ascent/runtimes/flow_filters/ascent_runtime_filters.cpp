@@ -145,6 +145,7 @@ register_builtin()
     AscentRuntime::register_filter_type<VTKHScale>("transforms","scale");
     AscentRuntime::register_filter_type<VTKHProject2d>("transforms","project_2d");
     AscentRuntime::register_filter_type<VTKHTriangulate>("transforms","triangulate");
+    AscentRuntime::register_filter_type<VTKHRevolve>("transforms","revolve");
     AscentRuntime::register_filter_type<VTKHParticleAdvection>("transforms","particle_advection");
     AscentRuntime::register_filter_type<VTKHStreamline>("transforms","streamline");
     AscentRuntime::register_filter_type<VTKHWarpXStreamline>("transforms","warpx_streamline");

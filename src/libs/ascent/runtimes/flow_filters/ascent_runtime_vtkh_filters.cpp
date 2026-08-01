@@ -72,6 +72,7 @@
 #include <vtkh/filters/WarpXStreamline.hpp>
 #include <vtkh/filters/Threshold.hpp>
 #include <vtkh/filters/Triangulate.hpp>
+#include <vtkh/filters/Revolve.hpp>
 #include <vtkh/filters/VectorMagnitude.hpp>
 #include <vtkh/filters/VectorComponent.hpp>
 #include <vtkh/filters/Histogram.hpp>
@@ -593,6 +594,143 @@ VTKHTriangulate::execute()
     // re wrap in data object
     DataObject *res =  new DataObject(new_coll);
     delete tri_output;
+    set_output<DataObject>(res);
+}
+
+//-----------------------------------------------------------------------------
+VTKHRevolve::VTKHRevolve()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHRevolve::~VTKHRevolve()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHRevolve::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_revolve";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+
+    // ----------- Define Param Schema -----------
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
+
+    string_schema(param_schema["properties/topology"]);
+    vec3_schema_anyOf(param_schema["properties/axis"], true);
+    vec3_schema_anyOf(param_schema["properties/point"], true);
+    number_schema(param_schema["properties/angle"], true);
+    number_schema(param_schema["properties/num_steps"], true);
+    string_schema(param_schema["properties/capping"]);
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHRevolve::execute()
+{
+
+    if(!input(0).check_type<DataObject>())
+    {
+        ASCENT_ERROR("vtkh_revolve input must be a data object");
+    }
+
+    DataObject *data_object = input<DataObject>(0);
+    if(!data_object->is_valid())
+    {
+      set_output<DataObject>(data_object);
+      return;
+    }
+
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
+
+    bool throw_error = false;
+    std::string topo_name = detail::resolve_topology(params(),
+                                                     this->name(),
+                                                     collection,
+                                                     throw_error);
+    if(topo_name == "")
+    {
+      // this creates a data object with an invalid source
+      set_output<DataObject>(new DataObject());
+      return;
+    }
+
+    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+    vtkh::Revolve rev;
+
+    viskores::Vec3f axis(1.f, 0.f, 0.f);
+    viskores::Vec3f point(0.f, 0.f, 0.f);
+    viskores::FloatDefault angle = 360.f;
+    viskores::Id num_steps = 16;
+    bool capping = false;
+
+    if(params().has_child("axis"))
+    {
+      const Node &a = params()["axis"];
+      if(a.has_child("x")) axis[0] = static_cast<viskores::FloatDefault>(get_float64(a["x"], data_object));
+      if(a.has_child("y")) axis[1] = static_cast<viskores::FloatDefault>(get_float64(a["y"], data_object));
+      if(a.has_child("z")) axis[2] = static_cast<viskores::FloatDefault>(get_float64(a["z"], data_object));
+    }
+
+    if(params().has_child("point"))
+    {
+      const Node &p = params()["point"];
+      if(p.has_child("x")) point[0] = static_cast<viskores::FloatDefault>(get_float64(p["x"], data_object));
+      if(p.has_child("y")) point[1] = static_cast<viskores::FloatDefault>(get_float64(p["y"], data_object));
+      if(p.has_child("z")) point[2] = static_cast<viskores::FloatDefault>(get_float64(p["z"], data_object));
+    }
+
+    if(params().has_path("angle"))
+    {
+      angle = static_cast<viskores::FloatDefault>(get_float64(params()["angle"], data_object));
+    }
+
+    if(params().has_path("num_steps"))
+    {
+      num_steps = static_cast<viskores::Id>(get_int32(params()["num_steps"], data_object));
+    }
+
+    if(params().has_path("capping"))
+    {
+      const std::string cap = params()["capping"].as_string();
+      if(cap == "true")
+      {
+        capping = true;
+      }
+      else if(cap == "false")
+      {
+        capping = false;
+      }
+      else
+      {
+        ASCENT_ERROR("vtkh_revolve 'capping' must be \"true\" or \"false\".");
+      }
+    }
+
+    rev.SetAxis(axis);
+    rev.SetPoint(point);
+    rev.SetAngleDegrees(angle);
+    rev.SetNumSteps(num_steps);
+    rev.SetCapping(capping);
+
+    rev.SetInput(&data);
+    rev.Update();
+
+    vtkh::DataSet *rev_output = rev.GetOutput();
+
+    // we need to pass through the rest of the topologies, untouched,
+    // and add the result of this operation
+    VTKHCollection *new_coll = collection->copy_without_topology(topo_name);
+    new_coll->add(*rev_output, topo_name);
+    DataObject *res =  new DataObject(new_coll);
+    delete rev_output;
     set_output<DataObject>(res);
 }
 

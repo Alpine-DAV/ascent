@@ -3,6 +3,7 @@
 #==============================================================================
 
 set(viskores_filters_headers
+    viskores_filter_features.hpp
     viskoresCellAverage.hpp
     viskoresClip.hpp
     viskoresCleanGrid.hpp
@@ -19,6 +20,7 @@ set(viskores_filters_headers
     viskoresPointAverage.hpp
     viskoresPointTransform.hpp
     viskoresProbe.hpp
+    viskoresRevolve.hpp
     viskoresStatistics.hpp
     viskoresTetrahedralize.hpp
     viskoresTriangulate.hpp
@@ -44,6 +46,7 @@ set(viskores_filters_sources
     viskoresPointAverage.cpp
     viskoresPointTransform.cpp
     viskoresProbe.cpp
+    viskoresRevolve.cpp
     viskoresStatistics.cpp
     viskoresTetrahedralize.cpp
     viskoresTriangulate.cpp
@@ -89,4 +92,3 @@ endif()
 
 install(FILES ${viskores_filters_install_headers}
         DESTINATION include/ascent/vtkh/viskores_filters)
-

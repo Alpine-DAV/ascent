@@ -433,6 +433,17 @@ public:
 };
 
 //-----------------------------------------------------------------------------
+class ASCENT_API VTKHRevolve : public ::flow::Filter
+{
+public:
+    VTKHRevolve();
+    virtual ~VTKHRevolve();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual void   execute();
+};
+
+//-----------------------------------------------------------------------------
 class ASCENT_API VTKHParticleAdvection : public ::flow::Filter
 {
 public:
