@@ -1,0 +1,22 @@
+#An example of using the sample filter to sample on a sphere surface topology from the input dataset.
+
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "sample"
+        params: 
+          fields: 
+            - "braid"
+          topology: "sample_sphere"
+          invalid_value: -10.0
+- 
+  action: "add_extracts"
+  extracts: 
+    e1: 
+      pipeline: "pl1"
+      type: "relay"
+      params: 
+        protocol: "hdf5"
+        path: "/usr/WS1/nicolem/sadbox/ascent/scripts/build_ascent/build/ascent-checkout/tests/_output/tout_sample_topology_sphere"

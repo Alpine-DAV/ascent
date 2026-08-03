@@ -124,7 +124,8 @@ An example of creating a scene with a user defined pipeline:
 In addition to surfaces, this pseudocolor color plot can render point meshes
 with no additional parameters.
 While there is a default point radius, the plot options allow for constant or
-variable radii.
+variable radii. Point meshes use sphere glyphs by default. The ``points/glyph_type``
+option can select the world-space ``sphere``, ``cube``, or ``axes`` glyph.
 
 
 .. _pnormalfig:

@@ -1,7 +1,7 @@
 #include "PointRenderer.hpp"
 
 #include <viskores/rendering/CanvasRayTracer.h>
-#include <viskores/rendering/MapperPoint.h>
+#include <viskores/rendering/MapperGlyphScalar.h>
 #include <vtkh/filters/ParticleMerging.hpp>
 #include <memory>
 
@@ -17,7 +17,7 @@ PointRenderer::PointRenderer()
     m_radius_mult(2.f),
     m_delete_input(false)
 {
-  typedef viskores::rendering::MapperPoint TracerType;
+  typedef viskores::rendering::MapperGlyphScalar TracerType;
   auto mapper = std::make_shared<TracerType>();
   mapper->SetCompositeBackground(false);
   this->m_mapper = mapper;
@@ -83,11 +83,20 @@ PointRenderer::SetRadiusDelta(viskores::Float32 delta)
 }
 
 void
+PointRenderer::SetGlyphType(viskores::rendering::GlyphType glyph_type)
+{
+  typedef viskores::rendering::MapperGlyphScalar MapperType;
+  std::shared_ptr<MapperType> mapper =
+    std::dynamic_pointer_cast<MapperType>(this->m_mapper);
+  mapper->SetGlyphType(glyph_type);
+}
+
+void
 PointRenderer::PreExecute()
 {
   Renderer::PreExecute();
 
-  typedef viskores::rendering::MapperPoint MapperType;
+  typedef viskores::rendering::MapperGlyphScalar MapperType;
   std::shared_ptr<MapperType> mesh_mapper =
     std::dynamic_pointer_cast<MapperType>(this->m_mapper);
 
@@ -103,7 +112,7 @@ PointRenderer::PreExecute()
   viskores::Float32 radius = m_base_radius;
   if(m_radius_set)
   {
-    mesh_mapper->SetRadius(m_base_radius);
+    mesh_mapper->SetBaseSize(m_base_radius);
   }
   else
   {
@@ -121,7 +130,7 @@ PointRenderer::PreExecute()
     {
       radius = 0.00001f;
     }
-    mesh_mapper->SetRadius(radius);
+    mesh_mapper->SetBaseSize(radius);
   }
 
   if(!m_use_nodes && this->m_input->IsPointMesh() && m_use_point_merging)
@@ -141,8 +150,8 @@ PointRenderer::PreExecute()
     m_delete_input = true;
   }
 
-  mesh_mapper->UseVariableRadius(m_use_variable_radius);
-  mesh_mapper->SetRadiusDelta(m_delta_radius);
+  mesh_mapper->SetScaleByValue(m_use_variable_radius);
+  mesh_mapper->SetScaleDelta(m_delta_radius);
 
 }
 
