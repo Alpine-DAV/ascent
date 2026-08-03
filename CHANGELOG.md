@@ -16,19 +16,24 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - mfem@4.8
 
 ### Added
+- Added a `gltf` extract that exports surface geometry (points, lines, and triangles) as GLB files, with optional scalar field coloring.
+- Added the `points/glyph_type` scene option for rendering point meshes with sphere, cube, or axes glyphs.
 - Added plane to the Sample Filter
 - Added the ability to specify "min/max" as the x/y/z point for the reflect transform filter
 - Added Uniform Grid filter as a parameter of the Sample Filter
 - Added ability to define cameras for rendering using visit camera view parameters
-- Added ability to do tiled rendering, where tiles covering an image are rendered seperately to form the final image. The default is to do tiled rendering with 1024 by 1024 tiles.
+- Added ability to do tiled rendering, where tiles covering an image are rendered separately to form the final image. The default is to do tiled rendering with 1024 by 1024 tiles.
 - Added support for 64 bit IDs
 - Added support for RZ meshes
 - If a `default_dir` is passed as an Ascent Option, extracts and plots will output to that directory by default now.
 - Added a warning if a `ascent.py` file exsits in the current working directory when executing a python extract. 
-- Added support for monochrome/solid color plotting 
+- Added support for monochrome/solid color plotting
+- Added support for `surface` and `wireframe` aliases
+- Added support for plotting pseudocolor plots without providing a field
 
 ### Changed
-- Redefined the parameter varification and surprise checking behavior for Filters to instead use a conduit based JSON Schema style verification schema. Implimented for all existing filters. 
+- Redefined the parameter verification and surprise checking behavior for Filters to instead use a conduit based JSON Schema style verification schema. Implemented for all existing filters.
+- Change tiled rendering default to `false`.
 
 ### Fixed
 - Fixed the aspect ratio for frustum renderings

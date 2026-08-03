@@ -506,8 +506,16 @@ vtkh::Render parse_render(const conduit::Node &render_node,
       ASCENT_ERROR("render/tiled_rendering node must be a string value");
     }
     const std::string tiled_rendering = render_node["tiled_rendering"].as_string();
-    // default is always tiled rendering
-    if(tiled_rendering == "false")
+
+    // https://github.com/Alpine-DAV/ascent/issues/1754
+    // current default is tiled rendering is OFF
+
+    // plumb both settings, so logic will be same regardless of default
+    if(tiled_rendering == "true")
+    {
+      render.SetTiledRendering(true);
+    }
+    else if(tiled_rendering == "false")
     {
       render.SetTiledRendering(false);
     }
@@ -1822,6 +1830,8 @@ CreatePlot::declare_interface(Node &i)
         points_schema["additionalProperties"] = false;
         ignore_schema(points_schema["properties/radius"]);
         ignore_schema(points_schema["properties/radius_delta"]);
+        string_enum_schema(points_schema["properties/glyph_type"],
+                           {"sphere", "cube", "axes"});
 
         conduit::Node &pseudocolor_schema = param_schema["oneOf"].append();
         pseudocolor_schema["type"] = "object";
@@ -1945,6 +1955,18 @@ CreatePlot::execute()
       {
         vtkh::PointRenderer *p_renderer = new vtkh::PointRenderer();
         p_renderer->UseCells();
+        if(plot_params.has_path("points/glyph_type"))
+        {
+          const std::string glyph_type = plot_params["points/glyph_type"].as_string();
+          if(glyph_type == "cube")
+          {
+            p_renderer->SetGlyphType(viskores::rendering::GlyphType::Cube);
+          }
+          else if(glyph_type == "axes")
+          {
+            p_renderer->SetGlyphType(viskores::rendering::GlyphType::Axes);
+          }
+        }
         if(plot_params.has_path("points/radius"))
         {
           float radius = plot_params["points/radius"].to_float32();

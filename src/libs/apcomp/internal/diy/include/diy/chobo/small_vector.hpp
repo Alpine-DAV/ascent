@@ -185,13 +185,14 @@ struct small_vector: Alloc
 
 public:
     using allocator_type = Alloc;
-    using value_type = typename Alloc::value_type;
-    using size_type = typename Alloc::size_type;
-    using difference_type = typename Alloc::difference_type;
-    using reference = typename Alloc::reference;
-    using const_reference = typename Alloc::const_reference;
-    using pointer = typename Alloc::pointer;
-    using const_pointer = typename Alloc::const_pointer;
+    using allocator_traits = std::allocator_traits<Alloc>;
+    using value_type = typename allocator_traits::value_type;
+    using size_type = typename allocator_traits::size_type;
+    using difference_type = typename allocator_traits::difference_type;
+    using reference = value_type&;
+    using const_reference = const value_type&;
+    using pointer = typename allocator_traits::pointer;
+    using const_pointer = typename allocator_traits::const_pointer;
     using iterator = pointer;
     using const_iterator = const_pointer;
     using reverse_iterator = std::reverse_iterator<iterator>;
@@ -261,7 +262,7 @@ public:
 
         for (auto p = v.m_begin; p != v.m_end; ++p)
         {
-            get_alloc().construct(m_end, *p);
+            allocator_traits::construct(get_alloc(), m_end, *p);
             ++m_end;
         }
     }
@@ -277,7 +278,7 @@ public:
             m_begin = m_end = static_begin_ptr();
             for (auto p = v.m_begin; p != v.m_end; ++p)
             {
-                get_alloc().construct(m_end, std::move(*p));
+                allocator_traits::construct(get_alloc(), m_end, std::move(*p));
                 ++m_end;
             }
 
@@ -319,7 +320,7 @@ public:
 
         for (auto p = v.m_begin; p != v.m_end; ++p)
         {
-            get_alloc().construct(m_end, *p);
+            allocator_traits::construct(get_alloc(), m_end, *p);
             ++m_end;
         }
 
@@ -342,7 +343,7 @@ public:
             m_begin = m_end = static_begin_ptr();
             for (auto p = v.m_begin; p != v.m_end; ++p)
             {
-                get_alloc().construct(m_end, std::move(*p));
+                allocator_traits::construct(get_alloc(), m_end, std::move(*p));
                 ++m_end;
             }
 
@@ -534,13 +535,13 @@ public:
         // now we need to transfer the existing elements into the new buffer
         for (size_type i = 0; i < s; ++i)
         {
-            get_alloc().construct(new_buf + i, std::move(*(m_begin + i)));
+            allocator_traits::construct(get_alloc(), new_buf + i, std::move(*(m_begin + i)));
         }
 
         // free old elements
         for (size_type i = 0; i < s; ++i)
         {
-            get_alloc().destroy(m_begin + i);
+            allocator_traits::destroy(get_alloc(), m_begin + i);
         }
 
         if (m_begin != static_begin_ptr())
@@ -583,9 +584,9 @@ public:
 
         for (auto p = m_dynamic_data; p != old_end; ++p)
         {
-            get_alloc().construct(m_end, std::move(*p));
+            allocator_traits::construct(get_alloc(), m_end, std::move(*p));
             ++m_end;
-            get_alloc().destroy(p);
+            allocator_traits::destroy(get_alloc(), p);
         }
 
         get_alloc().deallocate(m_dynamic_data, m_dynamic_capacity);
@@ -605,9 +606,9 @@ public:
         m_capacity = StaticCapacity;
         for (auto p = m_dynamic_data; p != old_end; ++p)
         {
-            get_alloc().construct(m_end, std::move(*p));
+            allocator_traits::construct(get_alloc(), m_end, std::move(*p));
             ++m_end;
-            get_alloc().destroy(p);
+            allocator_traits::destroy(get_alloc(), p);
         }
     }
 
@@ -616,7 +617,7 @@ public:
     {
         for (auto p = m_begin; p != m_end; ++p)
         {
-            get_alloc().destroy(p);
+            allocator_traits::destroy(get_alloc(), p);
         }
 
         if (RevertToStaticSize > 0)
@@ -633,14 +634,14 @@ public:
     iterator insert(const_iterator position, const value_type& val)
     {
         auto pos = grow_at(position, 1);
-        get_alloc().construct(pos, val);
+        allocator_traits::construct(get_alloc(), pos, val);
         return pos;
     }
 
     iterator insert(const_iterator position, value_type&& val)
     {
         auto pos = grow_at(position, 1);
-        get_alloc().construct(pos, std::move(val));
+        allocator_traits::construct(get_alloc(), pos, std::move(val));
         return pos;
     }
 
@@ -649,7 +650,7 @@ public:
         auto pos = grow_at(position, count);
         for (size_type i = 0; i < count; ++i)
         {
-            get_alloc().construct(pos + i, val);
+            allocator_traits::construct(get_alloc(), pos + i, val);
         }
         return pos;
     }
@@ -662,7 +663,7 @@ public:
         auto np = pos;
         for (auto p = first; p != last; ++p, ++np)
         {
-            get_alloc().construct(np, *p);
+            allocator_traits::construct(get_alloc(), np, *p);
         }
         return pos;
     }
@@ -673,7 +674,7 @@ public:
         size_type i = 0;
         for (auto& elem : ilist)
         {
-            get_alloc().construct(pos + i, elem);
+            allocator_traits::construct(get_alloc(), pos + i, elem);
             ++i;
         }
         return pos;
@@ -683,7 +684,7 @@ public:
     iterator emplace(const_iterator position, Args&&... args)
     {
         auto pos = grow_at(position, 1);
-        get_alloc().construct(pos, std::forward<Args>(args)...);
+        allocator_traits::construct(get_alloc(), pos, std::forward<Args>(args)...);
         return pos;
     }
 
@@ -701,20 +702,20 @@ public:
     void push_back(const_reference val)
     {
         auto pos = grow_at(m_end, 1);
-        get_alloc().construct(pos, val);
+        allocator_traits::construct(get_alloc(), pos, val);
     }
 
     void push_back(T&& val)
     {
         auto pos = grow_at(m_end, 1);
-        get_alloc().construct(pos, std::move(val));
+        allocator_traits::construct(get_alloc(), pos, std::move(val));
     }
 
     template<typename... Args>
     reference emplace_back(Args&&... args)
     {
         auto pos = grow_at(m_end, 1);
-        get_alloc().construct(pos, std::forward<Args>(args)...);
+        allocator_traits::construct(get_alloc(), pos, std::forward<Args>(args)...);
         return *pos;
     }
 
@@ -735,12 +736,12 @@ public:
 
             while (m_end > new_end)
             {
-                get_alloc().destroy(--m_end);
+                allocator_traits::destroy(get_alloc(), --m_end);
             }
 
             while (new_end > m_end)
             {
-                get_alloc().construct(m_end++, v);
+                allocator_traits::construct(get_alloc(), m_end++, v);
             }
         }
         else
@@ -752,19 +753,19 @@ public:
 
             for (size_type i = 0; i < num_transfer; ++i)
             {
-                get_alloc().construct(new_buf + i, std::move(*(m_begin + i)));
+                allocator_traits::construct(get_alloc(), new_buf + i, std::move(*(m_begin + i)));
             }
 
             // free obsoletes
             for (size_type i = 0; i < s; ++i)
             {
-                get_alloc().destroy(m_begin + i);
+                allocator_traits::destroy(get_alloc(), m_begin + i);
             }
 
             // construct new elements
             for (size_type i = num_transfer; i < n; ++i)
             {
-                get_alloc().construct(new_buf + i, v);
+                allocator_traits::construct(get_alloc(), new_buf + i, v);
             }
 
             if (m_begin != static_begin_ptr())
@@ -799,12 +800,12 @@ public:
 
             while (m_end > new_end)
             {
-                get_alloc().destroy(--m_end);
+                allocator_traits::destroy(get_alloc(), --m_end);
             }
 
             while (new_end > m_end)
             {
-                get_alloc().construct(m_end++);
+                allocator_traits::construct(get_alloc(), m_end++);
             }
         }
         else
@@ -816,19 +817,19 @@ public:
 
             for (size_type i = 0; i < num_transfer; ++i)
             {
-                get_alloc().construct(new_buf + i, std::move(*(m_begin + i)));
+                allocator_traits::construct(get_alloc(), new_buf + i, std::move(*(m_begin + i)));
             }
 
             // free obsoletes
             for (size_type i = 0; i < n; ++i)
             {
-                get_alloc().destroy(m_begin + i);
+                allocator_traits::destroy(get_alloc(), m_begin + i);
             }
 
             // construct new elements
             for (size_type i = num_transfer; i < s; ++i)
             {
-                get_alloc().construct(new_buf + i);
+                allocator_traits::construct(get_alloc(), new_buf + i);
             }
 
             if (m_begin != static_begin_ptr())
@@ -877,8 +878,8 @@ private:
 
             for (auto p = m_end - num - 1; p >= position; --p)
             {
-                get_alloc().construct(p + num, std::move(*p));
-                get_alloc().destroy(p);
+                allocator_traits::construct(get_alloc(), p + num, std::move(*p));
+                allocator_traits::destroy(get_alloc(), p);
             }
 
             return position;
@@ -894,19 +895,19 @@ private:
 
             for (; np != position; ++p, ++np)
             {
-                get_alloc().construct(np, std::move(*p));
+                allocator_traits::construct(get_alloc(), np, std::move(*p));
             }
 
             np += num;
             for (; p != m_end; ++p, ++np)
             {
-                get_alloc().construct(np, std::move(*p));
+                allocator_traits::construct(get_alloc(), np, std::move(*p));
             }
 
             // destroy old
             for (p = m_begin; p != m_end; ++p)
             {
-                get_alloc().destroy(p);
+                allocator_traits::destroy(get_alloc(), p);
             }
 
             if (m_begin != static_begin_ptr())
@@ -945,13 +946,13 @@ private:
 
             for (auto p = position, np = position + num; np != m_end; ++p, ++np)
             {
-                get_alloc().destroy(p);
-                get_alloc().construct(p, std::move(*np));
+                allocator_traits::destroy(get_alloc(), p);
+                allocator_traits::construct(get_alloc(), p, std::move(*np));
             }
 
             for (auto p = m_end - num; p != m_end; ++p)
             {
-                get_alloc().destroy(p);
+                allocator_traits::destroy(get_alloc(), p);
             }
 
             m_end -= num;
@@ -967,19 +968,19 @@ private:
             auto p = m_begin, np = new_buf;
             for (; p != position; ++p, ++np)
             {
-                get_alloc().construct(np, std::move(*p));
-                get_alloc().destroy(p);
+                allocator_traits::construct(get_alloc(), np, std::move(*p));
+                allocator_traits::destroy(get_alloc(), p);
             }
 
             for (; p != position + num; ++p)
             {
-                get_alloc().destroy(p);
+                allocator_traits::destroy(get_alloc(), p);
             }
 
             for (; np != new_buf + s - num; ++p, ++np)
             {
-                get_alloc().construct(np, std::move(*p));
-                get_alloc().destroy(p);
+                allocator_traits::construct(get_alloc(), np, std::move(*p));
+                allocator_traits::destroy(get_alloc(), p);
             }
 
             position = new_buf + (position - m_begin);
@@ -998,7 +999,7 @@ private:
         m_begin = m_end = choose_data(count);
         for (size_type i = 0; i < count; ++i)
         {
-            get_alloc().construct(m_end, value);
+            allocator_traits::construct(get_alloc(), m_end, value);
             ++m_end;
         }
 
@@ -1014,7 +1015,7 @@ private:
         m_begin = m_end = choose_data(last - first);
         for (auto p = first; p != last; ++p)
         {
-            get_alloc().construct(m_end, *p);
+            allocator_traits::construct(get_alloc(), m_end, *p);
             ++m_end;
         }
 
@@ -1029,7 +1030,7 @@ private:
         m_begin = m_end = choose_data(ilist.size());
         for (auto& elem : ilist)
         {
-            get_alloc().construct(m_end, elem);
+            allocator_traits::construct(get_alloc(), m_end, elem);
             ++m_end;
         }
 
