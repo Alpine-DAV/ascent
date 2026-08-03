@@ -670,7 +670,7 @@ fi # if enable_hip || enable_sycl
 ################
 # Viskores
 ################
-viskores_version=1.2.0-rc1
+viskores_version=1.2.0-rc2
 viskores_src_dir=$(ospath ${source_dir}/viskores-${viskores_version})
 viskores_build_dir=$(ospath ${build_dir}/viskores-${viskores_version})
 viskores_install_dir=$(ospath ${install_dir}/viskores-${viskores_version}/)

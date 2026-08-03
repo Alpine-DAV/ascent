@@ -29,10 +29,16 @@ class Viskores(CMakePackage, CudaPackage, ROCmPackage):
     version("main", branch="main")
     version("release", branch="release")
     version(
+        "1.2.0",
+        tag="v1.2.0-rc2",
+        commit="cfd39568ea2a7d74571baad2f67022147dab4164",
+        preferred=True,
+    )
+
+    version(
         "1.1.1",
         tag="v1.1.1",
-        commit="1d38698019f56ef2636d7283f4cac9bc2ee6c819",
-        preferred=True,
+        commit="1d38698019f56ef2636d7283f4cac9bc2ee6c819"
     )
     version(
         "1.0.0",
