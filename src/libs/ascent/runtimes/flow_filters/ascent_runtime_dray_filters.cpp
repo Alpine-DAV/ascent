@@ -179,17 +179,36 @@ void dray_color_table_schema(conduit::Node &param_schema) {
     {
         conduit::Node &control_points_schema = param_schema["properties/control_points"];
 
-        conduit::Node &cp_compressed_schema = control_points_schema["oneOf"].append();
-        cp_compressed_schema["type"] = "object";
-        cp_compressed_schema["additionalProperties"] = false;
-        ignore_schema(cp_compressed_schema["properties/r"]);
-        ignore_schema(cp_compressed_schema["properties/g"]);
-        ignore_schema(cp_compressed_schema["properties/b"]);
-        ignore_schema(cp_compressed_schema["properties/a"]);
-        ignore_schema(cp_compressed_schema["properties/position"]);
-        cp_compressed_schema["constraints/forbid"].append() = "type";
-        cp_compressed_schema["constraints/forbid"].append() = "alpha";
-        cp_compressed_schema["constraints/forbid"].append() = "color";
+        // Compressed control points (object format) can be provided either as:
+        // - {r,g,b,(a),position} arrays
+        // - {hex,(a),position} arrays
+        // These are mutually exclusive.
+
+        conduit::Node &cp_compressed_rgb_schema = control_points_schema["oneOf"].append();
+        cp_compressed_rgb_schema["type"] = "object";
+        cp_compressed_rgb_schema["additionalProperties"] = false;
+        ignore_schema(cp_compressed_rgb_schema["properties/r"]);
+        ignore_schema(cp_compressed_rgb_schema["properties/g"]);
+        ignore_schema(cp_compressed_rgb_schema["properties/b"]);
+        ignore_schema(cp_compressed_rgb_schema["properties/a"]);
+        ignore_schema(cp_compressed_rgb_schema["properties/position"]);
+        cp_compressed_rgb_schema["constraints/forbid"].append() = "hex";
+        cp_compressed_rgb_schema["constraints/forbid"].append() = "type";
+        cp_compressed_rgb_schema["constraints/forbid"].append() = "alpha";
+        cp_compressed_rgb_schema["constraints/forbid"].append() = "color";
+
+        conduit::Node &cp_compressed_hex_schema = control_points_schema["oneOf"].append();
+        cp_compressed_hex_schema["type"] = "object";
+        cp_compressed_hex_schema["additionalProperties"] = false;
+        ignore_schema(cp_compressed_hex_schema["properties/hex"]);
+        ignore_schema(cp_compressed_hex_schema["properties/a"]);
+        ignore_schema(cp_compressed_hex_schema["properties/position"]);
+        cp_compressed_hex_schema["constraints/forbid"].append() = "r";
+        cp_compressed_hex_schema["constraints/forbid"].append() = "g";
+        cp_compressed_hex_schema["constraints/forbid"].append() = "b";
+        cp_compressed_hex_schema["constraints/forbid"].append() = "type";
+        cp_compressed_hex_schema["constraints/forbid"].append() = "alpha";
+        cp_compressed_hex_schema["constraints/forbid"].append() = "color";
 
         conduit::Node cp_list_item_schema;
         cp_list_item_schema["type"] = "object";
@@ -201,6 +220,7 @@ void dray_color_table_schema(conduit::Node &param_schema) {
         cp_list_item_schema["constraints/forbid"].append() = "r";
         cp_list_item_schema["constraints/forbid"].append() = "g";
         cp_list_item_schema["constraints/forbid"].append() = "b";
+        cp_list_item_schema["constraints/forbid"].append() = "hex";
         cp_list_item_schema["constraints/forbid"].append() = "a";
 
         array_schema(control_points_schema["oneOf"].append(), cp_list_item_schema);
@@ -509,9 +529,10 @@ parse_color_table(const conduit::Node &color_table_node)
     }
     else if (control_points_node.dtype().is_object())
     {
-        if (control_points_node.has_child("r") && 
-            control_points_node.has_child("g") && 
-            control_points_node.has_child("b"))
+        if ((control_points_node.has_child("r") && 
+             control_points_node.has_child("g") && 
+             control_points_node.has_child("b")) ||
+            control_points_node.has_child("hex"))
         {
             clear = true;
         }
@@ -609,26 +630,30 @@ parse_color_table(const conduit::Node &color_table_node)
     }
     else if (control_points_node.dtype().is_object())
     {
-        if (!control_points_node.has_child("r"))
-        {
-            ASCENT_ERROR("Color map control point must provide r values");
-        }
+      if (!control_points_node.has_child("position"))
+      {
+        ASCENT_ERROR("Color map control point must have a position");
+      }
 
-        if (!control_points_node.has_child("g"))
-        {
-            ASCENT_ERROR("Color map control point must provide g values");
-        }
+      const bool has_rgb_channels = control_points_node.has_child("r") &&
+                                    control_points_node.has_child("g") &&
+                                    control_points_node.has_child("b");
+      const bool has_hex_channel = control_points_node.has_child("hex");
 
-        if (!control_points_node.has_child("b"))
-        {
-            ASCENT_ERROR("Color map control point must provide b values");
-        }
+      if(has_rgb_channels && has_hex_channel)
+      {
+        ASCENT_ERROR("Color map control points must use either {r,g,b} or {hex}, not both");
+      }
 
-        if (!control_points_node.has_child("position"))
-        {
-            ASCENT_ERROR("Color map control point must have a position");
-        }
+      if(!has_rgb_channels && !has_hex_channel)
+      {
+        ASCENT_ERROR("Color map control points must provide either {r,g,b} values or {hex} values");
+      }
 
+      float64_array pos_vals = control_points_node.fetch("position").value();
+
+      if(has_rgb_channels)
+      {
         conduit::Node r_vals_node;
         control_points_node["r"].to_float32_array(r_vals_node);
         float32_array r_vals = r_vals_node.as_float32_array();
@@ -641,50 +666,142 @@ parse_color_table(const conduit::Node &color_table_node)
         control_points_node["b"].to_float32_array(b_vals_node);
         float32_array b_vals = b_vals_node.as_float32_array();
 
-        float64_array pos_vals = control_points_node.fetch("position").value();
-
         if (r_vals.number_of_elements() != g_vals.number_of_elements() ||
             g_vals.number_of_elements() != b_vals.number_of_elements() ||
             b_vals.number_of_elements() != pos_vals.number_of_elements())
         {
-            ASCENT_ERROR("Color map color channels should all be of the same size");
+          ASCENT_ERROR("Color map color channels should all be of the same size");
         }
 
-        for (index_t i=0; i<r_vals.number_of_elements();i++)
+        for (index_t i=0; i<r_vals.number_of_elements(); i++)
         {
-            dray::Vec<dray::float32,3> ecolor({r_vals[i], g_vals[i], b_vals[i]});
-            
-            for (int e = 0; e < 3; ++e)
-            {
-                ecolor[e] = std::min(1.f, std::max(ecolor[e], 0.f));
-            }
+          dray::Vec<dray::float32,3> ecolor({r_vals[i], g_vals[i], b_vals[i]});
+          
+          for (int e = 0; e < 3; ++e)
+          {
+            ecolor[e] = std::min(1.f, std::max(ecolor[e], 0.f));
+          }
 
-            if (pos_vals[i] > 1.0 || pos_vals[i] < 0.0)
-            {
-                ASCENT_ERROR("Cannot add color map control point position "
-                                << pos_vals[i]
-                                << ". Must be a normalized scalar.");
-            }
+          if (pos_vals[i] > 1.0 || pos_vals[i] < 0.0)
+          {
+            ASCENT_ERROR("Cannot add color map control point position "
+                         << pos_vals[i]
+                         << ". Must be a normalized scalar.");
+          }
 
-            color_table.add_point(pos_vals[i], ecolor);
+          color_table.add_point(pos_vals[i], ecolor);
         }
 
         if (control_points_node.has_child("a"))
         {
-            conduit::Node alpha_vals_node;
-            control_points_node["a"].to_float32_array(alpha_vals_node);
-            float32_array alpha_vals = alpha_vals_node.as_float32_array();
+          conduit::Node alpha_vals_node;
+          control_points_node["a"].to_float32_array(alpha_vals_node);
+          float32_array alpha_vals = alpha_vals_node.as_float32_array();
 
-            if (pos_vals.number_of_elements() != alpha_vals.number_of_elements())
-            {
-                ASCENT_ERROR("Color map alpha channel should have same size as color channels");
-            }
+          if (pos_vals.number_of_elements() != alpha_vals.number_of_elements())
+          {
+            ASCENT_ERROR("Color map alpha channel should have same size as color channels");
+          }
 
-            for (index_t i=0; i<alpha_vals.number_of_elements();i++)
-            {
-                color_table.add_alpha(pos_vals[i], std::min(1.f, std::max(alpha_vals[i], 0.f)));
-            }
+          for (index_t i=0; i<alpha_vals.number_of_elements(); i++)
+          {
+            color_table.add_alpha(pos_vals[i], std::min(1.f, std::max(alpha_vals[i], 0.f)));
+          }
         }
+      }
+      else // has_hex_channel
+      {
+        const conduit::Node &hex_node = control_points_node.fetch("hex");
+        std::vector<std::string> hex_vals;
+
+        if(hex_node.dtype().is_list())
+        {
+          NodeConstIterator hitr = hex_node.children();
+          while(hitr.has_next())
+          {
+            const conduit::Node &h = hitr.next();
+            if(!h.dtype().is_string())
+            {
+              ASCENT_ERROR("Color map hex control points must be strings");
+            }
+            hex_vals.push_back(h.as_string());
+          }
+        }
+        else if(hex_node.dtype().is_string())
+        {
+          hex_vals.push_back(hex_node.as_string());
+        }
+        else
+        {
+          ASCENT_ERROR("Color map hex control points must be a string or a list of strings");
+        }
+
+        if(static_cast<conduit::index_t>(hex_vals.size()) != pos_vals.number_of_elements())
+        {
+          ASCENT_ERROR("Color map hex channel should have same size as position channel");
+        }
+
+        const bool has_alpha_channel = control_points_node.has_child("a");
+        std::vector<float> hex_alpha_vals(hex_vals.size(), 1.f);
+        bool any_hex_alpha = false;
+
+        for(conduit::index_t i = 0; i < pos_vals.number_of_elements(); i++)
+        {
+          if (pos_vals[i] > 1.0 || pos_vals[i] < 0.0)
+          {
+            ASCENT_ERROR("Cannot add color map control point position "
+                         << pos_vals[i]
+                         << ". Must be a normalized scalar.");
+          }
+
+          double r = 0., g = 0., b = 0., a = 1.;
+          bool has_alpha = false;
+          std::string err;
+          if(!detail::parse_hex_color_string(hex_vals[i], r, g, b, a, has_alpha, err))
+          {
+            ASCENT_ERROR("Invalid hex color for color_table/control_points/hex: '"
+                         << hex_vals[i] << "' (" << err << ")");
+          }
+
+          dray::Vec<float,3> ecolor({static_cast<float>(r),
+                                     static_cast<float>(g),
+                                     static_cast<float>(b)});
+          for(int c = 0; c < 3; ++c)
+          {
+            ecolor[c] = std::min(1.f, std::max(ecolor[c], 0.f));
+          }
+
+          color_table.add_point(pos_vals[i], ecolor);
+
+          hex_alpha_vals[i] = static_cast<float>(a);
+          any_hex_alpha = any_hex_alpha || has_alpha;
+        }
+
+        if (has_alpha_channel)
+        {
+          conduit::Node alpha_vals_node;
+          control_points_node["a"].to_float32_array(alpha_vals_node);
+          float32_array alpha_vals = alpha_vals_node.as_float32_array();
+
+          if (pos_vals.number_of_elements() != alpha_vals.number_of_elements())
+          {
+            ASCENT_ERROR("Color map alpha channel should have same size as color channels");
+          }
+
+          for (index_t i=0; i<alpha_vals.number_of_elements(); i++)
+          {
+            color_table.add_alpha(pos_vals[i], std::min(1.f, std::max(alpha_vals[i], 0.f)));
+          }
+        }
+        else if(any_hex_alpha)
+        {
+          for(std::size_t i = 0; i < hex_alpha_vals.size(); i++)
+          {
+            color_table.add_alpha(pos_vals[static_cast<conduit::index_t>(i)],
+                                  std::min(1.f, std::max(hex_alpha_vals[i], 0.f)));
+          }
+        }
+      }
     }
   }
 
@@ -2587,5 +2704,3 @@ DRayVectorComponent::execute()
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
-
-

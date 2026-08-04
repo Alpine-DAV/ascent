@@ -113,17 +113,36 @@ void color_table_schema(conduit::Node &param_schema) {
     {
         conduit::Node &control_points_schema = param_schema["properties/control_points"];
 
-        conduit::Node &cp_compressed_schema = control_points_schema["oneOf"].append();
-        cp_compressed_schema["type"] = "object";
-        cp_compressed_schema["additionalProperties"] = false;
-        ignore_schema(cp_compressed_schema["properties/r"]);
-        ignore_schema(cp_compressed_schema["properties/g"]);
-        ignore_schema(cp_compressed_schema["properties/b"]);
-        ignore_schema(cp_compressed_schema["properties/a"]);
-        ignore_schema(cp_compressed_schema["properties/position"]);
-        cp_compressed_schema["constraints/forbid"].append() = "type";
-        cp_compressed_schema["constraints/forbid"].append() = "alpha";
-        cp_compressed_schema["constraints/forbid"].append() = "color";
+        // Compressed control points (object format) can be provided either as:
+        // - {r,g,b,(a),position} arrays
+        // - {hex,(a),position} arrays
+        // These are mutually exclusive.
+
+        conduit::Node &cp_compressed_rgb_schema = control_points_schema["oneOf"].append();
+        cp_compressed_rgb_schema["type"] = "object";
+        cp_compressed_rgb_schema["additionalProperties"] = false;
+        ignore_schema(cp_compressed_rgb_schema["properties/r"]);
+        ignore_schema(cp_compressed_rgb_schema["properties/g"]);
+        ignore_schema(cp_compressed_rgb_schema["properties/b"]);
+        ignore_schema(cp_compressed_rgb_schema["properties/a"]);
+        ignore_schema(cp_compressed_rgb_schema["properties/position"]);
+        cp_compressed_rgb_schema["constraints/forbid"].append() = "hex";
+        cp_compressed_rgb_schema["constraints/forbid"].append() = "type";
+        cp_compressed_rgb_schema["constraints/forbid"].append() = "alpha";
+        cp_compressed_rgb_schema["constraints/forbid"].append() = "color";
+
+        conduit::Node &cp_compressed_hex_schema = control_points_schema["oneOf"].append();
+        cp_compressed_hex_schema["type"] = "object";
+        cp_compressed_hex_schema["additionalProperties"] = false;
+        ignore_schema(cp_compressed_hex_schema["properties/hex"]);
+        ignore_schema(cp_compressed_hex_schema["properties/a"]);
+        ignore_schema(cp_compressed_hex_schema["properties/position"]);
+        cp_compressed_hex_schema["constraints/forbid"].append() = "r";
+        cp_compressed_hex_schema["constraints/forbid"].append() = "g";
+        cp_compressed_hex_schema["constraints/forbid"].append() = "b";
+        cp_compressed_hex_schema["constraints/forbid"].append() = "type";
+        cp_compressed_hex_schema["constraints/forbid"].append() = "alpha";
+        cp_compressed_hex_schema["constraints/forbid"].append() = "color";
 
         conduit::Node cp_list_item_schema;
         cp_list_item_schema["type"] = "object";
@@ -135,6 +154,7 @@ void color_table_schema(conduit::Node &param_schema) {
         cp_list_item_schema["constraints/forbid"].append() = "r";
         cp_list_item_schema["constraints/forbid"].append() = "g";
         cp_list_item_schema["constraints/forbid"].append() = "b";
+        cp_list_item_schema["constraints/forbid"].append() = "hex";
         cp_list_item_schema["constraints/forbid"].append() = "a";
 
         array_schema(control_points_schema["oneOf"].append(), cp_list_item_schema);
