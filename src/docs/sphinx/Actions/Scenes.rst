@@ -246,7 +246,11 @@ Image of the color tables provided by Viskores can be found in :ref:`viskores_co
 Minimally, a color table name needs to be specified, but the ``color_table`` node allows you to specify RGB and Alpha (opacity) control points for complete customization of color maps.
 Alpha control points are used when rendering volumes.
 The built-in Color map names are: ``Cool to Warm``, ``Black-Body Radiation``, ``Samsel Fire``, ``Inferno``, ``Linear YGB``, ``Cold and Hot``, ``Rainbow Desaturated``, ``Cool to Warm (Extended)``, ``X Ray``, ``Black, Blue and White``, ``Viridis``, ``Linear Green``, ``Jet``, and ``Rainbow``.
-Colors are three double precision values between 0 and 1.
+
+Colors can be expressed one of two ways.
+The first is as three double precision RGB values between 0 and 1.
+The second is as Hex color values.
+
 Alphas and positions  are a single double precision values between 0 and 1.
 
 Here is an example of specifying a color table by name:
@@ -277,8 +281,18 @@ but when a color table is specified, then the color table needs to include
 alpha values. Otherwise, the volume plot will look exactly the same as a
 pseudocolor plot.
 
-There are two formats that can be used to add a custom color table. The first is
-a compact color table format:
+There are two formats that can be used to add a custom color table.
+The first is a compact color table format and the second is an expanded color table format.
+
+All of the examples below are equivilant forms to express the same color table and result in the following plot:
+
+..  figure:: ../images/color_table_example.png
+    :scale: 50 %
+    :align: center
+
+    A volume plot defined using a custom color table
+
+Here is an example of adding a custom color table to the volume plot using scalar colors and the compact color table:
 
 .. code-block:: c++
 
@@ -286,7 +300,7 @@ a compact color table format:
   control_points["r"] = {.23, .48, .99};
   control_points["g"] = {0.08, .23, 1.};
   control_points["b"] = {0.08, .04, .96};
-  control_points["a"] = {1., 1., 1.};
+  control_points["a"] = {0., .5, 1.};
   control_points["position"] = {0., .5, 1.}; 
 
   conduit::Node scenes;
@@ -299,8 +313,30 @@ a compact color table format:
   add_plots["action"] = "add_scenes";
   add_plots["scenes"] = scenes;
 
+With hex colors, the compact color table can be written as follows:
+
+.. code-block:: c++
+
+  conduit::Node control_points;
+  conduit::Node &hex = control_points["hex"];
+  hex.append() = "#3B1414";
+  hex.append() = "#7A3B0A";
+  hex.append() = "#FCFFF5";
+  control_points["a"] = {0., .5, 1.};
+  control_points["position"] = {0., .5, 1.};
+
+  conduit::Node scenes;
+  scenes["s1/plots/p1/type"]  = "volume";
+  scenes["s1/plots/p1/field"] = "braid";
+  scenes["s1/plots/p1/color_table/control_points"] = control_points;
+
+  conduit::Node actions;
+  conduit::Node &add_plots = actions.append();
+  add_plots["action"] = "add_scenes";
+  add_plots["scenes"] = scenes;
+
 Alternatively, there is a second, expanded color table format that can be used.
-Here is an example of adding a custom color table to the volume plot:
+Here is an example of adding a custom color table to the volume plot using scalar colors and the expanded color table:
 
 .. code-block:: c++
 
@@ -308,21 +344,23 @@ Here is an example of adding a custom color table to the volume plot:
   conduit::Node &point1 = control_points.append();
   point1["type"] = "rgb";
   point1["position"] = 0.;
-  double color[3] = {1., 0., 0.};
+  double color[3] = {.23, 0.08, 0.08};
   point1["color"].set_float64_ptr(color, 3);
 
   conduit::Node &point2 = control_points.append();
   point2["type"] = "rgb";
   point2["position"] = 0.5;
-  color[0] = 0;
-  color[1] = 1.;
+  color[0] = .48;
+  color[1] = .23;
+  color[2] = .04;
   point2["color"].set_float64_ptr(color, 3);
 
   conduit::Node &point3 = control_points.append();
   point3["type"] = "rgb";
   point3["position"] = 1.0;
-  color[1] = 0;
-  color[2] = 1.;
+  color[0] = .99;
+  color[1] = 1.;
+  color[2] = .96;
   point3["color"].set_float64_ptr(color, 3);
 
   conduit::Node &point4 = control_points.append();
@@ -332,7 +370,48 @@ Here is an example of adding a custom color table to the volume plot:
 
   conduit::Node &point5 = control_points.append();
   point5["type"] = "alpha";
-  point5["position"] = 1.0;
+  point5["position"] = 1.;
+  point5["alpha"] = 1.;
+
+  conduit::Node scenes;
+  scenes["s1/plots/p1/type"]  = "volume";
+  scenes["s1/plots/p1/field"] = "braid";
+  scenes["s1/plots/p1/color_table/control_points"] = control_points;
+
+  conduit::Node actions;
+  conduit::Node &add_plots = actions.append();
+  add_plots["action"] = "add_scenes";
+  add_plots["scenes"] = scenes;
+
+
+With hex colors, the expanded color table can be written as follows:
+
+.. code-block:: c++
+
+  conduit::Node control_points;
+  conduit::Node &point1 = control_points.append();
+  point1["type"] = "rgb";
+  point1["position"] = 0.;
+  point1["color"] = "#3B1414";
+
+  conduit::Node &point2 = control_points.append();
+  point2["type"] = "rgb";
+  point2["position"] = 0.5;
+  point2["color"] = "#7A3B0A";
+
+  conduit::Node &point3 = control_points.append();
+  point3["type"] = "rgb";
+  point3["position"] = 1.0;
+  point3["color"] = "#FCFFF5";
+
+  conduit::Node &point4 = control_points.append();
+  point4["type"] = "alpha";
+  point4["position"] = 0.;
+  point4["alpha"] = 0.;
+
+  conduit::Node &point5 = control_points.append();
+  point5["type"] = "alpha";
+  point5["position"] = 1.;
   point5["alpha"] = 1.;
 
   conduit::Node scenes;
@@ -358,6 +437,18 @@ RGB or RGBA percentages values between 0 and 1 to the ``color_table/solid`` node
   scenes["s1/plots/p1/type"]  = "pseudocolor";
   scenes["s1/plots/p1/field"] = "braid";
   scenes["s1/plots/p1/color_table/solid"] = {0.0, 0.184, 0.655};
+
+  conduit::Node actions;
+  conduit::Node &add_plots = actions.append();
+  add_plots["action"] = "add_scenes";
+  add_plots["scenes"] = scenes;
+
+.. code-block:: c++
+
+  conduit::Node scenes;
+  scenes["s1/plots/p1/type"]  = "pseudocolor";
+  scenes["s1/plots/p1/field"] = "braid";
+  scenes["s1/plots/p1/color_table/solid"] = "#002FA7";
 
   conduit::Node actions;
   conduit::Node &add_plots = actions.append();
