@@ -443,6 +443,8 @@ RGB or RGBA percentages values between 0 and 1 to the ``color_table/solid`` node
   add_plots["action"] = "add_scenes";
   add_plots["scenes"] = scenes;
 
+The above custom color table can also be expressed using hex colors:
+
 .. code-block:: c++
 
   conduit::Node scenes;
