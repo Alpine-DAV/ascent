@@ -916,7 +916,7 @@ TEST(ascent_devil_ray, test_dray_compressed_color_table)
     ASCENT_INFO("Testing Devil Ray Compressed Color Table");
 
     string output_path = prepare_output_dir();
-    string output_file = conduit::utils::join_file_path(output_path,"dray_compressed_color_table");
+    string output_file = conduit::utils::join_file_path(output_path,"tout_dray_compressed_color_table");
 
     // remove old images before rendering
     remove_test_image(output_file);
@@ -959,9 +959,68 @@ TEST(ascent_devil_ray, test_dray_compressed_color_table)
     ascent.close();
 
     // check that we created an image
-    // EXPECT_TRUE(check_test_image(output_file));
-    // std::string msg = "An example of creating a custom compressed color map.";
-    // ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+    EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example of creating a custom compressed color map.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_devil_ray, test_dray_compressed_color_table_hex)
+{
+    Node n;
+    ascent::about(n);
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              10,
+                                              10,
+                                              10,
+                                              data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing Devil Ray Compressed Hex Color Table");
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_dray_compressed_color_table_hex");
+
+    remove_test_image(output_file);
+
+    conduit::Node control_points;
+    conduit::Node &hex = control_points["hex"];
+    hex.append() = "#3B1414";
+    hex.append() = "#7A3B0A";
+    hex.append() = "#FCFFF5";
+    control_points["a"] = {1., 1., 1.};
+    control_points["position"] = {0., .5, 1.};   
+
+    conduit::Node extracts;
+    extracts["e1/type"]  = "dray_pseudocolor";
+    extracts["e1/params/field"] = "braid";
+    extracts["e1/params/color_table/control_points"] = control_points;
+    extracts["e1/params/image_width"]  = 512;
+    extracts["e1/params/image_height"] = 512;
+    extracts["e1/params/image_prefix"]   = output_file;
+
+    conduit::Node actions;
+    conduit::Node &add_plots = actions.append();
+    add_plots["action"] = "add_extracts";
+    add_plots["extracts"] = extracts;
+
+    Ascent ascent;
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example of creating a custom compressed color map using hex colors (devil ray).";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
 //-----------------------------------------------------------------------------
