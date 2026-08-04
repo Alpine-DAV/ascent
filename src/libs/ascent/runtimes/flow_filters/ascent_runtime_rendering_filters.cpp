@@ -97,6 +97,9 @@ void color_table_schema(conduit::Node &param_schema) {
     string_schema(param_schema["properties/annotation"]);
     string_schema(param_schema["properties/discrete"]);
 
+    conduit::Node solid_schema;
+    array_schema(param_schema["properties/solid"], number_schema(solid_schema), 3, 4);
+
     // --- Control Points ---
     {
         conduit::Node &control_points_schema = param_schema["properties/control_points"];
@@ -127,6 +130,10 @@ void color_table_schema(conduit::Node &param_schema) {
 
         array_schema(control_points_schema["oneOf"].append(), cp_list_item_schema);
     }
+
+    param_schema["constraints/exclusiveChildren"].append() = "solid";
+    param_schema["constraints/exclusiveChildren"].append() = "control_points";
+    param_schema["constraints/allowNoneInExclusiveGroup"] = true;
 }
 
 void viskores_bounds_to_conduit_node(const viskores::Bounds &bounds,
@@ -1764,7 +1771,11 @@ CreatePlot::declare_interface(Node &i)
     param_schema["type"] = "object";
     param_schema["additionalProperties"] = false;
 
-    string_schema(param_schema["properties/type"]);
+    // Plot types:
+    // - "wireframe" is an alias for "mesh"
+    // - "surface"   is an alias for "pseudocolor" with a solid color table
+    string_enum_schema(param_schema["properties/type"],
+                       {"mesh", "wireframe", "pseudocolor", "surface", "volume"});
     ignore_schema(param_schema["properties/pipeline"]);
     string_schema(param_schema["properties/topology"]);
 
@@ -1772,7 +1783,7 @@ CreatePlot::declare_interface(Node &i)
 
     param_schema["required"].append() = "type";
 
-    // --- Is Mesh ---
+    // --- Is Mesh (or alias) ---
     {
         // properties are still added at the root level and then limited through forbids
         ignore_schema(param_schema["properties/overlay"]);
@@ -1786,9 +1797,18 @@ CreatePlot::declare_interface(Node &i)
         mesh_schema["constraints/forbid"] = "max_value";
         mesh_schema["constraints/forbid"] = "samples";
         mesh_schema["constraints/forbid"] = "points";
+
+        conduit::Node &wireframe_schema = param_schema["oneOf"].append();
+        wireframe_schema["type"] = "object";
+        wireframe_schema["properties/type/constraints/const"] = "wireframe";
+        wireframe_schema["constraints/forbid"] = "field";
+        wireframe_schema["constraints/forbid"] = "min_value";
+        wireframe_schema["constraints/forbid"] = "max_value";
+        wireframe_schema["constraints/forbid"] = "samples";
+        wireframe_schema["constraints/forbid"] = "points";
     }
 
-    // --- Is not Mesh ---
+    // --- Is Pseudocolor (or alias) / Volume ---
     {
         // properties are still added at the root level and then limited through forbids
         ignore_schema(param_schema["properties/field"]);
@@ -1804,12 +1824,23 @@ CreatePlot::declare_interface(Node &i)
         string_enum_schema(points_schema["properties/glyph_type"],
                            {"sphere", "cube", "axes"});
 
-        conduit::Node &not_mesh_schema = param_schema["oneOf"].append();
-        not_mesh_schema["type"] = "object";
-        not_mesh_schema["constraints/not_const/type"] = "mesh";
-        not_mesh_schema["constraints/forbid"] = "overlay";
-        not_mesh_schema["constraints/forbid"] = "show_internal";
-        not_mesh_schema["required"].append() = "field";
+        conduit::Node &pseudocolor_schema = param_schema["oneOf"].append();
+        pseudocolor_schema["type"] = "object";
+        pseudocolor_schema["properties/type/constraints/const"] = "pseudocolor";
+        pseudocolor_schema["constraints/forbid"] = "overlay";
+        pseudocolor_schema["constraints/forbid"] = "show_internal";
+
+        conduit::Node &surface_schema = param_schema["oneOf"].append();
+        surface_schema["type"] = "object";
+        surface_schema["properties/type/constraints/const"] = "surface";
+        surface_schema["constraints/forbid"] = "overlay";
+        surface_schema["constraints/forbid"] = "show_internal";
+
+        conduit::Node &volume_schema = param_schema["oneOf"].append();
+        volume_schema["type"] = "object";
+        volume_schema["properties/type/constraints/const"] = "volume";
+        volume_schema["constraints/forbid"] = "overlay";
+        volume_schema["constraints/forbid"] = "show_internal";
     }
 }
 
@@ -1842,7 +1873,31 @@ CreatePlot::execute()
       field_name = plot_params["field"].as_string();
     }
 
-    std::string type = params()["type"].as_string();
+    const std::string requested_type = plot_params["type"].as_string();
+    std::string type = requested_type;
+    if(type == "wireframe")
+    {
+      type = "mesh";
+    }
+    else if(type == "surface")
+    {
+      type = "pseudocolor";
+
+      // Ensure "surface" renders with a single constant color table.
+      // If a non-solid color table is provided, use its first control point.
+      if(!plot_params.has_path("color_table/solid") && plot_params.has_path("color_table"))
+      {
+        viskores::cont::ColorTable ct = parse_color_table(plot_params["color_table"]);
+        viskores::cont::ColorTableSamplesRGBA samples;
+        if(ct.Sample(2, samples))
+        {
+          auto portal = samples.Samples.ReadPortal();
+          const auto rgba = portal.Get(1);
+          plot_params["color_table/solid"] =
+            {rgba[0] / 255.0, rgba[1] / 255.0, rgba[2] / 255.0, rgba[3] / 255.0};
+        }
+      }
+    }
     std::string topo_name;
     //if empty field name and not mesh plot
     if(field_name == "")
@@ -1852,9 +1907,8 @@ CreatePlot::execute()
                                            this->name(),
                                            collection,
                                            throw_error);
-      if(type != "mesh")
+      if(topo_name == "")
       {
-        // don't crash everything, just warn the user and continue
         detail::RendererContainer *container = new detail::RendererContainer();
         set_output<detail::RendererContainer>(container);
         return;
@@ -1942,7 +1996,7 @@ CreatePlot::execute()
     }
     else
     {
-        ASCENT_ERROR("create_plot unknown plot type '"<<type<<"'");
+        ASCENT_ERROR("create_plot unknown plot type '"<<requested_type<<"'");
     }
 
     // get the plot params
@@ -1969,6 +2023,11 @@ CreatePlot::execute()
           }
         }
       }
+
+      if(plot_params["color_table"].has_path("solid"))
+      {
+        renderer->DisableColorBar();
+      }
       renderer->SetColorTable(color_table);
     }
 
@@ -1989,19 +2048,19 @@ CreatePlot::execute()
     {
       renderer->SetField(field_name);
     }
+    else
+    {
+      const std::string fname = "constant_mesh_field";
+      data.AddConstantPointField(0.f, fname);
+      renderer->SetField(fname);
+    }
 
 
     if(type == "mesh")
     {
       vtkh::MeshRenderer *mesh = dynamic_cast<vtkh::MeshRenderer*>(renderer);
-      if(!plot_params.has_path("field"))
+      if(field_name == "" && !plot_params.has_path("color_table"))
       {
-        // The renderer needs a field, so add one if
-        // needed. This will eventually go away once
-        // the mesh mapper in viskores can handle no field
-        const std::string fname = "constant_mesh_field";
-        data.AddConstantPointField(0.f, fname);
-        renderer->SetField(fname);
         mesh->SetUseForegroundColor(true);
       }
 

@@ -52,8 +52,9 @@ the image file will be overwritten.
 
 Plots
 -----
-We current have support for three plot types: pseudocolor, volume, and mesh.
-Both plots support node centered and element centered scalar fields.
+We current have support for three plot types: ``pseudocolor``, ``volume``, and ``mesh`` (aliased as ``wireframe``).
+There is also support for the aliases ``surface``, which will generate a solid colored pseudocolor plot, and ``wireframe``, which will generate a mesh plot.
+Plots support node centered and element centered scalar fields.
 Plots optionally consume the result of a pipeline, but if none is specified, then the plot input is the published mesh data.
 Each scene can contain one or more plots.
 The plot interface is simply:
@@ -173,6 +174,28 @@ values at the max will have radii of ``0.25 + 0.5``.
 
     Point mesh rendered with a variable radius
 
+Surface Plot
+^^^^^^^^^^^^
+The surface plot is an alias for a pseudocolor plot with solid coloring rather than scalar coloring.
+
+.. code-block:: c++
+
+    conduit::Node scenes;
+    scenes["s1/plots/p1/type"]  = "surface";
+    scenes["s1/plots/p1/field"] = "braid";
+    scenes["s1/plots/p1/color_table/name"] = "Cool to Warm";
+    scenes["s1/renders/r1/annotations"] = "false";
+    scenes["s1/renders/r1/bg_color"].set({1.f, 1.f, 1.f}, 3);
+    scenes["s1/renders/r1/fg_color"].set({0.f, 0.f, 0.f}, 3);
+    scenes["s1/renders/r1/camera/azimuth"] = 30.0;
+    scenes["s1/renders/r1/camera/elevation"] = 30.0;
+
+..  figure:: ../images/surface_alias.png
+    :scale: 50 %
+    :align: center
+
+    Surface plot alias to generate pseudocolor plots with solid coloring.
+
 Volume Plot
 ^^^^^^^^^^^
 The volume plot produces a volume rendering of the provided scalar field.
@@ -189,8 +212,8 @@ The code below creates a volume plot of the default pipeline.
   add_plots["action"] = "add_scenes";
   add_plots["scenes"] = scenes;
 
-Mesh Plot
-^^^^^^^^^
+Mesh Plot (Wireframe)
+^^^^^^^^^^^^^^^^^^^^^
 The mesh plot, displays the computational mesh over which the simulations
 variables are defined. The mesh plot is often added to the scene window
 when other plots are visualized to allow individual cells to be clearly seen.
@@ -316,6 +339,25 @@ Here is an example of adding a custom color table to the volume plot:
   scenes["s1/plots/p1/type"]  = "volume";
   scenes["s1/plots/p1/field"] = "braid";
   scenes["s1/plots/p1/color_table/control_points"] = control_points;
+
+  conduit::Node actions;
+  conduit::Node &add_plots = actions.append();
+  add_plots["action"] = "add_scenes";
+  add_plots["scenes"] = scenes;
+
+Monochrome / Solid Color Plotting
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Generally, plotting is done using a range of colors from a color table; however, in some cases
+monochrome coloring is desirable. In these cases, the single color can be passed as a list of
+RGB or RGBA percentages values between 0 and 1 to the ``color_table/solid`` node.
+
+.. code-block:: c++
+
+  conduit::Node scenes;
+  scenes["s1/plots/p1/type"]  = "pseudocolor";
+  scenes["s1/plots/p1/field"] = "braid";
+  scenes["s1/plots/p1/color_table/solid"] = {0.0, 0.184, 0.655};
 
   conduit::Node actions;
   conduit::Node &add_plots = actions.append();

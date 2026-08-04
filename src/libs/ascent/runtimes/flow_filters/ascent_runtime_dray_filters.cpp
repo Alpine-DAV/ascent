@@ -161,6 +161,9 @@ void dray_color_table_schema(conduit::Node &param_schema) {
 
     string_schema(param_schema["properties/name"]);
     bool_schema(param_schema["properties/reverse"]);
+    
+    conduit::Node solid_schema;
+    array_schema(param_schema["properties/solid"], number_schema(solid_schema), 3, 4);
 
     // --- Control Points ---
     {
@@ -192,6 +195,10 @@ void dray_color_table_schema(conduit::Node &param_schema) {
 
         array_schema(control_points_schema["oneOf"].append(), cp_list_item_schema);
     }
+
+    param_schema["constraints/exclusiveChildren"].append() = "solid";
+    param_schema["constraints/exclusiveChildren"].append() = "control_points";
+    param_schema["constraints/allowNoneInExclusiveGroup"] = true;
 }
 
 void dray_load_balance_schema(conduit::Node &param_schema) {
@@ -377,6 +384,33 @@ parse_color_table(const conduit::Node &color_table_node)
   {
     ASCENT_INFO("Color table node is empty (no children). Defaulting to "
                 <<color_map_name);
+  }
+
+  if(color_table_node.has_child("solid"))
+  {
+    dray::ColorTable color_table;
+    color_table.clear_colors();
+    color_table.clear_alphas();
+
+    conduit::Node color_vals_node;
+    color_table_node["solid"].to_float32_array(color_vals_node);
+    float32_array color_vals = color_vals_node.as_float32_array();
+
+    dray::Vec<dray::float32,3> ecolor({color_vals[0], color_vals[1], color_vals[2]});
+            
+    for (int e = 0; e < 3; ++e)
+    {
+        ecolor[e] = std::min(1.f, std::max(ecolor[e], 0.f));
+    }
+
+    color_table.add_point(0.f, ecolor);
+
+    if (color_vals.number_of_elements() == 4)
+    {
+      color_table.add_alpha(0.f, std::min(1.f, std::max(color_vals[3], 0.f)));
+    }
+
+    return color_table;
   }
 
   bool name_provided = false;
@@ -1200,8 +1234,123 @@ parse_params(const conduit::Node &params,
   {
     color_map.color_table(parse_color_table(params["color_table"]));
   }
+}
 
+void
+execute_dray_pseudocolor_impl(DataObject *d_input,
+                              conduit::Node params,
+                              const bool force_solid_color_table)
+{
+    if(!d_input->is_valid())
+    {
+      return;
+    }
 
+    if(force_solid_color_table && !params.has_path("color_table/solid"))
+    {
+      conduit::Node ct_node;
+      if(params.has_path("color_table"))
+      {
+        ct_node = params["color_table"];
+      }
+
+      dray::ColorTable ct = parse_color_table(ct_node);
+      dray::Array<dray::Vec<dray::float32,4>> samples;
+      ct.sample(2, samples);
+      const auto rgba = samples.get_value(1);
+      params["color_table/solid"] = {rgba[0], rgba[1], rgba[2], rgba[3]};
+
+      // If the user supplied control points, avoid leaving an ambiguous state.
+      if(params.has_path("color_table/control_points"))
+      {
+        params["color_table"].remove("control_points");
+      }
+    }
+
+    dray::Collection *dcol = d_input->as_dray_collection().get();
+    int comm_id = -1;
+#ifdef ASCENT_MPI_ENABLED
+    comm_id = flow::Workspace::default_mpi_comm();
+#endif
+    bool is_3d = dcol->topo_dims() == 3;
+
+    dray::Collection faces = detail::boundary(*dcol);
+
+    std::vector<dray::Camera> cameras;
+    dray::ColorMap color_map("cool2warm");
+    std::string field_name;
+    std::vector<std::string> image_names;
+    conduit::Node meta = Metadata::n_metadata;
+
+    detail::parse_params(params,
+                         &faces,
+                         &meta,
+                         cameras,
+                         color_map,
+                         field_name,
+                         image_names);
+
+    bool draw_mesh = false;
+    if(params.has_path("draw_mesh"))
+    {
+      if(params["draw_mesh"].as_string() == "true")
+      {
+        draw_mesh = true;
+      }
+    }
+    float line_thickness = 0.05f;
+    if(params.has_path("line_thickness"))
+    {
+      line_thickness = params["line_thickness"].to_float32();
+    }
+
+    dray::Vec<float,4> vcolor = {0.f, 0.f, 0.f, 1.f};
+    if(params.has_path("line_color"))
+    {
+      conduit::Node n;
+      params["line_color"].to_float32_array(n);
+      if(n.dtype().number_of_elements() != 4)
+      {
+        ASCENT_ERROR("line_color is expected to be 4 floating "
+                     "point values (RGBA)");
+      }
+      const float32 *color = n.as_float32_ptr();
+      vcolor[0] = color[0];
+      vcolor[1] = color[1];
+      vcolor[2] = color[2];
+      vcolor[3] = color[3];
+    }
+
+    std::shared_ptr<dray::Surface> surface = std::make_shared<dray::Surface>(faces);
+    surface->field(field_name);
+    surface->color_map(color_map);
+    surface->line_thickness(line_thickness);
+    surface->line_color(vcolor);
+    surface->draw_mesh(draw_mesh);
+
+    dray::Renderer renderer;
+    renderer.add(surface);
+    renderer.use_lighting(is_3d);
+    bool annotations = true;
+    if(params.has_path("annotations"))
+    {
+      annotations = params["annotations"].as_string() != "false";
+    }
+
+    renderer.world_annotations(annotations);
+
+    const int num_images = cameras.size();
+    for(int i = 0; i < num_images; ++i)
+    {
+      dray::Camera &camera = cameras[i];
+      dray::Framebuffer fb = renderer.render(camera);
+
+      if(dray::dray::mpi_rank() == 0)
+      {
+        fb.composite_background();
+        fb.save(image_names[i]);
+      }
+    }
 }
 
 }; // namespace detail
@@ -1246,7 +1395,7 @@ DRayPseudocolor::declare_interface(Node &i)
     ignore_schema(param_schema["properties/camera"]);
 
     detail::dray_color_table_schema(param_schema["properties/color_table"]);
-    
+
     param_schema["required"].append() = "field";
 
     // --- check image name ---
@@ -1281,101 +1430,42 @@ DRayPseudocolor::execute()
     }
 
     DataObject *d_input = input<DataObject>(0);
-    if(!d_input->is_valid())
+    detail::execute_dray_pseudocolor_impl(d_input, params(), false);
+
+}
+
+//-----------------------------------------------------------------------------
+DRaySurface::DRaySurface()
+:DRayPseudocolor()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+DRaySurface::~DRaySurface()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+DRaySurface::declare_interface(Node &i)
+{
+    DRayPseudocolor::declare_interface(i);
+    i["type_name"] = "dray_surface";
+}
+
+//-----------------------------------------------------------------------------
+void
+DRaySurface::execute()
+{
+    if(!input(0).check_type<DataObject>())
     {
-      return;
+        ASCENT_ERROR("dray_surface input must be a DataObject");
     }
 
-    dray::Collection *dcol = d_input->as_dray_collection().get();
-    int comm_id = -1;
-#ifdef ASCENT_MPI_ENABLED
-    comm_id = flow::Workspace::default_mpi_comm();
-#endif
-    bool is_3d = dcol->topo_dims() == 3;
-
-    dray::Collection faces = detail::boundary(*dcol);
-
-    std::vector<dray::Camera> cameras;
-    dray::ColorMap color_map("cool2warm");
-    std::string field_name;
-    std::vector<std::string> image_names;
-    conduit::Node meta = Metadata::n_metadata;
-
-    detail::parse_params(params(),
-                         &faces,
-                         &meta,
-                         cameras,
-                         color_map,
-                         field_name,
-                         image_names);
-
-    bool draw_mesh = false;
-    if(params().has_path("draw_mesh"))
-    {
-      if(params()["draw_mesh"].as_string() == "true")
-      {
-        draw_mesh = true;
-      }
-    }
-    float line_thickness = 0.05f;
-    if(params().has_path("line_thickness"))
-    {
-      line_thickness = params()["line_thickness"].to_float32();
-    }
-
-    dray::Vec<float,4> vcolor = {0.f, 0.f, 0.f, 1.f};
-    if(params().has_path("line_color"))
-    {
-      conduit::Node n;
-      params()["line_color"].to_float32_array(n);
-      if(n.dtype().number_of_elements() != 4)
-      {
-        ASCENT_ERROR("line_color is expected to be 4 floating "
-                     "point values (RGBA)");
-      }
-      const float32 *color = n.as_float32_ptr();
-      vcolor[0] = color[0];
-      vcolor[1] = color[1];
-      vcolor[2] = color[2];
-      vcolor[3] = color[3];
-    }
-
-    std::vector<dray::Array<dray::Vec<dray::float32,4>>> color_buffers;
-    std::vector<dray::Array<dray::float32>> depth_buffers;
-
-    dray::Array<dray::Vec<dray::float32,4>> color_buffer;
-
-    std::shared_ptr<dray::Surface> surface = std::make_shared<dray::Surface>(faces);
-    surface->field(field_name);
-    surface->color_map(color_map);
-    surface->line_thickness(line_thickness);
-    surface->line_color(vcolor);
-    surface->draw_mesh(draw_mesh);
-
-    dray::Renderer renderer;
-    renderer.add(surface);
-    renderer.use_lighting(is_3d);
-    bool annotations = true;
-    if(params().has_path("annotations"))
-    {
-      annotations = params()["annotations"].as_string() != "false";
-    }
-
-    renderer.world_annotations(annotations);
-
-    const int num_images = cameras.size();
-    for(int i = 0; i < num_images; ++i)
-    {
-      dray::Camera &camera = cameras[i];
-      dray::Framebuffer fb = renderer.render(camera);
-
-      if(dray::dray::mpi_rank() == 0)
-      {
-        fb.composite_background();
-        fb.save(image_names[i]);
-      }
-    }
-
+    DataObject *d_input = input<DataObject>(0);
+    detail::execute_dray_pseudocolor_impl(d_input, params(), true);
 }
 
 //-----------------------------------------------------------------------------
@@ -1796,7 +1886,7 @@ DRayVolume::declare_interface(Node &i)
     number_schema(param_schema["properties/samples"]);
     bool_schema(param_schema["properties/use_lighing"]);
     ignore_schema(param_schema["properties/camera"]);
-    
+
     detail::dray_color_table_schema(param_schema["properties/color_table"]);
     detail::dray_load_balance_schema(param_schema["properties/load_balancing"]);
     

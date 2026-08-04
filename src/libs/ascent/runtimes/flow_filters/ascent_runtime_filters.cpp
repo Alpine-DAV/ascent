@@ -167,6 +167,7 @@ register_builtin()
 
 #if defined(ASCENT_DRAY_ENABLED)
     AscentRuntime::register_filter_type<DRayPseudocolor>("extracts", "dray_pseudocolor");
+    AscentRuntime::register_filter_type<DRaySurface>("extracts", "dray_surface");
     AscentRuntime::register_filter_type<DRay3Slice>("extracts", "dray_3slice");
     AscentRuntime::register_filter_type<DRayVolume>("extracts", "dray_volume");
     AscentRuntime::register_filter_type<DRayProject2d>("transforms", "dray_project_2d");
