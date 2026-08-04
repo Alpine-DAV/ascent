@@ -687,11 +687,11 @@ if [ ! -d ${viskores_src_dir} ]; then
   echo "**** Extracting ${viskores_tarball}"
   tar ${tar_extra_args} -xzf ${viskores_tarball} -C ${source_dir}
 
-  # apply patches
-  cd ${viskores_src_dir}
-  echo "**** Applying Patches to ${viskores_tarball}"
-  # patches go here
-  cd ${root_dir}
+  # # apply patches
+  # cd ${viskores_src_dir}
+  # echo "**** Applying Patches to ${viskores_tarball}"
+  # # patches go here
+  # cd ${root_dir}
 fi
 
 

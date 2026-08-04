@@ -130,9 +130,9 @@ class Viskores(CMakePackage, CudaPackage, ROCmPackage):
     conflicts("+cuda", when="cuda_arch=none", msg="viskores +cuda requires that cuda_arch be set")
 
     # pan and zoom patch for viskores needed for ascent tiled rendering
-    patch("2026_01_02_viskores_implent_pan_raytracing.patch")
-    patch("2026_04_10_viskores_1_1_0_volume_annotation_depth_hack.patch")
-    patch("2026_05_15_viskores_1_1_1_wireframer_fix.patch")
+    # patch("2026_01_02_viskores_implent_pan_raytracing.patch")
+    # patch("2026_04_10_viskores_1_1_0_volume_annotation_depth_hack.patch")
+    # patch("2026_05_15_viskores_1_1_1_wireframer_fix.patch")
 
     def flag_handler(self, name, flags):
         return (flags, None, None)
