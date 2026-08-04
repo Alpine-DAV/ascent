@@ -287,7 +287,7 @@ The first is a compact color table format and the second is an expanded color ta
 All of the examples below are equivilant forms to express the same color table and result in the following plot:
 
 ..  figure:: ../images/color_table_example.png
-    :scale: 50 %
+    :scale: 100 %
     :align: center
 
     A volume plot defined using a custom color table
