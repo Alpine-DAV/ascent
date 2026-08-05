@@ -18,7 +18,7 @@ Render::Render()
     m_render_background(true),
     m_shading(true),
     m_canvas(m_width, m_height),
-    m_tiled_rendering(true),
+    m_tiled_rendering(false), // DEFAULT TO OFF https://github.com/Alpine-DAV/ascent/issues/1754
     m_tiled_rendering_type(TiledRenderingType::OptimizedTiles),
     m_tile_width(1024),
     m_tile_height(1024)

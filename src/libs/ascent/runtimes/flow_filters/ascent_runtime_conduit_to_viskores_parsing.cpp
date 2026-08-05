@@ -413,6 +413,27 @@ parse_color_table(const conduit::Node &color_table_node)
                 <<color_map_name);
   }
 
+  if(color_table_node.has_child("solid"))
+  {
+    viskores::cont::ColorTable color_table;
+    color_table.ClearColors();
+
+    float64_array color_vals = color_table_node.fetch("solid").value();
+    viskores::Vec<viskores::Float64,3> ecolor(color_vals[0], color_vals[1], color_vals[2]);
+    // Create a truly constant color map by specifying both endpoints.
+    color_table.AddPoint(0.0, ecolor);
+    color_table.AddPoint(1.0, ecolor);
+
+    if (color_vals.number_of_elements() == 4)
+    {
+      const auto alpha = std::min(1., std::max(color_vals[3], 0.));
+      color_table.AddPointAlpha(0.0, alpha);
+      color_table.AddPointAlpha(1.0, alpha);
+    }
+
+    return color_table;
+  }
+
   bool name_provided = false;
   if(color_table_node.has_child("name"))
   {
@@ -614,6 +635,5 @@ parse_color_table(const conduit::Node &color_table_node)
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
-
 
 

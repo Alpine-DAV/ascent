@@ -19,6 +19,7 @@ public:
   void setBoxDims(const viskores::Vec<viskores::Float64,3> dims);
   void setBoxOrigin(const viskores::Vec<viskores::Float64,3> origin);
   void setBoxSpacing(const viskores::Vec<viskores::Float64,3> spacing);
+  void setGeometry(const viskores::cont::DataSet &geometry);
 
   void setInvalidValue(const viskores::Float64 invalid_value);
 
@@ -28,7 +29,8 @@ protected:
   enum SampleMode { 
                     NONE,
                     POINTS,
-                    BOX
+                    BOX,
+                    GEOMETRY
                   };
 
   int m_mode;
@@ -45,6 +47,7 @@ protected:
   viskores::Vec<viskores::Float64,3> m_box_origin;
   viskores::Vec<viskores::Float64,3> m_box_spacing;
 
+  viskores::cont::DataSet m_geometry;
 
 };
 }
