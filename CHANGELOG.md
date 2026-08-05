@@ -30,6 +30,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added support for monochrome/solid color plotting
 - Added support for `surface` and `wireframe` aliases
 - Added support for plotting pseudocolor plots without providing a field
+- Added support for hex color values for custom color tables
 
 ### Changed
 - Redefined the parameter verification and surprise checking behavior for Filters to instead use a conduit based JSON Schema style verification schema. Implemented for all existing filters.

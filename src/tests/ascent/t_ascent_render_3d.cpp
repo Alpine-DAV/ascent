@@ -14,6 +14,7 @@
 #include "gtest/gtest.h"
 
 #include <ascent.hpp>
+#include <ascent_runtime_color_utils.hpp>
 
 #include <iostream>
 #include <math.h>
@@ -2146,7 +2147,7 @@ TEST(ascent_render_3d, test_render_3d_compressed_color_table)
     ASCENT_INFO("Testing 3D Rendering with Compressed Color Table");
 
     string output_path = prepare_output_dir();
-    string output_file = conduit::utils::join_file_path(output_path,"viskores_compressed_color_table");
+    string output_file = conduit::utils::join_file_path(output_path,"tout_render_3d_compressed_color_table");
 
     // remove old images before rendering
     remove_test_image(output_file);
@@ -2194,6 +2195,159 @@ TEST(ascent_render_3d, test_render_3d_compressed_color_table)
     // check that we created an image
     EXPECT_TRUE(check_test_image(output_file));
     std::string msg = "An example of creating a custom compressed color map.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_render_3d, test_render_3d_compressed_color_table_hex)
+{
+    Node n;
+    ascent::about(n);
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping 3D compressed hex color table test");
+        return;
+    }
+
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("uniform",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing 3D Rendering with Compressed Hex Color Table");
+
+    string output_path = prepare_output_dir();
+    string output_file =
+      conduit::utils::join_file_path(output_path,"tout_render_3d_compressed_color_table_hex");
+
+    remove_test_image(output_file);
+
+    conduit::Node control_points;
+    conduit::Node &hex = control_points["hex"];
+    hex.append() = "#3B1414";
+    hex.append() = "#7A3B0A";
+    hex.append() = "#FCFFF5";
+    control_points["a"] = {0., .5, 1.};
+    control_points["position"] = {0., .5, 1.};
+
+    conduit::Node scenes;
+    scenes["s1/plots/p1/type"]  = "volume";
+    scenes["s1/plots/p1/field"] = "braid";
+    scenes["s1/plots/p1/color_table/control_points"] = control_points;
+
+    scenes["s1/image_prefix"] = output_file;
+
+    scenes["s1/renders/r1/image_width"]  = 512;
+    scenes["s1/renders/r1/image_height"] = 512;
+    scenes["s1/renders/r1/image_prefix"]   = output_file;
+
+    conduit::Node actions;
+    conduit::Node &add_plots = actions.append();
+    add_plots["action"] = "add_scenes";
+    add_plots["scenes"] = scenes;
+
+    Ascent ascent;
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example of creating a custom compressed color map using hex colors.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_render_3d, test_render_3d_expanded_color_table_hex)
+{
+    Node n;
+    ascent::about(n);
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping 3D expanded hex color table test");
+        return;
+    }
+
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("uniform",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing 3D Rendering with Expanded Hex Color Table");
+
+    string output_path = prepare_output_dir();
+    string output_file =
+      conduit::utils::join_file_path(output_path,"tout_render_3d_expanded_color_table_hex");
+
+    remove_test_image(output_file);
+
+    conduit::Node control_points;
+    conduit::Node &point1 = control_points.append();
+    point1["type"] = "rgb";
+    point1["position"] = 0.;
+    point1["color"] = "#3B1414";
+
+    conduit::Node &point2 = control_points.append();
+    point2["type"] = "rgb";
+    point2["position"] = 0.5;
+    point2["color"] = "#7A3B0A";
+
+    conduit::Node &point3 = control_points.append();
+    point3["type"] = "rgb";
+    point3["position"] = 1.0;
+    point3["color"] = "#FCFFF5";
+
+    conduit::Node &point4 = control_points.append();
+    point4["type"] = "alpha";
+    point4["position"] = 0.;
+    point4["alpha"] = 0.;
+
+    conduit::Node &point5 = control_points.append();
+    point5["type"] = "alpha";
+    point5["position"] = 0.5;
+    point5["alpha"] = 0.5;
+
+    conduit::Node &point6 = control_points.append();
+    point6["type"] = "alpha";
+    point6["position"] = 1.;
+    point6["alpha"] = 1.;
+
+    conduit::Node scenes;
+    scenes["s1/plots/p1/type"]  = "volume";
+    scenes["s1/plots/p1/field"] = "braid";
+    scenes["s1/plots/p1/color_table/control_points"] = control_points;
+
+    scenes["s1/image_prefix"] = output_file;
+
+    scenes["s1/renders/r1/image_width"]  = 512;
+    scenes["s1/renders/r1/image_height"] = 512;
+    scenes["s1/renders/r1/image_prefix"]   = output_file;
+
+    conduit::Node actions;
+    conduit::Node &add_plots = actions.append();
+    add_plots["action"] = "add_scenes";
+    add_plots["scenes"] = scenes;
+
+    Ascent ascent;
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example of creating a custom expanded color map using hex colors.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
@@ -2540,6 +2694,114 @@ TEST(ascent_render_3d, test_render_3d_wireframe_alias)
     EXPECT_TRUE(check_test_image(output_file_wireframe, 0.005));
     std::string msg = "An example of using the wireframe alias to plot a mesh.";
     ASCENT_ACTIONS_DUMP(actions,output_file_wireframe,msg);
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_render_3d, test_hex_color_parsing_helper)
+{
+    double r = 0., g = 0., b = 0., a = 0.;
+    bool has_alpha = false;
+    std::string err;
+
+    EXPECT_TRUE(ascent::runtime::filters::detail::parse_hex_color_string("#ff00aa",
+                                                                         r,
+                                                                         g,
+                                                                         b,
+                                                                         a,
+                                                                         has_alpha,
+                                                                         err));
+    EXPECT_NEAR(r, 1.0, 1e-12);
+    EXPECT_NEAR(g, 0.0, 1e-12);
+    EXPECT_NEAR(b, 170.0 / 255.0, 1e-12);
+    EXPECT_FALSE(has_alpha);
+
+    EXPECT_TRUE(ascent::runtime::filters::detail::parse_hex_color_string("#0F8C",
+                                                                         r,
+                                                                         g,
+                                                                         b,
+                                                                         a,
+                                                                         has_alpha,
+                                                                         err));
+    EXPECT_TRUE(has_alpha);
+    EXPECT_NEAR(r, 0.0, 1e-12);
+    EXPECT_NEAR(g, 1.0, 1e-12);
+    EXPECT_NEAR(b, 136.0 / 255.0, 1e-12);
+    EXPECT_NEAR(a, 204.0 / 255.0, 1e-12);
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_render_3d, test_render_3d_hex_Yves_Klein)
+{
+    // the ascent runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping 3D default"
+                      "Pipeline test");
+
+        return;
+    }
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("uniform",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+
+    ASCENT_INFO("Testing 3D Rendering with a Single Color");
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_render_3d_monochrome_hex");
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+    //
+    // Create the actions.
+    //
+
+    conduit::Node scenes;
+    scenes["s1/plots/p1/type"]  = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "braid";
+    scenes["s1/plots/p1/color_table/solid"] = "#002fa7";
+
+    scenes["s1/image_prefix"] = output_file;
+
+    scenes["s1/renders/r1/image_width"]  = 512;
+    scenes["s1/renders/r1/image_height"] = 512;
+    scenes["s1/renders/r1/image_prefix"]   = output_file;
+
+    conduit::Node actions;
+    conduit::Node &add_plots = actions.append();
+    add_plots["action"] = "add_scenes";
+    add_plots["scenes"] = scenes;
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example of rendering with a single color.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
 //-----------------------------------------------------------------------------

@@ -97,24 +97,52 @@ void color_table_schema(conduit::Node &param_schema) {
     string_schema(param_schema["properties/annotation"]);
     string_schema(param_schema["properties/discrete"]);
 
-    conduit::Node solid_schema;
-    array_schema(param_schema["properties/solid"], number_schema(solid_schema), 3, 4);
+    conduit::Node solid_array_item_schema;
+    conduit::Node solid_array_schema;
+    array_schema(solid_array_schema, number_schema(solid_array_item_schema), 3, 4);
+
+    conduit::Node solid_string_schema;
+    string_schema(solid_string_schema);
+
+    conduit::Node &solid_schema = param_schema["properties/solid"];
+    solid_schema.reset();
+    solid_schema["oneOf"].append().set(solid_array_schema);
+    solid_schema["oneOf"].append().set(solid_string_schema);
 
     // --- Control Points ---
     {
         conduit::Node &control_points_schema = param_schema["properties/control_points"];
 
-        conduit::Node &cp_compressed_schema = control_points_schema["oneOf"].append();
-        cp_compressed_schema["type"] = "object";
-        cp_compressed_schema["additionalProperties"] = false;
-        ignore_schema(cp_compressed_schema["properties/r"]);
-        ignore_schema(cp_compressed_schema["properties/g"]);
-        ignore_schema(cp_compressed_schema["properties/b"]);
-        ignore_schema(cp_compressed_schema["properties/a"]);
-        ignore_schema(cp_compressed_schema["properties/position"]);
-        cp_compressed_schema["constraints/forbid"].append() = "type";
-        cp_compressed_schema["constraints/forbid"].append() = "alpha";
-        cp_compressed_schema["constraints/forbid"].append() = "color";
+        // Compressed control points (object format) can be provided either as:
+        // - {r,g,b,(a),position} arrays
+        // - {hex,(a),position} arrays
+        // These are mutually exclusive.
+
+        conduit::Node &cp_compressed_rgb_schema = control_points_schema["oneOf"].append();
+        cp_compressed_rgb_schema["type"] = "object";
+        cp_compressed_rgb_schema["additionalProperties"] = false;
+        ignore_schema(cp_compressed_rgb_schema["properties/r"]);
+        ignore_schema(cp_compressed_rgb_schema["properties/g"]);
+        ignore_schema(cp_compressed_rgb_schema["properties/b"]);
+        ignore_schema(cp_compressed_rgb_schema["properties/a"]);
+        ignore_schema(cp_compressed_rgb_schema["properties/position"]);
+        cp_compressed_rgb_schema["constraints/forbid"].append() = "hex";
+        cp_compressed_rgb_schema["constraints/forbid"].append() = "type";
+        cp_compressed_rgb_schema["constraints/forbid"].append() = "alpha";
+        cp_compressed_rgb_schema["constraints/forbid"].append() = "color";
+
+        conduit::Node &cp_compressed_hex_schema = control_points_schema["oneOf"].append();
+        cp_compressed_hex_schema["type"] = "object";
+        cp_compressed_hex_schema["additionalProperties"] = false;
+        ignore_schema(cp_compressed_hex_schema["properties/hex"]);
+        ignore_schema(cp_compressed_hex_schema["properties/a"]);
+        ignore_schema(cp_compressed_hex_schema["properties/position"]);
+        cp_compressed_hex_schema["constraints/forbid"].append() = "r";
+        cp_compressed_hex_schema["constraints/forbid"].append() = "g";
+        cp_compressed_hex_schema["constraints/forbid"].append() = "b";
+        cp_compressed_hex_schema["constraints/forbid"].append() = "type";
+        cp_compressed_hex_schema["constraints/forbid"].append() = "alpha";
+        cp_compressed_hex_schema["constraints/forbid"].append() = "color";
 
         conduit::Node cp_list_item_schema;
         cp_list_item_schema["type"] = "object";
@@ -126,6 +154,7 @@ void color_table_schema(conduit::Node &param_schema) {
         cp_list_item_schema["constraints/forbid"].append() = "r";
         cp_list_item_schema["constraints/forbid"].append() = "g";
         cp_list_item_schema["constraints/forbid"].append() = "b";
+        cp_list_item_schema["constraints/forbid"].append() = "hex";
         cp_list_item_schema["constraints/forbid"].append() = "a";
 
         array_schema(control_points_schema["oneOf"].append(), cp_list_item_schema);
