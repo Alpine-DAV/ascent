@@ -51,8 +51,7 @@ RayGenerator::get_rays(Ray32 &rays)
   const int64 width = rover::settings["width"].to_int64();
   const int64 height = rover::settings["height"].to_int64();
 
-  viskoresRayCamera ray_generator;
-  ray_generator.SetParameters(m_camera, width, height);
+  viskoresRayCamera ray_generator = m_camera.CreateRaytracingCamera(width, height);
   ray_generator.CreateRays(rays, m_coordinates.GetBounds());
 
   return rays.NumRays > 0;
@@ -64,8 +63,7 @@ RayGenerator::get_rays(Ray64 &rays)
   const int64 width = rover::settings["width"].to_int64();
   const int64 height = rover::settings["height"].to_int64();
 
-  viskoresRayCamera ray_generator;
-  ray_generator.SetParameters(m_camera, width, height);
+  viskoresRayCamera ray_generator = m_camera.CreateRaytracingCamera(width, height);
   ray_generator.CreateRays(rays, m_coordinates.GetBounds());
 
   return rays.NumRays > 0;
