@@ -80,15 +80,15 @@ set(rover_device_sources
     domain.cpp
     image.cpp
     engine.cpp
+    rover.cpp
+    typed_scheduler.cpp
     ray_generators/ray_generator.cpp
     ray_generators/visit_ray_generator.cpp
+    utils/vtk_dataset_reader.cpp
 )
 
 set(rover_host_sources
-    rover.cpp
-    typed_scheduler.cpp
     utils/rover_logging.cpp
-    utils/vtk_dataset_reader.cpp
 )
 
 set(rover_sources ${rover_device_sources} ${rover_host_sources})

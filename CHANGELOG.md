@@ -17,6 +17,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ### Added
 - Added support for structured strided Blueprint meshes in the VTK-h data adapter.
+- Added support for VisIt material volume fraction fields in field filtering and MIR.
 - Added a `gltf` extract that exports surface geometry (points, lines, and triangles) as GLB files, with optional scalar field coloring.
 - Added the `points/glyph_type` scene option for rendering point meshes with sphere, cube, or axes glyphs.
 - Added plane to the Sample Filter
@@ -27,7 +28,11 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added support for 64 bit IDs
 - Added support for RZ meshes
 - If a `default_dir` is passed as an Ascent Option, extracts and plots will output to that directory by default now.
-- Added a warning if a `ascent.py` file exists in the current working directory when executing a python extract.
+- Added a warning if a `ascent.py` file exsits in the current working directory when executing a python extract. 
+- Added support for monochrome/solid color plotting
+- Added support for `surface` and `wireframe` aliases
+- Added support for plotting pseudocolor plots without providing a field
+- Added support for hex color values for custom color tables
 
 ### Changed
 - Redefined the parameter verification and surprise checking behavior for Filters to instead use a conduit based JSON Schema style verification schema. Implemented for all existing filters.

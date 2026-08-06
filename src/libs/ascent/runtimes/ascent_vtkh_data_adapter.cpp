@@ -17,6 +17,7 @@
 #include <string.h>
 #include <limits.h>
 #include <algorithm>
+#include <cctype>
 #include <cstdlib>
 #include <sstream>
 #include <type_traits>
@@ -881,6 +882,13 @@ void GetMatSetFields(const conduit::Node &node, //materials["matset"]
   }
   else
   {
+    // Check whether the provided volume fractions leave implicit background material.
+    const S vf_tolerance = static_cast<S>(1e-6);
+    const S vf_dust = static_cast<S>(1e-4);
+    const S one = static_cast<S>(1);
+    std::vector<S> v_sums(neles, static_cast<S>(0));
+    std::vector<S> v_kept_sums(neles, static_cast<S>(0));
+
     NodeConstIterator itr = node["volume_fractions"].children();
     std::string material_name;
     while(itr.has_next())
@@ -888,19 +896,71 @@ void GetMatSetFields(const conduit::Node &node, //materials["matset"]
 
       const conduit::Node * n_material;
       const conduit::Node &n_next = itr.next();
-      //n_next is not leaf i.e. has values: [v0,v1,...,vn] 
+      // n_next is not leaf i.e. has values: [v0,v1,...,vn]
       if(n_next.number_of_children() != 0)
       {
         n_material = &n_next.child(0);
       }
       else
+      {
         n_material = &n_next;
+      }
       const S *data = n_material->value();
-      //increase length when a material vf value > 0
       for(index_t i = 0; i < neles; ++i)
       {
-        if(data[i] > 0)
+        if(data[i] > static_cast<S>(0))
+        {
+          v_sums[i] += data[i];
+        }
+      }
+    }
+
+    // If fractions do not sum to one, add a background material for the remainder.
+    bool add_implicit_background = false;
+    for(index_t i = 0; i < neles; ++i)
+    {
+      if(v_sums[i] < one - vf_tolerance)
+      {
+        add_implicit_background = true;
+        break;
+      }
+    }
+
+    itr = node["volume_fractions"].children();
+    while(itr.has_next())
+    {
+
+      const conduit::Node * n_material;
+      const conduit::Node &n_next = itr.next();
+      // n_next is not leaf i.e. has values: [v0,v1,...,vn]
+      if(n_next.number_of_children() != 0)
+      {
+        n_material = &n_next.child(0);
+      }
+      else
+      {
+        n_material = &n_next;
+      }
+      const S *data = n_material->value();
+      // increase length when a material vf value > 0
+      for(index_t i = 0; i < neles; ++i)
+      {
+        if(data[i] > (add_implicit_background ? vf_dust : static_cast<S>(0)))
+        {
           v_length[i] += 1;
+          v_kept_sums[i] += data[i];
+        }
+      }
+    }
+
+    if(add_implicit_background)
+    {
+      for(index_t i = 0; i < neles; ++i)
+      {
+        if(v_kept_sums[i] < one - vf_dust)
+        {
+          v_length[i] += 1;
+        }
       }
     }
   }
@@ -945,7 +1005,7 @@ void GetMatSetFields(const conduit::Node &node, //materials["matset"]
     {
       const conduit::Node * n_vol_frac;	    
       const conduit::Node &n_child = n_vol_fracs.child(i);
-      //n_child is not leaf i.e. has values: [v0,v1,...,vn] 
+      // n_child is not leaf i.e. has values: [v0,v1,...,vn]
       if(n_child.number_of_children() != 0)
       {
         n_vol_frac = &n_child.child(0);
@@ -970,31 +1030,94 @@ void GetMatSetFields(const conduit::Node &node, //materials["matset"]
   else
   {
     int num_materials = node["volume_fractions"].number_of_children();
+    // Check whether the provided volume fractions leave implicit background material.
+    const S vf_tolerance = static_cast<S>(1e-6);
+    const S vf_dust = static_cast<S>(1e-4);
+    const S one = static_cast<S>(1);
+    std::vector<S> v_sums(neles, static_cast<S>(0));
+    std::vector<S> v_kept_sums(neles, static_cast<S>(0));
+    bool add_implicit_background = false;
+
     for(index_t i = 0; i < num_materials; ++i)
     {
       const Node &n_materials = node["volume_fractions"];
       const Node &n_child = n_materials.child(i);
 
       const Node * n_material;
-      //n_child is not leaf i.e. has values: [v0,v1,...,vn] 
+      // n_child is not leaf i.e. has values: [v0,v1,...,vn]
       if(n_child.number_of_children() != 0)
       {
         n_material = &n_child.child(0);
       }
       else
+      {
         n_material = &n_child;
+      }
+
+      const S *data = n_material->value();
+
+      for(index_t j = 0; j < neles; ++j)
+      {
+        if(data[j] > static_cast<S>(0))
+        {
+          v_sums[j] += data[j];
+        }
+      }
+    }
+
+    // If fractions do not sum to one, add a background material for the remainder.
+    for(index_t j = 0; j < neles; ++j)
+    {
+      if(v_sums[j] < one - vf_tolerance)
+      {
+        add_implicit_background = true;
+        break;
+      }
+    }
+
+    for(index_t i = 0; i < num_materials; ++i)
+    {
+      const Node &n_materials = node["volume_fractions"];
+      const Node &n_child = n_materials.child(i);
+
+      const Node * n_material;
+      // n_child is not leaf i.e. has values: [v0,v1,...,vn]
+      if(n_child.number_of_children() != 0)
+      {
+        n_material = &n_child.child(0);
+      }
+      else
+      {
+        n_material = &n_child;
+      }
 
       const S *data = n_material->value();
 
       for(index_t j = 0; j < neles; ++j)
       {
         index_t offset = v_offsets[j];
-        if(data[j] > 0)
+        if(data[j] > (add_implicit_background ? vf_dust : static_cast<S>(0)))
         {
           v_length[j] -= 1;
           index_t length = v_length[j];
           v_ids[offset + length] = i + 1; //IDs cannot start at 0
           v_vfs[offset + length] = data[j];
+          v_kept_sums[j] += data[j];
+        }
+      }
+    }
+
+    if(add_implicit_background)
+    {
+      for(index_t j = 0; j < neles; ++j)
+      {
+        if(v_kept_sums[j] < one - vf_dust)
+        {
+          index_t offset = v_offsets[j];
+          v_length[j] -= 1;
+          index_t length = v_length[j];
+          v_ids[offset + length] = num_materials + 1; //implicit background material
+          v_vfs[offset + length] = one - v_kept_sums[j];
         }
       }
     }
@@ -1076,6 +1199,138 @@ void GetMatSetFields(const conduit::Node &node, //materials["matset"]
 //-----------------------------------------------------------------------------
 // VTKHDataAdapter public methods
 //-----------------------------------------------------------------------------
+
+namespace
+{
+
+bool
+material_volume_fraction_name(const std::string &field_name,
+                              std::string &material_name)
+{
+  // Convert supported VisIt volume fraction field names into material names.
+  const std::string visit_prefix = "volume_fraction_";
+  if(field_name.rfind(visit_prefix, 0) == 0 &&
+     field_name.size() > visit_prefix.size())
+  {
+    const std::string suffix = field_name.substr(visit_prefix.size());
+    for(size_t i = 0; i < suffix.size(); ++i)
+    {
+      if(!std::isdigit(static_cast<unsigned char>(suffix[i])))
+      {
+        return false;
+      }
+    }
+
+    material_name = "material_" + suffix;
+    return true;
+  }
+
+  const std::string axom_prefix = "vol_frac_";
+  if(field_name.rfind(axom_prefix, 0) == 0 &&
+     field_name.size() > axom_prefix.size())
+  {
+    material_name = field_name.substr(axom_prefix.size());
+    return true;
+  }
+
+  return false;
+}
+
+const conduit::Node *
+scalar_field_values(const conduit::Node &field)
+{
+  // Return scalar values, allowing either direct values or one named component.
+  if(!field.has_child("values"))
+  {
+    return NULL;
+  }
+
+  const conduit::Node &values = field["values"];
+  if(values.number_of_children() == 0)
+  {
+    return &values;
+  }
+
+  if(values.number_of_children() == 1)
+  {
+    return &values.child(0);
+  }
+
+  return NULL;
+}
+
+bool
+build_visit_style_matset(const conduit::Node &node,
+                         const std::string &topo_name,
+                         int neles,
+                         conduit::Node &matsets)
+{
+  // Build a temporary matset from VisIt volume fraction fields.
+  if(!node.has_child("fields"))
+  {
+    return false;
+  }
+
+  std::vector<std::pair<std::string, const conduit::Node *> > materials;
+  conduit::NodeConstIterator itr = node["fields"].children();
+  while(itr.has_next())
+  {
+    const conduit::Node &field = itr.next();
+    std::string material_name;
+    if(!material_volume_fraction_name(itr.name(), material_name))
+    {
+      continue;
+    }
+
+    if(!field.has_child("topology") ||
+       field["topology"].as_string() != topo_name)
+    {
+      continue;
+    }
+
+    if(field.has_child("association") &&
+       field["association"].as_string() != "element")
+    {
+      continue;
+    }
+
+    const conduit::Node *values = scalar_field_values(field);
+    if(values == NULL)
+    {
+      continue;
+    }
+
+    if(!values->dtype().is_float32() && !values->dtype().is_float64())
+    {
+      continue;
+    }
+
+    if(values->dtype().number_of_elements() != neles)
+    {
+      continue;
+    }
+
+    materials.push_back(std::make_pair(material_name, values));
+  }
+
+  if(materials.empty())
+  {
+    return false;
+  }
+
+  std::sort(materials.begin(), materials.end());
+
+  conduit::Node &matset = matsets["materials"];
+  matset["topology"] = topo_name;
+  for(size_t i = 0; i < materials.size(); ++i)
+  {
+    matset["volume_fractions"][materials[i].first].set_external(*materials[i].second);
+  }
+
+  return true;
+}
+
+} // namespace
 
 VTKHCollection*
 VTKHDataAdapter::BlueprintToVTKHCollection(const conduit::Node &n,
@@ -1347,10 +1602,22 @@ VTKHDataAdapter::BlueprintToViskoresDataSet(const Node &node,
         }
     }
 
+    conduit::Node visit_style_matsets;
+    const conduit::Node *matsets = NULL;
+    // Use explicit matsets when present; otherwise try to synthesize one from fields.
     if(node.has_child("matsets"))
     {
+        matsets = &node["matsets"];
+    }
+    else if(build_visit_style_matset(node, topo_name, neles, visit_style_matsets))
+    {
+        matsets = &visit_style_matsets;
+    }
+
+    if(matsets != NULL)
+    {
         // add all of the materials:
-        NodeConstIterator itr = node["matsets"].children();
+        NodeConstIterator itr = matsets->children();
         std::string matset_name;
         while(itr.has_next())
         {
