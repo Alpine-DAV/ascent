@@ -3987,6 +3987,8 @@ VTKHProject2d::declare_interface(Node &i)
     number_schema(param_schema["properties/image_height"]);
     ignore_schema(param_schema["properties/dataset_bounds"]);
     ignore_schema(param_schema["properties/camera"]);
+    ignore_schema(param_schema["properties/rays"]);
+    ignore_schema(param_schema["properties/result"]);
     array_schema(param_schema["properties/fields"]);
 }
 
@@ -4050,7 +4052,15 @@ VTKHProject2d::execute()
     viskores::rendering::Camera camera;
     camera.ResetToBounds(bounds);
 
+    std::string source = "camera"; // or rays
+    std::string result = "image";  // or rays
+
     std::vector<std::string> field_names;
+
+    if(params().has_path("result"))
+    {
+      result = params()["result"].as_string();
+    }
 
     if(params().has_path("camera"))
     {
@@ -4089,19 +4099,84 @@ VTKHProject2d::execute()
     {
       height = params()["image_height"].to_int32();
     }
+    
+    // handle rays
+    if(params().has_path("rays"))
+    {
+        // points/x,y,z
+        // normals/x,y,z
+        source = "rays";
+    }
+
 
     vtkh::ScalarRenderer tracer;
-
-    tracer.SetWidth(width);
-    tracer.SetHeight(height);
     tracer.SetInput(&data);
-    tracer.SetCamera(camera);
     tracer.SetFields(field_names);
+    
+    if(source == "camera")
+    {
+        tracer.SetCamera(camera);
+        tracer.SetWidth(width);
+        tracer.SetHeight(height);
+    }
+    else if( source == "rays")
+    {
+        float64_accessor pts  = params()["rays/points"].value();
+        float64_accessor nmls = params()["rays/normals"].value();
+        float64 max_dist      = params()["rays/max_distance"].to_value();
+        index_t number_of_rays = pts.number_of_elements();
+
+        viskores::cont::ArrayHandle<viskores::Float64> pts_x;
+        viskores::cont::ArrayHandle<viskores::Float64> pts_y;
+        viskores::cont::ArrayHandle<viskores::Float64> pts_z;
+
+        viskores::cont::ArrayHandle<viskores::Float64> dirs_x;
+        viskores::cont::ArrayHandle<viskores::Float64> dirs_y;
+        viskores::cont::ArrayHandle<viskores::Float64> dirs_z;
+
+        pts_x.Allocate(number_of_rays);
+        pts_y.Allocate(number_of_rays);
+        pts_z.Allocate(number_of_rays);
+
+        dirs_x.Allocate(number_of_rays);
+        dirs_y.Allocate(number_of_rays);
+        dirs_z.Allocate(number_of_rays);
+  
+        auto pts_x_portal = pts_x.WritePortal();
+        auto pts_y_portal = pts_y.WritePortal();
+        auto pts_z_portal = pts_z.WritePortal();
+
+        auto dirs_x_portal = dirs_x.WritePortal();
+        auto dirs_y_portal = dirs_y.WritePortal();
+        auto dirs_z_portal = dirs_z.WritePortal();
+
+        index_t idx = 0;
+        for(index_t i=0; i < number_of_rays; i++)
+        {
+            pts_x_portal.Set(i,pts[idx]);
+            pts_y_portal.Set(i,pts[idx+1]);
+            pts_z_portal.Set(i,pts[idx+2]);
+            dirs_x_portal.Set(i,nmls[idx]);
+            dirs_y_portal.Set(i,nmls[idx+1]);
+            dirs_z_portal.Set(i,nmls[idx+2]);
+
+            idx+=3;
+        }
+
+        tracer.SetRays(pts_x, pts_y, pts_z,
+                       dirs_x, dirs_y, dirs_z,
+                       max_dist);
+    }
+
     tracer.Update();
 
     vtkh::DataSet *output = tracer.GetOutput();
     VTKHCollection *new_coll = new VTKHCollection();
     new_coll->add(*output, topo_name);
+    
+    // TODO: Add rays mesh as well?
+    //tracer.GenerateRaysMesh()
+    
     // re wrap in data object
     DataObject *res =  new DataObject(new_coll);
     delete output;

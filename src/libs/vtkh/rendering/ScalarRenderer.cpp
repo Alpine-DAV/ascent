@@ -15,6 +15,7 @@
 #include <conduit/conduit.hpp>
 #include <conduit/conduit_relay.hpp>
 #include <conduit/conduit_blueprint.hpp>
+#include <conduit_fmt/conduit_fmt.h>
 
 #ifdef VTKH_PARALLEL
   #include <mpi.h>
@@ -125,164 +126,164 @@ ScalarRenderer::PostExecute()
 
 namespace detail
 {
-void
-CreateRaysMesh(ScalarRenderer::Result &srender_res,
-               conduit::Node &rays_mesh)
-{
-    // Create a Blueprint Mesh that represents the ray trace result
-
-    // Result Struct Details
-    /*
-    struct VISKORES_RENDERING_EXPORT Result
-    {
-      viskores::Int32 Width;
-      viskores::Int32 Height;
-      viskores::cont::ArrayHandle<viskores::Float32> Depths;
-      std::vector<viskores::cont::ArrayHandle<viskores::Float32>> Scalars;
-      std::vector<std::string> ScalarNames;
-      std::map<std::string, viskores::Range> Ranges;
-
-      viskores::cont::DataSet ToDataSet();
-    */
-
-    const int num_rays = srender_res.Width * srender_res.Height;
-    const int num_fields = srender_res.ScalarNames.size();
-
-    const float *depth_buffer = GetVISKORESPointer(srender_res.Depths);
-
-    rays_mesh.reset();
-    rays_mesh["coordsets/rays_coords/type"] = "explicit";
-
-    // use depth buffer to count hits and misses
-    //  hits will be represented as a line segment
-    //  misses will be represented as a single point
-
-    index_t num_hits   = 0;
-    index_t num_misses = 0;
-    index_t ray_idx = 0;
-
-    for(index_t j=0;j<srender_res.Height;j++)
-    for(index_t i=0;i<srender_res.Width;i++)
-    {
-        if(depth_buffer[ray_idx] > 0.0)
-        {
-            num_hits++;
-        }
-        else
-        {
-            num_misses++;
-        }
-        ray_idx++;
-    }
-
-    num_hits = num_hits + num_misses;
-    // npts = (number of hits * 2) + (number of misses)
-    index_t npts = num_hits * 2;// + num_misses;
-
-    rays_mesh["coordsets/rays_coords/values/x"].set(DataType::float64(npts));
-    rays_mesh["coordsets/rays_coords/values/y"].set(DataType::float64(npts));
-    rays_mesh["coordsets/rays_coords/values/z"].set(DataType::float64(npts));
-    float64_array xs = rays_mesh["coordsets/rays_coords/values/x"].value();
-    float64_array ys = rays_mesh["coordsets/rays_coords/values/y"].value();
-    float64_array zs = rays_mesh["coordsets/rays_coords/values/z"].value();
-
-    zs.fill(0);
-    ray_idx = 0;
-    index_t idx = 0;
-    for(index_t j=0;j<srender_res.Height;j++)
-    for(index_t i=0;i<srender_res.Width;i++)
-    {
-        if(depth_buffer[ray_idx] > 0.0)
-        {
-            xs[idx] = i;
-            ys[idx] = j;
-            zs[idx] = 0;
-
-            xs[idx+1] = i;
-            ys[idx+1] = j;
-            zs[idx+1] = 50.0;
-            idx+=2;
-        }
-        else
-        {
-            xs[idx] = i;
-            ys[idx] = j;
-            zs[idx] = 0;
-
-            xs[idx+1] = i;
-            ys[idx+1] = j;
-            zs[idx+1] = 0.0;
-            idx+=2;
-        }
-        ray_idx++;
-    }
-
-    rays_mesh["topologies/rays/type"] = "unstructured";
-    rays_mesh["topologies/rays/coordset"] = "rays_coords";
-    rays_mesh["topologies/rays/elements/shape"] = "line";
-    rays_mesh["topologies/rays/elements/connectivity"].set(DataType::index_t(npts));
-
-    // rays_mesh["topologies/rays/elements/shape"] = "mixed";
-    // rays_mesh["topologies/rays/elements/shapes"].set(DataType::index_t(num_rays));
-    // rays_mesh["topologies/rays/elements/sizes"].set(DataType::index_t(num_rays));
-    // rays_mesh["topologies/rays/elements/offsets"].set(DataType::index_t(num_rays));
-    // rays_mesh["topologies/rays/elements/shape_map/line"]  = 3;
-    // rays_mesh["topologies/rays/elements/shape_map/point"] = 1;
-
-    // index_t_array ray_shapes  = rays_mesh["topologies/rays/elements/shapes"].value();
-    // index_t_array ray_sizes   = rays_mesh["topologies/rays/elements/sizes"].value();
-    // index_t_array ray_offsets = rays_mesh["topologies/rays/elements/offsets"].value();
-    index_t_array ray_conn    = rays_mesh["topologies/rays/elements/connectivity"].value();
-
-    ray_idx = 0;
-    idx = 0;
-    for(index_t j=0;j<srender_res.Height;j++)
-    for(index_t i=0;i<srender_res.Width;i++)
-    {
-        if(depth_buffer[ray_idx] > 0.0)
-        {
-            // line segment case
-            // ray_shapes[ray_idx] = 3; // VTK_LINE
-            // ray_sizes[ray_idx]  = 2;
-            ray_conn[idx]       = idx;
-            ray_conn[idx+1]     = idx+1;
-            idx+=2;
-        }
-        else
-        {
-            // // point case
-            // ray_shapes[ray_idx] = 1; // VTK_VERTEX
-            // ray_sizes[ray_idx] = 1;
-            // ray_conn[idx] = idx;
-            // idx++;
-            // ray_shapes[ray_idx] = 3; // VTK_LINE
-            // ray_sizes[ray_idx]  = 2;
-            ray_conn[idx]       = idx;
-            ray_conn[idx+1]     = idx+1;
-            idx+=2;
-        }
-        ray_idx++;
-    }
-
-    rays_mesh["fields/depth/topology"] = "rays";
-    rays_mesh["fields/depth/association"] = "element";
-    rays_mesh["fields/depth/values"].set(depth_buffer, num_rays);
-
-    for(index_t i=0; i<srender_res.Scalars.size(); i++)
-    {
-        const float* scalar_buffer = GetVISKORESPointer(srender_res.Scalars[i]);
-        const std::string field_path = "fields/" + srender_res.ScalarNames[i];
-        rays_mesh[field_path + "/topology"] = "rays";
-        rays_mesh[field_path + "/association"] = "element";
-        rays_mesh[field_path + "/values"].set(scalar_buffer, num_rays);
-    }
-
-    conduit::Node info;
-    if(!conduit::blueprint::mesh::verify(rays_mesh,info))
-    {
-        std::cout << info.to_yaml() << std::endl;
-    }
-}
+// void
+// CreateRaysMesh(ScalarRenderer::Result &srender_res,
+//                conduit::Node &rays_mesh)
+// {
+//     // Create a Blueprint Mesh that represents the ray trace result
+//
+//     // Result Struct Details
+//     /*
+//     struct VISKORES_RENDERING_EXPORT Result
+//     {
+//       viskores::Int32 Width;
+//       viskores::Int32 Height;
+//       viskores::cont::ArrayHandle<viskores::Float32> Depths;
+//       std::vector<viskores::cont::ArrayHandle<viskores::Float32>> Scalars;
+//       std::vector<std::string> ScalarNames;
+//       std::map<std::string, viskores::Range> Ranges;
+//
+//       viskores::cont::DataSet ToDataSet();
+//     */
+//
+//     const int num_rays = srender_res.Width * srender_res.Height;
+//     const int num_fields = srender_res.ScalarNames.size();
+//
+//     const float *depth_buffer = GetVISKORESPointer(srender_res.Depths);
+//
+//     rays_mesh.reset();
+//     rays_mesh["coordsets/rays_coords/type"] = "explicit";
+//
+//     // use depth buffer to count hits and misses
+//     //  hits will be represented as a line segment
+//     //  misses will be represented as a single point
+//
+//     index_t num_hits   = 0;
+//     index_t num_misses = 0;
+//     index_t ray_idx = 0;
+//
+//     for(index_t j=0;j<srender_res.Height;j++)
+//     for(index_t i=0;i<srender_res.Width;i++)
+//     {
+//         if(depth_buffer[ray_idx] > 0.0)
+//         {
+//             num_hits++;
+//         }
+//         else
+//         {
+//             num_misses++;
+//         }
+//         ray_idx++;
+//     }
+//
+//     num_hits = num_hits + num_misses;
+//     // npts = (number of hits * 2) + (number of misses)
+//     index_t npts = num_hits * 2;// + num_misses;
+//
+//     rays_mesh["coordsets/rays_coords/values/x"].set(DataType::float64(npts));
+//     rays_mesh["coordsets/rays_coords/values/y"].set(DataType::float64(npts));
+//     rays_mesh["coordsets/rays_coords/values/z"].set(DataType::float64(npts));
+//     float64_array xs = rays_mesh["coordsets/rays_coords/values/x"].value();
+//     float64_array ys = rays_mesh["coordsets/rays_coords/values/y"].value();
+//     float64_array zs = rays_mesh["coordsets/rays_coords/values/z"].value();
+//
+//     zs.fill(0);
+//     ray_idx = 0;
+//     index_t idx = 0;
+//     for(index_t j=0;j<srender_res.Height;j++)
+//     for(index_t i=0;i<srender_res.Width;i++)
+//     {
+//         if(depth_buffer[ray_idx] > 0.0)
+//         {
+//             xs[idx] = i;
+//             ys[idx] = j;
+//             zs[idx] = 0;
+//
+//             xs[idx+1] = i;
+//             ys[idx+1] = j;
+//             zs[idx+1] = 50.0;
+//             idx+=2;
+//         }
+//         else
+//         {
+//             xs[idx] = i;
+//             ys[idx] = j;
+//             zs[idx] = 0;
+//
+//             xs[idx+1] = i;
+//             ys[idx+1] = j;
+//             zs[idx+1] = 0.0;
+//             idx+=2;
+//         }
+//         ray_idx++;
+//     }
+//
+//     rays_mesh["topologies/rays/type"] = "unstructured";
+//     rays_mesh["topologies/rays/coordset"] = "rays_coords";
+//     rays_mesh["topologies/rays/elements/shape"] = "line";
+//     rays_mesh["topologies/rays/elements/connectivity"].set(DataType::index_t(npts));
+//
+//     // rays_mesh["topologies/rays/elements/shape"] = "mixed";
+//     // rays_mesh["topologies/rays/elements/shapes"].set(DataType::index_t(num_rays));
+//     // rays_mesh["topologies/rays/elements/sizes"].set(DataType::index_t(num_rays));
+//     // rays_mesh["topologies/rays/elements/offsets"].set(DataType::index_t(num_rays));
+//     // rays_mesh["topologies/rays/elements/shape_map/line"]  = 3;
+//     // rays_mesh["topologies/rays/elements/shape_map/point"] = 1;
+//
+//     // index_t_array ray_shapes  = rays_mesh["topologies/rays/elements/shapes"].value();
+//     // index_t_array ray_sizes   = rays_mesh["topologies/rays/elements/sizes"].value();
+//     // index_t_array ray_offsets = rays_mesh["topologies/rays/elements/offsets"].value();
+//     index_t_array ray_conn    = rays_mesh["topologies/rays/elements/connectivity"].value();
+//
+//     ray_idx = 0;
+//     idx = 0;
+//     for(index_t j=0;j<srender_res.Height;j++)
+//     for(index_t i=0;i<srender_res.Width;i++)
+//     {
+//         if(depth_buffer[ray_idx] > 0.0)
+//         {
+//             // line segment case
+//             // ray_shapes[ray_idx] = 3; // VTK_LINE
+//             // ray_sizes[ray_idx]  = 2;
+//             ray_conn[idx]       = idx;
+//             ray_conn[idx+1]     = idx+1;
+//             idx+=2;
+//         }
+//         else
+//         {
+//             // // point case
+//             // ray_shapes[ray_idx] = 1; // VTK_VERTEX
+//             // ray_sizes[ray_idx] = 1;
+//             // ray_conn[idx] = idx;
+//             // idx++;
+//             // ray_shapes[ray_idx] = 3; // VTK_LINE
+//             // ray_sizes[ray_idx]  = 2;
+//             ray_conn[idx]       = idx;
+//             ray_conn[idx+1]     = idx+1;
+//             idx+=2;
+//         }
+//         ray_idx++;
+//     }
+//
+//     rays_mesh["fields/depth/topology"] = "rays";
+//     rays_mesh["fields/depth/association"] = "element";
+//     rays_mesh["fields/depth/values"].set(depth_buffer, num_rays);
+//
+//     for(index_t i=0; i<srender_res.Scalars.size(); i++)
+//     {
+//         const float* scalar_buffer = GetVISKORESPointer(srender_res.Scalars[i]);
+//         const std::string field_path = "fields/" + srender_res.ScalarNames[i];
+//         rays_mesh[field_path + "/topology"] = "rays";
+//         rays_mesh[field_path + "/association"] = "element";
+//         rays_mesh[field_path + "/values"].set(scalar_buffer, num_rays);
+//     }
+//
+//     conduit::Node info;
+//     if(!conduit::blueprint::mesh::verify(rays_mesh,info))
+//     {
+//         std::cout << info.to_yaml() << std::endl;
+//     }
+// }
 
 template <typename Precision>
 void
@@ -306,7 +307,7 @@ CreateRaysMesh(ScalarRenderer::Result &srender_res,
       viskores::cont::DataSet ToDataSet();
     */
 
-    const int num_rays = srender_res.Width * srender_res.Height;
+    const int num_rays   = srender_res.Width * srender_res.Height;
     const int num_fields = srender_res.ScalarNames.size();
 
     const float *depth_buffer = GetVISKORESPointer(srender_res.Depths);
@@ -318,27 +319,25 @@ CreateRaysMesh(ScalarRenderer::Result &srender_res,
     //  hits will be represented as a line segment
     //  misses will be represented as a single point
 
-    index_t num_hits   = 0;
-    index_t num_misses = 0;
-    index_t ray_idx = 0;
+    // index_t num_hits   = 0;
+    // index_t num_misses = 0;
+    // index_t ray_idx = 0;
+    //
+    // for(index_t j=0;j<srender_res.Height;j++)
+    // for(index_t i=0;i<srender_res.Width;i++)
+    // {
+    //     if(depth_buffer[ray_idx] > 0.0)
+    //     {
+    //         num_hits++;
+    //     }
+    //     else
+    //     {
+    //         num_misses++;
+    //     }
+    //     ray_idx++;
+    // }
 
-    for(index_t j=0;j<srender_res.Height;j++)
-    for(index_t i=0;i<srender_res.Width;i++)
-    {
-        if(depth_buffer[ray_idx] > 0.0)
-        {
-            num_hits++;
-        }
-        else
-        {
-            num_misses++;
-        }
-        ray_idx++;
-    }
-
-    num_hits = num_hits + num_misses;
-    // npts = (number of hits * 2) + (number of misses)
-    index_t npts = num_hits * 2;// + num_misses;
+    index_t npts = num_rays * 2;
 
     rays_mesh["coordsets/rays_coords/values/x"].set(DataType::float64(npts));
     rays_mesh["coordsets/rays_coords/values/y"].set(DataType::float64(npts));
@@ -346,16 +345,6 @@ CreateRaysMesh(ScalarRenderer::Result &srender_res,
     float64_array xs = rays_mesh["coordsets/rays_coords/values/x"].value();
     float64_array ys = rays_mesh["coordsets/rays_coords/values/y"].value();
     float64_array zs = rays_mesh["coordsets/rays_coords/values/z"].value();
-
-  // viskores::cont::ArrayHandle<Precision> OriginX; //ray Origin
-  // viskores::cont::ArrayHandle<Precision> OriginY;
-  // viskores::cont::ArrayHandle<Precision> OriginZ;
-  //
-  // viskores::cont::ArrayHandle<Precision> DirX; //ray Dir
-  // viskores::cont::ArrayHandle<Precision> DirY;
-  // viskores::cont::ArrayHandle<Precision> DirZ;
-
-    // viskores::cont::ArrayHandle<viskores::UInt8> Status; // 0 = active 1 = miss 2 = lost
 
     auto rays_orig_x = rays.OriginX.ReadPortal();
     auto rays_orig_y = rays.OriginY.ReadPortal();
@@ -370,7 +359,6 @@ CreateRaysMesh(ScalarRenderer::Result &srender_res,
     ys.fill(0);
     zs.fill(0);
 
-    ray_idx = 0;
     index_t idx = 0;
     
     std::cout << "total : " << rays_orig_x.GetNumberOfValues() << " vs " << srender_res.Height << 
@@ -409,7 +397,7 @@ CreateRaysMesh(ScalarRenderer::Result &srender_res,
             zs[img_idx+1] = ray_end[2];
 
         }
-        else
+        else // no hit, line
         {
             xs[img_idx] = ray_origin[0];
             ys[img_idx] = ray_origin[1];
@@ -422,128 +410,19 @@ CreateRaysMesh(ScalarRenderer::Result &srender_res,
         idx+=2;
     }
 
-
-
-    // index_t num_active_rays = rays_orig_x.GetNumberOfValues();
-    // for(index_t active_ray_idx=0; active_ray_idx<num_active_rays; active_ray_idx++)
-    // {
-    //     index_t img_idx = active_ray_idx *2;
-    //     viskores::Vec<Precision,3> ray_origin(rays_orig_x.Get(active_ray_idx),
-    //                                           rays_orig_y.Get(active_ray_idx),
-    //                                           rays_orig_z.Get(active_ray_idx));
-    //     if(depth_buffer[active_ray_idx] > 0)
-    //     {
-    //         // first point:
-    //         //  origin
-    //         // second point:
-    //         //  distance * normalize(dir) + origin
-    //         // normalize dir
-    //
-    //         viskores::Vec<Precision,3> ray_dir(rays_dir_x.Get(active_ray_idx),
-    //                                            rays_dir_y.Get(active_ray_idx),
-    //                                            rays_dir_z.Get(active_ray_idx));
-    //
-    //         Precision ray_dist = (Precision) depth_buffer[active_ray_idx];
-    //
-    //         xs[img_idx] = ray_origin[0];
-    //         ys[img_idx] = ray_origin[1];
-    //         zs[img_idx] = ray_origin[2];
-    //
-    //         viskores::Normalize(ray_dir);
-    //         viskores::Vec<Precision,3> ray_end = (ray_dist * ray_dir) + ray_origin;
-    //         xs[img_idx+1] = ray_end[0];
-    //         ys[img_idx+1] = ray_end[1];
-    //         zs[img_idx+1] = ray_end[2];
-    //
-    //     }
-    //     else
-    //     {
-    //         xs[img_idx] = ray_origin[0];
-    //         ys[img_idx] = ray_origin[1];
-    //         zs[img_idx] = ray_origin[2];
-    //
-    //         xs[img_idx+1] = ray_origin[0];
-    //         ys[img_idx+1] = ray_origin[1];
-    //         zs[img_idx+1] = ray_origin[2];
-    //     }
-    //     idx+=2;
-    // }
-
-    // for(index_t j=0;j<srender_res.Height;j++)
-    // for(index_t i=0;i<srender_res.Width;i++)
-    // {
-    // //     std::cout << " FETCH " << ray_idx << std::endl;
-    //     if(depth_buffer[ray_idx] > 0.0)
-    //     {
-    //         xs[idx] = i;
-    //         ys[idx] = j;
-    //         zs[idx] = 0;
-    //
-    //         xs[idx+1] = i;
-    //         ys[idx+1] = j;
-    //         zs[idx+1] = 50.0;
-    //         idx+=2;
-    //
-    //     }
-    //     else
-    //     {
-    //         xs[idx] = i;
-    //         ys[idx] = j;
-    //         zs[idx] = 0.0;
-    //
-    //         xs[idx+1] = i;
-    //         ys[idx+1] = j;
-    //         zs[idx+1] = 0.0;
-    //         idx+=2;
-    //     }
-    //     ray_idx++;
-    // }
-
     rays_mesh["topologies/rays/type"] = "unstructured";
     rays_mesh["topologies/rays/coordset"] = "rays_coords";
     rays_mesh["topologies/rays/elements/shape"] = "line";
     rays_mesh["topologies/rays/elements/connectivity"].set(DataType::index_t(npts));
+    index_t_array ray_conn = rays_mesh["topologies/rays/elements/connectivity"].value();
 
-    // rays_mesh["topologies/rays/elements/shape"] = "mixed";
-    // rays_mesh["topologies/rays/elements/shapes"].set(DataType::index_t(num_rays));
-    // rays_mesh["topologies/rays/elements/sizes"].set(DataType::index_t(num_rays));
-    // rays_mesh["topologies/rays/elements/offsets"].set(DataType::index_t(num_rays));
-    // rays_mesh["topologies/rays/elements/shape_map/line"]  = 3;
-    // rays_mesh["topologies/rays/elements/shape_map/point"] = 1;
-
-    // index_t_array ray_shapes  = rays_mesh["topologies/rays/elements/shapes"].value();
-    // index_t_array ray_sizes   = rays_mesh["topologies/rays/elements/sizes"].value();
-    // index_t_array ray_offsets = rays_mesh["topologies/rays/elements/offsets"].value();
-    index_t_array ray_conn    = rays_mesh["topologies/rays/elements/connectivity"].value();
-
-    ray_idx = 0;
     idx = 0;
     for(index_t j=0;j<srender_res.Height;j++)
     for(index_t i=0;i<srender_res.Width;i++)
     {
-        if(depth_buffer[ray_idx] > 0.0)
-        {
-            // line segment case
-            // ray_shapes[ray_idx] = 3; // VTK_LINE
-            // ray_sizes[ray_idx]  = 2;
-            ray_conn[idx]       = idx;
-            ray_conn[idx+1]     = idx+1;
-            idx+=2;
-        }
-        else
-        {
-            // // point case
-            // ray_shapes[ray_idx] = 1; // VTK_VERTEX
-            // ray_sizes[ray_idx] = 1;
-            // ray_conn[idx] = idx;
-            // idx++;
-            // ray_shapes[ray_idx] = 3; // VTK_LINE
-            // ray_sizes[ray_idx]  = 2;
-            ray_conn[idx]       = idx;
-            ray_conn[idx+1]     = idx+1;
-            idx+=2;
-        }
-        ray_idx++;
+        ray_conn[idx]   = idx;
+        ray_conn[idx+1] = idx+1;
+        idx+=2;
     }
 
     rays_mesh["fields/depth/topology"] = "rays";
@@ -645,7 +524,8 @@ ScalarRenderer::DoExecute()
     if(data_set.GetCellSet().GetNumberOfCells())
     {
       no_data = num_cells == 0;
-
+      // TODO
+      // Result res = renderers[dom].Render(Rays);
       Result res = renderers[dom].Render(m_camera);
 
       field_names = res.ScalarNames;
@@ -778,7 +658,9 @@ ScalarRenderer::DoExecute()
         // detail::CreateRaysMesh(final_result, rays_mesh); //rays, rays_mesh);
         // TODO viskores 1.1.1.
         detail::CreateRaysMesh(final_result, rays, rays_mesh);
-        conduit::relay::io::blueprint::save_mesh(rays_mesh,"tout");
+        static int scount = 0;
+        conduit::relay::io::blueprint::save_mesh(rays_mesh,conduit_fmt::format("tout_{:06d}",scount));
+        scount++;
       }
     }
   }
@@ -880,6 +762,31 @@ ScalarRenderer::SetWidth(const int width)
 {
   m_width = width;
 }
+
+void
+ScalarRenderer::SetRays(viskores::cont::ArrayHandle<viskores::Float64> pts_xs,
+                        viskores::cont::ArrayHandle<viskores::Float64> pts_ys,
+                        viskores::cont::ArrayHandle<viskores::Float64> pts_zs,
+                        viskores::cont::ArrayHandle<viskores::Float64> dirs_xs,
+                        viskores::cont::ArrayHandle<viskores::Float64> dirs_ys,
+                        viskores::cont::ArrayHandle<viskores::Float64> dirs_zs,
+                        double max_dist)
+{
+    // result is a 1D image
+    SetWidth(pts_xs.GetNumberOfValues());
+    SetHeight(1);
+
+    m_rays_pts_xs = pts_xs;
+    m_rays_pts_ys = pts_ys;
+    m_rays_pts_zs = pts_zs;
+
+    m_rays_dirs_xs = dirs_xs;
+    m_rays_dirs_ys = dirs_ys;
+    m_rays_dirs_zs = dirs_zs;
+
+    m_rays_max_distance = max_dist;
+}
+
 
 vtkh::DataSet *
 ScalarRenderer::GetInput()

@@ -42,8 +42,8 @@ public:
                viskores::cont::ArrayHandle<viskores::Float64> pts_zs,
                viskores::cont::ArrayHandle<viskores::Float64> dirs_xs,
                viskores::cont::ArrayHandle<viskores::Float64> dirs_ys,
-               viskores::cont::ArrayHandle<viskores::Float64> dirs_zs);
-
+               viskores::cont::ArrayHandle<viskores::Float64> dirs_zs,
+               double max_dist);
   void SetFields(const std::vector<std::string> &fields);
 
 protected:
@@ -51,6 +51,15 @@ protected:
   int m_width;
   int m_height;
   int m_num_points;
+
+  viskores::cont::ArrayHandle<viskores::Float64> m_rays_pts_xs;
+  viskores::cont::ArrayHandle<viskores::Float64> m_rays_pts_ys;
+  viskores::cont::ArrayHandle<viskores::Float64> m_rays_pts_zs;
+
+  viskores::cont::ArrayHandle<viskores::Float64> m_rays_dirs_xs;
+  viskores::cont::ArrayHandle<viskores::Float64> m_rays_dirs_ys;
+  viskores::cont::ArrayHandle<viskores::Float64> m_rays_dirs_zs;
+  double m_rays_max_distance;  
 
   std::vector<std::string> m_field_names;
 
