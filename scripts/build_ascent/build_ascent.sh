@@ -670,11 +670,11 @@ fi # if enable_hip || enable_sycl
 ################
 # Viskores
 ################
-viskores_version=1.1.1
+viskores_version=1.2.0-rc2
 viskores_src_dir=$(ospath ${source_dir}/viskores-${viskores_version})
 viskores_build_dir=$(ospath ${build_dir}/viskores-${viskores_version})
 viskores_install_dir=$(ospath ${install_dir}/viskores-${viskores_version}/)
-viskores_tarball=$(ospath ${source_dir}/v${viskores_version}.tar.gz)
+viskores_tarball=$(ospath ${source_dir}/viskores-v${viskores_version}.tar.gz)
 
 # build only if install doesn't exist
 if [ ! -d ${viskores_install_dir} ]; then
@@ -687,13 +687,11 @@ if [ ! -d ${viskores_src_dir} ]; then
   echo "**** Extracting ${viskores_tarball}"
   tar ${tar_extra_args} -xzf ${viskores_tarball} -C ${source_dir}
 
-  # apply patches
-  cd ${viskores_src_dir}
-  echo "**** Applying Patches to ${viskores_tarball}"
-  patch -p1 < ${script_dir}/2026_01_02_viskores_implent_pan_raytracing.patch
-  patch -p1 < ${script_dir}/2026_04_10_viskores_1_1_0_volume_annotation_depth_hack.patch
-  patch -p1 < ${script_dir}/2026_05_15_viskores_1_1_1_wireframer_fix.patch
-  cd ${root_dir}
+  # # apply patches
+  # cd ${viskores_src_dir}
+  # echo "**** Applying Patches to ${viskores_tarball}"
+  # # patches go here
+  # cd ${root_dir}
 fi
 
 
