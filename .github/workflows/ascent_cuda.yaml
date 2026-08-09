@@ -21,7 +21,7 @@ jobs:
       matrix:
         include:
           - name: cuda 12.8.1
-            container: alpinedav/ascent-devel:ubuntu-22.04-cuda-12.8.1-x86_64-tpls_2026-08-04-sha50fcd3
+            container: alpinedav/ascent-devel:ubuntu-22.04-cuda-12.8.1-x86_64-tpls_2026-08-08-sha91a906
             env:
               cc: gcc
               cxx: g++
@@ -38,7 +38,7 @@ jobs:
               enable_examples: OFF
               enable_utils: OFF
           - name: cuda 11.8.0
-            container: alpinedav/ascent-devel:ubuntu-22.04-cuda-11.8.0-x86_64-tpls_2026-08-03-sha50fcd3
+            container: alpinedav/ascent-devel:ubuntu-22.04-cuda-11.8.0-x86_64-tpls_2026-08-09-sha91a906
             env:
               cc: gcc
               cxx: g++
