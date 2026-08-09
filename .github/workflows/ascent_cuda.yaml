@@ -21,7 +21,7 @@ jobs:
       matrix:
         include:
           - name: cuda 12.8.1
-            container: alpinedav/ascent-devel:ubuntu-22.04-cuda-12.8.1-x86_64-tpls_2026-07-25-shaf13d7d
+            container: alpinedav/ascent-devel:ubuntu-22.04-cuda-12.8.1-x86_64-tpls_2026-08-04-sha50fcd3
             env:
               cc: gcc
               cxx: g++
@@ -37,23 +37,23 @@ jobs:
               enable_tests: OFF
               enable_examples: OFF
               enable_utils: OFF
-          # - name: cuda 11.8.0
-          #   container: alpinedav/ascent-devel:ubuntu-22.04-cuda-11.8.0-x86_64-tpls_2026-07-25-shaf13d7d
-          #   env:
-          #     cc: gcc
-          #     cxx: g++
-          #     fc: gfortran
-          #     build_shared_libs: OFF
-          #     cmake_build_type: MinSizeRel
-          #     cuda_arch: 70
-          #     enable_dray: OFF
-          #     enable_mfem: ON
-          #     blt_cxx_std: c++17
-          #     # static linking unit tests + examples eats up alot of disk space,
-          #     # so skip building tests in CI to keep us away from clif
-          #     enable_tests: OFF
-          #     enable_examples: OFF
-          #     enable_utils: OFF
+          - name: cuda 11.8.0
+            container: alpinedav/ascent-devel:ubuntu-22.04-cuda-11.8.0-x86_64-tpls_2026-08-03-sha50fcd3
+            env:
+              cc: gcc
+              cxx: g++
+              fc: gfortran
+              build_shared_libs: OFF
+              cmake_build_type: MinSizeRel
+              cuda_arch: 70
+              enable_dray: OFF
+              enable_mfem: ON
+              blt_cxx_std: c++17
+              # static linking unit tests + examples eats up alot of disk space,
+              # so skip building tests in CI to keep us away from clif
+              enable_tests: OFF
+              enable_examples: OFF
+              enable_utils: OFF
     env:
       COMPILER_CC: ${{ matrix.env.cc }}
       COMPILER_CXX: ${{ matrix.env.cxx }}
