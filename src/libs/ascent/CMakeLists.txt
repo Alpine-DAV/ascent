@@ -302,7 +302,7 @@ if(VISKORES_FOUND)
     list(APPEND ascent_sources
                 runtimes/flow_filters/ascent_runtime_vtkh_filters.cpp
                 runtimes/flow_filters/ascent_runtime_gltf_extract.cpp
-                ascent_vtkh_dep_sources runtimes/ascent_main_runtime.cpp)
+                runtimes/ascent_main_runtime.cpp)
 endif()
 
 
