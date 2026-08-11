@@ -299,7 +299,8 @@ if(VISKORES_FOUND)
     list(APPEND ascent_device_sources ${ascent_viskores_device_sources})
 
     # these are not device sources, they also use fmt which makes nvcc unhappy as of fmt 12
-    list(APPEND runtimes/flow_filters/ascent_runtime_vtkh_filters.cpp
+    list(APPEND ascent_vtkh_dep_sources
+                runtimes/flow_filters/ascent_runtime_vtkh_filters.cpp
                 runtimes/flow_filters/ascent_runtime_gltf_extract.cpp
                 ascent_vtkh_dep_sources runtimes/ascent_main_runtime.cpp)
 endif()
