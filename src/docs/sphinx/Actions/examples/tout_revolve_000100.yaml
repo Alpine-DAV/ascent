@@ -1,0 +1,27 @@
+#An example revolve filter using rotational extrusion.
+
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "revolve"
+        params: 
+          topology: "mesh"
+          axis: 
+            x: 1.0
+            y: 0.0
+            z: 0.0
+          angle: 360.0
+          num_steps: 24
+          capping: "false"
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "braid"
+          pipeline: "pl1"
+      image_prefix: "/usr/WS1/nicolem/sandbox/ascent/scripts/build_ascent/build/ascent-checkout/tests/_output/tout_revolve"
