@@ -3463,6 +3463,7 @@ VTKHSample::declare_interface(Node &i)
 
     string_schema(param_schema["properties/field"]);
     array_schema(param_schema["properties/fields"]);
+    string_schema(param_schema["properties/topology"]);
     number_schema(param_schema["properties/invalid_value"]);
 
     // --- Line ---
@@ -3585,8 +3586,76 @@ VTKHSample::execute()
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
 
     vtkh::Sample sampler;
+    std::string output_topo_name = topo_name;
 
-    if(params().has_path("line"))
+    const bool has_topology = params().has_path("topology");
+    if(has_topology)
+    {
+      std::string sample_topo_name = params()["topology"].as_string();
+      if(!collection->has_topology(sample_topo_name))
+      {
+        ASCENT_ERROR("vtkh_sample topology '" << sample_topo_name
+                     << "' does not exist. Known topologies: "
+                     << detail::possible_topologies(collection));
+      }
+
+      std::shared_ptr<VTKHCollection> sample_collection;
+#ifdef ASCENT_MPI_ENABLED
+      MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
+      int rank = 0;
+      MPI_Comm_rank(mpi_comm, &rank);
+
+      std::shared_ptr<conduit::Node> blueprint_data = data_object->as_low_order_bp();
+      conduit::Node sample_mesh;
+      if(rank == 0)
+      {
+        const conduit::Node &bp = *blueprint_data;
+        const auto domains = blueprint::mesh::domains(bp);
+
+        //make a conduit::Node sample mesh with input topo
+        for(size_t i = 0; i < domains.size(); ++i)
+        {
+          const conduit::Node &src_dom = *domains[i];
+          const std::string topo_path = "topologies/" + sample_topo_name;
+          if(src_dom.has_path(topo_path))
+          {
+            conduit::Node &dst_dom = sample_mesh.append();
+            if(src_dom.has_path("state"))
+            {
+              dst_dom["state"].set(src_dom["state"]);
+            }
+
+            dst_dom[topo_path].set(src_dom[topo_path]);
+            const std::string coordset_name = src_dom[topo_path + "/coordset"].as_string();
+            dst_dom["coordsets/" + coordset_name].set(src_dom["coordsets/" + coordset_name]);
+          }
+        }
+
+        if(sample_mesh.number_of_children() == 0)
+        {
+          ASCENT_ERROR("vtkh_sample topology '" << sample_topo_name
+                       << "' must be present on rank 0 for MPI topology sampling");
+        }
+      }
+	  //broadcast created sample node and convert back to vtkh
+      conduit::relay::mpi::broadcast_using_schema(sample_mesh, 0, mpi_comm);
+      sample_collection.reset(VTKHDataAdapter::BlueprintToVTKHCollection(sample_mesh,
+                                                                         false));
+#else
+      sample_collection = collection;
+#endif
+
+      vtkh::DataSet &sample_data = sample_collection->dataset_by_topology(sample_topo_name);
+      std::vector<viskores::cont::DataSet> sample_domains;
+      std::vector<viskores::Id> sample_domain_ids = sample_data.GetDomainIds();
+      for(size_t i = 0; i < sample_domain_ids.size(); ++i)
+      {
+        sample_domains.push_back(sample_data.GetDomainById(sample_domain_ids[i]));
+      }
+      sampler.Topology(sample_domains, sample_domain_ids);
+      output_topo_name = sample_topo_name;
+    }
+    else if(params().has_path("line"))
     {
       const Node &line_p = params()["line"];
       int num_samples = line_p["num_samples"].to_int();
@@ -3920,7 +3989,7 @@ VTKHSample::execute()
     vtkh::DataSet *grid_output = sampler.GetOutput();
 
     VTKHCollection *new_coll = new VTKHCollection();
-    new_coll->add(*grid_output, topo_name);
+    new_coll->add(*grid_output, output_topo_name);
     // re wrap in data object
     DataObject *res =  new DataObject(new_coll);
     delete grid_output;

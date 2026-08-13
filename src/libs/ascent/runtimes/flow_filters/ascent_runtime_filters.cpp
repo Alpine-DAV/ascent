@@ -32,6 +32,7 @@
     #include <ascent_runtime_vtkh_filters.hpp>
     #include <ascent_runtime_rendering_filters.hpp>
     #include <ascent_runtime_rover_filters.hpp>
+    #include <ascent_runtime_gltf_extract.hpp>
 #endif
 
 #if defined(ASCENT_DRAY_ENABLED)
@@ -152,6 +153,7 @@ register_builtin()
     AscentRuntime::register_filter_type<VTKHSample>("transforms","sample");
     AscentRuntime::register_filter_type<VTKHUniformGrid>("transforms","uniform_grid");
     AscentRuntime::register_filter_type<VTKHVTKFileExtract>("extracts", "vtk");
+    AscentRuntime::register_filter_type<GltfExtract>("extracts", "gltf");
     AscentRuntime::register_filter_type<VTKHMIR>("transforms","mir");
 
 
@@ -166,6 +168,7 @@ register_builtin()
 
 #if defined(ASCENT_DRAY_ENABLED)
     AscentRuntime::register_filter_type<DRayPseudocolor>("extracts", "dray_pseudocolor");
+    AscentRuntime::register_filter_type<DRaySurface>("extracts", "dray_surface");
     AscentRuntime::register_filter_type<DRay3Slice>("extracts", "dray_3slice");
     AscentRuntime::register_filter_type<DRayVolume>("extracts", "dray_volume");
     AscentRuntime::register_filter_type<DRayProject2d>("transforms", "dray_project_2d");

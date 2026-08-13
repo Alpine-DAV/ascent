@@ -45,6 +45,7 @@ set(BASIC_TESTS t_ascent_smoke
                 t_ascent_relay
                 t_ascent_conduit_extract
                 t_ascent_vtk_file_extract
+                t_ascent_gltf_extract
                 t_ascent_htg
                 t_ascent_flatten
                 t_ascent_partition
@@ -106,6 +107,7 @@ set(MPI_TESTS  t_ascent_mpi_smoke
                t_ascent_mpi_multi_topo
                t_ascent_mpi_slice
                t_ascent_mpi_vtk_file_extract
+               t_ascent_mpi_gltf_extract
                t_ascent_mpi_add_ranks
                t_ascent_mpi_add_domain_ids
                t_ascent_mpi_uniform_grid

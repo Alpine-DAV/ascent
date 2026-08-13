@@ -23,6 +23,8 @@ You can find the tutorial source code and notebooks in your Ascent install direc
 
 
 Tutorials:
+ * Visualization and Analysis of HPC Simulation Data with VisIt and Ascent @ ATPESC26 - July 2026, St. Charles, IL, USA
+ * In-Situ Analysis and Visualization with Ascent @ ATPESC25 - August 2025, St. Charles, IL, USA
  * `Introduction to Ascent, a Flyweight In Situ Visualization and Analysis for HPC Simulations @ LLNL's HPCIC AWS Tutorial Series 2025 <https://hpcic.llnl.gov/tutorials/2025-hpc-tutorials>`_ - July 2025, Virtual
  * `Introduction to Ascent, a Flyweight In Situ Visualization and Analysis for HPC Simulations @ LLNL's HPCIC AWS Tutorial Series 2024 <https://hpcic.llnl.gov/tutorials/2024-hpc-tutorials>`_ - August 2024, Virtual
  * In-Situ Analysis and Visualization with Ascent @ ATPESC24 - August 2024, St. Charles, IL, USA

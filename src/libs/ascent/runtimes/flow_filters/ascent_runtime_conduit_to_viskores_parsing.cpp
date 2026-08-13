@@ -15,11 +15,13 @@
 
 #include <ascent_logging.hpp>
 #include <ascent_logging_old.hpp>
+#include <ascent_runtime_color_utils.hpp>
 #include <cerrno>
 #include <cmath>
 #include <cctype>
 #include <cstdlib>
 #include <limits>
+#include <vector>
 using namespace conduit;
 
 //-----------------------------------------------------------------------------
@@ -413,6 +415,52 @@ parse_color_table(const conduit::Node &color_table_node)
                 <<color_map_name);
   }
 
+  if(color_table_node.has_child("solid"))
+  {
+    viskores::cont::ColorTable color_table;
+    color_table.ClearColors();
+
+    double r = 0., g = 0., b = 0., a = 1.;
+    bool has_alpha = false;
+
+    const conduit::Node &solid_node = color_table_node.fetch("solid");
+    if(solid_node.dtype().is_string())
+    {
+      std::string err;
+      const std::string s = solid_node.as_string();
+      if(!detail::parse_hex_color_string(s, r, g, b, a, has_alpha, err))
+      {
+        ASCENT_ERROR("Invalid hex color for color_table/solid: '" << s << "' (" << err << ")");
+      }
+    }
+    else
+    {
+      float64_array color_vals = solid_node.value();
+      r = color_vals[0];
+      g = color_vals[1];
+      b = color_vals[2];
+      if(color_vals.number_of_elements() == 4)
+      {
+        a = color_vals[3];
+        has_alpha = true;
+      }
+    }
+
+    // Create a truly constant color map by specifying both endpoints.
+    viskores::Vec<viskores::Float64,3> ecolor(r, g, b);
+    color_table.AddPoint(0.0, ecolor);
+    color_table.AddPoint(1.0, ecolor);
+
+    if(has_alpha)
+    {
+      const auto alpha = std::min(1., std::max(a, 0.));
+      color_table.AddPointAlpha(0.0, alpha);
+      color_table.AddPointAlpha(1.0, alpha);
+    }
+
+    return color_table;
+  }
+
   bool name_provided = false;
   if(color_table_node.has_child("name"))
   {
@@ -452,12 +500,13 @@ parse_color_table(const conduit::Node &color_table_node)
     }
     else if (control_points_node.dtype().is_object())
     {
-        if (control_points_node.has_child("r") &&
-            control_points_node.has_child("g") &&
-            control_points_node.has_child("b"))
-        {
-            clear = true;
-        }
+      if((control_points_node.has_child("r") &&
+          control_points_node.has_child("g") &&
+          control_points_node.has_child("b")) ||
+         control_points_node.has_child("hex"))
+      {
+        clear = true;
+      }
     }
 
     if(clear && !name_provided)
@@ -488,11 +537,31 @@ parse_color_table(const conduit::Node &color_table_node)
 
             if (peg["type"].as_string() == "rgb")
             {
-                conduit::Node n;
-                peg["color"].to_float64_array(n);
-                const float64 *color = n.as_float64_ptr();
+                double r = 0., g = 0., b = 0., a = 1.;
+                bool has_alpha = false;
 
-                viskores::Vec<viskores::Float64,3> ecolor(color[0], color[1], color[2]);
+                const conduit::Node &color_node = peg["color"];
+                if(color_node.dtype().is_string())
+                {
+                  std::string err;
+                  const std::string s = color_node.as_string();
+                  if(!detail::parse_hex_color_string(s, r, g, b, a, has_alpha, err))
+                  {
+                    ASCENT_ERROR("Invalid hex color for color_table/control_points/color: '" << s
+                                 << "' (" << err << ")");
+                  }
+                }
+                else
+                {
+                  conduit::Node n;
+                  color_node.to_float64_array(n);
+                  const float64 *color = n.as_float64_ptr();
+                  r = color[0];
+                  g = color[1];
+                  b = color[2];
+                }
+
+                viskores::Vec<viskores::Float64,3> ecolor(r, g, b);
 
                 for(int i = 0; i < 3; ++i)
                 {
@@ -500,6 +569,10 @@ parse_color_table(const conduit::Node &color_table_node)
                 }
 
                 color_table.AddPoint(position, ecolor);
+                if(has_alpha)
+                {
+                  color_table.AddPointAlpha(position, std::min(1., std::max(a, 0.)));
+                }
             }
             else if (peg["type"].as_string() == "alpha")
             {
@@ -517,71 +590,161 @@ parse_color_table(const conduit::Node &color_table_node)
     }
     else if (control_points_node.dtype().is_object())
     {
-        if(!control_points_node.has_child("r"))
-        {
-            ASCENT_ERROR("Color map control point must provide r values");
-        }
+      if(!control_points_node.has_child("position"))
+      {
+        ASCENT_ERROR("Color map control point must have a position");
+      }
 
-        if(!control_points_node.has_child("g"))
-        {
-            ASCENT_ERROR("Color map control point must provide g values");
-        }
+      const bool has_rgb_channels = control_points_node.has_child("r") &&
+                                    control_points_node.has_child("g") &&
+                                    control_points_node.has_child("b");
+      const bool has_hex_channel = control_points_node.has_child("hex");
 
-        if(!control_points_node.has_child("b"))
-        {
-            ASCENT_ERROR("Color map control point must provide b values");
-        }
+      if(has_rgb_channels && has_hex_channel)
+      {
+        ASCENT_ERROR("Color map control points must use either {r,g,b} or {hex}, not both");
+      }
 
-        if(!control_points_node.has_child("position"))
-        {
-            ASCENT_ERROR("Color map control point must have a position");
-        }
+      if(!has_rgb_channels && !has_hex_channel)
+      {
+        ASCENT_ERROR("Color map control points must provide either {r,g,b} values or {hex} values");
+      }
 
+      float64_array pos_vals = control_points_node.fetch("position").value();
+
+      if(has_rgb_channels)
+      {
         float64_array r_vals = control_points_node.fetch("r").value();
         float64_array g_vals = control_points_node.fetch("g").value();
         float64_array b_vals = control_points_node.fetch("b").value();
-        float64_array pos_vals = control_points_node.fetch("position").value();
 
         if(r_vals.number_of_elements() != g_vals.number_of_elements() ||
-            g_vals.number_of_elements() != b_vals.number_of_elements() ||
-            b_vals.number_of_elements() != pos_vals.number_of_elements())
+           g_vals.number_of_elements() != b_vals.number_of_elements() ||
+           b_vals.number_of_elements() != pos_vals.number_of_elements())
         {
-            ASCENT_ERROR("Color map color channels should all be of the same size");
+          ASCENT_ERROR("Color map color channels should all be of the same size");
         }
 
-        for(index_t i=0; i<r_vals.number_of_elements();i++)
+        for(index_t i=0; i<r_vals.number_of_elements(); i++)
         {
-            viskores::Vec<viskores::Float64,3> ecolor(r_vals[i], g_vals[i], b_vals[i]);
+          viskores::Vec<viskores::Float64,3> ecolor(r_vals[i], g_vals[i], b_vals[i]);
 
-            for(int i = 0; i < 3; ++i)
-            {
-                ecolor[i] = std::min(1., std::max(ecolor[i], 0.));
-            }
+          for(int c = 0; c < 3; ++c)
+          {
+            ecolor[c] = std::min(1., std::max(ecolor[c], 0.));
+          }
 
-            if(pos_vals[i] > 1.0 || pos_vals[i] < 0.0)
-            {
-                ASCENT_ERROR("Cannot add color map control point position "
-                                << pos_vals[i]
-                                << ". Must be a normalized scalar.");
-            }
+          if(pos_vals[i] > 1.0 || pos_vals[i] < 0.0)
+          {
+            ASCENT_ERROR("Cannot add color map control point position "
+                         << pos_vals[i]
+                         << ". Must be a normalized scalar.");
+          }
 
-            color_table.AddPoint(pos_vals[i], ecolor);
+          color_table.AddPoint(pos_vals[i], ecolor);
         }
 
         if(control_points_node.has_child("a"))
         {
-            float64_array alpha_vals = control_points_node.fetch("a").value();
+          float64_array alpha_vals = control_points_node.fetch("a").value();
 
-            if(pos_vals.number_of_elements() != alpha_vals.number_of_elements())
-            {
-                ASCENT_ERROR("Color map alpha channel should have same size as color channels");
-            }
+          if(pos_vals.number_of_elements() != alpha_vals.number_of_elements())
+          {
+            ASCENT_ERROR("Color map alpha channel should have same size as color channels");
+          }
 
-            for(index_t i=0; i<alpha_vals.number_of_elements();i++)
-            {
-                color_table.AddPointAlpha(pos_vals[i], std::min(1., std::max(alpha_vals[i], 0.)));
-            }
+          for(index_t i=0; i<alpha_vals.number_of_elements(); i++)
+          {
+            color_table.AddPointAlpha(pos_vals[i], std::min(1., std::max(alpha_vals[i], 0.)));
+          }
         }
+      }
+      else // has_hex_channel
+      {
+        const conduit::Node &hex_node = control_points_node.fetch("hex");
+        std::vector<std::string> hex_vals;
+
+        if(hex_node.dtype().is_list())
+        {
+          NodeConstIterator hitr = hex_node.children();
+          while(hitr.has_next())
+          {
+            const conduit::Node &h = hitr.next();
+            if(!h.dtype().is_string())
+            {
+              ASCENT_ERROR("Color map hex control points must be strings");
+            }
+            hex_vals.push_back(h.as_string());
+          }
+        }
+        else if(hex_node.dtype().is_string())
+        {
+          hex_vals.push_back(hex_node.as_string());
+        }
+        else
+        {
+          ASCENT_ERROR("Color map hex control points must be a string or a list of strings");
+        }
+
+        if(static_cast<conduit::index_t>(hex_vals.size()) != pos_vals.number_of_elements())
+        {
+          ASCENT_ERROR("Color map hex channel should have same size as position channel");
+        }
+
+        const bool has_alpha_channel = control_points_node.has_child("a");
+        std::vector<double> hex_alpha_vals(hex_vals.size(), 1.0);
+        bool any_hex_alpha = false;
+
+        for(conduit::index_t i = 0; i < pos_vals.number_of_elements(); i++)
+        {
+          if(pos_vals[i] > 1.0 || pos_vals[i] < 0.0)
+          {
+            ASCENT_ERROR("Cannot add color map control point position "
+                         << pos_vals[i]
+                         << ". Must be a normalized scalar.");
+          }
+
+          double r = 0., g = 0., b = 0., a = 1.;
+          bool has_alpha = false;
+          std::string err;
+          if(!detail::parse_hex_color_string(hex_vals[i], r, g, b, a, has_alpha, err))
+          {
+            ASCENT_ERROR("Invalid hex color for color_table/control_points/hex: '"
+                         << hex_vals[i] << "' (" << err << ")");
+          }
+
+          viskores::Vec<viskores::Float64,3> ecolor(r, g, b);
+          for(int c = 0; c < 3; ++c)
+          {
+            ecolor[c] = std::min(1., std::max(ecolor[c], 0.));
+          }
+          color_table.AddPoint(pos_vals[i], ecolor);
+
+          hex_alpha_vals[i] = a;
+          any_hex_alpha = any_hex_alpha || has_alpha;
+        }
+
+        if(has_alpha_channel)
+        {
+          float64_array alpha_vals = control_points_node.fetch("a").value();
+          if(pos_vals.number_of_elements() != alpha_vals.number_of_elements())
+          {
+            ASCENT_ERROR("Color map alpha channel should have same size as color channels");
+          }
+          for(conduit::index_t i = 0; i < alpha_vals.number_of_elements(); i++)
+          {
+            color_table.AddPointAlpha(pos_vals[i], std::min(1., std::max(alpha_vals[i], 0.)));
+          }
+        }
+        else if(any_hex_alpha)
+        {
+          for(std::size_t i = 0; i < hex_alpha_vals.size(); i++)
+          {
+            color_table.AddPointAlpha(pos_vals[static_cast<conduit::index_t>(i)],
+                                      std::min(1., std::max(hex_alpha_vals[i], 0.)));
+          }
+        }
+      }
     }
   }
 
@@ -614,6 +777,3 @@ parse_color_table(const conduit::Node &color_table_node)
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
-
-
-

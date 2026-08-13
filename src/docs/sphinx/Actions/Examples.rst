@@ -223,7 +223,7 @@ Resulting image:
 
 .. image:: examples/tout_gradient_mag_braid100.png
 
-An example of using the gradient filter on a element centered fieldand plotting the magnitude.
+An example of using the gradient filter on a element centered field and plotting the magnitude.
 -----------------------------------------------------------------------------------------------
 
 YAML actions:
@@ -519,6 +519,13 @@ YAML actions:
 Resulting image:
 
 .. image:: examples/tout_render_3d_multi_mesh100.png
+
+An example of selecting material fields and matsets with field filtering.
+------------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_material_field_selection.yaml
 
 An example of rendering with no annotations.
 ---------------------------------------------
@@ -1059,6 +1066,20 @@ Resulting image:
 
 .. image:: examples/tout_transform_rotate_y_000100.png
 
+An example of using the sample filter to sample on a plane topology from the input dataset.
+-------------------------------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_sample_topology_plane_000100.yaml
+
+An example of using the sample filter to sample on a sphere surface topology from the input dataset.
+----------------------------------------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_sample_topology_sphere_000100.yaml
+
 An example transform filter rotating around the z-axis.
 --------------------------------------------------------
 
@@ -1525,3 +1546,13 @@ YAML actions:
 
 .. literalinclude:: examples/tout_sample_plane_000100.yaml
 
+An example of using the Material Interface Reconstruction filter with VisIt-style material fields.
+-------------------------------------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_mir_axom_q7o5_material_boundary_000100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_mir_axom_q7o5_material_boundary_000100.png
