@@ -281,14 +281,12 @@ if(VISKORES_FOUND)
         runtimes/ascent_data_object.cpp
         runtimes/ascent_vtkh_data_adapter.cpp
         runtimes/ascent_vtkh_collection.cpp
-        runtimes/flow_filters/ascent_runtime_vtkh_filters.cpp
         runtimes/flow_filters/ascent_runtime_vtkh_utils.cpp
         runtimes/flow_filters/ascent_runtime_rendering_filters.cpp
         runtimes/flow_filters/ascent_runtime_rover_filters.cpp
         runtimes/flow_filters/ascent_runtime_conduit_to_viskores_parsing.cpp
-        runtimes/flow_filters/ascent_runtime_gltf_extract.cpp
         runtimes/flow_filters/ascent_runtime_filters.cpp
-        runtimes/ascent_main_runtime.cpp)
+        )
 
     list(APPEND ascent_headers ${ascent_vtkh_dep_headers})
     list(APPEND ascent_sources ${ascent_vtkh_dep_sources})
@@ -299,6 +297,12 @@ if(VISKORES_FOUND)
 
     # also make sure that these are in ascent's device source list
     list(APPEND ascent_device_sources ${ascent_viskores_device_sources})
+
+    # these are not device sources, they also use fmt which makes nvcc unhappy as of fmt 12
+    list(APPEND ascent_sources
+                runtimes/flow_filters/ascent_runtime_vtkh_filters.cpp
+                runtimes/flow_filters/ascent_runtime_gltf_extract.cpp
+                runtimes/ascent_main_runtime.cpp)
 endif()
 
 

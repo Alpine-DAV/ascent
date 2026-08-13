@@ -7,7 +7,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ## Unreleased
 ### Preferred dependency versions for ascent@develop
 - cmake@3.23 or newer
-- conduit@0.9.5
+- conduit@0.9.7
 - viskores@1.1.1
 - raja@v2025.09.0
 - umpire@v2025.09.0
