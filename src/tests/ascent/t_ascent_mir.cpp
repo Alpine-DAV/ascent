@@ -518,6 +518,72 @@ TEST(ascent_mir, test_material_field_selection)
   conduit::Node &add_extracts = actions.append();
   add_extracts["action"] = "add_extracts";
   conduit::Node &extracts = add_extracts["extracts"];
+  extracts["e1/type"] = "relay";
+  extracts["e1/params/path"] = output_file;
+  extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
+  extracts["e1/params/fields"].append() = "materials";
+
+  Ascent ascent;
+  ascent.open();
+  ascent.publish(data);
+  ascent.execute(actions);
+  ascent.close();
+
+  Node filtered;
+  conduit::relay::io::blueprint::load_mesh(output_root_file, filtered);
+  Node *filtered_dom = mesh_domain(filtered);
+  ASSERT_TRUE(filtered_dom != nullptr);
+
+  const Node &dom = *filtered_dom;
+  EXPECT_TRUE(dom.has_path("fields/mesh_material_attribute"));
+  EXPECT_TRUE(dom.has_path("fields/boundary_material_attribute"));
+  EXPECT_TRUE(dom.has_path("fields/vol_frac_inner"));
+  EXPECT_TRUE(dom.has_path("fields/vol_frac_middle"));
+  EXPECT_TRUE(dom.has_path("fields/vol_frac_outer"));
+  EXPECT_TRUE(dom.has_path("matsets/material"));
+
+  const Node &material_values = dom["fields/mesh_material_attribute/values"];
+  ASSERT_EQ(material_values.dtype().number_of_elements(), 1);
+  ASSERT_TRUE(material_values.dtype().is_int32() || material_values.dtype().is_int64());
+  if(material_values.dtype().is_int32())
+  {
+    EXPECT_EQ(material_values.as_int32_ptr()[0], 1);
+  }
+  else
+  {
+    EXPECT_EQ(material_values.as_int64_ptr()[0], 1);
+  }
+
+  const Node &inner_values = dom["fields/vol_frac_inner/values"];
+  ASSERT_TRUE(inner_values.dtype().is_float64() ||
+              inner_values.dtype().is_float32());
+
+  double inner_min = std::numeric_limits<double>::max();
+  double inner_max = -std::numeric_limits<double>::max();
+  const index_t num_inner_values = inner_values.dtype().number_of_elements();
+  if(inner_values.dtype().is_float64())
+  {
+    const float64 *values = inner_values.as_float64_ptr();
+    for(index_t i = 0; i < num_inner_values; ++i)
+    {
+      inner_min = std::min(inner_min, values[i]);
+      inner_max = std::max(inner_max, values[i]);
+    }
+  }
+  else
+  {
+    const float32 *values = inner_values.as_float32_ptr();
+    for(index_t i = 0; i < num_inner_values; ++i)
+    {
+      inner_min = std::min(inner_min, static_cast<double>(values[i]));
+      inner_max = std::max(inner_max, static_cast<double>(values[i]));
+    }
+  }
+
+  EXPECT_GT(num_inner_values, 0);
+  EXPECT_GT(inner_max, inner_min);
+}
+
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {
