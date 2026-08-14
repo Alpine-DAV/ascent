@@ -469,6 +469,56 @@ TEST(ascent_mir, axom_q7o5_material_boundary)
   ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 //-----------------------------------------------------------------------------
+TEST(ascent_mir, test_material_field_selection)
+{
+  // Verify the "materials" field selection keeps material fields and matsets.
+  auto mesh_domain = [](Node &mesh) -> Node *
+  {
+    if(mesh.has_path("fields"))
+    {
+      return &mesh;
+    }
+
+    for(index_t i = 0; i < mesh.number_of_children(); ++i)
+    {
+      Node &candidate = mesh.child(i);
+      if(candidate.has_path("fields"))
+      {
+        return &candidate;
+      }
+    }
+
+    return nullptr;
+  };
+
+  Node data;
+  std::string root_file;
+  ASSERT_TRUE(stage_axom_klee_fixture("3mat_q12o12", root_file));
+
+  conduit::relay::io::blueprint::load_mesh(root_file, data);
+  Node *input_dom = mesh_domain(data);
+  ASSERT_TRUE(input_dom != nullptr);
+  ASSERT_TRUE(input_dom->has_path("fields/vol_frac_inner"));
+  ASSERT_TRUE(input_dom->has_path("fields/vol_frac_middle"));
+  ASSERT_TRUE(input_dom->has_path("fields/vol_frac_outer"));
+  (*input_dom)["state/cycle"] = 0;
+
+  const std::string output_path = prepare_output_dir();
+  const std::string output_file =
+    conduit::utils::join_file_path(output_path,
+                                   "tout_material_field_selection");
+  const std::string output_root_file = output_file + ".cycle_000000.root";
+
+  if(conduit::utils::is_file(output_root_file))
+  {
+    conduit::utils::remove_file(output_root_file);
+  }
+
+  conduit::Node actions;
+  conduit::Node &add_extracts = actions.append();
+  add_extracts["action"] = "add_extracts";
+  conduit::Node &extracts = add_extracts["extracts"];
+//-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {
     int result = 0;
