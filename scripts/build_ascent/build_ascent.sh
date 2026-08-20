@@ -294,7 +294,7 @@ fi # build_hdf5
 ################
 # Silo
 ################
-silo_version=4.11.1
+silo_version=4.12.1
 silo_src_dir=$(ospath ${source_dir}/Silo-${silo_version})
 silo_build_dir=$(ospath ${build_dir}/silo-${silo_version}/)
 silo_install_dir=$(ospath ${install_dir}/silo-${silo_version}/)
@@ -417,7 +417,7 @@ fi
 # -DWITH_CUPTI=ON -DWITH_NVTX=ON -DCUDA_TOOLKIT_ROOT_DIR={path} -DCUPTI_PREFIX={path}
 # -DWITH_ROCTRACER=ON -DWITH_ROCTX=ON -DROCM_PREFIX={path}
 
-caliper_windows_cmake_flags="-DCMAKE_CXX_STANDARD=17 -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON -DWITH_TOOLS=OFF"
+caliper_windows_cmake_flags="-DCMAKE_CXX_STANDARD=20 -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON -DWITH_TOOLS=OFF"
 
 caliper_extra_cmake_args=""
 if [[ "$build_windows" == "ON" ]]; then
@@ -610,7 +610,7 @@ if [[ "$enable_hip" == "ON" ]]; then
   kokkos_extra_cmake_args="${kokkos_extra_cmake_args} -DKokkos_ENABLE_HIP_RELOCATABLE_DEVICE_CODE=OFF"
   kokkos_extra_cmake_args="${kokkos_extra_cmake_args} -DCMAKE_CXX_COMPILER=${ROCM_PATH}/bin/hipcc"
   kokkos_extra_cmake_args="${kokkos_extra_cmake_args} -DCMAKE_CXX_EXTENSIONS=OFF"
-  kokkos_extra_cmake_args="${kokkos_extra_cmake_args} -DCMAKE_CXX_STANDARD=17"
+  kokkos_extra_cmake_args="${kokkos_extra_cmake_args} -DCMAKE_CXX_STANDARD=20"
   kokkos_extra_cmake_args="${kokkos_extra_cmake_args} -DKokkos_ENABLE_ROCTHRUST=OFF"
 
   ##
@@ -642,7 +642,7 @@ if [[ "$enable_sycl" == "ON" ]]; then
   kokkos_extra_cmake_args="${kokkos_extra_cmake_args} -DKokkos_ENABLE_SYCL=ON"
   kokkos_extra_cmake_args="${kokkos_extra_cmake_args} -DKokkos_ARCH_INTEL_PVC=ON"
   kokkos_extra_cmake_args="${kokkos_extra_cmake_args} -DCMAKE_CXX_EXTENSIONS=OFF"
-  kokkos_extra_cmake_args="${kokkos_extra_cmake_args} -DCMAKE_CXX_STANDARD=17"
+  kokkos_extra_cmake_args="${kokkos_extra_cmake_args} -DCMAKE_CXX_STANDARD=20"
 fi
 
 echo "**** Configuring Kokkos ${kokkos_version}"
@@ -871,7 +871,7 @@ umpire_src_dir=$(ospath ${source_dir}/umpire-${umpire_version})
 umpire_build_dir=$(ospath ${build_dir}/umpire-${umpire_version})
 umpire_install_dir=$(ospath ${install_dir}/umpire-${umpire_version}/)
 umpire_tarball=$(ospath ${source_dir}/umpire-${umpire_version}.tar.gz)
-umpire_windows_cmake_flags="-DBLT_CXX_STD=c++17 -DCMAKE_CXX_STANDARD=17 -DUMPIRE_ENABLE_FILESYSTEM=On -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=On"
+umpire_windows_cmake_flags="-DBLT_CXX_STD=c++20 -DCMAKE_CXX_STANDARD=20 -DUMPIRE_ENABLE_FILESYSTEM=On -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=On"
 
 umpire_extra_cmake_args=""
 if [[ "$build_windows" == "ON" ]]; then
@@ -1079,6 +1079,15 @@ fi
 echo 'set(CMAKE_VERBOSE_MAKEFILE ' ${enable_verbose} ' CACHE BOOL "")' >> ${root_dir}/ascent-config.cmake
 echo 'set(CMAKE_BUILD_TYPE ' ${build_config} ' CACHE STRING "")' >> ${root_dir}/ascent-config.cmake
 echo 'set(BUILD_SHARED_LIBS ' ${build_shared_libs} ' CACHE STRING "")' >> ${root_dir}/ascent-config.cmake
+
+# Optional override for the project C++ standard (example: `env cxx_standard=20 ./build_ascent.sh`).
+if [ ! -z ${cxx_standard+x} ]; then
+  echo 'set(CMAKE_CXX_STANDARD ' ${cxx_standard} ' CACHE STRING "")' >> ${root_dir}/ascent-config.cmake
+  echo 'set(CMAKE_CXX_STANDARD_REQUIRED ON CACHE BOOL "")' >> ${root_dir}/ascent-config.cmake
+  echo 'set(CMAKE_CXX_EXTENSIONS OFF CACHE BOOL "")' >> ${root_dir}/ascent-config.cmake
+  echo 'set(BLT_CXX_STD c++'${cxx_standard}' CACHE STRING "")' >> ${root_dir}/ascent-config.cmake
+fi
+
 echo 'set(CMAKE_INSTALL_PREFIX ' ${ascent_install_dir} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
 echo 'set(ENABLE_TESTS ' ${enable_tests} ' CACHE BOOL "")' >> ${root_dir}/ascent-config.cmake
 echo 'set(ENABLE_MPI ' ${enable_mpi} ' CACHE BOOL "")' >> ${root_dir}/ascent-config.cmake

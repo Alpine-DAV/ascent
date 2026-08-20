@@ -39,7 +39,9 @@ if(CUDA_FOUND)
 endif()
 
 if(ENABLE_HIP)
-    list(APPEND rover_base_deps blt::hip)
+    # Rover itself does not contain HIP kernels/worklets. Building Rover sources
+    # as HIP causes device-link failures due to host-only Viskores/Vtkh control
+    # code (e.g. destructors) being instantiated for the device.
 endif()
 
 if(ENABLE_OPENMP)
@@ -76,7 +78,7 @@ set(rover_headers
       ${CMAKE_CURRENT_BINARY_DIR}/rover_config.h
      )
 
-set(rover_device_sources
+set(rover_sources
     domain.cpp
     image.cpp
     engine.cpp
@@ -85,13 +87,8 @@ set(rover_device_sources
     ray_generators/ray_generator.cpp
     ray_generators/visit_ray_generator.cpp
     utils/vtk_dataset_reader.cpp
-)
-
-set(rover_host_sources
     utils/rover_logging.cpp
 )
-
-set(rover_sources ${rover_device_sources} ${rover_host_sources})
 
 ###############################################################################
 if (ENABLE_SERIAL)
@@ -101,7 +98,9 @@ if (ENABLE_SERIAL)
                     DEPENDS_ON ${rover_thirdparty_deps}
                     )
 
-    viskores_add_target_information(rover DEVICE_SOURCES ${rover_device_sources})
+    # Rover is a host-only consumer of Viskores/Vtkh APIs; it is not a Viskores
+    # device source target.
+    target_compile_definitions(rover PRIVATE VISKORES_NO_ERROR_ON_MIXED_CUDA_CXX_TAG)
 
     # build includes
     # this allows us to include as <header.hpp>
@@ -143,7 +142,9 @@ if(MPI_FOUND)
                   DEPENDS_ON ${rover_mpi_thirdparty_deps}
                   )
 
-  viskores_add_target_information(rover_mpi DEVICE_SOURCES ${rover_device_sources})
+  # Rover is a host-only consumer of Viskores/Vtkh APIs; it is not a Viskores
+  # device source target.
+  target_compile_definitions(rover_mpi PRIVATE VISKORES_NO_ERROR_ON_MIXED_CUDA_CXX_TAG)
 
   # build includes
   # this allows us to include as <rover/header.hpp>
