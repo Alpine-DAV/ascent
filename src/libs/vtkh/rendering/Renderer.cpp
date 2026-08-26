@@ -245,118 +245,120 @@ Renderer::DoExecute()
 
   int total_renders = static_cast<int>(m_renders.size());
   int num_domains = static_cast<int>(m_input->GetNumberOfDomains());
+  std::vector<viskores::cont::DataSet> data_sets;
   for(int dom = 0; dom < num_domains; ++dom)
   {
     viskores::cont::DataSet data_set;
     viskores::Id domain_id;
     m_input->GetDomain(dom, data_set, domain_id);
-    if(!data_set.HasField(m_field_name))
+    data_sets.push_back(data_set);
+  }
+  for(int i = 0; i < total_renders; ++i)
+  {
+    if(m_renders[i].GetShadingOn())
     {
-      continue;
+      this->SetShadingOn(true);
+    }
+    else
+    {
+      this->SetShadingOn(false);
     }
 
-    const viskores::cont::UnknownCellSet &cellset = data_set.GetCellSet();
-    const viskores::cont::Field &field = data_set.GetField(m_field_name);
-    const viskores::cont::CoordinateSystem &coords = data_set.GetCoordinateSystem();
+    m_mapper->SetActiveColorTable(m_color_table);
 
-    if(cellset.GetNumberOfCells() == 0)
+    Render::viskoresCanvas &canvas = m_renders[i].GetCanvas();
+    const viskoresCamera &camera = m_renders[i].GetCamera();
+    bool tile_image = false;
+    viskores::Int32 tile_width = 0;
+    viskores::Int32 tile_height = 0;
+    if (m_renders[i].GetTiledRendering())
     {
-      continue;
+      switch(m_renders[i].GetTiledRenderingType())
+      {
+        case Render::TiledRenderingType::SquareTiles:
+          if (canvas.GetWidth() > m_renders[i].GetTileWidth() ||
+              canvas.GetHeight() > m_renders[i].GetTileWidth())
+          {
+            tile_image = true;
+            tile_width = m_renders[i].GetTileWidth();
+            tile_height = m_renders[i].GetTileWidth();
+            //std::cerr << "Square tiles: width=" << tile_width << ",height=" << tile_height << std::endl;
+          }
+          break;
+        case Render::TiledRenderingType::RectangularTiles:
+          if (canvas.GetWidth() > m_renders[i].GetTileWidth() ||
+              canvas.GetHeight() > m_renders[i].GetTileHeight())
+          {
+            tile_image = true;
+            tile_width = m_renders[i].GetTileWidth();
+            tile_height = m_renders[i].GetTileHeight();
+            //std::cerr << "Rectanglar tiles: width=" << tile_width << ",height=" << tile_height << std::endl;
+          }
+          break;
+        case Render::TiledRenderingType::HorizontalStrips:
+          if (canvas.GetHeight() > m_renders[i].GetTileHeight())
+          {
+            tile_image = true;
+            tile_width = canvas.GetWidth();
+            tile_height = m_renders[i].GetTileHeight();
+            //std::cerr << "Horizontal strips: width=" << tile_width << ",height=" << tile_height << std::endl;
+          }
+          break;
+        case Render::TiledRenderingType::VerticalStrips:
+          if (canvas.GetWidth() > m_renders[i].GetTileWidth())
+          {
+            tile_image = true;
+            tile_width = m_renders[i].GetTileWidth();
+            tile_height = canvas.GetHeight();
+            //std::cerr << "Vertical strips: width=" << tile_width << ",height=" << tile_height << std::endl;
+          }
+          break;
+        case Render::TiledRenderingType::OptimizedTiles:
+          if (canvas.GetWidth() > m_renders[i].GetTileWidth() ||
+              canvas.GetHeight() > m_renders[i].GetTileHeight())
+          {
+            tile_image = true;
+            int x_tile_size = m_renders[i].GetTileWidth();
+            int y_tile_size = m_renders[i].GetTileHeight();
+            int nx_canvas = canvas.GetWidth();
+            int ny_canvas = canvas.GetHeight();
+            int nx_tiles = int(double(nx_canvas - 1) / double(x_tile_size)) + 1;
+            int ny_tiles = int(double(ny_canvas - 1) / double(y_tile_size)) + 1;
+            tile_width = std::ceil(double(nx_canvas) / double(nx_tiles));
+            tile_height = std::ceil(double(ny_canvas) / double(ny_tiles));
+            //std::cerr << "Optimized tiles: width=" << tile_width << ",height=" << tile_height << std::endl;
+          }
+          break;
+      }
     }
-
-    for(int i = 0; i < total_renders; ++i)
+    if (tile_image)
     {
-      if(m_renders[i].GetShadingOn())
+      //std::cerr << "Calling RenderTiled" << std::endl;
+      RenderTiled(canvas,
+                  camera,
+                  data_sets,
+                  tile_width,
+                  tile_height);
+    }
+    else
+    {
+      //std::cerr << "Calling RenderCells" << std::endl;
+      for(int dom = 0; dom < data_sets.size(); ++dom)
       {
-        this->SetShadingOn(true);
-      }
-      else
-      {
-        this->SetShadingOn(false);
-      }
-
-      m_mapper->SetActiveColorTable(m_color_table);
-
-      Render::viskoresCanvas &canvas = m_renders[i].GetCanvas();
-      const viskoresCamera &camera = m_renders[i].GetCamera();
-      bool tile_image = false;
-      viskores::Int32 tile_width = 0;
-      viskores::Int32 tile_height = 0;
-      if (m_renders[i].GetTiledRendering())
-      {
-        switch(m_renders[i].GetTiledRenderingType())
+        if(!data_sets[dom].HasField(m_field_name))
         {
-          case Render::TiledRenderingType::SquareTiles:
-            if (canvas.GetWidth() > m_renders[i].GetTileWidth() ||
-                canvas.GetHeight() > m_renders[i].GetTileWidth())
-            {
-              tile_image = true;
-              tile_width = m_renders[i].GetTileWidth();
-              tile_height = m_renders[i].GetTileWidth();
-	      //std::cerr << "Square tiles: width=" << tile_width << ",height=" << tile_height << std::endl;
-            }
-            break;
-	  case Render::TiledRenderingType::RectangularTiles:
-            if (canvas.GetWidth() > m_renders[i].GetTileWidth() ||
-                canvas.GetHeight() > m_renders[i].GetTileHeight())
-            {
-              tile_image = true;
-              tile_width = m_renders[i].GetTileWidth();
-              tile_height = m_renders[i].GetTileHeight();
-	      //std::cerr << "Rectanglar tiles: width=" << tile_width << ",height=" << tile_height << std::endl;
-            }
-            break;
-	  case Render::TiledRenderingType::HorizontalStrips:
-            if (canvas.GetHeight() > m_renders[i].GetTileHeight())
-            {
-              tile_image = true;
-              tile_width = canvas.GetWidth();
-              tile_height = m_renders[i].GetTileHeight();
-	      //std::cerr << "Horizontal strips: width=" << tile_width << ",height=" << tile_height << std::endl;
-            }
-            break;
-	  case Render::TiledRenderingType::VerticalStrips:
-            if (canvas.GetWidth() > m_renders[i].GetTileWidth())
-            {
-              tile_image = true;
-              tile_width = m_renders[i].GetTileWidth();
-              tile_height = canvas.GetHeight();
-	      //std::cerr << "Vertical strips: width=" << tile_width << ",height=" << tile_height << std::endl;
-            }
-            break;
-	  case Render::TiledRenderingType::OptimizedTiles:
-            if (canvas.GetWidth() > m_renders[i].GetTileWidth() ||
-                canvas.GetHeight() > m_renders[i].GetTileHeight())
-            {
-              tile_image = true;
-	      int x_tile_size = m_renders[i].GetTileWidth();
-              int y_tile_size = m_renders[i].GetTileHeight();
-              int nx_canvas = canvas.GetWidth();
-              int ny_canvas = canvas.GetHeight();
-              int nx_tiles = int(double(nx_canvas - 1) / double(x_tile_size)) + 1;
-              int ny_tiles = int(double(ny_canvas - 1) / double(y_tile_size)) + 1;
-	      tile_width = std::ceil(double(nx_canvas) / double(nx_tiles));
-	      tile_height = std::ceil(double(ny_canvas) / double(ny_tiles));
-	      //std::cerr << "Optimized tiles: width=" << tile_width << ",height=" << tile_height << std::endl;
-            }
-            break;
+          continue;
         }
-      }
-      if (tile_image)
-      {
-        //std::cerr << "Calling RenderTiled" << std::endl;
-        RenderTiled(canvas,
-                    camera,
-                    cellset,
-                    field,
-                    coords,
-                    data_set,
-		    tile_width,
-		    tile_height);
-      }
-      else
-      {
-        //std::cerr << "Calling RenderCells" << std::endl;
+
+        const viskores::cont::UnknownCellSet &cellset = data_sets[dom].GetCellSet();
+        const viskores::cont::Field &field = data_sets[dom].GetField(m_field_name);
+        const viskores::cont::CoordinateSystem &coords = data_sets[dom].GetCoordinateSystem();
+
+        if(cellset.GetNumberOfCells() == 0)
+        {
+          continue;
+        }
+
         m_mapper->SetCanvas(&canvas);
         m_mapper->RenderCells(cellset,
                               coords,
@@ -367,8 +369,6 @@ Renderer::DoExecute()
       }
     }
   }
-
-
 }
 
 void
@@ -395,10 +395,7 @@ Renderer::ImageToCanvas(Image &image, viskores::rendering::Canvas &canvas, bool 
 void
 Renderer::RenderTiled(Render::viskoresCanvas &canvas,
                       const viskoresCamera &camera,
-                      const viskores::cont::UnknownCellSet &cellset,
-                      const viskores::cont::Field &field,
-                      const viskores::cont::CoordinateSystem &coords,
-                      viskores::cont::DataSet &data_set,
+                      std::vector<viskores::cont::DataSet> &data_sets,
                       const viskores::Int32 tile_width,
                       const viskores::Int32 tile_height)
 {
@@ -409,6 +406,7 @@ Renderer::RenderTiled(Render::viskoresCanvas &canvas,
   const int ny_canvas = canvas.GetHeight();
   const int nx_tiles = int(double(nx_canvas - 1) / double(x_tile_size)) + 1;
   const int ny_tiles = int(double(ny_canvas - 1) / double(y_tile_size)) + 1;
+  //std::cerr << "x_tile_size=" << x_tile_size << ",y_tile_size=" << y_tile_size << std::endl;
   //std::cerr << "nx_tiles=" << nx_tiles << ",ny_tiles=" << ny_tiles << std::endl;
 
   // Create a canvas for doing the tiling.
@@ -464,12 +462,29 @@ Renderer::RenderTiled(Render::viskoresCanvas &canvas,
 
       // Render the tile.
       tile_canvas->Clear();
-      m_mapper->RenderCells(cellset,
-                            coords,
-                            field,
-                            m_color_table,
-                            tile_camera,
-                            m_range);
+      for(int dom = 0; dom < data_sets.size(); ++dom)
+      {
+        if(!data_sets[dom].HasField(m_field_name))
+        {
+          continue;
+        }
+
+        const viskores::cont::UnknownCellSet &cellset = data_sets[dom].GetCellSet();
+        const viskores::cont::Field &field = data_sets[dom].GetField(m_field_name);
+        const viskores::cont::CoordinateSystem &coords = data_sets[dom].GetCoordinateSystem();
+
+        if(cellset.GetNumberOfCells() == 0)
+        {
+          continue;
+        }
+
+        m_mapper->RenderCells(cellset,
+                              coords,
+                              field,
+                              m_color_table,
+                              tile_camera,
+                              m_range);
+      }
 
       // Copy the image from the tile into the output buffer. Note that
       // the last tile in each row and all the tiles in the last row may
@@ -488,17 +503,17 @@ Renderer::RenderTiled(Render::viskoresCanvas &canvas,
         for(int ii = 0; ii < x_max; ++ii)
         {
           if (tile_depth_buffer[ll2] < depth_buffer[kk2])
-            {
-              color_buffer[kk]   = tile_color_buffer[ll];
-              color_buffer[kk+1] = tile_color_buffer[ll+1];
-              color_buffer[kk+2] = tile_color_buffer[ll+2];
-              color_buffer[kk+3] = tile_color_buffer[ll+3];
-              depth_buffer[kk2] = tile_depth_buffer[ll2];
-              kk  += 4;
-              kk2 += 1;
-              ll  += 4;
-              ll2 += 1;
-            }
+          {
+            color_buffer[kk]   = tile_color_buffer[ll];
+            color_buffer[kk+1] = tile_color_buffer[ll+1];
+            color_buffer[kk+2] = tile_color_buffer[ll+2];
+            color_buffer[kk+3] = tile_color_buffer[ll+3];
+            depth_buffer[kk2] = tile_depth_buffer[ll2];
+          }
+          kk  += 4;
+          kk2 += 1;
+          ll  += 4;
+          ll2 += 1;
         }
       }
       xpan -= xpan_delta;

@@ -72,12 +72,9 @@ protected:
 
   void RenderTiled(Render::viskoresCanvas &canvas,
                    const viskoresCamera &camera,
-                   const viskores::cont::UnknownCellSet &cellset,
-                   const viskores::cont::Field &field,
-                   const viskores::cont::CoordinateSystem &coords,
-                   viskores::cont::DataSet &data_set,
-		   const viskores::Int32 tile_width,
-		   const viskores::Int32 tile_height);
+                   std::vector<viskores::cont::DataSet> &data_sets,
+                   const viskores::Int32 tile_width,
+                   const viskores::Int32 tile_height);
 };
 
 } // namespace vtkh
