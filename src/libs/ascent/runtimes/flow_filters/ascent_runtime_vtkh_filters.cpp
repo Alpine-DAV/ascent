@@ -3366,9 +3366,9 @@ VTKHSample::declare_interface(Node &i)
     conduit::Node &box_schema = param_schema["properties/box"];
     box_schema["type"] = "object";
     box_schema["additionalProperties"] = false;
-    vec3_schema_anyOf(box_schema["properties/dims"]);
-    vec3_schema_anyOf(box_schema["properties/min"]);
-    vec3_schema_anyOf(box_schema["properties/max"]);
+    vec3_schema_anyOf(box_schema["properties/dims"], "i", "j", "k");
+    vec3_schema_anyOf(box_schema["properties/min"], true);
+    vec3_schema_anyOf(box_schema["properties/max"], true);
 
     // --- Uniform Grid ---
     conduit::Node &uniform_grid_schema = param_schema["properties/uniform_grid"];
