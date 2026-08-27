@@ -143,6 +143,7 @@ private:
     static void                  AddField(const std::string &field_name,
                                           const conduit::Node &n_field,
                                           const std::string &topo_name,
+                                          const conduit::Node &n_topo,
                                           int neles,
                                           int nverts,
                                           viskores::cont::DataSet *dset,
@@ -191,5 +192,4 @@ private:
 //-----------------------------------------------------------------------------
 // -- end header ifdef guard
 //-----------------------------------------------------------------------------
-
 
