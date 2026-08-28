@@ -51,6 +51,7 @@ protected:
   int m_width;
   int m_height;
   int m_num_points;
+  std::string m_mode;
 
   viskores::cont::ArrayHandle<viskores::Float64> m_rays_pts_xs;
   viskores::cont::ArrayHandle<viskores::Float64> m_rays_pts_ys;
@@ -72,6 +73,8 @@ protected:
 
   PayloadImage * Convert(Result &result);
   ScalarRenderer::Result Convert(PayloadImage &image, std::vector<std::string> &names);
+  template <typename Precision>
+  void GenerateRays(const std::string &mode, viskores::rendering::raytracing::Ray<Precision> &rays);
   //void ImageToDataSet(Image &image, viskores::rendering::Canvas &canvas, bool get_depth);
 
 };

@@ -6,12 +6,14 @@
 #include <vtkh/Logger.hpp>
 #include <vtkh/utils/viskores_array_utils.hpp>
 #include <vtkh/utils/viskores_dataset_info.hpp>
+#include <viskores/cont/Algorithm.h>
 #include <viskores/rendering/raytracing/Logger.h>
+#include <viskores/rendering/raytracing/RayOperations.h>
 #include <viskores/rendering/Camera.h>
 #include <viskores/rendering/raytracing/Camera.h>
 
-#include <viskores/rendering/ScalarRenderer.h>
 
+#include <viskores/rendering/ScalarRenderer.h>
 #include <conduit/conduit.hpp>
 #include <conduit/conduit_relay.hpp>
 #include <conduit/conduit_blueprint.hpp>
@@ -72,7 +74,8 @@ filter_scalar_fields(viskores::cont::DataSet &dataset,
 
 ScalarRenderer::ScalarRenderer()
   : m_width(1024),
-    m_height(1024)
+    m_height(1024),
+    m_mode("camera")
 {
 }
 
@@ -90,6 +93,7 @@ void
 ScalarRenderer::SetCamera(viskoresCamera &camera)
 {
   m_camera = camera;
+  m_mode = "camera";
 }
 
 
@@ -284,6 +288,8 @@ namespace detail
 //         std::cout << info.to_yaml() << std::endl;
 //     }
 // }
+
+
 
 template <typename Precision>
 void
@@ -525,8 +531,20 @@ ScalarRenderer::DoExecute()
     {
       no_data = num_cells == 0;
       // TODO
-      // Result res = renderers[dom].Render(Rays);
-      Result res = renderers[dom].Render(m_camera);
+
+      //detail::GenerateRays
+      Result res;
+      if(m_mode == "camera")
+      {
+          res = renderers[dom].Render(m_camera);
+      }
+      else if(m_mode == "rays")
+      {
+          viskores::rendering::raytracing::Ray<viskores::Float32> rays;
+          GenerateRays(m_mode,rays);
+          std::cout << "Rays num rays " << rays.NumRays << std::endl;
+          res = renderers[dom].Render(rays);
+      }
 
       field_names = res.ScalarNames;
       PayloadImage *pimage = Convert(res);
@@ -638,25 +656,26 @@ ScalarRenderer::DoExecute()
         const int domain_id = 0;
         this->m_output->AddDomain(dset, domain_id);
 
-        // create a mesh that represents the rays
 
-        // requires viskores 1.1.1
-        // create rays from camera
-        viskores::Bounds cam_bounds(bounds);
         viskores::rendering::raytracing::Ray<viskores::Float32> rays;
-        viskores::rendering::raytracing::Camera ray_cam;
-        // we need a ray tracing camera here, not a rendering camera
-        // viskores::rendering::raytracing::Camera ray_cam = m_camera.CreateRaytracingCamera((viskores::Int32)m_width,
-        //                                                                                   (viskores::Int32)m_height);
+        if(m_mode == "camera")
+        {
+            // create rays from camera
+            viskores::Bounds cam_bounds(bounds);
+            viskores::rendering::raytracing::Camera ray_cam = m_camera.CreateRaytracingCamera((viskores::Int32)m_width,
+                                                                                              (viskores::Int32)m_height);
+            std::cout << "ext w vs h " << m_width << " "  << m_height << std::endl;
 
-        std::cout << "ext w vs h " << m_width << " "  << m_height << std::endl;
-        ray_cam.SetParameters(m_camera,m_width, m_height);
-        ray_cam.CreateRays(rays, cam_bounds);
-        rays.Buffers.at(0).InitConst(0.f);
+            ray_cam.CreateRays(rays, cam_bounds);
+            rays.Buffers.at(0).InitConst(0.f);
+        }
+        else if(m_mode == "rays")
+        {
+            GenerateRays(m_mode,rays);
+        }
 
+        // create a mesh that represents the rays
         conduit::Node rays_mesh;
-        // detail::CreateRaysMesh(final_result, rays_mesh); //rays, rays_mesh);
-        // TODO viskores 1.1.1.
         detail::CreateRaysMesh(final_result, rays, rays_mesh);
         static int scount = 0;
         conduit::relay::io::blueprint::save_mesh(rays_mesh,conduit_fmt::format("tout_{:06d}",scount));
@@ -666,6 +685,84 @@ ScalarRenderer::DoExecute()
   }
 
 }
+
+template <typename Precision>
+void
+ScalarRenderer::GenerateRays(const std::string &mode,
+                             viskores::rendering::raytracing::Ray<Precision> &rays)
+{
+    // if(mode == "camera")
+    // {
+    //     // viskores::rendering::raytracing::Camera ray_cam = m_camera.CreateRaytracingCamera((viskores::Int32)m_width,
+    //     //                                                                                   (viskores::Int32)m_height);
+    //     // // ray_cam.CreateRays(rays, cam_bounds);
+    //     // rays.Buffers.at(0).InitConst(0.f);
+    // }
+    // else if(mode == "rays")
+    // {
+        // viskores::rendering::raytracing::Camera ray_cam = m_camera.CreateRaytracingCamera((viskores::Int32)m_width,
+        //                                                                                   (viskores::Int32)m_height);
+        // ray_cam.CreateRays(rays, cam_bounds);
+
+        std::cout <<  "GO" << std::endl;
+        std::cout <<  rays.NumRays << std::endl;
+        std::cout <<  m_rays_pts_xs.GetNumberOfValues() << std::endl;
+        viskores::rendering::raytracing::RayOperations::Resize(rays, m_rays_pts_xs.GetNumberOfValues());
+        std::cout <<  rays.NumRays << std::endl;
+
+        Precision infinity;
+        viskores::rendering::raytracing::GetInfinity(infinity);
+
+        viskores::cont::ArrayHandleConstant<Precision> inf(infinity, rays.NumRays);
+        viskores::cont::Algorithm::Copy(inf, rays.MaxDistance);
+
+        viskores::cont::ArrayHandleConstant<Precision> zero(0, rays.NumRays);
+        viskores::cont::Algorithm::Copy(zero, rays.MinDistance);
+        viskores::cont::Algorithm::Copy(zero, rays.Distance);
+
+        viskores::cont::ArrayHandleConstant<viskores::Id> initHit(-2, rays.NumRays);
+        viskores::cont::Algorithm::Copy(initHit, rays.HitIdx);
+
+
+        viskores::cont::Algorithm::Copy(m_rays_pts_xs, rays.OriginX);
+        viskores::cont::Algorithm::Copy(m_rays_pts_ys, rays.OriginY);
+        viskores::cont::Algorithm::Copy(m_rays_pts_zs, rays.OriginZ);
+
+        viskores::cont::Algorithm::Copy(m_rays_dirs_xs, rays.DirX);
+        viskores::cont::Algorithm::Copy(m_rays_dirs_ys, rays.DirY);
+        viskores::cont::Algorithm::Copy(m_rays_dirs_zs, rays.DirZ);
+
+        // TODO FILL
+        for(int i=0;i<rays.NumRays;i++)
+        {
+            rays.PixelIdx.WritePortal().Set(i,i);
+        }
+
+        std::cout <<  rays.OriginX.GetNumberOfValues() << std::endl;
+        std::cout <<  rays.OriginY.GetNumberOfValues() << std::endl;
+        std::cout <<  rays.OriginZ.GetNumberOfValues() << std::endl;
+
+        std::cout <<  rays.DirX.GetNumberOfValues() << std::endl;
+        std::cout <<  rays.DirY.GetNumberOfValues() << std::endl;
+        std::cout <<  rays.DirZ.GetNumberOfValues() << std::endl;
+
+        std::cout <<  rays.PixelIdx.GetNumberOfValues() << std::endl;
+        rays.EnableIntersectionData();
+        rays.Buffers.at(0).InitConst(0.f);
+        std::cout <<  rays.NumRays << std::endl;
+
+    std::cerr << "HitIdx:          " << rays.HitIdx.GetNumberOfValues() << "\n";
+    std::cerr << "Distance:        " << rays.Distance.GetNumberOfValues() << "\n";
+    std::cerr << "Dir:             " << rays.Dir.GetNumberOfValues() << "\n";
+    std::cerr << "Origin:          " << rays.Origin.GetNumberOfValues() << "\n";
+    std::cerr << "IntersectionX:   " << rays.IntersectionX.GetNumberOfValues() << "\n";
+    std::cerr << "IntersectionY:   " << rays.IntersectionY.GetNumberOfValues() << "\n";
+    std::cerr << "IntersectionZ:   " << rays.IntersectionZ.GetNumberOfValues() << "\n";
+    std::cerr << "MaxDistance:     " << rays.MaxDistance.GetNumberOfValues() << "\n";
+    
+        rays.PrintRay(0);
+    // }
+};
 
 
 ScalarRenderer::Result
@@ -785,6 +882,8 @@ ScalarRenderer::SetRays(viskores::cont::ArrayHandle<viskores::Float64> pts_xs,
     m_rays_dirs_zs = dirs_zs;
 
     m_rays_max_distance = max_dist;
+
+    m_mode = "rays";
 }
 
 

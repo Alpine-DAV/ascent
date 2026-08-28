@@ -4193,7 +4193,7 @@ VTKHProject2d::execute()
         float64_accessor pts  = params()["rays/points"].value();
         float64_accessor nmls = params()["rays/normals"].value();
         float64 max_dist      = params()["rays/max_distance"].to_value();
-        index_t number_of_rays = pts.number_of_elements();
+        index_t number_of_rays = pts.number_of_elements() / 3;
 
         viskores::cont::ArrayHandle<viskores::Float64> pts_x;
         viskores::cont::ArrayHandle<viskores::Float64> pts_y;
