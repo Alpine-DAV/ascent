@@ -56,10 +56,9 @@ struct CoordsToVec3d
     for(viskores::Id i = 0; i < n; ++i)
     {
       const auto v = portal.Get(i);
-      this->Coords[static_cast<size_t>(i)] =
-        viskores::Vec<viskores::Float64,3>(static_cast<viskores::Float64>(v[0]),
-                                           static_cast<viskores::Float64>(v[1]),
-                                           0.0);
+      this->Coords[static_cast<size_t>(i)] = viskores::Vec<viskores::Float64,3>(static_cast<viskores::Float64>(v[0]),
+                                                                                static_cast<viskores::Float64>(v[1]),
+                                                                                0.0);
     }
   }
 
@@ -142,8 +141,7 @@ viskoresLinearExtrude::Run(viskores::cont::DataSet &input,
     throw Error("vtkh::LinearExtrude expects an unstructured cell set");
   }
 
-  const viskores::Id num_points_per_plane =
-    input.GetCoordinateSystem(0).GetData().GetNumberOfValues();
+  const viskores::Id num_points_per_plane = input.GetCoordinateSystem(0).GetData().GetNumberOfValues();
   if(num_points_per_plane <= 0 || num_cells <= 0)
   {
     return viskores::cont::DataSet{};
@@ -180,15 +178,13 @@ viskoresLinearExtrude::Run(viskores::cont::DataSet &input,
   {
     auto coords = input.GetCoordinateSystem(0).GetData();
     detail::CoordsToVec3d to_vec(base_coords);
-    using CoordValueTypes =
-      viskores::List<viskores::Vec<viskores::Float32,2>,
-                     viskores::Vec<viskores::Float64,2>,
-                     viskores::Vec<viskores::Float32,3>,
-                     viskores::Vec<viskores::Float64,3>>;
-    using CoordStorageTypes =
-      viskores::List<viskores::cont::StorageTagBasic,
-                     viskores::cont::StorageTagSOA,
-                     viskores::cont::StorageTagSOAStride>;
+    using CoordValueTypes = viskores::List<viskores::Vec<viskores::Float32,2>,
+                                           viskores::Vec<viskores::Float64,2>,
+                                           viskores::Vec<viskores::Float32,3>,
+                                           viskores::Vec<viskores::Float64,3>>;
+    using CoordStorageTypes = viskores::List<viskores::cont::StorageTagBasic,
+                                             viskores::cont::StorageTagSOA,
+                                             viskores::cont::StorageTagSOAStride>;
     coords.CastAndCallForTypes<CoordValueTypes, CoordStorageTypes>(to_vec);
   }
 
@@ -199,8 +195,7 @@ viskoresLinearExtrude::Run(viskores::cont::DataSet &input,
     auto out_portal = out_coords.WritePortal();
     for(viskores::Int32 p = 0; p < planes; ++p)
     {
-      const viskores::Float64 t =
-        static_cast<viskores::Float64>(p) / static_cast<viskores::Float64>(steps);
+      const viskores::Float64 t = static_cast<viskores::Float64>(p) / static_cast<viskores::Float64>(steps);
       const viskores::Vec<viskores::Float64,3> delta = vector * t;
       const viskores::Id point_offset = static_cast<viskores::Id>(p) * num_points_per_plane;
       for(viskores::Id i = 0; i < num_points_per_plane; ++i)
@@ -228,10 +223,8 @@ viskoresLinearExtrude::Run(viskores::cont::DataSet &input,
 
       for(viskores::Id c = 0; c < num_cells; ++c)
       {
-        const viskores::Id a =
-          static_cast<viskores::Id>(conn32_vec[static_cast<size_t>(c * 2 + 0)]);
-        const viskores::Id b =
-          static_cast<viskores::Id>(conn32_vec[static_cast<size_t>(c * 2 + 1)]);
+        const viskores::Id a = static_cast<viskores::Id>(conn32_vec[static_cast<size_t>(c * 2 + 0)]);
+        const viskores::Id b = static_cast<viskores::Id>(conn32_vec[static_cast<size_t>(c * 2 + 1)]);
 
         const viskores::Id out_cell_id = static_cast<viskores::Id>(s) * num_cells + c;
         const viskores::Id out_off = out_cell_id * 4;
@@ -259,12 +252,9 @@ viskoresLinearExtrude::Run(viskores::cont::DataSet &input,
 
       for(viskores::Id c = 0; c < num_cells; ++c)
       {
-        const viskores::Id a =
-          static_cast<viskores::Id>(conn32_vec[static_cast<size_t>(c * 3 + 0)]);
-        const viskores::Id b =
-          static_cast<viskores::Id>(conn32_vec[static_cast<size_t>(c * 3 + 1)]);
-        const viskores::Id cc =
-          static_cast<viskores::Id>(conn32_vec[static_cast<size_t>(c * 3 + 2)]);
+        const viskores::Id a = static_cast<viskores::Id>(conn32_vec[static_cast<size_t>(c * 3 + 0)]);
+        const viskores::Id b = static_cast<viskores::Id>(conn32_vec[static_cast<size_t>(c * 3 + 1)]);
+        const viskores::Id cc = static_cast<viskores::Id>(conn32_vec[static_cast<size_t>(c * 3 + 2)]);
 
         const viskores::Id out_cell_id = static_cast<viskores::Id>(s) * num_cells + c;
         const viskores::Id out_off = out_cell_id * 6;
@@ -294,14 +284,10 @@ viskoresLinearExtrude::Run(viskores::cont::DataSet &input,
 
       for(viskores::Id c = 0; c < num_cells; ++c)
       {
-        const viskores::Id a =
-          static_cast<viskores::Id>(conn32_vec[static_cast<size_t>(c * 4 + 0)]);
-        const viskores::Id b =
-          static_cast<viskores::Id>(conn32_vec[static_cast<size_t>(c * 4 + 1)]);
-        const viskores::Id cc =
-          static_cast<viskores::Id>(conn32_vec[static_cast<size_t>(c * 4 + 2)]);
-        const viskores::Id d =
-          static_cast<viskores::Id>(conn32_vec[static_cast<size_t>(c * 4 + 3)]);
+        const viskores::Id a = static_cast<viskores::Id>(conn32_vec[static_cast<size_t>(c * 4 + 0)]);
+        const viskores::Id b = static_cast<viskores::Id>(conn32_vec[static_cast<size_t>(c * 4 + 1)]);
+        const viskores::Id cc = static_cast<viskores::Id>(conn32_vec[static_cast<size_t>(c * 4 + 2)]);
+        const viskores::Id d = static_cast<viskores::Id>(conn32_vec[static_cast<size_t>(c * 4 + 3)]);
 
         const viskores::Id out_cell_id = static_cast<viskores::Id>(s) * num_cells + c;
         const viskores::Id out_off = out_cell_id * 8;
@@ -325,14 +311,13 @@ viskoresLinearExtrude::Run(viskores::cont::DataSet &input,
     viskores::cont::CoordinateSystem(input.GetCoordinateSystem(0).GetName(), out_coords));
 
   const viskores::Id rep_cells = static_cast<viskores::Id>(steps);
-  using FieldStorageTypes =
-    viskores::List<viskores::cont::StorageTagBasic,
-                   viskores::cont::StorageTagSOA,
-                   viskores::cont::StorageTagSOAStride,
-                   viskores::cont::StorageTagUniformPoints,
-                   viskores::cont::StorageTagCartesianProduct<viskores::cont::StorageTagBasic,
-                                                              viskores::cont::StorageTagBasic,
-                                                              viskores::cont::StorageTagBasic>>;
+  using FieldStorageTypes = viskores::List<viskores::cont::StorageTagBasic,
+                                           viskores::cont::StorageTagSOA,
+                                           viskores::cont::StorageTagSOAStride,
+                                           viskores::cont::StorageTagUniformPoints,
+                                          viskores::cont::StorageTagCartesianProduct<viskores::cont::StorageTagBasic,
+                                                                                     viskores::cont::StorageTagBasic,
+                                                                                     viskores::cont::StorageTagBasic>>;
 
   for(viskores::IdComponent i = 0; i < input.GetNumberOfFields(); ++i)
   {
