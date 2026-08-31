@@ -63,6 +63,8 @@ set(BASIC_TESTS t_ascent_smoke
                 t_ascent_vector_ops
                 t_ascent_flow_runtime
                 t_ascent_recenter
+                t_ascent_revolve
+                t_ascent_extrude
                 t_ascent_rover
                 t_ascent_lagrangian
                 t_ascent_log

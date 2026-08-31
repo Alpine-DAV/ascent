@@ -1,0 +1,24 @@
+# An example of the extrude filter using an RZ cylinder mesh.
+
+- action: "add_pipelines"
+  pipelines:
+    pl1:
+      f1:
+        type: "extrude"
+        params:
+          vector:
+            x: 0.0
+            y: 5.0
+            z: 0.0
+          steps: 8
+
+- action: "add_scenes"
+  scenes:
+    s1:
+      plots:
+        p1:
+          type: "pseudocolor"
+          field: "cyl"
+          pipeline: "pl1"
+      image_prefix: "/path/to/output/tout_extrude_rz"
+
