@@ -77,10 +77,9 @@ struct CoordsToVec3d
     for(viskores::Id i = 0; i < n; ++i)
     {
       const auto v = portal.Get(i);
-      this->Coords[static_cast<size_t>(i)] =
-        viskores::Vec<viskores::Float64,3>(static_cast<viskores::Float64>(v[0]),
-                                           static_cast<viskores::Float64>(v[1]),
-                                           static_cast<viskores::Float64>(v[2]));
+      this->Coords[static_cast<size_t>(i)] = viskores::Vec<viskores::Float64,3>(static_cast<viskores::Float64>(v[0]),
+                                                                                static_cast<viskores::Float64>(v[1]),
+                                                                                static_cast<viskores::Float64>(v[2]));
     }
   }
 
@@ -150,16 +149,14 @@ viskoresRevolve::Run(viskores::cont::DataSet &input,
 
   if(unknown_cs.IsType<viskores::cont::CellSetSingleType<>>())
   {
-    const viskores::cont::CellSetSingleType<> cs =
-      unknown_cs.AsCellSet<viskores::cont::CellSetSingleType<>>();
+    const viskores::cont::CellSetSingleType<> cs = unknown_cs.AsCellSet<viskores::cont::CellSetSingleType<>>();
     num_cells = cs.GetNumberOfCells();
     conn_ids = cs.GetConnectivityArray(viskores::TopologyElementTagCell(),
                                        viskores::TopologyElementTagPoint());
   }
   else if(unknown_cs.IsType<viskores::cont::CellSetExplicit<>>())
   {
-    const viskores::cont::CellSetExplicit<> cs =
-      unknown_cs.AsCellSet<viskores::cont::CellSetExplicit<>>();
+    const viskores::cont::CellSetExplicit<> cs = unknown_cs.AsCellSet<viskores::cont::CellSetExplicit<>>();
     num_cells = cs.GetNumberOfCells();
     conn_ids = cs.GetConnectivityArray(viskores::TopologyElementTagCell(),
                                        viskores::TopologyElementTagPoint());
@@ -200,8 +197,7 @@ viskoresRevolve::Run(viskores::cont::DataSet &input,
   }
 
   const viskores::Int32 planes = periodic ? steps : (steps + 1);
-  const viskores::Id num_out_points =
-    num_points_per_plane * static_cast<viskores::Id>(planes);
+  const viskores::Id num_out_points = num_points_per_plane * static_cast<viskores::Id>(planes);
 
   std::vector<viskores::Vec<viskores::Float64,3>> base_coords;
   {
@@ -230,8 +226,7 @@ viskoresRevolve::Run(viskores::cont::DataSet &input,
     for(viskores::Int32 p = 0; p < planes; ++p)
     {
       const viskores::Float64 theta = start_radians + static_cast<viskores::Float64>(p) * delta;
-      const viskores::Id point_offset =
-        static_cast<viskores::Id>(p) * num_points_per_plane;
+      const viskores::Id point_offset = static_cast<viskores::Id>(p) * num_points_per_plane;
       for(viskores::Id i = 0; i < num_points_per_plane; ++i)
       {
         const auto rp = detail::rotate_about_axis(base_coords[static_cast<size_t>(i)],
@@ -263,12 +258,9 @@ viskoresRevolve::Run(viskores::cont::DataSet &input,
 
       for(viskores::Id c = 0; c < num_cells; ++c)
       {
-        const viskores::Id a =
-          static_cast<viskores::Id>(conn32_vec[static_cast<size_t>(c * 3 + 0)]);
-        const viskores::Id b =
-          static_cast<viskores::Id>(conn32_vec[static_cast<size_t>(c * 3 + 1)]);
-        const viskores::Id cc =
-          static_cast<viskores::Id>(conn32_vec[static_cast<size_t>(c * 3 + 2)]);
+        const viskores::Id a = static_cast<viskores::Id>(conn32_vec[static_cast<size_t>(c * 3 + 0)]);
+        const viskores::Id b = static_cast<viskores::Id>(conn32_vec[static_cast<size_t>(c * 3 + 1)]);
+        const viskores::Id cc = static_cast<viskores::Id>(conn32_vec[static_cast<size_t>(c * 3 + 2)]);
 
         const viskores::Id out_cell_id = static_cast<viskores::Id>(s) * num_cells + c;
         const viskores::Id out_off = out_cell_id * 6;
@@ -303,10 +295,8 @@ viskoresRevolve::Run(viskores::cont::DataSet &input,
 
       for(viskores::Id c = 0; c < num_cells; ++c)
       {
-        const viskores::Id a =
-          static_cast<viskores::Id>(conn32_vec[static_cast<size_t>(c * 2 + 0)]);
-        const viskores::Id b =
-          static_cast<viskores::Id>(conn32_vec[static_cast<size_t>(c * 2 + 1)]);
+        const viskores::Id a = static_cast<viskores::Id>(conn32_vec[static_cast<size_t>(c * 2 + 0)]);
+        const viskores::Id b = static_cast<viskores::Id>(conn32_vec[static_cast<size_t>(c * 2 + 1)]);
 
         const viskores::Id out_cell_id = static_cast<viskores::Id>(s) * num_cells + c;
         const viskores::Id out_off = out_cell_id * 4;
