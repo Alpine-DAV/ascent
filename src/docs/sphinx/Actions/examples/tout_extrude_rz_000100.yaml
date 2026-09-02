@@ -19,7 +19,7 @@
       type: "relay"
       pipeline: "pl1"
       params: 
-        path: "/usr/WS1/nicolem/sadbox/ascent/scripts/build_ascent/build/ascent-checkout/tests/_output/tout_extrude_rz_hdf5"
+        path: "ascent/scripts/build_ascent/build/ascent-checkout/tests/_output/tout_extrude_rz_hdf5"
         protocol: "blueprint/mesh/hdf5"
 - 
   action: "add_scenes"
@@ -32,7 +32,7 @@
           pipeline: "pl1"
       renders: 
         r1: 
-          image_prefix: "/usr/WS1/nicolem/sadbox/ascent/scripts/build_ascent/build/ascent-checkout/tests/_output/tout_extrude_rz"
+          image_prefix: "ascent/scripts/build_ascent/build/ascent-checkout/tests/_output/tout_extrude_rz"
           camera: 
             look_at: [0.0, 0.0, 0.0]
             position: [20.0, 20.0, 20.0]
