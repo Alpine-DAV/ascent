@@ -1,0 +1,39 @@
+#An example of linearly extruding a dataset 8 steps along a vector.
+
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "extrude"
+        params: 
+          vector: 
+            x: 0.0
+            z: 5.0
+            y: 0.0
+          steps: 8
+- 
+  action: "add_extracts"
+  extracts: 
+    e1: 
+      type: "relay"
+      pipeline: "pl1"
+      params: 
+        path: "/usr/WS1/nicolem/sadbox/ascent/scripts/build_ascent/build/ascent-checkout/tests/_output/tout_extrude_rz_hdf5"
+        protocol: "blueprint/mesh/hdf5"
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "cyl"
+          pipeline: "pl1"
+      renders: 
+        r1: 
+          image_prefix: "/usr/WS1/nicolem/sadbox/ascent/scripts/build_ascent/build/ascent-checkout/tests/_output/tout_extrude_rz"
+          camera: 
+            look_at: [0.0, 0.0, 0.0]
+            position: [20.0, 20.0, 20.0]
+            up: [0.0, 1.0, 0.0]

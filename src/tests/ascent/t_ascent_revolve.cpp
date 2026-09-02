@@ -326,7 +326,6 @@ run_revolve_contour_lines_case(const double angle, const bool periodic)
   scenes["s1/renders/r1/camera/look_at"] = {0.0, 0.0, 0.0};
   scenes["s1/renders/r1/camera/position"] = {20.0, 20.0, 20.0};
   scenes["s1/renders/r1/camera/up"] = {0.0, 1.0, 0.0};
-  scenes["s1/renders/r1/camera/zoom"] = 0.8;
   scenes["s2/plots/p1/type"] = "pseudocolor";
   scenes["s2/plots/p1/field"] = "braid";
   scenes["s2/plots/p1/pipeline"] = "pl1";
@@ -334,7 +333,9 @@ run_revolve_contour_lines_case(const double angle, const bool periodic)
   scenes["s2/renders/r1/camera/look_at"] = {0.0, 0.0, 0.0};
   scenes["s2/renders/r1/camera/position"] = {20.0, 20.0, 20.0};
   scenes["s2/renders/r1/camera/up"] = {0.0, 1.0, 0.0};
-  scenes["s2/renders/r1/camera/zoom"] = 0.8;
+
+  // print our full actions tree
+  std::cout << actions.to_yaml() << std::endl;
 
   Ascent ascent;
   ascent.open();
@@ -346,6 +347,9 @@ run_revolve_contour_lines_case(const double angle, const bool periodic)
   EXPECT_TRUE(check_test_image(output_base_pseudo, 0.01f));
 
   verify_revolve_mesh_checks(output_extract_root, steps, periodic, "quad");
+  std::stringstream ss;
+  ss << "An example of revolving (rotationally extruding) a dataset " << angle << " degrees over " << steps << " steps.";
+  ASCENT_ACTIONS_DUMP(actions,output_base,ss.str());
 }
 
 void
@@ -415,7 +419,6 @@ run_revolve_slice_surface_case(const double angle, const bool periodic)
   scenes["s1/renders/r1/camera/look_at"] = {0.0, 0.0, 0.0};
   scenes["s1/renders/r1/camera/position"] = {20.0, 20.0, 20.0};
   scenes["s1/renders/r1/camera/up"] = {0.0, 1.0, 0.0};
-  scenes["s1/renders/r1/camera/zoom"] = 0.8;
   scenes["s2/plots/p1/type"] = "pseudocolor";
   scenes["s2/plots/p1/field"] = "braid";
   scenes["s2/plots/p1/pipeline"] = "pl1";
@@ -423,7 +426,9 @@ run_revolve_slice_surface_case(const double angle, const bool periodic)
   scenes["s2/renders/r1/camera/look_at"] = {0.0, 0.0, 0.0};
   scenes["s2/renders/r1/camera/position"] = {20.0, 20.0, 20.0};
   scenes["s2/renders/r1/camera/up"] = {0.0, 1.0, 0.0};
-  scenes["s2/renders/r1/camera/zoom"] = 0.8;
+
+  // print our full actions tree
+  std::cout << actions.to_yaml() << std::endl;
 
   Ascent ascent;
   ascent.open();
@@ -435,6 +440,9 @@ run_revolve_slice_surface_case(const double angle, const bool periodic)
   EXPECT_TRUE(check_test_image(output_base_pseudo, 0.01f));
 
   verify_revolve_z_extent(output_extract_root, "wedge");
+  std::stringstream ss;
+  ss << "An example of revolving (rotationally extruding) a dataset " << angle << " degrees over " << steps << " steps.";
+  ASCENT_ACTIONS_DUMP(actions,output_base,ss.str());
 }
 
 void
@@ -505,6 +513,9 @@ run_revolve_rz_case(const double angle, const bool periodic)
   scenes["s2/renders/r1/camera/position"] = {20.0, 20.0, 20.0};
   scenes["s2/renders/r1/camera/up"] = {0.0, 1.0, 0.0};
 
+  // print our full actions tree
+  std::cout << actions.to_yaml() << std::endl;
+
   Ascent ascent;
   ascent.open();
   ascent.publish(data);
@@ -515,6 +526,9 @@ run_revolve_rz_case(const double angle, const bool periodic)
   EXPECT_TRUE(check_test_image(output_base_pseudo, 0.01f));
 
   verify_revolve_mesh_checks(output_extract_root, steps, periodic, "wedge");
+  std::stringstream ss;
+  ss << "An example of revolving (rotationally extruding) a dataset " << angle << " degrees over " << steps << " steps.";
+  ASCENT_ACTIONS_DUMP(actions,output_base,ss.str());
 }
 
 } // namespace

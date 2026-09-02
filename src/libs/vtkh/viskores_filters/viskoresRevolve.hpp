@@ -8,9 +8,11 @@
 namespace vtkh
 {
 
+// Revolve an input mesh around an axis, producing a swept dataset and optionally mapping fields.
 class viskoresRevolve
 {
 public:
+  // Run the revolve operation, sweeping by the given angle and number of steps.
   viskores::cont::DataSet Run(viskores::cont::DataSet &input,
                               const viskores::Vec<viskores::Float64,3> &point,
                               const viskores::Vec<viskores::Float64,3> &axis,

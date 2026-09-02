@@ -1,0 +1,59 @@
+#An example of revolving (rotationally extruding) a dataset 90 degrees over 8 steps.
+
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "triangulate"
+      f2: 
+        type: "revolve"
+        params: 
+          point: 
+            x: 0.0
+            y: 0.0
+            z: 0.0
+          axis: 
+            x: 0.0
+            y: 1.0
+            z: 0.0
+          angle: 90.0
+          steps: 8
+          periodic: "false"
+- 
+  action: "add_extracts"
+  extracts: 
+    e1: 
+      type: "relay"
+      pipeline: "pl1"
+      params: 
+        path: "/usr/WS1/nicolem/sadbox/ascent/scripts/build_ascent/build/ascent-checkout/tests/_output/tout_revolve_rz_angle_90_mesh_hdf5"
+        protocol: "blueprint/mesh/hdf5"
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "mesh"
+          pipeline: "pl1"
+      renders: 
+        r1: 
+          image_prefix: "/usr/WS1/nicolem/sadbox/ascent/scripts/build_ascent/build/ascent-checkout/tests/_output/tout_revolve_rz_angle_90_mesh"
+          camera: 
+            look_at: [0.0, 0.0, 0.0]
+            position: [20.0, 20.0, 20.0]
+            up: [0.0, 1.0, 0.0]
+    s2: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "cyl"
+          pipeline: "pl1"
+      renders: 
+        r1: 
+          image_prefix: "/usr/WS1/nicolem/sadbox/ascent/scripts/build_ascent/build/ascent-checkout/tests/_output/tout_revolve_rz_angle_90_cyl"
+          camera: 
+            look_at: [0.0, 0.0, 0.0]
+            position: [20.0, 20.0, 20.0]
+            up: [0.0, 1.0, 0.0]

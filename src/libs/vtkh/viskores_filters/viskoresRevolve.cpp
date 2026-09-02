@@ -22,6 +22,7 @@ namespace vtkh
 namespace detail
 {
 
+// Rotate a point around an axis passing through an origin (Rodrigues' rotation formula).
 VISKORES_EXEC_CONT
 inline viskores::Vec<viskores::Float64,3>
 rotate_about_axis(const viskores::Vec<viskores::Float64,3> &p,
@@ -29,9 +30,9 @@ rotate_about_axis(const viskores::Vec<viskores::Float64,3> &p,
                   const viskores::Vec<viskores::Float64,3> &axis_unit,
                   const viskores::Float64 angle_radians)
 {
-  const viskores::Vec<viskores::Float64,3> v = p - origin;
-  const viskores::Float64 c = viskores::Cos(angle_radians);
-  const viskores::Float64 s = viskores::Sin(angle_radians);
+  const viskores::Vec<viskores::Float64,3> point_minus_origin = p - origin;
+  const viskores::Float64 cos_theta = viskores::Cos(angle_radians);
+  const viskores::Float64 sin_theta = viskores::Sin(angle_radians);
 
   // Rodrigues' rotation formula (implemented explicitly to avoid any ambiguity
   // around vector-analysis helpers across backends).
@@ -39,9 +40,9 @@ rotate_about_axis(const viskores::Vec<viskores::Float64,3> &p,
   const viskores::Float64 uy = axis_unit[1];
   const viskores::Float64 uz = axis_unit[2];
 
-  const viskores::Float64 vx = v[0];
-  const viskores::Float64 vy = v[1];
-  const viskores::Float64 vz = v[2];
+  const viskores::Float64 vx = point_minus_origin[0];
+  const viskores::Float64 vy = point_minus_origin[1];
+  const viskores::Float64 vz = point_minus_origin[2];
 
   const viskores::Float64 dot = ux * vx + uy * vy + uz * vz;
 
@@ -49,17 +50,18 @@ rotate_about_axis(const viskores::Vec<viskores::Float64,3> &p,
   const viskores::Float64 cy = uz * vx - ux * vz;
   const viskores::Float64 cz = ux * vy - uy * vx;
 
-  const viskores::Float64 one_minus_c = 1.0 - c;
+  const viskores::Float64 one_minus_cos_theta = 1.0 - cos_theta;
 
-  const viskores::Vec<viskores::Float64,3> term1(vx * c, vy * c, vz * c);
-  const viskores::Vec<viskores::Float64,3> term2(cx * s, cy * s, cz * s);
-  const viskores::Vec<viskores::Float64,3> term3(ux * dot * one_minus_c,
-                                                 uy * dot * one_minus_c,
-                                                 uz * dot * one_minus_c);
+  const viskores::Vec<viskores::Float64,3> term1(vx * cos_theta, vy * cos_theta, vz * cos_theta);
+  const viskores::Vec<viskores::Float64,3> term2(cx * sin_theta, cy * sin_theta, cz * sin_theta);
+  const viskores::Vec<viskores::Float64,3> term3(ux * dot * one_minus_cos_theta,
+                                                 uy * dot * one_minus_cos_theta,
+                                                 uz * dot * one_minus_cos_theta);
 
   return origin + term1 + term2 + term3;
 }
 
+// Cast 3D coordinate arrays to a host-side Vec<Float64,3> vector for downstream processing.
 struct CoordsToVec3d
 {
   std::vector<viskores::Vec<viskores::Float64,3>> &Coords;
@@ -71,15 +73,15 @@ struct CoordsToVec3d
   template<typename T, typename S>
   void operator()(const viskores::cont::ArrayHandle<viskores::Vec<T,3>,S> &in) const
   {
-    const viskores::Id n = in.GetNumberOfValues();
-    this->Coords.resize(static_cast<size_t>(n));
+    const viskores::Id num_values = in.GetNumberOfValues();
+    this->Coords.resize(static_cast<size_t>(num_values));
     auto portal = in.ReadPortal();
-    for(viskores::Id i = 0; i < n; ++i)
+    for(viskores::Id i = 0; i < num_values; ++i)
     {
-      const auto v = portal.Get(i);
-      this->Coords[static_cast<size_t>(i)] = viskores::Vec<viskores::Float64,3>(static_cast<viskores::Float64>(v[0]),
-                                                                                static_cast<viskores::Float64>(v[1]),
-                                                                                static_cast<viskores::Float64>(v[2]));
+      const auto coord_value = portal.Get(i);
+      this->Coords[static_cast<size_t>(i)] = viskores::Vec<viskores::Float64,3>(static_cast<viskores::Float64>(coord_value[0]),
+                                                                                static_cast<viskores::Float64>(coord_value[1]),
+                                                                                static_cast<viskores::Float64>(coord_value[2]));
     }
   }
 
@@ -90,6 +92,7 @@ struct CoordsToVec3d
   }
 };
 
+// Replicate a point- or cell-associated field across the generated planes/steps.
 struct ReplicateField
 {
   viskores::cont::DataSet &Out;
@@ -116,9 +119,9 @@ struct ReplicateField
     viskores::cont::ArrayHandle<T> out;
     out.Allocate(this->BaseSize * this->Replications);
 
-    for(viskores::Id r = 0; r < this->Replications; ++r)
+    for(viskores::Id replication_index = 0; replication_index < this->Replications; ++replication_index)
     {
-      const viskores::Id out_offset = r * this->BaseSize;
+      const viskores::Id out_offset = replication_index * this->BaseSize;
       viskores::cont::Algorithm::CopySubRange(in, 0, this->BaseSize, out, out_offset);
     }
 
@@ -128,6 +131,7 @@ struct ReplicateField
 
 } // namespace detail
 
+// Revolve an input line/triangle mesh around an axis to form a swept surface/volume, then replicate selected fields.
 viskores::cont::DataSet
 viskoresRevolve::Run(viskores::cont::DataSet &input,
                      const viskores::Vec<viskores::Float64,3> &point,
@@ -143,6 +147,7 @@ viskoresRevolve::Run(viskores::cont::DataSet &input,
     throw Error("vtkh::Revolve requires 'steps' > 0");
   }
 
+  // Extract connectivity from the supported unstructured cell set types.
   const viskores::cont::UnknownCellSet unknown_cs = input.GetCellSet();
   viskores::cont::ArrayHandle<viskores::Id> conn_ids;
   viskores::Id num_cells = 0;
@@ -166,6 +171,7 @@ viskoresRevolve::Run(viskores::cont::DataSet &input,
     throw Error("vtkh::Revolve expects a triangle-only unstructured cell set");
   }
 
+  // Validate mesh sizes and derive point/cell counts used for sweeping.
   const viskores::Id num_points_per_plane = input.GetCoordinateSystem(0).GetData().GetNumberOfValues();
   if(num_points_per_plane <= 0 || num_cells <= 0)
   {
@@ -199,6 +205,7 @@ viskoresRevolve::Run(viskores::cont::DataSet &input,
   const viskores::Int32 planes = periodic ? steps : (steps + 1);
   const viskores::Id num_out_points = num_points_per_plane * static_cast<viskores::Id>(planes);
 
+  // Read the input coordinates into a host vector for repeated rotation.
   std::vector<viskores::Vec<viskores::Float64,3>> base_coords;
   {
     auto coords = input.GetCoordinateSystem(0).GetData();
@@ -206,6 +213,7 @@ viskoresRevolve::Run(viskores::cont::DataSet &input,
     coords.CastAndCall(to_vec);
   }
 
+  // Normalize the rotation axis once to keep the rotation kernel stable.
   viskores::Vec<viskores::Float64,3> axis_unit = axis;
   const viskores::Float64 axis_mag = viskores::Magnitude(axis_unit);
   if(axis_mag <= 0.0)
@@ -218,6 +226,7 @@ viskoresRevolve::Run(viskores::cont::DataSet &input,
   const viskores::Float64 sweep_radians = viskores::Pi() * sweep_angle_degrees / 180.0;
   const viskores::Float64 delta = sweep_radians / static_cast<viskores::Float64>(steps);
 
+  // Generate rotated coordinates for each sweep plane.
   viskores::cont::ArrayHandle<viskores::Vec<viskores::Float64,3>> out_coords;
   out_coords.Allocate(num_out_points);
 
@@ -241,36 +250,37 @@ viskoresRevolve::Run(viskores::cont::DataSet &input,
   viskores::cont::CellSetSingleType<> out_cs;
   if(points_per_cell == 3)
   {
+    // Triangles swept across steps become wedge cells (prisms).
     const viskores::Id out_cells = num_cells * static_cast<viskores::Id>(steps);
     viskores::cont::ArrayHandle<viskores::Id> out_conn;
     out_conn.Allocate(out_cells * 6);
     auto out_conn_portal = out_conn.WritePortal();
 
-    for(viskores::Int32 s = 0; s < steps; ++s)
+    for(viskores::Int32 step_index = 0; step_index < steps; ++step_index)
     {
-      const viskores::Id plane0 = static_cast<viskores::Id>(s);
+      const viskores::Id plane0 = static_cast<viskores::Id>(step_index);
       const viskores::Id plane1 = periodic
-        ? static_cast<viskores::Id>((s + 1) % steps)
-        : static_cast<viskores::Id>(s + 1);
+        ? static_cast<viskores::Id>((step_index + 1) % steps)
+        : static_cast<viskores::Id>(step_index + 1);
 
       const viskores::Id p0_off = plane0 * num_points_per_plane;
       const viskores::Id p1_off = plane1 * num_points_per_plane;
 
-      for(viskores::Id c = 0; c < num_cells; ++c)
+      for(viskores::Id cell_index = 0; cell_index < num_cells; ++cell_index)
       {
-        const viskores::Id a = static_cast<viskores::Id>(conn32_vec[static_cast<size_t>(c * 3 + 0)]);
-        const viskores::Id b = static_cast<viskores::Id>(conn32_vec[static_cast<size_t>(c * 3 + 1)]);
-        const viskores::Id cc = static_cast<viskores::Id>(conn32_vec[static_cast<size_t>(c * 3 + 2)]);
+        const viskores::Id base_point_id0 = static_cast<viskores::Id>(conn32_vec[static_cast<size_t>(cell_index * 3 + 0)]);
+        const viskores::Id base_point_id1 = static_cast<viskores::Id>(conn32_vec[static_cast<size_t>(cell_index * 3 + 1)]);
+        const viskores::Id base_point_id2 = static_cast<viskores::Id>(conn32_vec[static_cast<size_t>(cell_index * 3 + 2)]);
 
-        const viskores::Id out_cell_id = static_cast<viskores::Id>(s) * num_cells + c;
+        const viskores::Id out_cell_id = static_cast<viskores::Id>(step_index) * num_cells + cell_index;
         const viskores::Id out_off = out_cell_id * 6;
 
-        out_conn_portal.Set(out_off + 0, p0_off + a);
-        out_conn_portal.Set(out_off + 1, p0_off + b);
-        out_conn_portal.Set(out_off + 2, p0_off + cc);
-        out_conn_portal.Set(out_off + 3, p1_off + a);
-        out_conn_portal.Set(out_off + 4, p1_off + b);
-        out_conn_portal.Set(out_off + 5, p1_off + cc);
+        out_conn_portal.Set(out_off + 0, p0_off + base_point_id0);
+        out_conn_portal.Set(out_off + 1, p0_off + base_point_id1);
+        out_conn_portal.Set(out_off + 2, p0_off + base_point_id2);
+        out_conn_portal.Set(out_off + 3, p1_off + base_point_id0);
+        out_conn_portal.Set(out_off + 4, p1_off + base_point_id1);
+        out_conn_portal.Set(out_off + 5, p1_off + base_point_id2);
       }
     }
 
@@ -278,39 +288,41 @@ viskoresRevolve::Run(viskores::cont::DataSet &input,
   }
   else
   {
+    // Lines swept across steps become quad cells.
     const viskores::Id out_cells = num_cells * static_cast<viskores::Id>(steps);
     viskores::cont::ArrayHandle<viskores::Id> out_conn;
     out_conn.Allocate(out_cells * 4);
     auto out_conn_portal = out_conn.WritePortal();
 
-    for(viskores::Int32 s = 0; s < steps; ++s)
+    for(viskores::Int32 step_index = 0; step_index < steps; ++step_index)
     {
-      const viskores::Id plane0 = static_cast<viskores::Id>(s);
+      const viskores::Id plane0 = static_cast<viskores::Id>(step_index);
       const viskores::Id plane1 = periodic
-        ? static_cast<viskores::Id>((s + 1) % steps)
-        : static_cast<viskores::Id>(s + 1);
+        ? static_cast<viskores::Id>((step_index + 1) % steps)
+        : static_cast<viskores::Id>(step_index + 1);
 
       const viskores::Id p0_off = plane0 * num_points_per_plane;
       const viskores::Id p1_off = plane1 * num_points_per_plane;
 
-      for(viskores::Id c = 0; c < num_cells; ++c)
+      for(viskores::Id cell_index = 0; cell_index < num_cells; ++cell_index)
       {
-        const viskores::Id a = static_cast<viskores::Id>(conn32_vec[static_cast<size_t>(c * 2 + 0)]);
-        const viskores::Id b = static_cast<viskores::Id>(conn32_vec[static_cast<size_t>(c * 2 + 1)]);
+        const viskores::Id base_point_id0 = static_cast<viskores::Id>(conn32_vec[static_cast<size_t>(cell_index * 2 + 0)]);
+        const viskores::Id base_point_id1 = static_cast<viskores::Id>(conn32_vec[static_cast<size_t>(cell_index * 2 + 1)]);
 
-        const viskores::Id out_cell_id = static_cast<viskores::Id>(s) * num_cells + c;
+        const viskores::Id out_cell_id = static_cast<viskores::Id>(step_index) * num_cells + cell_index;
         const viskores::Id out_off = out_cell_id * 4;
 
-        out_conn_portal.Set(out_off + 0, p0_off + a);
-        out_conn_portal.Set(out_off + 1, p0_off + b);
-        out_conn_portal.Set(out_off + 2, p1_off + b);
-        out_conn_portal.Set(out_off + 3, p1_off + a);
+        out_conn_portal.Set(out_off + 0, p0_off + base_point_id0);
+        out_conn_portal.Set(out_off + 1, p0_off + base_point_id1);
+        out_conn_portal.Set(out_off + 2, p1_off + base_point_id1);
+        out_conn_portal.Set(out_off + 3, p1_off + base_point_id0);
       }
     }
 
     out_cs.Fill(num_out_points, viskores::CELL_SHAPE_QUAD, 4, out_conn);
   }
 
+  // Assemble output dataset (cell set + coordinates) and replicate requested fields.
   viskores::cont::DataSet output;
   output.SetCellSet(out_cs);
   output.AddCoordinateSystem(viskores::cont::CoordinateSystem(input.GetCoordinateSystem(0).GetName(),

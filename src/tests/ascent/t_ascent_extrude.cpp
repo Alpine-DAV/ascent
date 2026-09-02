@@ -155,7 +155,6 @@ TEST(ascent_extrude, test_linear_extrude_tris)
   scenes["s1/renders/r1/camera/look_at"] = {0.0, 0.0, 0.0};
   scenes["s1/renders/r1/camera/position"] = {30.0, 30.0, 30.0};
   scenes["s1/renders/r1/camera/up"] = {0.0, 0.0, 1.0};
-  scenes["s1/renders/r1/camera/zoom"] = 0.8;
 
   Ascent ascent;
   Node ascent_opts;
@@ -169,6 +168,9 @@ TEST(ascent_extrude, test_linear_extrude_tris)
   EXPECT_TRUE(check_test_image(output_base, 0.01f));
 
   verify_extrude_output(output_extract_root, "wedge", "z");
+  std::stringstream ss;
+  ss << "An example of linearly extruding a dataset 8 steps along a vector.";
+  ASCENT_ACTIONS_DUMP(actions,output_base,ss.str());
 }
 
 //-----------------------------------------------------------------------------
@@ -225,7 +227,6 @@ TEST(ascent_extrude, test_linear_extrude_quads)
   scenes["s1/renders/r1/camera/look_at"] = {0.0, 0.0, 0.0};
   scenes["s1/renders/r1/camera/position"] = {30.0, 30.0, 30.0};
   scenes["s1/renders/r1/camera/up"] = {0.0, 0.0, 1.0};
-  scenes["s1/renders/r1/camera/zoom"] = 0.8;
 
   Ascent ascent;
   Node ascent_opts;
@@ -274,10 +275,9 @@ TEST(ascent_extrude, test_linear_extrude_rz_cylinder)
 
   pipelines["pl1/f1/type"] = "extrude";
   Node &ext_params = pipelines["pl1/f1/params"];
-  // rz_cylinder is embedded in 3D with a constant axis; extrude along Y to ensure non-zero y extent.
   ext_params["vector/x"] = 0.0;
-  ext_params["vector/y"] = 5.0;
-  ext_params["vector/z"] = 0.0;
+  ext_params["vector/y"] = 0.0;
+  ext_params["vector/z"] = 5.0;
   ext_params["steps"] = 8;
 
   Node &add_extracts = actions.append();
@@ -311,6 +311,9 @@ TEST(ascent_extrude, test_linear_extrude_rz_cylinder)
   EXPECT_TRUE(check_test_image(output_base, 0.01f));
 
   verify_extrude_output(output_extract_root, "hex", "y");
+  std::stringstream ss;
+  ss << "An example of linearly extruding a dataset 8 steps along a vector.";
+  ASCENT_ACTIONS_DUMP(actions,output_base,ss.str());
 }
 
 //-----------------------------------------------------------------------------

@@ -135,6 +135,8 @@ register_builtin()
     AscentRuntime::register_filter_type<VTKHNoOp>("transforms","noop");
     AscentRuntime::register_filter_type<VTKHRecenter>("transforms","recenter");
     AscentRuntime::register_filter_type<VTKHVectorMagnitude>("transforms","vector_magnitude");
+    AscentRuntime::register_filter_type<VTKHRevolve>("transforms","revolve");
+    AscentRuntime::register_filter_type<VTKHLinearExtrude>("transforms","extrude");
     AscentRuntime::register_filter_type<VTKHHistSampling>("transforms","histsampling");
     AscentRuntime::register_filter_type<VTKHQCriterion>("transforms","qcriterion");
     AscentRuntime::register_filter_type<VTKHStats>("extracts","statistics");
