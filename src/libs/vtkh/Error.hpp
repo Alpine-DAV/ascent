@@ -14,9 +14,9 @@ private:
   std::string m_message;
   Error() {}
 public:
-  Error(const std::string message) : m_message(message) {}
-  const std::string & GetMessage() const { return this->m_message; }
-  const char * what() const noexcept override { return m_message.c_str(); }
+  inline Error(const std::string message) : m_message(message) {}
+  inline const std::string & GetMessage() const { return this->m_message; }
+  inline const char * what() const noexcept override { return m_message.c_str(); }
 
 };
 
