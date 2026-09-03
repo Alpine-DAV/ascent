@@ -12,11 +12,12 @@ class VTKH_API Error : public std::exception
 {
 private:
   std::string m_message;
-  Error() {}
+  Error();
 public:
-  Error(const std::string message) : m_message(message) {}
-  const std::string & GetMessage() const { return this->m_message; }
-  const char * what() const noexcept override { return m_message.c_str(); }
+  Error(const std::string message);
+  ~Error() override;
+  const std::string & GetMessage() const;
+  const char * what() const noexcept override;
 
 };
 
