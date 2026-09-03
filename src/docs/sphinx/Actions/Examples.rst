@@ -1281,3 +1281,42 @@ YAML actions:
 Resulting image:
 
 .. image:: examples/tout_mir_axom_q7o5_material_boundary_000100.png
+
+An example of the revolve filter with a partial revolution.
+------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_revolve_angle_90_mesh_000100.yaml
+
+Resulting images:
+
+.. image:: examples/tout_revolve_angle_90_mesh_000100.png
+
+.. image:: examples/tout_revolve_angle_90_braid_000100.png
+
+An example of the revolve filter with a partial revolution of an RZ dataset.
+------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_revolve_rz_angle_90_mesh_000100.yaml
+
+Resulting images:
+
+.. image:: examples/tout_revolve_angle_rz_90_mesh_000100.png
+
+.. image:: examples/tout_revolve_angle_rz_90_cyl_000100.png
+
+An example of the linear extrusion filter of an RZ dataset.
+----------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_extrude_rz_000100.yaml
+
+
+Resulting image:
+
+.. image:: examples/tout_extrude_rz_000100.png
+

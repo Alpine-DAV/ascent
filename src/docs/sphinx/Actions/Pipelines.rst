@@ -226,6 +226,84 @@ The plane is defined by a point (on the plane) and a normal vector (not required
 :numref:`Figure %s <slicefig>` shows an image produced from the slice filter.
 The full example is located in the file `slice test <https://github.com/Alpine-DAV/ascent/blob/develop/src/tests/ascent/t_ascent_slice.cpp>`_.
 
+Revolve
+~~~~~~~~
+The revolve filter creates a 3D volume by rotating a 2D surface mesh around an axis.
+The rotation axis is defined by a point on the axis and an axis direction vector.
+Angles are specified in degrees.
+
+Limitations:
+
+- The filter expects an unstructured input mesh with fixed-size cells.
+- Only line (2 points) and triangle (3 points) cells are currently supported.
+  Quad-based surfaces (including Conduit Blueprint RZ examples like ``rz_cylinder``) must be
+  triangulated first.
+
+.. code-block:: c++
+
+  conduit::Node pipelines;
+  pipelines["pl1/f1/type"] = "revolve";
+  conduit::Node &rev_params = pipelines["pl1/f1/params"];
+  rev_params["topology"] = "topo";
+  rev_params["point/x"] = 0.0;
+  rev_params["point/y"] = 0.0;
+  rev_params["point/z"] = 0.0;
+  rev_params["axis/x"]  = 0.0;
+  rev_params["axis/y"]  = 1.0;
+  rev_params["axis/z"]  = 0.0;
+  rev_params["start_angle"] = 0.0;  // optional
+  rev_params["angle"] = 270.0;      // required sweep angle
+  rev_params["steps"] = 32;         // optional
+  rev_params["periodic"] = "false"; // optional ("true" or "false")
+
+Parameters:
+
+  - ``axis`` (required): Axis direction vector.
+  - ``angle`` (required): Sweep angle in degrees.
+  - ``point`` (optional): A point on the rotation axis (default: (0,0,0)).
+  - ``start_angle`` (optional): Starting angle in degrees (default: 0).
+  - ``steps`` (optional): Number of angular steps used to discretize the sweep (default: 32).
+  - ``periodic`` (optional): When ``"true"``, the final plane wraps to the first (default: ``"false"``).
+  - ``topology`` (optional): Input topology name.
+
+Example: triangulate a quad surface, then revolve:
+
+.. code-block:: c++
+
+  conduit::Node pipelines;
+  pipelines["pl1/f1/type"] = "triangulate";
+  pipelines["pl1/f2/type"] = "revolve";
+  conduit::Node &rev_params = pipelines["pl1/f2/params"];
+  rev_params["axis/x"]  = 0.0;
+  rev_params["axis/y"]  = 1.0;
+  rev_params["axis/z"]  = 0.0;
+  rev_params["angle"] = 360.0;
+  rev_params["steps"] = 32;
+  rev_params["periodic"] = "true";
+
+Extrude
+~~~~~~~~
+The extrude filter creates a 3D volume by translating a 2D mesh along a vector.
+
+The filter expects an unstructured input mesh with fixed-size cells (lines, triangles, or quads).
+
+.. code-block:: c++
+
+  conduit::Node pipelines;
+  pipelines["pl1/f1/type"] = "extrude";
+  conduit::Node &ext_params = pipelines["pl1/f1/params"];
+  ext_params["topology"] = "topo";
+  ext_params["vector/x"] = 0.0;
+  ext_params["vector/y"] = 0.0;
+  ext_params["vector/z"] = 5.0;
+  ext_params["steps"] = 8; // optional (default: 1)
+
+Parameters:
+
+  - ``vector`` (required): Total translation vector for the extrusion.
+  - ``steps`` (optional): Number of segments used to discretize the extrusion (default: 1).
+  - ``topology`` (optional): Input topology name.
+
 Three Slice
 ~~~~~~~~~~~
 The three slice filter slices 3d data sets using three axis-aligned slice planes and
