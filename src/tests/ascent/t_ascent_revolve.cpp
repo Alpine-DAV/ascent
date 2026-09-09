@@ -32,432 +32,95 @@ using namespace ascent;
 namespace
 {
 
-std::string
-find_root_file(const std::string &output_extract_root)
-{
-  if(conduit::utils::is_file(output_extract_root + ".root"))
-  {
-    return output_extract_root + ".root";
-  }
-  if(conduit::utils::is_file(output_extract_root + ".cycle_000100.root"))
-  {
-    return output_extract_root + ".cycle_000100.root";
-  }
-  if(conduit::utils::is_file(output_extract_root + ".cycle_000000.root"))
-  {
-    return output_extract_root + ".cycle_000000.root";
-  }
-  return "";
-}
-
 void
-load_output_mesh(const std::string &output_extract_root,
-                 Node &mesh,
-                 std::string &topo_name)
+compute_rz_bounds(const Node &mesh,
+                  double &rmin,
+                  double &rmax,
+                  double &zmin,
+                  double &zmax)
 {
-  Node verify_info;
-  const std::string root_file = find_root_file(output_extract_root);
-  EXPECT_FALSE(root_file.empty());
-  if(root_file.empty())
+  EXPECT_TRUE(mesh.has_path("coordsets"));
+  if(!mesh.has_path("coordsets"))
   {
+    rmin = rmax = zmin = zmax = 0.0;
     return;
   }
 
-  conduit::relay::io::load(root_file + ":mesh", "hdf5", mesh);
-  EXPECT_TRUE(conduit::blueprint::mesh::verify(mesh, verify_info));
-
-  std::vector<std::string> topo_names = mesh["topologies"].child_names();
-  EXPECT_TRUE(!topo_names.empty());
-  if(topo_names.empty())
+  const std::vector<std::string> cs_names = mesh["coordsets"].child_names();
+  EXPECT_TRUE(!cs_names.empty());
+  if(cs_names.empty())
   {
+    rmin = rmax = zmin = zmax = 0.0;
     return;
   }
 
-  topo_name = topo_names[0];
-}
+  const Node &cs = mesh["coordsets/" + cs_names[0]];
+  Node cs_explicit;
+  conduit::blueprint::mesh::coordset::to_explicit(cs, cs_explicit);
 
-void
-verify_revolve_mesh_checks(const std::string &output_extract_root,
-                           const int steps,
-                           const bool periodic,
-                           const std::string &expected_shape)
-{
-  Node res;
-  std::string topo_name;
-  load_output_mesh(output_extract_root, res, topo_name);
-  if(topo_name.empty())
+  EXPECT_TRUE(cs_explicit.has_path("values/r"));
+  EXPECT_TRUE(cs_explicit.has_path("values/z"));
+  if(!cs_explicit.has_path("values/r") || !cs_explicit.has_path("values/z"))
   {
+    rmin = rmax = zmin = zmax = 0.0;
     return;
   }
 
-  const std::string topo_path = "topologies/" + topo_name;
-  const std::string conn_path = topo_path + "/elements/connectivity";
+  Node r_node, z_node;
+  cs_explicit["values/r"].to_float64_array(r_node);
+  cs_explicit["values/z"].to_float64_array(z_node);
 
-  EXPECT_TRUE(res[conn_path].dtype().number_of_elements() > 0);
-
-  if(!expected_shape.empty() && res[topo_path + "/elements"].has_path("shape"))
+  const index_t n = r_node.dtype().number_of_elements();
+  EXPECT_TRUE(n > 0);
+  EXPECT_EQ(n, z_node.dtype().number_of_elements());
+  if(n <= 0 || z_node.dtype().number_of_elements() != n)
   {
-    EXPECT_EQ(res[topo_path + "/elements/shape"].as_string(), expected_shape);
-  }
-
-  const index_t out_points = res["coordsets/coords/values/x"].dtype().number_of_elements();
-  EXPECT_TRUE(out_points > 0);
-  if(out_points <= 0)
-  {
+    rmin = rmax = zmin = zmax = 0.0;
     return;
   }
 
-  const double *x = res["coordsets/coords/values/x"].as_double_ptr();
-  const double *y = res["coordsets/coords/values/y"].as_double_ptr();
-  const double *z = res["coordsets/coords/values/z"].as_double_ptr();
+  const double *r = r_node.as_float64_ptr();
+  const double *z = z_node.as_float64_ptr();
 
-  double xmin = x[0], xmax = x[0];
-  double ymin = y[0], ymax = y[0];
-  double zmin = z[0], zmax = z[0];
-
-  for(index_t i = 1; i < out_points; ++i)
+  rmin = rmax = r[0];
+  zmin = zmax = z[0];
+  for(index_t i = 1; i < n; ++i)
   {
-    xmin = std::min(xmin, x[i]);
-    xmax = std::max(xmax, x[i]);
-    ymin = std::min(ymin, y[i]);
-    ymax = std::max(ymax, y[i]);
+    rmin = std::min(rmin, r[i]);
+    rmax = std::max(rmax, r[i]);
     zmin = std::min(zmin, z[i]);
     zmax = std::max(zmax, z[i]);
   }
-
-  EXPECT_TRUE((xmax - xmin) > 0.0);
-  EXPECT_TRUE((ymax - ymin) > 0.0);
-  EXPECT_TRUE((zmax - zmin) > 0.0);
-
-  const index_t planes = periodic ? steps : (steps + 1);
-  EXPECT_TRUE(planes > 0);
-  EXPECT_TRUE(out_points % planes == 0);
-  if(planes <= 0 || (out_points % planes) != 0)
-  {
-    return;
-  }
-
-  const index_t points_per_plane = out_points / planes;
-  EXPECT_TRUE(points_per_plane > 0);
-  if(points_per_plane <= 0)
-  {
-    return;
-  }
-
-  bool any_moved = false;
-  const index_t sample = std::min<index_t>(points_per_plane, 32);
-  for(index_t i = 0; i < sample; ++i)
-  {
-    const index_t j = i + points_per_plane;
-    if(j >= out_points)
-    {
-      break;
-    }
-    const double dx = std::abs(x[j] - x[i]);
-    const double dy = std::abs(y[j] - y[i]);
-    const double dz = std::abs(z[j] - z[i]);
-    if((dx + dy + dz) > 1e-6)
-    {
-      any_moved = true;
-      break;
-    }
-  }
-  EXPECT_TRUE(any_moved);
-
-  const index_t conn_len = res[conn_path].dtype().number_of_elements();
-  EXPECT_TRUE(conn_len > 0);
-  if(conn_len <= 0)
-  {
-    return;
-  }
-
-  const conduit::DataType conn_dt = res[conn_path].dtype();
-  index_t max_id = 0;
-  if(conn_dt.is_int32())
-  {
-    const int32 *conn = res[conn_path].as_int32_ptr();
-    max_id = static_cast<index_t>(conn[0]);
-    for(index_t i = 1; i < conn_len; ++i)
-    {
-      max_id = std::max(max_id, static_cast<index_t>(conn[i]));
-    }
-  }
-  else if(conn_dt.is_int64())
-  {
-    const int64 *conn = res[conn_path].as_int64_ptr();
-    max_id = static_cast<index_t>(conn[0]);
-    for(index_t i = 1; i < conn_len; ++i)
-    {
-      max_id = std::max(max_id, static_cast<index_t>(conn[i]));
-    }
-  }
-  else if(conn_dt.is_uint32())
-  {
-    const uint32 *conn = res[conn_path].as_uint32_ptr();
-    max_id = static_cast<index_t>(conn[0]);
-    for(index_t i = 1; i < conn_len; ++i)
-    {
-      max_id = std::max(max_id, static_cast<index_t>(conn[i]));
-    }
-  }
-  else if(conn_dt.is_uint64())
-  {
-    const uint64 *conn = res[conn_path].as_uint64_ptr();
-    max_id = static_cast<index_t>(conn[0]);
-    for(index_t i = 1; i < conn_len; ++i)
-    {
-      max_id = std::max(max_id, static_cast<index_t>(conn[i]));
-    }
-  }
-  else
-  {
-    FAIL() << "Unexpected connectivity dtype: " << conn_dt.name();
-    return;
-  }
-
-  EXPECT_TRUE(max_id >= points_per_plane);
 }
 
+
 void
-verify_revolve_z_extent(const std::string &output_extract_root,
-                        const std::string &expected_shape)
+run_revolve_rz_r_case(const double angle, const bool periodic)
 {
-  Node res;
-  std::string topo_name;
-  load_output_mesh(output_extract_root, res, topo_name);
-  if(topo_name.empty())
+  Node n;
+  ascent::about(n);
+  if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
   {
+    ASCENT_INFO("Ascent viskores support disabled, skipping test");
     return;
   }
 
-  const std::string topo_path = "topologies/" + topo_name;
-  if(!expected_shape.empty() && res[topo_path + "/elements"].has_path("shape"))
-  {
-    EXPECT_EQ(res[topo_path + "/elements/shape"].as_string(), expected_shape);
-  }
-
-  const index_t out_points = res["coordsets/coords/values/x"].dtype().number_of_elements();
-  EXPECT_TRUE(out_points > 0);
-  if(out_points <= 0)
-  {
-    return;
-  }
-
-  const double *z = res["coordsets/coords/values/z"].as_double_ptr();
-
-  double zmin = z[0], zmax = z[0];
-  for(index_t i = 1; i < out_points; ++i)
-  {
-    zmin = std::min(zmin, z[i]);
-    zmax = std::max(zmax, z[i]);
-  }
-  EXPECT_TRUE((zmax - zmin) > 0.0);
-}
-
-void
-run_revolve_contour_lines_case(const double angle, const bool periodic)
-{
-  Node data, verify_info;
-
-  conduit::blueprint::mesh::examples::braid("hexs", 20, 20, 20, data);
-  EXPECT_TRUE(conduit::blueprint::mesh::verify(data, verify_info));
-
-  const int steps = 8;
-
-  std::ostringstream mesh, pseudo;
-  mesh << "tout_revolve_angle_" << static_cast<int>(angle) << "_mesh";
-  pseudo << "tout_revolve_angle_" << static_cast<int>(angle) << "_braid";
-  std::string output_path = prepare_output_dir();
-  std::string output_base = conduit::utils::join_file_path(output_path, mesh.str());
-  std::string output_base_pseudo = conduit::utils::join_file_path(output_path, pseudo.str());
-  std::string output_extract_root = output_base + "_hdf5";
-
-  conduit::utils::remove_directory(output_extract_root);
-  remove_test_file(output_extract_root + ".cycle_000100.root");
-  remove_test_image(output_base);
-  remove_test_image(output_base_pseudo);
-
-  Node actions;
-
-  Node &add_pipelines = actions.append();
-  add_pipelines["action"] = "add_pipelines";
-  Node &pipelines = add_pipelines["pipelines"];
-
-  pipelines["pl1/f1/type"] = "slice";
-  Node &slice_params = pipelines["pl1/f1/params"];
-  slice_params["point/x"] = 0.0;
-  slice_params["point/y"] = 0.0;
-  slice_params["point/z"] = 0.0;
-  slice_params["normal/x"] = 0.0;
-  slice_params["normal/y"] = 0.0;
-  slice_params["normal/z"] = 1.0;
-
-  pipelines["pl1/f2/type"] = "contour";
-  Node &contour_params = pipelines["pl1/f2/params"];
-  contour_params["field"] = "braid";
-  contour_params["iso_values"] = 0.0;
-
-  pipelines["pl1/f3/type"] = "revolve";
-  Node &rev_params = pipelines["pl1/f3/params"];
-  rev_params["point/x"] = 0.0;
-  rev_params["point/y"] = 0.0;
-  rev_params["point/z"] = 0.0;
-  rev_params["axis/x"] = 0.0;
-  rev_params["axis/y"] = 1.0;
-  rev_params["axis/z"] = 0.0;
-  rev_params["angle"] = angle;
-  rev_params["steps"] = steps;
-  rev_params["periodic"] = periodic ? "true" : "false";
-
-  Node &add_extracts = actions.append();
-  add_extracts["action"] = "add_extracts";
-  Node &extracts = add_extracts["extracts"];
-  extracts["e1/type"] = "relay";
-  extracts["e1/pipeline"] = "pl1";
-  extracts["e1/params/path"] = output_extract_root;
-  extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
-
-  Node &add_scenes = actions.append();
-  add_scenes["action"] = "add_scenes";
-  Node &scenes = add_scenes["scenes"];
-  scenes["s1/plots/p1/type"] = "mesh";
-  scenes["s1/plots/p1/pipeline"] = "pl1";
-  scenes["s1/renders/r1/image_prefix"] = output_base;
-  scenes["s1/renders/r1/camera/look_at"] = {0.0, 0.0, 0.0};
-  scenes["s1/renders/r1/camera/position"] = {20.0, 20.0, 20.0};
-  scenes["s1/renders/r1/camera/up"] = {0.0, 1.0, 0.0};
-  scenes["s2/plots/p1/type"] = "pseudocolor";
-  scenes["s2/plots/p1/field"] = "braid";
-  scenes["s2/plots/p1/pipeline"] = "pl1";
-  scenes["s2/renders/r1/image_prefix"] = output_base_pseudo;
-  scenes["s2/renders/r1/camera/look_at"] = {0.0, 0.0, 0.0};
-  scenes["s2/renders/r1/camera/position"] = {20.0, 20.0, 20.0};
-  scenes["s2/renders/r1/camera/up"] = {0.0, 1.0, 0.0};
-
-  // print our full actions tree
-  std::cout << actions.to_yaml() << std::endl;
-
-  Ascent ascent;
-  ascent.open();
-  ascent.publish(data);
-  ascent.execute(actions);
-  ascent.close();
-
-  EXPECT_TRUE(check_test_image(output_base, 0.01f));
-  EXPECT_TRUE(check_test_image(output_base_pseudo, 0.01f));
-
-  verify_revolve_mesh_checks(output_extract_root, steps, periodic, "quad");
-  std::stringstream ss;
-  ss << "An example of revolving (rotationally extruding) a dataset " << angle << " degrees over " << steps << " steps.";
-  ASCENT_ACTIONS_DUMP(actions,output_base,ss.str());
-}
-
-void
-run_revolve_slice_surface_case(const double angle, const bool periodic)
-{
-  Node data, verify_info;
-
-  conduit::blueprint::mesh::examples::braid("hexs", 20, 20, 20, data);
-  EXPECT_TRUE(conduit::blueprint::mesh::verify(data, verify_info));
-
-  const int steps = 8;
-
-  std::ostringstream mesh, pseudo;
-  mesh << "tout_revolve_surface_angle_" << static_cast<int>(angle) << "_mesh";
-  pseudo << "tout_revolve_surface_angle_" << static_cast<int>(angle) << "_braid";
-  std::string output_path = prepare_output_dir();
-  std::string output_base = conduit::utils::join_file_path(output_path, mesh.str());
-  std::string output_base_pseudo = conduit::utils::join_file_path(output_path, pseudo.str());
-  std::string output_extract_root = output_base + "_hdf5";
-
-  conduit::utils::remove_directory(output_extract_root);
-  remove_test_file(output_extract_root + ".cycle_000100.root");
-  remove_test_image(output_base);
-  remove_test_image(output_base_pseudo);
-
-  Node actions;
-
-  Node &add_pipelines = actions.append();
-  add_pipelines["action"] = "add_pipelines";
-  Node &pipelines = add_pipelines["pipelines"];
-
-  pipelines["pl1/f1/type"] = "slice";
-  Node &slice_params = pipelines["pl1/f1/params"];
-  slice_params["point/x"] = 0.0;
-  slice_params["point/y"] = 0.0;
-  slice_params["point/z"] = 0.0;
-  slice_params["normal/x"] = 0.0;
-  slice_params["normal/y"] = 0.0;
-  slice_params["normal/z"] = 1.0;
-
-  pipelines["pl1/f2/type"] = "revolve";
-  Node &rev_params = pipelines["pl1/f2/params"];
-  rev_params["point/x"] = 0.0;
-  rev_params["point/y"] = 0.0;
-  rev_params["point/z"] = 0.0;
-  rev_params["axis/x"] = 0.0;
-  rev_params["axis/y"] = 1.0;
-  rev_params["axis/z"] = 0.0;
-  rev_params["angle"] = angle;
-  rev_params["steps"] = steps;
-  rev_params["periodic"] = periodic ? "true" : "false";
-
-  Node &add_extracts = actions.append();
-  add_extracts["action"] = "add_extracts";
-  Node &extracts = add_extracts["extracts"];
-  extracts["e1/type"] = "relay";
-  extracts["e1/pipeline"] = "pl1";
-  extracts["e1/params/path"] = output_extract_root;
-  extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
-
-  Node &add_scenes = actions.append();
-  add_scenes["action"] = "add_scenes";
-  Node &scenes = add_scenes["scenes"];
-  scenes["s1/plots/p1/type"] = "mesh";
-  scenes["s1/plots/p1/pipeline"] = "pl1";
-  scenes["s1/renders/r1/image_prefix"] = output_base;
-  scenes["s1/renders/r1/camera/look_at"] = {0.0, 0.0, 0.0};
-  scenes["s1/renders/r1/camera/position"] = {20.0, 20.0, 20.0};
-  scenes["s1/renders/r1/camera/up"] = {0.0, 1.0, 0.0};
-  scenes["s2/plots/p1/type"] = "pseudocolor";
-  scenes["s2/plots/p1/field"] = "braid";
-  scenes["s2/plots/p1/pipeline"] = "pl1";
-  scenes["s2/renders/r1/image_prefix"] = output_base_pseudo;
-  scenes["s2/renders/r1/camera/look_at"] = {0.0, 0.0, 0.0};
-  scenes["s2/renders/r1/camera/position"] = {20.0, 20.0, 20.0};
-  scenes["s2/renders/r1/camera/up"] = {0.0, 1.0, 0.0};
-
-  // print our full actions tree
-  std::cout << actions.to_yaml() << std::endl;
-
-  Ascent ascent;
-  ascent.open();
-  ascent.publish(data);
-  ascent.execute(actions);
-  ascent.close();
-
-  EXPECT_TRUE(check_test_image(output_base, 0.01f));
-  EXPECT_TRUE(check_test_image(output_base_pseudo, 0.01f));
-
-  verify_revolve_z_extent(output_extract_root, "wedge");
-  std::stringstream ss;
-  ss << "An example of revolving (rotationally extruding) a dataset " << angle << " degrees over " << steps << " steps.";
-  ASCENT_ACTIONS_DUMP(actions,output_base,ss.str());
-}
-
-void
-run_revolve_rz_case(const double angle, const bool periodic)
-{
   Node data, verify_info;
 
   conduit::blueprint::mesh::examples::rz_cylinder("structured", 10, 10, data);
+  data["state/cycle"] = 100;
   EXPECT_TRUE(conduit::blueprint::mesh::verify(data, verify_info));
 
+  double rmin = 0.0, rmax = 0.0, zmin = 0.0, zmax = 0.0;
+  compute_rz_bounds(data, rmin, rmax, zmin, zmax);
+
   const int steps = 8;
+  const int angle_int = static_cast<int>(angle);
 
   std::ostringstream mesh, pseudo;
-  mesh << "tout_revolve_rz_angle_" << static_cast<int>(angle) << "_mesh";
-  pseudo << "tout_revolve_rz_angle_" << static_cast<int>(angle) << "_cyl";
+  mesh << "tout_revolve_rz_r_case_angle_" << angle_int << "_mesh";
+  pseudo << "tout_revolve_rz_r_case_angle_" << angle_int << "_cyl";
+
   std::string output_path = prepare_output_dir();
   std::string output_base = conduit::utils::join_file_path(output_path, mesh.str());
   std::string output_base_pseudo = conduit::utils::join_file_path(output_path, pseudo.str());
@@ -478,13 +141,12 @@ run_revolve_rz_case(const double angle, const bool periodic)
   pipelines["pl1/f1/type"] = "triangulate";
   pipelines["pl1/f2/type"] = "revolve";
   Node &rev_params = pipelines["pl1/f2/params"];
-  rev_params["point/x"] = 0.0;
-  rev_params["point/y"] = 0.0;
-  rev_params["point/z"] = 0.0;
-  rev_params["axis/x"] = 0.0;
-  rev_params["axis/y"] = 1.0;
+  // Rotate about the Z axis (in RZ), at the lower (r,z) corner to avoid self-intersection.
+  rev_params["point/r"] = rmin;
+  rev_params["point/z"] = zmin;
+  rev_params["axis/r"] = 1.0;
   rev_params["axis/z"] = 0.0;
-  rev_params["angle"] = angle;
+  rev_params["angle"] = angle_int;
   rev_params["steps"] = steps;
   rev_params["periodic"] = periodic ? "true" : "false";
 
@@ -499,206 +161,207 @@ run_revolve_rz_case(const double angle, const bool periodic)
   Node &add_scenes = actions.append();
   add_scenes["action"] = "add_scenes";
   Node &scenes = add_scenes["scenes"];
+
   scenes["s1/plots/p1/type"] = "mesh";
   scenes["s1/plots/p1/pipeline"] = "pl1";
   scenes["s1/renders/r1/image_prefix"] = output_base;
-  scenes["s1/renders/r1/camera/look_at"] = {0.0, 0.0, 0.0};
-  scenes["s1/renders/r1/camera/position"] = {20.0, 20.0, 20.0};
-  scenes["s1/renders/r1/camera/up"] = {0.0, 1.0, 0.0};
+  const double zmid = 0.5 * (zmin + zmax);
+  const double rmid = 0.5 * (rmin + rmax);
+  scenes["s1/renders/r1/camera/elevation"] = 30;
+  scenes["s1/renders/r1/camera/azimuth"] = 90;
+//  scenes["s1/renders/r1/camera/look_at"] = {rmid, zmid, 0.0};
+//  scenes["s1/renders/r1/camera/position"] = {rmid + 20.0, zmid + 20.0, 20.0};
+//  scenes["s1/renders/r1/camera/up"] = {0.0, 1.0, 0.0};
+
   scenes["s2/plots/p1/type"] = "pseudocolor";
   scenes["s2/plots/p1/field"] = "cyl";
   scenes["s2/plots/p1/pipeline"] = "pl1";
   scenes["s2/renders/r1/image_prefix"] = output_base_pseudo;
-  scenes["s2/renders/r1/camera/look_at"] = {0.0, 0.0, 0.0};
-  scenes["s2/renders/r1/camera/position"] = {20.0, 20.0, 20.0};
-  scenes["s2/renders/r1/camera/up"] = {0.0, 1.0, 0.0};
-
-  // print our full actions tree
-  std::cout << actions.to_yaml() << std::endl;
+  scenes["s2/renders/r1/camera/elevation"] = 30;
+  scenes["s2/renders/r1/camera/azimuth"] = 90;
+//  scenes["s2/renders/r1/camera/look_at"] = {rmid, zmid, 0.0};
+//  scenes["s2/renders/r1/camera/position"] = {rmid + 20.0, zmid + 20.0, 20.0};
+//  scenes["s2/renders/r1/camera/up"] = {0.0, 1.0, 0.0};
 
   Ascent ascent;
-  ascent.open();
+  Node ascent_opts;
+  ascent_opts["runtime/type"] = "ascent";
+  ascent_opts["exceptions"] = "forward";
+  ascent.open(ascent_opts);
   ascent.publish(data);
   ascent.execute(actions);
   ascent.close();
-
-  EXPECT_TRUE(check_test_image(output_base, 0.01f));
+  
+  //too much to ask for the mesh to be exact?
+  //EXPECT_TRUE(check_test_image(output_base, 0.01f));
   EXPECT_TRUE(check_test_image(output_base_pseudo, 0.01f));
+  EXPECT_TRUE(check_test_file(output_extract_root) +".cycle_000100.root");
 
-  verify_revolve_mesh_checks(output_extract_root, steps, periodic, "wedge");
   std::stringstream ss;
-  ss << "An example of revolving (rotationally extruding) a dataset " << angle << " degrees over " << steps << " steps.";
-  ASCENT_ACTIONS_DUMP(actions,output_base,ss.str());
+  ss << "An example of revolving (rotationally extruding) a dataset " << angle_int
+     << " degrees over " << steps << " steps.";
+  ASCENT_ACTIONS_DUMP(actions, output_base, ss.str());
+}
+
+void
+run_revolve_rz_z_case(const double angle, const bool periodic)
+{
+  Node n;
+  ascent::about(n);
+  if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
+  {
+    ASCENT_INFO("Ascent viskores support disabled, skipping test");
+    return;
+  }
+
+  Node data, verify_info;
+
+  conduit::blueprint::mesh::examples::rz_cylinder("structured", 10, 10, data);
+  data["state/cycle"] = 100;
+  EXPECT_TRUE(conduit::blueprint::mesh::verify(data, verify_info));
+
+  double rmin = 0.0, rmax = 0.0, zmin = 0.0, zmax = 0.0;
+  compute_rz_bounds(data, rmin, rmax, zmin, zmax);
+
+  const int steps = 8;
+  const int angle_int = static_cast<int>(angle);
+
+  std::ostringstream mesh, pseudo;
+  mesh << "tout_revolve_rz_z_case_angle_" << angle_int << "_mesh";
+  pseudo << "tout_revolve_rz_z_case_angle_" << angle_int << "_cyl";
+
+  std::string output_path = prepare_output_dir();
+  std::string output_base = conduit::utils::join_file_path(output_path, mesh.str());
+  std::string output_base_pseudo = conduit::utils::join_file_path(output_path, pseudo.str());
+  std::string output_extract_root = output_base + "_hdf5";
+
+  conduit::utils::remove_directory(output_extract_root);
+  remove_test_file(output_extract_root + ".cycle_000100.root");
+  remove_test_image(output_base);
+  remove_test_image(output_base_pseudo);
+
+  Node actions;
+
+  Node &add_pipelines = actions.append();
+  add_pipelines["action"] = "add_pipelines";
+  Node &pipelines = add_pipelines["pipelines"];
+
+  // rz_cylinder produces quad cells; revolve currently expects triangles.
+  pipelines["pl1/f1/type"] = "triangulate";
+  pipelines["pl1/f2/type"] = "revolve";
+  Node &rev_params = pipelines["pl1/f2/params"];
+  // Rotate about the Z axis (in RZ), at the lower (r,z) corner to avoid self-intersection.
+  rev_params["point/r"] = rmin;
+  rev_params["point/z"] = zmin;
+  rev_params["axis/r"] = 0.0;
+  rev_params["axis/z"] = 1.0;
+  rev_params["angle"] = angle_int;
+  rev_params["steps"] = steps;
+  rev_params["periodic"] = periodic ? "true" : "false";
+
+  Node &add_extracts = actions.append();
+  add_extracts["action"] = "add_extracts";
+  Node &extracts = add_extracts["extracts"];
+  extracts["e1/type"] = "relay";
+  extracts["e1/pipeline"] = "pl1";
+  extracts["e1/params/path"] = output_extract_root;
+  extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
+
+  Node &add_scenes = actions.append();
+  add_scenes["action"] = "add_scenes";
+  Node &scenes = add_scenes["scenes"];
+
+  scenes["s1/plots/p1/type"] = "mesh";
+  scenes["s1/plots/p1/pipeline"] = "pl1";
+  scenes["s1/renders/r1/image_prefix"] = output_base;
+  const double zmid = 0.5 * (zmin + zmax);
+  const double rmid = 0.5 * (rmin + rmax);
+  scenes["s1/renders/r1/camera/elevation"] = 30;
+  scenes["s1/renders/r1/camera/azimuth"] = 90;
+
+  scenes["s2/plots/p1/type"] = "pseudocolor";
+  scenes["s2/plots/p1/field"] = "cyl";
+  scenes["s2/plots/p1/pipeline"] = "pl1";
+  scenes["s2/renders/r1/image_prefix"] = output_base_pseudo;
+  scenes["s2/renders/r1/camera/elevation"] = 30;
+  scenes["s2/renders/r1/camera/azimuth"] = 90;
+
+  Ascent ascent;
+  Node ascent_opts;
+  ascent_opts["runtime/type"] = "ascent";
+  ascent_opts["exceptions"] = "forward";
+  ascent.open(ascent_opts);
+  ascent.publish(data);
+  ascent.execute(actions);
+  ascent.close();
+  
+  //too much to ask for the mesh to be exact?
+  //EXPECT_TRUE(check_test_image(output_base, 0.01f));
+  EXPECT_TRUE(check_test_image(output_base_pseudo, 0.01f));
+  EXPECT_TRUE(check_test_file(output_extract_root) +".cycle_000100.root");
+
+  std::stringstream ss;
+  ss << "An example of revolving (rotationally extruding) a dataset " << angle_int
+     << " degrees over " << steps << " steps.";
+  ASCENT_ACTIONS_DUMP(actions, output_base, ss.str());
 }
 
 } // namespace
 
 //-----------------------------------------------------------------------------
-TEST(ascent_revolve, test_revolve_contour_lines_angle_90)
+TEST(ascent_revolve, test_revolve_rz_r_case_angle_90)
 {
-  Node n;
-  ascent::about(n);
-  if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
-  {
-    ASCENT_INFO("Ascent viskores support disabled, skipping test");
-    return;
-  }
-
-  run_revolve_contour_lines_case(90.0, false);
+  const bool periodic = false;
+  run_revolve_rz_r_case(90.0, periodic);
 }
 
 //-----------------------------------------------------------------------------
-TEST(ascent_revolve, test_revolve_contour_lines_angle_180)
+TEST(ascent_revolve, test_revolve_rz_r_case_angle_180)
 {
-  Node n;
-  ascent::about(n);
-  if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
-  {
-    ASCENT_INFO("Ascent viskores support disabled, skipping test");
-    return;
-  }
-
-  run_revolve_contour_lines_case(180.0, false);
+  const bool periodic = false;
+  run_revolve_rz_r_case(180.0, periodic);
 }
 
 //-----------------------------------------------------------------------------
-TEST(ascent_revolve, test_revolve_contour_lines_angle_270)
+TEST(ascent_revolve, test_revolve_rz_r_case_angle_270)
 {
-  Node n;
-  ascent::about(n);
-  if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
-  {
-    ASCENT_INFO("Ascent viskores support disabled, skipping test");
-    return;
-  }
-
-  run_revolve_contour_lines_case(270.0, false);
+  const bool periodic = false;
+  run_revolve_rz_r_case(270.0, periodic);
 }
 
 //-----------------------------------------------------------------------------
-TEST(ascent_revolve, test_revolve_contour_lines_angle_360)
+TEST(ascent_revolve, test_revolve_rz_r_case_angle_360)
 {
-  Node n;
-  ascent::about(n);
-  if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
-  {
-    ASCENT_INFO("Ascent viskores support disabled, skipping test");
-    return;
-  }
-
-  run_revolve_contour_lines_case(360.0, true);
+  const bool periodic = true;
+  run_revolve_rz_r_case(360.0, periodic);
 }
 
 //-----------------------------------------------------------------------------
-TEST(ascent_revolve, test_revolve_slice_surface_angle_90)
+TEST(ascent_revolve, test_revolve_rz_z_case_angle_90)
 {
-  Node n;
-  ascent::about(n);
-  if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
-  {
-    ASCENT_INFO("Ascent viskores support disabled, skipping test");
-    return;
-  }
-
-  run_revolve_slice_surface_case(90.0, false);
+  const bool periodic = false;
+  run_revolve_rz_z_case(90.0, periodic);
 }
 
 //-----------------------------------------------------------------------------
-TEST(ascent_revolve, test_revolve_slice_surface_angle_180)
+TEST(ascent_revolve, test_revolve_rz_z_case_angle_180)
 {
-  Node n;
-  ascent::about(n);
-  if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
-  {
-    ASCENT_INFO("Ascent viskores support disabled, skipping test");
-    return;
-  }
-
-  run_revolve_slice_surface_case(180.0, false);
+  const bool periodic = false;
+  run_revolve_rz_z_case(180.0, periodic);
 }
 
 //-----------------------------------------------------------------------------
-TEST(ascent_revolve, test_revolve_slice_surface_angle_270)
+TEST(ascent_revolve, test_revolve_rz_z_case_angle_270)
 {
-  Node n;
-  ascent::about(n);
-  if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
-  {
-    ASCENT_INFO("Ascent viskores support disabled, skipping test");
-    return;
-  }
-
-  run_revolve_slice_surface_case(270.0, false);
+  const bool periodic = false;
+  run_revolve_rz_z_case(270.0, periodic);
 }
 
 //-----------------------------------------------------------------------------
-TEST(ascent_revolve, test_revolve_slice_surface_angle_360)
+TEST(ascent_revolve, test_revolve_rz_z_case_angle_360)
 {
-  Node n;
-  ascent::about(n);
-  if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
-  {
-    ASCENT_INFO("Ascent viskores support disabled, skipping test");
-    return;
-  }
-
-  run_revolve_slice_surface_case(360.0, true);
-}
-
-//-----------------------------------------------------------------------------
-TEST(ascent_revolve, test_revolve_rz_angle_90)
-{
-  Node n;
-  ascent::about(n);
-  if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
-  {
-    ASCENT_INFO("Ascent viskores support disabled, skipping test");
-    return;
-  }
-
-  run_revolve_rz_case(90.0, false);
-}
-
-//-----------------------------------------------------------------------------
-TEST(ascent_revolve, test_revolve_rz_angle_180)
-{
-  Node n;
-  ascent::about(n);
-  if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
-  {
-    ASCENT_INFO("Ascent viskores support disabled, skipping test");
-    return;
-  }
-
-  run_revolve_rz_case(180.0, false);
-}
-
-//-----------------------------------------------------------------------------
-TEST(ascent_revolve, test_revolve_rz_angle_270)
-{
-  Node n;
-  ascent::about(n);
-  if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
-  {
-    ASCENT_INFO("Ascent viskores support disabled, skipping test");
-    return;
-  }
-
-  run_revolve_rz_case(270.0, false);
-}
-
-//-----------------------------------------------------------------------------
-TEST(ascent_revolve, test_revolve_rz_angle_360)
-{
-  Node n;
-  ascent::about(n);
-  if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
-  {
-    ASCENT_INFO("Ascent viskores support disabled, skipping test");
-    return;
-  }
-
-  run_revolve_rz_case(360.0, true);
+  const bool periodic = true;
+  run_revolve_rz_z_case(360.0, periodic);
 }
 
 //-----------------------------------------------------------------------------

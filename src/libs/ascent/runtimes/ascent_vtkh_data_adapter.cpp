@@ -376,8 +376,8 @@ GetRZCoordinateSystem(const conduit::Node &n_coords,
     theta_coords_handle.AllocateAndFill(nverts,0.0);
 
     return viskores::cont::CoordinateSystem(name,
-                                    make_ArrayHandleSOA(z_coords_handle,
-                                                        r_coords_handle,
+                                    make_ArrayHandleSOA(r_coords_handle,
+                                                        z_coords_handle,
                                                         theta_coords_handle));
 }
 
@@ -1600,14 +1600,14 @@ VTKHDataAdapter::UniformBlueprintToViskoresDataSet
         }
         else if (is_rz && is_2d)
         {
-            if(n_origin.has_child("z"))
-            {
-                origin_x = n_origin["z"].to_float64();
-            }
-
             if(n_origin.has_child("r"))
             {
-                origin_y = n_origin["r"].to_float64();
+                origin_x = n_origin["r"].to_float64();
+            }
+
+            if(n_origin.has_child("z"))
+            {
+                origin_y = n_origin["z"].to_float64();
             }
         }
         else if (is_rz && !is_2d)
@@ -1639,14 +1639,14 @@ VTKHDataAdapter::UniformBlueprintToViskoresDataSet
         }
         else if (is_rz && is_2d)
         {
-            if(n_spacing.has_path("dz"))
-            {
-                spacing_x = n_spacing["dz"].to_float64();
-            }
-
             if(n_spacing.has_path("dr"))
             {
-                spacing_y = n_spacing["dr"].to_float64();
+                spacing_x = n_spacing["dr"].to_float64();
+            }
+
+            if(n_spacing.has_path("dz"))
+            {
+                spacing_y = n_spacing["dz"].to_float64();
             }
         }
         else if (is_rz && !is_2d)
@@ -1666,18 +1666,9 @@ VTKHDataAdapter::UniformBlueprintToViskoresDataSet
                                        spacing_z);
 
     viskores::Id3 dims;
-    if(is_rz)
-    {
-        dims = viskores::Id3(dims_j,
-                    dims_i,
-                    dims_k);
-    }
-    else
-    {
-        dims = viskores::Id3(dims_i,
-                    dims_j,
-                    dims_k);
-    }
+    dims = viskores::Id3(dims_i,
+                         dims_j,
+                         dims_k);
 
     // todo, use actually coordset and topo names?
     result->AddCoordinateSystem( viskores::cont::CoordinateSystem(coords_name.c_str(),
@@ -1967,9 +1958,9 @@ VTKHDataAdapter::RectilinearBlueprintToViskoresDataSet
             viskores::cont::ArrayHandle<viskores::FloatDefault>,
             viskores::cont::ArrayHandle<viskores::FloatDefault> > coords;
 
-        coords = viskores::cont::make_ArrayHandleCartesianProduct(z_coords_handle,
-                                                                    r_coords_handle,
-                                                                    theta_coords_handle);
+        coords = viskores::cont::make_ArrayHandleCartesianProduct(r_coords_handle,
+                                                                  z_coords_handle,
+                                                                  theta_coords_handle);
 
         viskores::cont::CoordinateSystem coordinate_system(coords_name.c_str(), coords);
 
@@ -1978,8 +1969,8 @@ VTKHDataAdapter::RectilinearBlueprintToViskoresDataSet
         viskores::Id3 topo_origin = detail::topo_origin(n_topo);
 
         viskores::cont::CellSetStructured<2> cell_set;
-        cell_set.SetPointDimensions(viskores::make_Vec(z_npts,
-                                                    r_npts));
+        cell_set.SetPointDimensions(viskores::make_Vec(r_npts,
+                                                       z_npts));
         viskores::Id2 origin2(topo_origin[0], topo_origin[1]);
         cell_set.SetGlobalPointIndexStart(origin2);
         result->SetCellSet(cell_set);

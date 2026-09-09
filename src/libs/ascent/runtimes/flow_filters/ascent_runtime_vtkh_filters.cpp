@@ -575,8 +575,15 @@ VTKHRevolve::declare_interface(Node &i)
     param_schema["additionalProperties"] = false;
 
     string_schema(param_schema["properties/topology"]);
-    vec3_schema(param_schema["properties/point"], true);
-    vec3_schema(param_schema["properties/axis"], true);
+
+    // Support both cartesian (x,y,z) and cylindrical RZ (r,z) specifications.
+    // For RZ we interpret {r,z} as {x,y} in the adapter's (r,z,theta) coordinate system,
+    // with theta assumed to be 0.0.
+    vec3_schema(param_schema["properties/point/oneOf"].append(), true);
+    vec2_schema(param_schema["properties/point/oneOf"].append(), "r", "z", true);
+    vec3_schema(param_schema["properties/axis/oneOf"].append(), true);
+    vec2_schema(param_schema["properties/axis/oneOf"].append(), "r", "z", true);
+
     number_schema(param_schema["properties/start_angle"], true);
     number_schema(param_schema["properties/angle"], true);
     integer_schema(param_schema["properties/steps"], true, 1);
@@ -599,7 +606,9 @@ VTKHLinearExtrude::declare_interface(Node &i)
     param_schema["additionalProperties"] = false;
 
     string_schema(param_schema["properties/topology"]);
-    vec3_schema(param_schema["properties/vector"], true);
+    // Support both cartesian (x,y,z) and cylindrical RZ (r,z) specifications.
+    vec3_schema(param_schema["properties/vector/oneOf"].append(), true);
+    vec2_schema(param_schema["properties/vector/oneOf"].append(), "r", "z", true);
     integer_schema(param_schema["properties/steps"], true, 1);
 
     param_schema["required"].append() = "vector";
@@ -647,17 +656,35 @@ VTKHRevolve::execute()
     if(params().has_path("point"))
     {
       const Node &n_point = params()["point"];
-      point[0] = get_float64(n_point["x"], data_object);
-      point[1] = get_float64(n_point["y"], data_object);
-      point[2] = get_float64(n_point["z"], data_object);
+      if(n_point.has_child("r"))
+      {
+        point[0] = get_float64(n_point["r"], data_object);
+        point[1] = get_float64(n_point["z"], data_object);
+        point[2] = 0.0;
+      }
+      else
+      {
+        point[0] = get_float64(n_point["x"], data_object);
+        point[1] = get_float64(n_point["y"], data_object);
+        point[2] = get_float64(n_point["z"], data_object);
+      }
     }
 
     if(params().has_path("axis"))
     {
       const Node &n_axis = params()["axis"];
-      axis[0] = get_float64(n_axis["x"], data_object);
-      axis[1] = get_float64(n_axis["y"], data_object);
-      axis[2] = get_float64(n_axis["z"], data_object);
+      if(n_axis.has_child("r"))
+      {
+        axis[0] = get_float64(n_axis["r"], data_object);
+        axis[1] = get_float64(n_axis["z"], data_object);
+        axis[2] = 0.0;
+      }
+      else
+      {
+        axis[0] = get_float64(n_axis["x"], data_object);
+        axis[1] = get_float64(n_axis["y"], data_object);
+        axis[2] = get_float64(n_axis["z"], data_object);
+      }
     }
 
     if(params().has_path("start_angle"))
@@ -730,9 +757,18 @@ VTKHLinearExtrude::execute()
     int steps = 1;
 
     const Node &n_vec = params()["vector"];
-    vector[0] = get_float64(n_vec["x"], data_object);
-    vector[1] = get_float64(n_vec["y"], data_object);
-    vector[2] = get_float64(n_vec["z"], data_object);
+    if(n_vec.has_child("r"))
+    {
+      vector[0] = get_float64(n_vec["r"], data_object);
+      vector[1] = get_float64(n_vec["z"], data_object);
+      vector[2] = 0.0;
+    }
+    else
+    {
+      vector[0] = get_float64(n_vec["x"], data_object);
+      vector[1] = get_float64(n_vec["y"], data_object);
+      vector[2] = get_float64(n_vec["z"], data_object);
+    }
 
     if(params().has_path("steps"))
     {

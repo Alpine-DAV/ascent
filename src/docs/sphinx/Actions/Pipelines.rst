@@ -231,61 +231,58 @@ Revolve
 The revolve filter creates a 3D volume by rotating a 2D surface mesh around an axis.
 The rotation axis is defined by a point on the axis and an axis direction vector.
 Angles are specified in degrees.
+Required parameters include: 
+specifying the rotational extrusion vector (``axis``)  via ``(r,z)`` or ``(x,y,z)``;
+and the degrees of rotation (``angle``).
+Optional parameters include: 
+ the ``point`` of rotation (default: (0,0)); 
+the ``start_angle``, in degrees, of where to begin the rotation (default: 0);
+the number of ``steps`` used to discretize the rotational extrusion (default: 32);
+``periodic`` is ``true`` when the final plane of revolution wraps to the first (default: ``false``);
+and the ``topology`` name if there are multiple. 
 
-Limitations:
 
-- The filter expects an unstructured input mesh with fixed-size cells.
-- Only line (2 points) and triangle (3 points) cells are currently supported.
-  Quad-based surfaces (including Conduit Blueprint RZ examples like ``rz_cylinder``) must be
-  triangulated first.
+Example: revolve an RZ dataset around the z-axis for 270 degrees in 32 steps:
 
 .. code-block:: c++
 
-  conduit::Node pipelines;
-  pipelines["pl1/f1/type"] = "revolve";
-  conduit::Node &rev_params = pipelines["pl1/f1/params"];
-  rev_params["topology"] = "topo";
-  rev_params["point/x"] = 0.0;
-  rev_params["point/y"] = 0.0;
-  rev_params["point/z"] = 0.0;
-  rev_params["axis/x"]  = 0.0;
-  rev_params["axis/y"]  = 1.0;
-  rev_params["axis/z"]  = 0.0;
-  rev_params["start_angle"] = 0.0;  // optional
-  rev_params["angle"] = 270.0;      // required sweep angle
-  rev_params["steps"] = 32;         // optional
-  rev_params["periodic"] = "false"; // optional ("true" or "false")
+	  conduit::Node pipelines;
+	  pipelines["pl1/f1/type"] = "revolve";
+	  conduit::Node &rev_params = pipelines["pl1/f1/params"];
+	  rev_params["topology"] = "topo";
+	  rev_params["point/r"] = 0.0;
+	  rev_params["point/z"] = 0.0;
+	  rev_params["axis/r"]  = 0.0;
+	  rev_params["axis/z"]  = 1.0;
+	  rev_params["start_angle"] = 0.0;  
+	  rev_params["angle"] = 270.0;       
+	  rev_params["steps"] = 32;         
+	  rev_params["periodic"] = "false"; 
 
-Parameters:
 
-  - ``axis`` (required): Axis direction vector.
-  - ``angle`` (required): Sweep angle in degrees.
-  - ``point`` (optional): A point on the rotation axis (default: (0,0,0)).
-  - ``start_angle`` (optional): Starting angle in degrees (default: 0).
-  - ``steps`` (optional): Number of angular steps used to discretize the sweep (default: 32).
-  - ``periodic`` (optional): When ``"true"``, the final plane wraps to the first (default: ``"false"``).
-  - ``topology`` (optional): Input topology name.
-
+Only line (2 points) and triangle (3 points) cells are currently supported.
+Quad-based surfaces must be triangulated first.
 Example: triangulate a quad surface, then revolve:
 
 .. code-block:: c++
 
-  conduit::Node pipelines;
-  pipelines["pl1/f1/type"] = "triangulate";
-  pipelines["pl1/f2/type"] = "revolve";
-  conduit::Node &rev_params = pipelines["pl1/f2/params"];
-  rev_params["axis/x"]  = 0.0;
-  rev_params["axis/y"]  = 1.0;
-  rev_params["axis/z"]  = 0.0;
-  rev_params["angle"] = 360.0;
-  rev_params["steps"] = 32;
-  rev_params["periodic"] = "true";
+	  conduit::Node pipelines;
+	  pipelines["pl1/f1/type"] = "triangulate";
+	  pipelines["pl1/f2/type"] = "revolve";
+	  conduit::Node &rev_params = pipelines["pl1/f2/params"];
+	  rev_params["axis/r"]  = 0.0;
+	  rev_params["axis/z"]  = 1.0;
+	  rev_params["angle"] = 360.0;
+	  rev_params["steps"] = 32;
+	  rev_params["periodic"] = "true";
 
 Extrude
 ~~~~~~~~
 The extrude filter creates a 3D volume by translating a 2D mesh along a vector.
-
-The filter expects an unstructured input mesh with fixed-size cells (lines, triangles, or quads).
+The only required parameter is the translation vector, ``vector``, for the linear extrusion.
+Optional parameters include: 
+the number of segments (``steps``) used to discretize the extrusion (default: 1);
+and the input topology name, ``topology``.
 
 .. code-block:: c++
 
@@ -298,11 +295,7 @@ The filter expects an unstructured input mesh with fixed-size cells (lines, tria
   ext_params["vector/z"] = 5.0;
   ext_params["steps"] = 8; // optional (default: 1)
 
-Parameters:
 
-  - ``vector`` (required): Total translation vector for the extrusion.
-  - ``steps`` (optional): Number of segments used to discretize the extrusion (default: 1).
-  - ``topology`` (optional): Input topology name.
 
 Three Slice
 ~~~~~~~~~~~
