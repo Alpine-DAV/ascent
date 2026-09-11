@@ -5857,7 +5857,7 @@ VTKHVTKFileExtract::execute()
           ofs << "!NBLOCKS " << num_global_domains << std::endl;
           for(size_t i=0;i< global_domain_ids.number_of_elements();i++)
           {
-              ofs << conduit_fmt::format(output_file_pattern_rel,
+              ofs << conduit_fmt::format(conduit_fmt::runtime(output_file_pattern_rel),
                                          global_domain_ids[i]) << std::endl;
           }
         }
