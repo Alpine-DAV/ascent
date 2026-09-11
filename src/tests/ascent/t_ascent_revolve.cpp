@@ -91,6 +91,7 @@ compute_rz_bounds(const Node &mesh,
     zmin = std::min(zmin, z[i]);
     zmax = std::max(zmax, z[i]);
   }
+  //std::cerr << "rmin: " << rmin << " rmax: " << rmax << " zmin: " << zmin << " zmax: " << zmax << std::endl;
 }
 
 
@@ -165,13 +166,8 @@ run_revolve_rz_r_case(const double angle, const bool periodic)
   scenes["s1/plots/p1/type"] = "mesh";
   scenes["s1/plots/p1/pipeline"] = "pl1";
   scenes["s1/renders/r1/image_prefix"] = output_base;
-  const double zmid = 0.5 * (zmin + zmax);
-  const double rmid = 0.5 * (rmin + rmax);
   scenes["s1/renders/r1/camera/elevation"] = 30;
   scenes["s1/renders/r1/camera/azimuth"] = 90;
-//  scenes["s1/renders/r1/camera/look_at"] = {rmid, zmid, 0.0};
-//  scenes["s1/renders/r1/camera/position"] = {rmid + 20.0, zmid + 20.0, 20.0};
-//  scenes["s1/renders/r1/camera/up"] = {0.0, 1.0, 0.0};
 
   scenes["s2/plots/p1/type"] = "pseudocolor";
   scenes["s2/plots/p1/field"] = "cyl";
@@ -179,9 +175,6 @@ run_revolve_rz_r_case(const double angle, const bool periodic)
   scenes["s2/renders/r1/image_prefix"] = output_base_pseudo;
   scenes["s2/renders/r1/camera/elevation"] = 30;
   scenes["s2/renders/r1/camera/azimuth"] = 90;
-//  scenes["s2/renders/r1/camera/look_at"] = {rmid, zmid, 0.0};
-//  scenes["s2/renders/r1/camera/position"] = {rmid + 20.0, zmid + 20.0, 20.0};
-//  scenes["s2/renders/r1/camera/up"] = {0.0, 1.0, 0.0};
 
   Ascent ascent;
   Node ascent_opts;
@@ -274,8 +267,6 @@ run_revolve_rz_z_case(const double angle, const bool periodic)
   scenes["s1/plots/p1/type"] = "mesh";
   scenes["s1/plots/p1/pipeline"] = "pl1";
   scenes["s1/renders/r1/image_prefix"] = output_base;
-  const double zmid = 0.5 * (zmin + zmax);
-  const double rmid = 0.5 * (rmin + rmax);
   scenes["s1/renders/r1/camera/elevation"] = 30;
   scenes["s1/renders/r1/camera/azimuth"] = 90;
 

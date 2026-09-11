@@ -577,8 +577,8 @@ VTKHRevolve::declare_interface(Node &i)
     string_schema(param_schema["properties/topology"]);
 
     // Support both cartesian (x,y,z) and cylindrical RZ (r,z) specifications.
-    // For RZ we interpret {r,z} as {x,y} in the adapter's (r,z,theta) coordinate system,
-    // with theta assumed to be 0.0.
+    // The VTK-h adapter represents RZ as (z,r,theta). Map {r,z} onto {y,x} and
+    // set theta to 0.0.
     vec3_schema(param_schema["properties/point/oneOf"].append(), true);
     vec2_schema(param_schema["properties/point/oneOf"].append(), "r", "z", true);
     vec3_schema(param_schema["properties/axis/oneOf"].append(), true);
@@ -658,8 +658,8 @@ VTKHRevolve::execute()
       const Node &n_point = params()["point"];
       if(n_point.has_child("r"))
       {
-        point[0] = get_float64(n_point["r"], data_object);
-        point[1] = get_float64(n_point["z"], data_object);
+        point[0] = get_float64(n_point["z"], data_object); // x := z
+        point[1] = get_float64(n_point["r"], data_object); // y := r
         point[2] = 0.0;
       }
       else
@@ -675,8 +675,8 @@ VTKHRevolve::execute()
       const Node &n_axis = params()["axis"];
       if(n_axis.has_child("r"))
       {
-        axis[0] = get_float64(n_axis["r"], data_object);
-        axis[1] = get_float64(n_axis["z"], data_object);
+        axis[0] = get_float64(n_axis["z"], data_object); // x := z
+        axis[1] = get_float64(n_axis["r"], data_object); // y := r
         axis[2] = 0.0;
       }
       else
@@ -759,8 +759,8 @@ VTKHLinearExtrude::execute()
     const Node &n_vec = params()["vector"];
     if(n_vec.has_child("r"))
     {
-      vector[0] = get_float64(n_vec["r"], data_object);
-      vector[1] = get_float64(n_vec["z"], data_object);
+      vector[0] = get_float64(n_vec["z"], data_object); // x := z
+      vector[1] = get_float64(n_vec["r"], data_object); // y := r
       vector[2] = 0.0;
     }
     else
