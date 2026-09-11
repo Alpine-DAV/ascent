@@ -2,7 +2,9 @@
 # Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
 # other details. No copyright assignment is required to contribute to Ascent.
 
-# Find the interpreter first
+#
+# Downstream packages may configure using PYTHON_DIR or PYTHON_EXECUTABLE
+#
 if(PYTHON_DIR AND NOT PYTHON_EXECUTABLE)
     if(UNIX)
         # look for python 3 first
@@ -16,181 +18,23 @@ if(PYTHON_DIR AND NOT PYTHON_EXECUTABLE)
     endif()
 endif()
 
-find_package(PythonInterp REQUIRED)
-if(PYTHONINTERP_FOUND)
-        MESSAGE(STATUS "PYTHON_EXECUTABLE ${PYTHON_EXECUTABLE}")
-
-        execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c"
-                        "import sys;from sysconfig import get_config_var; sys.stdout.write(get_config_var('VERSION'))"
-                        OUTPUT_VARIABLE PYTHON_CONFIG_VERSION
-                        ERROR_VARIABLE  ERROR_FINDING_PYTHON_VERSION)
-        MESSAGE(STATUS "PYTHON_CONFIG_VERSION ${PYTHON_CONFIG_VERSION}")
-
-        execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c"
-                                "import sys;from sysconfig import get_path;sys.stdout.write(get_path('include'))"
-                        OUTPUT_VARIABLE PYTHON_INCLUDE_DIR
-                        ERROR_VARIABLE ERROR_FINDING_INCLUDES)
-        MESSAGE(STATUS "PYTHON_INCLUDE_DIR ${PYTHON_INCLUDE_DIR}")
-
-        if(NOT EXISTS ${PYTHON_INCLUDE_DIR})
-            MESSAGE(FATAL_ERROR "Reported PYTHON_INCLUDE_DIR ${PYTHON_INCLUDE_DIR} does not exist!")
-        endif()
-
-        #######################################################################
-        # Find main python package dirs for embedded use cases
-        # (used in Ascent, not Conduit)
-        #######################################################################
-        #
-        # TODO: replacing distutils.get_python_lib() isn't straight forward
-        #       distutils had special logic for some platforms (ubuntu)
-        #       which is not 1:1 using sysconfig.
-        #       We may need several queries and a list of paths to replace
-        #       get_python_lib()
-        #
-        execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c"
-                                "import sys;from distutils.sysconfig import get_python_lib;sys.stdout.write(get_python_lib())"
-                        OUTPUT_VARIABLE PYTHON_SITE_PACKAGES_DIR
-                        ERROR_VARIABLE ERROR_FINDING_SITE_PACKAGES_DIR)
-        MESSAGE(STATUS "PYTHON_SITE_PACKAGES_DIR ${PYTHON_SITE_PACKAGES_DIR}")
-
-        if(NOT EXISTS ${PYTHON_SITE_PACKAGES_DIR})
-            MESSAGE(FATAL_ERROR "Reported PYTHON_SITE_PACKAGES_DIR ${PYTHON_SITE_PACKAGES_DIR} does not exist!")
-        endif()
-        # for embedded python, we need to know where the site packages dir is
-        set(EXTRA_PYTHON_MODULE_DIRS "")
-        list(APPEND EXTRA_PYTHON_MODULE_DIRS ${PYTHON_SITE_PACKAGES_DIR})
-        #######################################################################
-
-        # check if we need "-undefined dynamic_lookup" by inspecting LDSHARED flags
-        execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c"
-                                "import sys;import sysconfig;sys.stdout.write(sysconfig.get_config_var('LDSHARED'))"
-                        OUTPUT_VARIABLE PYTHON_LDSHARED_FLAGS
-                        ERROR_VARIABLE ERROR_FINDING_PYTHON_LDSHARED_FLAGS)
-
-        MESSAGE(STATUS "PYTHON_LDSHARED_FLAGS ${PYTHON_LDSHARED_FLAGS}")
-
-        if(PYTHON_LDSHARED_FLAGS MATCHES "-undefined dynamic_lookup")
-             MESSAGE(STATUS "PYTHON_USE_UNDEFINED_DYNAMIC_LOOKUP_FLAG is ON")
-            set(PYTHON_USE_UNDEFINED_DYNAMIC_LOOKUP_FLAG ON)
-        else()
-             MESSAGE(STATUS "PYTHON_USE_UNDEFINED_DYNAMIC_LOOKUP_FLAG is OFF")
-            set(PYTHON_USE_UNDEFINED_DYNAMIC_LOOKUP_FLAG OFF)
-        endif()
-
-        # our goal is to find the specific python lib, based on info
-        # we extract from sysconfig from the python executable
-        #
-        # check for python libs differs for windows python installs
-        if(NOT WIN32)
-            # we may build a shared python module against a static python
-            # check for both shared and static libs cases
-
-            # combos to try:
-            # shared:
-            #  LIBDIR + LDLIBRARY
-            #  LIBPL + LDLIBRARY
-            # static:
-            #  LIBDIR + LIBRARY
-            #  LIBPL + LIBRARY
-
-            execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c"
-                                    "import sys;from sysconfig import get_config_var; sys.stdout.write(get_config_var('LIBDIR'))"
-                            OUTPUT_VARIABLE PYTHON_CONFIG_LIBDIR
-                            ERROR_VARIABLE  ERROR_FINDING_PYTHON_LIBDIR)
-
-            execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c"
-                                    "import sys;from sysconfig import get_config_var; sys.stdout.write(get_config_var('LIBPL'))"
-                            OUTPUT_VARIABLE PYTHON_CONFIG_LIBPL
-                            ERROR_VARIABLE  ERROR_FINDING_PYTHON_LIBPL)
-
-            execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c"
-                                    "import sys;from sysconfig import get_config_var; sys.stdout.write(get_config_var('LDLIBRARY'))"
-                            OUTPUT_VARIABLE PYTHON_CONFIG_LDLIBRARY
-                            ERROR_VARIABLE  ERROR_FINDING_PYTHON_LDLIBRARY)
-
-            execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c"
-                                    "import sys;from sysconfig import get_config_var; sys.stdout.write(get_config_var('LIBRARY'))"
-                            OUTPUT_VARIABLE PYTHON_CONFIG_LIBRARY
-                            ERROR_VARIABLE  ERROR_FINDING_PYTHON_LIBRARY)
-
-            message(STATUS "PYTHON_CONFIG_LIBDIR:     ${PYTHON_CONFIG_LIBDIR}")
-            message(STATUS "PYTHON_CONFIG_LIBPL:      ${PYTHON_CONFIG_LIBPL}")
-            message(STATUS "PYTHON_CONFIG_LDLIBRARY:  ${PYTHON_CONFIG_LDLIBRARY}")
-            message(STATUS "PYTHON_CONFIG_LIBRARY:    ${PYTHON_CONFIG_LIBRARY}")
-
-            set(PYTHON_LIBRARY "")
-            # look for shared libs first
-            # shared libdir + ldlibrary
-            if(NOT EXISTS ${PYTHON_LIBRARY})
-                if(IS_DIRECTORY ${PYTHON_CONFIG_LIBDIR})
-                    set(_PYTHON_LIBRARY_TEST  "${PYTHON_CONFIG_LIBDIR}/${PYTHON_CONFIG_LDLIBRARY}")
-                    message(STATUS "Checking for python library at: ${_PYTHON_LIBRARY_TEST}")
-                    if(EXISTS ${_PYTHON_LIBRARY_TEST})
-                        set(PYTHON_LIBRARY ${_PYTHON_LIBRARY_TEST})
-                    endif()
-                endif()
-            endif()
-
-            # shared libpl + ldlibrary
-            if(NOT EXISTS ${PYTHON_LIBRARY})
-                if(IS_DIRECTORY ${PYTHON_CONFIG_LIBPL})
-                    set(_PYTHON_LIBRARY_TEST  "${PYTHON_CONFIG_LIBPL}/${PYTHON_CONFIG_LDLIBRARY}")
-                    message(STATUS "Checking for python library at: ${_PYTHON_LIBRARY_TEST}")
-                    if(EXISTS ${_PYTHON_LIBRARY_TEST})
-                        set(PYTHON_LIBRARY ${_PYTHON_LIBRARY_TEST})
-                    endif()
-                endif()
-            endif()
-
-            # static: libdir + library
-            if(NOT EXISTS ${PYTHON_LIBRARY})
-                if(IS_DIRECTORY ${PYTHON_CONFIG_LIBDIR})
-                    set(_PYTHON_LIBRARY_TEST  "${PYTHON_CONFIG_LIBDIR}/${PYTHON_CONFIG_LIBRARY}")
-                    message(STATUS "Checking for python library at: ${_PYTHON_LIBRARY_TEST}")
-                    if(EXISTS ${_PYTHON_LIBRARY_TEST})
-                        set(PYTHON_LIBRARY ${_PYTHON_LIBRARY_TEST})
-                    endif()
-                endif()
-            endif()
-
-            # static: libpl + library
-            if(NOT EXISTS ${PYTHON_LIBRARY})
-                if(IS_DIRECTORY ${PYTHON_CONFIG_LIBPL})
-                    set(_PYTHON_LIBRARY_TEST  "${PYTHON_CONFIG_LIBPL}/${PYTHON_CONFIG_LIBRARY}")
-                    message(STATUS "Checking for python library at: ${_PYTHON_LIBRARY_TEST}")
-                    if(EXISTS ${_PYTHON_LIBRARY_TEST})
-                        set(PYTHON_LIBRARY ${_PYTHON_LIBRARY_TEST})
-                    endif()
-                endif()
-            endif()
-        else() # windows
-            get_filename_component(PYTHON_ROOT_DIR ${PYTHON_EXECUTABLE} DIRECTORY)
-            # Note: this assumes that two versions of python are not installed in the same dest dir
-            set(_PYTHON_LIBRARY_TEST  "${PYTHON_ROOT_DIR}/libs/python${PYTHON_CONFIG_VERSION}.lib")
-            message(STATUS "Checking for python library at: ${_PYTHON_LIBRARY_TEST}")
-            if(EXISTS ${_PYTHON_LIBRARY_TEST})
-                set(PYTHON_LIBRARY ${_PYTHON_LIBRARY_TEST})
-            endif()
-        endif()
-
-        if(NOT EXISTS ${PYTHON_LIBRARY})
-            MESSAGE(FATAL_ERROR "Failed to find main library using PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}")
-        endif()
-
-        MESSAGE(STATUS "{PythonLibs from PythonInterp} using: PYTHON_LIBRARY=${PYTHON_LIBRARY}")
-        find_package(PythonLibs)
-
-        if(NOT PYTHONLIBS_FOUND)
-            MESSAGE(FATAL_ERROR "Failed to find Python Libraries using PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}")
-        endif()
-
+# allow PYTHON_EXECUTABLE to init Python3_EXECUTABLE
+if(PYTHON_EXECUTABLE AND NOT Python3_EXECUTABLE)
+    set(Python3_EXECUTABLE ${PYTHON_EXECUTABLE})
 endif()
 
+if(Python3_EXECUTABLE)
+    message(STATUS "Python Executable: {Python3_EXECUTABLE}")
+endif()
 
-find_package_handle_standard_args(Python  DEFAULT_MSG
-                                  PYTHON_LIBRARY PYTHON_INCLUDE_DIR)
+find_package(Python3
+             REQUIRED
+             COMPONENTS Interpreter Development NumPy)
 
-
+# normalize python found to all caps
+if(Python3_FOUND)
+    set(PYTHON_FOUND TRUE)
+endif()
 
 ##############################################################################
 # Macro to use a pure python pip setup script
@@ -246,7 +90,7 @@ FUNCTION(PYTHON_ADD_PIP_SETUP)
     # like we were able to do with distutils, you have to use TMPDIR
     # TODO: we might want to  explore this in the future
     add_custom_command(OUTPUT ${stamp}
-            COMMAND ${PYTHON_EXECUTABLE} -m pip install . -V
+            COMMAND ${Python3_EXECUTABLE} -m pip install . -V 
             --no-cache-dir
             --disable-pip-version-check
             --no-index
@@ -276,8 +120,9 @@ FUNCTION(PYTHON_ADD_PIP_SETUP)
         INSTALL(CODE
             "
             EXECUTE_PROCESS(WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-                COMMAND ${PYTHON_EXECUTABLE} -m pip install . -V --upgrade
+                COMMAND ${Python3_EXECUTABLE} -m pip install . -V --upgrade
                 --disable-pip-version-check --no-warn-script-location
+                --no-index --no-deps --no-build-isolation
                 --target ${py_mod_inst_prefix}
                 OUTPUT_VARIABLE PY_DIST_UTILS_INSTALL_OUT)
             MESSAGE(STATUS \"\${PY_DIST_UTILS_INSTALL_OUT}\")
@@ -287,8 +132,9 @@ FUNCTION(PYTHON_ADD_PIP_SETUP)
         INSTALL(CODE
             "
             EXECUTE_PROCESS(WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-                COMMAND ${PYTHON_EXECUTABLE} -m pip install . -V --upgrade
+                COMMAND ${Python3_EXECUTABLE} -m pip install . -V --upgrade
                 --disable-pip-version-check --no-warn-script-location
+                --no-index --no-deps --no-build-isolation
                 --target \$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${args_DEST_DIR}
                 OUTPUT_VARIABLE PY_DIST_UTILS_INSTALL_OUT)
             MESSAGE(STATUS \"\${PY_DIST_UTILS_INSTALL_OUT}\")
@@ -303,10 +149,10 @@ FUNCTION(PYTHON_ADD_PIP_SETUP)
 ENDFUNCTION(PYTHON_ADD_PIP_SETUP)
 
 ##############################################################################
-# Macro to create a compiled python module
+# Macro to create a compiled python module 
 ##############################################################################
 #
-# we use this instead of the std ADD_PYTHON_MODULE cmake command
+# we use this instead of the std ADD_PYTHON_MODULE cmake command 
 # to setup proper install targets.
 #
 ##############################################################################
@@ -340,7 +186,11 @@ FUNCTION(PYTHON_ADD_COMPILED_MODULE)
     endif()
 
     MESSAGE(STATUS "Configuring python module: ${args_NAME}")
-    PYTHON_ADD_MODULE(${args_NAME} ${args_SOURCES})
+    set(sabi)
+    if (ASCENT_PYTHON_USE_LIMITED_API)
+        set(sabi USE_SABI 3.8)
+    endif ()
+    Python3_add_library(${args_NAME} MODULE ${sabi} WITH_SOABI ${args_SOURCES})
 
     set_target_properties(${args_NAME} PROPERTIES
                                        LIBRARY_OUTPUT_DIRECTORY
@@ -364,27 +214,25 @@ FUNCTION(PYTHON_ADD_COMPILED_MODULE)
     # defer linking with python, let the final python interpreter
     # provide the proper symbols
 
-    # on osx we need to use the following flag to
+    # on osx we need to use the following flag to 
     # avoid undefined linking errors
     if(PYTHON_USE_UNDEFINED_DYNAMIC_LOOKUP_FLAG)
         set_target_properties(${args_NAME} PROPERTIES
                               LINK_FLAGS "-undefined dynamic_lookup")
     endif()
-
-    # win32, link to python
-    if(WIN32)
-        target_link_libraries(${args_NAME} PRIVATE ${PYTHON_LIBRARIES})
-    endif()
+    
+    # link to python as a module
+    target_link_libraries(${args_NAME} PRIVATE Python3::Module)
 
     # support installing the python module components to an
-    # an alternate dir, set via PYTHON_MODULE_INSTALL_PREFIX
+    # an alternate dir, set via PYTHON_MODULE_INSTALL_PREFIX 
     set(py_install_dir ${args_DEST_DIR})
     if(PYTHON_MODULE_INSTALL_PREFIX)
         set(py_install_dir ${PYTHON_MODULE_INSTALL_PREFIX})
     endif()
 
     install(TARGETS ${args_NAME}
-            EXPORT  conduit
+            EXPORT  ascent
             LIBRARY DESTINATION ${py_install_dir}/${args_PY_MODULE_DIR}
             ARCHIVE DESTINATION ${py_install_dir}/${args_PY_MODULE_DIR}
             RUNTIME DESTINATION ${py_install_dir}/${args_PY_MODULE_DIR}
@@ -452,16 +300,7 @@ FUNCTION(PYTHON_ADD_HYBRID_MODULE)
     # "${args_NAME}" depends on "${args_NAME}_py_setup"
     target_link_libraries("${args_NAME}" PRIVATE "${args_NAME}_py_setup")
 
-    # args_NAME depends on "${args_NAME}_py_setup"
-    add_dependencies( ${args_NAME} "${args_NAME}_py_setup")
-
 ENDFUNCTION(PYTHON_ADD_HYBRID_MODULE)
 
-#
-# Also register python as a BLT dep,to support the case were we link python,
-# as opposed to creating python modules via the above macros.
-#
 
-blt_register_library(NAME python
-                     INCLUDES ${PYTHON_INCLUDE_DIR}
-                     LIBRARIES ${PYTHON_LIBRARY} )
+
