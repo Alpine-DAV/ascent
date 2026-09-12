@@ -367,7 +367,7 @@ if ${build_pyvenv}; then
     ${venv_python_exe} -m pip install --upgrade pip
     ${venv_python_exe} -m pip install numpy sphinx sphinx_rtd_theme wheel
     if ${build_zfp}; then
-        ${venv_python_exe} -m pip install cython setuptools
+        ${venv_python_exe} -m pip install cython setuptools>=61.0.0
     fi
     if [[ "$enable_mpi" == "ON" ]]; then
         ${venv_python_exe} -m pip install mpi4py
