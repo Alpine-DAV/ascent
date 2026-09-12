@@ -141,6 +141,7 @@ jobs:
         which mpicc
     - name: Build TPLs
       run: |
+        python3 -m pip install --upgrade setuptools
         env enable_mpi=ON \
             enable_fortran=ON \
             enable_tests=OFF \
