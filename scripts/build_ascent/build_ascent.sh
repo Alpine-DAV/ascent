@@ -364,8 +364,8 @@ if [ ! -d ${venv_install_dir} ]; then
 if ${build_pyvenv}; then
     echo "**** Creating Python Virtual Env"
     cd ${install_dir} && ${python_exe} -m venv python-venv
-    ${venv_python_exe} -m pip install --upgrade pip
-    ${venv_python_exe} -m pip install numpy sphinx sphinx_rtd_theme wheel setuptools
+    ${venv_python_exe} -m pip install --upgrade pip setuptools
+    ${venv_python_exe} -m pip install numpy sphinx sphinx_rtd_theme wheel
     if ${build_zfp}; then
         ${venv_python_exe} -m pip install cython
     fi
