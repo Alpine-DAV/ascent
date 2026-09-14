@@ -381,9 +381,8 @@ Learn::execute()
 #ifdef ASCENT_MPI_ENABLED
     MPI_Allreduce(&num_domains, &global_blocks, 1, MPI_INT, MPI_SUM, mpi_comm);
 #endif
-
-    double *kVecs = new double[num_fields*num_fields]; // TODO: need one per domain!!!!
-    double *eigvals = new double[num_fields];
+//    double *kVecs = new double[num_fields*num_fields]; // TODO: need one per domain!!!!
+//    double *eigvals = new double[num_fields];
     double *norm_eigv = new double[num_domains];
     double *fmms = new double[num_fields * num_domains];
     //double *anomaly_metric = new double
