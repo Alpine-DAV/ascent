@@ -60,9 +60,8 @@ TEST(ascent_extrude, test_linear_extrude_rz_structured)
 
   pipelines["pl1/f1/type"] = "extrude";
   Node &ext_params = pipelines["pl1/f1/params"];
-  ext_params["vector/x"] = 0.0;
-  ext_params["vector/y"] = 5.0;
-  ext_params["vector/z"] = 0.0;
+  ext_params["vector/r"] = 0.0;
+  ext_params["vector/z"] = 5.0;
   ext_params["steps"] = 8;
 
   Node &add_extracts = actions.append();
@@ -130,8 +129,7 @@ TEST(ascent_extrude, test_linear_extrude_rz_unstructured)
 
   pipelines["pl1/f1/type"] = "extrude";
   Node &ext_params = pipelines["pl1/f1/params"];
-  ext_params["vector/x"] = 0.0;
-  ext_params["vector/y"] = 0.0;
+  ext_params["vector/r"] = 0.0;
   ext_params["vector/z"] = 5.0;
   ext_params["steps"] = 8;
 
@@ -150,8 +148,6 @@ TEST(ascent_extrude, test_linear_extrude_rz_unstructured)
   scenes["s1/plots/p1/field"] = "cyl";
   scenes["s1/plots/p1/pipeline"] = "pl1";
   scenes["s1/renders/r1/image_prefix"] = output_base;
-  scenes["s1/renders/r1/camera/azimuth"] = 90;
-  scenes["s1/renders/r1/camera/elevation"] = 30;
 
   Ascent ascent;
   Node ascent_opts;
