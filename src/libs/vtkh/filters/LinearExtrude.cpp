@@ -71,4 +71,3 @@ LinearExtrude::DoExecute()
 }
 
 } // namespace vtkh
-

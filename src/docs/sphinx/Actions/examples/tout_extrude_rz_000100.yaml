@@ -6,7 +6,7 @@
     pl1: 
       f1: 
         type: "extrude"
-        params: 
+        params:
           vector: 
             x: 0.0
             z: 5.0

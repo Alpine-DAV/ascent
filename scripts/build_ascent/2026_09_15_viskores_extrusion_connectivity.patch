@@ -1,0 +1,288 @@
+--- a/viskores/filter/geometry_refinement/ExtrusionAbstract.hxx
++++ b/viskores/filter/geometry_refinement/ExtrusionAbstract.hxx
+@@ -24,6 +24,7 @@
+ #include <viskores/cont/CellSetSingleType.h>
+ #include <viskores/cont/ErrorFilterExecution.h>
+ #include <viskores/filter/MapFieldPermutation.h>
++#include <viskores/filter/geometry_refinement/ExtrusionConnectivity.hxx>
+ #include <viskores/filter/geometry_refinement/Triangulate.h>
+ #include <viskores/filter/geometry_refinement/worklet/Extrusion.h>
+ 
+@@ -39,97 +40,6 @@
+ namespace internal
+ {
+ 
+-struct IsShapeTriangle
+-{
+-  VISKORES_EXEC_CONT
+-  bool operator()(viskores::UInt8 shape) const { return shape == viskores::CELL_SHAPE_TRIANGLE; }
+-};
+-
+-struct IsThreeIndices
+-{
+-  template <typename ValueType>
+-  VISKORES_EXEC_CONT bool operator()(ValueType count) const
+-  {
+-    return count == 3;
+-  }
+-};
+-
+-struct BinaryAnd
+-{
+-  VISKORES_EXEC_CONT
+-  bool operator()(bool u, bool v) const { return u && v; }
+-};
+-
+-template <typename ConnectivityArrayType>
+-VISKORES_CONT void ValidateConnectivityRange(const ConnectivityArrayType& connectivity,
+-                                             viskores::Id numberOfPoints,
+-                                             const std::string& filterName)
+-{
+-  const viskores::Vec<viskores::Id, 2> range = viskores::cont::Algorithm::Reduce(
+-    connectivity,
+-    viskores::make_Vec(std::numeric_limits<viskores::Id>::max(),
+-                       std::numeric_limits<viskores::Id>::lowest()),
+-    viskores::MinAndMax<viskores::Id>{});
+-  if ((range[0] < 0) || (range[1] >= numberOfPoints))
+-  {
+-    throw viskores::cont::ErrorFilterExecution(
+-      filterName + ": triangle connectivity contains an invalid point id.");
+-  }
+-}
+-
+-VISKORES_CONT inline viskores::cont::ArrayHandle<viskores::Id> MakeTriangleConnectivity(
+-  const viskores::cont::UnknownCellSet& unknownCellSet,
+-  const std::string& filterName)
+-{
+-  if (unknownCellSet.GetNumberOfCells() <= 0)
+-  {
+-    throw viskores::cont::ErrorFilterExecution(filterName + ": input has no cells.");
+-  }
+-  if (unknownCellSet.GetNumberOfPoints() <= 0)
+-  {
+-    throw viskores::cont::ErrorFilterExecution(filterName + ": input has no points.");
+-  }
+-
+-  viskores::cont::ArrayHandle<viskores::Id> connectivity;
+-
+-  if (unknownCellSet.CanConvert<viskores::cont::CellSetSingleType<>>())
+-  {
+-    const auto cellSet = unknownCellSet.AsCellSet<viskores::cont::CellSetSingleType<>>();
+-    if (cellSet.GetCellShapeAsId() != viskores::CellShapeTagTriangle::Id)
+-    {
+-      throw viskores::cont::ErrorFilterExecution(filterName + ": input cells must be triangles.");
+-    }
+-    connectivity = cellSet.GetConnectivityArray(viskores::TopologyElementTagCell{},
+-                                                viskores::TopologyElementTagPoint{});
+-  }
+-  else if (unknownCellSet.CanConvert<viskores::cont::CellSetExplicit<>>())
+-  {
+-    const auto cellSet = unknownCellSet.AsCellSet<viskores::cont::CellSetExplicit<>>();
+-    const auto shapes = cellSet.GetShapesArray(viskores::TopologyElementTagCell{},
+-                                               viskores::TopologyElementTagPoint{});
+-    const bool allTriangleShapes = viskores::cont::Algorithm::Reduce(
+-      viskores::cont::make_ArrayHandleTransform(shapes, IsShapeTriangle{}), true, BinaryAnd{});
+-    const auto numIndices = cellSet.GetNumIndicesArray(viskores::TopologyElementTagCell{},
+-                                                       viskores::TopologyElementTagPoint{});
+-    const bool allTriangleCounts = viskores::cont::Algorithm::Reduce(
+-      viskores::cont::make_ArrayHandleTransform(numIndices, IsThreeIndices{}), true, BinaryAnd{});
+-    if (!allTriangleShapes || !allTriangleCounts)
+-    {
+-      throw viskores::cont::ErrorFilterExecution(filterName + ": input cells must be triangles.");
+-    }
+-    connectivity = cellSet.GetConnectivityArray(viskores::TopologyElementTagCell{},
+-                                                viskores::TopologyElementTagPoint{});
+-  }
+-  else
+-  {
+-    throw viskores::cont::ErrorFilterExecution(
+-      filterName + ": input cell set must be explicit triangle topology.");
+-  }
+-
+-  ValidateConnectivityRange(connectivity, unknownCellSet.GetNumberOfPoints(), filterName);
+-  return connectivity;
+-}
+-
+ VISKORES_CONT inline void ValidateCellSetExtrudeLimits(viskores::Id numberOfPoints,
+                                                        viskores::Id numberOfPlanes,
+                                                        viskores::Id connectivitySize,
+--- a/viskores/filter/geometry_refinement/CMakeLists.txt
++++ b/viskores/filter/geometry_refinement/CMakeLists.txt
+@@ -30,6 +30,7 @@ set(geometry_refinement_sources
+ 
+ set(geometry_refinement_template_sources
+   ExtrusionAbstract.hxx
++  ExtrusionConnectivity.hxx
+   )
+ 
+ viskores_library(
+--- a/viskores/filter/geometry_refinement/ExtrusionConnectivity.hxx
++++ b/viskores/filter/geometry_refinement/ExtrusionConnectivity.hxx
+@@ -0,0 +1,167 @@
++//============================================================================
++//  The contents of this file are covered by the Viskores license. See
++//  LICENSE.txt for details.
++//
++//  By contributing to this file, all contributors agree to the Developer
++//  Certificate of Origin Version 1.1 (DCO 1.1) as stated in DCO.txt.
++//============================================================================
++
++#ifndef viskores_filter_geometry_refinement_ExtrusionConnectivity_hxx
++#define viskores_filter_geometry_refinement_ExtrusionConnectivity_hxx
++
++#include <viskores/CellShape.h>
++#include <viskores/cont/Algorithm.h>
++#include <viskores/cont/ArrayHandle.h>
++#include <viskores/cont/ArrayHandleTransform.h>
++#include <viskores/cont/CellSetExplicit.h>
++#include <viskores/cont/CellSetSingleType.h>
++#include <viskores/cont/ErrorFilterExecution.h>
++#include <viskores/cont/UnknownCellSet.h>
++
++#include <limits>
++#include <string>
++
++namespace viskores
++{
++namespace filter
++{
++namespace geometry_refinement
++{
++namespace internal
++{
++
++struct BinaryAnd
++{
++  VISKORES_EXEC_CONT
++  bool operator()(bool u, bool v) const { return u && v; }
++};
++
++struct IsShape
++{
++  viskores::UInt8 Shape;
++
++  VISKORES_EXEC_CONT
++  bool operator()(viskores::UInt8 shape) const { return shape == this->Shape; }
++};
++
++struct IsNumIndices
++{
++  viskores::IdComponent Count;
++
++  template <typename ValueType>
++  VISKORES_EXEC_CONT bool operator()(ValueType count) const
++  {
++    return count == static_cast<ValueType>(this->Count);
++  }
++};
++
++template <typename ConnectivityArrayType>
++VISKORES_CONT void ValidateConnectivityRange(const ConnectivityArrayType& connectivity,
++                                             viskores::Id numberOfPoints,
++                                             const std::string& filterName)
++{
++  const viskores::Vec<viskores::Id, 2> range = viskores::cont::Algorithm::Reduce(
++    connectivity,
++    viskores::make_Vec(std::numeric_limits<viskores::Id>::max(),
++                       std::numeric_limits<viskores::Id>::lowest()),
++    viskores::MinAndMax<viskores::Id>{});
++  if ((range[0] < 0) || (range[1] >= numberOfPoints))
++  {
++    throw viskores::cont::ErrorFilterExecution(
++      filterName + ": connectivity contains an invalid point id.");
++  }
++}
++
++VISKORES_CONT inline viskores::cont::ArrayHandle<viskores::Id> MakeFixedSizeConnectivity(
++  const viskores::cont::UnknownCellSet& unknownCellSet,
++  viskores::UInt8 shapeId,
++  viskores::IdComponent pointsPerCell,
++  const std::string& filterName,
++  const std::string& elementName)
++{
++  if (unknownCellSet.GetNumberOfCells() <= 0)
++  {
++    throw viskores::cont::ErrorFilterExecution(filterName + ": input has no cells.");
++  }
++  if (unknownCellSet.GetNumberOfPoints() <= 0)
++  {
++    throw viskores::cont::ErrorFilterExecution(filterName + ": input has no points.");
++  }
++
++  viskores::cont::ArrayHandle<viskores::Id> connectivity;
++
++  if (unknownCellSet.CanConvert<viskores::cont::CellSetSingleType<>>())
++  {
++    const auto cellSet = unknownCellSet.AsCellSet<viskores::cont::CellSetSingleType<>>();
++    if (cellSet.GetCellShapeAsId() != shapeId)
++    {
++      throw viskores::cont::ErrorFilterExecution(filterName + ": input cells must be " +
++                                                 elementName + "s.");
++    }
++    connectivity = cellSet.GetConnectivityArray(viskores::TopologyElementTagCell{},
++                                                viskores::TopologyElementTagPoint{});
++  }
++  else if (unknownCellSet.CanConvert<viskores::cont::CellSetExplicit<>>())
++  {
++    const auto cellSet = unknownCellSet.AsCellSet<viskores::cont::CellSetExplicit<>>();
++    const auto shapes = cellSet.GetShapesArray(viskores::TopologyElementTagCell{},
++                                               viskores::TopologyElementTagPoint{});
++    const bool allShapes = viskores::cont::Algorithm::Reduce(
++      viskores::cont::make_ArrayHandleTransform(shapes, IsShape{ shapeId }), true, BinaryAnd{});
++    const auto numIndices = cellSet.GetNumIndicesArray(viskores::TopologyElementTagCell{},
++                                                       viskores::TopologyElementTagPoint{});
++    const bool allCounts = viskores::cont::Algorithm::Reduce(
++      viskores::cont::make_ArrayHandleTransform(numIndices, IsNumIndices{ pointsPerCell }),
++      true,
++      BinaryAnd{});
++    if (!allShapes || !allCounts)
++    {
++      throw viskores::cont::ErrorFilterExecution(filterName + ": input cells must be " +
++                                                 elementName + "s.");
++    }
++    connectivity = cellSet.GetConnectivityArray(viskores::TopologyElementTagCell{},
++                                                viskores::TopologyElementTagPoint{});
++  }
++  else
++  {
++    throw viskores::cont::ErrorFilterExecution(
++      filterName + ": input cell set must be explicit " + elementName + " topology.");
++  }
++
++  ValidateConnectivityRange(connectivity, unknownCellSet.GetNumberOfPoints(), filterName);
++  return connectivity;
++}
++
++VISKORES_CONT inline viskores::cont::ArrayHandle<viskores::Id> MakeTriangleConnectivity(
++  const viskores::cont::UnknownCellSet& unknownCellSet,
++  const std::string& filterName)
++{
++  return MakeFixedSizeConnectivity(unknownCellSet,
++                                   viskores::CellShapeTagTriangle::Id,
++                                   3,
++                                   filterName,
++                                   "triangle");
++}
++
++VISKORES_CONT inline viskores::cont::ArrayHandle<viskores::Id> MakeLineConnectivity(
++  const viskores::cont::UnknownCellSet& unknownCellSet,
++  const std::string& filterName)
++{
++  return MakeFixedSizeConnectivity(
++    unknownCellSet, viskores::CellShapeTagLine::Id, 2, filterName, "line");
++}
++
++VISKORES_CONT inline viskores::cont::ArrayHandle<viskores::Id> MakeQuadConnectivity(
++  const viskores::cont::UnknownCellSet& unknownCellSet,
++  const std::string& filterName)
++{
++  return MakeFixedSizeConnectivity(
++    unknownCellSet, viskores::CellShapeTagQuad::Id, 4, filterName, "quad");
++}
++
++} // namespace internal
++} // namespace geometry_refinement
++} // namespace filter
++} // namespace viskores
++
++#endif // viskores_filter_geometry_refinement_ExtrusionConnectivity_hxx

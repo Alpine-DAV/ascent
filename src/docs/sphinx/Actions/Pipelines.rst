@@ -284,6 +284,10 @@ Optional parameters include:
 the number of segments (``steps``) used to discretize the extrusion (default: 1);
 and the input topology name, ``topology``.
 
+Note: The Viskores-based extrusion path operates on triangulated surfaces.
+If the input contains quad cells, it is triangulated internally before extrusion and
+the extruded volume is represented with wedge cells.
+
 .. code-block:: c++
 
   conduit::Node pipelines;
