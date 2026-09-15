@@ -27,7 +27,6 @@ public:
   virtual void Update();
   virtual std::string GetName() const override;
 
-
   // int GetNumberOfCameras() const;
   vtkh::DataSet *GetInput();
 
@@ -44,7 +43,15 @@ public:
                viskores::cont::ArrayHandle<viskores::Float64> dirs_ys,
                viskores::cont::ArrayHandle<viskores::Float64> dirs_zs,
                double max_dist);
+
   void SetFields(const std::vector<std::string> &fields);
+
+  void GenerateResultRaysMesh(const Result &result_image,
+                              conduit::Node &rays_mesh);
+
+  const viskoresCamera &GetCamera()       const { return m_camera; }
+  viskores::Bounds      GetResultBounds() const { return m_bounds; }
+  const Result         &GetResultImage()  const { return m_result_image; }
 
 protected:
 
@@ -60,21 +67,32 @@ protected:
   viskores::cont::ArrayHandle<viskores::Float64> m_rays_dirs_xs;
   viskores::cont::ArrayHandle<viskores::Float64> m_rays_dirs_ys;
   viskores::cont::ArrayHandle<viskores::Float64> m_rays_dirs_zs;
-  double m_rays_max_distance;  
+  double m_rays_max_distance;
 
   std::vector<std::string> m_field_names;
 
-  // image related data with cinema support
-  viskoresCamera  m_camera;
+  // results
+  viskoresCamera   m_camera;
+  viskores::Bounds m_bounds;
+  Result           m_result_image;
+
   // methods
   virtual void PreExecute() override;
   virtual void PostExecute() override;
   virtual void DoExecute() override;
 
   PayloadImage * Convert(Result &result);
+
   ScalarRenderer::Result Convert(PayloadImage &image, std::vector<std::string> &names);
   template <typename Precision>
-  void GenerateRays(const std::string &mode, viskores::rendering::raytracing::Ray<Precision> &rays);
+  void GenerateCameraRays(const viskoresCamera &camera,
+                          const viskores::Bounds &bounds,
+                          int width, int height,
+                          viskores::rendering::raytracing::Ray<Precision> &rays);
+
+  template <typename Precision>
+  void GenerateExplicitRays(viskores::rendering::raytracing::Ray<Precision> &rays);
+
   //void ImageToDataSet(Image &image, viskores::rendering::Canvas &canvas, bool get_depth);
 
 };

@@ -4190,6 +4190,13 @@ VTKHProject2d::execute()
     }
     else if( source == "rays")
     {
+        // TODO:
+        
+        //
+        // rays/points/x,y,z
+        // rays/normals/x,y,z
+        //
+
         float64_accessor pts  = params()["rays/points"].value();
         float64_accessor nmls = params()["rays/normals"].value();
         float64 max_dist      = params()["rays/max_distance"].to_value();
@@ -4239,17 +4246,24 @@ VTKHProject2d::execute()
 
     tracer.Update();
 
-    vtkh::DataSet *output = tracer.GetOutput();
-    VTKHCollection *new_coll = new VTKHCollection();
-    new_coll->add(*output, topo_name);
-    
-    // TODO: Add rays mesh as well?
-    //tracer.GenerateRaysMesh()
-    
-    // re wrap in data object
-    DataObject *res =  new DataObject(new_coll);
-    delete output;
-    set_output<DataObject>(res);
+    if(result == "image")
+    {
+        vtkh::DataSet *output = tracer.GetOutput();
+        VTKHCollection *new_coll = new VTKHCollection();
+        new_coll->add(*output, topo_name);
+        // re wrap in data object
+        DataObject *res =  new DataObject(new_coll);
+        delete output;
+        set_output<DataObject>(res);
+    }
+    else if(result == "rays")
+    {
+        conduit::Node *rays_mesh = new conduit::Node();
+        tracer.GenerateResultRaysMesh(tracer.GetResultImage(),
+                                      *rays_mesh);
+        DataObject *res =  new DataObject(rays_mesh);
+        set_output<DataObject>(res);
+    }
 }
 
 //-----------------------------------------------------------------------------
