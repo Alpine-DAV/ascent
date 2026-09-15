@@ -501,36 +501,9 @@ ScalarRenderer::DoExecute()
         viskores::cont::DataSet dset = m_result_image.ToDataSet();
         const int domain_id = 0;
         this->m_output->AddDomain(dset, domain_id);
-
-        // // rays output.
-        // viskores::rendering::raytracing::Ray<viskores::Float32> rays;
-        // if(m_mode == "camera")
-        // {
-        //     // create rays from camera
-        //     viskores::Bounds cam_bounds(bounds);
-        //     viskores::rendering::raytracing::Camera ray_cam = m_camera.CreateRaytracingCamera((viskores::Int32)m_width,
-        //                                                                                       (viskores::Int32)m_height);
-        //     std::cout << "ext w vs h " << m_width << " "  << m_height << std::endl;
-        //
-        //     ray_cam.CreateRays(rays, m_cam_bounds);
-        //     rays.Buffers.at(0).InitConst(0.f);
-        // }
-        // else if(m_mode == "rays")
-        // {
-        //     // bounds can be used to determine max distance
-        //     GenerateRays(m_mode,rays);
-        // }
-        //
-        // // create a mesh that represents the rays
-        // conduit::Node rays_mesh;
-        // detail::CreateRaysMesh(final_result, rays, rays_mesh);
-        // static int scount = 0;
-        // conduit::relay::io::blueprint::save_mesh(rays_mesh,conduit_fmt::format("tout_{:06d}",scount));
-        // scount++;
       }
     }
   }
-
 }
 
 template <typename Precision>
