@@ -3354,7 +3354,7 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
 
                 try
                 {
-                  // TODO sizes and offsets are not guaranteed to exist
+                  // TODOJUSTIN sizes and offsets are not guaranteed to exist
                     // sizes and offsets as Id-type fields
                     const conduit::Node &n_sizes = n_matset["sizes"];
                     const conduit::Node &n_offsets = n_matset["offsets"];
@@ -3550,6 +3550,7 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
 
                     if (vf_dtype.is_float32())
                     {
+                      // TODOJUSTIN take a pass through this helper
                         AddMatSetFieldsCommon<viskores::Id, float32>(
                             matset_converted,
                             "sizes",
