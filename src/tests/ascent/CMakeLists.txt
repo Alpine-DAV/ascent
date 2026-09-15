@@ -123,7 +123,9 @@ if(VISKORES_FOUND)
    list(APPEND VTKH_DEP_TESTS t_ascent_vtkh_data_adapter)
    list(APPEND MPI_TESTS   t_ascent_mpi_ascent_runtime
                            t_ascent_mpi_relay_extract
-                           t_ascent_mpi_rover)
+                           t_ascent_mpi_rover
+                           t_ascent_mpi_revolve
+                           t_ascent_mpi_extrude)
 endif()
 
 
