@@ -364,10 +364,10 @@ if [ ! -d ${venv_install_dir} ]; then
 if ${build_pyvenv}; then
     echo "**** Creating Python Virtual Env"
     cd ${install_dir} && ${python_exe} -m venv python-venv
-    ${venv_python_exe} -m pip install --upgrade pip
+    ${venv_python_exe} -m pip install --upgrade pip setuptools
     ${venv_python_exe} -m pip install numpy sphinx sphinx_rtd_theme wheel
     if ${build_zfp}; then
-        ${venv_python_exe} -m pip install cython setuptools
+        ${venv_python_exe} -m pip install cython
     fi
     if [[ "$enable_mpi" == "ON" ]]; then
         ${venv_python_exe} -m pip install mpi4py
@@ -513,7 +513,7 @@ fi # build_zfp
 ################
 # Conduit
 ################
-conduit_version=v0.9.7
+conduit_version=v0.9.8
 conduit_src_dir=$(ospath ${source_dir}/conduit-${conduit_version})
 conduit_build_dir=$(ospath ${build_dir}/conduit-${conduit_version}/)
 conduit_install_dir=$(ospath ${install_dir}/conduit-${conduit_version}/)
