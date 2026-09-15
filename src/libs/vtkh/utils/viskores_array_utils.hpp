@@ -13,6 +13,15 @@ GetVISKORESPointer(viskores::cont::ArrayHandle<T> &handle)
   return handle.WritePortal().GetArray();
 }
 
+
+template<typename T>
+const T *
+GetVISKORESPointer(const viskores::cont::ArrayHandle<T> &handle)
+{
+  return handle.WritePortal().GetArray();
+}
+
+
 class ViskoresTypeCast : public viskores::worklet::WorkletMapField
 {
 public:
