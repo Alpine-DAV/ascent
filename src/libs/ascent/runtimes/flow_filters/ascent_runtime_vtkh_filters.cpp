@@ -4240,8 +4240,7 @@ VTKHProject2d::execute()
         }
 
         tracer.SetRays(pts_x, pts_y, pts_z,
-                       dirs_x, dirs_y, dirs_z,
-                       max_dist);
+                       dirs_x, dirs_y, dirs_z);
     }
 
     tracer.Update();
