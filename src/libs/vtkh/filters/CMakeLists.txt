@@ -14,6 +14,7 @@ set(vtkh_filters_headers
     GhostStripper.hpp
     HistSampling.hpp
     Histogram.hpp
+    LinearExtrude.hpp
     Log.hpp
     IsoVolume.hpp
     NoOp.hpp
@@ -26,6 +27,7 @@ set(vtkh_filters_headers
     PointAverage.hpp
     PointTransform.hpp
     Recenter.hpp
+    Revolve.hpp
     Tetrahedralize.hpp
     Threshold.hpp
     Triangulate.hpp
@@ -54,6 +56,7 @@ set(vtkh_filters_sources
     GhostStripper.cpp
     HistSampling.cpp
     Histogram.cpp
+    LinearExtrude.cpp
     Log.cpp
     IsoVolume.cpp
     NoOp.cpp
@@ -66,6 +69,7 @@ set(vtkh_filters_sources
     PointAverage.cpp
     PointTransform.cpp
     Recenter.cpp
+    Revolve.cpp
     Tetrahedralize.cpp
     Threshold.cpp
     Triangulate.cpp
