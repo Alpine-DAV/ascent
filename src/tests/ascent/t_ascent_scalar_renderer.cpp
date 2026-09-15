@@ -589,85 +589,6 @@ TEST(ascent_scalar_rendering, test_scalar_rendering_contour_rays_output)
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
-
-// void gen_rays_mesh(const Node &params,
-//                    const std::string &ofname)
-// {
-//     index_t nrays = (index_t) params["rays/points"].dtype().number_of_elements() / 3;
-//     index_t npts = nrays *2;
-//     float64 max_dist = params["rays/max_distance"].value();
-//
-//     float64_accessor pts   = params["rays/points"].value();
-//     float64_accessor norms = params["rays/normals"].value();
-//
-//
-//     Node mesh;
-//
-//     mesh["coordsets/pts/type"] = "explicit";
-//     mesh["coordsets/pts/values/x"] = DataType::float64(npts);
-//     mesh["coordsets/pts/values/y"] = DataType::float64(npts);
-//     mesh["coordsets/pts/values/z"] = DataType::float64(npts);
-//
-//     mesh["topologies/rays/type"] = "unstructured";
-//     mesh["topologies/rays/coordset"] = "pts";
-//     mesh["topologies/rays/connectivity"] = "pts";
-//     mesh["topologies/rays/elements/shape"] = "line";
-//     mesh["topologies/rays/elements/connectivity"].set(DataType::index_t(npts));
-//     index_t_array ray_conn = mesh["topologies/rays/elements/connectivity"].value();
-//     float64_array vals_x = mesh["coordsets/pts/values/x"].value();
-//     float64_array vals_y = mesh["coordsets/pts/values/y"].value();
-//     float64_array vals_z = mesh["coordsets/pts/values/z"].value();
-//
-//     index_t pts_idx =0;
-//     index_t idx =0;
-//     for(index_t i=0;i<nrays;i++)
-//     {
-//         vals_x[idx] = pts[pts_idx];
-//         vals_x[idx+1] = pts[pts_idx] + norms[pts_idx] * max_dist;
-//
-//         vals_y[idx] = pts[pts_idx+1];
-//         vals_y[idx+1] = pts[pts_idx+1] + norms[pts_idx+1] * max_dist;
-//
-//         vals_z[idx] = pts[pts_idx+2];
-//         vals_z[idx+1] = pts[pts_idx+2] + norms[pts_idx+2] * max_dist;
-//         ray_conn[idx] = idx;
-//         ray_conn[idx+1] = idx+1;
-//
-//         idx+=2;
-//         pts_idx+=3;
-//
-//     }
-//
-//     mesh["fields/id/association"] = "element";
-//     mesh["fields/id/topology"] = "rays";
-//     mesh["fields/id/values"] = DataType::float64(nrays);
-//
-//     float64_array fv = mesh["fields/id/values"].value();
-//     for(index_t i=0;i<nrays;i++)
-//     {
-//         fv[i] = i;
-//     }
-//
-//     std::cout << "full: " << mesh.to_yaml() << std::endl;
-//
-//     conduit::Node info;
-//     if(!conduit::blueprint::mesh::verify(mesh,info))
-//     {
-//         std::cout << info.to_yaml() << std::endl;
-//     }
-//     else
-//     {
-//
-//     static int rr = 0;
-//
-//     conduit::relay::io::blueprint::save_mesh(mesh,conduit_fmt::format("tout_rr_{:06d}",rr));
-//
-//     rr++;
-//
-//     }
-//
-// }
-
 //-----------------------------------------------------------------------------
 TEST(ascent_scalar_rendering, test_scalar_rendering_contour_explicit_rays_with_rays_output)
 {
@@ -761,7 +682,7 @@ TEST(ascent_scalar_rendering, test_scalar_rendering_contour_explicit_rays_with_r
 
     params["rays/max_distance"] = 20.0;
     params["result"] = "rays";
-    // gen_rays_mesh(params,"here");
+
     conduit::Node extracts;
     extracts["e1/type"]  = "relay";
     extracts["e1/pipeline"] = "pl1";

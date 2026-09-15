@@ -551,11 +551,7 @@ template <typename Precision>
 void
 ScalarRenderer::GenerateExplicitRays(viskores::rendering::raytracing::Ray<Precision> &rays)
 {
-        // std::cout <<  "GO" << std::endl;
-        // std::cout <<  rays.NumRays << std::endl;
-        // std::cout <<  m_rays_pts_xs.GetNumberOfValues() << std::endl;
         viskores::rendering::raytracing::RayOperations::Resize(rays, m_rays_pts_xs.GetNumberOfValues());
-        // std::cout <<  rays.NumRays << std::endl;
 
         Precision infinity;
         viskores::rendering::raytracing::GetInfinity(infinity);
@@ -579,36 +575,14 @@ ScalarRenderer::GenerateExplicitRays(viskores::rendering::raytracing::Ray<Precis
         viskores::cont::Algorithm::Copy(m_rays_dirs_ys, rays.DirY);
         viskores::cont::Algorithm::Copy(m_rays_dirs_zs, rays.DirZ);
 
-        // TODO FILL
         for(int i=0;i<rays.NumRays;i++)
         {
             rays.PixelIdx.WritePortal().Set(i,i);
         }
 
-        // std::cout <<  rays.OriginX.GetNumberOfValues() << std::endl;
-        // std::cout <<  rays.OriginY.GetNumberOfValues() << std::endl;
-        // std::cout <<  rays.OriginZ.GetNumberOfValues() << std::endl;
-        //
-        // std::cout <<  rays.DirX.GetNumberOfValues() << std::endl;
-        // std::cout <<  rays.DirY.GetNumberOfValues() << std::endl;
-        // std::cout <<  rays.DirZ.GetNumberOfValues() << std::endl;
-        //
-        // std::cout <<  rays.PixelIdx.GetNumberOfValues() << std::endl;
         rays.EnableIntersectionData();
         rays.Buffers.at(0).InitConst(0.f);
-    //     std::cout <<  rays.NumRays << std::endl;
-    //
-    // std::cerr << "HitIdx:          " << rays.HitIdx.GetNumberOfValues() << "\n";
-    // std::cerr << "Distance:        " << rays.Distance.GetNumberOfValues() << "\n";
-    // std::cerr << "Dir:             " << rays.Dir.GetNumberOfValues() << "\n";
-    // std::cerr << "Origin:          " << rays.Origin.GetNumberOfValues() << "\n";
-    // std::cerr << "IntersectionX:   " << rays.IntersectionX.GetNumberOfValues() << "\n";
-    // std::cerr << "IntersectionY:   " << rays.IntersectionY.GetNumberOfValues() << "\n";
-    // std::cerr << "IntersectionZ:   " << rays.IntersectionZ.GetNumberOfValues() << "\n";
-    // std::cerr << "MaxDistance:     " << rays.MaxDistance.GetNumberOfValues() << "\n";
-    //
-    //     rays.PrintRay(0);
-    // // }
+
 };
 
 
