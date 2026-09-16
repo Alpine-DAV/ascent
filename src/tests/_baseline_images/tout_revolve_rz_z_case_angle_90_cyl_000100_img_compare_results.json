@@ -1,0 +1,18 @@
+
+{
+  "test_file": 
+  {
+    "path": "/usr/WS1/nicolem/sadbox/ascent/scripts/build_ascent/build/ascent-checkout/tests/_output/tout_revolve_rz_z_case_angle_90_cyl_000100.png",
+    "exists": "true"
+  },
+  "baseline_file": 
+  {
+    "path": "/usr/WS1/nicolem/sadbox/ascent/src/tests/_baseline_images/tout_revolve_rz_z_case_angle_90_cyl_000100.png",
+    "exists": "true"
+  },
+  "dims_match": "true",
+  "percent_diff": 0.400038719177246,
+  "tolerance": 0.00999999977648258,
+  "pass": "false",
+  "diff_image": "/usr/WS1/nicolem/sadbox/ascent/scripts/build_ascent/build/ascent-checkout/tests/_output/diff_tout_revolve_rz_z_case_angle_90_cyl_000100.png"
+}

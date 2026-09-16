@@ -78,6 +78,8 @@
 #include <vtkh/filters/HistSampling.hpp>
 #include <vtkh/filters/PointTransform.hpp>
 #include <vtkh/filters/MIR.hpp>
+#include <vtkh/filters/Revolve.hpp>
+#include <vtkh/filters/LinearExtrude.hpp>
 #include <viskores/Bounds.h>
 #include <viskores/cont/DataSet.h>
 #include <viskores/io/VTKDataSetWriter.h>
@@ -531,6 +533,261 @@ VTKHTriangulate::VTKHTriangulate()
 VTKHTriangulate::~VTKHTriangulate()
 {
 // empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHRevolve::VTKHRevolve()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHLinearExtrude::VTKHLinearExtrude()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHRevolve::~VTKHRevolve()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHLinearExtrude::~VTKHLinearExtrude()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHRevolve::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_revolve";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+
+    // ----------- Define Param Schema -----------
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
+
+    string_schema(param_schema["properties/topology"]);
+
+    // Support both cartesian (x,y,z) and cylindrical RZ (r,z) specifications.
+    // The VTK-h adapter represents RZ as (z,r,theta). Map {r,z} onto {y,x} and
+    // set theta to 0.0.
+    vec3_schema(param_schema["properties/point/oneOf"].append(), true);
+    vec2_schema(param_schema["properties/point/oneOf"].append(), "r", "z", true);
+    vec3_schema(param_schema["properties/axis/oneOf"].append(), true);
+    vec2_schema(param_schema["properties/axis/oneOf"].append(), "r", "z", true);
+
+    number_schema(param_schema["properties/start_angle"], true);
+    number_schema(param_schema["properties/angle"], true);
+    integer_schema(param_schema["properties/steps"], true, 1);
+    bool_schema(param_schema["properties/periodic"]);
+
+    param_schema["required"].append() = "axis";
+    param_schema["required"].append() = "angle";
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHLinearExtrude::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_linear_extrude";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
+
+    string_schema(param_schema["properties/topology"]);
+    // Support both cartesian (x,y,z) and cylindrical RZ (r,z) specifications.
+    vec3_schema(param_schema["properties/vector/oneOf"].append(), true);
+    vec2_schema(param_schema["properties/vector/oneOf"].append(), "r", "z", true);
+    integer_schema(param_schema["properties/steps"], true, 1);
+
+    param_schema["required"].append() = "vector";
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHRevolve::execute()
+{
+
+    if(!input(0).check_type<DataObject>())
+    {
+        ASCENT_ERROR("VTKHRevolve input must be a data object");
+    }
+
+    DataObject *data_object = input<DataObject>(0);
+    if(!data_object->is_valid())
+    {
+      set_output<DataObject>(data_object);
+      return;
+    }
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
+
+    bool throw_error = false;
+    std::string topo_name = detail::resolve_topology(params(),
+                                                     this->name(),
+                                                     collection,
+                                                     throw_error);
+    if(topo_name == "")
+    {
+      // this creates a data object with an invalid soource
+      set_output<DataObject>(new DataObject());
+      return;
+    }
+
+    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+
+    double point[3] = {0.0, 0.0, 0.0};
+    double axis[3]  = {0.0, 1.0, 0.0};
+    double start_angle = 0.0;
+    double angle = get_float64(params()["angle"], data_object);
+    int steps = 32;
+    bool periodic = false;
+
+    if(params().has_path("point"))
+    {
+      const Node &n_point = params()["point"];
+      if(n_point.has_child("r"))
+      {
+        point[0] = get_float64(n_point["z"], data_object); // x := z
+        point[1] = get_float64(n_point["r"], data_object); // y := r
+        point[2] = 0.0;
+      }
+      else
+      {
+        point[0] = get_float64(n_point["x"], data_object);
+        point[1] = get_float64(n_point["y"], data_object);
+        point[2] = get_float64(n_point["z"], data_object);
+      }
+    }
+
+    if(params().has_path("axis"))
+    {
+      const Node &n_axis = params()["axis"];
+      if(n_axis.has_child("r"))
+      {
+        axis[0] = get_float64(n_axis["z"], data_object); // x := z
+        axis[1] = get_float64(n_axis["r"], data_object); // y := r
+        axis[2] = 0.0;
+      }
+      else
+      {
+        axis[0] = get_float64(n_axis["x"], data_object);
+        axis[1] = get_float64(n_axis["y"], data_object);
+        axis[2] = get_float64(n_axis["z"], data_object);
+      }
+    }
+
+    if(params().has_path("start_angle"))
+    {
+      start_angle = get_float64(params()["start_angle"], data_object);
+    }
+
+    if(params().has_path("steps"))
+    {
+      steps = get_int32(params()["steps"], data_object);
+    }
+
+    if(params().has_path("periodic"))
+    {
+      std::string v = params()["periodic"].as_string();
+      periodic = v == "true";
+    }
+
+    vtkh::Revolve revolver;
+    revolver.SetInput(&data);
+    revolver.SetPoint(point);
+    revolver.SetAxis(axis);
+    revolver.SetStartAngle(start_angle);
+    revolver.SetSweepAngle(angle);
+    revolver.SetSteps(steps);
+    revolver.SetPeriodic(periodic);
+    revolver.Update();
+
+    vtkh::DataSet *rev_output = revolver.GetOutput();
+
+    VTKHCollection *new_coll = new VTKHCollection();
+    new_coll->add(*rev_output, topo_name);
+    DataObject *res = new DataObject(new_coll);
+    delete rev_output;
+    set_output<DataObject>(res);
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHLinearExtrude::execute()
+{
+
+    if(!input(0).check_type<DataObject>())
+    {
+        ASCENT_ERROR("VTKHLinearExtrude input must be a data object");
+    }
+
+    DataObject *data_object = input<DataObject>(0);
+    if(!data_object->is_valid())
+    {
+      set_output<DataObject>(data_object);
+      return;
+    }
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
+
+    bool throw_error = false;
+    std::string topo_name = detail::resolve_topology(params(),
+                                                     this->name(),
+                                                     collection,
+                                                     throw_error);
+    if(topo_name == "")
+    {
+      set_output<DataObject>(new DataObject());
+      return;
+    }
+
+    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+
+    double vector[3] = {0.0, 0.0, 1.0};
+    int steps = 1;
+
+    const Node &n_vec = params()["vector"];
+    if(n_vec.has_child("r"))
+    {
+      vector[0] = get_float64(n_vec["z"], data_object); // x := z
+      vector[1] = get_float64(n_vec["r"], data_object); // y := r
+      vector[2] = 0.0;
+    }
+    else
+    {
+      vector[0] = get_float64(n_vec["x"], data_object);
+      vector[1] = get_float64(n_vec["y"], data_object);
+      vector[2] = get_float64(n_vec["z"], data_object);
+    }
+
+    if(params().has_path("steps"))
+    {
+      steps = get_int32(params()["steps"], data_object);
+    }
+
+    vtkh::LinearExtrude extruder;
+    extruder.SetInput(&data);
+    extruder.SetVector(vector);
+    extruder.SetSteps(steps);
+    extruder.Update();
+
+    vtkh::DataSet *ext_output = extruder.GetOutput();
+
+    VTKHCollection *new_coll = new VTKHCollection();
+    new_coll->add(*ext_output, topo_name);
+    DataObject *res = new DataObject(new_coll);
+    delete ext_output;
+    set_output<DataObject>(res);
 }
 
 //-----------------------------------------------------------------------------

@@ -66,13 +66,14 @@ set(vtkh_core_headers
     ${CMAKE_CURRENT_BINARY_DIR}/vtkh_config.h
     )
 
-set(vtkh_core_sources
-    DataSet.cpp
-    Logger.cpp
-    Timer.cpp
-    StatisticsDB.cpp
-    vtkh.cpp
-    )
+	set(vtkh_core_sources
+	    DataSet.cpp
+	    Error.cpp
+	    Logger.cpp
+	    Timer.cpp
+	    StatisticsDB.cpp
+	    vtkh.cpp
+	    )
 
 
 # always install headers
