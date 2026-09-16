@@ -3279,6 +3279,7 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
 
     const bool use64BitIds = (sizeof(viskores::Id) == 8);
 
+    // TODOJUSTIN have a look through this helper
     // Helper: add an integer Node as a viskores::Id field, converting width if needed.
     auto add_index_field_as_Id = [&](const conduit::Node &src, const std::string &name, const std::string &assoc)
     {
@@ -3364,16 +3365,18 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
 
                     // Material IDs: allow int32 or int64 in input, ensure > 0, then adapt to Id type
                     const conduit::Node &n_material_ids = n_matset["material_ids"];
-                    const auto &id_dtype = n_material_ids.dtype();
-                    const index_t num_vals = static_cast<index_t>(id_dtype.number_of_elements());
+                    const conduit::DataType mat_id_dtype = n_material_ids.dtype();
+                    const index_t num_vals = mat_id_dtype.number_of_elements();
 
                     conduit::Node tmp_ids;
                     const conduit::Node *ids_src = &n_material_ids;
 
-                    if (id_dtype.is_int32())
+                    if (mat_id_dtype.is_int32())
                     {
                         const conduit::int32 *ids = n_material_ids.as_int32_ptr();
-                        const bool has_non_positive = std::any_of(ids, ids + num_vals, [](conduit::int32 v) { return v <= 0; });
+                        const bool has_non_positive = std::any_of(ids,
+                                                                  static_cast<size_t>(num_vals),
+                                                                  [](conduit::int32 v) { return v <= 0; });
 
                         if (has_non_positive)
                         {
@@ -3386,10 +3389,12 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
                             ids_src = &tmp_ids;
                         }
                     }
-                    else if (id_dtype.is_int64())
+                    else if (mat_id_dtype.is_int64())
                     {
                         const conduit::int64 *ids = n_material_ids.as_int64_ptr();
-                        const bool has_non_positive = std::any_of(ids, ids + num_vals, [](conduit::int64 v) { return v <= 0; });
+                        const bool has_non_positive = std::any_of(ids,
+                                                                  static_cast<size_t>(num_vals),
+                                                                  [](conduit::int64 v) { return v <= 0; });
 
                         if (has_non_positive)
                         {
@@ -3412,20 +3417,21 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
                     add_index_field_as_Id(*ids_src, "material_ids", "whole");
 
                     // Volume fractions: must be float32 or float64
-                    const conduit::Node &n_vfs = n_matset["volume_fractions"];
+                    const conduit::Node &n_volume_fractions = n_matset["volume_fractions"];
+                    const conduit::DataType vf_dtype = n_volume_fractions.dtype();
 
-                    if (n_vfs.dtype().is_float32())
+                    if (vf_dtype.is_float32())
                     {
-                        dset->AddField(detail::GetField<float32>(n_vfs,
+                        dset->AddField(detail::GetField<float32>(n_volume_fractions,
                                                                 "volume_fractions",
                                                                 "whole",
                                                                 topo_name,
                                                                 index_t(1),
                                                                 zero_copy));
                     }
-                    else if (n_vfs.dtype().is_float64())
+                    else if (vf_dtype.is_float64())
                     {
-                        dset->AddField(detail::GetField<float64>(n_vfs,
+                        dset->AddField(detail::GetField<float64>(n_volume_fractions,
                                                                 "volume_fractions",
                                                                 "whole",
                                                                 topo_name,
@@ -3605,6 +3611,7 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
             try
             {
                 // Add materials directly
+              // TODOJUSTIN sizes and offsets are not guaranteed to exist
                 const conduit::Node &n_length = n_matset["sizes"];
                 const conduit::Node &n_offsets = n_matset["offsets"];
 
@@ -3612,12 +3619,15 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
                 add_index_field_as_Id(n_offsets, "offsets", "element");
 
                 const conduit::Node &n_material_ids = n_matset["material_ids"];
-                const int num_vals = n_material_ids.dtype().number_of_elements();
+                const conduit::DataType mat_id_dtype = n_material_ids.dtype();
+                const index_t num_vals = mat_id_dtype.number_of_elements();
 
-                if (n_material_ids.dtype().is_int32())
+                if (mat_id_dtype.is_int32())
                 {
                     const conduit::int32 *ids = n_material_ids.value();
-                    const bool has_non_positive = std::any_of(ids, ids + num_vals, [](conduit::int32 v) { return v <= 0; });
+                    const bool has_non_positive = std::any_of(ids,
+                                                              ids + static_cast<size_t>(num_vals),
+                                                              [](conduit::int32 v) { return v <= 0; });
 
                     if (has_non_positive) // need to make a copy and increment all material ids
                     {
@@ -3649,10 +3659,12 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
                         dset->AddField(field_copy);
                     }
                 }
-                else if (n_material_ids.dtype().is_int64())
+                else if (mat_id_dtype.is_int64())
                 {
                     const conduit::int64 *ids = n_material_ids.value();
-                    const bool has_non_positive = std::any_of(ids, ids + num_vals, [](conduit::int64 v) { return v <= 0; });
+                    const bool has_non_positive = std::any_of(ids,
+                                                              ids + static_cast<size_t>(num_vals),
+                                                              [](conduit::int64 v) { return v <= 0; });
 
                     if (has_non_positive) // need to make a copy and increment all material ids
                     {
@@ -3687,9 +3699,12 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
                     ASCENT_ERROR("Unsupported integer type for material IDs");
                 }
 
-                if (n_matset["volume_fractions"].dtype().is_float32())
+                // Volume fractions: must be float32 or float64
+                const conduit::Node &n_volume_fractions = n_matset["volume_fractions"];
+                const conduit::DataType vf_dtype = n_volume_fractions.dtype();
+
+                if (vf_dtype.is_float32())
                 {
-                    const conduit::Node &n_volume_fractions = n_matset["volume_fractions"];
                     dset->AddField(detail::GetField<float32>(n_volume_fractions,
                                                              "volume_fractions",
                                                              "whole",
@@ -3697,9 +3712,8 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
                                                              index_t(1),
                                                              zero_copy));
                 }
-                else if (n_matset["volume_fractions"].dtype().is_float64())
+                else if (vf_dtype.is_float64())
                 {
-                    const conduit::Node &n_volume_fractions = n_matset["volume_fractions"];
                     dset->AddField(detail::GetField<float64>(n_volume_fractions,
                                                              "volume_fractions",
                                                              "whole",
@@ -3754,6 +3768,7 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
             {
                 if (mat_dtype.is_float32())
                 {
+                  // TODOJUSTIN have a look at this helper
                     AddMatSetFieldsCommon<int, float32>(
                         n_matset,
                         "sizes",
