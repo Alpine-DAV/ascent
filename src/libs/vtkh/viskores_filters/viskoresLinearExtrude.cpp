@@ -52,19 +52,15 @@ NeedsTriangulateForExtrusion(const viskores::cont::UnknownCellSet &unknownCellSe
 
     const auto shapes = cellSet.GetShapesArray(viskores::TopologyElementTagCell{},
                                                viskores::TopologyElementTagPoint{});
-    const bool allTriangleShapes =
-      viskores::cont::Algorithm::Reduce(
-        viskores::cont::make_ArrayHandleTransform(shapes, IsTriangleShape{}),
-        true,
-        BinaryAnd{});
+    const bool allTriangleShapes = viskores::cont::Algorithm::Reduce(viskores::cont::make_ArrayHandleTransform(shapes, IsTriangleShape{}),
+                                                                     true,
+                                                                     BinaryAnd{});
 
     const auto numIndices = cellSet.GetNumIndicesArray(viskores::TopologyElementTagCell{},
                                                        viskores::TopologyElementTagPoint{});
-    const bool allTriangleCounts =
-      viskores::cont::Algorithm::Reduce(
-        viskores::cont::make_ArrayHandleTransform(numIndices, IsThreeIndices{}),
-        true,
-        BinaryAnd{});
+    const bool allTriangleCounts = viskores::cont::Algorithm::Reduce(viskores::cont::make_ArrayHandleTransform(numIndices, IsThreeIndices{}),
+                                                                     true,
+                                                                     BinaryAnd{});
 
     return !allTriangleShapes || !allTriangleCounts;
   }
@@ -87,18 +83,16 @@ viskoresLinearExtrude::Run(viskores::cont::DataSet &input,
     throw viskores::cont::ErrorFilterExecution("vtkh::LinearExtrude requires 'steps' > 0");
   }
 
-  const viskores::Float64 perStepDistance =
-    viskores::Magnitude(vector) / static_cast<viskores::Float64>(steps);
+  const viskores::Float64 perStepDistance = viskores::Magnitude(vector) / static_cast<viskores::Float64>(steps);
 
   viskores::filter::geometry_refinement::ExtrusionLinear extruder;
   extruder.SetFieldsToPass(map_fields);
   extruder.SetTriangulateInput(NeedsTriangulateForExtrusion(input.GetCellSet()));
   extruder.SetCompactOutput(false);
   extruder.SetNumberOfPlanes(static_cast<viskores::Id>(steps) + 1);
-  extruder.SetDirection(
-    viskores::Vec3f(static_cast<viskores::FloatDefault>(vector[0]),
-                    static_cast<viskores::FloatDefault>(vector[1]),
-                    static_cast<viskores::FloatDefault>(vector[2])));
+  extruder.SetDirection(viskores::Vec3f(static_cast<viskores::FloatDefault>(vector[0]),
+                                        static_cast<viskores::FloatDefault>(vector[1]),
+                                        static_cast<viskores::FloatDefault>(vector[2])));
   extruder.SetDistance(static_cast<viskores::FloatDefault>(perStepDistance));
 
   return extruder.Execute(input);
