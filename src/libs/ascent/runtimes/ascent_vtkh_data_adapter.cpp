@@ -3551,7 +3551,7 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
 
                     // now set up the element ids, converting if necessary
                     const conduit::Node &elem_ids_src = n_matset["element_ids"];
-                    const conduit::Node &elem_ids_dst = matset_converted["element_ids"];
+                    conduit::Node &elem_ids_dst = matset_converted["element_ids"];
                     const std::vector<std::string> matnames = n_matset["element_ids"].child_names();
                     for (const std::string &matname : matnames)
                     {
