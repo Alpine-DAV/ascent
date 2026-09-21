@@ -25,7 +25,7 @@
       type: "relay"
       pipeline: "pl1"
       params: 
-        path: "/usr/WS1/nicolem/sadbox/ascent/scripts/build_ascent/build/ascent-checkout/tests/_output/tout_revolve_rz_z_case_angle_180_mesh_hdf5"
+        path: "ascent/scripts/build_ascent/build/ascent-checkout/tests/_output/tout_revolve_rz_z_case_angle_180_mesh_hdf5"
         protocol: "blueprint/mesh/hdf5"
 - 
   action: "add_scenes"
@@ -37,7 +37,7 @@
           pipeline: "pl1"
       renders: 
         r1: 
-          image_prefix: "/usr/WS1/nicolem/sadbox/ascent/scripts/build_ascent/build/ascent-checkout/tests/_output/tout_revolve_rz_z_case_angle_180_mesh"
+          image_prefix: "ascent/scripts/build_ascent/build/ascent-checkout/tests/_output/tout_revolve_rz_z_case_angle_180_mesh"
           camera: 
             elevation: 30
             azimuth: 90
@@ -49,7 +49,7 @@
           pipeline: "pl1"
       renders: 
         r1: 
-          image_prefix: "/usr/WS1/nicolem/sadbox/ascent/scripts/build_ascent/build/ascent-checkout/tests/_output/tout_revolve_rz_z_case_angle_180_cyl"
+          image_prefix: "ascent/scripts/build_ascent/build/ascent-checkout/tests/_output/tout_revolve_rz_z_case_angle_180_cyl"
           camera: 
             elevation: 30
             azimuth: 90

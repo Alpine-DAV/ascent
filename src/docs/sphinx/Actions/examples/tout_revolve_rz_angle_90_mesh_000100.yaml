@@ -52,7 +52,7 @@
           pipeline: "pl1"
       renders: 
         r1: 
-          image_prefix: "/usr/WS1/nicolem/sadbox/ascent/scripts/build_ascent/build/ascent-checkout/tests/_output/tout_revolve_rz_angle_90_cyl"
+          image_prefix: "ascent/scripts/build_ascent/build/ascent-checkout/tests/_output/tout_revolve_rz_angle_90_cyl"
           camera: 
             look_at: [0.0, 0.0, 0.0]
             position: [20.0, 20.0, 20.0]
