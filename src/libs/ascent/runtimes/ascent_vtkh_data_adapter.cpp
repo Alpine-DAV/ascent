@@ -3279,7 +3279,6 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
 
     const bool use64BitIds = (sizeof(viskores::Id) == 8);
 
-    // TODOJUSTIN have a look through this helper
     // Helper: add an integer Node as a viskores::Id field, converting width if needed.
     auto add_index_field_as_Id = [&](const conduit::Node &src,
                                      const std::string &name,
@@ -3305,29 +3304,11 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
 
         if (use64BitIds && src.dtype().is_int32())
         {
-            // 32 -> 64
-            tmp.set(conduit::DataType::int64(n));
-
-            const conduit::int32 *p32 = src.as_int32_ptr();
-            conduit::int64 *p64 = tmp.as_int64_ptr();
-
-            for (index_t i = 0; i < n; ++i)
-            {
-                p64[i] = static_cast<conduit::int64>(p32[i]);
-            }
+            src.to_int64_array(tmp);
         }
         else if (!use64BitIds && src.dtype().is_int64())
         {
-            // 64 -> 32
-            tmp.set(conduit::DataType::int32(n));
-
-            const conduit::int64 *p64 = src.as_int64_ptr();
-            conduit::int32 *p32 = tmp.as_int32_ptr();
-
-            for (index_t i = 0; i < n; ++i)
-            {
-                p32[i] = static_cast<conduit::int32>(p64[i]);
-            }
+            src.to_int32_array(tmp);
         }
         else
         {
