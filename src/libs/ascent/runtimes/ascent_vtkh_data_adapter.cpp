@@ -3269,7 +3269,7 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
                             const std::string &topo_name,
                             const int neles,
                             viskores::cont::DataSet *dset,
-                            bool zero_copy)
+                            const bool zero_copy)
 {
     // Common precondition: all matsets must have volume fractions.
     if (!n_matset.has_child("volume_fractions"))
@@ -3281,7 +3281,10 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
 
     // TODOJUSTIN have a look through this helper
     // Helper: add an integer Node as a viskores::Id field, converting width if needed.
-    auto add_index_field_as_Id = [&](const conduit::Node &src, const std::string &name, const std::string &assoc)
+    auto add_index_field_as_Id = [&](const conduit::Node &src,
+                                     const std::string &name,
+                                     const std::string &assoc,
+                                     const bool do_zero_copy)
     {
         const index_t n = static_cast<index_t>(src.dtype().number_of_elements());
         const bool type_ok = ( use64BitIds && src.dtype().is_int64() ) || (!use64BitIds && src.dtype().is_int32());
@@ -3294,7 +3297,7 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
                                                assoc,
                                                topo_name,
                                                index_t(1),
-                                               zero_copy));
+                                               do_zero_copy));
             return;
         }
 
@@ -3355,13 +3358,40 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
 
                 try
                 {
-                  // TODOJUSTIN sizes and offsets are not guaranteed to exist
                     // sizes and offsets as Id-type fields
-                    const conduit::Node &n_sizes = n_matset["sizes"];
-                    const conduit::Node &n_offsets = n_matset["offsets"];
+                    if (n_matset.has_child("sizes") && n_matset.has_child("offsets"))
+                    {
+                        add_index_field_as_Id(n_matset["sizes"], "sizes", "element", zero_copy);
+                        add_index_field_as_Id(n_matset["offsets"], "offsets", "element", zero_copy);
+                    }
+                    else
+                    {
+                        // the only other valid case after passing blueprint::verify is that
+                        // the o2m relation defines NEITHER sizes nor offsets.
+                        
+                        conduit::Node sizes;
+                        sizes.set(conduit::DataType::int64(neles));
+                        int64_array sizes_arr = sizes.value();
+                        sizes_arr.fill(1);
+                        add_index_field_as_Id(sizes, "sizes", "element", false); // do not zero-copy
 
-                    add_index_field_as_Id(n_sizes, "sizes", "element");
-                    add_index_field_as_Id(n_offsets, "offsets", "element");
+                        conduit::Node offsets;
+                        offsets.set(conduit::DataType::int64(neles));
+                        int64_array offsets_arr = offsets.value();
+                        for (index_t elem_id = 0; elem_id < neles; elem_id ++)
+                        {
+                            offsets_arr[elem_id] = elem_id;
+                        }
+                        add_index_field_as_Id(offsets, "offsets", "element", false); // do not zero-copy
+                    }
+
+                    // TODO handle the indices case
+                    if (n_matset.has_child("indices"))
+                    {
+                        ASCENT_ERROR("o2mrelation indices are currently unsupported for matsets. "
+                                     "These were encountered when reading matset: "
+                                     << matset_name << ". Please contact an Ascent developer.");
+                    }
 
                     // Material IDs: allow int32 or int64 in input, ensure > 0, then adapt to Id type
                     const conduit::Node &n_material_ids = n_matset["material_ids"];
@@ -3375,7 +3405,7 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
                     {
                         const conduit::int32 *ids = n_material_ids.as_int32_ptr();
                         const bool has_non_positive = std::any_of(ids,
-                                                                  static_cast<size_t>(num_vals),
+                                                                  ids + static_cast<size_t>(num_vals),
                                                                   [](conduit::int32 v) { return v <= 0; });
 
                         if (has_non_positive)
@@ -3393,7 +3423,7 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
                     {
                         const conduit::int64 *ids = n_material_ids.as_int64_ptr();
                         const bool has_non_positive = std::any_of(ids,
-                                                                  static_cast<size_t>(num_vals),
+                                                                  ids + static_cast<size_t>(num_vals),
                                                                   [](conduit::int64 v) { return v <= 0; });
 
                         if (has_non_positive)
@@ -3414,7 +3444,7 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
                     }
 
                     // Now adapt material_ids (possibly shifted) to viskores::Id
-                    add_index_field_as_Id(*ids_src, "material_ids", "whole");
+                    add_index_field_as_Id(*ids_src, "material_ids", "whole", zero_copy);
 
                     // Volume fractions: must be float32 or float64
                     const conduit::Node &n_volume_fractions = n_matset["volume_fractions"];
@@ -3610,13 +3640,40 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
 
             try
             {
-                // Add materials directly
-              // TODOJUSTIN sizes and offsets are not guaranteed to exist
-                const conduit::Node &n_length = n_matset["sizes"];
-                const conduit::Node &n_offsets = n_matset["offsets"];
+                // sizes and offsets as Id-type fields
+                if (n_matset.has_child("sizes") && n_matset.has_child("offsets"))
+                {
+                    add_index_field_as_Id(n_matset["sizes"], "sizes", "element", zero_copy);
+                    add_index_field_as_Id(n_matset["offsets"], "offsets", "element", zero_copy);
+                }
+                else
+                {
+                    // the only other valid case after passing blueprint::verify is that
+                    // the o2m relation defines NEITHER sizes nor offsets.
+                    
+                    conduit::Node sizes;
+                    sizes.set(conduit::DataType::int64(neles));
+                    int64_array sizes_arr = sizes.value();
+                    sizes_arr.fill(1);
+                    add_index_field_as_Id(sizes, "sizes", "element", false); // do not zero-copy
 
-                add_index_field_as_Id(n_length, "sizes", "element");
-                add_index_field_as_Id(n_offsets, "offsets", "element");
+                    conduit::Node offsets;
+                    offsets.set(conduit::DataType::int64(neles));
+                    int64_array offsets_arr = offsets.value();
+                    for (index_t elem_id = 0; elem_id < neles; elem_id ++)
+                    {
+                        offsets_arr[elem_id] = elem_id;
+                    }
+                    add_index_field_as_Id(offsets, "offsets", "element", false); // do not zero-copy
+                }
+
+                // TODO handle the indices case
+                if (n_matset.has_child("indices"))
+                {
+                    ASCENT_ERROR("o2mrelation indices are currently unsupported for matsets. "
+                                 "These were encountered when reading matset: "
+                                 << matset_name << ". Please contact an Ascent developer.");
+                }
 
                 const conduit::Node &n_material_ids = n_matset["material_ids"];
                 const conduit::DataType mat_id_dtype = n_material_ids.dtype();
