@@ -630,87 +630,80 @@ bool allEqual(std::vector<T> const &v)
 }
 
 
-
-template<typename T, typename S>
-void GetMatSetFields(const conduit::Node &node, //materials["matset"]
-                           const std::string &length_name,
-                           const std::string &offsets_name,
-                           const std::string &ids_name,
-                           const std::string &vfs_name,
-                           const std::string &topo_str,
-                           const int neles,
-                           viskores::cont::Field &length,
-                           viskores::cont::Field &offsets,
-                           viskores::cont::Field &ids,
-                           viskores::cont::Field &vfs)
+// only handles multi-buffer matsets (elem-dom (full) and mat-dom (sparse by material))
+template<typename Id_T, typename Float_T>
+void GetMatSetFields(const conduit::Node &n_matset, //materials["matset"]
+                     const std::string &topo_str,
+                     const int neles,
+                     viskores::cont::Field &length,
+                     viskores::cont::Field &offsets,
+                     viskores::cont::Field &ids,
+                     viskores::cont::Field &vfs)
 {
+  // TODO what I need to do is have a helper in conduit that handles the 
+  // implicit background material case
+  // then use my converters to convert both multi-buffer matset cases
+  // to uni-buffer element-dom.
+  // Then feed that to viskores.
+
+
+
+  // create a matset accessor for gathering quick information
+  MatsetAccessor m_acc = MatsetAccessor(n_matset);
+
   viskores::CopyFlag copy = viskores::CopyFlag::On;
 
   viskores::cont::Field::Association viskores_assoc_c = viskores::cont::Field::Association::Cells;
 
-  std::vector<T> v_length(neles,0);
-  std::vector<T> v_offsets(neles,0);
-  if(node.has_child("element_ids"))
+  std::vector<Id_T> v_length(neles,0);
+  std::vector<Id_T> v_offsets(neles,0);
+
+  if (m_acc.is_material_dominant())
   {
-    NodeConstIterator itr = node["element_ids"].children();
-    while(itr.has_next())
+    // multi-buffer material-dominant (sparse by material)
+
+    const index_t num_mats = m_acc.num_mats();
+    for (index_t mat_idx = 0; mat_idx < nmats; mat_idx ++)
     {
-      const Node &n_material = itr.next();
-      const int nvals = n_material.dtype().number_of_elements();
-      const T *data = n_material.value();
+      const index_t num_elems_for_mat = m_acc.num_elems_for_mat(mat_idx);
       //increase length when a material vf value > 0
-      for(int i = 0; i < nvals; ++i)
+      for (index_t elem_idx = 0; elem_idx < num_elems_for_mat; elem_idx ++)
       {
-        v_length[data[i]] += 1;
+        const index_t elem_id = m_acc.get_elem_id(elem_idx, mat_idx);
+        v_length[elem_id] += 1;
       }
     }
   }
-  else
+  else // (m_acc.is_element_dominant())
   {
+    // multi-buffer element-dominant (full)
+
     // Check whether the provided volume fractions leave implicit background material.
-    const S vf_tolerance = static_cast<S>(1e-6);
-    const S vf_dust = static_cast<S>(1e-4);
-    const S one = static_cast<S>(1);
-    std::vector<S> v_sums(neles, static_cast<S>(0));
-    std::vector<S> v_kept_sums(neles, static_cast<S>(0));
-
-    NodeConstIterator itr = node["volume_fractions"].children();
-    while(itr.has_next())
-    {
-
-      const conduit::Node * n_material;
-      const conduit::Node &n_next = itr.next();
-      // n_next is not leaf i.e. has values: [v0,v1,...,vn]
-      if(n_next.number_of_children() != 0)
-      {
-        n_material = &n_next.child(0);
-      }
-      else
-      {
-        n_material = &n_next;
-      }
-      const S *data = n_material->value();
-      for(index_t i = 0; i < neles; ++i)
-      {
-        if(data[i] > static_cast<S>(0))
-        {
-          v_sums[i] += data[i];
-        }
-      }
-    }
+    const Float_T vf_tolerance = static_cast<Float_T>(1e-6);
+    const Float_T vf_dust = static_cast<Float_T>(1e-4);
+    const Float_T one = static_cast<Float_T>(1);
+    std::vector<Float_T> v_kept_sums(neles, static_cast<Float_T>(0));
 
     // If fractions do not sum to one, add a background material for the remainder.
     bool add_implicit_background = false;
-    for(index_t i = 0; i < neles; ++i)
+
+    const index_t nmats = m_acc.num_mats();
+    for (index_t elem_idx = 0; elem_idx < neles; elem_idx ++)
     {
-      if(v_sums[i] < one - vf_tolerance)
+      const Float_T vf_sum = 0.0;
+      for (index_t mat_idx = 0; mat_idx < nmats; mat_idx ++)
+      {
+        const Float_T vol_frac = m_acc.get_vol_frac(elem_idx, mat_idx);
+        vf_sum += vol_frac;
+      }
+      if (vf_sum < one - vf_tolerance)
       {
         add_implicit_background = true;
         break;
       }
     }
 
-    itr = node["volume_fractions"].children();
+    itr = n_matset["volume_fractions"].children();
     while(itr.has_next())
     {
 
@@ -725,11 +718,11 @@ void GetMatSetFields(const conduit::Node &node, //materials["matset"]
       {
         n_material = &n_next;
       }
-      const S *data = n_material->value();
+      const Float_T *data = n_material->value();
       // increase length when a material vf value > 0
       for(index_t i = 0; i < neles; ++i)
       {
-        if(data[i] > (add_implicit_background ? vf_dust : static_cast<S>(0)))
+        if(data[i] > (add_implicit_background ? vf_dust : static_cast<Float_T>(0)))
         {
           v_length[i] += 1;
           v_kept_sums[i] += data[i];
@@ -758,36 +751,37 @@ void GetMatSetFields(const conduit::Node &node, //materials["matset"]
   }
   l_total += v_length[neles-1];
 
-  const T *length_ptr = v_length.data();
+  const Id_T *length_ptr = v_length.data();
 
-  length = viskores::cont::make_Field(length_name,
-                                 viskores_assoc_c,
-                                 length_ptr,
-                                 neles,
-                                 copy);
+  length = viskores::cont::make_Field("sizes",
+                                      viskores_assoc_c,
+                                      length_ptr,
+                                      neles,
+                                      copy);
 
-  const T *offsets_ptr = v_offsets.data();
+  const Id_T *offsets_ptr = v_offsets.data();
 
-  offsets = viskores::cont::make_Field(offsets_name,
-                                 viskores_assoc_c,
-                                 offsets_ptr,
-                                 neles,
-                                 copy);
+  offsets = viskores::cont::make_Field("offsets",
+                                       viskores_assoc_c,
+                                       offsets_ptr,
+                                       neles,
+                                       copy);
   //calc vfs and mat ids
   viskores::cont::Field::Association viskores_assoc_w = viskores::cont::Field::Association::WholeDataSet;
-  std::vector<T> v_ids(l_total,0);
-  std::vector<S> v_vfs(l_total,0);
+  std::vector<Id_T> v_ids(l_total,0);
+  std::vector<Float_T> v_vfs(l_total,0);
 
-  if(node.has_child("element_ids"))
+  if (m_acc.is_material_dominant())
   {
+    // multi-buffer material-dominant (sparse by material)
 
-    int num_materials = node["element_ids"].number_of_children();
-    const Node &n_vol_fracs = node["volume_fractions"];
-    const Node &n_ele_ids = node["element_ids"];
+    int num_materials = n_matset["element_ids"].number_of_children();
+    const Node &n_vol_fracs = n_matset["volume_fractions"];
+    const Node &n_ele_ids = n_matset["element_ids"];
 
     for(index_t i = 0; i < num_materials; ++i)
     {
-      const conduit::Node * n_vol_frac;	    
+      const conduit::Node *n_vol_frac;	    
       const conduit::Node &n_child = n_vol_fracs.child(i);
       // n_child is not leaf i.e. has values: [v0,v1,...,vn]
       if(n_child.number_of_children() != 0)
@@ -795,36 +789,40 @@ void GetMatSetFields(const conduit::Node &node, //materials["matset"]
         n_vol_frac = &n_child.child(0);
       }
       else
+      {
         n_vol_frac = &n_child;	      
+      }
       const Node &n_ele_id = n_ele_ids.child(i);
-      const S *vf_data = n_vol_frac->value();
-      const T *id_data = n_ele_id.value();
+      const Float_T *vf_data = n_vol_frac->value();
+      const Id_T *id_data = n_ele_id.value();
       int num_vals = n_ele_id.dtype().number_of_elements(); 
 
       for(index_t j = 0; j < num_vals; ++j)
       {
         v_length[id_data[j]] -= 1;
-        index_t offset = v_offsets[id_data[j]];
-        index_t length = v_length[id_data[j]];
+        const index_t offset = v_offsets[id_data[j]];
+        const index_t length = v_length[id_data[j]];
         v_vfs[offset + length] = vf_data[j];
         v_ids[offset + length] = i+1; //material ids can't start at 0
       }
     }
   }
-  else
+  else // (m_acc.is_element_dominant())
   {
-    int num_materials = node["volume_fractions"].number_of_children();
+    // multi-buffer element-dominant (full)
+    
+    int num_materials = n_matset["volume_fractions"].number_of_children();
     // Check whether the provided volume fractions leave implicit background material.
-    const S vf_tolerance = static_cast<S>(1e-6);
-    const S vf_dust = static_cast<S>(1e-4);
-    const S one = static_cast<S>(1);
-    std::vector<S> v_sums(neles, static_cast<S>(0));
-    std::vector<S> v_kept_sums(neles, static_cast<S>(0));
+    const Float_T vf_tolerance = static_cast<Float_T>(1e-6);
+    const Float_T vf_dust = static_cast<Float_T>(1e-4);
+    const Float_T one = static_cast<Float_T>(1);
+    std::vector<Float_T> v_sums(neles, static_cast<Float_T>(0));
+    std::vector<Float_T> v_kept_sums(neles, static_cast<Float_T>(0));
     bool add_implicit_background = false;
 
     for(index_t i = 0; i < num_materials; ++i)
     {
-      const Node &n_materials = node["volume_fractions"];
+      const Node &n_materials = n_matset["volume_fractions"];
       const Node &n_child = n_materials.child(i);
 
       const Node * n_material;
@@ -838,11 +836,11 @@ void GetMatSetFields(const conduit::Node &node, //materials["matset"]
         n_material = &n_child;
       }
 
-      const S *data = n_material->value();
+      const Float_T *data = n_material->value();
 
       for(index_t j = 0; j < neles; ++j)
       {
-        if(data[j] > static_cast<S>(0))
+        if(data[j] > static_cast<Float_T>(0))
         {
           v_sums[j] += data[j];
         }
@@ -861,7 +859,7 @@ void GetMatSetFields(const conduit::Node &node, //materials["matset"]
 
     for(index_t i = 0; i < num_materials; ++i)
     {
-      const Node &n_materials = node["volume_fractions"];
+      const Node &n_materials = n_matset["volume_fractions"];
       const Node &n_child = n_materials.child(i);
 
       const Node * n_material;
@@ -875,12 +873,12 @@ void GetMatSetFields(const conduit::Node &node, //materials["matset"]
         n_material = &n_child;
       }
 
-      const S *data = n_material->value();
+      const Float_T *data = n_material->value();
 
       for(index_t j = 0; j < neles; ++j)
       {
         index_t offset = v_offsets[j];
-        if(data[j] > (add_implicit_background ? vf_dust : static_cast<S>(0)))
+        if(data[j] > (add_implicit_background ? vf_dust : static_cast<Float_T>(0)))
         {
           v_length[j] -= 1;
           index_t length = v_length[j];
@@ -907,21 +905,21 @@ void GetMatSetFields(const conduit::Node &node, //materials["matset"]
     }
   }
 
-  const T *ids_ptr = v_ids.data();
+  const Id_T *ids_ptr = v_ids.data();
 
-  ids = viskores::cont::make_Field(ids_name,
-                               viskores_assoc_w,
-                               ids_ptr,
-                               l_total,
-                               copy);
+  ids = viskores::cont::make_Field("material_ids",
+                                   viskores_assoc_w,
+                                   ids_ptr,
+                                   l_total,
+                                   copy);
 
-  const S *vfs_ptr = v_vfs.data();
+  const Float_T *vfs_ptr = v_vfs.data();
 
-  vfs = viskores::cont::make_Field(vfs_name,
-                               viskores_assoc_w,
-                               vfs_ptr,
-                               l_total,
-                               copy);
+  vfs = viskores::cont::make_Field("volume_fractions",
+                                   viskores_assoc_w,
+                                   vfs_ptr,
+                                   l_total,
+                                   copy);
 }
 
 //template<typename T, typename S>
@@ -3234,22 +3232,14 @@ VTKHDataAdapter::AddVectorField(const std::string &field_name,
 
 template <typename Id_T, typename Float_T>
 void AddMatSetFieldsCommon(const conduit::Node &matset,
-                           const std::string &length_name,
-                           const std::string &offsets_name,
-                           const std::string &ids_name,
-                           const std::string &vfs_name,
                            const std::string &topo_name,
-                           int neles,
+                           const int neles,
                            viskores::cont::DataSet *dset)
 {
     viskores::cont::Field length, offsets, ids, vfs;
 
     detail::GetMatSetFields<Id_T, Float_T>(
         matset,
-        length_name,
-        offsets_name,
-        ids_name,
-        vfs_name,
         topo_name,
         neles,
         length,
@@ -3498,10 +3488,6 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
                     {
                         AddMatSetFieldsCommon<viskores::Id, float32>(
                             n_matset,
-                            "sizes",
-                            "offsets",
-                            "material_ids",
-                            "volume_fractions",
                             topo_name,
                             neles,
                             dset);
@@ -3510,10 +3496,6 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
                     {
                         AddMatSetFieldsCommon<viskores::Id, float64>(
                             n_matset,
-                            "sizes",
-                            "offsets",
-                            "material_ids",
-                            "volume_fractions",
                             topo_name,
                             neles,
                             dset);
@@ -3570,10 +3552,6 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
                       // TODOJUSTIN take a pass through this helper
                         AddMatSetFieldsCommon<viskores::Id, float32>(
                             matset_converted,
-                            "sizes",
-                            "offsets",
-                            "material_ids",
-                            "volume_fractions",
                             topo_name,
                             neles,
                             dset);
@@ -3582,10 +3560,6 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
                     {
                         AddMatSetFieldsCommon<viskores::Id, float64>(
                             matset_converted,
-                            "sizes",
-                            "offsets",
-                            "material_ids",
-                            "volume_fractions",
                             topo_name,
                             neles,
                             dset);
@@ -3809,10 +3783,6 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
                   // TODOJUSTIN have a look at this helper
                     AddMatSetFieldsCommon<int, float32>(
                         n_matset,
-                        "sizes",
-                        "offsets",
-                        "material_ids",
-                        "volume_fractions",
                         topo_name,
                         neles,
                         dset);
@@ -3821,10 +3791,6 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
                 {
                     AddMatSetFieldsCommon<int, float64>(
                         n_matset,
-                        "sizes",
-                        "offsets",
-                        "material_ids",
-                        "volume_fractions",
                         topo_name,
                         neles,
                         dset);
@@ -3851,10 +3817,6 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
                 {
                     AddMatSetFieldsCommon<int, float32>(
                         n_matset,
-                        "sizes",
-                        "offsets",
-                        "material_ids",
-                        "volume_fractions",
                         topo_name,
                         neles,
                         dset);
@@ -3863,10 +3825,6 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
                 {
                     AddMatSetFieldsCommon<int, float64>(
                         n_matset,
-                        "sizes",
-                        "offsets",
-                        "material_ids",
-                        "volume_fractions",
                         topo_name,
                         neles,
                         dset);
