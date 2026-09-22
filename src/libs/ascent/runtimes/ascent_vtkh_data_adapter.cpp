@@ -2886,6 +2886,203 @@ VTKHDataAdapter::AddVectorField(const std::string &field_name,
 
 }
 
+//-------------------------------------------------------------------------
+std::pair<std::string, index_t>
+generate_implicit_background_material_name_and_id(const conduit::Node &matset)
+{
+    // extra seat belt here
+    if (! matset.dtype().is_object())
+    {
+        CONDUIT_ERROR("blueprint::mesh::matset::generate_implicit_background_material_name_and_id"
+                      " passed matset node must be a valid matset tree.");
+    }
+
+    Node material_map;
+    create_or_reuse_material_map(src_matset, material_map);
+
+    //
+    // fetch an unused material id
+    //
+    std::set<index_t> used_mat_ids;
+    const index_t num_mats = material_map.number_of_children();
+    for (index_t mat_idx = 0; mat_idx < num_mats; mat_idx ++)
+    {
+        used_mat_ids.insert(material_map.child(mat_idx).to_index_t());
+    }
+
+    index_t candidate_mat_id = 0;
+    while (used_mat_ids.count(candidate_mat_id) > 0)
+    {
+        candidate_mat_id ++;
+    }
+
+    //
+    // fetch an unused material name
+    //
+    std::string candidate_name = "implicit_background";
+    if (material_map.has_child(candidate_name))
+    {
+        index_t id = 0;
+        std::string candidate_name = "implicit_background" + std::to_string(id);
+        while (material_map.has_child(candidate_name))
+        {
+            id ++;
+            candidate_name = "implicit_background" + std::to_string(id);
+        }
+    }
+    
+    //
+    // return both
+    //
+    return std::make_pair(candidate_name, candidate_mat_id);
+}
+
+//-------------------------------------------------------------------------
+// uses set external where possible
+void 
+handle_implicit_material(const conduit::Node &matset,
+                         conduit::Node &new_matset,
+                         const float64 epsilon)
+{
+    // extra seat belt here
+    if (! matset.dtype().is_object())
+    {
+        CONDUIT_ERROR("blueprint::mesh::matset::handle_implicit_material"
+                      " passed matset node must be a valid matset tree.");
+    }
+
+    MatsetAccessor m_acc = MatsetAccessor(matset);
+    bool has_implicit_background = false;
+
+    if (m_acc.is_element_dominant())
+    {
+        const index_t num_elems = m_acc.num_elems();
+
+        Node elem_vf_sums;
+        elem_vf_sums.set(DataType::float64(num_elems));
+        float64_array elem_vf_sums_arr = elem_vf_sums.value();
+        elem_vf_sums_arr.fill(0.0);
+
+        // venn full
+        if (m_acc.is_multi_buffer())
+        {
+            const index_t nmats = m_acc.num_mats();
+            for (index_t elem_idx = 0; elem_idx < num_elems; elem_idx ++)
+            {
+                for (index_t mat_idx = 0; mat_idx < nmats; mat_idx ++)
+                {
+                    elem_vf_sums_arr[elem_idx] += m_acc.get_vol_frac(elem_idx, mat_idx);
+                }
+                if (elem_vf_sums_arr[elem_idx] < 1.0 - epsilon)
+                {
+                    has_implicit_background = true;
+                }
+            }
+
+            if (has_implicit_background)
+            {
+                // fetch the new material metadata
+                const std::pair<std::string, index_t> matname_and_id = 
+                    generate_implicit_background_material_name_and_id(matset);
+                const std::string &new_matname = matname_and_id.first;
+                const index_t      new_mat_id  = matname_and_id.second;
+
+                // handle optional material map
+                if (matset.has_child("material_map"))
+                {
+                    new_matset["material_map"].set(matset["material_map"]);
+                    new_matset["material_map"][new_matname].set(new_mat_id);
+                }
+
+                // handle topology
+                new_matset["topology"].set(matset["topology"]);
+
+                // handle old volume fractions
+                const std::vector<std::string> matnames;
+                get_material_names(matset, matnames);
+                for (const std::string &matname : matnames)
+                {
+                    new_matset["volume_fractions"][matname].set_external(
+                        matset["volume_fractions"][matname]);
+                }
+
+                // handle new volume fractions
+                Node &new_vfs = new_matset["volume_fractions"][new_matname];
+                new_vfs.set(DataType::float64(num_elems));
+                float64_array new_vfs_arr = new_vfs.value();
+                for (index_t elem_idx = 0; elem_idx < num_elems; elem_idx ++)
+                {
+                    new_vfs_arr[elem_idx] = 1.0 - elem_vf_sums_arr[elem_idx];
+                }
+            }
+            else
+            {
+                new_matset.set_external(matset);
+            }
+        }
+        // venn sparse by element
+        else
+        {
+            for (index_t elem_idx = 0; elem_idx < num_elems; elem_idx ++)
+            {
+                const index_t nmats_in_elem = m_acc.num_mats_for_elem(elem_idx);
+                for (index_t mat_idx = 0; mat_idx < nmats_in_elem; mat_idx ++)
+                {
+                    elem_vf_sums_arr[elem_idx] += m_acc.get_vol_frac(elem_idx, mat_idx);
+                }
+                if (elem_vf_sums_arr[elem_idx] < 1.0 - epsilon)
+                {
+                    has_implicit_background = true;
+                }
+            }
+
+            if (has_implicit_background)
+            {
+                // fetch the new material metadata
+                const std::pair<std::string, index_t> matname_and_id = 
+                    generate_implicit_background_material_name_and_id(matset);
+                const std::string &new_matname = matname_and_id.first;
+                const index_t      new_mat_id  = matname_and_id.second;
+
+                // TODO
+            }
+            else
+            {
+                new_matset.set_external(matset);
+            }
+        }
+    }
+    else
+    {
+        // venn sparse by material
+        if (m_acc.is_multi_buffer())
+        {
+            // TODO
+
+            if (has_implicit_background)
+            {
+                // fetch the new material metadata
+                const std::pair<std::string, index_t> matname_and_id = 
+                    generate_implicit_background_material_name_and_id(matset);
+                const std::string &new_matname = matname_and_id.first;
+                const index_t      new_mat_id  = matname_and_id.second;
+
+                // TODO
+            }
+            else
+            {
+                new_matset.set_external(matset);
+            }
+        }
+        // material-dominant uni-buffer
+        else
+        {
+            CONDUIT_ERROR("blueprint::mesh::matset::handle_implicit_material() "
+                          "material-dominant uni-buffer material set is unsupported.");
+        }
+    }
+}
+
 void
 VTKHDataAdapter::AddMatSets(const std::string &matset_name,
                             const conduit::Node &n_matset,
