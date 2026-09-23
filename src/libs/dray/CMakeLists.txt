@@ -385,6 +385,10 @@ if(ENABLE_SERIAL)
     # setup exported target to point to proper include dir
     target_include_directories(dray PUBLIC $<INSTALL_INTERFACE:include/ascent/dray>)
 
+    set_target_properties(dray PROPERTIES
+                          WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
+
+
     install(TARGETS dray
             EXPORT ascent
             LIBRARY DESTINATION lib
@@ -426,6 +430,9 @@ if(MPI_FOUND)
 
     # avoid mpi C++ apis + link dep of libmpi_cxx
     target_compile_definitions(dray_mpi PUBLIC ${ASCENT_MPI_SKIP_MPICXX_DEFINES} )
+
+    set_target_properties(dray_mpi PROPERTIES
+                          WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
 
     install(TARGETS dray_mpi
             EXPORT ascent
