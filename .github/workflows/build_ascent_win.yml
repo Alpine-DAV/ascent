@@ -42,6 +42,32 @@ jobs:
       run: |
         echo "**** Installing Ascent"
         cmake --install  build --config Release
+    - name: Run tests under ProcDump
+      shell: pwsh
+      run: |
+        mkdir "$env:RUNNER_TEMP\dumps"
+
+        Invoke-WebRequest `
+          -Uri "https://download.sysinternals.com/files/Procdump.zip" `
+          -OutFile "$env:RUNNER_TEMP\procdump.zip"
+
+        Expand-Archive `
+          "$env:RUNNER_TEMP\procdump.zip" `
+          "$env:RUNNER_TEMP\procdump"
+
+        & "$env:RUNNER_TEMP\procdump\procdump.exe" `
+          -accepteula `
+          -ma `
+          -e 1 `
+          -x "$env:RUNNER_TEMP\dumps" `
+          "build\Release\t_ascent_about.exe"
+    - name: Upload crash dumps
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: windows-crash-dumps
+        path: ${{ runner.temp }}/dumps
+        retention-days: 7
     - name: Run Ascent Unit Tests
       run: |
         echo "**** Ascent Unit Tests"
