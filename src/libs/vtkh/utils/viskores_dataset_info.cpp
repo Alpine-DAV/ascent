@@ -107,7 +107,7 @@ VISKORESDataSetInfo::IsRectilinear(const viskores::cont::CoordinateSystem &coord
 }
 
 bool
-VISKORESDataSetInfo:: IsUniform(const viskores::cont::DataSet &data_set)
+VISKORESDataSetInfo::IsUniform(const viskores::cont::DataSet &data_set)
 {
   const viskores::cont::CoordinateSystem coords = data_set.GetCoordinateSystem();
   return IsUniform(coords);
@@ -160,23 +160,20 @@ VISKORESDataSetInfo::GetPointDims(const viskores::cont::UnknownCellSet &cell_set
 
   if(topo_dims == 1)
   {
-    viskores::cont::CellSetStructured<1> cell_set1 =
-        cell_set.AsCellSet<viskores::cont::CellSetStructured<1>>();
+    viskores::cont::CellSetStructured<1> cell_set1 = cell_set.AsCellSet<viskores::cont::CellSetStructured<1>>();
     viskores::Id dims1 = cell_set1.GetPointDimensions();
     dims[0] = dims1;
   }
   else if(topo_dims == 2)
   {
-    viskores::cont::CellSetStructured<2> cell_set2 =
-        cell_set.AsCellSet<viskores::cont::CellSetStructured<2>>();
+    viskores::cont::CellSetStructured<2> cell_set2 = cell_set.AsCellSet<viskores::cont::CellSetStructured<2>>();
     viskores::Id2 dims2 = cell_set2.GetPointDimensions();
     dims[0] = dims2[0];
     dims[1] = dims2[1];
   }
   else if(topo_dims == 3)
   {
-    viskores::cont::CellSetStructured<3> cell_set3 =
-        cell_set.AsCellSet<viskores::cont::CellSetStructured<3>>();
+    viskores::cont::CellSetStructured<3> cell_set3 = cell_set.AsCellSet<viskores::cont::CellSetStructured<3>>();
     viskores::Id3 dims3 = cell_set3.GetPointDimensions();
     dims[0] = dims3[0];
     dims[1] = dims3[1];
@@ -217,23 +214,20 @@ VISKORESDataSetInfo::GetCellDims(const viskores::cont::UnknownCellSet &cell_set,
 
   if(topo_dims == 1)
   {
-    viskores::cont::CellSetStructured<1> cell_set1 =
-        cell_set.AsCellSet<viskores::cont::CellSetStructured<1>>();
+    viskores::cont::CellSetStructured<1> cell_set1 = cell_set.AsCellSet<viskores::cont::CellSetStructured<1>>();
     viskores::Id dims1 = cell_set1.GetCellDimensions();
     dims[0] = dims1;
   }
   else if(topo_dims == 2)
   {
-    viskores::cont::CellSetStructured<2> cell_set2 =
-        cell_set.AsCellSet<viskores::cont::CellSetStructured<2>>();
+    viskores::cont::CellSetStructured<2> cell_set2 = cell_set.AsCellSet<viskores::cont::CellSetStructured<2>>();
     viskores::Id2 dims2 = cell_set2.GetCellDimensions();
     dims[0] = dims2[0];
     dims[1] = dims2[1];
   }
   else if(topo_dims == 3)
   {
-    viskores::cont::CellSetStructured<3> cell_set3 =
-        cell_set.AsCellSet<viskores::cont::CellSetStructured<3>>();
+    viskores::cont::CellSetStructured<3> cell_set3 = cell_set.AsCellSet<viskores::cont::CellSetStructured<3>>();
     viskores::Id3 dims3 = cell_set3.GetCellDimensions();
     dims[0] = dims3[0];
     dims[1] = dims3[1];
@@ -267,9 +261,7 @@ VISKORESDataSetInfo::IsSingleCellShape(const viskores::cont::UnknownCellSet &cel
     else if(cell_set.IsType<viskores::cont::CellSetExplicit<>>())
     {
       viskores::cont::CellSetExplicit<> exp = cell_set.AsCellSet<viskores::cont::CellSetExplicit<>>();
-      const viskores::cont::ArrayHandle<viskores::UInt8> shapes = exp.GetShapesArray(
-        viskores::TopologyElementTagCell(),
-        viskores::TopologyElementTagPoint());
+      const viskores::cont::ArrayHandle<viskores::UInt8> shapes = exp.GetShapesArray(viskores::TopologyElementTagCell(), viskores::TopologyElementTagPoint());
 
       viskores::UInt8 init_min = 255;
       viskores::UInt8 min = viskores::cont::Algorithm::Reduce(shapes, init_min, viskores::Minimum());
@@ -303,17 +295,15 @@ VISKORESDataSetInfo::IsTriangleMesh(const viskores::cont::UnknownCellSet &cell_s
 
     const auto shapes = explicitSet.GetShapesArray(viskores::TopologyElementTagCell{},
                                                    viskores::TopologyElementTagPoint{});
-    const bool allTriangleShapes =
-      viskores::cont::Algorithm::Reduce(viskores::cont::make_ArrayHandleTransform(shapes, IsTriangleShape{}),
-                                        true,
-                                        BinaryAnd{});
+    const bool allTriangleShapes = viskores::cont::Algorithm::Reduce(viskores::cont::make_ArrayHandleTransform(shapes, IsTriangleShape{}),
+                                                                     true,
+                                                                     BinaryAnd{});
 
     const auto numIndices = explicitSet.GetNumIndicesArray(viskores::TopologyElementTagCell{},
                                                            viskores::TopologyElementTagPoint{});
-    const bool allTriangleCounts =
-      viskores::cont::Algorithm::Reduce(viskores::cont::make_ArrayHandleTransform(numIndices, IsThreeIndices{}),
-                                        true,
-                                        BinaryAnd{});
+    const bool allTriangleCounts = viskores::cont::Algorithm::Reduce(viskores::cont::make_ArrayHandleTransform(numIndices, IsThreeIndices{}),
+                                                                     true,
+                                                                     BinaryAnd{});
 
     return allTriangleShapes && allTriangleCounts;
   }
