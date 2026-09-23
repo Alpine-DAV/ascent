@@ -37,6 +37,7 @@ set(BASIC_TESTS t_ascent_smoke
                 t_ascent_web_main
                 t_ascent_clip
                 t_ascent_scalar_renderer
+                t_ascent_ray_surface
                 t_ascent_multi_topo
                 t_ascent_gradient
                 t_ascent_qcriterion

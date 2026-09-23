@@ -145,6 +145,8 @@ register_builtin()
     AscentRuntime::register_filter_type<VTKHTransform>("transforms","transform");
     AscentRuntime::register_filter_type<VTKHScale>("transforms","scale");
     AscentRuntime::register_filter_type<VTKHProject2d>("transforms","project_2d");
+    // note, ray surface is currently an alias for projec_2d
+    AscentRuntime::register_filter_type<VTKHProject2d>("transforms","ray_surface");
     AscentRuntime::register_filter_type<VTKHTriangulate>("transforms","triangulate");
     AscentRuntime::register_filter_type<VTKHParticleAdvection>("transforms","particle_advection");
     AscentRuntime::register_filter_type<VTKHStreamline>("transforms","streamline");

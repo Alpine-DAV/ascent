@@ -11,9 +11,8 @@
 #include <viskores/rendering/raytracing/RayOperations.h>
 #include <viskores/rendering/Camera.h>
 #include <viskores/rendering/raytracing/Camera.h>
-
-
 #include <viskores/rendering/ScalarRenderer.h>
+
 #include <conduit/conduit.hpp>
 #include <conduit/conduit_relay.hpp>
 #include <conduit/conduit_blueprint.hpp>

@@ -4056,8 +4056,15 @@ VTKHProject2d::declare_interface(Node &i)
     integer_schema(param_schema["properties/image_height"]);
     ignore_schema(param_schema["properties/dataset_bounds"]);
     ignore_schema(param_schema["properties/camera"]);
-    ignore_schema(param_schema["properties/rays"]);
-    ignore_schema(param_schema["properties/result"]);
+
+    number_schema(param_schema["properties/rays/points/x"]);
+    number_schema(param_schema["properties/rays/points/y"]);
+    number_schema(param_schema["properties/rays/points/z"]);
+    number_schema(param_schema["properties/rays/normals/x"]);
+    number_schema(param_schema["properties/rays/normals/y"]);
+    number_schema(param_schema["properties/rays/normals/z"]);
+
+    string_schema(param_schema["properties/result"]);
     array_schema(param_schema["properties/fields"]);
 }
 
@@ -4190,17 +4197,122 @@ VTKHProject2d::execute()
     }
     else if( source == "rays")
     {
-        // TODO:
-        
-        //
+        // This mode accepts:
         // rays/points/x,y,z
         // rays/normals/x,y,z
-        //
 
-        float64_accessor pts  = params()["rays/points"].value();
-        float64_accessor nmls = params()["rays/normals"].value();
-        float64 max_dist      = params()["rays/max_distance"].to_value();
-        index_t number_of_rays = pts.number_of_elements() / 3;
+        float64_accessor rays_pts_x, rays_pts_y, rays_pts_z;
+        float64_accessor rays_norms_x, rays_norms_y, rays_norms_z;
+
+        index_t rays_pts_x_len = 0;
+        index_t rays_pts_y_len = 0;
+        index_t rays_pts_z_len = 0;
+
+        index_t rays_norms_x_len = 0;
+        index_t rays_norms_y_len = 0;
+        index_t rays_norms_z_len = 0;
+
+        const Node &ray_pts   = params()["rays/points"];
+        const Node &ray_norms = params()["rays/normals"];
+
+        // points
+        if(ray_pts.has_child("x"))
+        {
+            rays_pts_x = ray_pts["x"].value();
+            rays_pts_x_len = rays_pts_x.number_of_elements();
+        }
+
+        if(ray_pts.has_child("y"))
+        {
+            rays_pts_y = ray_pts["y"].value();
+            rays_pts_y_len = rays_pts_y.number_of_elements();
+        }
+
+        if(ray_pts.has_child("z"))
+        {
+            rays_pts_z = ray_pts["z"].value();
+            rays_pts_z_len = rays_pts_z.number_of_elements();
+        }
+
+        // norms
+        if(ray_norms.has_child("x"))
+        {
+            rays_norms_x = ray_norms["x"].value();
+            rays_norms_x_len = rays_norms_x.number_of_elements();
+        }
+
+        if(ray_norms.has_child("y"))
+        {
+            rays_norms_y = ray_norms["y"].value();
+            rays_norms_y_len = rays_norms_y.number_of_elements();
+        }
+
+        if(ray_norms.has_child("z"))
+        {
+            rays_norms_z = ray_norms["z"].value();
+            rays_norms_z_len = rays_norms_z.number_of_elements();
+        }
+
+        // check for consistent # of entries, 0 is ok
+        // any non zero lengths must be consistent
+        bool bad_lens = false;
+        index_t number_of_rays = rays_pts_x_len;
+
+        if(rays_pts_y_len > 0)
+        {
+            number_of_rays = number_of_rays == 0 ? rays_pts_y_len: number_of_rays;
+            if( number_of_rays != rays_pts_y_len)
+            {
+                bad_lens = true;
+            }
+        }
+
+        if(rays_pts_z_len > 0)
+        {
+            number_of_rays = number_of_rays == 0 ? rays_pts_z_len : number_of_rays;
+            if( number_of_rays != rays_pts_z_len)
+            {
+                bad_lens = true;
+            }
+        }
+
+        if(number_of_rays == 0)
+        {
+            ASCENT_ERROR("Input `rays/points/x,y,z` are length 0");
+        }
+
+        if(rays_norms_x_len > 0 && (number_of_rays != rays_norms_x_len) )
+        {
+            bad_lens = true;
+        }
+
+        if(rays_norms_y_len > 0 && (number_of_rays != rays_norms_y_len) )
+        {
+            bad_lens = true;
+        }
+
+        if(rays_norms_z_len > 0 && (number_of_rays != rays_norms_z_len) )
+        {
+            bad_lens = true;
+        }
+
+        if( (rays_norms_y_len == 0) && 
+            (rays_norms_y_len == 0) &&
+            (rays_norms_z_len == 0) )
+        {
+            ASCENT_ERROR("Input `rays/normals/x,y,z` are length 0");
+        }
+
+        if(bad_lens)
+        {
+            ASCENT_ERROR("Inconsistent ray points and normals input lengths" << std::endl
+                          << " rays/points/x (length):"  << rays_pts_x_len << std::endl 
+                          << " rays/points/y (length):"  << rays_pts_y_len << std::endl
+                          << " rays/points/z (length):"  << rays_pts_z_len << std::endl
+                          << " rays/normals/x (length):"  << rays_norms_x_len << std::endl 
+                          << " rays/normals/y (length):"  << rays_norms_y_len << std::endl
+                          << " rays/normals/z (length):"  << rays_norms_z_len << std::endl);
+        }
 
         viskores::cont::ArrayHandle<viskores::Float64> pts_x;
         viskores::cont::ArrayHandle<viskores::Float64> pts_y;
@@ -4226,19 +4338,16 @@ VTKHProject2d::execute()
         auto dirs_y_portal = dirs_y.WritePortal();
         auto dirs_z_portal = dirs_z.WritePortal();
 
-        index_t idx = 0;
         for(index_t i=0; i < number_of_rays; i++)
         {
-            pts_x_portal.Set(i,pts[idx]);
-            pts_y_portal.Set(i,pts[idx+1]);
-            pts_z_portal.Set(i,pts[idx+2]);
-            dirs_x_portal.Set(i,nmls[idx]);
-            dirs_y_portal.Set(i,nmls[idx+1]);
-            dirs_z_portal.Set(i,nmls[idx+2]);
+            pts_x_portal.Set(i, i < rays_pts_x_len ? rays_pts_x[i] : 0.0);
+            pts_y_portal.Set(i, i < rays_pts_y_len ? rays_pts_y[i] : 0.0);
+            pts_z_portal.Set(i, i < rays_pts_z_len ? rays_pts_z[i] : 0.0);
 
-            idx+=3;
+            dirs_x_portal.Set(i, i < rays_norms_x_len ? rays_norms_x[i] : 0.0);
+            dirs_y_portal.Set(i, i < rays_norms_y_len ? rays_norms_y[i] : 0.0);
+            dirs_z_portal.Set(i, i < rays_norms_z_len ? rays_norms_z[i] : 0.0);
         }
-
         tracer.SetRays(pts_x, pts_y, pts_z,
                        dirs_x, dirs_y, dirs_z);
     }
