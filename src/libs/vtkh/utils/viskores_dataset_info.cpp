@@ -7,10 +7,40 @@
 
 #include <vtkh/utils/viskores_dataset_info.hpp>
 
+#include <viskores/CellShape.h>
 #include <viskores/cont/Algorithm.h>
+#include <viskores/cont/ArrayHandleTransform.h>
+#include <viskores/cont/CellSetExplicit.h>
+#include <viskores/cont/CellSetSingleType.h>
 
 namespace vtkh
 {
+
+namespace
+{
+
+struct BinaryAnd
+{
+  VISKORES_EXEC_CONT
+  bool operator()(bool u, bool v) const { return u && v; }
+};
+
+struct IsTriangleShape
+{
+  VISKORES_EXEC_CONT
+  bool operator()(viskores::UInt8 shape) const { return shape == viskores::CellShapeTagTriangle::Id; }
+};
+
+struct IsThreeIndices
+{
+  template <typename ValueType>
+  VISKORES_EXEC_CONT bool operator()(ValueType count) const
+  {
+    return count == 3;
+  }
+};
+
+} // namespace
 
 bool VISKORESDataSetInfo::IsStructured(const viskores::cont::DataSet &data_set,
                                    int &topo_dims)
@@ -258,5 +288,38 @@ VISKORESDataSetInfo::IsSingleCellShape(const viskores::cont::UnknownCellSet &cel
   return is_single_shape;
 }
 
-} // namespace vtkh
+bool
+VISKORESDataSetInfo::IsTriangleMesh(const viskores::cont::UnknownCellSet &cell_set)
+{
+  if(cell_set.CanConvert<viskores::cont::CellSetSingleType<>>())
+  {
+    const auto single = cell_set.AsCellSet<viskores::cont::CellSetSingleType<>>();
+    return single.GetCellShapeAsId() == viskores::CellShapeTagTriangle::Id;
+  }
 
+  if(cell_set.CanConvert<viskores::cont::CellSetExplicit<>>())
+  {
+    const auto explicitSet = cell_set.AsCellSet<viskores::cont::CellSetExplicit<>>();
+
+    const auto shapes = explicitSet.GetShapesArray(viskores::TopologyElementTagCell{},
+                                                   viskores::TopologyElementTagPoint{});
+    const bool allTriangleShapes =
+      viskores::cont::Algorithm::Reduce(viskores::cont::make_ArrayHandleTransform(shapes, IsTriangleShape{}),
+                                        true,
+                                        BinaryAnd{});
+
+    const auto numIndices = explicitSet.GetNumIndicesArray(viskores::TopologyElementTagCell{},
+                                                           viskores::TopologyElementTagPoint{});
+    const bool allTriangleCounts =
+      viskores::cont::Algorithm::Reduce(viskores::cont::make_ArrayHandleTransform(numIndices, IsThreeIndices{}),
+                                        true,
+                                        BinaryAnd{});
+
+    return allTriangleShapes && allTriangleCounts;
+  }
+
+  // Unknown cell set type: can't prove it's triangles.
+  return false;
+}
+
+} // namespace vtkh

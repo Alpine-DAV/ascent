@@ -1,6 +1,7 @@
 #include <vtkh/filters/Revolve.hpp>
 
 #include <vtkh/viskores_filters/viskoresRevolve.hpp>
+#include <vtkh/utils/viskores_dataset_info.hpp>
 
 namespace vtkh
 {
@@ -94,6 +95,8 @@ Revolve::DoExecute()
     viskores::cont::DataSet dom;
     this->m_input->GetDomain(i, dom, domain_id);
 
+    const bool triangulate_input = !VISKORESDataSetInfo::IsTriangleMesh(dom.GetCellSet());
+
     viskoresRevolve revolver;
     auto dataset = revolver.Run(dom,
                                 m_point,
@@ -102,10 +105,10 @@ Revolve::DoExecute()
                                 m_sweep_angle_degrees,
                                 static_cast<viskores::Int32>(m_steps),
                                 m_periodic,
+                                triangulate_input,
                                 this->GetFieldSelection());
     m_output->AddDomain(dataset, domain_id);
   }
 }
 
 } // namespace vtkh
-

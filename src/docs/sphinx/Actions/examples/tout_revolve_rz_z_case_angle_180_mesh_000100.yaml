@@ -5,8 +5,6 @@
   pipelines: 
     pl1: 
       f1: 
-        type: "triangulate"
-      f2: 
         type: "revolve"
         params: 
           point: 

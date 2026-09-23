@@ -1,6 +1,7 @@
 #include <vtkh/filters/LinearExtrude.hpp>
 
 #include <vtkh/viskores_filters/viskoresLinearExtrude.hpp>
+#include <vtkh/utils/viskores_dataset_info.hpp>
 
 namespace vtkh
 {
@@ -61,10 +62,13 @@ LinearExtrude::DoExecute()
     viskores::cont::DataSet dom;
     this->m_input->GetDomain(i, dom, domain_id);
 
+    const bool triangulate_input = !VISKORESDataSetInfo::IsTriangleMesh(dom.GetCellSet());
+
     viskoresLinearExtrude extruder;
     auto dataset = extruder.Run(dom,
                                 m_vector,
                                 static_cast<viskores::Int32>(m_steps),
+                                triangulate_input,
                                 this->GetFieldSelection());
     m_output->AddDomain(dataset, domain_id);
   }

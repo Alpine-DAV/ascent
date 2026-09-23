@@ -20,6 +20,7 @@ public:
                               const viskores::Float64 sweep_angle_degrees,
                               const viskores::Int32 steps,
                               const bool periodic,
+                              const bool triangulate_input,
                               viskores::filter::FieldSelection map_fields);
 };
 

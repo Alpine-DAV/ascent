@@ -16,6 +16,7 @@ public:
   viskores::cont::DataSet Run(viskores::cont::DataSet &input,
                               const viskores::Vec<viskores::Float64,3> &vector,
                               const viskores::Int32 steps,
+                              const bool triangulate_input,
                               viskores::filter::FieldSelection map_fields);
 };
 

@@ -76,6 +76,7 @@ viskoresRevolve::Run(viskores::cont::DataSet &input,
                      const viskores::Float64 sweep_angle_degrees,
                      const viskores::Int32 steps,
                      const bool periodic,
+                     const bool triangulate_input,
                      viskores::filter::FieldSelection map_fields)
 {
   if (steps <= 0)
@@ -105,7 +106,7 @@ viskoresRevolve::Run(viskores::cont::DataSet &input,
 
   viskores::filter::geometry_refinement::ExtrusionRotational revolver;
   revolver.SetFieldsToPass(map_fields);
-  revolver.SetTriangulateInput(false);
+  revolver.SetTriangulateInput(triangulate_input);
   revolver.SetCompactOutput(false);
   revolver.SetAxis(viskores::Vec3f_64{ axis });
   revolver.SetCenter(viskores::Vec3f_64{ point });

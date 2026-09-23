@@ -260,21 +260,9 @@ Example: revolve an RZ dataset around the z-axis for 270 degrees in 32 steps:
 	  rev_params["periodic"] = "false"; 
 
 
-Only line (2 points) and triangle (3 points) cells are currently supported.
-Quad-based surfaces must be triangulated first.
-Example: triangulate a quad surface, then revolve:
-
-.. code-block:: c++
-
-	  conduit::Node pipelines;
-	  pipelines["pl1/f1/type"] = "triangulate";
-	  pipelines["pl1/f2/type"] = "revolve";
-	  conduit::Node &rev_params = pipelines["pl1/f2/params"];
-	  rev_params["axis/r"]  = 0.0;
-	  rev_params["axis/z"]  = 1.0;
-	  rev_params["angle"] = 360.0;
-	  rev_params["steps"] = 32;
-	  rev_params["periodic"] = "true";
+Revolve operates on line and triangle surface cells. If the input contains quad
+cells, it is triangulated internally before revolving (no need to add an explicit
+``triangulate`` filter).
 
 Extrude
 ~~~~~~~~
@@ -286,7 +274,8 @@ and the input topology name, ``topology``.
 
 Note: The Viskores-based extrusion path operates on triangulated surfaces.
 If the input contains quad cells, it is triangulated internally before extrusion and
-the extruded volume is represented with wedge cells.
+the extruded volume is represented with wedge cells (no need to add an explicit
+``triangulate`` filter).
 
 .. code-block:: c++
 
