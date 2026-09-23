@@ -91,6 +91,7 @@
 #endif
 
 #include <stdio.h>
+#include <cmath>
 #include <random>
 
 using namespace conduit;
@@ -587,7 +588,6 @@ VTKHRevolve::declare_interface(Node &i)
     number_schema(param_schema["properties/start_angle"], true);
     number_schema(param_schema["properties/angle"], true);
     integer_schema(param_schema["properties/steps"], true, 1);
-    bool_schema(param_schema["properties/periodic"]);
 
     param_schema["required"].append() = "axis";
     param_schema["required"].append() = "angle";
@@ -651,7 +651,11 @@ VTKHRevolve::execute()
     double start_angle = 0.0;
     double angle = get_float64(params()["angle"], data_object);
     int steps = 32;
-    bool periodic = false;
+    const double full_sweep_degrees = 360.0;
+    const double full_sweep_tol = 1e-8;
+    const bool periodic_from_angle =
+      std::fabs(std::fabs(angle) - full_sweep_degrees) < full_sweep_tol;
+    bool periodic = periodic_from_angle;
 
     if(params().has_path("point"))
     {
@@ -695,12 +699,6 @@ VTKHRevolve::execute()
     if(params().has_path("steps"))
     {
       steps = get_int32(params()["steps"], data_object);
-    }
-
-    if(params().has_path("periodic"))
-    {
-      std::string v = params()["periodic"].as_string();
-      periodic = v == "true";
     }
 
     vtkh::Revolve revolver;

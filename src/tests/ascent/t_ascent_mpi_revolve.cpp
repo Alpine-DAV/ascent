@@ -164,7 +164,6 @@ TEST(ascent_mpi_revolve, mpi_revolve_rz_r_case_angle_180)
   rev_params["axis/z"] = 0.0;
   rev_params["angle"] = 180;
   rev_params["steps"] = 8;
-  rev_params["periodic"] = "false";
 
   Node &add_scenes = actions.append();
   add_scenes["action"] = "add_scenes";
@@ -200,4 +199,3 @@ int main(int argc, char* argv[])
   MPI_Finalize();
   return result;
 }
-

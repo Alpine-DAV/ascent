@@ -238,8 +238,8 @@ Optional parameters include:
  the ``point`` of rotation (default: (0,0)); 
 the ``start_angle``, in degrees, of where to begin the rotation (default: 0);
 the number of ``steps`` used to discretize the rotational extrusion (default: 32);
-``periodic`` is ``true`` when the final plane of revolution wraps to the first (default: ``false``);
 and the ``topology`` name if there are multiple. 
+If ``angle`` is 360 degrees, revolve automatically wraps the final plane back to the first.
 
 
 Example: revolve an RZ dataset around the z-axis for 270 degrees in 32 steps:
@@ -257,7 +257,6 @@ Example: revolve an RZ dataset around the z-axis for 270 degrees in 32 steps:
 	  rev_params["start_angle"] = 0.0;  
 	  rev_params["angle"] = 270.0;       
 	  rev_params["steps"] = 32;         
-	  rev_params["periodic"] = "false"; 
 
 
 Revolve operates on line and triangle surface cells. If the input contains quad

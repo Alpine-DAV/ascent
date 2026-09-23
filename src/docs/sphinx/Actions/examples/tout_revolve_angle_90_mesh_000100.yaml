@@ -33,7 +33,6 @@
             z: 0.0
           angle: 90.0
           steps: 8
-          periodic: "false"
 - 
   action: "add_extracts"
   extracts: 

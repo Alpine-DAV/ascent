@@ -96,7 +96,7 @@ compute_rz_bounds(const Node &mesh,
 
 
 void
-run_revolve_rz_r_case(const double angle, const bool periodic)
+run_revolve_rz_r_case(const double angle)
 {
   Node n;
   ascent::about(n);
@@ -149,7 +149,6 @@ run_revolve_rz_r_case(const double angle, const bool periodic)
   rev_params["axis/z"] = 0.0;
   rev_params["angle"] = angle_int;
   rev_params["steps"] = steps;
-  rev_params["periodic"] = periodic ? "true" : "false";
 
   Node &add_extracts = actions.append();
   add_extracts["action"] = "add_extracts";
@@ -197,7 +196,7 @@ run_revolve_rz_r_case(const double angle, const bool periodic)
 }
 
 void
-run_revolve_rz_z_case(const double angle, const bool periodic)
+run_revolve_rz_z_case(const double angle)
 {
   Node n;
   ascent::about(n);
@@ -250,7 +249,6 @@ run_revolve_rz_z_case(const double angle, const bool periodic)
   rev_params["axis/z"] = 1.0;
   rev_params["angle"] = angle_int;
   rev_params["steps"] = steps;
-  rev_params["periodic"] = periodic ? "true" : "false";
 
   Node &add_extracts = actions.append();
   add_extracts["action"] = "add_extracts";
@@ -302,57 +300,49 @@ run_revolve_rz_z_case(const double angle, const bool periodic)
 //-----------------------------------------------------------------------------
 TEST(ascent_revolve, test_revolve_rz_r_case_angle_90)
 {
-  const bool periodic = false;
-  run_revolve_rz_r_case(90.0, periodic);
+  run_revolve_rz_r_case(90.0);
 }
 
 //-----------------------------------------------------------------------------
 TEST(ascent_revolve, test_revolve_rz_r_case_angle_180)
 {
-  const bool periodic = false;
-  run_revolve_rz_r_case(180.0, periodic);
+  run_revolve_rz_r_case(180.0);
 }
 
 //-----------------------------------------------------------------------------
 TEST(ascent_revolve, test_revolve_rz_r_case_angle_270)
 {
-  const bool periodic = false;
-  run_revolve_rz_r_case(270.0, periodic);
+  run_revolve_rz_r_case(270.0);
 }
 
 //-----------------------------------------------------------------------------
 TEST(ascent_revolve, test_revolve_rz_r_case_angle_360)
 {
-  const bool periodic = true;
-  run_revolve_rz_r_case(360.0, periodic);
+  run_revolve_rz_r_case(360.0);
 }
 
 //-----------------------------------------------------------------------------
 TEST(ascent_revolve, test_revolve_rz_z_case_angle_90)
 {
-  const bool periodic = false;
-  run_revolve_rz_z_case(90.0, periodic);
+  run_revolve_rz_z_case(90.0);
 }
 
 //-----------------------------------------------------------------------------
 TEST(ascent_revolve, test_revolve_rz_z_case_angle_180)
 {
-  const bool periodic = false;
-  run_revolve_rz_z_case(180.0, periodic);
+  run_revolve_rz_z_case(180.0);
 }
 
 //-----------------------------------------------------------------------------
 TEST(ascent_revolve, test_revolve_rz_z_case_angle_270)
 {
-  const bool periodic = false;
-  run_revolve_rz_z_case(270.0, periodic);
+  run_revolve_rz_z_case(270.0);
 }
 
 //-----------------------------------------------------------------------------
 TEST(ascent_revolve, test_revolve_rz_z_case_angle_360)
 {
-  const bool periodic = true;
-  run_revolve_rz_z_case(360.0, periodic);
+  run_revolve_rz_z_case(360.0);
 }
 
 //-----------------------------------------------------------------------------

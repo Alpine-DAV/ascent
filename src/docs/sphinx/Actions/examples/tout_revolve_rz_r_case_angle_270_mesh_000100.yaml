@@ -15,7 +15,6 @@
             z: 0.0
           angle: 270
           steps: 8
-          periodic: "false"
 - 
   action: "add_extracts"
   extracts: 
