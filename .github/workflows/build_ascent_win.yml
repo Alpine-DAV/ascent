@@ -42,6 +42,10 @@ jobs:
       run: |
         echo "**** Installing Ascent"
         cmake --install  build --config Release
+    - name: Run Ascent Unit Tests
+      run: |
+        echo "**** Ascent Unit Tests"
+        cmake -E env CTEST_OUTPUT_ON_FAILURE=1 cmake --build build --config Release --target RUN_TESTS
     - name: Run tests under ProcDump
       shell: pwsh
       run: |
@@ -60,7 +64,7 @@ jobs:
           -ma `
           -e 1 `
           -x "$env:RUNNER_TEMP\dumps" `
-          "build\Release\t_ascent_about.exe"
+          "build\Release\bin\t_ascent_about.exe"
     - name: Upload crash dumps
       if: always()
       uses: actions/upload-artifact@v4
@@ -68,10 +72,6 @@ jobs:
         name: windows-crash-dumps
         path: ${{ runner.temp }}/dumps
         retention-days: 7
-    - name: Run Ascent Unit Tests
-      run: |
-        echo "**** Ascent Unit Tests"
-        cmake -E env CTEST_OUTPUT_ON_FAILURE=1 cmake --build build --config Release --target RUN_TESTS
     - name: Upload Ascent Unit Test Artifacts
       if: always()
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
