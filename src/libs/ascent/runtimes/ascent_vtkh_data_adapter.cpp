@@ -2886,55 +2886,168 @@ VTKHDataAdapter::AddVectorField(const std::string &field_name,
 
 }
 
-//-------------------------------------------------------------------------
-std::pair<std::string, index_t>
-generate_implicit_background_material_name_and_id(const conduit::Node &matset)
+namespace justindetail
 {
-    // extra seat belt here
-    if (! matset.dtype().is_object())
+// begin justindetail
+
+//-----------------------------------------------------------------------------
+// for each element:
+//     for each material:
+//         do_for_each_material()
+//     do_for_each_elem()
+template <class ForEachValue, class ForEachElement>
+void
+walk_matset_by_element(const MatsetAccessor &m_acc,
+                       ForEachValue &&for_each_value,
+                       ForEachElement &&for_each_element,
+                       const float64 epsilon = CONDUIT_EPSILON)
+{
+    if (! m_acc.is_element_dominant())
     {
-        CONDUIT_ERROR("blueprint::mesh::matset::generate_implicit_background_material_name_and_id"
-                      " passed matset node must be a valid matset tree.");
+        CONDUIT_ERROR("Walking by element is only supported for element-dominant material sets.");
     }
 
-    Node material_map;
-    create_or_reuse_material_map(src_matset, material_map);
+    const index_t num_elems = m_acc.num_elems();
 
-    //
-    // fetch an unused material id
-    //
-    std::set<index_t> used_mat_ids;
-    const index_t num_mats = material_map.number_of_children();
-    for (index_t mat_idx = 0; mat_idx < num_mats; mat_idx ++)
+    // full
+    if (m_acc.is_multi_buffer())
     {
-        used_mat_ids.insert(material_map.child(mat_idx).to_index_t());
-    }
-
-    index_t candidate_mat_id = 0;
-    while (used_mat_ids.count(candidate_mat_id) > 0)
-    {
-        candidate_mat_id ++;
-    }
-
-    //
-    // fetch an unused material name
-    //
-    std::string candidate_name = "implicit_background";
-    if (material_map.has_child(candidate_name))
-    {
-        index_t id = 0;
-        std::string candidate_name = "implicit_background" + std::to_string(id);
-        while (material_map.has_child(candidate_name))
+        const index_t nmats = m_acc.num_mats();
+        for (index_t elem_idx = 0; elem_idx < num_elems; elem_idx ++)
         {
-            id ++;
-            candidate_name = "implicit_background" + std::to_string(id);
+            index_t nmats_in_elem = 0;
+            for (index_t mat_idx = 0; mat_idx < nmats; mat_idx ++)
+            {
+                const float64 vol_frac = m_acc.get_vol_frac(elem_idx, mat_idx);
+                if (vol_frac > epsilon)
+                {
+                    // elem_idx is an index over all elements
+                    // mat_idx is an index over all materials
+                    // nmats_in_elem is running count of materials in the current zone
+                    for_each_value(elem_idx, mat_idx, nmats_in_elem);
+                    nmats_in_elem ++;
+                }
+            }
+            for_each_element(elem_idx, nmats_in_elem);
         }
     }
-    
-    //
-    // return both
-    //
-    return std::make_pair(candidate_name, candidate_mat_id);
+    // sparse by element
+    else
+    {
+        for (index_t elem_idx = 0; elem_idx < num_elems; elem_idx ++)
+        {
+            const index_t nmats_in_elem = m_acc.num_mats_for_elem(elem_idx);
+            for (index_t mat_idx = 0; mat_idx < nmats_in_elem; mat_idx ++)
+            {
+                // elem_idx is an index over all elements
+                // mat_idx is an index over all materials in the current zone
+                // we pass it twice because it is also the running count of materials
+                // in the current zone
+                for_each_value(elem_idx, mat_idx, mat_idx);
+            }
+            for_each_element(elem_idx, nmats_in_elem);
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
+// for each material:
+//     for each element:
+//         do_for_each_elem()
+template <class ForEachValue>
+void
+walk_matset_value_by_material(const MatsetAccessor &m_acc,
+                              ForEachValue &&for_each_value,
+                              const float64 epsilon = CONDUIT_EPSILON)
+{
+    auto for_each_material = [](const index_t mat_idx,
+                                const index_t num_elems_for_mat)
+    {
+        (void) mat_idx;
+        (void) num_elems_for_mat;
+    };
+    walk_matset_by_material(m_acc,
+                            for_each_value,
+                            for_each_material,
+                            epsilon);
+}
+
+//-----------------------------------------------------------------------------
+// for each material:
+//     for each element:
+//         do_for_each_elem()
+//     do_for_each_material()
+template <class ForEachValue, class ForEachMaterial>
+void
+walk_matset_by_material(const MatsetAccessor &m_acc,
+                        ForEachValue &&for_each_value,
+                        ForEachMaterial &&for_each_material,
+                        const float64 epsilon = CONDUIT_EPSILON)
+{
+    const index_t num_materials = m_acc.num_mats();
+
+    if (m_acc.is_element_dominant())
+    {
+        // elem-dom multi-buffer "full"
+        if (m_acc.is_multi_buffer())
+        {
+            // we *can* walk this elem-dom representation by material, and sometimes
+            // we have to. But it is not very efficient.
+
+            const index_t num_elems = m_acc.num_elems();
+            // Material ids need not be within in the range [0, N-1), so we iterate
+            // over the order materials appear in the matset.
+            for (index_t mat_idx = 0; mat_idx < num_materials; mat_idx ++)
+            {
+                index_t num_elems_for_mat = 0;
+                for (index_t elem_idx = 0; elem_idx < num_elems; elem_idx ++)
+                {
+                    const float64 vol_frac = m_acc.get_vol_frac(elem_idx, mat_idx);
+                    if (vol_frac > epsilon)
+                    {
+                        // elem_idx is an index over all elements
+                        // mat_idx is an index over all materials
+                        // num_elems_for_mat is running count of elements for the current material
+                        for_each_value(mat_idx, elem_idx, num_elems_for_mat);
+                        num_elems_for_mat ++;
+                    }
+                }
+                for_each_material(mat_idx, num_elems_for_mat);
+            }
+        }
+        // elem-dom uni-buffer "sparse by element"
+        else
+        {
+            CONDUIT_ERROR("Walking by material is not supported for element-dominant uni-buffer material sets.");
+        }
+    }
+    else
+    {
+        // mat-dom multi-buffer "sparse by material"
+        if (m_acc.is_multi_buffer())
+        {
+            // Material ids need not be within in the range [0, N-1), so we iterate
+            // over the order materials appear in the matset.
+            for (index_t mat_idx = 0; mat_idx < num_materials; mat_idx ++)
+            {
+                const index_t num_elems_for_mat = m_acc.num_elems_for_mat(mat_idx);
+                for (index_t elem_idx = 0; elem_idx < num_elems_for_mat; elem_idx ++)
+                {
+                    // elem_idx is an index over all elements the current material is in
+                    // mat_idx is an index over all materials
+                    // we pass elem_idx twice because it is also the running count of
+                    // elements for the current material
+                    for_each_value(mat_idx, elem_idx, elem_idx);
+                }
+                for_each_material(mat_idx, num_elems_for_mat);
+            }
+        }
+        // mat-dom uni-buffer - currently unsupported
+        else
+        {
+            CONDUIT_ERROR("material-dominant uni-buffer material set is unsupported.");
+        }
+    }
 }
 
 //-------------------------------------------------------------------------
@@ -2951,42 +3064,87 @@ handle_implicit_material(const conduit::Node &matset,
                       " passed matset node must be a valid matset tree.");
     }
 
+    // helper lambda for generating the new material name and id
+    auto generate_name_and_id = [](const conduit::Node &matset) -> std::pair<std::string, index_t>
+    {
+        Node material_map;
+        conduit::blueprint::mesh::matset::create_or_reuse_material_map(matset, material_map);
+
+        //
+        // fetch an unused material id
+        //
+        std::set<index_t> used_mat_ids;
+        const index_t num_mats = material_map.number_of_children();
+        for (index_t mat_idx = 0; mat_idx < num_mats; mat_idx ++)
+        {
+            used_mat_ids.insert(material_map.child(mat_idx).to_index_t());
+        }
+
+        index_t candidate_mat_id = 0;
+        while (used_mat_ids.count(candidate_mat_id) > 0)
+        {
+            candidate_mat_id ++;
+        }
+
+        //
+        // fetch an unused material name
+        //
+        std::string candidate_name = "implicit_background";
+        if (material_map.has_child(candidate_name))
+        {
+            index_t id = 0;
+            std::string candidate_name = "implicit_background" + std::to_string(id);
+            while (material_map.has_child(candidate_name))
+            {
+                id ++;
+                candidate_name = "implicit_background" + std::to_string(id);
+            }
+        }
+        
+        //
+        // return both
+        //
+        return std::make_pair(candidate_name, candidate_mat_id);
+    };
+    // end helper lambda
+
     MatsetAccessor m_acc = MatsetAccessor(matset);
     bool has_implicit_background = false;
+    const index_t num_elems = m_acc.num_elems();
+
+    Node elem_vf_sums;
+    elem_vf_sums.set(DataType::float64(num_elems));
+    float64_array elem_vf_sums_arr = elem_vf_sums.value();
+    elem_vf_sums_arr.fill(0.0);
 
     if (m_acc.is_element_dominant())
     {
-        const index_t num_elems = m_acc.num_elems();
-
-        Node elem_vf_sums;
-        elem_vf_sums.set(DataType::float64(num_elems));
-        float64_array elem_vf_sums_arr = elem_vf_sums.value();
-        elem_vf_sums_arr.fill(0.0);
-
-        // venn full
-        if (m_acc.is_multi_buffer())
+        index_t num_background_matvals = 0;
+        auto for_each_value = [&](const index_t elem_idx, const index_t mat_idx, const index_t)
         {
-            const index_t nmats = m_acc.num_mats();
-            for (index_t elem_idx = 0; elem_idx < num_elems; elem_idx ++)
+            elem_vf_sums_arr[elem_idx] += m_acc.get_vol_frac(elem_idx, mat_idx);
+        };
+        auto for_each_element = [&](const index_t elem_idx, const index_t)
+        {
+            if (elem_vf_sums_arr[elem_idx] < 1.0 - epsilon)
             {
-                for (index_t mat_idx = 0; mat_idx < nmats; mat_idx ++)
-                {
-                    elem_vf_sums_arr[elem_idx] += m_acc.get_vol_frac(elem_idx, mat_idx);
-                }
-                if (elem_vf_sums_arr[elem_idx] < 1.0 - epsilon)
-                {
-                    has_implicit_background = true;
-                }
+                has_implicit_background = true;
+                num_background_matvals ++;
             }
+        };
+        walk_matset_by_element(m_acc, for_each_value, for_each_element, epsilon);
 
-            if (has_implicit_background)
+        if (has_implicit_background)
+        {
+            // fetch the new material metadata
+            const std::pair<std::string, index_t> matname_and_id = 
+                generate_name_and_id(matset);
+            const std::string &new_matname = matname_and_id.first;
+            const index_t      new_mat_id  = matname_and_id.second;
+
+            // venn full
+            if (m_acc.is_multi_buffer())
             {
-                // fetch the new material metadata
-                const std::pair<std::string, index_t> matname_and_id = 
-                    generate_implicit_background_material_name_and_id(matset);
-                const std::string &new_matname = matname_and_id.first;
-                const index_t      new_mat_id  = matname_and_id.second;
-
                 // handle optional material map
                 if (matset.has_child("material_map"))
                 {
@@ -2998,8 +3156,8 @@ handle_implicit_material(const conduit::Node &matset,
                 new_matset["topology"].set(matset["topology"]);
 
                 // handle old volume fractions
-                const std::vector<std::string> matnames;
-                get_material_names(matset, matnames);
+                std::vector<std::string> matnames;
+                conduit::blueprint::mesh::matset::get_material_names(matset, matnames);
                 for (const std::string &matname : matnames)
                 {
                     new_matset["volume_fractions"][matname].set_external(
@@ -3015,73 +3173,170 @@ handle_implicit_material(const conduit::Node &matset,
                     new_vfs_arr[elem_idx] = 1.0 - elem_vf_sums_arr[elem_idx];
                 }
             }
+            // venn sparse by element
             else
             {
-                new_matset.set_external(matset);
+                // handle material map
+                new_matset["material_map"].set(matset["material_map"]);
+                new_matset["material_map"][new_matname].set(new_mat_id);
+
+                // handle topology
+                new_matset["topology"].set(matset["topology"]);
+
+                // handle vfs, mat ids, sizes, offsets
+                const index_t old_num_matvals = matset["volume_fractions"].dtype().number_of_elements();
+                const index_t new_num_matvals = old_num_matvals + num_background_matvals;
+                
+                new_matset["volume_fractions"].set(DataType::float64(new_num_matvals));
+                new_matset["material_ids"].set(DataType::index_t(new_num_matvals));
+                new_matset["sizes"].set(DataType::index_t(num_elems));
+                new_matset["offsets"].set(DataType::index_t(num_elems));
+                
+                float64_array new_vfs_arr = new_matset["volume_fractions"].value();
+                index_t_array new_mat_ids = new_matset["material_ids"].value();
+                index_t_array new_sizes   = new_matset["sizes"].value();
+                index_t_array new_offsets = new_matset["offsets"].value();
+
+                index_t matval_idx = 0;
+                index_t curr_offset = 0;
+                for (index_t elem_idx = 0; elem_idx < num_elems; elem_idx ++)
+                {
+                    // get the original number of materials in the element
+                    const index_t num_mats_for_elem = m_acc.num_mats_for_elem(elem_idx);
+
+                    // either way, we need to copy in the original data for this zone
+                    for (index_t mat_idx = 0; mat_idx < num_mats_for_elem; mat_idx ++)
+                    {
+                        new_vfs_arr[matval_idx] = m_acc.get_vol_frac(elem_idx, mat_idx);
+                        new_mat_ids[matval_idx] = m_acc.get_mat_id(elem_idx, mat_idx);
+                        matval_idx ++;
+                    }
+
+                    // we need to add the background material here
+                    if (elem_vf_sums_arr[elem_idx] < 1.0 - epsilon)
+                    {
+                        // size is increased by 1
+                        new_sizes[elem_idx] = num_mats_for_elem + 1;
+                        new_vfs_arr[matval_idx] = 1.0 - elem_vf_sums_arr[elem_idx];
+                        new_mat_ids[matval_idx] = new_mat_id;
+                        matval_idx ++;
+                    }
+                    // we are not adding to this element
+                    else
+                    {
+                        // size stays the same
+                        new_sizes[elem_idx] = num_mats_for_elem;
+                    }
+
+                    // record offset
+                    new_offsets[elem_idx] = curr_offset;
+                    curr_offset += new_sizes[elem_idx];
+                }
             }
         }
-        // venn sparse by element
         else
         {
-            for (index_t elem_idx = 0; elem_idx < num_elems; elem_idx ++)
-            {
-                const index_t nmats_in_elem = m_acc.num_mats_for_elem(elem_idx);
-                for (index_t mat_idx = 0; mat_idx < nmats_in_elem; mat_idx ++)
-                {
-                    elem_vf_sums_arr[elem_idx] += m_acc.get_vol_frac(elem_idx, mat_idx);
-                }
-                if (elem_vf_sums_arr[elem_idx] < 1.0 - epsilon)
-                {
-                    has_implicit_background = true;
-                }
-            }
-
-            if (has_implicit_background)
-            {
-                // fetch the new material metadata
-                const std::pair<std::string, index_t> matname_and_id = 
-                    generate_implicit_background_material_name_and_id(matset);
-                const std::string &new_matname = matname_and_id.first;
-                const index_t      new_mat_id  = matname_and_id.second;
-
-                // TODO
-            }
-            else
-            {
-                new_matset.set_external(matset);
-            }
+            new_matset.set_external(matset);
         }
     }
-    else
+    else // (m_acc.is_material_dominant())
     {
-        // venn sparse by material
-        if (m_acc.is_multi_buffer())
+        // create an intermediate representation
+        // for each element, the material ids of the materials in that element
+        std::vector<std::vector<index_t>> material_ids(num_elems);
+        // for each element, the volume fractions of the materials in that element
+        std::vector<std::vector<float64>> vol_fracs(num_elems);
+
+        // walk the matset to fill the intermediate representation
+        auto for_each_value = [&](const index_t mat_idx,
+                                  const index_t elem_idx,
+                                  const index_t)
         {
-            // TODO
+            const index_t real_elem_id = m_acc.get_elem_id(elem_idx, mat_idx);
+            material_ids[real_elem_id].push_back(m_acc.get_mat_id(elem_idx, mat_idx));
+            vol_fracs[real_elem_id].push_back(m_acc.get_vol_frac(elem_idx, mat_idx));
+        };
+        walk_matset_value_by_material(m_acc, for_each_value, epsilon);
 
-            if (has_implicit_background)
+        // now walk the intermediate representation by element to determine if there is
+        // an implicit background
+        std::vector<index_t> elem_ids_of_new_mat;
+        for (index_t elem_idx = 0; elem_idx < num_elems; elem_idx ++)
+        {
+            const index_t num_mats_for_elem = static_cast<index_t>(material_ids[elem_idx].size());
+            for (index_t mat_idx = 0; mat_idx < num_mats_for_elem; mat_idx ++)
             {
-                // fetch the new material metadata
-                const std::pair<std::string, index_t> matname_and_id = 
-                    generate_implicit_background_material_name_and_id(matset);
-                const std::string &new_matname = matname_and_id.first;
-                const index_t      new_mat_id  = matname_and_id.second;
-
-                // TODO
+                elem_vf_sums_arr[elem_idx] += vol_fracs[elem_idx][mat_idx];
             }
-            else
+            if (elem_vf_sums_arr[elem_idx] < 1.0 - epsilon)
             {
-                new_matset.set_external(matset);
+                has_implicit_background = true;
+                elem_ids_of_new_mat.push_back(elem_idx);
             }
         }
-        // material-dominant uni-buffer
+
+        if (has_implicit_background)
+        {
+            // fetch the new material metadata
+            const std::pair<std::string, index_t> matname_and_id = 
+                generate_name_and_id(matset);
+            const std::string &new_matname = matname_and_id.first;
+            const index_t      new_mat_id  = matname_and_id.second;
+
+            // venn sparse by material
+            if (m_acc.is_multi_buffer())
+            {
+                // handle optional material map
+                if (matset.has_child("material_map"))
+                {
+                    new_matset["material_map"].set(matset["material_map"]);
+                    new_matset["material_map"][new_matname].set(new_mat_id);
+                }
+
+                // handle topology
+                new_matset["topology"].set(matset["topology"]);
+
+                // handle old volume fractions and material ids
+                std::vector<std::string> matnames;
+                conduit::blueprint::mesh::matset::get_material_names(matset, matnames);
+                for (const std::string &matname : matnames)
+                {
+                    new_matset["volume_fractions"][matname].set_external(
+                        matset["volume_fractions"][matname]);
+                    new_matset["material_ids"][matname].set_external(
+                        matset["material_ids"][matname]);
+                }
+
+                // handle new volume fractions
+                const index_t num_elems_for_new_mat = static_cast<index_t>(elem_ids_of_new_mat.size());
+                Node &new_vfs = new_matset["volume_fractions"][new_matname];
+                Node &new_ids = new_matset["material_ids"][new_matname];
+                new_vfs.set(DataType::float64(num_elems_for_new_mat));
+                new_ids.set(elem_ids_of_new_mat);
+                float64_array new_vfs_arr = new_vfs.value();
+                for (index_t elem_idx = 0; elem_idx < num_elems_for_new_mat; elem_idx ++)
+                {
+                    const index_t real_elem_id = elem_ids_of_new_mat[elem_idx];
+                    new_vfs_arr[elem_idx] = 1.0 - elem_vf_sums_arr[real_elem_id];
+                }
+            }
+            // material-dominant uni-buffer
+            else
+            {
+                CONDUIT_ERROR("blueprint::mesh::matset::handle_implicit_material() "
+                              "material-dominant uni-buffer material set is unsupported.");
+            }
+        }
         else
         {
-            CONDUIT_ERROR("blueprint::mesh::matset::handle_implicit_material() "
-                          "material-dominant uni-buffer material set is unsupported.");
+            new_matset.set_external(matset);
         }
     }
 }
+
+// end justindetail
+}
+//
 
 void
 VTKHDataAdapter::AddMatSets(const std::string &matset_name,
