@@ -17,7 +17,6 @@
 #include <conduit/conduit.hpp>
 #include <conduit/conduit_relay.hpp>
 #include <conduit/conduit_blueprint.hpp>
-#include <conduit_fmt/conduit_fmt.h>
 
 #ifdef VTKH_PARALLEL
   #include <mpi.h>
