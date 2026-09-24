@@ -26,6 +26,7 @@ jobs:
         cmake --version
         env build_ascent=false `
             enable_tests=OFF `
+            build_config=Debug `
             ./scripts/build_ascent/build_ascent.sh
     - name: Configure Ascent
       run: |
