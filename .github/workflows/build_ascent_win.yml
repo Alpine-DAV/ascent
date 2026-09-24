@@ -64,7 +64,7 @@ jobs:
           -ma `
           -e 1 `
           -x "$env:RUNNER_TEMP\dumps" `
-          "build\bin\Release\t_ascent_about.exe"
+          "build\bin\Release\t_ascent_smoke.exe"
     - name: Upload crash dumps
       if: always()
       uses: actions/upload-artifact@v4
