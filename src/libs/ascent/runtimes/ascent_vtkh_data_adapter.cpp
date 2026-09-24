@@ -3559,8 +3559,6 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
         zero_copy = false;
     }
 
-    sbe_matset.print();
-
     // handle sizes, offsets, indices, and volume fractions
     try
     {
