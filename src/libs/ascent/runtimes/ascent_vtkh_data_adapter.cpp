@@ -3477,8 +3477,12 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
                                                       false));
     };
 
-    Node expanded_matset;
-    justindetail::handle_implicit_material(n_matset, expanded_matset);
+    // // TODOJUSTIN remove this
+    // // see if viskores errors or not
+    // // if it does, I can either look to expand the matset in the test
+    // // or make a new test using venn that looks like the marbl case
+    // Node expanded_matset;
+    // justindetail::handle_implicit_material(n_matset, expanded_matset);
 
     const bool has_non_positive_mat_id = [](const conduit::Node &matset) -> bool
     {
@@ -3494,31 +3498,31 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
             }
         }
         return false;
-    }(expanded_matset);
+    }(n_matset);
 
     Node renumbered_matset;
     if (has_non_positive_mat_id)
     {
-        if (! expanded_matset.has_child("material_map"))
+        if (! n_matset.has_child("material_map"))
         {
             Node material_map;
-            conduit::blueprint::mesh::matset::create_or_reuse_material_map(expanded_matset, material_map);
+            conduit::blueprint::mesh::matset::create_or_reuse_material_map(n_matset, material_map);
 
-            expanded_matset["material_map"].set(material_map);
+            renumbered_matset["material_map"].set(material_map);
         }
 
         // shallow copy over all children that are not material_map and material_ids
         // and deep copy those
-        const std::vector<std::string> matset_childnames = expanded_matset.child_names();
+        const std::vector<std::string> matset_childnames = n_matset.child_names();
         for (const std::string &childname : matset_childnames)
         {
             if (childname != "material_map" && childname != "material_ids")
             {
-                renumbered_matset[childname].set_external(expanded_matset[childname]);
+                renumbered_matset[childname].set_external(n_matset[childname]);
             }
             else
             {
-                renumbered_matset[childname].set(expanded_matset[childname]);
+                renumbered_matset[childname].set(n_matset[childname]);
             }
         }
 
@@ -3526,7 +3530,7 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
     }
     else
     {
-        renumbered_matset.set_external(expanded_matset);
+        renumbered_matset.set_external(n_matset);
     }
 
     conduit::Node sbe_matset;
@@ -3554,6 +3558,8 @@ VTKHDataAdapter::AddMatSets(const std::string &matset_name,
         conduit::blueprint::mesh::matset::to_uni_buffer_by_element(renumbered_matset, sbe_matset);
         zero_copy = false;
     }
+
+    sbe_matset.print();
 
     // handle sizes, offsets, indices, and volume fractions
     try
