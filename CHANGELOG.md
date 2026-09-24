@@ -35,7 +35,8 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ### Changed
 - Redefined the parameter verification and surprise checking behavior for Filters to instead use a conduit based JSON Schema style verification schema. Implemented for all existing filters.
-- Change tiled rendering default to `false`.
+- Changed tiled rendering default to `false`.
+- A couple of bugs were fixed with tiled rendering and the tiled rendering default was changed to `true`.
 
 ### Fixed
 - Fixed the aspect ratio for frustum renderings

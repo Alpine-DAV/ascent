@@ -3366,9 +3366,9 @@ VTKHSample::declare_interface(Node &i)
     conduit::Node &box_schema = param_schema["properties/box"];
     box_schema["type"] = "object";
     box_schema["additionalProperties"] = false;
-    vec3_schema_anyOf(box_schema["properties/dims"]);
-    vec3_schema_anyOf(box_schema["properties/min"]);
-    vec3_schema_anyOf(box_schema["properties/max"]);
+    vec3_schema_anyOf(box_schema["properties/dims"], "i", "j", "k");
+    vec3_schema_anyOf(box_schema["properties/min"], true);
+    vec3_schema_anyOf(box_schema["properties/max"], true);
 
     // --- Uniform Grid ---
     conduit::Node &uniform_grid_schema = param_schema["properties/uniform_grid"];
@@ -6054,7 +6054,7 @@ VTKHVTKFileExtract::execute()
           ofs << "!NBLOCKS " << num_global_domains << std::endl;
           for(size_t i=0;i< global_domain_ids.number_of_elements();i++)
           {
-              ofs << conduit_fmt::format(output_file_pattern_rel,
+              ofs << conduit_fmt::format(conduit_fmt::runtime(output_file_pattern_rel),
                                          global_domain_ids[i]) << std::endl;
           }
         }
