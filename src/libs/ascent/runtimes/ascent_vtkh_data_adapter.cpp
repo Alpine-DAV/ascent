@@ -701,14 +701,14 @@ void GetMatSetFields(const conduit::Node &node, //materials["matset"]
 
     // If fractions do not sum to one, add a background material for the remainder.
     bool add_implicit_background = false;
-    for(index_t i = 0; i < neles; ++i)
-    {
-      if(v_sums[i] < one - vf_tolerance)
-      {
-        add_implicit_background = true;
-        break;
-      }
-    }
+    // for(index_t i = 0; i < neles; ++i)
+    // {
+    //   if(v_sums[i] < one - vf_tolerance)
+    //   {
+    //     add_implicit_background = true;
+    //     break;
+    //   }
+    // }
 
     itr = node["volume_fractions"].children();
     while(itr.has_next())
@@ -849,15 +849,15 @@ void GetMatSetFields(const conduit::Node &node, //materials["matset"]
       }
     }
 
-    // If fractions do not sum to one, add a background material for the remainder.
-    for(index_t j = 0; j < neles; ++j)
-    {
-      if(v_sums[j] < one - vf_tolerance)
-      {
-        add_implicit_background = true;
-        break;
-      }
-    }
+    // // If fractions do not sum to one, add a background material for the remainder.
+    // for(index_t j = 0; j < neles; ++j)
+    // {
+    //   if(v_sums[j] < one - vf_tolerance)
+    //   {
+    //     add_implicit_background = true;
+    //     break;
+    //   }
+    // }
 
     for(index_t i = 0; i < num_materials; ++i)
     {
