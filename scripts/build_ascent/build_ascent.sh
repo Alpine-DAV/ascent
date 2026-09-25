@@ -243,10 +243,9 @@ fi # build_zlib
 ################
 # HDF5
 ################
-# release 1-2 GAH!
-hdf5_version=1.14.1-2
-hdf5_middle_version=1.14.1
-hdf5_short_version=1.14
+hdf5_version=2.0.0
+hdf5_middle_version=2_0_0
+hdf5_short_version=2_0
 hdf5_src_dir=$(ospath ${source_dir}/hdf5-${hdf5_version})
 hdf5_build_dir=$(ospath ${build_dir}/hdf5-${hdf5_version}/)
 hdf5_install_dir=$(ospath ${install_dir}/hdf5-${hdf5_version}/)
@@ -257,7 +256,7 @@ if [ ! -d ${hdf5_install_dir} ]; then
 if ${build_hdf5}; then
 if [ ! -f ${hdf5_tarball} ]; then
   echo "**** Downloading ${hdf5_tarball}"
-  curl -L https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-${hdf5_short_version}/hdf5-${hdf5_middle_version}/src/hdf5-${hdf5_version}.tar.gz -o ${hdf5_tarball}
+  curl -L https://support.hdfgroup.org/releases/hdf5/v${hdf5_short_version}/v${hdf5_middle_version}/downloads/hdf5-${hdf5_version}.tar.gz -o ${hdf5_tarball}
 fi
 if [ ! -d ${hdf5_src_dir} ]; then
   echo "**** Extracting ${hdf5_tarball}"
@@ -266,20 +265,33 @@ fi
 
 #################
 #
-# hdf5 1.14.x CMake recipe for using zlib
+# hdf5 CMake recipe for using zlib
 #
-# -DHDF5_ENABLE_Z_LIB_SUPPORT=ON
+# -DHDF5_ENABLE_ZLIB_SUPPORT=ON
 # Add zlib install dir to CMAKE_PREFIX_PATH
 #
 #################
 
 echo "**** Configuring HDF5 ${hdf5_version}"
+hdf_parallel_settings=""
+# check if mpi is enabled
+if [[ "${enable_mpi}" == "ON" ]]; then
+  echo "**** Enabling MPI support for HDF5"
+  hdf_parallel_settings=" -DHDF5_ENABLE_PARALLEL=ON"
+else
+  echo "**** Disabling MPI support for HDF5"
+  hdf_parallel_settings=" -DHDF5_ENABLE_PARALLEL=OFF"
+fi
+
 cmake -S ${hdf5_src_dir} -B ${hdf5_build_dir} ${cmake_compiler_settings} \
   -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose} \
   -DCMAKE_BUILD_TYPE=${build_config} \
-  -DHDF5_ENABLE_Z_LIB_SUPPORT=ON \
+  -DHDF5_ENABLE_ZLIB_SUPPORT:BOOL=ON \
   -DCMAKE_PREFIX_PATH=${zlib_install_dir} \
-  -DCMAKE_INSTALL_PREFIX=${hdf5_install_dir}
+  -DCMAKE_INSTALL_PREFIX=${hdf5_install_dir} \
+  -DHDF5_BUILD_EXAMPLES:BOOL=OFF \
+  -DBUILD_TESTING:BOOL=OFF \
+  ${hdf_parallel_settings}
 
 echo "**** Building HDF5 ${hdf5_version}"
 cmake --build ${hdf5_build_dir} --config ${build_config} -j${build_jobs}
@@ -291,10 +303,11 @@ else
   echo "**** Skipping HDF5 build, install found at: ${hdf5_install_dir}"
 fi # build_hdf5
 
+
 ################
 # Silo
 ################
-silo_version=4.11.1
+silo_version=4.12.1
 silo_src_dir=$(ospath ${source_dir}/Silo-${silo_version})
 silo_build_dir=$(ospath ${build_dir}/silo-${silo_version}/)
 silo_install_dir=$(ospath ${install_dir}/silo-${silo_version}/)
@@ -312,19 +325,9 @@ if [ ! -d ${silo_src_dir} ]; then
   # untar and avoid symlinks (which windows despises)
   tar ${tar_extra_args} -xzf ${silo_tarball} -C ${source_dir} \
       --exclude="Silo-${silo_version}/config-site/*" \
-      --exclude="Silo-${silo_version}/README.md"
-  # apply silo patches
-  cd  ${silo_src_dir}
-  patch -p1 < ${script_dir}/2024_07_25_silo_4_11_cmake_fix.patch
-
-  # windows specifc patch
-  if [[ "$build_windows" == "ON" ]]; then
-    patch -p1 < ${script_dir}/2024_07_29_silo-pr389-win32-bugfix.patch
-  fi
-
-  cd ${root_dir}
+      --exclude="Silo-${silo_version}/LICENSE.md" \
+      --exclude="Silo-${silo_version}/silo_objects.png"
 fi
-
 
 echo "**** Configuring Silo ${silo_version}"
 cmake -S ${silo_src_dir} -B ${silo_build_dir} ${cmake_compiler_settings} \
@@ -692,7 +695,6 @@ if [ ! -d ${viskores_src_dir} ]; then
   echo "**** Applying Patches to ${viskores_tarball}"
   patch -p1 < ${script_dir}/2026_08_13_viskores-add-plumbing-for-rays-wo-camera.patch
   patch -p1 < ${script_dir}/2026_09_15_viskores_extrusion_connectivity.patch
-  patch -p1 < ${script_dir}/2026_09_24_use-float64-for-scalar-rendering.patch
   cd ${root_dir}
 fi
 
@@ -933,7 +935,7 @@ fi # build_umpire
 ################
 # MFEM
 ################
-mfem_version=4.8
+mfem_version=4.10
 mfem_src_dir=$(ospath ${source_dir}/mfem-${mfem_version})
 mfem_build_dir=$(ospath ${build_dir}/mfem-${mfem_version})
 mfem_install_dir=$(ospath ${install_dir}/mfem-${mfem_version}/)
