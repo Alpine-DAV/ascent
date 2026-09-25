@@ -1,0 +1,1232 @@
+diff --git a/viskores/filter/geometry_refinement/CMakeLists.txt b/viskores/filter/geometry_refinement/CMakeLists.txt
+--- a/viskores/filter/geometry_refinement/CMakeLists.txt
++++ b/viskores/filter/geometry_refinement/CMakeLists.txt
+@@ -17,26 +17,35 @@
+ set(geometry_refinement_headers
+   ConvertToPointCloud.h
++  ExtrusionAbstract.h
++  ExtrusionLinear.h
++  ExtrusionRotational.h
+   Shrink.h
+   SplitSharpEdges.h
+   Tetrahedralize.h
+   Triangulate.h
+   Tube.h
+   VertexClustering.h
+   )
+ 
+ set(geometry_refinement_sources
+   ConvertToPointCloud.cxx
++  ExtrusionLinear.cxx
++  ExtrusionRotational.cxx
+   Shrink.cxx
+   SplitSharpEdges.cxx
+   Tetrahedralize.cxx
+   Triangulate.cxx
+   Tube.cxx
+   VertexClustering.cxx
+   )
+ 
++set(geometry_refinement_template_sources
++  ExtrusionAbstract.hxx
++  )
+ viskores_library(
+   NAME viskores_filter_geometry_refinement
+   HEADERS ${geometry_refinement_headers}
++  TEMPLATE_SOURCES ${geometry_refinement_template_sources}
+   DEVICE_SOURCES ${geometry_refinement_sources}
+   USE_VISKORES_JOB_POOL
+ )
+diff --git a/viskores/filter/geometry_refinement/worklet/CMakeLists.txt b/viskores/filter/geometry_refinement/worklet/CMakeLists.txt
+--- a/viskores/filter/geometry_refinement/worklet/CMakeLists.txt
++++ b/viskores/filter/geometry_refinement/worklet/CMakeLists.txt
+@@ -17,8 +17,11 @@
+ set(headers
++  Extrusion.h
++  ExtrusionLinear.h
++  ExtrusionRotational.h
+   Shrink.h
+   SplitSharpEdges.h
+   Tetrahedralize.h
+   Triangulate.h
+   Tube.h
+   VertexClustering.h
+   )
+diff --git a/viskores/filter/geometry_refinement/ExtrusionAbstract.h b/viskores/filter/geometry_refinement/ExtrusionAbstract.h
+new file mode 100644
+--- /dev/null
++++ b/viskores/filter/geometry_refinement/ExtrusionAbstract.h
+@@ -0,0 +1,74 @@
++//============================================================================
++//  The contents of this file are covered by the Viskores license. See
++//  LICENSE.txt for details.
++//
++//  By contributing to this file, all contributors agree to the Developer
++//  Certificate of Origin Version 1.1 (DCO 1.1) as stated in DCO.txt.
++//============================================================================
++
++#ifndef viskores_filter_geometry_refinement_ExtrusionAbstract_h
++#define viskores_filter_geometry_refinement_ExtrusionAbstract_h
++
++#include <viskores/Math.h>
++#include <viskores/filter/Filter.h>
++#include <viskores/filter/geometry_refinement/viskores_filter_geometry_refinement_export.h>
++
++#include <string>
++
++namespace viskores
++{
++namespace filter
++{
++namespace geometry_refinement
++{
++
++/// @brief Base class for extrusion filters.
++///
++/// `ExtrusionAbstract` provides common controls for filters that create a sequence of
++/// extruded profile planes and connect adjacent planes into an output cell set. Current
++/// subclasses support triangulated profiles and wedge-cell output.
++class VISKORES_FILTER_GEOMETRY_REFINEMENT_EXPORT ExtrusionAbstract : public viskores::filter::Filter
++{
++public:
++  /// @brief Set the number of profile planes.
++  VISKORES_CONT void SetNumberOfPlanes(viskores::Id planes) { this->NumberOfPlanes = planes; }
++  /// @copydoc SetNumberOfPlanes
++  VISKORES_CONT viskores::Id GetNumberOfPlanes() const { return this->NumberOfPlanes; }
++
++  /// @brief Triangulate the input before extrusion.
++  VISKORES_CONT void SetTriangulateInput(bool on) { this->TriangulateInput = on; }
++  /// @copydoc SetTriangulateInput
++  VISKORES_CONT bool GetTriangulateInput() const { return this->TriangulateInput; }
++
++  /// @brief Use compact `viskores::cont::CellSetExtrude` topology for the output.
++  ///
++  /// The default is `false`, which returns explicit wedge cells. Compact output
++  /// uses less memory but requires downstream consumers that support
++  /// `viskores::cont::CellSetExtrude`.
++  VISKORES_CONT void SetCompactOutput(bool on) { this->CompactOutput = on; }
++  /// @copydoc SetCompactOutput
++  VISKORES_CONT bool GetCompactOutput() const { return this->CompactOutput; }
++
++protected:
++  template <typename MakeCoordinateWorklet,
++            typename MakeOrientationWorklet,
++            typename ValidateCoordinates>
++  VISKORES_CONT viskores::cont::DataSet ExecuteTriangleExtrusion(
++    const viskores::cont::DataSet& input,
++    const std::string& filterName,
++    bool closeSweep,
++    MakeCoordinateWorklet makeCoordinateWorklet,
++    MakeOrientationWorklet makeOrientationWorklet,
++    ValidateCoordinates validateCoordinates);
++
++private:
++  viskores::Id NumberOfPlanes = 16;
++  bool TriangulateInput = false;
++  bool CompactOutput = false;
++};
++
++} // namespace geometry_refinement
++} // namespace filter
++} // namespace viskores
++
++#endif // viskores_filter_geometry_refinement_ExtrusionAbstract_h
+diff --git a/viskores/filter/geometry_refinement/ExtrusionAbstract.hxx b/viskores/filter/geometry_refinement/ExtrusionAbstract.hxx
+new file mode 100644
+--- /dev/null
++++ b/viskores/filter/geometry_refinement/ExtrusionAbstract.hxx
+@@ -0,0 +1,354 @@
++//============================================================================
++//  The contents of this file are covered by the Viskores license. See
++//  LICENSE.txt for details.
++//
++//  By contributing to this file, all contributors agree to the Developer
++//  Certificate of Origin Version 1.1 (DCO 1.1) as stated in DCO.txt.
++//============================================================================
++
++#ifndef viskores_filter_geometry_refinement_ExtrusionAbstract_hxx
++#define viskores_filter_geometry_refinement_ExtrusionAbstract_hxx
++
++#include <viskores/filter/geometry_refinement/ExtrusionAbstract.h>
++
++#include <viskores/BinaryOperators.h>
++#include <viskores/CellShape.h>
++#include <viskores/cont/Algorithm.h>
++#include <viskores/cont/ArrayCopy.h>
++#include <viskores/cont/ArrayHandleCounting.h>
++#include <viskores/cont/ArrayHandleGroupVec.h>
++#include <viskores/cont/ArrayHandleIndex.h>
++#include <viskores/cont/ArrayHandleTransform.h>
++#include <viskores/cont/CellSetExplicit.h>
++#include <viskores/cont/CellSetExtrude.h>
++#include <viskores/cont/CellSetSingleType.h>
++#include <viskores/cont/ErrorFilterExecution.h>
++#include <viskores/filter/MapFieldPermutation.h>
++#include <viskores/filter/geometry_refinement/Triangulate.h>
++#include <viskores/filter/geometry_refinement/worklet/Extrusion.h>
++
++#include <limits>
++#include <type_traits>
++
++namespace viskores
++{
++namespace filter
++{
++namespace geometry_refinement
++{
++namespace internal
++{
++
++struct IsShapeTriangle
++{
++  VISKORES_EXEC_CONT
++  bool operator()(viskores::UInt8 shape) const { return shape == viskores::CELL_SHAPE_TRIANGLE; }
++};
++
++struct IsThreeIndices
++{
++  template <typename ValueType>
++  VISKORES_EXEC_CONT bool operator()(ValueType count) const
++  {
++    return count == 3;
++  }
++};
++
++struct BinaryAnd
++{
++  VISKORES_EXEC_CONT
++  bool operator()(bool u, bool v) const { return u && v; }
++};
++
++template <typename ConnectivityArrayType>
++VISKORES_CONT void ValidateConnectivityRange(const ConnectivityArrayType& connectivity,
++                                             viskores::Id numberOfPoints,
++                                             const std::string& filterName)
++{
++  const viskores::Vec<viskores::Id, 2> range = viskores::cont::Algorithm::Reduce(
++    connectivity,
++    viskores::make_Vec(std::numeric_limits<viskores::Id>::max(),
++                       std::numeric_limits<viskores::Id>::lowest()),
++    viskores::MinAndMax<viskores::Id>{});
++  if ((range[0] < 0) || (range[1] >= numberOfPoints))
++  {
++    throw viskores::cont::ErrorFilterExecution(
++      filterName + ": triangle connectivity contains an invalid point id.");
++  }
++}
++
++VISKORES_CONT inline viskores::cont::ArrayHandle<viskores::Id> MakeTriangleConnectivity(
++  const viskores::cont::UnknownCellSet& unknownCellSet,
++  const std::string& filterName)
++{
++  if (unknownCellSet.GetNumberOfCells() <= 0)
++  {
++    throw viskores::cont::ErrorFilterExecution(filterName + ": input has no cells.");
++  }
++  if (unknownCellSet.GetNumberOfPoints() <= 0)
++  {
++    throw viskores::cont::ErrorFilterExecution(filterName + ": input has no points.");
++  }
++
++  viskores::cont::ArrayHandle<viskores::Id> connectivity;
++
++  if (unknownCellSet.CanConvert<viskores::cont::CellSetSingleType<>>())
++  {
++    const auto cellSet = unknownCellSet.AsCellSet<viskores::cont::CellSetSingleType<>>();
++    if (cellSet.GetCellShapeAsId() != viskores::CellShapeTagTriangle::Id)
++    {
++      throw viskores::cont::ErrorFilterExecution(filterName + ": input cells must be triangles.");
++    }
++    connectivity = cellSet.GetConnectivityArray(viskores::TopologyElementTagCell{},
++                                                viskores::TopologyElementTagPoint{});
++  }
++  else if (unknownCellSet.CanConvert<viskores::cont::CellSetExplicit<>>())
++  {
++    const auto cellSet = unknownCellSet.AsCellSet<viskores::cont::CellSetExplicit<>>();
++    const auto shapes = cellSet.GetShapesArray(viskores::TopologyElementTagCell{},
++                                               viskores::TopologyElementTagPoint{});
++    const bool allTriangleShapes = viskores::cont::Algorithm::Reduce(
++      viskores::cont::make_ArrayHandleTransform(shapes, IsShapeTriangle{}), true, BinaryAnd{});
++    const auto numIndices = cellSet.GetNumIndicesArray(viskores::TopologyElementTagCell{},
++                                                       viskores::TopologyElementTagPoint{});
++    const bool allTriangleCounts = viskores::cont::Algorithm::Reduce(
++      viskores::cont::make_ArrayHandleTransform(numIndices, IsThreeIndices{}), true, BinaryAnd{});
++    if (!allTriangleShapes || !allTriangleCounts)
++    {
++      throw viskores::cont::ErrorFilterExecution(filterName + ": input cells must be triangles.");
++    }
++    connectivity = cellSet.GetConnectivityArray(viskores::TopologyElementTagCell{},
++                                                viskores::TopologyElementTagPoint{});
++  }
++  else
++  {
++    throw viskores::cont::ErrorFilterExecution(
++      filterName + ": input cell set must be explicit triangle topology.");
++  }
++
++  ValidateConnectivityRange(connectivity, unknownCellSet.GetNumberOfPoints(), filterName);
++  return connectivity;
++}
++
++VISKORES_CONT inline void ValidateCellSetExtrudeLimits(viskores::Id numberOfPoints,
++                                                       viskores::Id numberOfPlanes,
++                                                       viskores::Id connectivitySize,
++                                                       const std::string& filterName)
++{
++  const viskores::Id maxInt32 =
++    static_cast<viskores::Id>(std::numeric_limits<viskores::Int32>::max());
++  if ((numberOfPoints > maxInt32) || (numberOfPlanes > maxInt32) || (connectivitySize > maxInt32))
++  {
++    throw viskores::cont::ErrorFilterExecution(
++      filterName + ": compact CellSetExtrude output exceeds Int32 topology limits.");
++  }
++}
++
++VISKORES_CONT inline viskores::cont::ArrayHandle<viskores::Int32> MakeInt32Connectivity(
++  const viskores::cont::ArrayHandle<viskores::Id>& connectivity)
++{
++  viskores::cont::ArrayHandle<viskores::Int32> connectivity32;
++  viskores::cont::ArrayCopy(connectivity, connectivity32);
++  return connectivity32;
++}
++
++VISKORES_CONT inline viskores::cont::ArrayHandle<viskores::Int32> MakeIdentityNextNode(
++  viskores::Id numberOfPoints)
++{
++  viskores::cont::ArrayHandle<viskores::Int32> nextNode;
++  viskores::cont::Algorithm::Copy(viskores::cont::make_ArrayHandleCounting(
++                                    viskores::Int32{ 0 }, viskores::Int32{ 1 }, numberOfPoints),
++                                  nextNode);
++  return nextNode;
++}
++
++VISKORES_CONT inline bool HasPointFields(const viskores::cont::DataSet& input)
++{
++  const viskores::IdComponent numberOfFields = input.GetNumberOfFields();
++  for (viskores::IdComponent fieldIndex = 0; fieldIndex < numberOfFields; ++fieldIndex)
++  {
++    if (input.GetField(fieldIndex).IsPointField())
++    {
++      return true;
++    }
++  }
++  return false;
++}
++
++VISKORES_CONT inline bool HasCellFields(const viskores::cont::DataSet& input)
++{
++  const viskores::IdComponent numberOfFields = input.GetNumberOfFields();
++  for (viskores::IdComponent fieldIndex = 0; fieldIndex < numberOfFields; ++fieldIndex)
++  {
++    if (input.GetField(fieldIndex).IsCellField())
++    {
++      return true;
++    }
++  }
++  return false;
++}
++
++VISKORES_CONT inline bool MapExtrudedField(
++  viskores::cont::DataSet& result,
++  const viskores::cont::Field& field,
++  const viskores::cont::ArrayHandle<viskores::Id>& pointPermutation,
++  const viskores::cont::ArrayHandle<viskores::Id>& cellPermutation)
++{
++  if (field.IsPointField())
++  {
++    return viskores::filter::MapFieldPermutation(field, pointPermutation, result);
++  }
++  else if (field.IsCellField())
++  {
++    return viskores::filter::MapFieldPermutation(field, cellPermutation, result);
++  }
++  else if (field.IsWholeDataSetField())
++  {
++    result.AddField(field);
++    return true;
++  }
++  else
++  {
++    return false;
++  }
++}
++
++} // namespace internal
++
++template <typename MakeCoordinateWorklet,
++          typename MakeOrientationWorklet,
++          typename ValidateCoordinates>
++VISKORES_CONT viskores::cont::DataSet ExtrusionAbstract::ExecuteTriangleExtrusion(
++  const viskores::cont::DataSet& input,
++  const std::string& filterName,
++  bool closeSweep,
++  MakeCoordinateWorklet makeCoordinateWorklet,
++  MakeOrientationWorklet makeOrientationWorklet,
++  ValidateCoordinates validateCoordinates)
++{
++  if (closeSweep)
++  {
++    if (this->NumberOfPlanes < 3)
++    {
++      throw viskores::cont::ErrorFilterExecution(filterName +
++                                                 ": closed sweeps require at least 3 planes.");
++    }
++  }
++  else if (this->NumberOfPlanes < 2)
++  {
++    throw viskores::cont::ErrorFilterExecution(filterName +
++                                               ": open sweeps require at least 2 planes.");
++  }
++
++  viskores::cont::DataSet workingInput = input;
++  if (this->TriangulateInput)
++  {
++    viskores::filter::geometry_refinement::Triangulate triangulate;
++    workingInput = triangulate.Execute(input);
++  }
++
++  const auto& inputCoordinates =
++    workingInput.GetCoordinateSystem(this->GetActiveCoordinateSystemIndex());
++  const viskores::Id numberOfPoints = workingInput.GetCellSet().GetNumberOfPoints();
++  if (inputCoordinates.GetData().GetNumberOfValues() != numberOfPoints)
++  {
++    throw viskores::cont::ErrorFilterExecution(
++      filterName + ": coordinate count does not match cell set point count.");
++  }
++
++  viskores::cont::ArrayHandle<viskores::Id> connectivity =
++    internal::MakeTriangleConnectivity(workingInput.GetCellSet(), filterName);
++  const viskores::Id numberOfCellsPerPlane = connectivity.GetNumberOfValues() / 3;
++  viskores::cont::ArrayHandle<viskores::Id> orientedConnectivity;
++  const viskores::Id numberOfOutputPoints = this->NumberOfPlanes * numberOfPoints;
++  const viskores::Id numberOfOutputCells =
++    (closeSweep ? this->NumberOfPlanes : (this->NumberOfPlanes - 1)) * numberOfCellsPerPlane;
++
++  viskores::cont::UnknownArrayHandle outputCoordinates;
++  auto resolveCoordinates = [&](const auto& concreteCoordinates)
++  {
++    using CoordinateArrayType = std::decay_t<decltype(concreteCoordinates)>;
++    using CoordinateType = typename CoordinateArrayType::ValueType;
++
++    validateCoordinates(concreteCoordinates);
++
++    viskores::cont::ArrayHandle<CoordinateType> generatedCoordinates;
++    this->Invoke(makeCoordinateWorklet(numberOfPoints),
++                 viskores::cont::ArrayHandleIndex(numberOfOutputPoints),
++                 concreteCoordinates,
++                 generatedCoordinates);
++    outputCoordinates = generatedCoordinates;
++
++    this->Invoke(makeOrientationWorklet(),
++                 viskores::cont::make_ArrayHandleGroupVec<3>(connectivity),
++                 concreteCoordinates,
++                 viskores::cont::make_ArrayHandleGroupVec<3>(orientedConnectivity));
++  };
++  this->CastAndCallVecField<3>(inputCoordinates.GetData(), resolveCoordinates);
++
++  // Match ExternalFaces: check field associations before creating maps that may not be used.
++  const bool hasPointFields = internal::HasPointFields(workingInput);
++  const bool hasCellFields = internal::HasCellFields(workingInput);
++
++  viskores::cont::ArrayHandle<viskores::Id> pointPermutation;
++  if (hasPointFields)
++  {
++    viskores::cont::Algorithm::Copy(
++      viskores::cont::make_ArrayHandleTransform(
++        viskores::cont::ArrayHandleIndex(numberOfOutputPoints),
++        viskores::worklet::ExtrusionOutputToInputPlane{ numberOfPoints }),
++      pointPermutation);
++  }
++
++  viskores::cont::ArrayHandle<viskores::Id> cellPermutation;
++  if (hasCellFields)
++  {
++    viskores::cont::Algorithm::Copy(
++      viskores::cont::make_ArrayHandleTransform(
++        viskores::cont::ArrayHandleIndex(numberOfOutputCells),
++        viskores::worklet::ExtrusionOutputToInputPlane{ numberOfCellsPerPlane }),
++      cellPermutation);
++  }
++
++  auto mapper = [&](auto& result, const auto& field)
++  { return internal::MapExtrudedField(result, field, pointPermutation, cellPermutation); };
++
++  if (this->CompactOutput)
++  {
++    internal::ValidateCellSetExtrudeLimits(
++      numberOfPoints, this->NumberOfPlanes, orientedConnectivity.GetNumberOfValues(), filterName);
++    viskores::cont::ArrayHandle<viskores::Int32> connectivity32 =
++      internal::MakeInt32Connectivity(orientedConnectivity);
++    viskores::cont::ArrayHandle<viskores::Int32> nextNode =
++      internal::MakeIdentityNextNode(numberOfPoints);
++    viskores::cont::CellSetExtrude outputCells(connectivity32,
++                                               static_cast<viskores::Int32>(numberOfPoints),
++                                               static_cast<viskores::Int32>(this->NumberOfPlanes),
++                                               nextNode,
++                                               closeSweep);
++    return this->CreateResultCoordinateSystem(
++      workingInput, outputCells, inputCoordinates.GetName(), outputCoordinates, mapper);
++  }
++  else
++  {
++    viskores::cont::ArrayHandle<viskores::Id> explicitConnectivity;
++    this->Invoke(
++      viskores::worklet::ExtrudedCellSetToExplicitWedgeConnectivity{
++        numberOfCellsPerPlane, numberOfPoints, this->NumberOfPlanes },
++      viskores::cont::ArrayHandleIndex(numberOfOutputCells * 6),
++      orientedConnectivity,
++      explicitConnectivity);
++
++    viskores::cont::CellSetSingleType<> explicitCells;
++    explicitCells.Fill(numberOfOutputPoints, viskores::CELL_SHAPE_WEDGE, 6, explicitConnectivity);
++
++    return this->CreateResultCoordinateSystem(
++      workingInput, explicitCells, inputCoordinates.GetName(), outputCoordinates, mapper);
++  }
++}
++
++} // namespace geometry_refinement
++} // namespace filter
++} // namespace viskores
++
++#endif // viskores_filter_geometry_refinement_ExtrusionAbstract_hxx
+diff --git a/viskores/filter/geometry_refinement/ExtrusionLinear.cxx b/viskores/filter/geometry_refinement/ExtrusionLinear.cxx
+new file mode 100644
+--- /dev/null
++++ b/viskores/filter/geometry_refinement/ExtrusionLinear.cxx
+@@ -0,0 +1,62 @@
++//============================================================================
++//  The contents of this file are covered by the Viskores license. See
++//  LICENSE.txt for details.
++//
++//  By contributing to this file, all contributors agree to the Developer
++//  Certificate of Origin Version 1.1 (DCO 1.1) as stated in DCO.txt.
++//============================================================================
++
++#include <viskores/filter/geometry_refinement/ExtrusionAbstract.hxx>
++#include <viskores/filter/geometry_refinement/ExtrusionLinear.h>
++#include <viskores/filter/geometry_refinement/worklet/ExtrusionLinear.h>
++
++namespace viskores
++{
++namespace filter
++{
++namespace geometry_refinement
++{
++
++VISKORES_CONT viskores::cont::DataSet ExtrusionLinear::DoExecute(
++  const viskores::cont::DataSet& input)
++{
++  const viskores::Vec3f_64 direction{ this->Direction };
++  const viskores::Float64 directionMagnitude2 = viskores::MagnitudeSquared(direction);
++  if (directionMagnitude2 <= 0)
++  {
++    throw viskores::cont::ErrorFilterExecution("ExtrusionLinear: direction must be nonzero.");
++  }
++
++  const viskores::Float64 inverseDirectionMagnitude = viskores::RSqrt(directionMagnitude2);
++  const viskores::Vec3f_64 normalizedDirection64 = direction * inverseDirectionMagnitude;
++  const viskores::Vec3f normalizedDirection(
++    static_cast<viskores::FloatDefault>(normalizedDirection64[0]),
++    static_cast<viskores::FloatDefault>(normalizedDirection64[1]),
++    static_cast<viskores::FloatDefault>(normalizedDirection64[2]));
++  const viskores::Vec3f sweep = normalizedDirection * this->Distance;
++
++  auto makeCoordinateWorklet = [&](viskores::Id numberOfPoints)
++  {
++    return viskores::worklet::ExtrusionLinearCoordinates{
++      normalizedDirection, this->Distance, this->GetNumberOfPlanes(), numberOfPoints
++    };
++  };
++
++  auto makeOrientationWorklet = [&]()
++  {
++    return viskores::worklet::OrientExtrudedTriangleConnectivity<
++      viskores::worklet::ExtrusionLinearSweep>{ viskores::worklet::ExtrusionLinearSweep{ sweep } };
++  };
++
++  auto validateCoordinates = [](const auto&) {};
++
++  return this->ExecuteTriangleExtrusion(input,
++                                        "ExtrusionLinear",
++                                        false,
++                                        makeCoordinateWorklet,
++                                        makeOrientationWorklet,
++                                        validateCoordinates);
++}
++} // namespace geometry_refinement
++} // namespace filter
++} // namespace viskores
+diff --git a/viskores/filter/geometry_refinement/ExtrusionLinear.h b/viskores/filter/geometry_refinement/ExtrusionLinear.h
+new file mode 100644
+--- /dev/null
++++ b/viskores/filter/geometry_refinement/ExtrusionLinear.h
+@@ -0,0 +1,55 @@
++//============================================================================
++//  The contents of this file are covered by the Viskores license. See
++//  LICENSE.txt for details.
++//
++//  By contributing to this file, all contributors agree to the Developer
++//  Certificate of Origin Version 1.1 (DCO 1.1) as stated in DCO.txt.
++//============================================================================
++
++#ifndef viskores_filter_geometry_refinement_ExtrusionLinear_h
++#define viskores_filter_geometry_refinement_ExtrusionLinear_h
++
++#include <viskores/filter/geometry_refinement/ExtrusionAbstract.h>
++#include <viskores/filter/geometry_refinement/viskores_filter_geometry_refinement_export.h>
++
++namespace viskores
++{
++namespace filter
++{
++namespace geometry_refinement
++{
++
++/// @brief Extrude a triangulated profile along a direction into wedge cells.
++///
++/// `ExtrusionLinear` creates a sequence of translated copies of the input points
++/// along a direction and connects adjacent triangle copies with wedge cells.
++class VISKORES_FILTER_GEOMETRY_REFINEMENT_EXPORT ExtrusionLinear
++  : public viskores::filter::geometry_refinement::ExtrusionAbstract
++{
++public:
++  VISKORES_CONT ExtrusionLinear() { this->SetNumberOfPlanes(2); }
++
++  /// @brief Set the extrusion direction.
++  ///
++  /// The direction vector is normalized before use. Use `SetDistance` to set
++  /// the spacing between adjacent planes.
++  VISKORES_CONT void SetDirection(viskores::Vec3f direction) { this->Direction = direction; }
++  /// @copydoc SetDirection
++  VISKORES_CONT viskores::Vec3f GetDirection() const { return this->Direction; }
++
++  /// @brief Set the extrusion distance along the normalized direction.
++  VISKORES_CONT void SetDistance(viskores::FloatDefault distance) { this->Distance = distance; }
++  /// @copydoc SetDistance
++  VISKORES_CONT viskores::FloatDefault GetDistance() const { return this->Distance; }
++
++private:
++  VISKORES_CONT viskores::cont::DataSet DoExecute(const viskores::cont::DataSet& input) override;
++
++  viskores::Vec3f Direction = { 0, 0, 1 };
++  viskores::FloatDefault Distance = 1;
++};
++} // namespace geometry_refinement
++} // namespace filter
++} // namespace viskores
++
++#endif // viskores_filter_geometry_refinement_ExtrusionLinear_h
+diff --git a/viskores/filter/geometry_refinement/ExtrusionRotational.cxx b/viskores/filter/geometry_refinement/ExtrusionRotational.cxx
+new file mode 100644
+--- /dev/null
++++ b/viskores/filter/geometry_refinement/ExtrusionRotational.cxx
+@@ -0,0 +1,152 @@
++//============================================================================
++//  The contents of this file are covered by the Viskores license. See
++//  LICENSE.txt for details.
++//
++//  By contributing to this file, all contributors agree to the Developer
++//  Certificate of Origin Version 1.1 (DCO 1.1) as stated in DCO.txt.
++//============================================================================
++
++#include <viskores/filter/geometry_refinement/ExtrusionAbstract.hxx>
++#include <viskores/filter/geometry_refinement/ExtrusionRotational.h>
++#include <viskores/filter/geometry_refinement/worklet/ExtrusionRotational.h>
++
++#include <viskores/cont/Algorithm.h>
++#include <viskores/cont/ArrayHandleTransform.h>
++
++namespace
++{
++
++VISKORES_CONT bool NearlyFullSweep(viskores::FloatDefault angle)
++{
++  constexpr viskores::Float64 tolerance = 1.0e-6;
++  const viskores::Float64 fullSweep = viskores::TwoPi<viskores::Float64>();
++  const viskores::Float64 absAngle = viskores::Abs(static_cast<viskores::Float64>(angle));
++  return viskores::Abs(absAngle - fullSweep) <= tolerance;
++}
++
++struct IsPointOnAxis
++{
++  viskores::Vec3f_64 Axis;
++  viskores::Vec3f_64 Center;
++  viskores::Float64 Tolerance2;
++
++  template <typename PointType>
++  VISKORES_EXEC_CONT bool operator()(const PointType& pointValue) const
++  {
++    const viskores::Vec3f_64 relativeP = viskores::Vec3f_64{ pointValue } - this->Center;
++
++    const viskores::Float64 dot = viskores::Dot(this->Axis, relativeP);
++    const viskores::Vec3f_64 perpendicular = relativeP - (dot * this->Axis);
++    const viskores::Float64 perpendicularMagnitude2 = viskores::MagnitudeSquared(perpendicular);
++
++    return perpendicularMagnitude2 <= this->Tolerance2;
++  }
++};
++
++template <typename CoordinateArrayType>
++VISKORES_CONT void ValidateAxisPoints(const CoordinateArrayType& coordinates,
++                                      viskores::Vec3f_64 axis,
++                                      viskores::Vec3f_64 center,
++                                      viskores::Float64 tolerance)
++{
++  const bool hasAxisPoint = viskores::cont::Algorithm::Reduce(
++    viskores::cont::make_ArrayHandleTransform(coordinates,
++                                              IsPointOnAxis{ axis, center, tolerance * tolerance }),
++    false,
++    viskores::LogicalOr{});
++  if (hasAxisPoint)
++  {
++    throw viskores::cont::ErrorFilterExecution(
++      "ExtrusionRotational: input contains a point on the rotation axis.");
++  }
++}
++
++} // anonymous namespace
++
++namespace viskores
++{
++namespace filter
++{
++namespace geometry_refinement
++{
++
++VISKORES_CONT ExtrusionRotational::ExtrusionRotational()
++{
++  this->CloseSweep = NearlyFullSweep(this->SweepAngle);
++}
++
++VISKORES_CONT void ExtrusionRotational::SetSweepAngle(viskores::FloatDefault radians)
++{
++  this->SweepAngle = radians;
++  if (!this->CloseSweepExplicitlySet)
++  {
++    this->CloseSweep = NearlyFullSweep(radians);
++  }
++}
++
++VISKORES_CONT void ExtrusionRotational::SetCloseSweep(bool close)
++{
++  this->CloseSweep = close;
++  this->CloseSweepExplicitlySet = true;
++}
++
++VISKORES_CONT viskores::cont::DataSet ExtrusionRotational::DoExecute(
++  const viskores::cont::DataSet& input)
++{
++  const viskores::Float64 axisMagnitude2 = viskores::MagnitudeSquared(this->Axis);
++  if (axisMagnitude2 <= 0)
++  {
++    throw viskores::cont::ErrorFilterExecution("ExtrusionRotational: axis must be nonzero.");
++  }
++  if (this->AxisPointTolerance < 0)
++  {
++    throw viskores::cont::ErrorFilterExecution(
++      "ExtrusionRotational: axis point tolerance must be nonnegative.");
++  }
++  if (this->GetCloseSweep() && !NearlyFullSweep(this->SweepAngle))
++  {
++    throw viskores::cont::ErrorFilterExecution(
++      "ExtrusionRotational: closed sweeps require a full 2*pi sweep angle.");
++  }
++
++  const viskores::Float64 inverseAxisMagnitude = viskores::RSqrt(axisMagnitude2);
++  const viskores::Vec3f_64 normalizedAxis = this->Axis * inverseAxisMagnitude;
++
++  auto makeCoordinateWorklet = [&](viskores::Id numberOfPoints)
++  {
++    return viskores::worklet::ExtrusionRotationalCoordinates{
++      normalizedAxis, this->Center,         this->SweepAngle, this->GetNumberOfPlanes(),
++      numberOfPoints, this->GetCloseSweep()
++    };
++  };
++
++  auto makeOrientationWorklet = [&]()
++  {
++    const viskores::Float64 denominator = static_cast<viskores::Float64>(
++      this->GetCloseSweep() ? this->GetNumberOfPlanes() : (this->GetNumberOfPlanes() - 1));
++    const viskores::Float64 stepAngle =
++      static_cast<viskores::Float64>(this->SweepAngle) / denominator;
++
++    return viskores::worklet::OrientExtrudedTriangleConnectivity<
++      viskores::worklet::ExtrusionRotationalSweep>{ viskores::worklet::ExtrusionRotationalSweep{
++      normalizedAxis, this->Center, viskores::Cos(stepAngle), viskores::Sin(stepAngle) } };
++  };
++
++  auto validateCoordinates = [&](const auto& coordinates)
++  {
++    if (!this->AllowAxisPoints)
++    {
++      ValidateAxisPoints(coordinates, normalizedAxis, this->Center, this->AxisPointTolerance);
++    }
++  };
++
++  return this->ExecuteTriangleExtrusion(input,
++                                        "ExtrusionRotational",
++                                        this->GetCloseSweep(),
++                                        makeCoordinateWorklet,
++                                        makeOrientationWorklet,
++                                        validateCoordinates);
++}
++} // namespace geometry_refinement
++} // namespace filter
++} // namespace viskores
+diff --git a/viskores/filter/geometry_refinement/ExtrusionRotational.h b/viskores/filter/geometry_refinement/ExtrusionRotational.h
+new file mode 100644
+--- /dev/null
++++ b/viskores/filter/geometry_refinement/ExtrusionRotational.h
+@@ -0,0 +1,89 @@
++//============================================================================
++//  The contents of this file are covered by the Viskores license. See
++//  LICENSE.txt for details.
++//
++//  By contributing to this file, all contributors agree to the Developer
++//  Certificate of Origin Version 1.1 (DCO 1.1) as stated in DCO.txt.
++//============================================================================
++
++#ifndef viskores_filter_geometry_refinement_ExtrusionRotational_h
++#define viskores_filter_geometry_refinement_ExtrusionRotational_h
++
++#include <viskores/Math.h>
++#include <viskores/filter/geometry_refinement/ExtrusionAbstract.h>
++#include <viskores/filter/geometry_refinement/viskores_filter_geometry_refinement_export.h>
++
++namespace viskores
++{
++namespace filter
++{
++namespace geometry_refinement
++{
++
++/// @brief Revolve a triangulated profile into wedge cells.
++///
++/// `ExtrusionRotational` creates a series of rotated copies of the input points around an
++/// axis and connects adjacent triangle copies with wedge cells. By default, the
++/// output is an explicit wedge cell set for broad downstream compatibility.
++class VISKORES_FILTER_GEOMETRY_REFINEMENT_EXPORT ExtrusionRotational
++  : public viskores::filter::geometry_refinement::ExtrusionAbstract
++{
++public:
++  VISKORES_CONT ExtrusionRotational();
++
++  /// @brief Set the axis direction used for rotation.
++  VISKORES_CONT void SetAxis(viskores::Vec3f_64 axis) { this->Axis = axis; }
++  /// @copydoc SetAxis
++  VISKORES_CONT viskores::Vec3f_64 GetAxis() const { return this->Axis; }
++
++  /// @brief Set a point on the rotation axis.
++  VISKORES_CONT void SetCenter(viskores::Vec3f_64 center) { this->Center = center; }
++  /// @copydoc SetCenter
++  VISKORES_CONT viskores::Vec3f_64 GetCenter() const { return this->Center; }
++
++  /// @brief Set the total sweep angle in radians.
++  ///
++  /// Unless `SetCloseSweep` has been called explicitly, full 2*pi sweeps are
++  /// closed and non-full sweeps are open.
++  VISKORES_CONT void SetSweepAngle(viskores::FloatDefault radians);
++  /// @copydoc SetSweepAngle
++  VISKORES_CONT viskores::FloatDefault GetSweepAngle() const { return this->SweepAngle; }
++
++  /// @brief Explicitly specify whether the last plane connects back to the first.
++  VISKORES_CONT void SetCloseSweep(bool close);
++  /// @copydoc SetCloseSweep
++  VISKORES_CONT bool GetCloseSweep() const { return this->CloseSweep; }
++
++  /// @brief Allow points on the rotation axis, which can produce degenerate wedges.
++  ///
++  /// This is enabled by default to support solid-of-revolution inputs whose
++  /// profile touches the rotation axis. Disable it to reject axis-touching
++  /// profiles instead of producing degenerate wedges along the axis.
++  VISKORES_CONT void SetAllowAxisPoints(bool on) { this->AllowAxisPoints = on; }
++  /// @copydoc SetAllowAxisPoints
++  VISKORES_CONT bool GetAllowAxisPoints() const { return this->AllowAxisPoints; }
++
++  /// @brief Set the absolute distance tolerance used to detect points on the rotation axis.
++  VISKORES_CONT void SetAxisPointTolerance(viskores::Float64 tolerance)
++  {
++    this->AxisPointTolerance = tolerance;
++  }
++  /// @copydoc SetAxisPointTolerance
++  VISKORES_CONT viskores::Float64 GetAxisPointTolerance() const { return this->AxisPointTolerance; }
++
++private:
++  VISKORES_CONT viskores::cont::DataSet DoExecute(const viskores::cont::DataSet& input) override;
++
++  viskores::Vec3f_64 Axis = { 0.0, 0.0, 1.0 };
++  viskores::Vec3f_64 Center = { 0.0, 0.0, 0.0 };
++  viskores::FloatDefault SweepAngle = viskores::TwoPi<viskores::FloatDefault>();
++  bool CloseSweep = false;
++  bool CloseSweepExplicitlySet = false;
++  bool AllowAxisPoints = true;
++  viskores::Float64 AxisPointTolerance = 1.0e-6;
++};
++} // namespace geometry_refinement
++} // namespace filter
++} // namespace viskores
++
++#endif // viskores_filter_geometry_refinement_ExtrusionRotational_h
+diff --git a/viskores/filter/geometry_refinement/worklet/Extrusion.h b/viskores/filter/geometry_refinement/worklet/Extrusion.h
+new file mode 100644
+--- /dev/null
++++ b/viskores/filter/geometry_refinement/worklet/Extrusion.h
+@@ -0,0 +1,121 @@
++//============================================================================
++//  The contents of this file are covered by the Viskores license. See
++//  LICENSE.txt for details.
++//
++//  By contributing to this file, all contributors agree to the Developer
++//  Certificate of Origin Version 1.1 (DCO 1.1) as stated in DCO.txt.
++//============================================================================
++
++#ifndef viskores_worklet_Extrusion_h
++#define viskores_worklet_Extrusion_h
++
++#include <viskores/Math.h>
++#include <viskores/worklet/WorkletMapField.h>
++
++namespace viskores
++{
++namespace worklet
++{
++
++struct ExtrusionOutputToInputPlane
++{
++  viskores::Id NumberOfIdsPerPlane = 0;
++
++  VISKORES_EXEC_CONT
++  viskores::Id operator()(viskores::Id outputId) const
++  {
++    return outputId % this->NumberOfIdsPerPlane;
++  }
++};
++
++template <typename SweepFunctor>
++class OrientExtrudedTriangleConnectivity : public viskores::worklet::WorkletMapField
++{
++public:
++  using ControlSignature = void(FieldIn baseConnectivity,
++                                WholeArrayIn baseCoordinates,
++                                FieldOut output);
++  using ExecutionSignature = void(_1, _2, _3);
++
++  VISKORES_CONT
++  explicit OrientExtrudedTriangleConnectivity(SweepFunctor sweep)
++    : Sweep(sweep)
++  {
++  }
++
++  template <typename ConnectivityType, typename CoordinatePortalType>
++  VISKORES_EXEC void operator()(const ConnectivityType& baseConnectivity,
++                                const CoordinatePortalType& baseCoordinates,
++                                viskores::Id3& output) const
++  {
++    using CoordinateType = typename CoordinatePortalType::ValueType;
++    using ComponentType = typename CoordinateType::ComponentType;
++
++    const viskores::Id pointId0 = baseConnectivity[0];
++    const viskores::Id pointId1 = baseConnectivity[1];
++    const viskores::Id pointId2 = baseConnectivity[2];
++
++    const viskores::Vec<ComponentType, 3> point0 = baseCoordinates.Get(pointId0);
++    const viskores::Vec<ComponentType, 3> point1 = baseCoordinates.Get(pointId1);
++    const viskores::Vec<ComponentType, 3> point2 = baseCoordinates.Get(pointId2);
++
++    const viskores::Vec<ComponentType, 3> normal =
++      viskores::Cross(point1 - point0, point2 - point0);
++    const viskores::Vec<ComponentType, 3> sweep = this->Sweep(point0, point1, point2);
++    const bool flip = viskores::Dot(normal, sweep) < ComponentType{ 0 };
++
++    output[0] = pointId0;
++    output[1] = flip ? pointId2 : pointId1;
++    output[2] = flip ? pointId1 : pointId2;
++  }
++
++private:
++  SweepFunctor Sweep;
++};
++
++// The extrusion filters generate each plane with the same point ordering, so
++// explicit output uses identity point correspondence between adjacent planes.
++class ExtrudedCellSetToExplicitWedgeConnectivity : public viskores::worklet::WorkletMapField
++{
++public:
++  using ControlSignature = void(FieldIn flatConnectivityId,
++                                WholeArrayIn baseConnectivity,
++                                FieldOut output);
++  using ExecutionSignature = void(_1, _2, _3);
++
++  VISKORES_CONT
++  ExtrudedCellSetToExplicitWedgeConnectivity(viskores::Id numberOfCellsPerPlane,
++                                             viskores::Id numberOfPointsPerPlane,
++                                             viskores::Id numberOfPlanes)
++    : NumberOfCellsPerPlane(numberOfCellsPerPlane)
++    , NumberOfPointsPerPlane(numberOfPointsPerPlane)
++    , NumberOfPlanes(numberOfPlanes)
++  {
++  }
++
++  template <typename ConnectivityPortalType>
++  VISKORES_EXEC void operator()(viskores::Id flatConnectivityId,
++                                const ConnectivityPortalType& baseConnectivity,
++                                viskores::Id& output) const
++  {
++    const viskores::Id cellId = flatConnectivityId / 6;
++    const viskores::Id localPointId = flatConnectivityId % 6;
++    const viskores::Id triangleId = cellId % this->NumberOfCellsPerPlane;
++    const viskores::Id plane0 = cellId / this->NumberOfCellsPerPlane;
++    const viskores::Id plane1 = (plane0 < (this->NumberOfPlanes - 1)) ? (plane0 + 1) : 0;
++    const viskores::Id basePointId = baseConnectivity.Get((triangleId * 3) + (localPointId % 3));
++
++    output = (localPointId < 3) ? ((plane0 * this->NumberOfPointsPerPlane) + basePointId)
++                                : ((plane1 * this->NumberOfPointsPerPlane) + basePointId);
++  }
++
++private:
++  viskores::Id NumberOfCellsPerPlane;
++  viskores::Id NumberOfPointsPerPlane;
++  viskores::Id NumberOfPlanes;
++};
++
++}
++} // namespace viskores::worklet
++
++#endif // viskores_worklet_Extrusion_h
+diff --git a/viskores/filter/geometry_refinement/worklet/ExtrusionLinear.h b/viskores/filter/geometry_refinement/worklet/ExtrusionLinear.h
+new file mode 100644
+--- /dev/null
++++ b/viskores/filter/geometry_refinement/worklet/ExtrusionLinear.h
+@@ -0,0 +1,93 @@
++//============================================================================
++//  The contents of this file are covered by the Viskores license. See
++//  LICENSE.txt for details.
++//
++//  By contributing to this file, all contributors agree to the Developer
++//  Certificate of Origin Version 1.1 (DCO 1.1) as stated in DCO.txt.
++//============================================================================
++
++#ifndef viskores_worklet_ExtrusionLinear_h
++#define viskores_worklet_ExtrusionLinear_h
++
++#include <viskores/Math.h>
++#include <viskores/filter/geometry_refinement/worklet/Extrusion.h>
++#include <viskores/worklet/WorkletMapField.h>
++
++namespace viskores
++{
++namespace worklet
++{
++
++class ExtrusionLinearSweep
++{
++public:
++  VISKORES_CONT
++  explicit ExtrusionLinearSweep(viskores::Vec3f sweep)
++    : Sweep(sweep)
++  {
++  }
++
++  template <typename ComponentType>
++  VISKORES_EXEC viskores::Vec<ComponentType, 3> operator()(
++    const viskores::Vec<ComponentType, 3>&,
++    const viskores::Vec<ComponentType, 3>&,
++    const viskores::Vec<ComponentType, 3>&) const
++  {
++    return viskores::Vec<ComponentType, 3>(static_cast<ComponentType>(this->Sweep[0]),
++                                           static_cast<ComponentType>(this->Sweep[1]),
++                                           static_cast<ComponentType>(this->Sweep[2]));
++  }
++
++private:
++  viskores::Vec3f Sweep;
++};
++
++class ExtrusionLinearCoordinates : public viskores::worklet::WorkletMapField
++{
++public:
++  using ControlSignature = void(FieldIn flatPointId, WholeArrayIn baseCoordinates, FieldOut output);
++  using ExecutionSignature = void(_1, _2, _3);
++
++  VISKORES_CONT
++  ExtrusionLinearCoordinates(viskores::Vec3f direction,
++                             viskores::FloatDefault distance,
++                             viskores::Id numberOfPlanes,
++                             viskores::Id numberOfPointsPerPlane)
++    : Direction(direction)
++    , Distance(distance)
++    , NumberOfPlanes(numberOfPlanes)
++    , NumberOfPointsPerPlane(numberOfPointsPerPlane)
++  {
++  }
++
++  template <typename CoordinatePortalType, typename OutputPointType>
++  VISKORES_EXEC void operator()(viskores::Id flatPointId,
++                                const CoordinatePortalType& baseCoordinates,
++                                OutputPointType& output) const
++  {
++    using ComponentType = typename OutputPointType::ComponentType;
++
++    const viskores::Id pointInPlane = flatPointId % this->NumberOfPointsPerPlane;
++    const viskores::Id planeIndex = flatPointId / this->NumberOfPointsPerPlane;
++    const ComponentType denominator = static_cast<ComponentType>(this->NumberOfPlanes - 1);
++    const ComponentType distance = static_cast<ComponentType>(this->Distance) *
++      static_cast<ComponentType>(planeIndex) / denominator;
++
++    const viskores::Vec<ComponentType, 3> direction(static_cast<ComponentType>(this->Direction[0]),
++                                                    static_cast<ComponentType>(this->Direction[1]),
++                                                    static_cast<ComponentType>(this->Direction[2]));
++    const viskores::Vec<ComponentType, 3> point = baseCoordinates.Get(pointInPlane);
++
++    output = point + (direction * distance);
++  }
++
++private:
++  viskores::Vec3f Direction;
++  viskores::FloatDefault Distance;
++  viskores::Id NumberOfPlanes;
++  viskores::Id NumberOfPointsPerPlane;
++};
++}
++} // namespace viskores::worklet
++
++#endif // viskores_worklet_ExtrusionLinear_h
+diff --git a/viskores/filter/geometry_refinement/worklet/ExtrusionRotational.h b/viskores/filter/geometry_refinement/worklet/ExtrusionRotational.h
+new file mode 100644
+--- /dev/null
++++ b/viskores/filter/geometry_refinement/worklet/ExtrusionRotational.h
+@@ -0,0 +1,133 @@
++//============================================================================
++//  The contents of this file are covered by the Viskores license. See
++//  LICENSE.txt for details.
++//
++//  By contributing to this file, all contributors agree to the Developer
++//  Certificate of Origin Version 1.1 (DCO 1.1) as stated in DCO.txt.
++//============================================================================
++
++#ifndef viskores_worklet_ExtrusionRotational_h
++#define viskores_worklet_ExtrusionRotational_h
++
++#include <viskores/Math.h>
++#include <viskores/filter/geometry_refinement/worklet/Extrusion.h>
++#include <viskores/worklet/WorkletMapField.h>
++
++namespace viskores
++{
++namespace worklet
++{
++
++class ExtrusionRotationalSweep
++{
++public:
++  VISKORES_CONT
++  ExtrusionRotationalSweep(viskores::Vec3f_64 axis,
++                           viskores::Vec3f_64 center,
++                           viskores::Float64 cosStep,
++                           viskores::Float64 sinStep)
++    : Axis(axis)
++    , Center(center)
++    , CosStep(cosStep)
++    , SinStep(sinStep)
++  {
++  }
++
++  template <typename ComponentType>
++  VISKORES_EXEC viskores::Vec<ComponentType, 3> operator()(
++    const viskores::Vec<ComponentType, 3>& point0,
++    const viskores::Vec<ComponentType, 3>& point1,
++    const viskores::Vec<ComponentType, 3>& point2) const
++  {
++    const viskores::Vec<ComponentType, 3> axis(static_cast<ComponentType>(this->Axis[0]),
++                                               static_cast<ComponentType>(this->Axis[1]),
++                                               static_cast<ComponentType>(this->Axis[2]));
++    const viskores::Vec<ComponentType, 3> center(static_cast<ComponentType>(this->Center[0]),
++                                                 static_cast<ComponentType>(this->Center[1]),
++                                                 static_cast<ComponentType>(this->Center[2]));
++
++    const viskores::Vec<ComponentType, 3> centroid =
++      (point0 + point1 + point2) / static_cast<ComponentType>(3);
++    const viskores::Vec<ComponentType, 3> shifted = centroid - center;
++    const viskores::Vec<ComponentType, 3> parallel = viskores::Dot(axis, shifted) * axis;
++    const viskores::Vec<ComponentType, 3> perpendicular = shifted - parallel;
++    const viskores::Vec<ComponentType, 3> nextPerpendicular =
++      (perpendicular * static_cast<ComponentType>(this->CosStep)) +
++      (viskores::Cross(axis, perpendicular) * static_cast<ComponentType>(this->SinStep));
++
++    return nextPerpendicular - perpendicular;
++  }
++
++private:
++  viskores::Vec3f_64 Axis;
++  viskores::Vec3f_64 Center;
++  viskores::Float64 CosStep;
++  viskores::Float64 SinStep;
++};
++
++class ExtrusionRotationalCoordinates : public viskores::worklet::WorkletMapField
++{
++public:
++  using ControlSignature = void(FieldIn flatPointId, WholeArrayIn baseCoordinates, FieldOut output);
++  using ExecutionSignature = void(_1, _2, _3);
++
++  VISKORES_CONT
++  ExtrusionRotationalCoordinates(viskores::Vec3f_64 axis,
++                                 viskores::Vec3f_64 center,
++                                 viskores::FloatDefault sweepAngle,
++                                 viskores::Id numberOfPlanes,
++                                 viskores::Id numberOfPointsPerPlane,
++                                 bool periodic)
++    : Axis(axis)
++    , Center(center)
++    , SweepAngle(sweepAngle)
++    , NumberOfPlanes(numberOfPlanes)
++    , NumberOfPointsPerPlane(numberOfPointsPerPlane)
++    , Periodic(periodic)
++  {
++  }
++
++  template <typename CoordinatePortalType, typename OutputPointType>
++  VISKORES_EXEC void operator()(viskores::Id flatPointId,
++                                const CoordinatePortalType& baseCoordinates,
++                                OutputPointType& output) const
++  {
++    using ComponentType = typename OutputPointType::ComponentType;
++
++    const viskores::Id pointInPlane = flatPointId % this->NumberOfPointsPerPlane;
++    const viskores::Id planeIndex = flatPointId / this->NumberOfPointsPerPlane;
++    const ComponentType denominator = static_cast<ComponentType>(
++      this->Periodic ? this->NumberOfPlanes : (this->NumberOfPlanes - 1));
++    const ComponentType theta = static_cast<ComponentType>(this->SweepAngle) *
++      static_cast<ComponentType>(planeIndex) / denominator;
++
++    const viskores::Vec<ComponentType, 3> axis(static_cast<ComponentType>(this->Axis[0]),
++                                               static_cast<ComponentType>(this->Axis[1]),
++                                               static_cast<ComponentType>(this->Axis[2]));
++    const viskores::Vec<ComponentType, 3> center(static_cast<ComponentType>(this->Center[0]),
++                                                 static_cast<ComponentType>(this->Center[1]),
++                                                 static_cast<ComponentType>(this->Center[2]));
++
++    const viskores::Vec<ComponentType, 3> point = baseCoordinates.Get(pointInPlane);
++    const viskores::Vec<ComponentType, 3> shifted = point - center;
++    const viskores::Vec<ComponentType, 3> parallel = viskores::Dot(axis, shifted) * axis;
++    const viskores::Vec<ComponentType, 3> perpendicular = shifted - parallel;
++    const viskores::Vec<ComponentType, 3> rotated = center + parallel +
++      (perpendicular * viskores::Cos(theta)) +
++      (viskores::Cross(axis, perpendicular) * viskores::Sin(theta));
++
++    output = rotated;
++  }
++
++private:
++  viskores::Vec3f_64 Axis;
++  viskores::Vec3f_64 Center;
++  viskores::FloatDefault SweepAngle;
++  viskores::Id NumberOfPlanes;
++  viskores::Id NumberOfPointsPerPlane;
++  bool Periodic;
++};
++}
++} // namespace viskores::worklet
++
++#endif // viskores_worklet_ExtrusionRotational_h
