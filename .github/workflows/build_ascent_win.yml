@@ -47,18 +47,6 @@ jobs:
     #   run: |
     #     echo "**** Ascent Unit Tests"
     #     cmake -E env CTEST_OUTPUT_ON_FAILURE=1 cmake --build build --config Release --target RUN_TESTS
-    - name: Install Windows debugging tools
-      if: always()
-      shell: powershell
-      run: |
-        $ErrorActionPreference = 'Stop'
-        # Install the Windows SDK debugging tools if they aren't already present.
-        # winget is available on current GitHub-hosted Windows runners.
-        winget install `
-          --id Microsoft.WindowsSDK `
-          --accept-source-agreements `
-          --accept-package-agreements `
-          --silent
     - name: Run tests under ProcDump
       shell: pwsh
       run: |
