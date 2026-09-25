@@ -15,6 +15,7 @@ project(ascent VERSION "0.9.5")
 ################################
 # Build Options
 ################################
+
 option(BUILD_SHARED_LIBS  "Build shared libraries"    ON)
 option(ENABLE_TESTS       "Build tests"               ON)
 

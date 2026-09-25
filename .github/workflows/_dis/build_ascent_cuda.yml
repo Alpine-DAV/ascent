@@ -1,17 +1,19 @@
-name: build_ascent_hip
+name: build_ascent_cuda
 
 on:
-  pull_request:
-    branches: [ develop ]
+  workflow_run:
+    workflows: ["blt_time_travel_check"]
+    types:
+      - completed
 
 permissions:
   contents: read
 
 jobs:
   build_cuda:
-    name: Build Ascent HIP
-    runs-on: ubuntu-22.04
-    container: alpinedav/ascent-devel:ubuntu-22.04-rocm-6.3.4-x86_64
+    name: Build Ascent CUDA
+    runs-on: ubuntu-latest
+    container: alpinedav/ascent-ci:ubuntu-22.04-cuda-11.8.0-devel
     env:
       CMAKE_VERSION: 3.31.8
     steps:
@@ -27,11 +29,11 @@ jobs:
     - name: Build TPLs
       run: |
         export PATH=$PATH:cmake-${CMAKE_VERSION}-linux-x86_64/bin/
-        env enable_hip=ON \
+        env enable_cuda=ON \
             enable_mpi=OFF \
             enable_fortran=OFF \
             enable_tests=OFF \
-            build_ascent=false \
+            build_ascent=OFF \
             enable_verbose=OFF \
             build_jobs=2 \
             ./scripts/build_ascent/build_ascent.sh

@@ -1,0 +1,848 @@
+From b427f9b67eb33f0e78a060a3455c85257109fdfb Mon Sep 17 00:00:00 2001
+From: "Mark C. Miller" <5720676+markcmiller86@users.noreply.github.com>
+Date: Fri, 23 Jan 2026 14:24:15 -0800
+Subject: [PATCH 01/18] Fix missing rpath info
+
+---
+ tests/CMakeLists.txt | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/tests/CMakeLists.txt b/tests/CMakeLists.txt
+index ba0ce0ae..e358a480 100644
+--- a/tests/CMakeLists.txt
++++ b/tests/CMakeLists.txt
+@@ -109,6 +109,8 @@
+ # cat Testing/Temporary/MemoryChecker.*
+ #
+ 
++set(CMAKE_BUILD_RPATH "@loader_path/../../lib")
++
+ ###-------------------------------------------------------------------------------------
+ # Set the output dir for test executables
+ ###-------------------------------------------------------------------------------------
+
+From 582e466e1f75f72afc14012bea2f1b3ec1eca136 Mon Sep 17 00:00:00 2001
+From: "Mark C. Miller" <5720676+markcmiller86@users.noreply.github.com>
+Date: Fri, 23 Jan 2026 14:24:40 -0800
+Subject: [PATCH 02/18] fix build w/o HDF5
+
+---
+ tests/CMakeLists.txt | 40 +++++++++++++++++++++++-----------------
+ 1 file changed, 23 insertions(+), 17 deletions(-)
+
+diff --git a/tests/CMakeLists.txt b/tests/CMakeLists.txt
+index e358a480..c3ad4757 100644
+--- a/tests/CMakeLists.txt
++++ b/tests/CMakeLists.txt
+@@ -232,18 +232,16 @@ endif()
+ 
+ set(SILO_TESTS_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+ 
+-if(SILO_ENABLE_HDF5 AND HDF5_FOUND)
+-    set(HDF5_ONLY_SOURCES
+-        compression.c
+-        grab.c
+-        largefile.c
+-        memfile_simple.c
+-        mk_nasf_h5.c
+-        partial_io.c
+-        readstuff.c
+-        testhdf5.c
+-    )
+-endif()
++set(HDF5_ONLY_SOURCES
++    compression.c
++    grab.c
++    largefile.c
++    memfile_simple.c
++    mk_nasf_h5.c
++    partial_io.c
++    readstuff.c
++    testhdf5.c
++)
+ 
+ set(PDB_ONLY_SOURCES
+     mk_nasf_pdb.c
+@@ -367,6 +365,11 @@ foreach(src IN LISTS C_TEST_SOURCES CXX_TEST_SOURCES F_TEST_SOURCES)
+         continue()
+     endif()
+ 
++    # Skip any HDF5 specific executables if we're not building with HDF5
++    if(srcFile IN_LIST HDF5_ONLY_SOURCES AND NOT (SILO_ENABLE_HDF5 AND HDF5_FOUND))
++        continue()
++    endif()
++
+     add_executable(${base} ${src})
+     add_dependencies(${base} silo)
+     target_compile_definitions(${base} PRIVATE PDB_LITE)
+@@ -419,11 +422,14 @@ foreach(src IN LISTS C_TEST_SOURCES CXX_TEST_SOURCES F_TEST_SOURCES)
+     # Add default tests for HDF5 or PDB drivers or BOTH 
+     #
+     if(srcFile IN_LIST HDF5_ONLY_SOURCES)
+-        add_test(NAME ${base}-hdf5 COMMAND $<TARGET_FILE:${base}> DB_HDF5)
+-        set_tests_properties(${base}-hdf5 PROPERTIES LABELS "hdf5")
+-        set_tests_properties(${base}-hdf5 PROPERTIES SKIP_RETURN_CODE ${_silo_test_skip_retval})
+-        if(src IN_LIST F_TEST_SOURCES)
+-            set_tests_properties(${base}-hdf5 PROPERTIES LABELS "fortran")
++        if(SILO_ENABLE_HDF5 AND HDF5_FOUND)
++            message(FATAL "adding hdf5 test \"${srcFile}\"")
++            add_test(NAME ${base}-hdf5 COMMAND $<TARGET_FILE:${base}> DB_HDF5)
++            set_tests_properties(${base}-hdf5 PROPERTIES LABELS "hdf5")
++            set_tests_properties(${base}-hdf5 PROPERTIES SKIP_RETURN_CODE ${_silo_test_skip_retval})
++            if(src IN_LIST F_TEST_SOURCES)
++                set_tests_properties(${base}-hdf5 PROPERTIES LABELS "fortran")
++            endif()
+         endif()
+     elseif(srcFile IN_LIST PDB_ONLY_SOURCES)
+         add_test(NAME ${base} COMMAND $<TARGET_FILE:${base}>)
+
+From 0ca036e42555cb44bca9541fea2e3015717ee356 Mon Sep 17 00:00:00 2001
+From: "Mark C. Miller" <5720676+markcmiller86@users.noreply.github.com>
+Date: Fri, 23 Jan 2026 19:23:11 -0800
+Subject: [PATCH 03/18] rm unused func
+
+---
+ tests/std.c | 25 -------------------------
+ 1 file changed, 25 deletions(-)
+
+diff --git a/tests/std.c b/tests/std.c
+index 2533b34a..577bb3d3 100644
+--- a/tests/std.c
++++ b/tests/std.c
+@@ -251,28 +251,3 @@ static int StringToDriver(const char *str)
+     fprintf(stderr, "Unable to determine driver from string \"%s\"\n", str);
+     exit(EXIT_FAILURE);
+ }
+-
+-double GetTime()
+-{
+-#ifdef HAVE_SYS_TIME_H
+-    static double t0 = -1;
+-    double t1;
+-    struct timeval tv1;
+-
+-    if (t0<0)
+-    {
+-        struct timeval tv0;
+-        gettimeofday(&tv0, 0);
+-        t0 = (double)tv0.tv_sec*1e+6+(double)tv0.tv_usec;
+-        return 0;
+-    }
+-
+-    gettimeofday(&tv1, 0);
+-    t1 = (double)tv1.tv_sec*1e+6+(double)tv1.tv_usec;
+-
+-    return t1-t0;
+-#else
+-    /* What to do here ? */
+-    return 0.0;
+-#endif
+-}
+
+From 43a52d788a3c15bee3b9391906e8ed276c5a456c Mon Sep 17 00:00:00 2001
+From: "Mark C. Miller" <5720676+markcmiller86@users.noreply.github.com>
+Date: Fri, 23 Jan 2026 19:03:18 -0800
+Subject: [PATCH 04/18] fix const nameschemes
+
+---
+ src/silo/silo_ns.c | 25 ++++++++++++++++++-------
+ 1 file changed, 18 insertions(+), 7 deletions(-)
+
+diff --git a/src/silo/silo_ns.c b/src/silo/silo_ns.c
+index 645077dd..e17a57d4 100644
+--- a/src/silo/silo_ns.c
++++ b/src/silo/silo_ns.c
+@@ -424,22 +424,33 @@ DBMakeNamescheme(char const *fmt, ...)
+     */
+     if (rv->ncspecs == 0)
+     {
+-        int rm_unnecessary_delim = 0;
++        free(rv->fmt);
+ 
+-        if (n > 2 && fmt[0] == fmt[n-1])
+-            rm_unnecessary_delim = !db_VariableNameValid(fmt);
++        /* If whole string is valid, take all of it. */
++        if (db_VariableNameValid(fmt))
++        {
++            rv->fmt = STRNDUP(&fmt[0],n);
++            rv->fmtlen = n;
++            return rv;
++        }
+ 
+-        free(rv->fmt);
++        /* If whole string but first char is valid, take all but first char */
++        if (db_VariableNameValid(&fmt[1]))
++        {
++            rv->fmt = STRNDUP(&fmt[1],n-1);
++            rv->fmtlen = n-1;
++            return rv;
++        }
+ 
+-        if (rm_unnecessary_delim)
++        if (fmt[0] == fmt[n-1])
+         {
+             rv->fmt = STRNDUP(&fmt[1],n-2);
+             rv->fmtlen = n-2;
+         }
+         else
+         {
+-            rv->fmt = STRNDUP(&fmt[0],n);
+-            rv->fmtlen = n;
++            rv->fmt = STRNDUP(&fmt[0],n-1);
++            rv->fmtlen = n-1;
+         }
+ 
+         return rv;
+
+From 74ebb1c9ea4e7d1f2f4a1bff3eb5c48104a9ea22 Mon Sep 17 00:00:00 2001
+From: "Mark C. Miller" <5720676+markcmiller86@users.noreply.github.com>
+Date: Fri, 23 Jan 2026 19:03:18 -0800
+Subject: [PATCH 05/18] fix const nameschemes
+
+---
+ tests/namescheme.c | 42 +++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 41 insertions(+), 1 deletion(-)
+
+diff --git a/tests/namescheme.c b/tests/namescheme.c
+index 8f586803..c86f36b5 100644
+--- a/tests/namescheme.c
++++ b/tests/namescheme.c
+@@ -151,12 +151,17 @@ int main(int argc, char **argv)
+         TEST_GET_NAME(ns, 513, "/Density");
+         TEST_GET_NAME(ns, 134571, "/Density");
+         DBFreeNamescheme(ns);
++        ns = DBMakeNamescheme("radar");
++        TEST_GET_NAME(ns, 0, "radar");
++        TEST_GET_NAME(ns, 1, "radar");
++        TEST_GET_NAME(ns, 137, "radar");
++        DBFreeNamescheme(ns);
+         ns = DBMakeNamescheme("/radar/");
+         TEST_GET_NAME(ns, 0, "/radar/");
+         TEST_GET_NAME(ns, 1, "/radar/");
+         TEST_GET_NAME(ns, 137, "/radar/");
+         DBFreeNamescheme(ns);
+-        ns = DBMakeNamescheme(":radar:");
++        ns = DBMakeNamescheme("-radar-");
+         TEST_GET_NAME(ns, 0, "radar");
+         TEST_GET_NAME(ns, 1, "radar");
+         TEST_GET_NAME(ns, 137, "radar");
+@@ -166,6 +171,41 @@ int main(int argc, char **argv)
+         TEST_GET_NAME(ns, 1, "_radar_");
+         TEST_GET_NAME(ns, 137, "_radar_");
+         DBFreeNamescheme(ns);
++        ns = DBMakeNamescheme("_radar");
++        TEST_GET_NAME(ns, 0, "_radar");
++        TEST_GET_NAME(ns, 1, "_radar");
++        TEST_GET_NAME(ns, 137, "_radar");
++        DBFreeNamescheme(ns);
++        ns = DBMakeNamescheme("radar_");
++        TEST_GET_NAME(ns, 0, "radar_");
++        TEST_GET_NAME(ns, 1, "radar_");
++        TEST_GET_NAME(ns, 137, "radar_");
++        DBFreeNamescheme(ns);
++        ns = DBMakeNamescheme("|radar|");
++        TEST_GET_NAME(ns, 0, "radar");
++        TEST_GET_NAME(ns, 1, "radar");
++        TEST_GET_NAME(ns, 137, "radar");
++        DBFreeNamescheme(ns);
++        ns = DBMakeNamescheme("|radar");
++        TEST_GET_NAME(ns, 0, "radar");
++        TEST_GET_NAME(ns, 1, "radar");
++        TEST_GET_NAME(ns, 137, "radar");
++        DBFreeNamescheme(ns);
++        ns = DBMakeNamescheme("radar|");
++        TEST_GET_NAME(ns, 0, "radar");
++        TEST_GET_NAME(ns, 1, "radar");
++        TEST_GET_NAME(ns, 137, "radar");
++        DBFreeNamescheme(ns);
++        ns = DBMakeNamescheme("@radar");
++        TEST_GET_NAME(ns, 0, "radar");
++        TEST_GET_NAME(ns, 1, "radar");
++        TEST_GET_NAME(ns, 137, "radar");
++        DBFreeNamescheme(ns);
++        ns = DBMakeNamescheme("radar@");
++        TEST_GET_NAME(ns, 0, "radar");
++        TEST_GET_NAME(ns, 1, "radar");
++        TEST_GET_NAME(ns, 137, "radar");
++        DBFreeNamescheme(ns);
+     }
+ 
+     /* Test a somewhat complex expression */ 
+
+From 54dca9fb6c5395533ded63ccf21218a1e95fa6f0 Mon Sep 17 00:00:00 2001
+From: "Mark C. Miller" <5720676+markcmiller86@users.noreply.github.com>
+Date: Fri, 23 Jan 2026 21:30:13 -0800
+Subject: [PATCH 06/18] upd docs for const ns
+
+---
+ docs/subsets.md | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/docs/subsets.md b/docs/subsets.md
+index 01cdf8f7..15929cd7 100644
+--- a/docs/subsets.md
++++ b/docs/subsets.md
+@@ -475,8 +475,9 @@ For this reason, where a specific application of MRG trees is desired (to repres
+ 
+   The first character of `ns_str` is treated as the *delimiter character definition*.
+   Wherever this delimiter character appears (except as the first character), this will indicate the end of one substring within `ns_str` and the beginning of a next substring.
+-  The delimiter character cannot be any of the characters used in the expression language (see below).
+   The delimiter character divides `ns_str` into substrings.
++  The delimiter character cannot be any of the characters used in the expression language (see below).
++  It is best, though not a strict requirement, if the delimiter character is not any of the characters that form a valid Silo object name.
+   For constant valued nameschemes, there is no need to divide the namescheme string into substrings.
+   So, the delimiter character is not necessary and if found to be present will be ignored.
+ 
+
+From 2e2e207b8d43359881b7cf775fe6c066ce078170 Mon Sep 17 00:00:00 2001
+From: "Mark C. Miller" <5720676+markcmiller86@users.noreply.github.com>
+Date: Sat, 24 Jan 2026 10:10:05 -0800
+Subject: [PATCH 07/18] adj const ns verbiage
+
+---
+ docs/subsets.md | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/docs/subsets.md b/docs/subsets.md
+index 15929cd7..b4b4f8a7 100644
+--- a/docs/subsets.md
++++ b/docs/subsets.md
+@@ -478,8 +478,7 @@ For this reason, where a specific application of MRG trees is desired (to repres
+   The delimiter character divides `ns_str` into substrings.
+   The delimiter character cannot be any of the characters used in the expression language (see below).
+   It is best, though not a strict requirement, if the delimiter character is not any of the characters that form a valid Silo object name.
+-  For constant valued nameschemes, there is no need to divide the namescheme string into substrings.
+-  So, the delimiter character is not necessary and if found to be present will be ignored.
++  This is indeed a *requirement* if the namescheme is constant valued (e.g. contains no other substrings).
+ 
+   The first substring of `ns_strs` (that is the characters from position 1 to the first delimiter character after its definition at index 0) will contain the complete printf-style format string the namescheme will generate.
+   The remaining substrings will contain simple expressions, one for each conversion specifier found in the format substring, which when evaluated will be used as the corresponding argument in an sprintf call to generate the actual name, when and if needed, on demand.
+
+From eec6bba426b3991a2c4f2dcb0d65cb727726c637 Mon Sep 17 00:00:00 2001
+From: "Mark C. Miller" <5720676+markcmiller86@users.noreply.github.com>
+Date: Sat, 24 Jan 2026 10:24:54 -0800
+Subject: [PATCH 08/18] fix build/run tests on macos
+
+---
+ tests/CMakeLists.txt         | 3 +++
+ tests/newsami.cxx            | 2 +-
+ tests/test_mat_compression.c | 2 +-
+ 3 files changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/tests/CMakeLists.txt b/tests/CMakeLists.txt
+index c3ad4757..c0cb6939 100644
+--- a/tests/CMakeLists.txt
++++ b/tests/CMakeLists.txt
+@@ -344,6 +344,9 @@ target_include_directories(rocket_silo PRIVATE
+         ${silo_build_include_dir}
+         ${Silo_SOURCE_DIR}/src/silo
+         ${SILO_TESTS_SOURCE_DIR})
++if(APPLE)
++  target_link_options(rocket_silo PRIVATE "-Wl,-undefined,dynamic_lookup")
++endif()
+ set_target_properties(rocket_silo PROPERTIES PREFIX "")
+ 
+ add_library(testlib_obj OBJECT testlib.c)
+diff --git a/tests/newsami.cxx b/tests/newsami.cxx
+index 14d46c27..35b1ef1b 100644
+--- a/tests/newsami.cxx
++++ b/tests/newsami.cxx
+@@ -286,7 +286,7 @@ int main(int argc, char *argv[])
+     for (i = 0; i < 8; i++)
+     {
+         char tmpname[32];
+-        sprintf(tmpname, "brick_nd%d", i);
++        snprintf(tmpname, sizeof(tmpname), "brick_nd%d", i);
+         DBWrite(dbfile, tmpname, &nodeids[i][0], &nzones, 1, DB_INT);
+     }
+ 
+diff --git a/tests/test_mat_compression.c b/tests/test_mat_compression.c
+index 5277111a..2acbe229 100644
+--- a/tests/test_mat_compression.c
++++ b/tests/test_mat_compression.c
+@@ -94,7 +94,7 @@ static int calc_material_object_size(DBmaterial const *mat)
+     retval += mat->mixlen * (3 * sizeof(int));
+ 
+     /* for mix_vf */
+-    retval += mat->mixlen * (mat->datatype == DB_FLOAT)?sizeof(float):sizeof(double);
++    retval += mat->mixlen * ((mat->datatype == DB_FLOAT)?sizeof(float):sizeof(double));
+ 
+     return retval;
+ }
+
+ From 6c31cdbecc89aec438b3bb488df1c65afb215d8f Mon Sep 17 00:00:00 2001
+From: "Mark C. Miller" <5720676+markcmiller86@users.noreply.github.com>
+Date: Sat, 24 Jan 2026 13:28:26 -0800
+Subject: [PATCH 11/18] test doc nameschemes
+
+---
+ docs/subsets.md    | 46 ++++++++++++++++++++++++----------------------
+ tests/namescheme.c | 38 ++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 62 insertions(+), 22 deletions(-)
+
+diff --git a/docs/subsets.md b/docs/subsets.md
+index b4b4f8a7..11dfef8a 100644
+--- a/docs/subsets.md
++++ b/docs/subsets.md
+@@ -476,39 +476,41 @@ For this reason, where a specific application of MRG trees is desired (to repres
+   The first character of `ns_str` is treated as the *delimiter character definition*.
+   Wherever this delimiter character appears (except as the first character), this will indicate the end of one substring within `ns_str` and the beginning of a next substring.
+   The delimiter character divides `ns_str` into substrings.
+-  The delimiter character cannot be any of the characters used in the expression language (see below).
++  It is best, though not a strict requirement, if the delimiter character is not any of the characters used in the expression language (see below).
+   It is best, though not a strict requirement, if the delimiter character is not any of the characters that form a valid Silo object name.
+-  This is indeed a *requirement* if the namescheme is constant valued (e.g. contains no other substrings).
++  The second of these is indeed a *requirement* if the namescheme is constant valued (e.g. contains no other substrings).
+ 
+   The first substring of `ns_strs` (that is the characters from position 1 to the first delimiter character after its definition at index 0) will contain the complete printf-style format string the namescheme will generate.
+   The remaining substrings will contain simple expressions, one for each conversion specifier found in the format substring, which when evaluated will be used as the corresponding argument in an sprintf call to generate the actual name, when and if needed, on demand.
+ 
+   The expression language for building up the arguments to be used along with the printf-style format string is pretty simple.
+ 
+-  It supports the '+', '-', '*', '/', '%' (modulo), '|', '&', '^' integer operators and a variant of the question-mark-colon operator, '? : :' which requires an extra, terminating colon.
++  It supports the `+`, `-`, `*`, `/`, `%` (modulo), `|`, `&`, `^` integer operators and a variant of the question-mark-colon operator, `? : :` which requires an extra, terminating colon.
+ 
+-  It supports grouping via '(' and ')' characters.
++  It supports grouping via `(` and `)` characters.
+ 
+-  It supports grouping of characters into arbitrary strings via the single quote character (').
++  It supports grouping of characters into arbitrary strings via the single quote character (`'`).
+   Any characters appearing between enclosing single quotes are treated as a literal string suitable for an argument to be associated with a %s-type conversion specifier in the format string.
+ 
+-  It supports references to external, integer valued arrays introduced via a '#' character appearing before an array's name and external, string valued arrays introduced via a '$' character appearing before an array's name.
++  It supports references to external, integer valued arrays introduced via a `#` character appearing before an array's name and external, string valued arrays introduced via a `$` character appearing before an array's name.
+ 
+-  Finally, the special operator 'n' appearing in an expression represents a *natural number* within the sequence of names (zero-origin index).
++  Finally, the special operator `n` appearing in an expression represents a *natural number* within the sequence of names (zero-origin index).
+ 
+   Except for singly quoted strings which evaluate to a literal string suitable for output via a %s type conversion specifier, and $-type external array references which evaluate to an external string, all other expressions are treated as evaluating to integer values suitable for any of the integer conversion specifiers (%[ouxXdi]) which may be used in the format substring.
+ 
+   Here are some examples...
+ 
+-  `/mesh1`
+-  : There is no delimiter character because the namescheme is constant valued, `/mesh1`.
++  `"@/mesh1"`
++  : The delimiter character is `@`.
++    The namescheme is constant valued, returning `/mesh1` for all `n`.
+     That is, there are no `%` characters appearing in the the first (only) substring of `ns_str`.
+     This could be the *block* path part (see `DBOPT_MB_BLOCK_NS` option of [`DBPutMultimesh()`](./parallel.md#dbputmultimesh)) of a namescheme where each block is at the same path but in a *different* Silo file.
+ 
+-  `"|slide_%s|(n%2)?'leader':'follower':"`
+-  : The delimiter character is `|`.
+-    The format substring is `slide_%s`.
+-    The expression substring for the argument to the first (and only in this case) conversion specifier (`%s`) is `(n%2)?'leader':'follower':`
++  `"~slide_%d_%s~n/2~(n%2)?'leader':'follower':"`
++  : The delimiter character is `~`.
++    The format substring is `slide_%d_%s`.
++    The expression substring for the argument to the first conversion specifier (`%d`) is `n/2`.
++    The expression substring for the argument to the second conversion specifier (`%s`) is `(n%2)?'leader':'follower':`
+     When this expression is evaluated for a given region, the region's natural number will be inserted for `n`.
+     The modulo operation with `2` will be applied.
+     If that result is non-zero, the `?::` expression will evaluate to `'leader'`.
+@@ -517,13 +519,13 @@ For this reason, where a specific application of MRG trees is desired (to repres
+     This naming scheme might be useful for an array of regions representing, alternately, the two halves of a contact surface.
+     Note also for the `?::` operator, the caller can assume that only the sub-expression corresponding to the whichever half of the operator is satisfied is actually evaluated.
+ 
+-  `"Hblock_%02dx%02dHn/16Hn%16"`
++  `"Hblock_%02Xx%02XHn/16Hn%16"`
+   : The delimiter character is `H`.
+-    The format substring is `block_%02dx%02d`.
+-    The expression substring for the argument to the first conversion specifier (`%02d`) is `n/256`.
+-    The expression substring for the argument to the second conversion specifier (also `%02d`) is `n%16`.
++    The format substring is `block_%02Xx%02X`.
++    The expression substring for the argument to the first conversion specifier (`%02X`) is `n/256`.
++    The expression substring for the argument to the second conversion specifier (also `%02X`) is `n%16`.
+     When this expression is evaluated, the region's natural number will be inserted for `n` and the div and mod operators will be evaluated.
+-    This naming scheme might be useful for a region array of 256 regions to be named as a 2D array of regions with names like "block_09x11".
++    This naming scheme might be useful for a region array of 256 regions to be named as a 2D array of regions with names like "block_0Ax1C".
+ 
+   `"@domain_%03d@n"`
+   : The delimiter character is `@`.
+@@ -536,16 +538,16 @@ For this reason, where a specific application of MRG trees is desired (to repres
+   : This is just like the case above except that region names begin with "domain_001" instead of "domain_000".
+     This might be useful to deal with different indexing origins; Fortran vs. C.
+ 
+-  `"|foo_%03dx%03d|#P[n]|#U[n%4]"`
+-  : The delimiter character is `|`.
++  `"!foo_%03dx%03d!#P[n]!#U[n%4]"`
++  : The delimiter character is `!`.
+     The format substring is `foo_%03dx%03d`.
+     The expression substring for the first argument is an external array reference `#P[n]` where the index into the array is just the natural number, n.
+     The expression substring for the second argument is another external array reference, `#U[n%4]` where the index is an expression `n%4` on the natural number n. 
+ 
+     If the caller is handling externally referenced arrays explicitly, because `P` is the first externally referenced array in the format string, a pointer to `P` must be the first to appear in the `...` list of additional args to `DBMakeNamescheme`.
+-    Similarly, because `U` appears as the second externally referenced array in the format string, a pointer to `U` must appear second in the `...` as in `DBMakeNamescheme("|foo_%03dx%03d|#P[n]|#U[n%4]", P, U)`
++    Similarly, because `U` appears as the second externally referenced array in the format string, a pointer to `U` must appear second in the `...` as in `DBMakeNamescheme("!foo_%03dx%03d!#P[n]!#U[n%4]", P, U)`
+ 
+-    Alternatively, if the caller wants the Silo library to find `P` and `U` in a Silo file, read the arrays from the file and bind them into the namescheme automatically, then `P` and `U` must be simple arrays in the current working directory of the file that is passed in as the 3-tuple `"(int) 0, (DBfile *) dbfile, 0"` in the `...` argument to `DBMakeNamescheme` as in `DBMakeNamescheme("|foo_%03dx%03d|#P[n]|#U[n%4]", 0, dbfile, 0)`.
++    Alternatively, if the caller wants the Silo library to find `P` and `U` in a Silo file, read the arrays from the file and bind them into the namescheme automatically, then `P` and `U` must be simple arrays in the current working directory of the file that is passed in as the 3-tuple `"(int) 0, (DBfile *) dbfile, 0"` in the `...` argument to `DBMakeNamescheme` as in `DBMakeNamescheme("!foo_%03dx%03d!#P[n]!#U[n%4]", 0, dbfile, 0)`.
+ 
+   Use `DBFreeNamescheme()` to free up the space associated with a namescheme.
+   Also note that there are numerous examples of nameschemes in the [nameschemes.c](https://raw.githubusercontent.com/LLNL/Silo/refs/heads/main/tests/nameschemes.c) test on GitHub and in the Silo source release tarball.
+diff --git a/tests/namescheme.c b/tests/namescheme.c
+index c86f36b5..aa5f9a52 100644
+--- a/tests/namescheme.c
++++ b/tests/namescheme.c
+@@ -206,6 +206,44 @@ int main(int argc, char **argv)
+         TEST_GET_NAME(ns, 1, "radar");
+         TEST_GET_NAME(ns, 137, "radar");
+         DBFreeNamescheme(ns);
++
++        /* Test nameschemes from docs */
++        ns = DBMakeNamescheme("@/mesh1");
++        TEST_GET_NAME(ns, 0, "/mesh1");
++        TEST_GET_NAME(ns, 1, "/mesh1");
++        TEST_GET_NAME(ns, 137, "/mesh1");
++        TEST_GET_NAME(ns, 102337, "/mesh1");
++        DBFreeNamescheme(ns);
++        ns = DBMakeNamescheme("/mesh1");
++        TEST_GET_NAME(ns, 0, "/mesh1");
++        TEST_GET_NAME(ns, 1, "/mesh1");
++        TEST_GET_NAME(ns, 137, "/mesh1");
++        TEST_GET_NAME(ns, 102337, "/mesh1");
++        DBFreeNamescheme(ns);
++        ns = DBMakeNamescheme("~slide_%d_%s~n/2~(n%2)?'leader':'follower':");
++        TEST_GET_NAME(ns, 0, "slide_0_follower");
++        TEST_GET_NAME(ns, 1, "slide_0_leader");
++        TEST_GET_NAME(ns, 2, "slide_1_follower");
++        TEST_GET_NAME(ns, 3, "slide_1_leader");
++        DBFreeNamescheme(ns);
++        ns = DBMakeNamescheme("Hblock_%02Xx%02XHn/16Hn%16");
++        TEST_GET_NAME(ns, 0, "block_00x00");
++        TEST_GET_NAME(ns, 1, "block_00x01");
++        TEST_GET_NAME(ns, 2, "block_00x02");
++        TEST_GET_NAME(ns, 15, "block_00x0F");
++        TEST_GET_NAME(ns, 16, "block_01x00");
++        TEST_GET_NAME(ns, 17, "block_01x01");
++        TEST_GET_NAME(ns, 255, "block_0Fx0F");
++        DBFreeNamescheme(ns);
++        ns = DBMakeNamescheme("@domain_%03d@n");
++        TEST_GET_NAME(ns, 0, "domain_000");
++        TEST_GET_NAME(ns, 1, "domain_001");
++        TEST_GET_NAME(ns, 137, "domain_137");
++        DBFreeNamescheme(ns);
++        ns = DBMakeNamescheme("@domain_%03d@n+1");
++        TEST_GET_NAME(ns, 0, "domain_001");
++        TEST_GET_NAME(ns, 1, "domain_002");
++        TEST_GET_NAME(ns, 137, "domain_138");
+     }
+ 
+     /* Test a somewhat complex expression */ 
+
+From 25c322c038b24135b14d6a469862b95f2066b7e0 Mon Sep 17 00:00:00 2001
+From: "Mark C. Miller" <5720676+markcmiller86@users.noreply.github.com>
+Date: Sat, 24 Jan 2026 22:07:13 -0800
+Subject: [PATCH 16/18] add missing free
+
+---
+ tests/namescheme.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/tests/namescheme.c b/tests/namescheme.c
+index aa5f9a52..9587833a 100644
+--- a/tests/namescheme.c
++++ b/tests/namescheme.c
+@@ -244,6 +244,7 @@ int main(int argc, char **argv)
+         TEST_GET_NAME(ns, 0, "domain_001");
+         TEST_GET_NAME(ns, 1, "domain_002");
+         TEST_GET_NAME(ns, 137, "domain_138");
++        DBFreeNamescheme(ns);
+     }
+ 
+     /* Test a somewhat complex expression */ 
+
+From a5355e66ce81de925e2da4bb7c1e2a77d7e7f6b4 Mon Sep 17 00:00:00 2001
+From: "Mark C. Miller" <5720676+markcmiller86@users.noreply.github.com>
+Date: Sat, 24 Jan 2026 22:20:09 -0800
+Subject: [PATCH 17/18] upd docs
+
+---
+ docs/subsets.md    |   8 +-
+ tests/namescheme.c | 220 ++++++++++++++++++++++-----------------------
+ 2 files changed, 116 insertions(+), 112 deletions(-)
+
+diff --git a/docs/subsets.md b/docs/subsets.md
+index 11dfef8a..063b0e8d 100644
+--- a/docs/subsets.md
++++ b/docs/subsets.md
+@@ -496,7 +496,7 @@ For this reason, where a specific application of MRG trees is desired (to repres
+ 
+   Finally, the special operator `n` appearing in an expression represents a *natural number* within the sequence of names (zero-origin index).
+ 
+-  Except for singly quoted strings which evaluate to a literal string suitable for output via a %s type conversion specifier, and $-type external array references which evaluate to an external string, all other expressions are treated as evaluating to integer values suitable for any of the integer conversion specifiers (%[ouxXdi]) which may be used in the format substring.
++  Except for singly quoted strings which evaluate to a literal string suitable for output via a `%s` type conversion specifier, and `$`-type external array references which evaluate to an external string, all other expressions are treated as evaluating to integer values suitable for any of the integer conversion specifiers (`%[ouxXdi]`) which may be used in the format substring.
+ 
+   Here are some examples...
+ 
+@@ -551,6 +551,12 @@ For this reason, where a specific application of MRG trees is desired (to repres
+ 
+   Use `DBFreeNamescheme()` to free up the space associated with a namescheme.
+   Also note that there are numerous examples of nameschemes in the [nameschemes.c](https://raw.githubusercontent.com/LLNL/Silo/refs/heads/main/tests/nameschemes.c) test on GitHub and in the Silo source release tarball.
++  For convenience, some of those are shown below
++
++  ```{literalinclude} ../test/namescheme.c
++  :start-at: "/* Test nameschemes from docs */"
++  :end-at: "/* Test DBnamescheme construction from arrays in a Silo file */"
++  ``` 
+ 
+ {{ EndFunc }}
+ 
+diff --git a/tests/namescheme.c b/tests/namescheme.c
+index 9587833a..24497e4d 100644
+--- a/tests/namescheme.c
++++ b/tests/namescheme.c
+@@ -134,118 +134,116 @@ int main(int argc, char **argv)
+     DBShowErrors(show_all_errors?DB_ALL_AND_DRVR:DB_ABORT, NULL);
+ 
+     /* test namescheme with constant componets with and without delimters */
+-    {
+-        ns = DBMakeNamescheme("foo/bar/gorfo_0");
+-        TEST_GET_NAME(ns, 0, "foo/bar/gorfo_0");
+-        TEST_GET_NAME(ns, 1, "foo/bar/gorfo_0");
+-        TEST_GET_NAME(ns, 122, "foo/bar/gorfo_0");
+-        DBFreeNamescheme(ns);
+-        ns = DBMakeNamescheme("@foo/bar/gorfo_0@");
+-        TEST_GET_NAME(ns, 0, "foo/bar/gorfo_0");
+-        TEST_GET_NAME(ns, 1, "foo/bar/gorfo_0");
+-        TEST_GET_NAME(ns, 122, "foo/bar/gorfo_0");
+-        DBFreeNamescheme(ns);
+-        ns = DBMakeNamescheme("@/Density@");
+-        TEST_GET_NAME(ns, 0, "/Density");
+-        TEST_GET_NAME(ns, 1, "/Density");
+-        TEST_GET_NAME(ns, 513, "/Density");
+-        TEST_GET_NAME(ns, 134571, "/Density");
+-        DBFreeNamescheme(ns);
+-        ns = DBMakeNamescheme("radar");
+-        TEST_GET_NAME(ns, 0, "radar");
+-        TEST_GET_NAME(ns, 1, "radar");
+-        TEST_GET_NAME(ns, 137, "radar");
+-        DBFreeNamescheme(ns);
+-        ns = DBMakeNamescheme("/radar/");
+-        TEST_GET_NAME(ns, 0, "/radar/");
+-        TEST_GET_NAME(ns, 1, "/radar/");
+-        TEST_GET_NAME(ns, 137, "/radar/");
+-        DBFreeNamescheme(ns);
+-        ns = DBMakeNamescheme("-radar-");
+-        TEST_GET_NAME(ns, 0, "radar");
+-        TEST_GET_NAME(ns, 1, "radar");
+-        TEST_GET_NAME(ns, 137, "radar");
+-        DBFreeNamescheme(ns);
+-        ns = DBMakeNamescheme("_radar_");
+-        TEST_GET_NAME(ns, 0, "_radar_");
+-        TEST_GET_NAME(ns, 1, "_radar_");
+-        TEST_GET_NAME(ns, 137, "_radar_");
+-        DBFreeNamescheme(ns);
+-        ns = DBMakeNamescheme("_radar");
+-        TEST_GET_NAME(ns, 0, "_radar");
+-        TEST_GET_NAME(ns, 1, "_radar");
+-        TEST_GET_NAME(ns, 137, "_radar");
+-        DBFreeNamescheme(ns);
+-        ns = DBMakeNamescheme("radar_");
+-        TEST_GET_NAME(ns, 0, "radar_");
+-        TEST_GET_NAME(ns, 1, "radar_");
+-        TEST_GET_NAME(ns, 137, "radar_");
+-        DBFreeNamescheme(ns);
+-        ns = DBMakeNamescheme("|radar|");
+-        TEST_GET_NAME(ns, 0, "radar");
+-        TEST_GET_NAME(ns, 1, "radar");
+-        TEST_GET_NAME(ns, 137, "radar");
+-        DBFreeNamescheme(ns);
+-        ns = DBMakeNamescheme("|radar");
+-        TEST_GET_NAME(ns, 0, "radar");
+-        TEST_GET_NAME(ns, 1, "radar");
+-        TEST_GET_NAME(ns, 137, "radar");
+-        DBFreeNamescheme(ns);
+-        ns = DBMakeNamescheme("radar|");
+-        TEST_GET_NAME(ns, 0, "radar");
+-        TEST_GET_NAME(ns, 1, "radar");
+-        TEST_GET_NAME(ns, 137, "radar");
+-        DBFreeNamescheme(ns);
+-        ns = DBMakeNamescheme("@radar");
+-        TEST_GET_NAME(ns, 0, "radar");
+-        TEST_GET_NAME(ns, 1, "radar");
+-        TEST_GET_NAME(ns, 137, "radar");
+-        DBFreeNamescheme(ns);
+-        ns = DBMakeNamescheme("radar@");
+-        TEST_GET_NAME(ns, 0, "radar");
+-        TEST_GET_NAME(ns, 1, "radar");
+-        TEST_GET_NAME(ns, 137, "radar");
+-        DBFreeNamescheme(ns);
++    ns = DBMakeNamescheme("foo/bar/gorfo_0");
++    TEST_GET_NAME(ns, 0, "foo/bar/gorfo_0");
++    TEST_GET_NAME(ns, 1, "foo/bar/gorfo_0");
++    TEST_GET_NAME(ns, 122, "foo/bar/gorfo_0");
++    DBFreeNamescheme(ns);
++    ns = DBMakeNamescheme("@foo/bar/gorfo_0@");
++    TEST_GET_NAME(ns, 0, "foo/bar/gorfo_0");
++    TEST_GET_NAME(ns, 1, "foo/bar/gorfo_0");
++    TEST_GET_NAME(ns, 122, "foo/bar/gorfo_0");
++    DBFreeNamescheme(ns);
++    ns = DBMakeNamescheme("@/Density@");
++    TEST_GET_NAME(ns, 0, "/Density");
++    TEST_GET_NAME(ns, 1, "/Density");
++    TEST_GET_NAME(ns, 513, "/Density");
++    TEST_GET_NAME(ns, 134571, "/Density");
++    DBFreeNamescheme(ns);
++    ns = DBMakeNamescheme("radar");
++    TEST_GET_NAME(ns, 0, "radar");
++    TEST_GET_NAME(ns, 1, "radar");
++    TEST_GET_NAME(ns, 137, "radar");
++    DBFreeNamescheme(ns);
++    ns = DBMakeNamescheme("/radar/");
++    TEST_GET_NAME(ns, 0, "/radar/");
++    TEST_GET_NAME(ns, 1, "/radar/");
++    TEST_GET_NAME(ns, 137, "/radar/");
++    DBFreeNamescheme(ns);
++    ns = DBMakeNamescheme("-radar-");
++    TEST_GET_NAME(ns, 0, "radar");
++    TEST_GET_NAME(ns, 1, "radar");
++    TEST_GET_NAME(ns, 137, "radar");
++    DBFreeNamescheme(ns);
++    ns = DBMakeNamescheme("_radar_");
++    TEST_GET_NAME(ns, 0, "_radar_");
++    TEST_GET_NAME(ns, 1, "_radar_");
++    TEST_GET_NAME(ns, 137, "_radar_");
++    DBFreeNamescheme(ns);
++    ns = DBMakeNamescheme("_radar");
++    TEST_GET_NAME(ns, 0, "_radar");
++    TEST_GET_NAME(ns, 1, "_radar");
++    TEST_GET_NAME(ns, 137, "_radar");
++    DBFreeNamescheme(ns);
++    ns = DBMakeNamescheme("radar_");
++    TEST_GET_NAME(ns, 0, "radar_");
++    TEST_GET_NAME(ns, 1, "radar_");
++    TEST_GET_NAME(ns, 137, "radar_");
++    DBFreeNamescheme(ns);
++    ns = DBMakeNamescheme("|radar|");
++    TEST_GET_NAME(ns, 0, "radar");
++    TEST_GET_NAME(ns, 1, "radar");
++    TEST_GET_NAME(ns, 137, "radar");
++    DBFreeNamescheme(ns);
++    ns = DBMakeNamescheme("|radar");
++    TEST_GET_NAME(ns, 0, "radar");
++    TEST_GET_NAME(ns, 1, "radar");
++    TEST_GET_NAME(ns, 137, "radar");
++    DBFreeNamescheme(ns);
++    ns = DBMakeNamescheme("radar|");
++    TEST_GET_NAME(ns, 0, "radar");
++    TEST_GET_NAME(ns, 1, "radar");
++    TEST_GET_NAME(ns, 137, "radar");
++    DBFreeNamescheme(ns);
++    ns = DBMakeNamescheme("@radar");
++    TEST_GET_NAME(ns, 0, "radar");
++    TEST_GET_NAME(ns, 1, "radar");
++    TEST_GET_NAME(ns, 137, "radar");
++    DBFreeNamescheme(ns);
++    ns = DBMakeNamescheme("radar@");
++    TEST_GET_NAME(ns, 0, "radar");
++    TEST_GET_NAME(ns, 1, "radar");
++    TEST_GET_NAME(ns, 137, "radar");
++    DBFreeNamescheme(ns);
+ 
+-        /* Test nameschemes from docs */
+-        ns = DBMakeNamescheme("@/mesh1");
+-        TEST_GET_NAME(ns, 0, "/mesh1");
+-        TEST_GET_NAME(ns, 1, "/mesh1");
+-        TEST_GET_NAME(ns, 137, "/mesh1");
+-        TEST_GET_NAME(ns, 102337, "/mesh1");
+-        DBFreeNamescheme(ns);
+-        ns = DBMakeNamescheme("/mesh1");
+-        TEST_GET_NAME(ns, 0, "/mesh1");
+-        TEST_GET_NAME(ns, 1, "/mesh1");
+-        TEST_GET_NAME(ns, 137, "/mesh1");
+-        TEST_GET_NAME(ns, 102337, "/mesh1");
+-        DBFreeNamescheme(ns);
+-        ns = DBMakeNamescheme("~slide_%d_%s~n/2~(n%2)?'leader':'follower':");
+-        TEST_GET_NAME(ns, 0, "slide_0_follower");
+-        TEST_GET_NAME(ns, 1, "slide_0_leader");
+-        TEST_GET_NAME(ns, 2, "slide_1_follower");
+-        TEST_GET_NAME(ns, 3, "slide_1_leader");
+-        DBFreeNamescheme(ns);
+-        ns = DBMakeNamescheme("Hblock_%02Xx%02XHn/16Hn%16");
+-        TEST_GET_NAME(ns, 0, "block_00x00");
+-        TEST_GET_NAME(ns, 1, "block_00x01");
+-        TEST_GET_NAME(ns, 2, "block_00x02");
+-        TEST_GET_NAME(ns, 15, "block_00x0F");
+-        TEST_GET_NAME(ns, 16, "block_01x00");
+-        TEST_GET_NAME(ns, 17, "block_01x01");
+-        TEST_GET_NAME(ns, 255, "block_0Fx0F");
+-        DBFreeNamescheme(ns);
+-        ns = DBMakeNamescheme("@domain_%03d@n");
+-        TEST_GET_NAME(ns, 0, "domain_000");
+-        TEST_GET_NAME(ns, 1, "domain_001");
+-        TEST_GET_NAME(ns, 137, "domain_137");
+-        DBFreeNamescheme(ns);
+-        ns = DBMakeNamescheme("@domain_%03d@n+1");
+-        TEST_GET_NAME(ns, 0, "domain_001");
+-        TEST_GET_NAME(ns, 1, "domain_002");
+-        TEST_GET_NAME(ns, 137, "domain_138");
+-        DBFreeNamescheme(ns);
+-    }
++    /* Test nameschemes from docs */
++    ns = DBMakeNamescheme("@/mesh1");
++    TEST_GET_NAME(ns, 0, "/mesh1");
++    TEST_GET_NAME(ns, 1, "/mesh1");
++    TEST_GET_NAME(ns, 137, "/mesh1");
++    TEST_GET_NAME(ns, 102337, "/mesh1");
++    DBFreeNamescheme(ns);
++    ns = DBMakeNamescheme("/mesh1");
++    TEST_GET_NAME(ns, 0, "/mesh1");
++    TEST_GET_NAME(ns, 1, "/mesh1");
++    TEST_GET_NAME(ns, 137, "/mesh1");
++    TEST_GET_NAME(ns, 102337, "/mesh1");
++    DBFreeNamescheme(ns);
++    ns = DBMakeNamescheme("~slide_%d_%s~n/2~(n%2)?'leader':'follower':");
++    TEST_GET_NAME(ns, 0, "slide_0_follower");
++    TEST_GET_NAME(ns, 1, "slide_0_leader");
++    TEST_GET_NAME(ns, 2, "slide_1_follower");
++    TEST_GET_NAME(ns, 3, "slide_1_leader");
++    DBFreeNamescheme(ns);
++    ns = DBMakeNamescheme("Hblock_%02Xx%02XHn/16Hn%16");
++    TEST_GET_NAME(ns, 0, "block_00x00");
++    TEST_GET_NAME(ns, 1, "block_00x01");
++    TEST_GET_NAME(ns, 2, "block_00x02");
++    TEST_GET_NAME(ns, 15, "block_00x0F");
++    TEST_GET_NAME(ns, 16, "block_01x00");
++    TEST_GET_NAME(ns, 17, "block_01x01");
++    TEST_GET_NAME(ns, 255, "block_0Fx0F");
++    DBFreeNamescheme(ns);
++    ns = DBMakeNamescheme("@domain_%03d@n");
++    TEST_GET_NAME(ns, 0, "domain_000");
++    TEST_GET_NAME(ns, 1, "domain_001");
++    TEST_GET_NAME(ns, 137, "domain_137");
++    DBFreeNamescheme(ns);
++    ns = DBMakeNamescheme("@domain_%03d@n+1");
++    TEST_GET_NAME(ns, 0, "domain_001");
++    TEST_GET_NAME(ns, 1, "domain_002");
++    TEST_GET_NAME(ns, 137, "domain_138");
++    DBFreeNamescheme(ns);
+ 
+     /* Test a somewhat complex expression */ 
+     ns = DBMakeNamescheme("@foo_%+03d@3-((n % 3)*(4+1)+1/2)+1");
+
+From fdb6b26a086aa82ed7adad1eb2e3ab78cf59a48d Mon Sep 17 00:00:00 2001
+From: "Mark C. Miller" <5720676+markcmiller86@users.noreply.github.com>
+Date: Sat, 24 Jan 2026 22:24:45 -0800
+Subject: [PATCH 18/18] fix link to src file
+
+---
+ docs/subsets.md | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/docs/subsets.md b/docs/subsets.md
+index 063b0e8d..95312f71 100644
+--- a/docs/subsets.md
++++ b/docs/subsets.md
+@@ -550,10 +550,10 @@ For this reason, where a specific application of MRG trees is desired (to repres
+     Alternatively, if the caller wants the Silo library to find `P` and `U` in a Silo file, read the arrays from the file and bind them into the namescheme automatically, then `P` and `U` must be simple arrays in the current working directory of the file that is passed in as the 3-tuple `"(int) 0, (DBfile *) dbfile, 0"` in the `...` argument to `DBMakeNamescheme` as in `DBMakeNamescheme("!foo_%03dx%03d!#P[n]!#U[n%4]", 0, dbfile, 0)`.
+ 
+   Use `DBFreeNamescheme()` to free up the space associated with a namescheme.
+-  Also note that there are numerous examples of nameschemes in the [nameschemes.c](https://raw.githubusercontent.com/LLNL/Silo/refs/heads/main/tests/nameschemes.c) test on GitHub and in the Silo source release tarball.
++  Also note that there are numerous examples of nameschemes in the [nameschemes.c](https://raw.githubusercontent.com/LLNL/Silo/refs/heads/main/tests/namescheme.c) test on GitHub and in the Silo source release tarball.
+   For convenience, some of those are shown below
+ 
+-  ```{literalinclude} ../test/namescheme.c
++  ```{literalinclude} ../tests/namescheme.c
+   :start-at: "/* Test nameschemes from docs */"
+   :end-at: "/* Test DBnamescheme construction from arrays in a Silo file */"
+   ``` 

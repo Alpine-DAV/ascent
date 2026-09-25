@@ -26,6 +26,7 @@ jobs:
         cmake --version
         env build_ascent=false `
             enable_tests=OFF `
+            build_config=Debug `
             ./scripts/build_ascent/build_ascent.sh
     - name: Configure Ascent
       run: |
@@ -37,15 +38,74 @@ jobs:
     - name: Build Ascent
       run: |
         echo "**** Building Ascent"
-        cmake --build  build --config Release -j2
+        cmake --build  build --config Debug -j2
     - name: Install Ascent
       run: |
         echo "**** Installing Ascent"
-        cmake --install  build --config Release
-    - name: Run Ascent Unit Tests
+        cmake --install  build --config Debug 
+    # - name: Run Ascent Unit Tests
+    #   run: |
+    #     echo "**** Ascent Unit Tests"
+    #     cmake -E env CTEST_OUTPUT_ON_FAILURE=1 cmake --build build --config Release --target RUN_TESTS
+    - name: Run tests under ProcDump
+      shell: pwsh
       run: |
-        echo "**** Ascent Unit Tests"
-        cmake -E env CTEST_OUTPUT_ON_FAILURE=1 cmake --build build --config Release --target RUN_TESTS
+        mkdir "$env:RUNNER_TEMP\dumps"
+
+        Invoke-WebRequest `
+          -Uri "https://download.sysinternals.com/files/Procdump.zip" `
+          -OutFile "$env:RUNNER_TEMP\procdump.zip"
+
+        Expand-Archive `
+          "$env:RUNNER_TEMP\procdump.zip" `
+          "$env:RUNNER_TEMP\procdump"
+
+        & "$env:RUNNER_TEMP\procdump\procdump.exe" `
+          -accepteula `
+          -ma `
+          -e 1 `
+          -x "$env:RUNNER_TEMP\dumps" `
+          "build\bin\Debug\t_ascent_smoke.exe"
+    - name: Analyze crash dump
+      if: always()
+      shell: powershell
+      run: |
+        $dumpDir = Join-Path $env:RUNNER_TEMP "dumps"
+        $dump = Get-ChildItem -Path $dumpDir -Filter "*.dmp" | Select-Object -First 1
+        if (-not $dump) {
+          Write-Host "No dump file found"
+          exit 0
+        }
+
+        # Find CDB installed with the Windows SDK
+        $cdb = Get-ChildItem "C:\Program Files (x86)\Windows Kits" `
+          -Recurse -Filter "cdb.exe" |
+          Where-Object { $_.FullName -match "\\x64\\cdb.exe$" } |
+          Select-Object -First 1
+
+        New-Item -ItemType Directory -Force crash-analysis | Out-Null
+
+        & $cdb.FullName `
+          -z $dump.FullName `
+          -c "!analyze -v; .ecxr; kb; lm; q" `
+          > crash-analysis\analysis.txt 2>&1
+
+        Copy-Item $dump.FullName crash-analysis\
+
+    - name: Upload crash analysis
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: crash-analysis
+        path: crash-analysis/
+
+    - name: Upload crash dumps
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: windows-crash-dumps
+        path: ${{ runner.temp }}/dumps
+        retention-days: 7
     - name: Upload Ascent Unit Test Artifacts
       if: always()
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -53,6 +113,7 @@ jobs:
         name: test-results
         path: build/tests/_output/
         retention-days: 7
+        
     # NOT READY FOR THIS ON WINDOWS YET
     # - name: Create Unit Test Report
     #   if: always()

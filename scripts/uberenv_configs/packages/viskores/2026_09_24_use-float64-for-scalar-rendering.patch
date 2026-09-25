@@ -1,0 +1,178 @@
+From 261122c4f33a96ef2f3260bd101f090e20679c36 Mon Sep 17 00:00:00 2001
+From: Cyrus Harrison <cyrush@llnl.gov>
+Date: Thu, 24 Sep 2026 10:08:30 -0700
+Subject: [PATCH] use float64 for scalar rendering
+
+---
+ viskores/rendering/ScalarRenderer.cxx | 48 +++++++++++----------------
+ viskores/rendering/ScalarRenderer.h   |  8 ++---
+ 2 files changed, 23 insertions(+), 33 deletions(-)
+
+diff --git a/viskores/rendering/ScalarRenderer.cxx b/viskores/rendering/ScalarRenderer.cxx
+index 00afc24..79376a0 100644
+--- a/viskores/rendering/ScalarRenderer.cxx
++++ b/viskores/rendering/ScalarRenderer.cxx
+@@ -39,7 +39,7 @@ struct ScalarRenderer::InternalsType
+   bool ValidDataSet = false;
+   viskores::Int32 Width = 1024;
+   viskores::Int32 Height = 1024;
+-  viskores::Float32 DefaultValue = viskores::Nan32();
++  viskores::Float64 DefaultValue = viskores::Nan64();
+   viskores::cont::DataSet DataSet;
+   viskores::rendering::raytracing::ScalarRenderer Tracer;
+   viskores::Bounds ShapeBounds;
+@@ -63,7 +63,7 @@ void ScalarRenderer::SetWidth(viskores::Int32 width)
+   Internals->Width = width;
+ }
+ 
+-void ScalarRenderer::SetDefaultValue(viskores::Float32 value)
++void ScalarRenderer::SetDefaultValue(viskores::Float64 value)
+ {
+   Internals->DefaultValue = value;
+ }
+@@ -98,7 +98,7 @@ void ScalarRenderer::SetInput(viskores::cont::DataSet& dataSet)
+ 
+ 
+ 
+-ScalarRenderer::Result ScalarRenderer::Render(viskores::rendering::raytracing::Ray<viskores::Float32> &rays)
++ScalarRenderer::Result ScalarRenderer::Render(viskores::rendering::raytracing::Ray<viskores::Float64> &rays)
+ {
+   if (!Internals->ValidDataSet)
+   {
+@@ -112,16 +112,6 @@ ScalarRenderer::Result ScalarRenderer::Render(viskores::rendering::raytracing::R
+   viskores::cont::Timer timer;
+   timer.Start();
+ 
+-  // // Create rays
+-  // viskores::rendering::raytracing::Camera cam =
+-  //   camera.CreateRaytracingCamera(this->Internals->Width, this->Internals->Height);
+-  //
+-  // // FIXME: rays are created with an unused Buffers.at(0), that ChannelBuffer
+-  // //  also has wrong number of channels, thus allocates memory that is wasted.
+-  // viskores::rendering::raytracing::Ray<viskores::Float32> rays;
+-  // cam.CreateRays(rays, this->Internals->ShapeBounds);
+-  // rays.Buffers.at(0).InitConst(0.f);
+-
+   // add fields
+   const viskores::Id numFields = this->Internals->DataSet.GetNumberOfFields();
+   std::map<std::string, viskores::Range> rangeMap;
+@@ -140,8 +130,8 @@ ScalarRenderer::Result ScalarRenderer::Render(viskores::rendering::raytracing::R
+   // cam is used for surface shading (which we don't need)
+   this->Internals->Tracer.Render(rays, Internals->DefaultValue);
+ 
+-  using ArrayF32 = viskores::cont::ArrayHandle<viskores::Float32>;
+-  std::vector<ArrayF32> res;
++  using ArrayF64 = viskores::cont::ArrayHandle<viskores::Float64>;
++  std::vector<ArrayF64> res;
+   std::vector<std::string> names;
+   const size_t numBuffers = rays.Buffers.size();
+   viskores::Id expandSize = Internals->Width * Internals->Height;
+@@ -151,16 +141,16 @@ ScalarRenderer::Result ScalarRenderer::Render(viskores::rendering::raytracing::R
+     const std::string name = rays.Buffers[i].GetName();
+     if (name == "default")
+       continue;
+-    raytracing::ChannelBuffer<viskores::Float32> buffer = rays.Buffers[i];
+-    raytracing::ChannelBuffer<viskores::Float32> expanded =
++    raytracing::ChannelBuffer<viskores::Float64> buffer = rays.Buffers[i];
++    raytracing::ChannelBuffer<viskores::Float64> expanded =
+       buffer.ExpandBuffer(rays.PixelIdx, expandSize, Internals->DefaultValue);
+     res.push_back(expanded.Buffer);
+     names.push_back(name);
+   }
+ 
+-  raytracing::ChannelBuffer<viskores::Float32> depthChannel(1, rays.NumRays);
++  raytracing::ChannelBuffer<viskores::Float64> depthChannel(1, rays.NumRays);
+   depthChannel.Buffer = rays.Distance;
+-  raytracing::ChannelBuffer<viskores::Float32> depthExpanded =
++  raytracing::ChannelBuffer<viskores::Float64> depthExpanded =
+     depthChannel.ExpandBuffer(rays.PixelIdx, expandSize, Internals->DefaultValue);
+ 
+   Result result;
+@@ -199,9 +189,9 @@ ScalarRenderer::Result ScalarRenderer::Render(const viskores::rendering::Camera&
+ 
+   // FIXME: rays are created with an unused Buffers.at(0), that ChannelBuffer
+   //  also has wrong number of channels, thus allocates memory that is wasted.
+-  viskores::rendering::raytracing::Ray<viskores::Float32> rays;
++  viskores::rendering::raytracing::Ray<viskores::Float64> rays;
+   cam.CreateRays(rays, this->Internals->ShapeBounds);
+-  rays.Buffers.at(0).InitConst(0.f);
++  rays.Buffers.at(0).InitConst(0.0);
+ 
+   // add fields
+   const viskores::Id numFields = this->Internals->DataSet.GetNumberOfFields();
+@@ -219,8 +209,8 @@ ScalarRenderer::Result ScalarRenderer::Render(const viskores::rendering::Camera&
+ 
+   this->Internals->Tracer.Render(rays, Internals->DefaultValue, cam);
+ 
+-  using ArrayF32 = viskores::cont::ArrayHandle<viskores::Float32>;
+-  std::vector<ArrayF32> res;
++  using ArrayF64 = viskores::cont::ArrayHandle<viskores::Float64>;
++  std::vector<ArrayF64> res;
+   std::vector<std::string> names;
+   const size_t numBuffers = rays.Buffers.size();
+   viskores::Id expandSize = Internals->Width * Internals->Height;
+@@ -230,16 +220,16 @@ ScalarRenderer::Result ScalarRenderer::Render(const viskores::rendering::Camera&
+     const std::string name = rays.Buffers[i].GetName();
+     if (name == "default")
+       continue;
+-    raytracing::ChannelBuffer<viskores::Float32> buffer = rays.Buffers[i];
+-    raytracing::ChannelBuffer<viskores::Float32> expanded =
++    raytracing::ChannelBuffer<viskores::Float64> buffer = rays.Buffers[i];
++    raytracing::ChannelBuffer<viskores::Float64> expanded =
+       buffer.ExpandBuffer(rays.PixelIdx, expandSize, Internals->DefaultValue);
+     res.push_back(expanded.Buffer);
+     names.push_back(name);
+   }
+ 
+-  raytracing::ChannelBuffer<viskores::Float32> depthChannel(1, rays.NumRays);
++  raytracing::ChannelBuffer<viskores::Float64> depthChannel(1, rays.NumRays);
+   depthChannel.Buffer = rays.Distance;
+-  raytracing::ChannelBuffer<viskores::Float32> depthExpanded =
++  raytracing::ChannelBuffer<viskores::Float64> depthExpanded =
+     depthChannel.ExpandBuffer(rays.PixelIdx, expandSize, Internals->DefaultValue);
+ 
+   Result result;
+@@ -270,8 +260,8 @@ viskores::cont::DataSet ScalarRenderer::Result::ToDataSet()
+   VISKORES_ASSERT(Height > 0);
+ 
+   viskores::cont::DataSet result;
+-  viskores::Vec<viskores::Float32, 3> origin(0.f, 0.f, 0.f);
+-  viskores::Vec<viskores::Float32, 3> spacing(1.f, 1.f, 1.f);
++  viskores::Vec<viskores::Float64, 3> origin(0.f, 0.f, 0.f);
++  viskores::Vec<viskores::Float64, 3> spacing(1.f, 1.f, 1.f);
+   viskores::Id3 dims(Width + 1, Height + 1, 1);
+   result.AddCoordinateSystem(viskores::cont::CoordinateSystem("coords", dims, origin, spacing));
+   viskores::Id2 dims2(dims[0], dims[1]);
+diff --git a/viskores/rendering/ScalarRenderer.h b/viskores/rendering/ScalarRenderer.h
+index 234362c..445155b 100644
+--- a/viskores/rendering/ScalarRenderer.h
++++ b/viskores/rendering/ScalarRenderer.h
+@@ -46,21 +46,21 @@ public:
+ 
+   void SetWidth(viskores::Int32 width);
+   void SetHeight(viskores::Int32 height);
+-  void SetDefaultValue(viskores::Float32 value);
++  void SetDefaultValue(viskores::Float64 value);
+ 
+   struct VISKORES_RENDERING_EXPORT Result
+   {
+     viskores::Int32 Width;
+     viskores::Int32 Height;
+-    viskores::cont::ArrayHandle<viskores::Float32> Depths;
+-    std::vector<viskores::cont::ArrayHandle<viskores::Float32>> Scalars;
++    viskores::cont::ArrayHandle<viskores::Float64> Depths;
++    std::vector<viskores::cont::ArrayHandle<viskores::Float64>> Scalars;
+     std::vector<std::string> ScalarNames;
+     std::map<std::string, viskores::Range> Ranges;
+ 
+     viskores::cont::DataSet ToDataSet();
+   };
+ 
+-  ScalarRenderer::Result Render(viskores::rendering::raytracing::Ray<viskores::Float32> &rays);
++  ScalarRenderer::Result Render(viskores::rendering::raytracing::Ray<viskores::Float64> &rays);
+   ScalarRenderer::Result Render(const viskores::rendering::Camera& camera);
+ 
+ 
+-- 
+2.50.1 (Apple Git-155)
+

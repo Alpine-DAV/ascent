@@ -1,0 +1,250 @@
+From 709bd46af3ff7153be43a68643df4265199f539e Mon Sep 17 00:00:00 2001
+From: Cyrus Harrison <cyrush@llnl.gov>
+Date: Wed, 29 Jul 2026 15:08:43 -0700
+Subject: [PATCH] add plumbing for rays wo camera
+
+---
+ viskores/rendering/ScalarRenderer.cxx         | 84 +++++++++++++++++++
+ viskores/rendering/ScalarRenderer.h           |  2 +
+ .../rendering/raytracing/ScalarRenderer.cxx   | 69 +++++++++++++++
+ .../rendering/raytracing/ScalarRenderer.h     | 13 +++
+ 4 files changed, 168 insertions(+)
+
+diff --git a/viskores/rendering/ScalarRenderer.cxx b/viskores/rendering/ScalarRenderer.cxx
+index abb2345..00afc24 100644
+--- a/viskores/rendering/ScalarRenderer.cxx
++++ b/viskores/rendering/ScalarRenderer.cxx
+@@ -96,6 +96,89 @@ void ScalarRenderer::SetInput(viskores::cont::DataSet& dataSet)
+   }
+ }
+ 
++
++
++ScalarRenderer::Result ScalarRenderer::Render(viskores::rendering::raytracing::Ray<viskores::Float32> &rays)
++{
++  if (!Internals->ValidDataSet)
++  {
++    throw viskores::cont::ErrorBadValue("ScalarRenderer: input never set");
++  }
++
++  raytracing::Logger* logger = raytracing::Logger::GetInstance();
++  logger->OpenLogEntry("scalar_render");
++  viskores::cont::Timer tot_timer;
++  tot_timer.Start();
++  viskores::cont::Timer timer;
++  timer.Start();
++
++  // // Create rays
++  // viskores::rendering::raytracing::Camera cam =
++  //   camera.CreateRaytracingCamera(this->Internals->Width, this->Internals->Height);
++  //
++  // // FIXME: rays are created with an unused Buffers.at(0), that ChannelBuffer
++  // //  also has wrong number of channels, thus allocates memory that is wasted.
++  // viskores::rendering::raytracing::Ray<viskores::Float32> rays;
++  // cam.CreateRays(rays, this->Internals->ShapeBounds);
++  // rays.Buffers.at(0).InitConst(0.f);
++
++  // add fields
++  const viskores::Id numFields = this->Internals->DataSet.GetNumberOfFields();
++  std::map<std::string, viskores::Range> rangeMap;
++  for (viskores::Id i = 0; i < numFields; ++i)
++  {
++    const auto& field = this->Internals->DataSet.GetField(i);
++    if (field.GetData().GetNumberOfComponents() == 1)
++    {
++      auto ranges = field.GetRange();
++      rangeMap[field.GetName()] = ranges.ReadPortal().Get(0);
++      this->Internals->Tracer.AddField(field);
++    }
++  }
++
++  // variant w/o cam
++  // cam is used for surface shading (which we don't need)
++  this->Internals->Tracer.Render(rays, Internals->DefaultValue);
++
++  using ArrayF32 = viskores::cont::ArrayHandle<viskores::Float32>;
++  std::vector<ArrayF32> res;
++  std::vector<std::string> names;
++  const size_t numBuffers = rays.Buffers.size();
++  viskores::Id expandSize = Internals->Width * Internals->Height;
++
++  for (size_t i = 0; i < numBuffers; ++i)
++  {
++    const std::string name = rays.Buffers[i].GetName();
++    if (name == "default")
++      continue;
++    raytracing::ChannelBuffer<viskores::Float32> buffer = rays.Buffers[i];
++    raytracing::ChannelBuffer<viskores::Float32> expanded =
++      buffer.ExpandBuffer(rays.PixelIdx, expandSize, Internals->DefaultValue);
++    res.push_back(expanded.Buffer);
++    names.push_back(name);
++  }
++
++  raytracing::ChannelBuffer<viskores::Float32> depthChannel(1, rays.NumRays);
++  depthChannel.Buffer = rays.Distance;
++  raytracing::ChannelBuffer<viskores::Float32> depthExpanded =
++    depthChannel.ExpandBuffer(rays.PixelIdx, expandSize, Internals->DefaultValue);
++
++  Result result;
++  result.Width = Internals->Width;
++  result.Height = Internals->Height;
++  result.Scalars = res;
++  result.ScalarNames = names;
++  result.Ranges = rangeMap;
++  result.Depths = depthExpanded.Buffer;
++
++  viskores::Float64 time = timer.GetElapsedTime();
++  logger->AddLogData("write_to_canvas", time);
++  time = tot_timer.GetElapsedTime();
++  logger->CloseLogEntry(time);
++
++  return result;
++}
++
+ ScalarRenderer::Result ScalarRenderer::Render(const viskores::rendering::Camera& camera)
+ {
+   if (!Internals->ValidDataSet)
+@@ -175,6 +258,7 @@ ScalarRenderer::Result ScalarRenderer::Render(const viskores::rendering::Camera&
+   return result;
+ }
+ 
++
+ viskores::cont::DataSet ScalarRenderer::Result::ToDataSet()
+ {
+   if (Scalars.empty())
+diff --git a/viskores/rendering/ScalarRenderer.h b/viskores/rendering/ScalarRenderer.h
+index a56b7a0..234362c 100644
+--- a/viskores/rendering/ScalarRenderer.h
++++ b/viskores/rendering/ScalarRenderer.h
+@@ -60,8 +60,10 @@ public:
+     viskores::cont::DataSet ToDataSet();
+   };
+ 
++  ScalarRenderer::Result Render(viskores::rendering::raytracing::Ray<viskores::Float32> &rays);
+   ScalarRenderer::Result Render(const viskores::rendering::Camera& camera);
+ 
++
+ private:
+   struct InternalsType;
+   std::unique_ptr<InternalsType> Internals;
+diff --git a/viskores/rendering/raytracing/ScalarRenderer.cxx b/viskores/rendering/raytracing/ScalarRenderer.cxx
+index 1d12467..8543229 100644
+--- a/viskores/rendering/raytracing/ScalarRenderer.cxx
++++ b/viskores/rendering/raytracing/ScalarRenderer.cxx
+@@ -252,6 +252,19 @@ void ScalarRenderer::Render(Ray<viskores::Float64>& rays,
+   RenderOnDevice(rays, missScalar, cam);
+ }
+ 
++void ScalarRenderer::Render(Ray<viskores::Float32>& rays,
++                            viskores::Float32 missScalar)
++{
++  RenderOnDevice(rays, missScalar);
++}
++
++void ScalarRenderer::Render(Ray<viskores::Float64>& rays,
++                            viskores::Float64 missScalar)
++{
++  RenderOnDevice(rays, missScalar);
++}
++
++
+ template <typename Precision>
+ void ScalarRenderer::RenderOnDevice(Ray<Precision>& rays,
+                                     Precision missScalar,
+@@ -307,6 +320,62 @@ void ScalarRenderer::RenderOnDevice(Ray<Precision>& rays,
+   logger->CloseLogEntry(time);
+ } // RenderOnDevice
+ 
++
++template <typename Precision>
++void ScalarRenderer::RenderOnDevice(Ray<Precision>& rays,
++                                    Precision missScalar)
++{
++  using Timer = viskores::cont::Timer;
++
++  Logger* logger = Logger::GetInstance();
++  Timer renderTimer;
++  renderTimer.Start();
++  viskores::Float64 time = 0.;
++  logger->OpenLogEntry("scalar_renderer");
++  logger->AddLogData("device", GetDeviceString());
++
++  logger->AddLogData("num_rays", rays.NumRays);
++  const size_t numFields = Fields.size();
++
++  if (numFields == 0)
++  {
++    throw viskores::cont::ErrorBadValue("ScalarRenderer: no fields added");
++  }
++  if (!Intersector)
++  {
++    throw viskores::cont::ErrorBadValue("ScalarRenderer: intersector never set");
++  }
++
++  Timer timer;
++  timer.Start();
++
++  Intersector->IntersectRays(rays);
++  time = timer.GetElapsedTime();
++  logger->AddLogData("intersect", time);
++
++  for (size_t f = 0; f < numFields; ++f)
++  {
++    timer.Start();
++    Intersector->IntersectionData(rays, Fields[f]);
++    time = timer.GetElapsedTime();
++    logger->AddLogData("intersection_data", time);
++    AddBuffer(rays, missScalar, Fields[f].GetName());
++  }
++
++  // w/o camera, we dont do surface shading
++  // const viskores::Int32 numChannels = 1;
++  // ChannelBuffer<Precision> buffer(numChannels, rays.NumRays);
++  // detail::SurfaceShade<Precision> surfaceShade;
++  // surfaceShade.run(rays, cam, missScalar, buffer.Buffer, true);
++  // buffer.SetName("shading");
++  // rays.Buffers.push_back(buffer);
++
++  this->Invoke(detail::FilterDepth<Precision>{ missScalar }, rays.HitIdx, rays.Distance);
++
++  time = renderTimer.GetElapsedTime();
++  logger->CloseLogEntry(time);
++} // RenderOnDevice
++
+ template <typename Precision>
+ void ScalarRenderer::AddBuffer(Ray<Precision>& rays, Precision missScalar, const std::string& name)
+ {
+diff --git a/viskores/rendering/raytracing/ScalarRenderer.h b/viskores/rendering/raytracing/ScalarRenderer.h
+index 1c8a6ad..0bccf75 100644
+--- a/viskores/rendering/raytracing/ScalarRenderer.h
++++ b/viskores/rendering/raytracing/ScalarRenderer.h
+@@ -47,6 +47,10 @@ protected:
+                       Precision missScalar,
+                       viskores::rendering::raytracing::Camera& cam);
+ 
++  template <typename Precision>
++  void RenderOnDevice(Ray<Precision>& rays,
++                      Precision missScalar);
++
+   template <typename Precision>
+   void AddBuffer(Ray<Precision>& rays, Precision missScalar, const std::string& name);
+ 
+@@ -70,6 +74,15 @@ public:
+               viskores::Float64 missScalar,
+               viskores::rendering::raytracing::Camera& cam);
+ 
++  VISKORES_CONT
++  void Render(viskores::rendering::raytracing::Ray<viskores::Float32>& rays,
++              viskores::Float32 missScalar);
++
++  VISKORES_CONT
++  void Render(viskores::rendering::raytracing::Ray<viskores::Float64>& rays,
++              viskores::Float64 missScalar);
++
++
+ }; //class RayTracer
+ }
+ }
+-- 
+2.50.1 (Apple Git-155)
+
