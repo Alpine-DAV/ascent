@@ -642,19 +642,7 @@ class Mfem(Package, CudaPackage, ROCmPackage):
             options += ["MFEM_PRECISION=%s" % spec.variants["precision"].value]
 
         # Determine C++ standard to use:
-        cxxstd = None
-        if self.spec.satisfies("@4.0.0:"):
-            cxxstd = "11"
-        if self.spec.satisfies("^raja@2022.03.0:"):
-            cxxstd = "14"
-        if self.spec.satisfies("^umpire@2022.03.0:"):
-            cxxstd = "14"
-        if self.spec.satisfies("^sundials@6.4.0:"):
-            cxxstd = "14"
-        if self.spec.satisfies("^ginkgo"):
-            cxxstd = "14"
-        if self.spec.satisfies("@4.9.0:"):
-            cxxstd = "17"
+        cxxstd = 17
         cxxstd_req = spec.variants["cxxstd"].value
         if cxxstd_req != "auto":
             # Constraints for valid standard level should be imposed during
