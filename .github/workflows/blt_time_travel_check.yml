@@ -1,0 +1,27 @@
+name: blt_time_travel_check
+
+on:
+  pull_request:
+    branches: [ develop ]
+
+permissions:
+  contents: read
+on:
+  pull_request:
+    branches: [ develop ]
+
+permissions:
+  contents: read
+
+jobs:
+  sanity:
+    name: BLT Time Travel Check
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+      with:
+        submodules: 'recursive'
+    - name: BLT Check
+      run: |
+        python3 scripts/ci/check_blt_time_travel.py 

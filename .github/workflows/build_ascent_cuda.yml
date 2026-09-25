@@ -1,8 +1,10 @@
 name: build_ascent_cuda
 
 on:
-  pull_request:
-    branches: [ develop ]
+  workflow_run:
+    workflows: ["blt_time_travel_check"]
+    types:
+      - completed
 
 permissions:
   contents: read
