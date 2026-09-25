@@ -82,7 +82,8 @@ jobs:
       if: always()
       shell: powershell
       run: |
-        $dump = Get-ChildItem -Recurse -Filter "$env:RUNNER_TEMP\dumps*.dmp" | Select-Object -First 1
+        $dumpDir = Join-Path $env:RUNNER_TEMP "dumps"
+        $dump = Get-ChildItem -Path $dumpDir -Filter "*.dmp" | Select-Object -First 1
         if (-not $dump) {
           Write-Host "No dump file found"
           exit 0
