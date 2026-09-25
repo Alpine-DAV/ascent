@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 jobs:
-  build_cuda:
+  build_hip:
     name: Build Ascent HIP
     runs-on: ubuntu-22.04
     container: alpinedav/ascent-devel:ubuntu-22.04-rocm-6.3.4-x86_64

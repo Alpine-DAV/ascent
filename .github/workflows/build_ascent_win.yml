@@ -47,6 +47,18 @@ jobs:
     #   run: |
     #     echo "**** Ascent Unit Tests"
     #     cmake -E env CTEST_OUTPUT_ON_FAILURE=1 cmake --build build --config Release --target RUN_TESTS
+    - name: Install Windows debugging tools
+      if: always()
+      shell: powershell
+      run: |
+        $ErrorActionPreference = 'Stop'
+        # Install the Windows SDK debugging tools if they aren't already present.
+        # winget is available on current GitHub-hosted Windows runners.
+        winget install `
+          --id Microsoft.WindowsSDK `
+          --accept-source-agreements `
+          --accept-package-agreements `
+          --silent
     - name: Run tests under ProcDump
       shell: pwsh
       run: |
@@ -66,6 +78,38 @@ jobs:
           -e 1 `
           -x "$env:RUNNER_TEMP\dumps" `
           "build\bin\Release\t_ascent_smoke.exe"
+    - name: Analyze crash dump
+      if: always()
+      shell: powershell
+      run: |
+        $dump = Get-ChildItem -Recurse -Filter "$env:RUNNER_TEMP\dumps*.dmp" | Select-Object -First 1
+        if (-not $dump) {
+          Write-Host "No dump file found"
+          exit 0
+        }
+
+        # Find CDB installed with the Windows SDK
+        $cdb = Get-ChildItem "C:\Program Files (x86)\Windows Kits" `
+          -Recurse -Filter "cdb.exe" |
+          Where-Object { $_.FullName -match "\\x64\\cdb.exe$" } |
+          Select-Object -First 1
+
+        New-Item -ItemType Directory -Force crash-analysis | Out-Null
+
+        & $cdb.FullName `
+          -z $dump.FullName `
+          -c "!analyze -v; .ecxr; kb; lm; q" `
+          > crash-analysis\analysis.txt 2>&1
+
+        Copy-Item $dump.FullName crash-analysis\
+
+    - name: Upload crash analysis
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: crash-analysis
+        path: crash-analysis/
+
     - name: Upload crash dumps
       if: always()
       uses: actions/upload-artifact@v4
@@ -80,6 +124,7 @@ jobs:
         name: test-results
         path: build/tests/_output/
         retention-days: 7
+        
     # NOT READY FOR THIS ON WINDOWS YET
     # - name: Create Unit Test Report
     #   if: always()
@@ -92,3 +137,173 @@ jobs:
     #   with:
     #     name: test-results
     #     path: build/tests/_output/
+
+- name: Run tests
+  shell: powershell
+  run: |
+    # Example -- replace with your test command
+    ctest --output-on-failure
+
+- name: Collect and analyze crash dumps
+  if: always()
+  shell: powershell
+  run: |
+    $ErrorActionPreference = 'Continue'
+
+    $outDir = Join-Path $env:GITHUB_WORKSPACE "crash-analysis"
+    New-Item -ItemType Directory -Force -Path $outDir | Out-Null
+
+    #
+    # Locate CDB.
+    #
+    $cdb = Get-ChildItem `
+      "C:\Program Files (x86)\Windows Kits" `
+      -Filter cdb.exe `
+      -Recurse `
+      -ErrorAction SilentlyContinue |
+      Where-Object { $_.FullName -match '\\x64\\cdb\.exe$' } |
+      Select-Object -First 1
+
+    if (-not $cdb) {
+      Write-Host "ERROR: cdb.exe was not found"
+      exit 1
+    }
+
+    $cdb = $cdb.FullName
+    Write-Host "Using CDB: $cdb"
+
+    #
+    # Symbol path.
+    #
+    $symbolDir = Join-Path $outDir "symbols"
+    New-Item -ItemType Directory -Force -Path $symbolDir | Out-Null
+
+    $symbolPath = "srv*$symbolDir*https://msdl.microsoft.com/download/symbols"
+
+    #
+    # Find dump files.
+    #
+    $dumps = Get-ChildItem `
+      -Path $env:GITHUB_WORKSPACE `
+      -Filter "*.dmp" `
+      -Recurse `
+      -File `
+      -ErrorAction SilentlyContinue
+
+    if ($dumps.Count -eq 0) {
+      Write-Host "No .dmp files found."
+      exit 0
+    }
+
+    Write-Host "Found $($dumps.Count) dump file(s):"
+    $dumps | ForEach-Object {
+      Write-Host "  $($_.FullName)"
+    }
+
+    #
+    # Analyze every dump.
+    #
+    foreach ($dump in $dumps) {
+
+      $baseName = [IO.Path]::GetFileNameWithoutExtension($dump.Name)
+      $analysisFile = Join-Path $outDir "$baseName-analysis.txt"
+
+      Write-Host ""
+      Write-Host "===================================================="
+      Write-Host "Analyzing $($dump.FullName)"
+      Write-Host "===================================================="
+
+      #
+      # CDB commands:
+      #
+      # !analyze -v  -- exception/crash analysis
+      # .ecxr       -- switch to exception context
+      # .exr -1     -- print exception record
+      # kb          -- stack
+      # lm          -- loaded modules
+      #
+      $commands = @(
+        ".symfix $symbolDir",
+        ".sympath+ $symbolPath",
+        ".reload /f",
+        "!analyze -v",
+        ".ecxr",
+        ".exr -1",
+        "r",
+        "kb",
+        "lm",
+        "q"
+      ) -join "; "
+
+      & $cdb `
+        -y $symbolPath `
+        -z $dump.FullName `
+        -c $commands `
+        2>&1 |
+        Tee-Object -FilePath $analysisFile
+
+      #
+      # Get detailed module information separately.
+      #
+      $modulesFile = Join-Path $outDir "$baseName-modules.txt"
+
+      $moduleCommands = @(
+        ".symfix $symbolDir",
+        ".sympath+ $symbolPath",
+        ".reload /f",
+        "lm",
+        "lmv",
+        "q"
+      ) -join "; "
+
+      & $cdb `
+        -y $symbolPath `
+        -z $dump.FullName `
+        -c $moduleCommands `
+        2>&1 |
+        Tee-Object -FilePath $modulesFile
+
+      #
+      # Copy the dump into the artifact directory.
+      #
+      Copy-Item `
+        -LiteralPath $dump.FullName `
+        -Destination (Join-Path $outDir $dump.Name) `
+        -Force
+    }
+
+    #
+    # Produce a compact summary of the analysis.
+    #
+    $summary = Join-Path $outDir "summary.txt"
+
+    @"
+    GitHub Actions crash dump analysis
+    ===================================
+
+    Runner:       $env:RUNNER_NAME
+    OS:           $env:RUNNER_OS
+    Architecture: $env:PROCESSOR_ARCHITECTURE
+    Date:         $(Get-Date -Format o)
+
+    CDB:
+      $cdb
+
+    Symbol path:
+      $symbolPath
+
+    Dump files:
+    "@ | Out-File $summary -Encoding utf8
+
+    $dumps | ForEach-Object {
+      $_.FullName | Out-File $summary -Append -Encoding utf8
+    }
+
+- name: Upload crash analysis
+  if: always()
+  uses: actions/upload-artifact@v4
+  with:
+    name: windows-crash-analysis
+    path: crash-analysis/
+    if-no-files-found: warn
+    retention-days: 14
