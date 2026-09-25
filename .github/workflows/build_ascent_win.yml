@@ -1,10 +1,8 @@
 name: build_ascent_windows
 
 on:
-  workflow_run:
-    workflows: ["blt_time_travel_check"]
-    types:
-      - completed
+  pull_request:
+    branches: [ develop ]
 
 permissions:
   contents: read
