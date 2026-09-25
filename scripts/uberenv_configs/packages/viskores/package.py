@@ -131,8 +131,7 @@ class Viskores(CMakePackage, CudaPackage, ROCmPackage):
 
     # patch for scalar rendering arb rays
     patch("2026_08_13_viskores-add-plumbing-for-rays-wo-camera.patch")
-
-    # patch for viskores needed for rotational and linear extrusion
+    # patch for viskores needed for rotational and linear extrusion 
     patch("2026_09_15_viskores_extrusion_connectivity.patch")
 
     def flag_handler(self, name, flags):
