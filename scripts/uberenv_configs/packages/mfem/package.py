@@ -51,6 +51,20 @@ class Mfem(Package, CudaPackage, ROCmPackage):
     version("develop", branch="master")
 
     version(
+        "4.10.0",
+        sha256="d01c26662ab96042ec5e3443a58ee9eb3c5c78c6632d899240b6e485f3a414cf",
+        url="https://bit.ly/4iEAcbE",
+        extension="tar.gz",
+    )
+
+    version(
+        "4.9.0",
+        sha256="6904974c8d5a6bcd127419c7b7adff873170d397ed2f0bccdf438e940e713af2",
+        url="https://bit.ly/mfem-4-9",
+        extension="tar.gz",
+    )
+
+    version(
         "4.8.0",
         sha256="49bd2a076b0d87863092cb55f8524b5292d9afb2e48c19f80222ada367819016",
         url="https://bit.ly/mfem-4-8",
@@ -639,6 +653,8 @@ class Mfem(Package, CudaPackage, ROCmPackage):
             cxxstd = "14"
         if self.spec.satisfies("^ginkgo"):
             cxxstd = "14"
+        if self.spec.satisfies("@4.9.0:"):
+            cxxstd = "17"
         cxxstd_req = spec.variants["cxxstd"].value
         if cxxstd_req != "auto":
             # Constraints for valid standard level should be imposed during
