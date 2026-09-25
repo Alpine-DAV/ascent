@@ -53,12 +53,9 @@
 #include <vtkh/utils/viskores_dataset_info.hpp>
 
 #include <conduit_blueprint.hpp>
-#include <conduit_blueprint_mesh_matset_accessor.hpp>
 
 using namespace std;
 using namespace conduit;
-// access material sets, material field data, and species sets
-using MatsetAccessor = conduit::blueprint::mesh::matset::MatsetAccessor;
 
 //-----------------------------------------------------------------------------
 // -- begin ascent:: --
