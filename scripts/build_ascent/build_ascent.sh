@@ -692,6 +692,7 @@ if [ ! -d ${viskores_src_dir} ]; then
   echo "**** Applying Patches to ${viskores_tarball}"
   patch -p1 < ${script_dir}/2026_08_13_viskores-add-plumbing-for-rays-wo-camera.patch
   patch -p1 < ${script_dir}/2026_09_15_viskores_extrusion_connectivity.patch
+  patch -p1 < ${script_dir}/2026_09_24_use-float64-for-scalar-rendering.patch
   cd ${root_dir}
 fi
 

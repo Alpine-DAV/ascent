@@ -135,6 +135,10 @@ class Viskores(CMakePackage, CudaPackage, ROCmPackage):
     # patch for viskores needed for rotational and linear extrusion
     patch("2026_09_15_viskores_extrusion_connectivity.patch")
 
+    # patch for viskores needed for 64-bit scalar rendering ray tracing
+    patch("2026_09_24_use-float64-for-scalar-rendering.patch")
+
+
     def flag_handler(self, name, flags):
         return (flags, None, None)
 
