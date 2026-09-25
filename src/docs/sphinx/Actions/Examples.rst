@@ -1281,3 +1281,53 @@ YAML actions:
 Resulting image:
 
 .. image:: examples/tout_mir_axom_q7o5_material_boundary_000100.png
+
+An example of the revolve filter for an RZ dataset (revolve around the R axis).
+------------------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_revolve_rz_r_case_angle_90_mesh_000100.yaml
+
+Resulting images:
+
+.. image:: examples/tout_revolve_rz_r_case_angle_90_mesh_000100.png
+
+.. image:: examples/tout_revolve_rz_r_case_angle_90_cyl_000100.png
+
+An example of the revolve filter for an RZ dataset (revolve around the Z axis).
+------------------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_revolve_rz_z_case_angle_90_mesh_000100.yaml
+
+Resulting images:
+
+.. image:: examples/tout_revolve_rz_z_case_angle_90_mesh_000100.png
+
+.. image:: examples/tout_revolve_rz_z_case_angle_90_cyl_000100.png
+
+An example of the linear extrusion filter.
+------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_extrude_structured_000100.yaml
+
+
+Resulting image:
+
+.. image:: examples/tout_extrude_structured_000100.png
+
+An example of the linear extrusion filter.
+---------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_extrude_unstructured_000100.yaml
+
+
+Resulting image:
+
+.. image:: examples/tout_extrude_unstructured_000100.png

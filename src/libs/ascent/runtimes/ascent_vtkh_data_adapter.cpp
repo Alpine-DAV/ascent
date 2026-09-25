@@ -1323,14 +1323,14 @@ VTKHDataAdapter::UniformBlueprintToViskoresDataSet
     if(is_rz)
     {
         dims = viskores::Id3(dims_j,
-                    dims_i,
-                    dims_k);
+                             dims_i,
+                             dims_k);
     }
     else
     {
         dims = viskores::Id3(dims_i,
-                    dims_j,
-                    dims_k);
+                             dims_j,
+                             dims_k);
     }
 
     // todo, use actually coordset and topo names?
@@ -1622,8 +1622,8 @@ VTKHDataAdapter::RectilinearBlueprintToViskoresDataSet
             viskores::cont::ArrayHandle<viskores::FloatDefault> > coords;
 
         coords = viskores::cont::make_ArrayHandleCartesianProduct(z_coords_handle,
-                                                                    r_coords_handle,
-                                                                    theta_coords_handle);
+                                                                  r_coords_handle,
+                                                                  theta_coords_handle);
 
         viskores::cont::CoordinateSystem coordinate_system(coords_name.c_str(), coords);
 
@@ -1633,7 +1633,7 @@ VTKHDataAdapter::RectilinearBlueprintToViskoresDataSet
 
         viskores::cont::CellSetStructured<2> cell_set;
         cell_set.SetPointDimensions(viskores::make_Vec(z_npts,
-                                                    r_npts));
+                                                       r_npts));
         viskores::Id2 origin2(topo_origin[0], topo_origin[1]);
         cell_set.SetGlobalPointIndexStart(origin2);
         result->SetCellSet(cell_set);
