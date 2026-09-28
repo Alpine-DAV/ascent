@@ -26,7 +26,7 @@ jobs:
         cmake --version
         env build_ascent=false `
             enable_tests=OFF `
-            build_config=Debug `
+            build_config=Release `
             ./scripts/build_ascent/build_ascent.sh
     - name: Configure Ascent
       run: |
@@ -38,15 +38,15 @@ jobs:
     - name: Build Ascent
       run: |
         echo "**** Building Ascent"
-        cmake --build  build --config Debug -j2
+        cmake --build  build --config Release -j2
     - name: Install Ascent
       run: |
         echo "**** Installing Ascent"
-        cmake --install  build --config Debug 
+        cmake --install  build --config Release 
     - name: Run Ascent Unit Tests
       run: |
         echo "**** Ascent Unit Tests"
-        cmake -E env CTEST_OUTPUT_ON_FAILURE=1 cmake --build build --config Debug --target RUN_TESTS
+        cmake -E env CTEST_OUTPUT_ON_FAILURE=1 cmake --build build --config Release --target RUN_TESTS
     # - name: Run tests under ProcDump
     #   shell: pwsh
     #   run: |
@@ -65,7 +65,7 @@ jobs:
     #       -ma `
     #       -e 1 `
     #       -x "$env:RUNNER_TEMP\dumps" `
-    #       "build\bin\Debug\t_ascent_smoke.exe"
+    #       "build\bin\Release\t_ascent_smoke.exe"
     # - name: Analyze crash dump
     #   if: always()
     #   shell: powershell
