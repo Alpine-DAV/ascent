@@ -14,9 +14,9 @@ COPY ascent.docker.src.tar.gz /
 RUN tar -xzf ascent.docker.src.tar.gz
 
 # copy spack build script in
-COPY docker_uberenv_build.sh docker_env_setup.sh /
+COPY docker_build_tpls.sh docker_env_setup.sh /
 RUN chmod -R a+x /*.sh
 
-RUN /docker_uberenv_build.sh
+RUN /docker_build_tpls.sh
 
 RUN /docker_env_setup.sh

@@ -104,6 +104,7 @@ jobs:
             build_shared_libs=${BUILD_SHARED_LIBS} \
             build_config=${CMAKE_BUILD_TYPE} \
             build_jobs=2 \
+            CXXFLAGS=-fno-lto \
             ./scripts/build_ascent/build_ascent.sh
     - name: Configure Ascent
       run: |
