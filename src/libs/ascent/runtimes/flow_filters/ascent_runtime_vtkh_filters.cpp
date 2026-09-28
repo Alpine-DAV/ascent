@@ -6053,7 +6053,7 @@ VTKHVTKFileExtract::execute()
                             viskores_dset,
                             domain_id);
         local_domain_ids[idx] = domain_id;
-        viskores::io::VTKDataSetWriter writer(conduit_fmt::format(output_file_pattern,
+        viskores::io::VTKDataSetWriter writer(conduit_fmt::format(conduit_fmt::runtime(output_file_pattern),
                                                               domain_id));
         writer.WriteDataSet(viskores_dset);
     }
