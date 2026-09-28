@@ -691,6 +691,7 @@ if [ ! -d ${viskores_src_dir} ]; then
   cd ${viskores_src_dir}
   echo "**** Applying Patches to ${viskores_tarball}"
   patch -p1 < ${script_dir}/2026_09_15_viskores_extrusion_connectivity.patch
+  patch -p1 < ${script_dir}/2026_09_28_viskores_mir_fixes.patch
   cd ${root_dir}
 fi
 

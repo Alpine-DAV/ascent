@@ -131,6 +131,8 @@ class Viskores(CMakePackage, CudaPackage, ROCmPackage):
 
     # patch for viskores needed for rotational and linear extrusion 
     patch("2026_09_15_viskores_extrusion_connectivity.patch")
+    # patch for viskores needed for MIR 
+    patch("2026_09_28_viskores_mir_fixes.patch")
 
     def flag_handler(self, name, flags):
         return (flags, None, None)

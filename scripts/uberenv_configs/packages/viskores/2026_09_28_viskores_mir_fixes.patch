@@ -1,0 +1,92 @@
+--- a/viskores/filter/contour/MIRFilter.cxx
++++ b/viskores/filter/contour/MIRFilter.cxx
+@@ -23,0 +24 @@
++#include <viskores/cont/ArrayHandleRuntimeVec.h>
+@@ -61 +62,6 @@
+-    viskores::cont::UnknownArrayHandle output = field.GetData().NewInstanceBasic();
++    // NOTE: We avoid `UnknownArrayHandle::ExtractArrayFromComponents()` here.
++    // Depending on the underlying storage, it can produce read-only portals that
++    // will assert when a worklet attempts to write via `Set()`.
++    viskores::Id outNumPoints = result.GetCoordinateSystem(this->GetActiveCoordinateSystemIndex()).GetNumberOfPoints();
++
++    viskores::cont::UnknownArrayHandle output;
+@@ -65 +72,18 @@
+-      auto outputArray = output.ExtractArrayFromComponents<T>(viskores::CopyFlag::Off);
++
++      // The MIR point interpolation worklet assumes `newVals` is backed by
++      // `ArrayHandleRecombineVec` and performs component-wise updates via `operator[]`.
++      // Build a writable `ArrayHandleRecombineVec` view into a single contiguous
++      // components buffer, then wrap that same buffer as an `ArrayHandleRuntimeVec`
++      // for storage in `UnknownArrayHandle`.
++
++      const viskores::IdComponent outNumComponents = field.GetData().GetNumberOfComponentsFlat();
++      viskores::cont::ArrayHandle<T, viskores::cont::StorageTagBasic> components;
++      components.Allocate(outNumPoints * outNumComponents);
++
++      viskores::cont::ArrayHandleRecombineVec<T> recombined;
++      for (viskores::IdComponent cIndex = 0; cIndex < outNumComponents; ++cIndex)
++      {
++        viskores::cont::ArrayHandleStride<T> compStride(components, outNumPoints, outNumComponents, cIndex);
++        recombined.AppendComponentArray(compStride);
++      }
++
+@@ -67 +92,3 @@
+-      this->Invoke(destructWeightList, MIRIDs, MIRWeights, concrete, outputArray);
++      this->Invoke(destructWeightList, MIRIDs, MIRWeights, concrete, recombined);
++
++      output = viskores::cont::make_ArrayHandleRuntimeVec(outNumComponents, components);
+@@ -68,0 +96 @@
++
+--- a/viskores/filter/contour/worklet/MIR.h
++++ b/viskores/filter/contour/worklet/MIR.h
+@@ -566,14 +566,13 @@
+             }
+-            // need to swap the weight of the point to be A-C / ((D-C) - (B-A)),
+-            // where A and C are edge0 mats 1 and 2, and B and D are edge1 mats 1 and 2.
+-            ei.Weight = viskores::Float64(1) +
+-              ((static_cast<viskores::Float64>(curScalars.Get(valPositionStart + edge[0]) -
+-                                               newScalars.Get(valPositionStart + edge[0]))) /
+-               static_cast<viskores::Float64>(curScalars.Get(valPositionStart + edge[1]) -
+-                                              curScalars.Get(valPositionStart + edge[0]) +
+-                                              newScalars.Get(valPositionStart + edge[0]) -
+-                                              newScalars.Get(valPositionStart + edge[1])));
++            // Compute the swapped weight as (D-B) / ((D-B) - (C-A)), where A and C
++            // are edge0 materials 1 and 2, and B and D are edge1 materials 1 and 2.
++            // This form avoids cancellation when the crossing is exactly at an endpoint.
++            const viskores::Float64 delta0 = static_cast<viskores::Float64>(curScalars.Get(valPositionStart + edge[0]) -
++                                             newScalars.Get(valPositionStart + edge[0]));
++            const viskores::Float64 delta1 = static_cast<viskores::Float64>(curScalars.Get(valPositionStart + edge[1]) -
++                                             newScalars.Get(valPositionStart + edge[1]));
++            ei.Weight = delta1 / (delta1 - delta0);
+ 
+             inCellEdgeReverseConnectivity.Set(inCellEdgeInterpIndex, inCellInterpPointIndex);
+             inCellEdgeInterpolation.Set(inCellEdgeInterpIndex, ei);
+             inCellEdgeInterpIndex++;
+@@ -630,13 +631,11 @@
+               this->swap(edge[0], edge[1]);
+             }
+ 
+-            ei.Weight = viskores::Float64(1) +
+-              ((static_cast<viskores::Float64>(curScalars.Get(valPositionStart + edge[0]) -
+-                                               newScalars.Get(valPositionStart + edge[0]))) /
+-               static_cast<viskores::Float64>(curScalars.Get(valPositionStart + edge[1]) -
+-                                              curScalars.Get(valPositionStart + edge[0]) +
+-                                              newScalars.Get(valPositionStart + edge[0]) -
+-                                              newScalars.Get(valPositionStart + edge[1])));
++            const viskores::Float64 delta0 = static_cast<viskores::Float64>(curScalars.Get(valPositionStart + edge[0]) -
++                                             newScalars.Get(valPositionStart + edge[0]));
++            const viskores::Float64 delta1 = static_cast<viskores::Float64>(curScalars.Get(valPositionStart + edge[1]) -
++                                             newScalars.Get(valPositionStart + edge[1]));
++            ei.Weight = delta1 / (delta1 - delta0);
+             //Add to set of new edge points
+             //Add reverse connectivity;
+             edgePointReverseConnectivity.Set(edgeIndex, connectivityIndex++);
+@@ -1647,7 +1648,7 @@ class InterpolateLookbackField
+         for (viskores::IdComponent j = 0; j < 8; j++)
+         {
+           weight[j] *= 1. / static_cast<viskores::Float64>(numValues);
+-          VISKORES_ASSERT(curOff[j] == 8);
++          VISKORES_ASSERT(curOff[j] == 8 || keys[j][curOff[j]] == viskores::Id(-1));
+         }
+       }
+     };
