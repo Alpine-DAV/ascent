@@ -958,6 +958,11 @@ fi
 if [ ! -d ${mfem_src_dir} ]; then
   echo "**** Extracting ${mfem_tarball}"
   tar ${tar_extra_args} -xzf ${mfem_tarball} -C ${source_dir}
+
+  cd  ${mfem_src_dir}
+    patch -p1 < ${script_dir}/2026_09_29_mfem-fix-for-hip-device-macro-consistency.patch
+  cd ${root_dir}
+
 fi
 
 #
