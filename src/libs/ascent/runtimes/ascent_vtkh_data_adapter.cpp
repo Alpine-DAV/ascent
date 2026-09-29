@@ -1031,8 +1031,7 @@ VTKHDataAdapter::BlueprintToViskoresDataSet(const Node &node,
             }
             else
             {
-              //ASCENT_INFO("skipping field "<<field_name<<" with "<<num_children<<" comps");
-	      continue;
+              ASCENT_INFO("skipping field "<<field_name<<" with "<<num_children<<" comps");
             }
         }
     }
