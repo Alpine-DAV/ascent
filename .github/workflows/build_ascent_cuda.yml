@@ -65,7 +65,6 @@ jobs:
     env:
       COMPILER_CC: ${{ matrix.env.cc }}
       COMPILER_CXX: ${{ matrix.env.cxx }}
-      COMPILER_FC: ${{ matrix.env.fc }}
       CMAKE_VERSION:  ${{ matrix.env.cmake_version }}
       BUILD_SHARED_LIBS: ${{ matrix.env.build_shared_libs }}
       CMAKE_BUILD_TYPE: ${{ matrix.env.cmake_build_type }}
