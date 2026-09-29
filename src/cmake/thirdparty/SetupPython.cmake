@@ -24,7 +24,7 @@ if(PYTHON_EXECUTABLE AND NOT Python3_EXECUTABLE)
 endif()
 
 if(Python3_EXECUTABLE)
-    message(STATUS "Python Executable: {Python3_EXECUTABLE}")
+    message(STATUS "Python Executable: ${Python3_EXECUTABLE}")
 endif()
 
 find_package(Python3
@@ -34,6 +34,42 @@ find_package(Python3
 # normalize python found to all caps
 if(Python3_FOUND)
     set(PYTHON_FOUND TRUE)
+endif()
+
+##############################################################################
+# Manual, bare-minimum check of setuptools version
+#
+# Installing with `pip install --no-build-isolation` causes pip to use the
+# setuptools already installed in this python rather than fetching the version
+# specified in the pyproject.toml. Versions of setuptools older than 61.0.0
+# do not understand pyproject.toml metadata, but instead of failing, those
+# versions quietly build an empty package.
+#
+# As a result, 61.0.0 is the hard floor enforced explicitly here. The "requires"
+# section of the pyproject.toml may pin a higher recommended version, but that
+# is a separate concern from this check.
+##############################################################################
+set(SETUPTOOLS_MIN_VERSION 61.0.0)
+
+execute_process(COMMAND ${Python3_EXECUTABLE} -c
+                        "import setuptools; print(setuptools.__version__)"
+                RESULT_VARIABLE setuptools_probe_result
+                OUTPUT_VARIABLE setuptools_version
+                ERROR_QUIET
+                OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+if(NOT setuptools_probe_result EQUAL 0)
+    message(FATAL_ERROR
+            "Could not determine the setuptools version in ${Python3_EXECUTABLE} "
+            "(it may be missing or broken). Install or repair setuptools there, "
+            "or build with ENABLE_PYTHON=OFF.")
+elseif(setuptools_version VERSION_LESS SETUPTOOLS_MIN_VERSION)
+    message(FATAL_ERROR
+            "Python modules require setuptools "
+            "${SETUPTOOLS_MIN_VERSION} or newer, but "
+            "${Python3_EXECUTABLE} provides ${setuptools_version}. Upgrade "
+            "setuptools there, use a python that provides a newer one, or "
+            "build with ENABLE_PYTHON=OFF.")
 endif()
 
 ##############################################################################
@@ -124,8 +160,17 @@ FUNCTION(PYTHON_ADD_PIP_SETUP)
                 --disable-pip-version-check --no-warn-script-location
                 --no-index --no-deps --no-build-isolation
                 --target ${py_mod_inst_prefix}
+                RESULT_VARIABLE PY_MODULE_INSTALL_RESULT
                 OUTPUT_VARIABLE PY_DIST_UTILS_INSTALL_OUT)
             MESSAGE(STATUS \"\${PY_DIST_UTILS_INSTALL_OUT}\")
+            # If pip install failed, that's actually an error we should stop at
+            IF(NOT PY_MODULE_INSTALL_RESULT EQUAL 0)
+                MESSAGE(FATAL_ERROR \"Staging ascent's python module failed (pip exited \${PY_MODULE_INSTALL_RESULT}); see output above.\")
+            ENDIF()
+            # If pip succeeded but expected sources are missing, that's an error too
+            IF(NOT EXISTS \"${py_mod_inst_prefix}/ascent/__init__.py\")
+                MESSAGE(FATAL_ERROR \"Staging ascent's python module produced no python sources (${py_mod_inst_prefix}/ascent/__init__.py is missing).\")
+            ENDIF()
             ")
     else()
         # else install to the dest dir under CMAKE_INSTALL_PREFIX
@@ -136,8 +181,17 @@ FUNCTION(PYTHON_ADD_PIP_SETUP)
                 --disable-pip-version-check --no-warn-script-location
                 --no-index --no-deps --no-build-isolation
                 --target \$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${args_DEST_DIR}
+                RESULT_VARIABLE PY_MODULE_INSTALL_RESULT
                 OUTPUT_VARIABLE PY_DIST_UTILS_INSTALL_OUT)
             MESSAGE(STATUS \"\${PY_DIST_UTILS_INSTALL_OUT}\")
+            # If pip install failed, that's actually an error we should stop at
+            IF(NOT PY_MODULE_INSTALL_RESULT EQUAL 0)
+                MESSAGE(FATAL_ERROR \"Staging ascent's python module failed (pip exited \${PY_MODULE_INSTALL_RESULT}); see output above.\")
+            ENDIF()
+            # If pip succeeded but expected sources are missing, that's an error too
+            IF(NOT EXISTS \"\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${args_DEST_DIR}/ascent/__init__.py\")
+                MESSAGE(FATAL_ERROR \"Staging ascent's python module produced no python sources (ascent/__init__.py is missing under the install prefix).\")
+            ENDIF()
             ")
     endif()
 
