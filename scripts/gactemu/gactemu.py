@@ -141,8 +141,10 @@ def proc_jobs(tree, config):
         job_ctx = CTX()
         job_full_name = config["root_name"] + "-" + job_name
         job_ctx.print_esc(tag = "job", txt =job_full_name )
-        if "runs-on" in job.keys():
-             job_ctx.set_container(map_gact_runners(job["runs-on"],config))
+        if "container" in job.keys(): # full container name, no need to map
+            job_ctx.set_container(job["container"])
+        elif "runs-on" in job.keys(): # need to map from gact to local
+            job_ctx.set_container(map_gact_runners(job["runs-on"],config))
         else:
             job_ctx.set_container(config["default_container"])
         job_ctx.set_name(job_full_name)
@@ -163,7 +165,7 @@ def proc_matrix_entry(steps,
     ctx.print("#-------------------------------------")
     ctx.print_esc(tag = "matrix entry", txt = matrix_entry_name)
     ctx.print("#-------------------------------------")
-    ctx.print_esc(tag = "azure global scope vars", txt = config["azure_vars"])
+    ctx.print_esc(tag = "global scope vars", txt = config["global_vars"])
     ctx.print_esc("matrix env vars")
     for k,v in env_vars.items():
         ctx.print("export {0}={1}".format(k,sanitize_var(v)))
