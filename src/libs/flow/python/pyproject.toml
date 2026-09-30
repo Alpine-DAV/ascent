@@ -12,7 +12,7 @@ description = "flow"
 requires-python = ">=3.8"
 
 [tool.setuptools.package-dir]
-conduit = "py_src"
+flow = "py_src"
 
 [tool.setuptools]
 zip-safe = false

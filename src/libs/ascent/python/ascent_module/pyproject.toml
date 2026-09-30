@@ -12,12 +12,12 @@ description = "ascent"
 requires-python = ">=3.8"
 
 [tool.setuptools.package-dir]
-conduit = "py_src"
+ascent = "py_src"
 
 [tool.setuptools]
 zip-safe = false
 packages = [
-    "flow",
+    "ascent",
     "ascent.bridge_kernel",
     "ascent.mpi"
 ]
