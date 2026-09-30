@@ -161,15 +161,15 @@ FUNCTION(PYTHON_ADD_PIP_SETUP)
                 --no-index --no-deps --no-build-isolation
                 --target ${py_mod_inst_prefix}
                 RESULT_VARIABLE PY_MODULE_INSTALL_RESULT
-                OUTPUT_VARIABLE PY_DIST_UTILS_INSTALL_OUT)
-            MESSAGE(STATUS \"\${PY_DIST_UTILS_INSTALL_OUT}\")
+                OUTPUT_VARIABLE PY_MODULE_INSTALL_OUT)
+            MESSAGE(STATUS \"\${PY_MODULE_INSTALL_OUT}\")
             # If pip install failed, that's actually an error we should stop at
             IF(NOT PY_MODULE_INSTALL_RESULT EQUAL 0)
-                MESSAGE(FATAL_ERROR \"Staging ascent's python module failed (pip exited \${PY_MODULE_INSTALL_RESULT}); see output above.\")
+                MESSAGE(FATAL_ERROR \"Staging python module ${args_PY_MODULE_DIR} failed (pip exited \${PY_MODULE_INSTALL_RESULT}); see output above.\")
             ENDIF()
             # If pip succeeded but expected sources are missing, that's an error too
-            IF(NOT EXISTS \"${py_mod_inst_prefix}/ascent/__init__.py\")
-                MESSAGE(FATAL_ERROR \"Staging ascent's python module produced no python sources (${py_mod_inst_prefix}/ascent/__init__.py is missing).\")
+            IF(NOT EXISTS \"${py_mod_inst_prefix}/${args_PY_MODULE_DIR}/__init__.py\")
+                MESSAGE(FATAL_ERROR \"Staging python module ${args_PY_MODULE_DIR} produced no python sources (${py_mod_inst_prefix}/${args_PY_MODULE_DIR}/__init__.py is missing).\")
             ENDIF()
             ")
     else()
@@ -182,15 +182,15 @@ FUNCTION(PYTHON_ADD_PIP_SETUP)
                 --no-index --no-deps --no-build-isolation
                 --target \$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${args_DEST_DIR}
                 RESULT_VARIABLE PY_MODULE_INSTALL_RESULT
-                OUTPUT_VARIABLE PY_DIST_UTILS_INSTALL_OUT)
-            MESSAGE(STATUS \"\${PY_DIST_UTILS_INSTALL_OUT}\")
+                OUTPUT_VARIABLE PY_MODULE_INSTALL_OUT)
+            MESSAGE(STATUS \"\${PY_MODULE_INSTALL_OUT}\")
             # If pip install failed, that's actually an error we should stop at
             IF(NOT PY_MODULE_INSTALL_RESULT EQUAL 0)
-                MESSAGE(FATAL_ERROR \"Staging ascent's python module failed (pip exited \${PY_MODULE_INSTALL_RESULT}); see output above.\")
+                MESSAGE(FATAL_ERROR \"Staging python module ${args_PY_MODULE_DIR} failed (pip exited \${PY_MODULE_INSTALL_RESULT}); see output above.\")
             ENDIF()
             # If pip succeeded but expected sources are missing, that's an error too
-            IF(NOT EXISTS \"\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${args_DEST_DIR}/ascent/__init__.py\")
-                MESSAGE(FATAL_ERROR \"Staging ascent's python module produced no python sources (ascent/__init__.py is missing under the install prefix).\")
+            IF(NOT EXISTS \"\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${args_DEST_DIR}/${args_PY_MODULE_DIR}/__init__.py\")
+                MESSAGE(FATAL_ERROR \"Staging python module ${args_PY_MODULE_DIR} produced no python sources (${args_PY_MODULE_DIR}/__init__.py is missing under the install prefix).\")
             ENDIF()
             ")
     endif()
