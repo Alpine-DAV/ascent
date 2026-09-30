@@ -113,7 +113,7 @@ jobs:
         cmake --version
         echo "**** Configuring Ascent"
         export CMAKE_OPTS="-S src -B build -C ascent-config.cmake -DCMAKE_INSTALL_PREFIX=install"
-        export CMAKE_OPTS="${CMAKE_OPTS}" -DCMAKE_CXX_FLAGS=-fno-lto -DCMAKE_CUDA_ARCHITECTURES=${CUDA_ARCH}"
+        export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_CXX_FLAGS=-fno-lto -DCMAKE_CUDA_ARCHITECTURES=${CUDA_ARCH}"
         echo "cmake ${CMAKE_OPTS}"
         cmake ${CMAKE_OPTS}
     - name: Build Ascent
