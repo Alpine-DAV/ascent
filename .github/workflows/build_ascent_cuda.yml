@@ -22,7 +22,7 @@ jobs:
               cxx: g++
               cmake_version: 3.31.8
               build_shared_libs: ON
-              cmake_build_type: MinSizeRel
+              cmake_build_type: Release
               cuda_arch: 80
               enable_dray: OFF
               enable_mfem: ON
@@ -37,7 +37,7 @@ jobs:
               cxx: g++
               cmake_version: 3.31.8
               build_shared_libs: OFF
-              cmake_build_type: MinSizeRel
+              cmake_build_type: Release
               cuda_arch: 80
               enable_dray: OFF
               enable_mfem: ON
@@ -54,7 +54,7 @@ jobs:
               cxx: g++
               cmake_version: 3.31.8
               build_shared_libs: ON
-              cmake_build_type: MinSizeRel
+              cmake_build_type: Release
               cuda_arch: 70
               enable_dray: OFF
               enable_mfem: ON
@@ -103,7 +103,9 @@ jobs:
             build_shared_libs=${BUILD_SHARED_LIBS} \
             build_config=${CMAKE_BUILD_TYPE} \
             build_jobs=2 \
+            CFLAGS=-fno-lto \
             CXXFLAGS=-fno-lto \
+            LDFLAGS=-fno-lto \
             ./scripts/build_ascent/build_ascent.sh
     - name: Configure Ascent
       run: |
