@@ -20,8 +20,6 @@ spack-libs
 spack.lock
 AZEMU-LAUNCH-*.sh
 AZEMU-SCRIPT-*.sh
+GACTEMU-SCRIPT-*.sh
+GACTEMU-LAUNCH-*.sh
 
-.gitignore_backup
-build/
-dconf/
-tpls/
