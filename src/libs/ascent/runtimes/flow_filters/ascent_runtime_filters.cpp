@@ -32,6 +32,7 @@
     #include <ascent_runtime_vtkh_filters.hpp>
     #include <ascent_runtime_rendering_filters.hpp>
     #include <ascent_runtime_rover_filters.hpp>
+    #include <ascent_runtime_gltf_extract.hpp>
 #endif
 
 #if defined(ASCENT_DRAY_ENABLED)
@@ -134,6 +135,8 @@ register_builtin()
     AscentRuntime::register_filter_type<VTKHNoOp>("transforms","noop");
     AscentRuntime::register_filter_type<VTKHRecenter>("transforms","recenter");
     AscentRuntime::register_filter_type<VTKHVectorMagnitude>("transforms","vector_magnitude");
+    AscentRuntime::register_filter_type<VTKHRevolve>("transforms","revolve");
+    AscentRuntime::register_filter_type<VTKHLinearExtrude>("transforms","extrude");
     AscentRuntime::register_filter_type<VTKHHistSampling>("transforms","histsampling");
     AscentRuntime::register_filter_type<VTKHQCriterion>("transforms","qcriterion");
     AscentRuntime::register_filter_type<VTKHStats>("extracts","statistics");
@@ -144,6 +147,8 @@ register_builtin()
     AscentRuntime::register_filter_type<VTKHTransform>("transforms","transform");
     AscentRuntime::register_filter_type<VTKHScale>("transforms","scale");
     AscentRuntime::register_filter_type<VTKHProject2d>("transforms","project_2d");
+    // note, ray surface is currently an alias for projec_2d
+    AscentRuntime::register_filter_type<VTKHProject2d>("transforms","ray_surface");
     AscentRuntime::register_filter_type<VTKHTriangulate>("transforms","triangulate");
     AscentRuntime::register_filter_type<VTKHParticleAdvection>("transforms","particle_advection");
     AscentRuntime::register_filter_type<VTKHStreamline>("transforms","streamline");
@@ -151,6 +156,7 @@ register_builtin()
     AscentRuntime::register_filter_type<VTKHSample>("transforms","sample");
     AscentRuntime::register_filter_type<VTKHUniformGrid>("transforms","uniform_grid");
     AscentRuntime::register_filter_type<VTKHVTKFileExtract>("extracts", "vtk");
+    AscentRuntime::register_filter_type<GltfExtract>("extracts", "gltf");
     AscentRuntime::register_filter_type<VTKHMIR>("transforms","mir");
 
 
@@ -165,6 +171,7 @@ register_builtin()
 
 #if defined(ASCENT_DRAY_ENABLED)
     AscentRuntime::register_filter_type<DRayPseudocolor>("extracts", "dray_pseudocolor");
+    AscentRuntime::register_filter_type<DRaySurface>("extracts", "dray_surface");
     AscentRuntime::register_filter_type<DRay3Slice>("extracts", "dray_3slice");
     AscentRuntime::register_filter_type<DRayVolume>("extracts", "dray_volume");
     AscentRuntime::register_filter_type<DRayProject2d>("transforms", "dray_project_2d");

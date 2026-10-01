@@ -15,6 +15,7 @@
 
 #include <ascent.hpp>
 #include <ascent_hola.hpp>
+#include <ascent_runtime_color_utils.hpp>
 
 #include <iostream>
 #include <math.h>
@@ -915,7 +916,7 @@ TEST(ascent_devil_ray, test_dray_compressed_color_table)
     ASCENT_INFO("Testing Devil Ray Compressed Color Table");
 
     string output_path = prepare_output_dir();
-    string output_file = conduit::utils::join_file_path(output_path,"dray_compressed_color_table");
+    string output_file = conduit::utils::join_file_path(output_path,"tout_dray_compressed_color_table");
 
     // remove old images before rendering
     remove_test_image(output_file);
@@ -958,9 +959,293 @@ TEST(ascent_devil_ray, test_dray_compressed_color_table)
     ascent.close();
 
     // check that we created an image
-    // EXPECT_TRUE(check_test_image(output_file));
-    // std::string msg = "An example of creating a custom compressed color map.";
-    // ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+    EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example of creating a custom compressed color map.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_devil_ray, test_dray_compressed_color_table_hex)
+{
+    Node n;
+    ascent::about(n);
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              10,
+                                              10,
+                                              10,
+                                              data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing Devil Ray Compressed Hex Color Table");
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_dray_compressed_color_table_hex");
+
+    remove_test_image(output_file);
+
+    conduit::Node control_points;
+    conduit::Node &hex = control_points["hex"];
+    hex.append() = "#3B1414";
+    hex.append() = "#7A3B0A";
+    hex.append() = "#FCFFF5";
+    control_points["a"] = {1., 1., 1.};
+    control_points["position"] = {0., .5, 1.};   
+
+    conduit::Node extracts;
+    extracts["e1/type"]  = "dray_pseudocolor";
+    extracts["e1/params/field"] = "braid";
+    extracts["e1/params/color_table/control_points"] = control_points;
+    extracts["e1/params/image_width"]  = 512;
+    extracts["e1/params/image_height"] = 512;
+    extracts["e1/params/image_prefix"]   = output_file;
+
+    conduit::Node actions;
+    conduit::Node &add_plots = actions.append();
+    add_plots["action"] = "add_extracts";
+    add_plots["extracts"] = extracts;
+
+    Ascent ascent;
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example of creating a custom compressed color map using hex colors (devil ray).";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_devil_ray, test_dray_Kazimir_Malevich)
+{
+    // the ascent runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              10,
+                                              10,
+                                              10,
+                                              data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+
+    ASCENT_INFO("Testing Devil Ray Rendering with a Single Color");
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_dray_monochrome");
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+    //
+    // Create the actions.
+    // 
+
+    conduit::Node extracts;
+    extracts["e1/type"]  = "dray_pseudocolor";
+    extracts["e1/params/field"] = "braid";
+    extracts["e1/params/color_table/solid"] = {0.748, 0.004, 0.008};
+    extracts["e1/params/image_width"]  = 512;
+    extracts["e1/params/image_height"] = 512;
+    extracts["e1/params/image_prefix"]   = output_file;
+
+    conduit::Node actions;
+    conduit::Node &add_plots = actions.append();
+    add_plots["action"] = "add_extracts";
+    add_plots["extracts"] = extracts;
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example of using dray to render with a single color.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_devil_ray, test_dray_surface_alias)
+{
+    // the ascent runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+
+    Node data, hola_opts, verify_info;
+    hola_opts["root_file"] = test_data_file("taylor_green.cycle_001860.root");
+    ascent::hola("relay/blueprint/mesh", hola_opts, data);
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+
+    ASCENT_INFO("Testing Devil Ray Rendering using the Surface Alias");
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_dray_surface_alias");
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+    //
+    // Create the actions.
+    // 
+
+    conduit::Node extracts;
+    extracts["e1/type"]  = "dray_surface";
+
+    // filter knobs
+    conduit::Node &params = extracts["e1/params/"];
+    params["field"] = "density";
+    params["min_value"] = 0.99;
+    params["max_value"] = 1.0;
+    params["log_scale"] = "false";
+    params["image_prefix"] = output_file;
+    params["camera/azimuth"] = -30;
+    params["camera/elevation"] = 35;
+
+    params["draw_mesh"] = "true";
+    params["line_thickness"] = 0.1;
+    float line_color[4] = {0.f, 0.f, 0.f, 1.0f};
+    params["line_color"].set(line_color, 4);
+
+    conduit::Node actions;
+    // add the extracts
+    conduit::Node &add_extracts = actions.append();
+    add_extracts["action"] = "add_extracts";
+    add_extracts["extracts"] = extracts;
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file, 0.1, 1860));
+    std::string msg = "An example of using the dray_surface alias to render with a single color.";
+    ASCENT_ACTIONS_DUMP_CYCLE(actions,output_file,msg,1860);
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_devil_ray, test_hex_color_parsing_helper)
+{
+    double r = 0., g = 0., b = 0., a = 0.;
+    bool has_alpha = false;
+    std::string err;
+
+    EXPECT_TRUE(ascent::runtime::filters::detail::parse_hex_color_string("ff00aa80",
+                                                                         r,
+                                                                         g,
+                                                                         b,
+                                                                         a,
+                                                                         has_alpha,
+                                                                         err));
+    EXPECT_TRUE(has_alpha);
+    EXPECT_NEAR(r, 1.0, 1e-12);
+    EXPECT_NEAR(g, 0.0, 1e-12);
+    EXPECT_NEAR(b, 170.0 / 255.0, 1e-12);
+    EXPECT_NEAR(a, 128.0 / 255.0, 1e-12);
+
+    EXPECT_FALSE(ascent::runtime::filters::detail::parse_hex_color_string("#GG00AA",
+                                                                          r,
+                                                                          g,
+                                                                          b,
+                                                                          a,
+                                                                          has_alpha,
+                                                                          err));
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_devil_ray, test_dray_hex_Kazimir_Malevich)
+{
+    // the ascent runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              10,
+                                              10,
+                                              10,
+                                              data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+
+    ASCENT_INFO("Testing Devil Ray Rendering with a Single Color");
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_dray_monochrome_hex");
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+    //
+    // Create the actions.
+    // 
+
+    conduit::Node extracts;
+    extracts["e1/type"]  = "dray_pseudocolor";
+    extracts["e1/params/field"] = "braid";
+    extracts["e1/params/color_table/solid"] = "#bf0101";
+    extracts["e1/params/image_width"]  = 512;
+    extracts["e1/params/image_height"] = 512;
+    extracts["e1/params/image_prefix"]   = output_file;
+
+    conduit::Node actions;
+    conduit::Node &add_plots = actions.append();
+    add_plots["action"] = "add_extracts";
+    add_plots["extracts"] = extracts;
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file));
+    std::string msg = "An example of using dray to render with a single color.";
+    ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
 //-----------------------------------------------------------------------------
@@ -974,5 +1259,3 @@ int main(int argc, char* argv[])
     result = RUN_ALL_TESTS();
     return result;
 }
-
-

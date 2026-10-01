@@ -29,10 +29,16 @@ class Viskores(CMakePackage, CudaPackage, ROCmPackage):
     version("main", branch="main")
     version("release", branch="release")
     version(
+        "1.2.0",
+        tag="v1.2.0",
+        commit="9d254cae5acaefbc7cc3959134ae7d8517063da8",
+        preferred=True,
+    )
+
+    version(
         "1.1.1",
         tag="v1.1.1",
-        commit="1d38698019f56ef2636d7283f4cac9bc2ee6c819",
-        preferred=True,
+        commit="1d38698019f56ef2636d7283f4cac9bc2ee6c819"
     )
     version(
         "1.0.0",
@@ -123,10 +129,12 @@ class Viskores(CMakePackage, CudaPackage, ROCmPackage):
     conflicts("+cuda~cuda_native~kokkos", msg="Cannot have +cuda without a cuda device")
     conflicts("+cuda", when="cuda_arch=none", msg="viskores +cuda requires that cuda_arch be set")
 
-    # pan and zoom patch for viskores needed for ascent tiled rendering
-    patch("2026_01_02_viskores_implent_pan_raytracing.patch")
-    patch("2026_04_10_viskores_1_1_0_volume_annotation_depth_hack.patch")
-    patch("2026_05_15_viskores_1_1_1_wireframer_fix.patch")
+    # patch for scalar rendering arb rays
+    patch("2026_08_13_viskores-add-plumbing-for-rays-wo-camera.patch")
+    # patch for viskores needed for rotational and linear extrusion 
+    patch("2026_09_15_viskores_extrusion_connectivity.patch")
+    # patch for viskores needed for MIR 
+    patch("2026_09_28_viskores_mir_fixes.patch")
 
     def flag_handler(self, name, flags):
         return (flags, None, None)

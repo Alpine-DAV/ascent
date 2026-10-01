@@ -54,6 +54,20 @@ public:
 };
 
 //-----------------------------------------------------------------------------
+// "surface" is an alias for Devil Ray pseudocolor with a solid color table.
+// Implemented as a thin wrapper with different default params.
+//-----------------------------------------------------------------------------
+class ASCENT_API DRaySurface : public DRayPseudocolor
+{
+public:
+    DRaySurface();
+    virtual ~DRaySurface();
+
+    virtual void   declare_interface(conduit::Node &i) override;
+    virtual void   execute() override;
+};
+
+//-----------------------------------------------------------------------------
 class ASCENT_API DRay3Slice : public ::flow::Filter
 {
 public:

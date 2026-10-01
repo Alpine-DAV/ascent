@@ -175,6 +175,7 @@ set(ascent_headers
     utils/ascent_block_timer.hpp
     utils/ascent_mpi_utils.hpp
     utils/ascent_string_utils.hpp
+    utils/ascent_runtime_color_utils.hpp
     utils/ascent_web_interface.hpp
     utils/ascent_resources.hpp
     utils/ascent_resources_cinema_web.hpp
@@ -240,6 +241,7 @@ set(ascent_sources
     utils/ascent_logging_old.cpp
     utils/ascent_mpi_utils.cpp
     utils/ascent_string_utils.cpp
+    utils/ascent_runtime_color_utils.cpp
     utils/ascent_web_interface.cpp
     utils/ascent_resources.cpp
     # hola
@@ -271,6 +273,7 @@ if(VISKORES_FOUND)
         runtimes/flow_filters/ascent_runtime_rendering_filters.hpp
         runtimes/flow_filters/ascent_runtime_rover_filters.hpp
         runtimes/flow_filters/ascent_runtime_conduit_to_viskores_parsing.hpp
+        runtimes/flow_filters/ascent_runtime_gltf_extract.hpp
         runtimes/flow_filters/ascent_runtime_filters.hpp
         runtimes/ascent_main_runtime.hpp)
 
@@ -278,13 +281,12 @@ if(VISKORES_FOUND)
         runtimes/ascent_data_object.cpp
         runtimes/ascent_vtkh_data_adapter.cpp
         runtimes/ascent_vtkh_collection.cpp
-        runtimes/flow_filters/ascent_runtime_vtkh_filters.cpp
         runtimes/flow_filters/ascent_runtime_vtkh_utils.cpp
         runtimes/flow_filters/ascent_runtime_rendering_filters.cpp
         runtimes/flow_filters/ascent_runtime_rover_filters.cpp
         runtimes/flow_filters/ascent_runtime_conduit_to_viskores_parsing.cpp
         runtimes/flow_filters/ascent_runtime_filters.cpp
-        runtimes/ascent_main_runtime.cpp)
+        )
 
     list(APPEND ascent_headers ${ascent_vtkh_dep_headers})
     list(APPEND ascent_sources ${ascent_vtkh_dep_sources})
@@ -295,6 +297,12 @@ if(VISKORES_FOUND)
 
     # also make sure that these are in ascent's device source list
     list(APPEND ascent_device_sources ${ascent_viskores_device_sources})
+
+    # these are not device sources, they also use fmt which makes nvcc unhappy as of fmt 12
+    list(APPEND ascent_sources
+                runtimes/flow_filters/ascent_runtime_vtkh_filters.cpp
+                runtimes/flow_filters/ascent_runtime_gltf_extract.cpp
+                runtimes/ascent_main_runtime.cpp)
 endif()
 
 

@@ -23,7 +23,7 @@ If you have Docker, an easy way to learn about Ascent is to run our prebuilt Doc
 
 .. code::
 
-    docker run -p 8888:8888 -t -i alpinedav/ascent-jupyter
+    docker run -p 8888:8888 -t -i alpinedav/ascent-jupyter:latest
 
 
 Then open http://localhost:8888 in your browser to connect to the Jupyter Server in the container.

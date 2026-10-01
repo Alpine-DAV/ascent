@@ -326,6 +326,13 @@ Resulting image:
 
 .. image:: examples/tout_field_filtering100.png
 
+An example of selecting material fields and matsets with field filtering.
+------------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_material_field_selection.yaml
+
 An example of using the gradient filter on a element centered field and plotting the magnitude.
 -----------------------------------------------------------------------------------------------
 
@@ -820,6 +827,20 @@ YAML actions:
 
 .. literalinclude:: examples/tout_sample_plane_000100.yaml
 
+An example of using the sample filter to sample on a plane topology from the input dataset.
+-------------------------------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_sample_topology_plane_000100.yaml
+
+An example of using the sample filter to sample on a sphere surface topology from the input dataset.
+----------------------------------------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_sample_topology_sphere_000100.yaml
+
 An example of using the sample filter to sample a list of 3D points.
 ---------------------------------------------------------------------
 
@@ -1249,3 +1270,64 @@ YAML actions:
 Resulting image:
 
 .. image:: examples/tout_mir_venn_full_000100.png
+
+An example of using the Material Interface Reconstruction filter with VisIt-style material fields.
+-------------------------------------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_mir_axom_q7o5_material_boundary_000100.yaml
+
+Resulting image:
+
+.. image:: examples/tout_mir_axom_q7o5_material_boundary_000100.png
+
+An example of the revolve filter for an RZ dataset (revolve around the R axis).
+------------------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_revolve_rz_r_case_angle_90_mesh_000100.yaml
+
+Resulting images:
+
+.. image:: examples/tout_revolve_rz_r_case_angle_90_mesh_000100.png
+
+.. image:: examples/tout_revolve_rz_r_case_angle_90_cyl_000100.png
+
+An example of the revolve filter for an RZ dataset (revolve around the Z axis).
+------------------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_revolve_rz_z_case_angle_90_mesh_000100.yaml
+
+Resulting images:
+
+.. image:: examples/tout_revolve_rz_z_case_angle_90_mesh_000100.png
+
+.. image:: examples/tout_revolve_rz_z_case_angle_90_cyl_000100.png
+
+An example of the linear extrusion filter.
+------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_extrude_structured_000100.yaml
+
+
+Resulting image:
+
+.. image:: examples/tout_extrude_structured_000100.png
+
+An example of the linear extrusion filter.
+---------------------------------------------------------------------
+
+YAML actions:
+
+.. literalinclude:: examples/tout_extrude_unstructured_000100.yaml
+
+
+Resulting image:
+
+.. image:: examples/tout_extrude_unstructured_000100.png

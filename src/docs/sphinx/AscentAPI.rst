@@ -171,11 +171,16 @@ actions where the required fields cannot be resolved. To support field filtering
 for all cases, we added support for action ``declare_fields`` that allows a user
 to explicitly control the list of active fields.
 
+For meshes with material data, the special field name ``materials`` can be used
+to keep material-related fields and matsets. This includes VisIt-style material
+fields such as ``volume_fraction_*``, ``vol_frac_*``, and
+``*material_attribute`` fields.
+
 .. code-block:: yaml
 
   -
    action: "declare_fields"
-   fields: ["my_field", "my_other_field", ...]
+   fields: ["my_field", "my_other_field", "materials", ...]
 
 
 
@@ -298,4 +303,3 @@ Error Handling
   C++ exceptions are thrown, but you can rewire Conduit's handlers with your own callbacks. For more info
   see the `Conduit Error Handling Tutorial <http://llnl-conduit.readthedocs.io/en/latest/tutorial_cpp_errors.html>`_.
   You can also stop exceptions at the Ascent interface using the ``exceptions`` option for :ref:`Ascent::open<ascent_api_open>` .
-

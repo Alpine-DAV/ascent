@@ -1,0 +1,27 @@
+#An example of using the MIR filter with VisIt-style material fields and plotting the resulting material field.
+
+- 
+  action: "add_pipelines"
+  pipelines: 
+    pl1: 
+      f1: 
+        type: "mir"
+        params: 
+          matset: "materials"
+          error_scaling: 0.0
+          scaling_decay: 0.0
+          iterations: 0
+          max_error: 1e-05
+          output_name: "materials"
+- 
+  action: "add_scenes"
+  scenes: 
+    s1: 
+      plots: 
+        p1: 
+          type: "pseudocolor"
+          field: "materials"
+          color_table: 
+            discrete: "true"
+          pipeline: "pl1"
+      image_prefix: "/home/user/ascent/build/tests/_output/tout_mir_axom_q7o5_material_boundary"

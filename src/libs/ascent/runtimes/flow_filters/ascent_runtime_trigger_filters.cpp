@@ -224,6 +224,7 @@ BasicTrigger::execute()
 #ifdef ASCENT_MPI_ENABLED
         ascent_opts["mpi_comm"] = mpi_comm_id;
 #endif
+        ascent_opts["actions_file"] = ""; // Force ascent to execute the actions it has been passed
         ascent.open(ascent_opts);
         ascent.publish(*n_input);
         ascent.execute(actions);

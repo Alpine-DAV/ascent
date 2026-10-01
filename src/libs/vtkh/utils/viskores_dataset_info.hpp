@@ -55,6 +55,9 @@ public:
 
   static bool IsSingleCellShape(const viskores::cont::UnknownCellSet &cell_set, viskores::UInt8 &shape_id);
 
+  // Returns true if the mesh consists entirely of triangle cells.
+  static bool IsTriangleMesh(const viskores::cont::UnknownCellSet &cell_set);
+
 };
 
 } // namespace vtkh

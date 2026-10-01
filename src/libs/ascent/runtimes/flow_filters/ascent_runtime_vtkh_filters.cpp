@@ -78,6 +78,8 @@
 #include <vtkh/filters/HistSampling.hpp>
 #include <vtkh/filters/PointTransform.hpp>
 #include <vtkh/filters/MIR.hpp>
+#include <vtkh/filters/Revolve.hpp>
+#include <vtkh/filters/LinearExtrude.hpp>
 #include <viskores/Bounds.h>
 #include <viskores/cont/DataSet.h>
 #include <viskores/io/VTKDataSetWriter.h>
@@ -89,6 +91,7 @@
 #endif
 
 #include <stdio.h>
+#include <cmath>
 #include <random>
 
 using namespace conduit;
@@ -531,6 +534,258 @@ VTKHTriangulate::VTKHTriangulate()
 VTKHTriangulate::~VTKHTriangulate()
 {
 // empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHRevolve::VTKHRevolve()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHLinearExtrude::VTKHLinearExtrude()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHRevolve::~VTKHRevolve()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+VTKHLinearExtrude::~VTKHLinearExtrude()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHRevolve::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_revolve";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+
+    // ----------- Define Param Schema -----------
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
+
+    string_schema(param_schema["properties/topology"]);
+
+    // Support both cartesian (x,y,z) and cylindrical RZ (r,z) specifications.
+    // The VTK-h adapter represents RZ as (z,r,theta). Map {r,z} onto {y,x} and
+    // set theta to 0.0.
+    vec3_schema(param_schema["properties/point/oneOf"].append(), true);
+    vec2_schema(param_schema["properties/point/oneOf"].append(), "r", "z", true);
+    vec3_schema(param_schema["properties/axis/oneOf"].append(), true);
+    vec2_schema(param_schema["properties/axis/oneOf"].append(), "r", "z", true);
+
+    number_schema(param_schema["properties/start_angle"], true);
+    number_schema(param_schema["properties/angle"], true);
+    integer_schema(param_schema["properties/steps"], true, 1);
+
+    param_schema["required"].append() = "axis";
+    param_schema["required"].append() = "angle";
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHLinearExtrude::declare_interface(Node &i)
+{
+    i["type_name"]   = "vtkh_linear_extrude";
+    i["port_names"].append() = "in";
+    i["output_port"] = "true";
+
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
+
+    string_schema(param_schema["properties/topology"]);
+    // Support both cartesian (x,y,z) and cylindrical RZ (r,z) specifications.
+    vec3_schema(param_schema["properties/vector/oneOf"].append(), true);
+    vec2_schema(param_schema["properties/vector/oneOf"].append(), "r", "z", true);
+    integer_schema(param_schema["properties/steps"], true, 1);
+
+    param_schema["required"].append() = "vector";
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHRevolve::execute()
+{
+
+    if(!input(0).check_type<DataObject>())
+    {
+        ASCENT_ERROR("VTKHRevolve input must be a data object");
+    }
+
+    DataObject *data_object = input<DataObject>(0);
+    if(!data_object->is_valid())
+    {
+      set_output<DataObject>(data_object);
+      return;
+    }
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
+
+    bool throw_error = false;
+    std::string topo_name = detail::resolve_topology(params(),
+                                                     this->name(),
+                                                     collection,
+                                                     throw_error);
+    if(topo_name == "")
+    {
+      // this creates a data object with an invalid soource
+      set_output<DataObject>(new DataObject());
+      return;
+    }
+
+    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+
+    double point[3] = {0.0, 0.0, 0.0};
+    double axis[3]  = {0.0, 1.0, 0.0};
+    double start_angle = 0.0;
+    double angle = get_float64(params()["angle"], data_object);
+    int steps = 32;
+    const double full_sweep_degrees = 360.0;
+    const double full_sweep_tol = 1e-8;
+    const bool periodic_from_angle =
+      std::fabs(std::fabs(angle) - full_sweep_degrees) < full_sweep_tol;
+    bool periodic = periodic_from_angle;
+
+    if(params().has_path("point"))
+    {
+      const Node &n_point = params()["point"];
+      if(n_point.has_child("r"))
+      {
+        point[0] = get_float64(n_point["z"], data_object); // x := z
+        point[1] = get_float64(n_point["r"], data_object); // y := r
+        point[2] = 0.0;
+      }
+      else
+      {
+        point[0] = get_float64(n_point["x"], data_object);
+        point[1] = get_float64(n_point["y"], data_object);
+        point[2] = get_float64(n_point["z"], data_object);
+      }
+    }
+
+    if(params().has_path("axis"))
+    {
+      const Node &n_axis = params()["axis"];
+      if(n_axis.has_child("r"))
+      {
+        axis[0] = get_float64(n_axis["z"], data_object); // x := z
+        axis[1] = get_float64(n_axis["r"], data_object); // y := r
+        axis[2] = 0.0;
+      }
+      else
+      {
+        axis[0] = get_float64(n_axis["x"], data_object);
+        axis[1] = get_float64(n_axis["y"], data_object);
+        axis[2] = get_float64(n_axis["z"], data_object);
+      }
+    }
+
+    if(params().has_path("start_angle"))
+    {
+      start_angle = get_float64(params()["start_angle"], data_object);
+    }
+
+    if(params().has_path("steps"))
+    {
+      steps = get_int32(params()["steps"], data_object);
+    }
+
+    vtkh::Revolve revolver;
+    revolver.SetInput(&data);
+    revolver.SetPoint(point);
+    revolver.SetAxis(axis);
+    revolver.SetStartAngle(start_angle);
+    revolver.SetSweepAngle(angle);
+    revolver.SetSteps(steps);
+    revolver.SetPeriodic(periodic);
+    revolver.Update();
+
+    vtkh::DataSet *rev_output = revolver.GetOutput();
+
+    VTKHCollection *new_coll = new VTKHCollection();
+    new_coll->add(*rev_output, topo_name);
+    DataObject *res = new DataObject(new_coll);
+    delete rev_output;
+    set_output<DataObject>(res);
+}
+
+//-----------------------------------------------------------------------------
+void
+VTKHLinearExtrude::execute()
+{
+
+    if(!input(0).check_type<DataObject>())
+    {
+        ASCENT_ERROR("VTKHLinearExtrude input must be a data object");
+    }
+
+    DataObject *data_object = input<DataObject>(0);
+    if(!data_object->is_valid())
+    {
+      set_output<DataObject>(data_object);
+      return;
+    }
+    std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
+
+    bool throw_error = false;
+    std::string topo_name = detail::resolve_topology(params(),
+                                                     this->name(),
+                                                     collection,
+                                                     throw_error);
+    if(topo_name == "")
+    {
+      set_output<DataObject>(new DataObject());
+      return;
+    }
+
+    vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
+
+    double vector[3] = {0.0, 0.0, 1.0};
+    int steps = 1;
+
+    const Node &n_vec = params()["vector"];
+    if(n_vec.has_child("r"))
+    {
+      vector[0] = get_float64(n_vec["z"], data_object); // x := z
+      vector[1] = get_float64(n_vec["r"], data_object); // y := r
+      vector[2] = 0.0;
+    }
+    else
+    {
+      vector[0] = get_float64(n_vec["x"], data_object);
+      vector[1] = get_float64(n_vec["y"], data_object);
+      vector[2] = get_float64(n_vec["z"], data_object);
+    }
+
+    if(params().has_path("steps"))
+    {
+      steps = get_int32(params()["steps"], data_object);
+    }
+
+    vtkh::LinearExtrude extruder;
+    extruder.SetInput(&data);
+    extruder.SetVector(vector);
+    extruder.SetSteps(steps);
+    extruder.Update();
+
+    vtkh::DataSet *ext_output = extruder.GetOutput();
+
+    VTKHCollection *new_coll = new VTKHCollection();
+    new_coll->add(*ext_output, topo_name);
+    DataObject *res = new DataObject(new_coll);
+    delete ext_output;
+    set_output<DataObject>(res);
 }
 
 //-----------------------------------------------------------------------------
@@ -3325,6 +3580,7 @@ VTKHSample::declare_interface(Node &i)
 
     string_schema(param_schema["properties/field"]);
     array_schema(param_schema["properties/fields"]);
+    string_schema(param_schema["properties/topology"]);
     number_schema(param_schema["properties/invalid_value"]);
 
     // --- Line ---
@@ -3365,9 +3621,9 @@ VTKHSample::declare_interface(Node &i)
     conduit::Node &box_schema = param_schema["properties/box"];
     box_schema["type"] = "object";
     box_schema["additionalProperties"] = false;
-    vec3_schema_anyOf(box_schema["properties/dims"]);
-    vec3_schema_anyOf(box_schema["properties/min"]);
-    vec3_schema_anyOf(box_schema["properties/max"]);
+    vec3_schema_anyOf(box_schema["properties/dims"], "i", "j", "k");
+    vec3_schema_anyOf(box_schema["properties/min"], true);
+    vec3_schema_anyOf(box_schema["properties/max"], true);
 
     // --- Uniform Grid ---
     conduit::Node &uniform_grid_schema = param_schema["properties/uniform_grid"];
@@ -3447,8 +3703,76 @@ VTKHSample::execute()
     vtkh::DataSet &data = collection->dataset_by_topology(topo_name);
 
     vtkh::Sample sampler;
+    std::string output_topo_name = topo_name;
 
-    if(params().has_path("line"))
+    const bool has_topology = params().has_path("topology");
+    if(has_topology)
+    {
+      std::string sample_topo_name = params()["topology"].as_string();
+      if(!collection->has_topology(sample_topo_name))
+      {
+        ASCENT_ERROR("vtkh_sample topology '" << sample_topo_name
+                     << "' does not exist. Known topologies: "
+                     << detail::possible_topologies(collection));
+      }
+
+      std::shared_ptr<VTKHCollection> sample_collection;
+#ifdef ASCENT_MPI_ENABLED
+      MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
+      int rank = 0;
+      MPI_Comm_rank(mpi_comm, &rank);
+
+      std::shared_ptr<conduit::Node> blueprint_data = data_object->as_low_order_bp();
+      conduit::Node sample_mesh;
+      if(rank == 0)
+      {
+        const conduit::Node &bp = *blueprint_data;
+        const auto domains = blueprint::mesh::domains(bp);
+
+        //make a conduit::Node sample mesh with input topo
+        for(size_t i = 0; i < domains.size(); ++i)
+        {
+          const conduit::Node &src_dom = *domains[i];
+          const std::string topo_path = "topologies/" + sample_topo_name;
+          if(src_dom.has_path(topo_path))
+          {
+            conduit::Node &dst_dom = sample_mesh.append();
+            if(src_dom.has_path("state"))
+            {
+              dst_dom["state"].set(src_dom["state"]);
+            }
+
+            dst_dom[topo_path].set(src_dom[topo_path]);
+            const std::string coordset_name = src_dom[topo_path + "/coordset"].as_string();
+            dst_dom["coordsets/" + coordset_name].set(src_dom["coordsets/" + coordset_name]);
+          }
+        }
+
+        if(sample_mesh.number_of_children() == 0)
+        {
+          ASCENT_ERROR("vtkh_sample topology '" << sample_topo_name
+                       << "' must be present on rank 0 for MPI topology sampling");
+        }
+      }
+	  //broadcast created sample node and convert back to vtkh
+      conduit::relay::mpi::broadcast_using_schema(sample_mesh, 0, mpi_comm);
+      sample_collection.reset(VTKHDataAdapter::BlueprintToVTKHCollection(sample_mesh,
+                                                                         false));
+#else
+      sample_collection = collection;
+#endif
+
+      vtkh::DataSet &sample_data = sample_collection->dataset_by_topology(sample_topo_name);
+      std::vector<viskores::cont::DataSet> sample_domains;
+      std::vector<viskores::Id> sample_domain_ids = sample_data.GetDomainIds();
+      for(size_t i = 0; i < sample_domain_ids.size(); ++i)
+      {
+        sample_domains.push_back(sample_data.GetDomainById(sample_domain_ids[i]));
+      }
+      sampler.Topology(sample_domains, sample_domain_ids);
+      output_topo_name = sample_topo_name;
+    }
+    else if(params().has_path("line"))
     {
       const Node &line_p = params()["line"];
       int num_samples = line_p["num_samples"].to_int();
@@ -3782,7 +4106,7 @@ VTKHSample::execute()
     vtkh::DataSet *grid_output = sampler.GetOutput();
 
     VTKHCollection *new_coll = new VTKHCollection();
-    new_coll->add(*grid_output, topo_name);
+    new_coll->add(*grid_output, output_topo_name);
     // re wrap in data object
     DataObject *res =  new DataObject(new_coll);
     delete grid_output;
@@ -3983,10 +4307,19 @@ VTKHProject2d::declare_interface(Node &i)
     param_schema["additionalProperties"] = false;
 
     string_schema(param_schema["properties/topology"]);
-    number_schema(param_schema["properties/image_width"]);
-    number_schema(param_schema["properties/image_height"]);
+    integer_schema(param_schema["properties/image_width"]);
+    integer_schema(param_schema["properties/image_height"]);
     ignore_schema(param_schema["properties/dataset_bounds"]);
     ignore_schema(param_schema["properties/camera"]);
+
+    number_schema(param_schema["properties/rays/points/x"]);
+    number_schema(param_schema["properties/rays/points/y"]);
+    number_schema(param_schema["properties/rays/points/z"]);
+    number_schema(param_schema["properties/rays/normals/x"]);
+    number_schema(param_schema["properties/rays/normals/y"]);
+    number_schema(param_schema["properties/rays/normals/z"]);
+
+    string_schema(param_schema["properties/result"]);
     array_schema(param_schema["properties/fields"]);
 }
 
@@ -4050,7 +4383,15 @@ VTKHProject2d::execute()
     viskores::rendering::Camera camera;
     camera.ResetToBounds(bounds);
 
+    std::string source = "camera"; // or rays
+    std::string result = "image";  // or rays
+
     std::vector<std::string> field_names;
+
+    if(params().has_path("result"))
+    {
+      result = params()["result"].as_string();
+    }
 
     if(params().has_path("camera"))
     {
@@ -4089,23 +4430,203 @@ VTKHProject2d::execute()
     {
       height = params()["image_height"].to_int32();
     }
+    
+    // handle rays
+    if(params().has_path("rays"))
+    {
+        // points/x,y,z
+        // normals/x,y,z
+        source = "rays";
+    }
+
 
     vtkh::ScalarRenderer tracer;
-
-    tracer.SetWidth(width);
-    tracer.SetHeight(height);
     tracer.SetInput(&data);
-    tracer.SetCamera(camera);
     tracer.SetFields(field_names);
+    
+    if(source == "camera")
+    {
+        tracer.SetCamera(camera);
+        tracer.SetWidth(width);
+        tracer.SetHeight(height);
+    }
+    else if( source == "rays")
+    {
+        // This mode accepts:
+        // rays/points/x,y,z
+        // rays/normals/x,y,z
+
+        float64_accessor rays_pts_x, rays_pts_y, rays_pts_z;
+        float64_accessor rays_norms_x, rays_norms_y, rays_norms_z;
+
+        index_t rays_pts_x_len = 0;
+        index_t rays_pts_y_len = 0;
+        index_t rays_pts_z_len = 0;
+
+        index_t rays_norms_x_len = 0;
+        index_t rays_norms_y_len = 0;
+        index_t rays_norms_z_len = 0;
+
+        const Node &ray_pts   = params()["rays/points"];
+        const Node &ray_norms = params()["rays/normals"];
+
+        // points
+        if(ray_pts.has_child("x"))
+        {
+            rays_pts_x = ray_pts["x"].value();
+            rays_pts_x_len = rays_pts_x.number_of_elements();
+        }
+
+        if(ray_pts.has_child("y"))
+        {
+            rays_pts_y = ray_pts["y"].value();
+            rays_pts_y_len = rays_pts_y.number_of_elements();
+        }
+
+        if(ray_pts.has_child("z"))
+        {
+            rays_pts_z = ray_pts["z"].value();
+            rays_pts_z_len = rays_pts_z.number_of_elements();
+        }
+
+        // norms
+        if(ray_norms.has_child("x"))
+        {
+            rays_norms_x = ray_norms["x"].value();
+            rays_norms_x_len = rays_norms_x.number_of_elements();
+        }
+
+        if(ray_norms.has_child("y"))
+        {
+            rays_norms_y = ray_norms["y"].value();
+            rays_norms_y_len = rays_norms_y.number_of_elements();
+        }
+
+        if(ray_norms.has_child("z"))
+        {
+            rays_norms_z = ray_norms["z"].value();
+            rays_norms_z_len = rays_norms_z.number_of_elements();
+        }
+
+        // check for consistent # of entries, 0 is ok
+        // any non zero lengths must be consistent
+        bool bad_lens = false;
+        index_t number_of_rays = rays_pts_x_len;
+
+        if(rays_pts_y_len > 0)
+        {
+            number_of_rays = number_of_rays == 0 ? rays_pts_y_len: number_of_rays;
+            if( number_of_rays != rays_pts_y_len)
+            {
+                bad_lens = true;
+            }
+        }
+
+        if(rays_pts_z_len > 0)
+        {
+            number_of_rays = number_of_rays == 0 ? rays_pts_z_len : number_of_rays;
+            if( number_of_rays != rays_pts_z_len)
+            {
+                bad_lens = true;
+            }
+        }
+
+        if(number_of_rays == 0)
+        {
+            ASCENT_ERROR("Input `rays/points/x,y,z` are length 0");
+        }
+
+        if(rays_norms_x_len > 0 && (number_of_rays != rays_norms_x_len) )
+        {
+            bad_lens = true;
+        }
+
+        if(rays_norms_y_len > 0 && (number_of_rays != rays_norms_y_len) )
+        {
+            bad_lens = true;
+        }
+
+        if(rays_norms_z_len > 0 && (number_of_rays != rays_norms_z_len) )
+        {
+            bad_lens = true;
+        }
+
+        if( (rays_norms_y_len == 0) && 
+            (rays_norms_y_len == 0) &&
+            (rays_norms_z_len == 0) )
+        {
+            ASCENT_ERROR("Input `rays/normals/x,y,z` are length 0");
+        }
+
+        if(bad_lens)
+        {
+            ASCENT_ERROR("Inconsistent ray points and normals input lengths" << std::endl
+                          << " rays/points/x (length):"  << rays_pts_x_len << std::endl 
+                          << " rays/points/y (length):"  << rays_pts_y_len << std::endl
+                          << " rays/points/z (length):"  << rays_pts_z_len << std::endl
+                          << " rays/normals/x (length):"  << rays_norms_x_len << std::endl 
+                          << " rays/normals/y (length):"  << rays_norms_y_len << std::endl
+                          << " rays/normals/z (length):"  << rays_norms_z_len << std::endl);
+        }
+
+        viskores::cont::ArrayHandle<viskores::Float64> pts_x;
+        viskores::cont::ArrayHandle<viskores::Float64> pts_y;
+        viskores::cont::ArrayHandle<viskores::Float64> pts_z;
+
+        viskores::cont::ArrayHandle<viskores::Float64> dirs_x;
+        viskores::cont::ArrayHandle<viskores::Float64> dirs_y;
+        viskores::cont::ArrayHandle<viskores::Float64> dirs_z;
+
+        pts_x.Allocate(number_of_rays);
+        pts_y.Allocate(number_of_rays);
+        pts_z.Allocate(number_of_rays);
+
+        dirs_x.Allocate(number_of_rays);
+        dirs_y.Allocate(number_of_rays);
+        dirs_z.Allocate(number_of_rays);
+  
+        auto pts_x_portal = pts_x.WritePortal();
+        auto pts_y_portal = pts_y.WritePortal();
+        auto pts_z_portal = pts_z.WritePortal();
+
+        auto dirs_x_portal = dirs_x.WritePortal();
+        auto dirs_y_portal = dirs_y.WritePortal();
+        auto dirs_z_portal = dirs_z.WritePortal();
+
+        for(index_t i=0; i < number_of_rays; i++)
+        {
+            pts_x_portal.Set(i, i < rays_pts_x_len ? rays_pts_x[i] : 0.0);
+            pts_y_portal.Set(i, i < rays_pts_y_len ? rays_pts_y[i] : 0.0);
+            pts_z_portal.Set(i, i < rays_pts_z_len ? rays_pts_z[i] : 0.0);
+
+            dirs_x_portal.Set(i, i < rays_norms_x_len ? rays_norms_x[i] : 0.0);
+            dirs_y_portal.Set(i, i < rays_norms_y_len ? rays_norms_y[i] : 0.0);
+            dirs_z_portal.Set(i, i < rays_norms_z_len ? rays_norms_z[i] : 0.0);
+        }
+        tracer.SetRays(pts_x, pts_y, pts_z,
+                       dirs_x, dirs_y, dirs_z);
+    }
+
     tracer.Update();
 
-    vtkh::DataSet *output = tracer.GetOutput();
-    VTKHCollection *new_coll = new VTKHCollection();
-    new_coll->add(*output, topo_name);
-    // re wrap in data object
-    DataObject *res =  new DataObject(new_coll);
-    delete output;
-    set_output<DataObject>(res);
+    if(result == "image")
+    {
+        vtkh::DataSet *output = tracer.GetOutput();
+        VTKHCollection *new_coll = new VTKHCollection();
+        new_coll->add(*output, topo_name);
+        // re wrap in data object
+        DataObject *res =  new DataObject(new_coll);
+        delete output;
+        set_output<DataObject>(res);
+    }
+    else if(result == "rays")
+    {
+        conduit::Node *rays_mesh = new conduit::Node();
+        tracer.GenerateResultRaysMesh(tracer.GetResultImage(),
+                                      *rays_mesh);
+        DataObject *res =  new DataObject(rays_mesh);
+        set_output<DataObject>(res);
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -5729,7 +6250,7 @@ VTKHVTKFileExtract::execute()
                             viskores_dset,
                             domain_id);
         local_domain_ids[idx] = domain_id;
-        viskores::io::VTKDataSetWriter writer(conduit_fmt::format(output_file_pattern,
+        viskores::io::VTKDataSetWriter writer(conduit_fmt::format(conduit_fmt::runtime(output_file_pattern),
                                                               domain_id));
         writer.WriteDataSet(viskores_dset);
     }
@@ -5788,7 +6309,7 @@ VTKHVTKFileExtract::execute()
           ofs << "!NBLOCKS " << num_global_domains << std::endl;
           for(size_t i=0;i< global_domain_ids.number_of_elements();i++)
           {
-              ofs << conduit_fmt::format(output_file_pattern_rel,
+              ofs << conduit_fmt::format(conduit_fmt::runtime(output_file_pattern_rel),
                                          global_domain_ids[i]) << std::endl;
           }
         }

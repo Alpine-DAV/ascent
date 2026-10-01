@@ -15,7 +15,9 @@
 
 #include <ascent.hpp>
 
+#include <fstream>
 #include <iostream>
+#include <limits>
 #include <math.h>
 
 #include <conduit_blueprint.hpp>
@@ -31,6 +33,49 @@ using namespace ascent;
 
 
 index_t EXAMPLE_MESH_SIDE_DIM = 10;
+
+namespace
+{
+
+bool
+copy_test_file(const std::string &src, const std::string &dest)
+{
+  std::ifstream input(src.c_str(), std::ios::binary);
+  std::ofstream output(dest.c_str(), std::ios::binary);
+
+  if(!input || !output)
+  {
+    return false;
+  }
+
+  output << input.rdbuf();
+  return output.good();
+}
+
+bool
+ensure_directory(const std::string &path)
+{
+  return conduit::utils::is_directory(path) || conduit::utils::create_directory(path);
+}
+
+bool
+stage_axom_klee_fixture(const std::string &fixture_name, std::string &root_file)
+{
+  // Stage the fixture beside test output so relative HDF5 links resolve.
+  const std::string input_dir  = conduit::utils::join_file_path(conduit::utils::join_file_path(std::string(ASCENT_T_DATA_DIR),"axom_klee_test_data"),fixture_name);
+  const std::string staged_dir = conduit::utils::join_file_path(prepare_output_dir(), "axom_klee_test_data_" + fixture_name);
+  const std::string input_shaping_dir  = conduit::utils::join_file_path(input_dir, "shaping");
+  const std::string staged_shaping_dir = conduit::utils::join_file_path(staged_dir, "shaping");
+
+  root_file = conduit::utils::join_file_path(staged_dir, "shaping.root");
+
+  return ensure_directory(staged_dir) && 
+         ensure_directory(staged_shaping_dir) && 
+         copy_test_file(conduit::utils::join_file_path(input_dir,"shaping.root"),root_file) &&
+         copy_test_file(conduit::utils::join_file_path(input_shaping_dir,"shaping_0000000.hdf5"),conduit::utils::join_file_path(staged_shaping_dir,"shaping_0000000.hdf5"));
+}
+
+}
 
 //-----------------------------------------------------------------------------
 TEST(ascent_conduit_extract, test_pass_thru)
@@ -186,8 +231,6 @@ TEST(ascent_conduit_extract, test_pipeline_result)
 
 }
 
-
-
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {
@@ -204,5 +247,3 @@ int main(int argc, char* argv[])
     result = RUN_ALL_TESTS();
     return result;
 }
-
-

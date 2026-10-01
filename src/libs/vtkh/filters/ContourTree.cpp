@@ -4,8 +4,13 @@
 
 // viskores includes
 #include <viskores/cont/DeviceAdapter.h>
+#include <viskores/cont/EnvironmentTracker.h>
 #include <viskores/cont/Storage.h>
 #include <viskores/internal/Configure.h>
+#include <viskores/thirdparty/diy/diy.h>
+#ifdef VTKH_PARALLEL
+#include <viskores/thirdparty/diy/mpi-cast.h>
+#endif
 #include <viskores/filter/scalar_topology/worklet/contourtree_augmented/PrintVectors.h>
 #include <viskores/filter/scalar_topology/worklet/contourtree_augmented/ProcessContourTree.h>
 #include <viskores/filter/scalar_topology/worklet/contourtree_augmented/processcontourtree/Branch.h>
@@ -17,6 +22,7 @@
 
 namespace caugmented_ns = viskores::worklet::contourtree_augmented;
 
+#ifdef VTKH_PARALLEL
 static void ShiftLogicalOriginToZero(viskores::cont::PartitionedDataSet& pds)
 {
   // Shift the logical origin (minimum of LocalPointIndexStart) to zero
@@ -69,7 +75,9 @@ static void ShiftLogicalOriginToZero(viskores::cont::PartitionedDataSet& pds)
       });
   }
 }
+#endif
 
+#ifdef VTKH_PARALLEL
 static void ComputeGlobalPointSize(viskores::cont::PartitionedDataSet& pds)
 {
   // Compute GlobalPointDimensions as maximum of GlobalPointIndexStart + PointDimensions
@@ -117,29 +125,7 @@ static void ComputeGlobalPointSize(viskores::cont::PartitionedDataSet& pds)
       });
   }
 }
-
-#ifdef VTKH_PARALLEL
-#include <mpi.h>
-
-// This is from Viskores diy mpi_cast.hpp. Need the make_DIY_MPI_Comm
-namespace viskoresdiy
-{
-namespace mpi
-{
-
-#define DEFINE_MPI_CAST(mpitype)                                                                              \
-inline mpitype& mpi_cast(DIY_##mpitype& obj) { return *reinterpret_cast<mpitype*>(&obj); }                    \
-inline const mpitype& mpi_cast(const DIY_##mpitype& obj) { return *reinterpret_cast<const mpitype*>(&obj); }  \
-inline DIY_##mpitype make_DIY_##mpitype(const mpitype& obj) { DIY_##mpitype ret; mpi_cast(ret) = obj; return ret; }
-
-DEFINE_MPI_CAST(MPI_Comm)
-#undef DEFINE_MPI_CAST
-
-}
-} // diy::mpi
-
 #endif
-
 
 namespace vtkh
 {

@@ -242,13 +242,14 @@ public:
     {
       throw viskores::cont::ErrorBadValue("Conn Proxy: null canvas");
     }
-    viskores::rendering::raytracing::Camera rayCamera;
-    rayCamera.SetParameters(
-      camera, (viskores::Int32)canvas->GetWidth(), (viskores::Int32)canvas->GetHeight());
+    viskores::rendering::raytracing::Camera rayCamera = camera.CreateRaytracingCamera((viskores::Int32)canvas->GetWidth(),
+                                                                                      (viskores::Int32)canvas->GetHeight());
     viskores::rendering::raytracing::Ray<viskores::Float32> rays;
     rayCamera.CreateRays(rays, this->Dataset.GetCoordinateSystem(this->CoordinateName).GetBounds());
     rays.Buffers.at(0).InitConst(0.f);
-    viskores::rendering::raytracing::RayOperations::MapCanvasToRays(rays, camera, *canvas);
+    viskores::rendering::raytracing::RayOperations::MapCanvasToRays(rays,
+                                                                    rayCamera,
+                                                                    canvas->GetDepthBuffer());
 
     if (this->Mode == RenderMode::Volume)
     {
