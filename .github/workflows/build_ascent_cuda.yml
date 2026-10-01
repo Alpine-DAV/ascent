@@ -102,7 +102,7 @@ jobs:
             enable_verbose=OFF \
             build_shared_libs=${BUILD_SHARED_LIBS} \
             build_config=${CMAKE_BUILD_TYPE} \
-            build_jobs=2 \
+            build_jobs=3 \
             CFLAGS=-fno-lto \
             CXXFLAGS=-fno-lto \
             LDFLAGS=-fno-lto \
@@ -112,7 +112,10 @@ jobs:
         export PATH=$PATH:cmake-${CMAKE_VERSION}-linux-x86_64/bin/
         cmake --version
         echo "**** Configuring Ascent"
-        export CMAKE_OPTS="-S src -B build -C ascent-config.cmake -DCMAKE_INSTALL_PREFIX=install"
+        export CFLAGS="-fno-lto"
+        export CXXFLAGS="-fno-lto"
+        export LDFLAGS="-fno-lto"
+        export CMAKE_OPTS="-S src -B build -C ascent-config.cmake -DCMAKE_INSTALL_PREFIX=ascent_install"
         export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_CXX_FLAGS=-fno-lto -DCMAKE_CUDA_ARCHITECTURES=${CUDA_ARCH}"
         echo "cmake ${CMAKE_OPTS}"
         cmake ${CMAKE_OPTS}
@@ -120,7 +123,7 @@ jobs:
       run: |
         export PATH=$PATH:cmake-${CMAKE_VERSION}-linux-x86_64/bin/
         echo "**** Building Ascent"
-        cmake --build  build -j2 --config ${CMAKE_BUILD_TYPE}
+        cmake --build  build -j3 --config ${CMAKE_BUILD_TYPE}
     - name: Install Ascent
       run: |
         export PATH=$PATH:cmake-${CMAKE_VERSION}-linux-x86_64/bin/
@@ -128,24 +131,19 @@ jobs:
         cmake --install  build --config ${CMAKE_BUILD_TYPE}
     - name: "Test vs Install (using-with-cmake) [build only]"
       run: |
-          # copy example we want to test
-          mkdir -p install/examples/ascent/
-          cp -r src/examples/using-with-cmake install/examples/ascent/
+          export PATH=$PATH:cmake-${CMAKE_VERSION}-linux-x86_64/bin/
           export LD_LIBRARY_PATH="/usr/local/cuda/compat/"
-          cd install/examples/ascent/using-with-cmake
-          env CC=mpicc CXX=mpic++ cmake -DCMAKE_CXX_FLAGS="-fno-lto" -DCMAKE_CUDA_ARCHITECTURES=${CUDA_ARCH} -S . -B _test_build
-          cd _test_build
+          env CC=mpicc CXX=mpic++ cmake \
+              -DCMAKE_CXX_FLAGS="-fno-lto" \
+              -DCMAKE_CUDA_ARCHITECTURES=${CUDA_ARCH} \
+              -S ascent_install/examples/ascent/using-with-cmake -B _test_using_with_cmake
+          cd _test_using_with_cmake
           make VERBOSE=1
     - name: "Test vs Install (using-with-make) [build only]"
       run: |
           echo "**** Building using with make example"
-          cat install/share/ascent/ascent_config.mk
-          pwd
-          ls -l
-          # copy example we want to test
-          mkdir -p install/examples/ascent/
-          cp -r src/examples/using-with-make install/examples/ascent/
+          cat ascent_install/share/ascent/ascent_config.mk
           export LD_LIBRARY_PATH="/usr/local/cuda/compat/"
-          cd install/examples/ascent/using-with-make
+          cd ascent_install/examples/ascent/using-with-make
           env CC=mpicc CXX=mpic++ CXXFLAGS="-fno-lto" make
 
