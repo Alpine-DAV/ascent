@@ -16,6 +16,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - mfem@4.8
 
 ### Added
+- Added Revolve and Extrude filters for rotational and linear extrusion, respectively
 - Added support for VisIt material volume fraction fields in field filtering and MIR.
 - Added a `gltf` extract that exports surface geometry (points, lines, and triangles) as GLB files, with optional scalar field coloring.
 - Added the `points/glyph_type` scene option for rendering point meshes with sphere, cube, or axes glyphs.
@@ -35,7 +36,8 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ### Changed
 - Redefined the parameter verification and surprise checking behavior for Filters to instead use a conduit based JSON Schema style verification schema. Implemented for all existing filters.
-- Change tiled rendering default to `false`.
+- Changed tiled rendering default to `false`.
+- A couple of bugs were fixed with tiled rendering and the tiled rendering default was changed to `true`.
 
 ### Fixed
 - Fixed the aspect ratio for frustum renderings

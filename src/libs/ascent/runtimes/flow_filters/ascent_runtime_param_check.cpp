@@ -247,6 +247,32 @@ conduit::Node &vec3_schema(conduit::Node &schema_node, bool supports_expressions
   return vec3_schema(schema_node, "x", "y", "z", supports_expressions);
 }
 
+//-----------------------------------------------------------------------------
+
+conduit::Node &vec2_schema(conduit::Node &schema_node,
+                           const std::string var1,
+                           const std::string var2,
+                           bool supports_expressions)
+{
+  schema_node.reset();
+
+  schema_node["type"] = "object";
+  schema_node["additionalProperties"] = false;
+
+  number_schema(schema_node["properties/" + var1], supports_expressions);
+  number_schema(schema_node["properties/" + var2], supports_expressions);
+
+  schema_node["required"].append() = var1;
+  schema_node["required"].append() = var2;
+
+  return schema_node;
+}
+
+conduit::Node &vec2_schema(conduit::Node &schema_node, bool supports_expressions)
+{
+  return vec2_schema(schema_node, "x", "y", supports_expressions);
+}
+
 conduit::Node &vec3_schema_anyOf(conduit::Node &schema_node,
                                  const std::string var1,
                                  const std::string var2,
@@ -435,7 +461,6 @@ int get_int32(const conduit::Node &node, DataObject *dataset)
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
-
 
 
 

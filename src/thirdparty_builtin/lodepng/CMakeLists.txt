@@ -23,6 +23,10 @@ blt_add_library(
     NAME        ascent_lodepng
     SOURCES     ${lodepng_sources})
 
+set_target_properties(ascent_lodepng PROPERTIES
+    WINDOWS_EXPORT_ALL_SYMBOLS TRUE
+)
+
 # install target for serial ascent lib
 install(TARGETS ascent_lodepng
         EXPORT  ascent 
