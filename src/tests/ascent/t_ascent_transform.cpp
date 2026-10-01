@@ -457,7 +457,7 @@ TEST(ascent_transform, test_bad_params)
     }
 
     conduit::Node data;
-    setup(data);
+    setup_input_mesh(data);
 
     conduit::Node actions;
     conduit::Node &add_pipelines = actions.append();
