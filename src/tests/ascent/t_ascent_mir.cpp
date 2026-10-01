@@ -363,7 +363,7 @@ TEST(ascent_mir, venn_viskores_mir_sparse_by_material)
 }
 
 //-----------------------------------------------------------------------------
-TEST(ascent_mir, axom_q7o5_material_boundary)
+TEST(ascent_mir, vol_frac_field_matset_reconstruction)
 {
   // Verify MIR can render a matset synthesized from VisIt material fields.
   Node n;
@@ -374,48 +374,35 @@ TEST(ascent_mir, axom_q7o5_material_boundary)
     ASCENT_INFO("Ascent viskores support disabled, skipping test");
     return;
   }
-  // only run this test if ascent was built with mfem support
-  if(n["runtimes/ascent/mfem/status"].as_string() == "disabled")
-  {
-    ASCENT_INFO("Ascent mfem support disabled, skipping test");
-    return;
-  }
 
-  auto mesh_domain = [](Node &mesh) -> Node *
-  {
-    if(mesh.has_path("fields") && mesh.has_path("topologies"))
-    {
-      return &mesh;
-    }
-
-    for(index_t i = 0; i < mesh.number_of_children(); ++i)
-    {
-      Node &candidate = mesh.child(i);
-      if(candidate.has_path("fields") && candidate.has_path("topologies"))
-      {
-        return &candidate;
-      }
-    }
-
-    return nullptr;
-  };
-
+  //
+  // Create an example mesh.
+  //
   Node data, verify_info;
-  std::string root_file;
-  ASSERT_TRUE(stage_axom_klee_fixture("balls_and_jacks_q7o5", root_file));
+  conduit::blueprint::mesh::examples::venn("full",
+                                            EXAMPLE_MESH_SIDE_DIM,
+                                            EXAMPLE_MESH_SIDE_DIM,
+                                            RADIUS,
+                                            data);
+  EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
 
-  conduit::relay::io::blueprint::load_mesh(root_file, data);
-  Node *dom = mesh_domain(data);
-  ASSERT_TRUE(dom != nullptr);
-  EXPECT_TRUE(conduit::blueprint::mesh::verify(*dom, verify_info));
+  data["fields"].rename_child("circle_a", "vol_frac_circle_a");
+  data["fields"].rename_child("circle_b", "vol_frac_circle_b");
+  data["fields"].rename_child("circle_c", "vol_frac_circle_c");
+  data["fields"].rename_child("background", "vol_frac_background");
 
-  ASCENT_INFO("Testing the MIR filter with Axom balls_and_jacks_q7o5 material data");
+  data.remove_child("matsets");
+  data["fields"].remove_child("area");
+  data["fields"].remove_child("mat_check");
+  data["fields"].remove_child("importance");
 
-  (*dom)["state/cycle"] = 100;
+  // std::cout << data.to_yaml() <<std::endl;
+
+  ASCENT_INFO("Testing the MIR filter with 'matset reconstruction' data");
+
+  data["state/cycle"] = 100;
   string output_path = prepare_output_dir();
-  string output_file =
-    conduit::utils::join_file_path(output_path,
-                                   "tout_mir_axom_q7o5_material_boundary");
+  string output_file = conduit::utils::join_file_path(output_path,"tout_mir_venn_full_reconstruction");
 
   // remove old images before rendering
   remove_test_image(output_file);
@@ -425,30 +412,42 @@ TEST(ascent_mir, axom_q7o5_material_boundary)
   //
 
   conduit::Node pipelines;
+  // pipeline 1
+
   pipelines["pl1/f1/type"] = "mir";
   conduit::Node &params = pipelines["pl1/f1/params"];
-  params["matset"] = "materials";
+  params["matset"] = "matset";         // name of the material set  
   params["error_scaling"] = 0.0;
   params["scaling_decay"] = 0.0;
   params["iterations"] = 0;
   params["max_error"] = 0.00001;
-  params["output_name"] = "materials";
+  params["output_name"] = "matset";   // name of the output field; default is `matset` param
 
   conduit::Node scenes;
   scenes["s1/plots/p1/type"] = "pseudocolor";
-  scenes["s1/plots/p1/field"] = "materials";
+  scenes["s1/plots/p1/field"] = "matset";
   scenes["s1/plots/p1/color_table/discrete"] = "true";
   scenes["s1/plots/p1/pipeline"] = "pl1";
   scenes["s1/image_prefix"] = output_file;
 
+  conduit::Node extracts;
+  extracts["e1/type"]  = "relay";
+  extracts["e1/params/path"] = output_file;
+  extracts["e1/params/protocol"] = "blueprint/mesh/hdf5";
+
   conduit::Node actions;
+  // add the pipeline
   conduit::Node &add_pipelines = actions.append();
   add_pipelines["action"] = "add_pipelines";
   add_pipelines["pipelines"] = pipelines;
+  // add the scenes
   conduit::Node &add_scenes= actions.append();
   add_scenes["action"] = "add_scenes";
   add_scenes["scenes"] = scenes;
-
+  // add the extracts
+//    conduit::Node &add_extracts = actions.append();
+//    add_extracts["action"] = "add_extracts";
+//    add_extracts["extracts"] = extracts;
   //
   // Run Ascent
   //
@@ -458,16 +457,17 @@ TEST(ascent_mir, axom_q7o5_material_boundary)
   Node ascent_opts;
   ascent_opts["runtime/type"] = "ascent";
   ascent.open(ascent_opts);
-  ascent.publish(*dom);
+  ascent.publish(data);
   ascent.execute(actions);
   ascent.close();
 
-  // check that we created an image and that it matches the baseline
+  // check that we created an image
   EXPECT_TRUE(check_test_image(output_file));
   std::string msg = "An example of using the MIR filter "
-                    "with Axom balls_and_jacks_q7o5 material data.";
+                    "and plotting the field 'cellMat'.";
   ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
+
 //-----------------------------------------------------------------------------
 TEST(ascent_mir, test_material_field_selection)
 {

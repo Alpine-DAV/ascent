@@ -516,7 +516,7 @@ fi # build_zfp
 ################
 # Conduit
 ################
-conduit_version=v0.9.8
+conduit_version=v0.9.9
 conduit_src_dir=$(ospath ${source_dir}/conduit-${conduit_version})
 conduit_build_dir=$(ospath ${build_dir}/conduit-${conduit_version}/)
 conduit_install_dir=$(ospath ${install_dir}/conduit-${conduit_version}/)
@@ -695,6 +695,7 @@ if [ ! -d ${viskores_src_dir} ]; then
   echo "**** Applying Patches to ${viskores_tarball}"
   patch -p1 < ${script_dir}/2026_08_13_viskores-add-plumbing-for-rays-wo-camera.patch
   patch -p1 < ${script_dir}/2026_09_15_viskores_extrusion_connectivity.patch
+  patch -p1 < ${script_dir}/2026_09_28_viskores_mir_fixes.patch
   cd ${root_dir}
 fi
 
