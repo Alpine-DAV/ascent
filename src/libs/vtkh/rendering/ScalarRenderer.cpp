@@ -6,8 +6,16 @@
 #include <vtkh/Logger.hpp>
 #include <vtkh/utils/viskores_array_utils.hpp>
 #include <vtkh/utils/viskores_dataset_info.hpp>
+#include <viskores/cont/Algorithm.h>
 #include <viskores/rendering/raytracing/Logger.h>
+#include <viskores/rendering/raytracing/RayOperations.h>
+#include <viskores/rendering/Camera.h>
+#include <viskores/rendering/raytracing/Camera.h>
 #include <viskores/rendering/ScalarRenderer.h>
+
+#include <conduit/conduit.hpp>
+#include <conduit/conduit_relay.hpp>
+#include <conduit/conduit_blueprint.hpp>
 
 #ifdef VTKH_PARALLEL
   #include <mpi.h>
@@ -17,6 +25,7 @@
 #include <algorithm>
 
 using namespace std;
+using namespace conduit;
 
 namespace vtkh
 {
@@ -63,7 +72,8 @@ filter_scalar_fields(viskores::cont::DataSet &dataset,
 
 ScalarRenderer::ScalarRenderer()
   : m_width(1024),
-    m_height(1024)
+    m_height(1024),
+    m_mode("camera")
 {
 }
 
@@ -81,6 +91,7 @@ void
 ScalarRenderer::SetCamera(viskoresCamera &camera)
 {
   m_camera = camera;
+  m_mode = "camera";
 }
 
 
@@ -114,6 +125,191 @@ ScalarRenderer::PostExecute()
 {
   Filter::PostExecute();
 }
+
+namespace detail
+{
+
+template <typename Precision>
+void
+CreateRaysMesh(const ScalarRenderer::Result &srender_res,
+               const viskores::rendering::raytracing::Ray<Precision> &rays,
+               conduit::Node &rays_mesh)
+{
+    // Create a Blueprint Mesh that represents the ray trace results
+
+    // Scalar Rendering Result Struct Details
+    /*
+    struct VISKORES_RENDERING_EXPORT Result
+    {
+      viskores::Int32 Width;
+      viskores::Int32 Height;
+      viskores::cont::ArrayHandle<viskores::Float32> Depths;
+      std::vector<viskores::cont::ArrayHandle<viskores::Float32>> Scalars;
+      std::vector<std::string> ScalarNames;
+      std::map<std::string, viskores::Range> Ranges;
+    */
+
+    const int num_rays   = srender_res.Width * srender_res.Height;
+    const int num_fields = srender_res.ScalarNames.size();
+
+    const float *depth_buffer = GetVISKORESPointer(srender_res.Depths);
+
+    rays_mesh.reset();
+    rays_mesh["coordsets/rays_coords/type"] = "explicit";
+
+    // each ray will have to verts
+    index_t npts = num_rays * 2;
+
+    rays_mesh["coordsets/rays_coords/values/x"].set(DataType::float64(npts));
+    rays_mesh["coordsets/rays_coords/values/y"].set(DataType::float64(npts));
+    rays_mesh["coordsets/rays_coords/values/z"].set(DataType::float64(npts));
+    float64_array xs = rays_mesh["coordsets/rays_coords/values/x"].value();
+    float64_array ys = rays_mesh["coordsets/rays_coords/values/y"].value();
+    float64_array zs = rays_mesh["coordsets/rays_coords/values/z"].value();
+
+    auto rays_orig_x = rays.OriginX.ReadPortal();
+    auto rays_orig_y = rays.OriginY.ReadPortal();
+    auto rays_orig_z = rays.OriginZ.ReadPortal();
+
+    auto rays_dir_x = rays.DirX.ReadPortal();
+    auto rays_dir_y = rays.DirY.ReadPortal();
+    auto rays_dir_z = rays.DirZ.ReadPortal();
+    auto rays_pixel_idx = rays.PixelIdx.ReadPortal();
+
+    xs.fill(0);
+    ys.fill(0);
+    zs.fill(0);
+
+    index_t idx = 0;
+    //
+    // // debug stmt to check ray buffer sizes
+    // std::cout << "total : " << rays_orig_x.GetNumberOfValues() << " vs " << srender_res.Height <<
+    //     " " << srender_res.Width << " " << "tot " << (srender_res.Height * srender_res.Width) << std::endl;
+    //
+
+    index_t num_active_rays = rays_orig_x.GetNumberOfValues();
+    for(index_t active_ray_idx=0; active_ray_idx<num_active_rays; active_ray_idx++)
+    {
+        index_t pixel_idx = rays_pixel_idx.Get(active_ray_idx);
+        index_t img_idx = pixel_idx *2;
+        viskores::Vec<Precision,3> ray_origin(rays_orig_x.Get(active_ray_idx),
+                                              rays_orig_y.Get(active_ray_idx),
+                                              rays_orig_z.Get(active_ray_idx));
+        if(depth_buffer[active_ray_idx] > 0)
+        {
+            // first point:
+            //  origin
+            // second point:
+            //  distance * normalize(dir) + origin
+            // normalize dir
+
+            viskores::Vec<Precision,3> ray_dir(rays_dir_x.Get(active_ray_idx),
+                                               rays_dir_y.Get(active_ray_idx),
+                                               rays_dir_z.Get(active_ray_idx));
+
+            Precision ray_dist = (Precision) depth_buffer[active_ray_idx];
+
+            xs[img_idx] = ray_origin[0];
+            ys[img_idx] = ray_origin[1];
+            zs[img_idx] = ray_origin[2];
+
+            viskores::Normalize(ray_dir);
+            viskores::Vec<Precision,3> ray_end = (ray_dist * ray_dir) + ray_origin;
+            xs[img_idx+1] = ray_end[0];
+            ys[img_idx+1] = ray_end[1];
+            zs[img_idx+1] = ray_end[2];
+
+        }
+        else // no hit, line
+        {
+            xs[img_idx] = ray_origin[0];
+            ys[img_idx] = ray_origin[1];
+            zs[img_idx] = ray_origin[2];
+
+            xs[img_idx+1] = ray_origin[0];
+            ys[img_idx+1] = ray_origin[1];
+            zs[img_idx+1] = ray_origin[2];
+        }
+        idx+=2;
+    }
+
+    rays_mesh["topologies/rays/type"] = "unstructured";
+    rays_mesh["topologies/rays/coordset"] = "rays_coords";
+    rays_mesh["topologies/rays/elements/shape"] = "line";
+    rays_mesh["topologies/rays/elements/connectivity"].set(DataType::index_t(npts));
+    index_t_array ray_conn = rays_mesh["topologies/rays/elements/connectivity"].value();
+
+    idx = 0;
+    for(index_t j=0;j<srender_res.Height;j++)
+    for(index_t i=0;i<srender_res.Width;i++)
+    {
+        ray_conn[idx]   = idx;
+        ray_conn[idx+1] = idx+1;
+        idx+=2;
+    }
+
+    rays_mesh["fields/depth/topology"] = "rays";
+    rays_mesh["fields/depth/association"] = "element";
+    rays_mesh["fields/depth/values"].set(DataType::float64(num_rays));
+    float64_array depth_vals = rays_mesh["fields/depth/values"].value();
+
+    for(index_t active_ray_idx=0; active_ray_idx<num_active_rays; active_ray_idx++)
+    {
+        index_t pixel_idx = rays_pixel_idx.Get(active_ray_idx);
+        depth_vals[pixel_idx] = depth_buffer[active_ray_idx];
+    }
+
+    for(index_t i=0; i<srender_res.Scalars.size(); i++)
+    {
+        const float* scalar_buffer = GetVISKORESPointer(srender_res.Scalars[i]);
+        const std::string field_path = "fields/" + srender_res.ScalarNames[i];
+        rays_mesh[field_path + "/topology"] = "rays";
+        rays_mesh[field_path + "/association"] = "element";
+        rays_mesh[field_path + "/values"].set(DataType::float64(num_rays));
+        float64_array fld_vals = rays_mesh[field_path + "/values"].value();
+
+        for(index_t active_ray_idx=0; active_ray_idx<num_active_rays; active_ray_idx++)
+        {
+            index_t pixel_idx = rays_pixel_idx.Get(active_ray_idx);
+            fld_vals[pixel_idx] = scalar_buffer[active_ray_idx];
+        }
+    }
+
+    conduit::Node info;
+    if(!conduit::blueprint::mesh::verify(rays_mesh,info))
+    {
+        // TODO: Error
+        std::cout << info.to_yaml() << std::endl;
+    }
+}
+};
+
+
+void
+ScalarRenderer::GenerateResultRaysMesh(const Result &result_image,
+                                       conduit::Node &rays_mesh)
+{
+    if(vtkh::GetMPIRank() == 0)
+    {
+        // rays output
+        viskores::rendering::raytracing::Ray<viskores::Float32> rays;
+        if(m_mode == "camera")
+        {
+            GenerateCameraRays(GetCamera(),
+                               GetResultBounds(),
+                               m_width,
+                               m_height,
+                               rays);
+        }
+        else if(m_mode == "rays")
+        {
+            GenerateExplicitRays(rays);
+        }
+        // create a mesh that represents the rays
+        detail::CreateRaysMesh(result_image, rays, rays_mesh.append());
+    }
+}
+
 
 void
 ScalarRenderer::DoExecute()
@@ -177,7 +373,19 @@ ScalarRenderer::DoExecute()
     {
       no_data = num_cells == 0;
 
-      Result res = renderers[dom].Render(m_camera);
+
+      Result res;
+      if(m_mode == "camera")
+      {
+          res = renderers[dom].Render(m_camera);
+      }
+      else if(m_mode == "rays")
+      {
+          // TODO Float32 vs 64
+          viskores::rendering::raytracing::Ray<viskores::Float32> rays;
+          GenerateExplicitRays(rays);
+          res = renderers[dom].Render(rays);
+      }
 
       field_names = res.ScalarNames;
       PayloadImage *pimage = Convert(res);
@@ -274,6 +482,9 @@ ScalarRenderer::DoExecute()
       compositor.AddImage(p);
     }
 
+    // keep a copy of the bounds
+    m_bounds = viskores::Bounds(bounds);
+
     if(min_p != max_p)
     {
       throw Error("Scalar Renderer: mismatch in payload bytes");
@@ -282,17 +493,69 @@ ScalarRenderer::DoExecute()
     PayloadImage final_image = compositor.Composite();
     if(vtkh::GetMPIRank() == 0)
     {
-      Result final_result = Convert(final_image, field_names);
-      if(final_result.Scalars.size() != 0)
+      m_result_image = Convert(final_image, field_names);
+      if(m_result_image.Scalars.size() != 0)
       {
-        viskores::cont::DataSet dset = final_result.ToDataSet();
+        viskores::cont::DataSet dset = m_result_image.ToDataSet();
         const int domain_id = 0;
         this->m_output->AddDomain(dset, domain_id);
       }
     }
   }
-
 }
+
+template <typename Precision>
+void
+ScalarRenderer::GenerateCameraRays(const viskoresCamera &camera,
+                                   const viskores::Bounds &bounds,
+                                   int width, int height,
+                                   viskores::rendering::raytracing::Ray<Precision> &rays)
+{
+    viskores::Bounds cam_bounds(bounds);
+    viskores::rendering::raytracing::Camera ray_cam = camera.CreateRaytracingCamera((viskores::Int32)width,
+                                                                                    (viskores::Int32)height);
+    ray_cam.CreateRays(rays, bounds);
+    rays.Buffers.at(0).InitConst(0.f);
+}
+
+template <typename Precision>
+void
+ScalarRenderer::GenerateExplicitRays(viskores::rendering::raytracing::Ray<Precision> &rays)
+{
+        viskores::rendering::raytracing::RayOperations::Resize(rays, m_rays_pts_xs.GetNumberOfValues());
+
+        Precision infinity;
+        viskores::rendering::raytracing::GetInfinity(infinity);
+
+        viskores::cont::ArrayHandleConstant<Precision> inf(infinity, rays.NumRays);
+        viskores::cont::Algorithm::Copy(inf, rays.MaxDistance);
+
+        viskores::cont::ArrayHandleConstant<Precision> zero(0, rays.NumRays);
+        viskores::cont::Algorithm::Copy(zero, rays.MinDistance);
+        viskores::cont::Algorithm::Copy(zero, rays.Distance);
+
+        viskores::cont::ArrayHandleConstant<viskores::Id> initHit(-2, rays.NumRays);
+        viskores::cont::Algorithm::Copy(initHit, rays.HitIdx);
+
+
+        viskores::cont::Algorithm::Copy(m_rays_pts_xs, rays.OriginX);
+        viskores::cont::Algorithm::Copy(m_rays_pts_ys, rays.OriginY);
+        viskores::cont::Algorithm::Copy(m_rays_pts_zs, rays.OriginZ);
+
+        viskores::cont::Algorithm::Copy(m_rays_dirs_xs, rays.DirX);
+        viskores::cont::Algorithm::Copy(m_rays_dirs_ys, rays.DirY);
+        viskores::cont::Algorithm::Copy(m_rays_dirs_zs, rays.DirZ);
+
+        for(int i=0;i<rays.NumRays;i++)
+        {
+            rays.PixelIdx.WritePortal().Set(i,i);
+        }
+
+        rays.EnableIntersectionData();
+        rays.Buffers.at(0).InitConst(0.f);
+
+};
+
 
 ScalarRenderer::Result
 ScalarRenderer::Convert(PayloadImage &image, std::vector<std::string> &names)
@@ -388,6 +651,30 @@ ScalarRenderer::SetWidth(const int width)
 {
   m_width = width;
 }
+
+void
+ScalarRenderer::SetRays(viskores::cont::ArrayHandle<viskores::Float64> pts_xs,
+                        viskores::cont::ArrayHandle<viskores::Float64> pts_ys,
+                        viskores::cont::ArrayHandle<viskores::Float64> pts_zs,
+                        viskores::cont::ArrayHandle<viskores::Float64> dirs_xs,
+                        viskores::cont::ArrayHandle<viskores::Float64> dirs_ys,
+                        viskores::cont::ArrayHandle<viskores::Float64> dirs_zs)
+{
+    // result is a 1D image
+    SetWidth(pts_xs.GetNumberOfValues());
+    SetHeight(1);
+
+    m_rays_pts_xs = pts_xs;
+    m_rays_pts_ys = pts_ys;
+    m_rays_pts_zs = pts_zs;
+
+    m_rays_dirs_xs = dirs_xs;
+    m_rays_dirs_ys = dirs_ys;
+    m_rays_dirs_zs = dirs_zs;
+
+    m_mode = "rays";
+}
+
 
 vtkh::DataSet *
 ScalarRenderer::GetInput()

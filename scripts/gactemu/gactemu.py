@@ -33,7 +33,7 @@ class CTX:
             self.cwd = ctx.cwd
     
     def set_name(self,name):
-        self.name = name
+        self.name = sanitize_name(name)
     
     def set_container(self,container):
         self.container = container
@@ -114,6 +114,9 @@ def shexe(cmd,ret_output=False,echo = True):
     else:
         return subprocess.call(cmd,shell=True)
 
+def sanitize_name(n):
+    return n.replace(" ","-")
+
 def sanitize_var(v):
     if type(v)==bool:
         if v:
@@ -136,24 +139,63 @@ def map_gact_runners(runner,config):
         print("# unsupported runner:" + runner)
         return "UNSUPPORTED"
 
+def matrix_case_sub(v,matrix_case):
+    res = v
+    if res.count("${{") >=0:
+        res = res.replace("${{","")
+        res = res.replace("}}","").strip()
+        #print(res)
+        if res.startswith("matrix.env"):
+            env_key = res[len("matrix.env")+1:]
+            #print(env_key)
+            if env_key in matrix_case["env"].keys():
+                res = matrix_case["env"][env_key]
+                print(v, " = ", res)
+    return res
+
+def proc_matrix(tree):
+    res = []
+    if "include" in tree.keys():
+        for mc in tree["include"]:
+            res.append(mc)
+    else:
+        print("unsupported matrix case (missing `include` key)")
+    return res
+
+def proc_job(job_name, job, config, matrix_case=None):
+    job_ctx = CTX()
+    job_full_name = config["root_name"] + "-" + job_name
+    if not matrix_case is None:
+        job_full_name += "-" + matrix_case["name"]
+    job_ctx.print_esc(tag = "job", txt =job_full_name )
+    if not matrix_case is None and "container" in matrix_case.keys():
+        job_ctx.set_container(matrix_case["container"])
+    elif "container" in job.keys(): # full container name, no need to map
+        job_ctx.set_container(job["container"])
+    elif "runs-on" in job.keys(): # need to map from gact to local
+        job_ctx.set_container(map_gact_runners(job["runs-on"],config))
+    else:
+        job_ctx.set_container(config["default_container"])
+    job_ctx.set_name(job_full_name)
+    if "env" in job.keys():
+        job_ctx.print_esc("job env vars")
+        for k,v in job["env"].items():
+            svar = sanitize_var(v)
+            svar = matrix_case_sub(svar, matrix_case)
+            job_ctx.print('export {0}="{1}"'.format(k,svar))
+    steps = job["steps"]
+    proc_steps(steps,config, job_ctx)
+    job_ctx.finish()
+
 def proc_jobs(tree, config):
     for job_name, job in tree.items():
-        job_ctx = CTX()
-        job_full_name = config["root_name"] + "-" + job_name
-        job_ctx.print_esc(tag = "job", txt =job_full_name )
-        if "runs-on" in job.keys():
-             job_ctx.set_container(map_gact_runners(job["runs-on"],config))
+        if "strategy" in job.keys():
+            if "matrix" in job["strategy"]:
+                matrix = proc_matrix(job["strategy"]["matrix"])
+                for matrix_case in matrix:
+                    proc_job(job_name, job, config, matrix_case)
         else:
-            job_ctx.set_container(config["default_container"])
-        job_ctx.set_name(job_full_name)
-        if "env" in job.keys():
-            job_ctx.print_esc("job env vars")
-            for k,v in job["env"].items():
-                job_ctx.print('export {0}="{1}"'.format(k,sanitize_var(v)))
-        steps = job["steps"]
-        proc_steps(steps,config, job_ctx)
-        job_ctx.finish()
-        ## fancier cases (matrix specs) not yet supported 
+            proc_job(job_name,job, config)
 
 def proc_matrix_entry(steps, 
                       config,
@@ -163,7 +205,7 @@ def proc_matrix_entry(steps,
     ctx.print("#-------------------------------------")
     ctx.print_esc(tag = "matrix entry", txt = matrix_entry_name)
     ctx.print("#-------------------------------------")
-    ctx.print_esc(tag = "azure global scope vars", txt = config["azure_vars"])
+    ctx.print_esc(tag = "global scope vars", txt = config["global_vars"])
     ctx.print_esc("matrix env vars")
     for k,v in env_vars.items():
         ctx.print("export {0}={1}".format(k,sanitize_var(v)))
