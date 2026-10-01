@@ -5036,6 +5036,9 @@ VTKHTransform::declare_interface(Node &i)
     param_schema["constraints/exclusiveChildren"].append() = "matrix";
     param_schema["constraints/allowNoneInExclusiveGroup"] = false;
 
+    string_schema(param_schema["properties/topology"]);
+    array_schema(param_schema["properties/topologies"]);
+
     vec3_schema_anyOf(param_schema["properties/scale"], true);
     vec3_schema_anyOf(param_schema["properties/translate"], true);
 
@@ -5081,6 +5084,8 @@ VTKHTransform::execute()
 
     std::shared_ptr<VTKHCollection> collection = data_object->as_vtkh_collection();
 
+    bool transform_all_topos = true;
+    std::vector<std::string> selected_topo_names;
     bool use_scale     = false;
     bool use_translate = false;
     bool use_rotate    = false;
@@ -5098,6 +5103,21 @@ VTKHTransform::execute()
                                   0.0, 0.0, 0.0, 0.0,
                                   0.0, 0.0, 0.0, 0.0};
     ParamSpec reflect_param[3];
+
+    if(params().has_child("topology"))
+    {
+        transform_all_topos = false;
+        selected_topo_names.push_back(params()["topology"].as_string());
+    }
+    else if(params().has_child("topologies"))
+    {
+        transform_all_topos = false;
+        NodeConstIterator itr = params()["topologies"].children();
+        while(itr.has_next())
+        {
+            selected_topo_names.push_back(itr.next().as_string());
+        }
+    }
 
     if(params().has_child("scale"))
     {
@@ -5229,7 +5249,13 @@ VTKHTransform::execute()
     VTKHCollection *new_coll = new VTKHCollection();
     for(auto &topo : topo_names)
     {
+
       vtkh::DataSet &data = collection->dataset_by_topology(topo);
+
+      // check if we are transforming this topo
+      if(transform_all_topos ||
+         std::find(selected_topo_names.begin(), selected_topo_names.end(), topo) != selected_topo_names.end() )
+      {
       vtkh::PointTransform transform;
 
       if(use_scale)
@@ -5257,18 +5283,18 @@ VTKHTransform::execute()
       if(use_reflect)
       {
           viskores::Bounds bounds = data.GetGlobalBounds();
-          //resolve the ParamSpec types now that we have bounds 
+          //resolve the ParamSpec types now that we have bounds
           auto resolve = [&](int axis) -> double
           {
             switch(reflect_param[axis].mode)
             {
-              case ParamVal::Unset:     
+              case ParamVal::Unset:
                 return 0.0;//default
 
-              case ParamVal::Value:     
+              case ParamVal::Value:
                 return reflect_param[axis].value;
 
-              case ParamVal::BoundsMin:       
+              case ParamVal::BoundsMin:
                 switch(axis)
                 {
                   case 0: return bounds.X.Min;
@@ -5292,7 +5318,7 @@ VTKHTransform::execute()
           t_reflect_point[0] = resolve(0);
           t_reflect_point[1] = resolve(1);
           t_reflect_point[2] = resolve(2);
-          
+      
           transform.SetReflect(t_reflect_point[0],
                                t_reflect_point[1],
                                t_reflect_point[2],
@@ -5311,6 +5337,11 @@ VTKHTransform::execute()
       vtkh::DataSet *trans_output = transform.GetOutput();
       new_coll->add(*trans_output, topo);
       delete trans_output;
+      }
+      else // don't transform this topo, but make sure to pass it along
+      {
+          new_coll->add(data, topo);
+      }
     }
 
     //// re wrap in data object
