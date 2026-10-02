@@ -1474,6 +1474,77 @@ TEST(ascent_relay, test_extract_name_format_keywords)
     EXPECT_TRUE(conduit::utils::is_file(extract_file_no_format_final));
 }
 
+
+
+//-----------------------------------------------------------------------------
+TEST(ascent_relay, test_relay_load)
+{
+    Node n;
+    ascent::about(n);
+
+    //
+    // Create an example mesh.
+    //
+
+    Node data;
+
+    data["coordsets/pt_coords/type"] = "explicit";
+    data["coordsets/pt_coords/values/x"] = 0.0;
+    data["coordsets/pt_coords/values/y"] = 0.0;
+    data["coordsets/pt_coords/values/z"] = 0.0;
+    data["topologies/pt_topo/type"] = "points";
+    data["topologies/pt_topo/coordset"] = "pt_coords";
+
+    data.print();
+    Node verify_info;
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    Node save_data;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              save_data);
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_relay_load_topos");
+    string output_root = output_file + ".cycle_000100.root";
+
+    conduit::relay::io::blueprint::save_mesh(save_data, output_file,"hdf5");
+
+    
+    conduit::Node actions;
+    // add the extracts
+    conduit::Node &add_pls = actions.append();
+    add_pls["action"] = "add_pipelines";
+    conduit::Node &pl = add_pls["pipelines/load_pipeline"];
+    pl["f1/type"] = "load";
+    pl["f1/params/path"] = output_root;
+
+    output_file = conduit::utils::join_file_path(output_path,"tout_relay_load_topos_extract");
+    output_root = output_file + ".cycle_000100.root";
+    remove_test_image(output_root);
+
+    conduit::Node &add_extacts = actions.append();
+    add_extacts["action"] = "add_extracts";
+    add_extacts["extracts/e1/type"] = "relay";
+    add_extacts["extracts/e1/pipeline"] = "load_pipeline";
+    add_extacts["extracts/e1/params/protocol"] = "blueprint/mesh/hdf5";
+    add_extacts["extracts/e1/params/path"] = output_file;
+    add_extacts["extracts/e1/params/fields"].append() = "braid";
+    
+    std::cout << actions.to_yaml() << std::endl;
+
+    Ascent ascent;
+    ascent.open();
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    EXPECT_TRUE(conduit::utils::is_file(output_root));
+}
+
+
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {
@@ -1490,5 +1561,7 @@ int main(int argc, char* argv[])
     result = RUN_ALL_TESTS();
     return result;
 }
+
+
 
 

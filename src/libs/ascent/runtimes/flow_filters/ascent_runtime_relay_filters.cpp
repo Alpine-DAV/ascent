@@ -680,7 +680,13 @@ RelayIOSave::declare_interface(Node &i)
     i["output_port"] = "false";
 
     // ----------- Define Param Schema -----------
-    io_param_schema(i["param_schema"]);
+    Node &param_schema = i["param_schema"];
+
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = true;
+
+    string_schema(param_schema["properties/path"], 1);
+    ignore_schema(param_schema["properties/rename"]);
 }
 
 //-----------------------------------------------------------------------------
@@ -1059,40 +1065,91 @@ void
 RelayIOLoad::declare_interface(Node &i)
 {
     i["type_name"]   = "relay_io_load";
-    i["port_names"] = DataType::empty();
+    i["port_names"].append() = "in";
     i["output_port"] = "true";
 
     // ----------- Define Param Schema -----------
     io_param_schema(i["param_schema"]);
+    // root file
 }
 
 //-----------------------------------------------------------------------------
 void
 RelayIOLoad::execute()
 {
+    Node load_opts =params();
     std::string path, protocol;
     path = params()["path"].as_string();
+    
+    // we pass thru most params as load opts, except:
+    //  path
+    //  rename
+    load_opts.remove("path");
 
-    // TODO check if we need to expand the path (MPI) case
-    if(params().has_child("protocol"))
+    // TODO RENAME NOT YET PASSED VIA PARAMS
+
+    Node rename_opts;
+    if(params().has_child("rename"))
     {
-        protocol = params()["protocol"].as_string();
+        rename_opts = params()["rename"].as_string();
+        load_opts.remove("rename");
     }
 
-    Node *res = new Node();
-
-    if(protocol.empty())
+    if(!input("in").check_type<DataObject>())
     {
-        conduit::relay::io::load(path,*res);
-    }
-    else
-    {
-        conduit::relay::io::load(path,protocol,*res);
+        // error
+        ASCENT_ERROR("relay_io_load requires a DataObject input");
     }
 
-    set_output<Node>(res);
+    DataObject *data_object  = input<DataObject>("in");
+    if(!data_object->is_valid())
+    {
+      return;
+    }
 
-}
+    std::shared_ptr<Node> n_input = data_object->as_node();
+    Node *mesh = n_input.get();
+    Node loaded_mesh, opts;
+
+//-----------------------------------------------------------------------------
+#ifdef ASCENT_MPI_ENABLED
+//-----------------------------------------------------------------------------
+    MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
+    conduit::relay::mpi::io::blueprint::load_mesh(path,
+                                                  loaded_mesh,
+                                                  mpi_comm);
+
+//-----------------------------------------------------------------------------
+#else // non mpi case
+//-----------------------------------------------------------------------------
+    conduit::relay::io::blueprint::load_mesh(path,
+                                             loaded_mesh);
+//-----------------------------------------------------------------------------
+#endif
+//-----------------------------------------------------------------------------
+
+    // loaded_mesh now contains new meshes ....
+    if(!rename_opts.dtype().is_empty())
+    {
+      // TODO
+      conduit::blueprint::mesh::rename(loaded_mesh,rename_opts);
+    }
+
+    // we can add the new meshes as new domains, we don't have 
+    // to combine with existing trees
+    if(mesh->dtype().is_list())
+    {
+          NodeIterator load_itr = loaded_mesh.children();
+          while(load_itr.has_next())
+          {
+            mesh->append().move(load_itr.next());
+          }
+    }
+
+    // we can return our input data object
+    set_output<DataObject>(data_object);
+  }
+
 //-----------------------------------------------------------------------------
 BlueprintFlatten::BlueprintFlatten()
 :Filter()
