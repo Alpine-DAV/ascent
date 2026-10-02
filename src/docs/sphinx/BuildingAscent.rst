@@ -32,13 +32,9 @@ For a minimal build with no parallel components, the following are required:
     * Conduit
     * C++ compilers
 
-We recognize that building on HPC systems can be difficult, and we provide three build strategies.
+We recognize that building on HPC systems can be difficult, and we provide a build_ascent.sh to help.
 
-    * A build_ascent.sh helper script
-    * A spack based build
-    * Manually compile dependencies using a CMake configuration file to keep compilers and libraries consistent
-
-Most often, build_ascent should be attempted first. This will automatically download and build all
+build_ascent.sh will automatically download and build all
 the third party dependencies and create a CMake configuration file for Ascent. Should you encounter build issues
 that are not addressed here, please ask questions using our github `issue tracker <https://github.com/Alpine-DAV/ascent/issues>`_.
 
