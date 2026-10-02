@@ -489,18 +489,13 @@ endif()
 ###############################################################################
 # Setup MPI
 ###############################################################################
-if("MPI" IN_LIST Conduit_FIND_COMPONENTS)
+if("MPI" IN_LIST Ascent_FIND_COMPONENTS)
     set(Ascent_MPI_NOT_FOUND_MESSAGE "")
-    if(NOT ASCENT_MPI_ENABLED)
-        
-    else()
-        
-    endif()
 
     if(NOT ASCENT_USE_CMAKE_MPI_TARGETS)
         # The compiler is expected to have MPI implicitly available; MPI is
         # found.
-    elseif(ASCENT_USE_MPI)
+    elseif(ASCENT_MPI_ENABLED)
         if(NOT TARGET MPI::MPI_C)
             set(_ascent_find_mpi_args "")
             if(Ascent_FIND_QUIETLY)
