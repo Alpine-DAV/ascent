@@ -71,7 +71,7 @@ Ascent requires Conduit and provides optional features that depend on third-part
      - OCCA, Umpire
 
 
-For a detailed account of features and what underpin them see :ref:`feature_map`.
+.. For a detailed account of features and what underpin them see :ref:`feature_map`.
 
 
 
@@ -247,17 +247,17 @@ CMake Options for Third-party Library Paths
    * - ``FIDES_DIR``
      - Path to a FIDES install (optional)
 
-   * - ``BABELFLOW_DIR``
-     - Path to a BabelFlow install (optional)
+  ..  * - ``BABELFLOW_DIR``
+  ..    - Path to a BabelFlow install (optional)
      
-   * - ``PMT_DIR``
-     - Path to a ParallelMergeTree install (optional)
+  ..  * - ``PMT_DIR``
+  ..    - Path to a ParallelMergeTree install (optional)
      
-   * - ``StreamStat_DIR``
-     - Path to a StreamStat install (optional)
+  ..  * - ``StreamStat_DIR``
+  ..    - Path to a StreamStat install (optional)
      
-   * - ``TopoFileParser_DIR``
-     - Path to a TopoFileParser install (optional)
+  ..  * - ``TopoFileParser_DIR``
+  ..    - Path to a TopoFileParser install (optional)
      
    * - ``BLT_SOURCE_DIR``
      - Path to a BLT install (default = ``blt``)
@@ -280,30 +280,16 @@ To handle build options, third party library paths, etc we rely on CMake's initi
 
 .. code:: bash
 
-    cmake -C config_file.cmake
+    cmake -C config_file.cmake -B build -S src
 
 
 We call these initial-cache files *host-config* files, since we typically create a file for each platform or specific hosts if necessary.
-
-The ``config-build.sh`` script uses your machine's hostname, the SYS_TYPE environment variable, and your platform name (via *uname*) to look for an existing host config file in the ``host-configs`` directory at the root of the ascent repo. If found, it passes the host config file to CMake via the `-C` command line option.
-
-.. code:: bash
-
-    cmake {other options} -C host-configs/{config_file}.cmake ../
-
-
-You can find example files in the ``host-configs`` directory.
 
 These files use standard CMake commands. CMake *set* commands need to specify the root cache path as follows:
 
 .. code:: cmake
 
     set(CMAKE_VARIABLE_NAME {VALUE} CACHE PATH "")
-
-It is  possible to create your own configure file, and an boilerplate example is provided in `/host-configs/boilerplate.cmake`
-
-.. warning:: If compiling all of the dependencies yourself, it is important that you use the same compilers for all dependencies. For example, different MPI and Fortran compilers (e.g., Intel and GCC) are not compatible with one another.
-
 
 Building Ascent and Third Party Dependencies
 --------------------------------------------------
@@ -323,144 +309,144 @@ It supports supports building on linux, macOS, and windows -- without device sup
 
 .. _building_with_uberenv:
 
-uberenv + spack
-^^^^^^^^^^^^^^^^^
+.. uberenv + spack
+.. ^^^^^^^^^^^^^^^^^
 
-We also use **Spack** (http://spack.io) to help build Ascent's third party dependencies on OSX and Linux.
+.. We also use **Spack** (http://spack.io) to help build Ascent's third party dependencies on OSX and Linux.
 
-Uberenv (``scripts/uberenv/uberenv.py``) automates fetching spack, building and installing third party dependencies, and can optionally install Ascent as well.  To automate the full install process, Uberenv uses the Ascent Spack package along with extra settings such as Spack compiler and external third party package details for common HPC platforms.
-
-
-Uberenv Options for Building Third Party Dependencies
-------------------------------------------------------
-
-``uberenv.py`` has a few options that allow you to control how dependencies are built:
-
- ==================== ============================================== ================================================
-  Option               Description                                     Default
- ==================== ============================================== ================================================
-  --prefix             Destination directory                          ``uberenv_libs``
-  --spec               Spack spec                                     linux: **%gcc**
-                                                                      osx: **%clang**
-  --spack-config-dir   Folder with Spack settings files               linux: (empty)
-                                                                      osx: ``scripts/uberenv_configs/spack_configs/darwin/``
-  -k                   Ignore SSL Errors                              **False**
-  --install            Fully install ascent not just dependencies     **False**
- ==================== ============================================== ================================================
-
-The ``-k`` option exists for sites where SSL certificate interception undermines fetching
-from github and https hosted source tarballs. When enabled, ``uberenv.py`` clones spack using:
-
-.. code:: bash
-
-    git -c http.sslVerify=false clone https://github.com/llnl/spack.git
-
-And passes ``-k`` to any spack commands that may fetch via https.
+.. Uberenv (``scripts/uberenv/uberenv.py``) automates fetching spack, building and installing third party dependencies, and can optionally install Ascent as well.  To automate the full install process, Uberenv uses the Ascent Spack package along with extra settings such as Spack compiler and external third party package details for common HPC platforms.
 
 
-Default invocation on Linux:
+.. Uberenv Options for Building Third Party Dependencies
+.. ------------------------------------------------------
 
-.. code:: bash
+.. ``uberenv.py`` has a few options that allow you to control how dependencies are built:
 
-    python scripts/uberenv/uberenv.py --prefix uberenv_libs \
-                                      --spec %gcc
+..  ==================== ============================================== ================================================
+..   Option               Description                                     Default
+..  ==================== ============================================== ================================================
+..   --prefix             Destination directory                          ``uberenv_libs``
+..   --spec               Spack spec                                     linux: **%gcc**
+..                                                                       osx: **%clang**
+..   --spack-config-dir   Folder with Spack settings files               linux: (empty)
+..                                                                       osx: ``scripts/uberenv_configs/spack_configs/darwin/``
+..   -k                   Ignore SSL Errors                              **False**
+..   --install            Fully install ascent not just dependencies     **False**
+..  ==================== ============================================== ================================================
 
-Default invocation on OSX:
+.. The ``-k`` option exists for sites where SSL certificate interception undermines fetching
+.. from github and https hosted source tarballs. When enabled, ``uberenv.py`` clones spack using:
 
-.. code:: bash
+.. .. code:: bash
 
-    python scripts/uberenv/uberenv.py --prefix uberenv_libs \
-                                      --spec %clang \
-                                      --spack-config-dir scripts/uberenv_configs/spack_configs/darwin/
+..     git -c http.sslVerify=false clone https://github.com/llnl/spack.git
 
-
-The uberenv `--install` installs ascent\@develop (not just the development dependencies):
-
-.. code:: bash
-
-    python scripts/uberenv/uberenv.py --install
-
-
-For details on Spack's spec syntax, see the `Spack Specs & dependencies <http://spack.readthedocs.io/en/latest/basic_usage.html#specs-dependencies>`_ documentation.
-
-
-Compiler Settings for Third Party Dependencies
-----------------------------------------------
-
-You can edit yaml files under ``scripts/uberenv_configs/spack_configs/configs/{platform}`` or use the **--spack-config-dir** option to specify a directory with compiler and packages yaml files to use with Spack. See the `Spack Compiler Configuration <http://spack.readthedocs.io/en/latest/getting_started.html#manual-compiler-configuration>`_
-and `Spack System Packages
-<http://spack.readthedocs.io/en/latest/getting_started.html#system-packages>`_
-documentation for details.
-
-For macOS, the defaults in ``scripts/uberenv_configs/spack_configs/configs/darwin/compilers.yaml`` are X-Code's clang and gfortran from https://gcc.gnu.org/wiki/GFortranBinaries#MacOS.
-
-.. note::
-    The bootstrapping process ignores ``~/.spack/compilers.yaml`` to avoid conflicts
-    and surprises from a user's specific Spack settings on HPC platforms.
-
-When run, ``uberenv.py`` checkouts a specific version of Spack from github as ``spack`` in the
-destination directory. It then uses Spack to build and install Conduit's dependencies into
-``spack/opt/spack/``. Finally, it generates a host-config file ``{hostname}.cmake`` in the
-destination directory that specifies the compiler settings and paths to all of the dependencies.
+.. And passes ``-k`` to any spack commands that may fetch via https.
 
 
-.. _building_known_hpc:
+.. Default invocation on Linux:
 
-Building with Uberenv on Known HPC Platforms
----------------------------------------------
+.. .. code:: bash
 
-`Here is a link to the scripts we use to build public Ascent installs. <https://github.com/Alpine-DAV/ascent/tree/develop/scripts/spack_install>`_
+..     python scripts/uberenv/uberenv.py --prefix uberenv_libs \
+..                                       --spec %gcc
 
+.. Default invocation on OSX:
 
-Building Third Party Dependencies for Development
---------------------------------------------------
+.. .. code:: bash
 
-You can use ``scripts/uberenv/uberenv.py`` to help setup your development environment on OSX and Linux. ``uberenv.py`` leverages **Spack** (https://spack.io/) to build the external third party libraries and tools used by Ascent.
-Fortran support in is optional, dependencies should build without fortran.
-After building these libraries and tools, it writes an initial *host-config* file and adds the Spack built CMake binary to your PATH, so can immediately call the ``config-build.sh`` helper script to configure a ascent build.
-
-.. code:: bash
-
-    #build third party libs using spack
-    python scripts/uberenv/uberenv.py
-
-    #copy the generated host-config file into the standard location
-    cp uberenv_libs/`hostname`*.cmake host-configs/
-
-    # run the configure helper script
-    ./config-build.sh
-
-    # or you can run the configure helper script and give it the
-    # path to a host-config file
-    ./config-build.sh uberenv_libs/`hostname`*.cmake
+..     python scripts/uberenv/uberenv.py --prefix uberenv_libs \
+..                                       --spec %clang \
+..                                       --spack-config-dir scripts/uberenv_configs/spack_configs/darwin/
 
 
+.. The uberenv `--install` installs ascent\@develop (not just the development dependencies):
 
-.. _building_with_spack:
+.. .. code:: bash
 
-Building with Spack
--------------------
-
-.. warning::
-  Installing Ascent from the Spack develop branch will most likely fail. We build and test spack
-  installations with uberenv.py.
-
-To install Ascent and also build all of its dependencies as necessary run:
-
-.. code:: bash
-
-  spack install ascent
+..     python scripts/uberenv/uberenv.py --install
 
 
-The Ascent Spack package provides several
-`variants <http://spack.readthedocs.io/en/latest/basic_usage.html#specs-dependencies>`_
-that customize the options and dependencies used to build Ascent.
+.. For details on Spack's spec syntax, see the `Spack Specs & dependencies <http://spack.readthedocs.io/en/latest/basic_usage.html#specs-dependencies>`_ documentation.
 
 
-Uberenv Spack Configurations 
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. Compiler Settings for Third Party Dependencies
+.. ----------------------------------------------
 
-See the `Spack configs <https://github.com/Alpine-DAV/spack_configs/tree/main/configs/alpinedav>`_ we use to build our CI Containers for concrete examples of using ``pacakges.yaml`` and ``compilers.yaml`` to specify system packages and compiler details to Spack.
+.. You can edit yaml files under ``scripts/uberenv_configs/spack_configs/configs/{platform}`` or use the **--spack-config-dir** option to specify a directory with compiler and packages yaml files to use with Spack. See the `Spack Compiler Configuration <http://spack.readthedocs.io/en/latest/getting_started.html#manual-compiler-configuration>`_
+.. and `Spack System Packages
+.. <http://spack.readthedocs.io/en/latest/getting_started.html#system-packages>`_
+.. documentation for details.
+
+.. For macOS, the defaults in ``scripts/uberenv_configs/spack_configs/configs/darwin/compilers.yaml`` are X-Code's clang and gfortran from https://gcc.gnu.org/wiki/GFortranBinaries#MacOS.
+
+.. .. note::
+..     The bootstrapping process ignores ``~/.spack/compilers.yaml`` to avoid conflicts
+..     and surprises from a user's specific Spack settings on HPC platforms.
+
+.. When run, ``uberenv.py`` checkouts a specific version of Spack from github as ``spack`` in the
+.. destination directory. It then uses Spack to build and install Conduit's dependencies into
+.. ``spack/opt/spack/``. Finally, it generates a host-config file ``{hostname}.cmake`` in the
+.. destination directory that specifies the compiler settings and paths to all of the dependencies.
+
+
+.. .. _building_known_hpc:
+
+.. Building with Uberenv on Known HPC Platforms
+.. ---------------------------------------------
+
+.. `Here is a link to the scripts we use to build public Ascent installs. <https://github.com/Alpine-DAV/ascent/tree/develop/scripts/spack_install>`_
+
+
+.. Building Third Party Dependencies for Development
+.. --------------------------------------------------
+
+.. You can use ``scripts/uberenv/uberenv.py`` to help setup your development environment on OSX and Linux. ``uberenv.py`` leverages **Spack** (https://spack.io/) to build the external third party libraries and tools used by Ascent.
+.. Fortran support in is optional, dependencies should build without fortran.
+.. After building these libraries and tools, it writes an initial *host-config* file and adds the Spack built CMake binary to your PATH, so can immediately call the ``config-build.sh`` helper script to configure a ascent build.
+
+.. .. code:: bash
+
+..     #build third party libs using spack
+..     python scripts/uberenv/uberenv.py
+
+..     #copy the generated host-config file into the standard location
+..     cp uberenv_libs/`hostname`*.cmake host-configs/
+
+..     # run the configure helper script
+..     ./config-build.sh
+
+..     # or you can run the configure helper script and give it the
+..     # path to a host-config file
+..     ./config-build.sh uberenv_libs/`hostname`*.cmake
+
+
+
+.. .. _building_with_spack:
+
+.. Building with Spack
+.. -------------------
+
+.. .. warning::
+..   Installing Ascent from the Spack develop branch will most likely fail. We build and test spack
+..   installations with uberenv.py.
+
+.. To install Ascent and also build all of its dependencies as necessary run:
+
+.. .. code:: bash
+
+..   spack install ascent
+
+
+.. The Ascent Spack package provides several
+.. `variants <http://spack.readthedocs.io/en/latest/basic_usage.html#specs-dependencies>`_
+.. that customize the options and dependencies used to build Ascent.
+
+
+.. Uberenv Spack Configurations 
+.. ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. See the `Spack configs <https://github.com/Alpine-DAV/spack_configs/tree/main/configs/alpinedav>`_ we use to build our CI Containers for concrete examples of using ``pacakges.yaml`` and ``compilers.yaml`` to specify system packages and compiler details to Spack.
 
 
 Using Ascent in Another Project
@@ -777,27 +763,27 @@ To start the Jupyter server and run the tutorial notebooks, run:
 ..     ``bsub $(spack location --install-dir ascent)/examples/ascent/paraview-vis/summit-moment-invariants.lsf``
 ..   - To check if the integration finished use: ``bjobs -a``
 
-Nightly tests
-""""""""""""""
+.. Nightly tests
+.. """"""""""""""
 
-We provide a docker file for Ubuntu 18.04 and a script that installs
-the latest ParaView and Ascent, runs the integrations provided with
-Ascent, runs visualizations using ParaView pipelines and checks the
-results. See ``tests/README-docker.md`` for how to create the docker
-image, run the container and execute the test script.
+.. We provide a docker file for Ubuntu 18.04 and a script that installs
+.. the latest ParaView and Ascent, runs the integrations provided with
+.. Ascent, runs visualizations using ParaView pipelines and checks the
+.. results. See ``tests/README-docker.md`` for how to create the docker
+.. image, run the container and execute the test script.
 
-Notes
-"""""
+.. Notes
+.. """""
 
-- Global extents are computed for uniform and rectilinear topologies but
-  they are not yet computed for a structured topology (lulesh). This
-  means that for lulesh and datasets that have a structured topology we
-  cannot save a correct parallel file that represents the whole dataset.
+.. - Global extents are computed for uniform and rectilinear topologies but
+..   they are not yet computed for a structured topology (lulesh). This
+..   means that for lulesh and datasets that have a structured topology we
+..   cannot save a correct parallel file that represents the whole dataset.
 
-- For the ``laghos`` simulation accessed through Python extracts
-  interface, only the higher order mesh is accessible at the moment,
-  which is a uniform dataset. The documentation shows a non-uniform mesh but
-  that is only available in the ``viskores`` pipelines.
+.. - For the ``laghos`` simulation accessed through Python extracts
+..   interface, only the higher order mesh is accessible at the moment,
+..   which is a uniform dataset. The documentation shows a non-uniform mesh but
+..   that is only available in the ``viskores`` pipelines.
 
 
 
