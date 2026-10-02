@@ -41,6 +41,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ### Fixed
 - Fixed the aspect ratio for frustum renderings
+- Fixed a bug causing unnecessarily strict type constraints for camera parameters.
 - Fixed issue where the plot did not align with the 3d axes when the camera was panned (`camera/xpan` and `camera/ypan`).
 - Fixed a crash with PNG encoding of large renders (10k+ by 10k+ resolution)
 
