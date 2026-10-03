@@ -1,0 +1,22 @@
+[build-system]
+# Conduit builds its python modules with `pip install --no-build-isolation`,
+# which means that pip will not install required packages/versions. Instead,
+# they must already be present in the Python used to build Conduit.
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "flow"
+version = "0.9.6"
+description = "flow"
+requires-python = ">=3.8"
+
+[tool.setuptools.package-dir]
+flow = "py_src"
+
+[tool.setuptools]
+zip-safe = false
+packages = [
+    "flow"
+]
+

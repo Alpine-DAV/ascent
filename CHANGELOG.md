@@ -28,11 +28,12 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added support for 64 bit IDs
 - Added support for RZ meshes
 - If a `default_dir` is passed as an Ascent Option, extracts and plots will output to that directory by default now.
-- Added a warning if a `ascent.py` file exsits in the current working directory when executing a python extract. 
+- Added a warning if a `ascent.py` file exists in the current working directory when executing a python extract. 
 - Added support for monochrome/solid color plotting
 - Added support for `surface` and `wireframe` aliases
 - Added support for plotting pseudocolor plots without providing a field
 - Added support for hex color values for custom color tables
+- Added `topology` and `topologies` parameters to the transform filter, to allow transforming a selected subset of the published topologies
 
 ### Changed
 - Redefined the parameter verification and surprise checking behavior for Filters to instead use a conduit based JSON Schema style verification schema. Implemented for all existing filters.
@@ -41,6 +42,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ### Fixed
 - Fixed the aspect ratio for frustum renderings
+- Fixed a bug causing unnecessarily strict type constraints for camera parameters.
 - Fixed issue where the plot did not align with the 3d axes when the camera was panned (`camera/xpan` and `camera/ypan`).
 - Fixed a crash with PNG encoding of large renders (10k+ by 10k+ resolution)
 
