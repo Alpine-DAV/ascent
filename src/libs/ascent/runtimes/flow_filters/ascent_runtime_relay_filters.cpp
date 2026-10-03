@@ -1069,8 +1069,13 @@ RelayIOLoad::declare_interface(Node &i)
     i["output_port"] = "true";
 
     // ----------- Define Param Schema -----------
-    io_param_schema(i["param_schema"]);
-    // root file
+    Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
+
+    string_schema(param_schema["properties/path"], 1);
+    ignore_schema(param_schema["properties/rename"]);
+
 }
 
 //-----------------------------------------------------------------------------
@@ -1091,7 +1096,8 @@ RelayIOLoad::execute()
     Node rename_opts;
     if(params().has_child("rename"))
     {
-        rename_opts = params()["rename"].as_string();
+        // copy out rename opts
+        rename_opts = params()["rename"];
         load_opts.remove("rename");
     }
 
@@ -1132,7 +1138,7 @@ RelayIOLoad::execute()
     if(!rename_opts.dtype().is_empty())
     {
       // TODO
-      conduit::blueprint::mesh::rename(loaded_mesh,rename_opts);
+      conduit::blueprint::mesh::rename(rename_opts,loaded_mesh);
     }
 
     // we can add the new meshes as new domains, we don't have 

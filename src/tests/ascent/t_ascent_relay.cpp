@@ -1482,12 +1482,8 @@ TEST(ascent_relay, test_relay_load)
     Node n;
     ascent::about(n);
 
-    //
-    // Create an example mesh.
-    //
-
+    // create a basic point mesh to public to ascent
     Node data;
-
     data["coordsets/pt_coords/type"] = "explicit";
     data["coordsets/pt_coords/values/x"] = 0.0;
     data["coordsets/pt_coords/values/y"] = 0.0;
@@ -1499,6 +1495,8 @@ TEST(ascent_relay, test_relay_load)
     Node verify_info;
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
 
+    // create a mesh that we save out side of ascent
+    // to test loading via the load filter
     Node save_data;
     conduit::blueprint::mesh::examples::braid("hexs",
                                               EXAMPLE_MESH_SIDE_DIM,
@@ -1520,6 +1518,11 @@ TEST(ascent_relay, test_relay_load)
     conduit::Node &pl = add_pls["pipelines/load_pipeline"];
     pl["f1/type"] = "load";
     pl["f1/params/path"] = output_root;
+    // test renaming blueprint components,
+    // this is useful to avoid name collisions
+    pl["f1/params/rename/fields/braid"] = "myfield";
+    pl["f1/params/rename/topologies/mesh"]  = "mytopo";
+    pl["f1/params/rename/coordsets/coords"]  = "mytopo";
 
     output_file = conduit::utils::join_file_path(output_path,"tout_relay_load_topos_extract");
     output_root = output_file + ".cycle_000100.root";
@@ -1531,8 +1534,8 @@ TEST(ascent_relay, test_relay_load)
     add_extacts["extracts/e1/pipeline"] = "load_pipeline";
     add_extacts["extracts/e1/params/protocol"] = "blueprint/mesh/hdf5";
     add_extacts["extracts/e1/params/path"] = output_file;
-    add_extacts["extracts/e1/params/fields"].append() = "braid";
-    
+    add_extacts["extracts/e1/params/fields"].append() = "myfield";
+
     std::cout << actions.to_yaml() << std::endl;
 
     Ascent ascent;
