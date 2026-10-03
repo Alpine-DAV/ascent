@@ -529,7 +529,7 @@ if (ENABLE_SERIAL)
                     )
 
         if(TARGET viskores::viskoresdiympi_nompi)
-            list(APPEND imported_targets_to_link viskores::)
+            list(APPEND imported_targets_to_link viskores::viskoresdiympi_nompi)
         endif()
 
         if(TARGET viskores::viskoresdiympi)
