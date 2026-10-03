@@ -21,11 +21,11 @@ endif()
 ###############################################################################
 if(ASCENT_HIP_ENABLED)
     ####################################
-    # IMPORANT NOTE AND FUN CMAKE FACT:
+    # IMPORTANT NOTE AND FUN CMAKE FACT:
     ####################################
-    # The HIP CMake Pacakge *requires* ROCM_PATH to be set.
+    # The HIP CMake Package *requires* ROCM_PATH to be set.
     #
-    # If not set, it won't find other reqd cmake imports (like AMDDeviceLibs)
+    # If not set, it won't find other read cmake imports (like AMDDeviceLibs)
     #
     # You *cannot* just hand the path as an arg like ${ASCENT_ROCM_PATH}
     # to find_package, ROCM_PATH must be set.
@@ -123,6 +123,35 @@ if(CALIPER_DIR)
     find_dependency(caliper REQUIRED
                     NO_DEFAULT_PATH
                     PATHS ${CALIPER_DIR}/share/cmake/caliper)
+endif()
+
+
+
+###############################################################################
+# Setup Python
+###############################################################################
+# when ascent is built with python support, an embedded python interpreter
+# is linked into the ascent libs (it's not simply an external python module)
+# so we must find python to proper link
+if(ASCENT_PYTHON_ENABLED)
+    if(NOT Python3_EXECUTABLE)
+        set(Python3_EXECUTABLE ${ASCENT_PYTHON_EXECUTABLE})
+    endif()
+
+    if(Python3_EXECUTABLE)
+        if(NOT Ascent_FIND_QUIETLY)
+            message(STATUS "Ascent was built with Python Support")
+        endif()
+
+        if(NOT Ascent_FIND_QUIETLY)
+            message(STATUS "Looking for Python using: ${Python3_EXECUTABLE}")
+        endif()
+
+        # find python
+        find_package(Python3
+                     REQUIRED
+                     COMPONENTS Interpreter Development NumPy)
+    endif()
 endif()
 
 ###############################################################################
@@ -455,6 +484,39 @@ endif()
 ###############################################################################
 if(ASCENT_MFEM_MPI_ENABLED AND NOT MPI_FOUND)
     find_package(MPI COMPONENTS C)
+endif()
+
+###############################################################################
+# Setup MPI
+###############################################################################
+if("MPI" IN_LIST Ascent_FIND_COMPONENTS)
+    set(Ascent_MPI_NOT_FOUND_MESSAGE "")
+
+    if(NOT ASCENT_USE_CMAKE_MPI_TARGETS)
+        # The compiler is expected to have MPI implicitly available; MPI is
+        # found.
+    elseif(ASCENT_MPI_ENABLED)
+        if(NOT TARGET MPI::MPI_C)
+            set(_ascent_find_mpi_args "")
+            if(Ascent_FIND_QUIETLY)
+                list(APPEND _ascent_find_mpi_args QUIET)
+            endif()
+
+            find_dependency(MPI ${_ascent_find_mpi_args} COMPONENTS C)
+            unset(_ascent_find_mpi_args)
+        endif()
+
+        if(NOT TARGET MPI::MPI_C)
+            set(Ascent_MPI_NOT_FOUND_MESSAGE "MPI could not be found: ${MPI_NOT_FOUND_MESSAGE}")
+        endif()
+    else()
+        set(Ascent_MPI_NOT_FOUND_MESSAGE "MPI support is not available")
+    endif()
+
+    set(Ascent_MPI_FOUND 1)
+    if(Ascent_MPI_NOT_FOUND_MESSAGE)
+        set(Ascent_MPI_FOUND 0)
+    endif()
 endif()
 
 

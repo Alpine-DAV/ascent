@@ -13,7 +13,7 @@ SET(flow_py_cpp_sources     flow_python.cpp)
 PYTHON_ADD_HYBRID_MODULE(NAME flow_python
                          DEST_DIR python-modules
                          PY_MODULE_DIR flow
-                         PY_SETUP_FILE setup.py
+                         PY_SETUP_FILE pyproject.toml
                          PY_SOURCES  "${flow_py_python_sources}"
                          SOURCES      ${flow_py_cpp_sources})
 
