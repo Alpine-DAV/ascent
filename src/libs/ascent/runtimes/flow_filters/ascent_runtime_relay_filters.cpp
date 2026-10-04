@@ -680,13 +680,7 @@ RelayIOSave::declare_interface(Node &i)
     i["output_port"] = "false";
 
     // ----------- Define Param Schema -----------
-    Node &param_schema = i["param_schema"];
-
-    param_schema["type"] = "object";
-    param_schema["additionalProperties"] = true;
-
-    string_schema(param_schema["properties/path"], 1);
-    ignore_schema(param_schema["properties/rename"]);
+    io_param_schema(i["param_schema"]);
 }
 
 //-----------------------------------------------------------------------------
