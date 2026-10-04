@@ -503,9 +503,7 @@ if (ENABLE_SERIAL)
 
         set(imported_targets_to_link "")
 
-        # updated for viskores 1.9
         list(APPEND imported_targets_to_link
-                    viskores::viskoresdiympi_nompi
                     viskores::io
                     viskores::rendering
                     viskores::filter_clean_grid
@@ -707,9 +705,7 @@ if(MPI_FOUND)
 
         set(imported_targets_to_link "")
 
-        # updated for viskores 1.9
         list(APPEND imported_targets_to_link
-                    viskores::viskoresdiympi_nompi
                     viskores::io
                     viskores::rendering
                     viskores::filter_clean_grid
