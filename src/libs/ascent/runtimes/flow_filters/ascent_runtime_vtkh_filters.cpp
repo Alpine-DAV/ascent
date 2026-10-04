@@ -4551,7 +4551,7 @@ VTKHProject2d::execute()
             bad_lens = true;
         }
 
-        if( (rays_norms_y_len == 0) && 
+        if( (rays_norms_x_len == 0) &&
             (rays_norms_y_len == 0) &&
             (rays_norms_z_len == 0) )
         {

@@ -816,7 +816,7 @@ JitableFusion::vector()
     const Kernel &arg2_kernel = *input_kernels[arg2_port];
     const Kernel &arg3_kernel = *input_kernels[arg3_port];
     if(arg1_kernel.num_components != 1 || arg2_kernel.num_components != 1 ||
-       arg2_kernel.num_components != 1)
+       arg3_kernel.num_components != 1)
     {
       ASCENT_ERROR("Vector arguments must all have exactly one component.");
     }
