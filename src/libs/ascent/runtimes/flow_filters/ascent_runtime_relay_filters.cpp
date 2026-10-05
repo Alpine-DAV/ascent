@@ -1080,12 +1080,11 @@ RelayIOLoad::execute()
     std::string path, protocol;
     path = params()["path"].as_string();
     
-    // we pass thru most params as load opts, except:
+    // we plan to pass thru most params as load opts, except:
     //  path
     //  rename
+    //
     load_opts.remove("path");
-
-    // TODO RENAME NOT YET PASSED VIA PARAMS
 
     Node rename_opts;
     if(params().has_child("rename"))
@@ -1111,6 +1110,9 @@ RelayIOLoad::execute()
     Node *mesh = n_input.get();
     Node loaded_mesh, opts;
 
+    // TODO: This conduit issue  https://github.com/llnl/conduit/issues/1717
+    //       prevents direct pass through of options
+
 //-----------------------------------------------------------------------------
 #ifdef ASCENT_MPI_ENABLED
 //-----------------------------------------------------------------------------
@@ -1129,9 +1131,10 @@ RelayIOLoad::execute()
 //-----------------------------------------------------------------------------
 
     // loaded_mesh now contains new meshes ....
+
+    // if we have rename options, exec rename
     if(!rename_opts.dtype().is_empty())
     {
-      // TODO
       conduit::blueprint::mesh::rename(rename_opts,loaded_mesh);
     }
 

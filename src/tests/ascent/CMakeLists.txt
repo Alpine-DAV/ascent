@@ -45,6 +45,7 @@ set(BASIC_TESTS t_ascent_smoke
                 t_ascent_vorticity
                 t_ascent_relay
                 t_ascent_conduit_extract
+                t_ascent_cache_extract
                 t_ascent_vtk_file_extract
                 t_ascent_gltf_extract
                 t_ascent_htg

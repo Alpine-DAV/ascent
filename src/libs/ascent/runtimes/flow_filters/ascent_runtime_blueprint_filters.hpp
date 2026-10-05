@@ -67,6 +67,19 @@ public:
     virtual void   execute();
 };
 
+//-----------------------------------------------------------------------------
+// In-memory conduit extract, published to registry `cache` subtree
+//-----------------------------------------------------------------------------
+class ASCENT_API BlueprintCacheExtract: public ::flow::Filter
+{
+public:
+    BlueprintCacheExtract();
+   ~BlueprintCacheExtract();
+
+    virtual void   declare_interface(conduit::Node &i);
+    virtual void   execute();
+};
+
 
 //-----------------------------------------------------------------------------
 class ASCENT_API BlueprintPartition : public ::flow::Filter

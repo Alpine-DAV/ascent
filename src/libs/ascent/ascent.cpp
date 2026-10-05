@@ -873,6 +873,53 @@ Ascent::info(conduit::Node &info_out)
     }
 }
 
+//-----------------------------------------------------------------------------
+void
+Ascent::info(const std::string &key, conduit::Node &info_out)
+{
+    ASCENT_ANNOTATE_MARK_SCOPE("ascent info");
+    try
+    {
+        if(m_runtime != NULL)
+        {
+            m_runtime->Info(key, info_out);
+        }
+
+        if(key.empty())
+        {
+            info_out["status"] = m_status;
+        }
+
+        // this doesn't modify status unless
+        // info triggers an error
+    }
+    catch(conduit::Error &e)
+    {
+        set_status("Ascent::info failed",
+                   e.message());
+
+        if(m_forward_exceptions)
+        {
+            throw e;
+        }
+        else
+        {
+          if(m_runtime != NULL)
+          {
+            std::stringstream msg;
+            msg << "[Error] Ascent::info"
+                << e.message() << std::endl;
+            m_runtime->DisplayError(msg.str());
+          }
+          else
+          {
+            std::cerr<< "[Error] Ascent::info"
+                     << e.message() << std::endl;
+          }
+        }
+    }
+}
+
 
 //-----------------------------------------------------------------------------
 conduit::Node &
@@ -883,12 +930,64 @@ Ascent::info()
     {
         if(m_runtime == NULL)
         {
-            
+            // we don't have a runtime, fall through
         }
-        else // we don't have info throw and error
+        else
         {
             conduit::Node &info = m_runtime->Info();
             info["status"].set(m_status);
+            return info;
+        }
+    }
+    catch(conduit::Error &e)
+    {
+        set_status("Ascent::info failed",
+                   e.message());
+
+        if(m_forward_exceptions)
+        {
+            throw e;
+        }
+        else
+        {
+          if(m_runtime != NULL)
+          {
+            std::stringstream msg;
+            msg << "[Error] Ascent::info"
+                << e.message() << std::endl;
+            m_runtime->DisplayError(msg.str());
+          }
+          else
+          {
+            std::cerr<< "[Error] Ascent::info"
+                     << e.message() << std::endl;
+          }
+        }
+    }
+
+    m_info.reset();
+    m_info["status"] = m_status;
+    return m_info;
+}
+
+//-----------------------------------------------------------------------------
+conduit::Node &
+Ascent::info(const std::string &key)
+{
+    ASCENT_ANNOTATE_MARK_SCOPE("ascent info");
+    try
+    {
+        if(m_runtime == NULL)
+        {
+            // we don't have a runtime, fall through
+        }
+        else
+        {
+            conduit::Node &info = m_runtime->Info(key);
+            if(key.empty())
+            {
+                info["status"].set(m_status);
+            }
             return info;
         }
     }

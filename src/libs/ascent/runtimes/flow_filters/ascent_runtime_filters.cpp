@@ -90,6 +90,7 @@ register_builtin()
     AscentRuntime::register_filter_type<BlueprintFlatten>("extracts","flatten");
     AscentRuntime::register_filter_type<RelayIOSave>("extracts","relay");
     AscentRuntime::register_filter_type<ConduitExtract>("extracts","conduit");
+    AscentRuntime::register_filter_type<BlueprintCacheExtract>("extracts","cache");
     AscentRuntime::register_filter_type<RelayIOLoad>("transforms","load");
     AscentRuntime::register_filter_type<HTGIOSave>("extracts","htg");
 
