@@ -39,13 +39,16 @@ class Conduit(CMakePackage):
     git = "https://github.com/LLNL/conduit.git"
     tags = ["radiuss", "e4s"]
 
-    license("Apache-2.0")
+    license("BSD-3-Clause")
 
     version("develop", branch="develop", submodules=True)
     # note: the main branch in conduit was renamed to develop, this next entry
     # is to bridge any spack dependencies that are still using the name master
     version("master", branch="develop", submodules=True)
     # note: 2021-05-05 latest tagged release is now preferred instead of develop
+    version("0.9.8", sha256="4f6e95b517030ee24d42e6065e295447647fa621c232b8c4590291852d9d26b1")
+    version("0.9.7", sha256="e207016e453dd360b2d9a5a1245e53a9aa26ed83fdfb02cc08fc7bfed664f923")
+    version("0.9.6", sha256="370780082f095ebcb5c43067b650c78325088df726488dc5c6d414e7037c847d")
     version("0.9.5", sha256="d93294efbf0936da5a27941e13486aa1a04a74a59285786a2303eed19a24265a")
     version("0.9.4", sha256="c9edfb2ff09890084313ad9c2d83bfb7c10e70b696980762d1ae1488f9f08e6c")
     version("0.9.2", sha256="45d5a4eccd0fc978d153d29c440c53c483b8f29dfcf78ddcc9aa15c59b257177")
@@ -138,7 +141,7 @@ class Conduit(CMakePackage):
     # cmake 3.14.1 or newer basic requirement
     depends_on("cmake@3.14.1:", type="build")
     # cmake 3.21.0 or newer for conduit 0.9.0
-    depends_on("cmake@3.21.0:", type="build", when="@0.9.0:")
+    depends_on("cmake@3.26.0:", type="build", when="@0.9.0:")
 
     #######################
     # Python

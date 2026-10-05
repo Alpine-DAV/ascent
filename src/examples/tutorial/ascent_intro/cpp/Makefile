@@ -135,6 +135,22 @@ ascent_trigger_examples: ascent_trigger_example1
 ascent_trigger_example1:
 	$(CXX) $(CXX_FLAGS) $(INC_FLAGS) ascent_trigger_example1.cpp $(LNK_FLAGS) -o ascent_trigger_example1
 
+#ascent sampling examples (1-4)
+ascent_sampling_examples: ascent_sampling_example1 ascent_sampling_example2 ascent_sampling_example3 ascent_sampling_example4
+	echo "[done building trigger examples]"
+
+ascent_sampling_example1:
+	$(CXX) $(CXX_FLAGS) $(INC_FLAGS) ascent_sampling_example1.cpp $(LNK_FLAGS) -o ascent_sampling_example1
+
+ascent_sampling_example2:
+	$(CXX) $(CXX_FLAGS) $(INC_FLAGS) ascent_sampling_example2.cpp $(LNK_FLAGS) -o ascent_sampling_example2
+
+ascent_sampling_example3:
+	$(CXX) $(CXX_FLAGS) $(INC_FLAGS) ascent_sampling_example3.cpp $(LNK_FLAGS) -o ascent_sampling_example3
+
+ascent_sampling_example4:
+	$(CXX) $(CXX_FLAGS) $(INC_FLAGS) ascent_sampling_example4.cpp $(LNK_FLAGS) -o ascent_sampling_example4
+
 
 all:  ascent_first_light_example conduit_examples blueprint_examples ascent_scene_examples ascent_pipeline_examples ascent_extract_examples ascent_query_examples ascent_binning_examples ascent_trigger_examples
 	echo "[done building all examples]"
@@ -163,3 +179,7 @@ clean:
 	rm -f ascent_query_example1
 	rm -f ascent_binning_example1
 	rm -f ascent_trigger_example1
+	rm -f ascent_sampling_example1
+	rm -f ascent_sampling_example2
+	rm -f ascent_sampling_example3
+	rm -f ascent_sampling_example4

@@ -37,6 +37,7 @@ set(BASIC_TESTS t_ascent_smoke
                 t_ascent_web_main
                 t_ascent_clip
                 t_ascent_scalar_renderer
+                t_ascent_ray_surface
                 t_ascent_multi_topo
                 t_ascent_gradient
                 t_ascent_qcriterion
@@ -63,6 +64,8 @@ set(BASIC_TESTS t_ascent_smoke
                 t_ascent_vector_ops
                 t_ascent_flow_runtime
                 t_ascent_recenter
+                t_ascent_revolve
+                t_ascent_extrude
                 t_ascent_rover
                 t_ascent_lagrangian
                 t_ascent_log
@@ -121,7 +124,9 @@ if(VISKORES_FOUND)
    list(APPEND VTKH_DEP_TESTS t_ascent_vtkh_data_adapter)
    list(APPEND MPI_TESTS   t_ascent_mpi_ascent_runtime
                            t_ascent_mpi_relay_extract
-                           t_ascent_mpi_rover)
+                           t_ascent_mpi_rover
+                           t_ascent_mpi_revolve
+                           t_ascent_mpi_extrude)
 endif()
 
 

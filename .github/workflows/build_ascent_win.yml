@@ -15,10 +15,10 @@ jobs:
       CMAKE_GENERATOR: Visual Studio 17 2022
     steps:
     - name: Setup MPI
-      uses: mpi4py/setup-mpi@f200dce75b64188be849b46657dcf86c721937b2 # v1
+      uses: mpi4py/setup-mpi@3417e34f1394a16723d7913c236642c24e95fd5a # v1
     - name: Setup Python Env
       run: python3 -m pip install --upgrade pip numpy mpi4py wheel
-    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
       with: 
         submodules: 'recursive'
     - name: Build TPLs
@@ -26,6 +26,7 @@ jobs:
         cmake --version
         env build_ascent=false `
             enable_tests=OFF `
+            build_config=Release `
             ./scripts/build_ascent/build_ascent.sh
     - name: Configure Ascent
       run: |
@@ -41,11 +42,70 @@ jobs:
     - name: Install Ascent
       run: |
         echo "**** Installing Ascent"
-        cmake --install  build --config Release
+        cmake --install  build --config Release 
     - name: Run Ascent Unit Tests
       run: |
         echo "**** Ascent Unit Tests"
         cmake -E env CTEST_OUTPUT_ON_FAILURE=1 cmake --build build --config Release --target RUN_TESTS
+    # - name: Run tests under ProcDump
+    #   shell: pwsh
+    #   run: |
+    #     mkdir "$env:RUNNER_TEMP\dumps"
+
+    #     Invoke-WebRequest `
+    #       -Uri "https://download.sysinternals.com/files/Procdump.zip" `
+    #       -OutFile "$env:RUNNER_TEMP\procdump.zip"
+
+    #     Expand-Archive `
+    #       "$env:RUNNER_TEMP\procdump.zip" `
+    #       "$env:RUNNER_TEMP\procdump"
+
+    #     & "$env:RUNNER_TEMP\procdump\procdump.exe" `
+    #       -accepteula `
+    #       -ma `
+    #       -e 1 `
+    #       -x "$env:RUNNER_TEMP\dumps" `
+    #       "build\bin\Release\t_ascent_smoke.exe"
+    # - name: Analyze crash dump
+    #   if: always()
+    #   shell: powershell
+    #   run: |
+    #     $dumpDir = Join-Path $env:RUNNER_TEMP "dumps"
+    #     $dump = Get-ChildItem -Path $dumpDir -Filter "*.dmp" | Select-Object -First 1
+    #     if (-not $dump) {
+    #       Write-Host "No dump file found"
+    #       exit 0
+    #     }
+
+    #     # Find CDB installed with the Windows SDK
+    #     $cdb = Get-ChildItem "C:\Program Files (x86)\Windows Kits" `
+    #       -Recurse -Filter "cdb.exe" |
+    #       Where-Object { $_.FullName -match "\\x64\\cdb.exe$" } |
+    #       Select-Object -First 1
+
+    #     New-Item -ItemType Directory -Force crash-analysis | Out-Null
+
+    #     & $cdb.FullName `
+    #       -z $dump.FullName `
+    #       -c "!analyze -v; .ecxr; kb; lm; q" `
+    #       > crash-analysis\analysis.txt 2>&1
+
+    #     Copy-Item $dump.FullName crash-analysis\
+
+    # - name: Upload crash analysis
+    #   if: always()
+    #   uses: actions/upload-artifact@v4
+    #   with:
+    #     name: crash-analysis
+    #     path: crash-analysis/
+
+    # - name: Upload crash dumps
+    #   if: always()
+    #   uses: actions/upload-artifact@v4
+    #   with:
+    #     name: windows-crash-dumps
+    #     path: ${{ runner.temp }}/dumps
+    #     retention-days: 7
     - name: Upload Ascent Unit Test Artifacts
       if: always()
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -53,6 +113,7 @@ jobs:
         name: test-results
         path: build/tests/_output/
         retention-days: 7
+        
     # NOT READY FOR THIS ON WINDOWS YET
     # - name: Create Unit Test Report
     #   if: always()

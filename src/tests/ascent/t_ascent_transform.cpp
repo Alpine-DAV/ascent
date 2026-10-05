@@ -49,7 +49,7 @@ viskores_avalible()
 
 //-----------------------------------------------------------------------------
 void
-setup(Node &data)
+setup_input_mesh(Node &data)
 {
     //
     // Create an example mesh.
@@ -63,11 +63,11 @@ setup(Node &data)
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
 }
 
+
 //-----------------------------------------------------------------------------
 void
-setup(const std::string &tout_name, Node &data, std::string &output_file)
+setup_output_file(const std::string &tout_name, std::string &output_file)
 {
-    setup(data);
     string output_path = prepare_output_dir();
     output_file = conduit::utils::join_file_path(output_path,tout_name);
 
@@ -77,7 +77,16 @@ setup(const std::string &tout_name, Node &data, std::string &output_file)
 
 
 //-----------------------------------------------------------------------------
-TEST(ascent_translate, test_translate)
+void
+setup(const std::string &tout_name, Node &data, std::string &output_file)
+{
+    setup_input_mesh(data);
+    setup_output_file(tout_name,output_file);
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(ascent_transform, test_translate)
 {
     if(!viskores_avalible())
     {
@@ -125,7 +134,7 @@ TEST(ascent_translate, test_translate)
 }
 
 //-----------------------------------------------------------------------------
-TEST(ascent_translate, test_scale)
+TEST(ascent_transform, test_scale)
 {
     if(!viskores_avalible())
     {
@@ -177,7 +186,7 @@ TEST(ascent_translate, test_scale)
 }
 
 //-----------------------------------------------------------------------------
-TEST(ascent_translate, test_rotate_x)
+TEST(ascent_transform, test_rotate_x)
 {
     if(!viskores_avalible())
     {
@@ -229,7 +238,7 @@ TEST(ascent_translate, test_rotate_x)
 
 
 //-----------------------------------------------------------------------------
-TEST(ascent_translate, test_rotate_y)
+TEST(ascent_transform, test_rotate_y)
 {
     if(!viskores_avalible())
     {
@@ -280,7 +289,7 @@ TEST(ascent_translate, test_rotate_y)
 }
 
 //-----------------------------------------------------------------------------
-TEST(ascent_translate, test_rotate_z)
+TEST(ascent_transform, test_rotate_z)
 {
     if(!viskores_avalible())
     {
@@ -331,7 +340,7 @@ TEST(ascent_translate, test_rotate_z)
 }
 
 //-----------------------------------------------------------------------------
-TEST(ascent_translate, test_rotate_arb)
+TEST(ascent_transform, test_rotate_arb)
 {
     if(!viskores_avalible())
     {
@@ -384,7 +393,7 @@ TEST(ascent_translate, test_rotate_arb)
 
 
 //-----------------------------------------------------------------------------
-TEST(ascent_translate, test_matrix)
+TEST(ascent_transform, test_matrix)
 {
     if(!viskores_avalible())
     {
@@ -402,7 +411,7 @@ TEST(ascent_translate, test_matrix)
     // filter knobs
     // scale
     pipelines["pl1/f1/type"] = "transform";
-    // this matrix is equiv to 
+    // this matrix is equiv to
     // scale/x = 2.0
     // scale/y = 0.5
     // scale/z = 2.0
@@ -440,7 +449,7 @@ TEST(ascent_translate, test_matrix)
 }
 
 //-----------------------------------------------------------------------------
-TEST(ascent_translate, test_bad_params)
+TEST(ascent_transform, test_bad_params)
 {
     if(!viskores_avalible())
     {
@@ -448,7 +457,7 @@ TEST(ascent_translate, test_bad_params)
     }
 
     conduit::Node data;
-    setup(data);
+    setup_input_mesh(data);
 
     conduit::Node actions;
     conduit::Node &add_pipelines = actions.append();
@@ -542,7 +551,7 @@ TEST(ascent_translate, test_bad_params)
 }
 
 //-----------------------------------------------------------------------------
-TEST(ascent_translate, test_reflect_x)
+TEST(ascent_transform, test_reflect_x)
 {
     if(!viskores_avalible())
     {
@@ -595,7 +604,7 @@ TEST(ascent_translate, test_reflect_x)
 }
 
 //-----------------------------------------------------------------------------
-TEST(ascent_translate, test_reflect_arb)
+TEST(ascent_transform, test_reflect_arb)
 {
     if(!viskores_avalible())
     {
@@ -650,7 +659,7 @@ TEST(ascent_translate, test_reflect_arb)
 
 
 //-----------------------------------------------------------------------------
-TEST(ascent_translate, test_reflect_y)
+TEST(ascent_transform, test_reflect_y)
 {
     if(!viskores_avalible())
     {
@@ -702,7 +711,7 @@ TEST(ascent_translate, test_reflect_y)
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 //-----------------------------------------------------------------------------
-TEST(ascent_translate, test_reflect_x_max)
+TEST(ascent_transform, test_reflect_x_max)
 {
     if(!viskores_avalible())
     {
@@ -757,7 +766,7 @@ TEST(ascent_translate, test_reflect_x_max)
 }
 
 //-----------------------------------------------------------------------------
-TEST(ascent_translate, test_reflect_y_min_2d)
+TEST(ascent_transform, test_reflect_y_min_2d)
 {
     if(!viskores_avalible())
     {
@@ -822,7 +831,7 @@ TEST(ascent_translate, test_reflect_y_min_2d)
 }
 
 //-----------------------------------------------------------------------------
-TEST(ascent_translate, test_reflect_over_point)
+TEST(ascent_transform, test_reflect_over_point)
 {
     if(!viskores_avalible())
     {
@@ -872,6 +881,164 @@ TEST(ascent_translate, test_reflect_over_point)
     std::string msg = "An example transform filter to reflect across a point.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
+
+
+//-----------------------------------------------------------------------------
+TEST(ascent_transform, test_transform_selected_topo)
+{
+    if(!viskores_avalible())
+    {
+        return;
+    }
+
+    conduit::Node data;
+    setup_input_mesh(data);
+
+    // add a points topo to test
+    data["coordsets/pts_coords/type"] = "explicit";
+    data["coordsets/pts_coords/values/x"] = { -5.0, -2.5, 0.0, 2.5, 5.0};
+    data["coordsets/pts_coords/values/y"] = { -2.0, -2.0, 5.0, 2.0, 2.0};
+    data["coordsets/pts_coords/values/z"] = { -5.0, -5.0, 0.0, 5.0, 5.0};
+
+    data["topologies/pts_topo/type"] = "points";
+    data["topologies/pts_topo/coordset"] = "pts_coords";
+    data["fields/pts_topo_vals/association"] = "vertex";
+    data["fields/pts_topo_vals/topology"] = "pts_topo";
+    data["fields/pts_topo_vals/values"] = { -1.0, -2.0, -3.0, -4.0, -5.0 };
+
+    conduit::Node actions;
+    conduit::Node &add_pipelines = actions.append();
+    add_pipelines["action"] = "add_pipelines";
+    conduit::Node &pipelines = add_pipelines["pipelines"];
+
+    // filter knobs
+    pipelines["pl0/f1/type"] = "transform";
+    pipelines["pl0/f1/params/topology"]= "pts_topo";
+    pipelines["pl0/f1/params/translate/x"]= 42;
+    pipelines["pl0/f1/params/translate/y"]= 42;
+    pipelines["pl0/f1/params/translate/z"]= 42;
+
+    conduit::Node &add_scenes = actions.append();
+    add_scenes["action"] = "add_scenes";
+    conduit::Node &scenes = add_scenes["scenes"];
+
+    // before
+    scenes["s1/plots/p1/type"]  = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "braid";
+    scenes["s1/plots/p2/type"]  = "pseudocolor";
+    scenes["s1/plots/p2/field"] = "pts_topo_vals";
+    scenes["s1/plots/p2/points/radius"] = 1.0;
+
+    // after
+    scenes["s2/plots/p1/type"]  = "pseudocolor";
+    scenes["s2/plots/p1/field"] = "braid";
+    scenes["s2/plots/p1/pipeline"] = "pl0";
+
+    scenes["s2/plots/p2/type"]  = "pseudocolor";
+    scenes["s2/plots/p2/field"] = "pts_topo_vals";
+    scenes["s2/plots/p2/points/radius"] = 1.0;
+
+    scenes["s2/plots/p2/pipeline"] = "pl0";
+
+    std::string output_file_bf, output_file_af;
+    setup_output_file("tout_transform_selected_topo_before",output_file_bf);
+    scenes["s1/image_prefix"] = output_file_bf;
+    setup_output_file("tout_transform_selected_topo_after",output_file_af);
+    scenes["s2/image_prefix"] = output_file_af;
+
+    actions.print();
+
+    Ascent ascent;
+    ascent.open();
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // check vs baselines
+    EXPECT_TRUE(check_test_image(output_file_bf));
+    EXPECT_TRUE(check_test_image(output_file_af));
+    std::string msg = "An example of applying a transform to a selected topology";
+    ASCENT_ACTIONS_DUMP(actions,output_file_af,msg);
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_transform, test_transform_selected_topos)
+{
+    if(!viskores_avalible())
+    {
+        return;
+    }
+
+    conduit::Node data;
+    setup_input_mesh(data);
+
+    // add a points topo to test
+    data["coordsets/pts_coords/type"] = "explicit";
+    data["coordsets/pts_coords/values/x"] = { -5.0, -2.5, 0.0, 2.5, 5.0};
+    data["coordsets/pts_coords/values/y"] = { -2.0, -2.0, 5.0, 2.0, 2.0};
+    data["coordsets/pts_coords/values/z"] = { -5.0, -5.0, 0.0, 5.0, 5.0};
+
+    data["topologies/pts_topo/type"] = "points";
+    data["topologies/pts_topo/coordset"] = "pts_coords";
+    data["fields/pts_topo_vals/association"] = "vertex";
+    data["fields/pts_topo_vals/topology"] = "pts_topo";
+    data["fields/pts_topo_vals/values"] = { -1.0, -2.0, -3.0, -4.0, -5.0 };
+
+    conduit::Node actions;
+    conduit::Node &add_pipelines = actions.append();
+    add_pipelines["action"] = "add_pipelines";
+    conduit::Node &pipelines = add_pipelines["pipelines"];
+
+    // filter knobs
+    pipelines["pl0/f1/type"] = "transform";
+    pipelines["pl0/f1/params/topologies"].append() =  "mesh";
+    pipelines["pl0/f1/params/translate/x"]= 42;
+    pipelines["pl0/f1/params/translate/y"]= 42;
+    pipelines["pl0/f1/params/translate/z"]= 42;
+
+    conduit::Node &add_scenes = actions.append();
+    add_scenes["action"] = "add_scenes";
+    conduit::Node &scenes = add_scenes["scenes"];
+
+    // before
+    scenes["s1/plots/p1/type"]  = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "braid";
+    scenes["s1/plots/p2/type"]  = "pseudocolor";
+    scenes["s1/plots/p2/field"] = "pts_topo_vals";
+    scenes["s1/plots/p2/points/radius"] = 1.0;
+
+    // after
+    scenes["s2/plots/p1/type"]  = "pseudocolor";
+    scenes["s2/plots/p1/field"] = "braid";
+    scenes["s2/plots/p1/pipeline"] = "pl0";
+
+    scenes["s2/plots/p2/type"]  = "pseudocolor";
+    scenes["s2/plots/p2/field"] = "pts_topo_vals";
+    scenes["s2/plots/p2/points/radius"] = 1.0;
+
+    scenes["s2/plots/p2/pipeline"] = "pl0";
+
+    std::string output_file_bf, output_file_af;
+    setup_output_file("tout_transform_selected_topos_before",output_file_bf);
+    scenes["s1/image_prefix"] = output_file_bf;
+    setup_output_file("tout_transform_selected_topos_after",output_file_af);
+    scenes["s2/image_prefix"] = output_file_af;
+
+    actions.print();
+
+    Ascent ascent;
+    ascent.open();
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // check vs baselines
+    EXPECT_TRUE(check_test_image(output_file_bf));
+    EXPECT_TRUE(check_test_image(output_file_af));
+    std::string msg = "An example of applying a transform to selected topologies";
+    ASCENT_ACTIONS_DUMP(actions,output_file_af,msg);
+}
+
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {
