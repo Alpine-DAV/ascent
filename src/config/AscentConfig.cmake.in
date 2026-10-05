@@ -114,7 +114,7 @@ if(NOT ASCENT_FOUND)
 
     # advertise if python support is enabled
     set(ASCENT_PYTHON_ENABLED @PYTHON_FOUND@)
-    set(ASCENT_PYTHON_EXECUTABLE "@PYTHON_EXECUTABLE@")
+    set(ASCENT_PYTHON_EXECUTABLE "@Python3_EXECUTABLE@")
 
     set(ASCENT_SERIAL_ENABLED @ENABLE_SERIAL@)
     set(ASCENT_MPI_ENABLED @ENABLE_MPI@)
@@ -140,6 +140,37 @@ if(NOT ASCENT_FOUND)
     # finish setup
     include("${ASCENT_CMAKE_CONFIG_DIR}/ascent_setup_targets.cmake")
 
-    set(ASCENT_FOUND TRUE)
+    set(Ascent_FOUND TRUE)
+
+    set(_ascent_known_components MPI)
+    foreach(_ascent_component IN LISTS Ascent_FIND_COMPONENTS)
+      if (NOT _ascent_component IN_LIST _ascent_known_components)
+        set("Ascent_${_ascent_component}_FOUND" 0)
+        set("Ascent_${_ascent_component}_NOT_FOUND_MESSAGE"
+          "Unknown component ${_ascent_component}")
+
+        if(Ascent_FIND_REQUIRED_${_ascent_component})
+          set(Ascent_FOUND 0)
+          list(APPEND Ascent_NOT_FOUND_MESSAGE
+            "Unknown component ${_ascent_component}")
+        endif()
+      else()
+        if(NOT DEFINED Ascent_${_ascent_component}_FOUND)
+          set("Ascent_${_ascent_component}_FOUND" 0)
+          set("Ascent_${_ascent_component}_NOT_FOUND_MESSAGE"
+            "Component ${_ascent_component} was not found (unimplemented?)")
+        endif()
+        if(NOT Ascent_${_ascent_component}_FOUND AND
+           Ascent_FIND_REQUIRED_${_ascent_component})
+         set(Ascent_FOUND 0)
+          list(APPEND Ascent_NOT_FOUND_MESSAGE
+            "Component ${_ascent_component} was not found: ${Ascent_${_ascent_component}_NOT_FOUND_MESSAGE}")
+        endif()
+      endif()
+    endforeach()
+    unset(_ascent_known_components)
+    unset(_ascent_component)
+
+    set(ASCENT_FOUND ${Ascent_FOUND})
 
 endif()

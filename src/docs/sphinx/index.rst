@@ -123,9 +123,10 @@ Ascent Documentation
    BuildingAscent
    AscentAPI
    Actions/index
-   FeatureMap
+   Actions/Examples
    Utilities
    GPU_notes
+..    FeatureMap
 
 
 .. toctree::
