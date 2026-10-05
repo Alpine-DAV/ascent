@@ -142,9 +142,7 @@ void CopyArray(viskores::cont::ArrayHandle<T> &viskores_handle, const T* vals_pt
 std::vector<index_t>
 IndexVector(const conduit::Node &node)
 {
-  conduit::Node idx_node;
-  node.to_index_t_array(idx_node);
-  conduit::index_t_array idx_array = idx_node.as_index_t_array();
+  const conduit::index_t_accessor idx_array = node.as_index_t_accessor();
 
   std::vector<index_t> res(idx_array.number_of_elements());
   for(index_t i = 0; i < idx_array.number_of_elements(); ++i)
@@ -158,7 +156,7 @@ IndexVector(const conduit::Node &node)
 bool
 HasStridedLayout(const conduit::Node &node)
 {
-  return node.has_child("offsets") && node.has_child("strides");
+  return node.has_child("offsets") || node.has_child("strides");
 }
 
 // Get logical field or coordinate dimensions from topology dimensions.
@@ -192,7 +190,7 @@ LogicalIndexArray(const std::vector<index_t> &logical_dims,
                   const index_t element_stride,
                   viskores::Id &source_size)
 {
-  const index_t ni = logical_dims[0];
+  const index_t ni = logical_dims.size() > 0 ? logical_dims[1] : 1;
   const index_t nj = logical_dims.size() > 1 ? logical_dims[1] : 1;
   const index_t nk = logical_dims.size() > 2 ? logical_dims[2] : 1;
 
@@ -265,8 +263,8 @@ GetPermutedArray(const conduit::Node &node,
 template<typename T>
 void
 BlueprintIndexArrayToViskoresIdArray(const conduit::Node &n,
-                                 bool zero_copy,
-                                 viskores::cont::ArrayHandle<T> &viskores_handle)
+                                     bool zero_copy,
+                                     viskores::cont::ArrayHandle<T> &viskores_handle)
 {
     int array_size = n.dtype().number_of_elements();
 
@@ -371,12 +369,12 @@ GetExplicitCoordinateSystem(const conduit::Node &n_coords,
       int x_verts_expanded = (nverts - 1) * x_element_stride + 1;
       const T *x_verts_ptr = n_coords["values/x"].value();
       viskores::cont::ArrayHandle<T> x_source_array = viskores::cont::make_ArrayHandle<T>(x_verts_ptr,
-                                                                                  x_verts_expanded,
-                                                                                  copy);
+                                                                                          x_verts_expanded,
+                                                                                          copy);
       viskores::cont::ArrayHandleStride<T> x_stride_handle(x_source_array,
-                                                       nverts,
-                                                       x_element_stride,
-                                                       0); // offset
+                                                           nverts,
+                                                           x_element_stride,
+                                                           0); // offset
 
       viskores::cont::Algorithm::Copy(x_stride_handle, x_coords_handle);
     }
@@ -391,12 +389,12 @@ GetExplicitCoordinateSystem(const conduit::Node &n_coords,
       int y_verts_expanded = (nverts - 1) * y_element_stride + 1;
       const T *y_verts_ptr = n_coords["values/y"].value();
       viskores::cont::ArrayHandle<T> y_source_array = viskores::cont::make_ArrayHandle<T>(y_verts_ptr,
-                                                                                  y_verts_expanded,
-                                                                                  copy);
+                                                                                          y_verts_expanded,
+                                                                                          copy);
       viskores::cont::ArrayHandleStride<T> y_stride_handle(y_source_array,
-                                                       nverts,
-                                                       y_element_stride,
-                                                       0); // offset
+                                                           nverts,
+                                                           y_element_stride,
+                                                           0); // offset
 
       viskores::cont::Algorithm::Copy(y_stride_handle, y_coords_handle);
     }
@@ -418,20 +416,20 @@ GetExplicitCoordinateSystem(const conduit::Node &n_coords,
       int z_verts_expanded = (nverts - 1) * z_element_stride + 1;
       const T *z_verts_ptr = n_coords["values/z"].value();
       viskores::cont::ArrayHandle<T> z_source_array = viskores::cont::make_ArrayHandle<T>(z_verts_ptr,
-                                                                                  z_verts_expanded,
-                                                                                  copy);
+                                                                                          z_verts_expanded,
+                                                                                          copy);
       viskores::cont::ArrayHandleStride<T> z_stride_handle(z_source_array,
-                                                       nverts,
-                                                       z_element_stride,
-                                                       0); // offset
+                                                           nverts,
+                                                           z_element_stride,
+                                                           0); // offset
 
       viskores::cont::Algorithm::Copy(z_stride_handle, z_coords_handle);
     }
 
     return viskores::cont::CoordinateSystem(name,
-                                        make_ArrayHandleSOA(x_coords_handle,
-                                                            y_coords_handle,
-                                                            z_coords_handle));
+                                            make_ArrayHandleSOA(x_coords_handle,
+                                                                y_coords_handle,
+                                                                z_coords_handle));
 
 }
 
@@ -458,6 +456,7 @@ GetStructuredExplicitCoordinateSystem(const conduit::Node &n_coords,
   {
     nverts *= static_cast<int>(point_dims[i]);
   }
+
   ndims = point_dims.size() == 3 ? 3 : 2;
 
   index_t x_element_stride = n_coords["values/x"].dtype().stride() / sizeof(T);
@@ -484,12 +483,18 @@ GetStructuredExplicitCoordinateSystem(const conduit::Node &n_coords,
                                                strides,
                                                z_element_stride,
                                                zero_copy);
-    return viskores::cont::CoordinateSystem(name,viskores::cont::make_ArrayHandleCompositeVector(x_coords_handle,y_coords_handle,z_coords_handle));
+    return viskores::cont::CoordinateSystem(name,
+		                            viskores::cont::make_ArrayHandleCompositeVector(x_coords_handle,
+                                                                                            y_coords_handle,
+                                                                                            z_coords_handle));
   }
 
   viskores::cont::ArrayHandle<T> z_coords_handle;
   z_coords_handle.AllocateAndFill(nverts, 0.0);
-  return viskores::cont::CoordinateSystem(name,viskores::cont::make_ArrayHandleCompositeVector(x_coords_handle,y_coords_handle,z_coords_handle));
+  return viskores::cont::CoordinateSystem(name,
+                                          viskores::cont::make_ArrayHandleCompositeVector(x_coords_handle,
+                                                                                          y_coords_handle,
+      			                                                                  z_coords_handle));
 }
 
 template<typename T>
@@ -1877,8 +1882,7 @@ VTKHDataAdapter::StructuredBlueprintToViskoresDataSet
     viskores::cont::CoordinateSystem coords;
     int ndims = 0;
     const bool has_strided_topology =
-      n_topo.has_path("elements/dims/offsets") &&
-      n_topo.has_path("elements/dims/strides");
+      detail::HasStridedLayout(n_topo["elements/dims"]);
 
     const bool is_rz = n_coords["values"].has_child("r") && n_coords["values"].has_child("z");
     const bool is_cartesian = n_coords["values"].has_child("x") && n_coords["values"].has_child("y");
@@ -1922,12 +1926,12 @@ VTKHDataAdapter::StructuredBlueprintToViskoresDataSet
                 }
 
                 coords = detail::GetExplicitCoordinateSystem<float64>(n_coords,
-                                                                        coords_name,
-                                                                        ndims,
-                                                                        x_element_stride,
-                                                                        y_element_stride,
-                                                                        z_element_stride,
-                                                                        zero_copy);
+                                                                      coords_name,
+                                                                      ndims,
+                                                                      x_element_stride,
+                                                                      y_element_stride,
+                                                                      z_element_stride,
+                                                                      zero_copy);
             }
         }
         else if(n_coords["values/x"].dtype().is_float32())
@@ -1956,12 +1960,12 @@ VTKHDataAdapter::StructuredBlueprintToViskoresDataSet
                 }
 
                 coords = detail::GetExplicitCoordinateSystem<float32>(n_coords,
-                                                                        coords_name,
-                                                                        ndims,
-                                                                        x_element_stride,
-                                                                        y_element_stride,
-                                                                        z_element_stride,
-                                                                        zero_copy);
+                                                                      coords_name,
+                                                                      ndims,
+                                                                      x_element_stride,
+                                                                      y_element_stride,
+                                                                      z_element_stride,
+                                                                      zero_copy);
             }
         }
         else
@@ -1980,11 +1984,11 @@ VTKHDataAdapter::StructuredBlueprintToViskoresDataSet
             index_t z_element_stride = z_stride / sizeof(float64);
             
             coords = detail::GetRZCoordinateSystem<float64>(n_coords,
-                                                                coords_name,
-                                                                ndims,
-                                                                r_element_stride,
-                                                                z_element_stride,
-                                                                zero_copy);
+                                                            coords_name,
+                                                            ndims,
+                                                            r_element_stride,
+                                                            z_element_stride,
+                                                            zero_copy);
         }
         else if(n_coords["values/r"].dtype().is_float32())
         {
@@ -1994,11 +1998,11 @@ VTKHDataAdapter::StructuredBlueprintToViskoresDataSet
             index_t z_element_stride = z_stride / sizeof(float32);
 
             coords = detail::GetRZCoordinateSystem<float32>(n_coords,
-                                                                coords_name,
-                                                                ndims,
-                                                                r_element_stride,
-                                                                z_element_stride,
-                                                                zero_copy);
+                                                            coords_name,
+                                                            ndims,
+                                                            r_element_stride,
+                                                            z_element_stride,
+                                                            zero_copy);
         }
         else
         {
@@ -2494,7 +2498,9 @@ VTKHDataAdapter::AddField(const std::string &field_name,
     const Node &n_vals = is_values ? n_field["values"] : n_field["values"].child(0);
     int num_vals = n_vals.dtype().number_of_elements();
     // Strided fields can have padded storage larger than the logical mesh.
-    const bool has_strided_layout = detail::HasStridedLayout(n_field);
+    const bool has_strided_layout =
+      n_topo["type"].as_string() == "structured" &&
+      detail::HasStridedLayout(n_field);
 
     if(!has_strided_layout && assoc_str == "vertex" && nverts != num_vals)
     {
@@ -2525,8 +2531,14 @@ VTKHDataAdapter::AddField(const std::string &field_name,
         if(has_strided_layout)
         {
             logical_dims = detail::LogicalDims(n_topo, assoc_str);
-            offsets = detail::IndexVector(n_field["offsets"]);
-            strides = detail::IndexVector(n_field["strides"]);
+            if(n_field.has_child("offsets"))
+            {
+                offsets = detail::IndexVector(n_field["offsets"]);
+            }
+            if(n_field.has_child("strides"))
+            {
+                strides = detail::IndexVector(n_field["strides"]);
+            }
         }
 
         // viskores can stride as long as the strides are a multiple of the native stride

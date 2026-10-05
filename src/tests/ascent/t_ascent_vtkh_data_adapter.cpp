@@ -455,6 +455,100 @@ TEST(ascent_data_adapter, strided_structured_to_viskores)
     delete ds;
 }
 
+//-----------------------------------------------------------------------------
+TEST(ascent_data_adapter, strided_structured_column_major_to_viskores)
+{
+    Node data, verify_info;
+    data.parse(R"yaml(
+coordsets:
+  coords:
+    type: explicit
+    values:
+      x: [0.0, 0.0, 0.0, 10.0, 10.0, 10.0]
+      y: [0.0, 1.0, 2.0, 0.0, 1.0, 2.0]
+topologies:
+  mesh:
+    type: structured
+    coordset: coords
+    elements:
+      dims:
+        i: 1
+        j: 2
+        strides: [3, 1]
+fields:
+  logical_vals:
+    association: vertex
+    topology: mesh
+    strides: [3, 1]
+    values: [1.0, 3.0, 5.0, 2.0, 4.0, 6.0]
+)yaml", "yaml");
+    ASSERT_TRUE(conduit::blueprint::mesh::verify(data, verify_info))
+      << verify_info.to_yaml();
+
+    viskores::cont::DataSet *ds =
+      VTKHDataAdapter::BlueprintToViskoresDataSet(data, true, "mesh");
+    ASSERT_NE(ds, nullptr);
+    EXPECT_EQ(ds->GetCoordinateSystem().GetData().GetNumberOfValues(), 6);
+    EXPECT_EQ(ds->GetCellSet().GetNumberOfPoints(), 6);
+    EXPECT_EQ(ds->GetCellSet().GetNumberOfCells(), 2);
+
+    viskores::cont::ArrayHandle<viskores::Vec3f_64> coords;
+    viskores::cont::ArrayHandle<viskores::Float64> values;
+    viskores::cont::ArrayCopy(ds->GetCoordinateSystem().GetData(), coords);
+    viskores::cont::ArrayCopy(ds->GetField("logical_vals").GetData(), values);
+
+    auto coords_portal = coords.ReadPortal();
+    auto values_portal = values.ReadPortal();
+    for(viskores::Id j = 0; j < 3; ++j)
+    {
+        for(viskores::Id i = 0; i < 2; ++i)
+        {
+            const viskores::Id logical_idx = j * 2 + i;
+            const viskores::Vec3f_64 point = coords_portal.Get(logical_idx);
+            EXPECT_EQ(point[0], static_cast<viskores::Float64>(i * 10));
+            EXPECT_EQ(point[1], static_cast<viskores::Float64>(j));
+            EXPECT_EQ(point[2], 0.0);
+            EXPECT_EQ(values_portal.Get(logical_idx),
+                      static_cast<viskores::Float64>(logical_idx + 1));
+        }
+    }
+
+    delete ds;
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_data_adapter, strided_structured_3d_to_viskores)
+{
+    Node data, desc, verify_info;
+    conduit::blueprint::mesh::examples::strided_structured(desc, 4, 3, 2, data);
+    ASSERT_TRUE(conduit::blueprint::mesh::verify(data, verify_info))
+      << verify_info.to_yaml();
+
+    viskores::cont::DataSet *ds =
+      VTKHDataAdapter::BlueprintToViskoresDataSet(data, true, "mesh");
+    ASSERT_NE(ds, nullptr);
+    EXPECT_EQ(ds->GetCoordinateSystem().GetData().GetNumberOfValues(), 24);
+    EXPECT_EQ(ds->GetCellSet().GetNumberOfPoints(), 24);
+    EXPECT_EQ(ds->GetCellSet().GetNumberOfCells(), 6);
+
+    viskores::cont::ArrayHandle<viskores::Float64> vert_vals;
+    viskores::cont::ArrayHandle<viskores::Float64> ele_vals;
+    viskores::cont::ArrayCopy(ds->GetField("vert_vals").GetData(), vert_vals);
+    viskores::cont::ArrayCopy(ds->GetField("ele_vals").GetData(), ele_vals);
+    auto vert_portal = vert_vals.ReadPortal();
+    auto ele_portal = ele_vals.ReadPortal();
+    for(viskores::Id i = 0; i < vert_vals.GetNumberOfValues(); ++i)
+    {
+        EXPECT_EQ(vert_portal.Get(i), static_cast<viskores::Float64>(i + 1));
+    }
+    for(viskores::Id i = 0; i < ele_vals.GetNumberOfValues(); ++i)
+    {
+        EXPECT_EQ(ele_portal.Get(i), static_cast<viskores::Float64>(i + 1));
+    }
+
+    delete ds;
+}
+
 
 //-----------------------------------------------------------------------------
 TEST(ascent_data_adapter, consistent_domain_ids_check)
