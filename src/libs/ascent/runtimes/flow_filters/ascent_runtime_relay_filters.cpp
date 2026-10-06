@@ -1176,13 +1176,21 @@ RelayIOLoad::execute()
 
     // we can add the new meshes as new domains, we don't have 
     // to combine with existing trees
-    if(mesh->dtype().is_list())
+
+    // mesh is multi domain, it will either be a list or empty Node
+    if(mesh->dtype().is_list() || mesh->dtype().is_empty())
     {
           NodeIterator load_itr = loaded_mesh.children();
           while(load_itr.has_next())
           {
             mesh->append().move(load_itr.next());
           }
+    }
+    else
+    {
+        ASCENT_ERROR("Blueprint load failure. "
+                     "Blueprint mesh Node is " << mesh->dtype().name() <<
+                     ", expected List or Empty Node");
     }
 
     // we can return our input data object

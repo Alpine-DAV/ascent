@@ -1553,7 +1553,7 @@ TEST(ascent_relay, test_relay_load_bad_path)
     Node n;
     ascent::about(n);
 
-    // create a basic point mesh to public to ascent
+    // create a basic point mesh to hand to ascent
     Node data;
     data["coordsets/pt_coords/type"] = "explicit";
     data["coordsets/pt_coords/values/x"] = {0.0, 1.0, 2.0};
