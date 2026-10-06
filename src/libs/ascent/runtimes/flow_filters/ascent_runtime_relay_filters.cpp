@@ -1113,22 +1113,58 @@ RelayIOLoad::execute()
     // TODO: This conduit issue  https://github.com/llnl/conduit/issues/1717
     //       prevents direct pass through of options
 
+    // if `path` starts with "cache:" look in ascents' cache
+    //
+    bool cache_load = (path.find("cache:") == 0);
+
+    if(cache_load)
+    {
+        std::string cache_name = path.substr(6); // len("cache:") == 6
+        conduit::Node *cache = graph().workspace().registry().fetch<Node>("cache");
+        // load a copy from the cache
+        if(cache->has_child(cache_name))
+        {
+            loaded_mesh.set(cache->fetch(cache_name));
+        }
+        else
+        {
+          const std::vector<std::string> child_names = cache->child_names();
+          std::ostringstream oss;
+          oss << "failed to load from cache, cache entry `" << cache_name << "` not found." << std::endl;
+          if(child_names.empty())
+          {
+            oss << " (Ascent cache is empty)" << std::endl;
+          }
+          else
+          {
+              oss << "Ascent cache entry names: " << std::endl;
+              for( const auto & name: child_names)
+              {
+                oss << " " << name << std::endl;
+              }
+          }
+          ASCENT_ERROR(oss.str());
+        }
+    }
+    else
+    {
 //-----------------------------------------------------------------------------
 #ifdef ASCENT_MPI_ENABLED
 //-----------------------------------------------------------------------------
-    MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
-    conduit::relay::mpi::io::blueprint::load_mesh(path,
-                                                  loaded_mesh,
-                                                  mpi_comm);
+        MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
+        conduit::relay::mpi::io::blueprint::load_mesh(path,
+                                                      loaded_mesh,
+                                                      mpi_comm);
 
 //-----------------------------------------------------------------------------
 #else // non mpi case
 //-----------------------------------------------------------------------------
-    conduit::relay::io::blueprint::load_mesh(path,
-                                             loaded_mesh);
+        conduit::relay::io::blueprint::load_mesh(path,
+                                                 loaded_mesh);
 //-----------------------------------------------------------------------------
 #endif
 //-----------------------------------------------------------------------------
+    }
 
     // loaded_mesh now contains new meshes ....
 

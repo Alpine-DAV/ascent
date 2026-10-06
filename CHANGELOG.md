@@ -6,14 +6,14 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ## Unreleased
 ### Preferred dependency versions for ascent@develop
-- cmake@3.23 or newer
-- conduit@0.9.7
-- viskores@1.1.1
+- cmake@3.26 or newer
+- conduit@0.9.9 or newer
+- viskores@1.2.0 (requires patches [patch1](https://github.com/Alpine-DAV/ascent/blob/develop/scripts/build_ascent/2026_08_13_viskores-add-plumbing-for-rays-wo-camera.patch) [patch2](https://github.com/Alpine-DAV/ascent/blob/develop/scripts/build_ascent/2026_09_15_viskores_extrusion_connectivity.patch) [patch3](https://github.com/Alpine-DAV/ascent/blob/develop/scripts/build_ascent/2026_09_28_viskores_mir_fixes.patch))
 - raja@v2025.09.0
 - umpire@v2025.09.0
 - camp@v2025.09.2
 - kokkos@4.7.00
-- mfem@4.8
+- mfem@4.10
 
 ### Added
 - Added Revolve and Extrude filters for rotational and linear extrusion, respectively
@@ -34,16 +34,20 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added support for plotting pseudocolor plots without providing a field
 - Added support for hex color values for custom color tables
 - Added `topology` and `topologies` parameters to the transform filter, to allow transforming a selected subset of the published topologies
+- Added `cache` extract, that creates an an in-memory copy of mesh data and caches it by name
+- Added `clear_cache` action, which allows you removed cached mesh data by name
+- Added `load` filter that allows you to load additional mesh data from files, or cached data (via `cache:name`)
 
 ### Changed
-- Redefined the parameter verification and surprise checking behavior for Filters to instead use a conduit based JSON Schema style verification schema. Implemented for all existing filters.
-- Changed tiled rendering default to `false`.
+- Redefined the parameter verification and surprise checking behavior for Filters to instead use a conduit based JSON Schema style verification schema. Implemented for all existing filters
+- Changed tiled rendering default to `false`
 - A couple of bugs were fixed with tiled rendering and the tiled rendering default was changed to `true`.
+- Changed ascent.info() methods to provide variants that accepts key. The key `cache` will return Ascent's cache instead of the normal info summary. This gives direct access to any cached data sets
 
 ### Fixed
 - Fixed the aspect ratio for frustum renderings
 - Fixed a bug causing unnecessarily strict type constraints for camera parameters.
-- Fixed issue where the plot did not align with the 3d axes when the camera was panned (`camera/xpan` and `camera/ypan`).
+- Fixed issue where the plot did not align with the 3d axes when the camera was panned (`camera/xpan` and `camera/ypan`)
 - Fixed a crash with PNG encoding of large renders (10k+ by 10k+ resolution)
 
 ## [0.9.5] - Released 2025-09-10
