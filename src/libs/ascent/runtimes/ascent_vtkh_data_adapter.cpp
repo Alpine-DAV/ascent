@@ -190,7 +190,7 @@ LogicalIndexArray(const std::vector<index_t> &logical_dims,
                   const index_t element_stride,
                   viskores::Id &source_size)
 {
-  const index_t ni = logical_dims.size() > 0 ? logical_dims[1] : 1;
+  const index_t ni = logical_dims.size() > 0 ? logical_dims[0] : 1;
   const index_t nj = logical_dims.size() > 1 ? logical_dims[1] : 1;
   const index_t nk = logical_dims.size() > 2 ? logical_dims[2] : 1;
 
