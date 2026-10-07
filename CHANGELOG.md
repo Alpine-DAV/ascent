@@ -16,6 +16,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - mfem@4.8
 
 ### Added
+- Added support for structured strided Blueprint meshes in the VTK-h data adapter.
 - Added Revolve and Extrude filters for rotational and linear extrusion, respectively
 - Added support for VisIt material volume fraction fields in field filtering and MIR.
 - Added a `gltf` extract that exports surface geometry (points, lines, and triangles) as GLB files, with optional scalar field coloring.
