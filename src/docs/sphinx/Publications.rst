@@ -42,21 +42,26 @@ Publications
 
 Tutorials
 -------------
+ * `Introduction to Ascent, a Flyweight In Situ Visualization and Analysis for HPC Simulations @ LLNL's HPCIC HPC Tutorial Series 2026 <https://hpcic.llnl.gov/tutorials/2026-hpc-tutorials>`_ - September 2026, Virtual
+ * Visualization and Analysis of HPC Simulation Data with VisIt and Ascent @ ATPESC26 - July 2026, St. Charles, IL, USA
+ * In-Situ Analysis and Visualization with Ascent @ ATPESC25 - August 2025, St. Charles, IL, USA
+ * `Introduction to Ascent, a Flyweight In Situ Visualization and Analysis for HPC Simulations @ LLNL's HPCIC AWS Tutorial Series 2025 <https://hpcic.llnl.gov/tutorials/2025-hpc-tutorials>`_ - July 2025, Virtual
+ * `Introduction to Ascent, a Flyweight In Situ Visualization and Analysis for HPC Simulations @ LLNL's HPCIC AWS Tutorial Series 2024 <https://hpcic.llnl.gov/tutorials/2024-hpc-tutorials>`_ - August 2024, Virtual
+ * In-Situ Analysis and Visualization with Ascent @ ATPESC24 - August 2024, St. Charles, IL, USA
+ * `In-Situ Analysis and Visualization with Ascent and ParaView Catalyst <https://sc23.supercomputing.org/presentation/?id=tut133&sess=sess211>`_ - November 2023, Denver, CO, USA
+ * `Introduction to Ascent, a Flyweight In Situ Visualization and Analysis for HPC Simulations @ LLNL's RADIUSS AWS Tutorial Series 2023 <https://software.llnl.gov/radiuss/event/2023/07/11/radiuss-on-aws/>`_ - August 2023, Virtual
+ * `Introduction to Ascent, a Flyweight In Situ Visualization and Analysis for HPC Simulations @ LLNL's RADIUSS AWS Tutorial Series 2022 <https://software.llnl.gov/radiuss/event/2022/07/07/radiuss-on-aws/>`_ - August 2022, Virtual
+ * `In Situ Analysis and Visualization with ParaView Catalyst and Ascent @ ISC 2022 <https://app.swapcard.com/widget/event/isc-high-performance-2022/planning/UGxhbm5pbmdfODYxMTUx>`_ - May 2022, Hamburg, Germany 
+ * ECP 2022 Annual Meeting - May 2022, Virtual
+ * `In Situ Analysis and Visualization with SENSEI and Ascent @ SC21 <https://sc21.supercomputing.org/presentation/?id=tut127&sess=sess190>`_ - Nov 2021, Virtual
+ * ECP 2021 Annual Meeting - April 2021, Virtual
+ * `In Situ Scientific Analysis and Visualization using ALPINE Ascent @ ECP Training Event <https://www.exascaleproject.org/event/ascent-201217/>`_ - Dec 2020, Virtual
+ * `In Situ Analysis and Visualization with SENSEI and Ascent @ SC20 <https://sc20.supercomputing.org/presentation/?id=tut111&sess=sess257>`_ - Nov 2020, Virtual
+ * ECP 2020 Annual Meeting - Feb 2020, Houston, TX, USA
+ * `In Situ Analysis and Visualization with SENSEI and Ascent @ SC19 <https://sc19.supercomputing.org/presentation/?id=tut141&sess=sess199>`_ - Nov 2019, Denver, CO, USA
+ * ECP 2019 Annual Meeting - Jan 2019, Houston, TX, USA
+ * ECP 2018 Annual Meeting - Feb 2018, Knoxville, TX, USA
 
-- `In Situ Analysis and Visualization with Ascent @ LLNL 2024 HPC Tutorial Series` August 2024, Virtual Event.
-- `In Situ Analysis and Visualization with Ascent @ ATPESC 2024` August 2024, St Charles, IL.
-- `In Situ Analysis and Visualization with Ascent and ParaView Catalyst @ SC 23`` <https://app.swapcard.com/widget/event/isc-high-performance-2022/planning/UGxhbm5pbmdfODYxMTUx>`_ - November 2023, Denver, CO.
-- `In Situ Analysis and Visualization with Ascent @ LLNL RADIUSS AWS Tutorial` August 2023, Virtual Event.
-- `In Situ Analysis and Visualization with ParaView Catalyst and Ascent @ ISC 2022 <https://app.swapcard.com/widget/event/isc-high-performance-2022/planning/UGxhbm5pbmdfODYxMTUx>`_ - May 2022, Hamburg, Germany
-- ECP 2022 Annual Meeting - May 2022, Virtual
-- `In Situ Analysis and Visualization with SENSEI and Ascent @ SC21 <https://sc21.supercomputing.org/presentation/?id=tut127&sess=sess190>`_ - Nov 2021, Virtual
-- ECP 2021 Annual Meeting - April 2021, Virtual
-- `In Situ Scientific Analysis and Visualization using ALPINE Ascent @ ECP Training Event <https://www.exascaleproject.org/event/ascent-201217/>`_ - Dec 2020, Virtual
-- `In Situ Analysis and Visualization with SENSEI and Ascent @ SC20 <https://sc20.supercomputing.org/presentation/?id=tut111&sess=sess257>`_ - Nov 2020, Virtual Event.
-- ECP 2020 Annual Meeting - Feb 2020, Houston, TX
-- In Situ Visualization and Analysis with Ascent, ECP Annual Meeting, February 2020, Houston, TX.
-- `In Situ Analysis and Visualization with SENSEI and Ascent <https://sc19.supercomputing.org/presentation/?id=tut141&sess=sess199>`_, SC19, Nov 17th, 2020, Denver, CO.
-- In Situ Visualization and Analysis with Ascent, ECP Annual Meeting, February 2019, Houston, TX.
 
 
 .. Presentations
