@@ -140,6 +140,16 @@ if (GENTEN_DIR)
   include(cmake/thirdparty/SetupGenTen.cmake)
 endif()
 
+################################
+# Setup Catalyst
+################################
 if (CATALYST_DIR)
   include(cmake/thirdparty/SetupCatalyst.cmake)
+endif()
+
+################################
+# Setup ANARI
+################################
+if (ANARI_DIR)
+  include(cmake/thirdparty/SetupANARI.cmake)
 endif()

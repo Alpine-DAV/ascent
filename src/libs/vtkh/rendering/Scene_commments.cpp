@@ -1,8 +1,8 @@
 #include <vtkh/rendering/Scene.hpp>
 #include <vtkh/rendering/MeshRenderer.hpp>
 #include <vtkh/rendering/VolumeRenderer.hpp>
+#include <vtkh/rendering/ANARIVolumeRenderer.hpp>
 #include <vtkh/utils/viskores_array_utils.hpp>
-#include <ascent_logging.hpp>
 
 #ifdef VTKH_PARALLEL
 #include <mpi.h>
@@ -72,27 +72,18 @@ Scene::IsVolume(vtkh::Renderer *renderer)
   {
     is_volume = true;
   }
-  return is_volume;
-}
-
-bool 
-Scene::IsANARI(vtkh::Renderer *renderer)
-{
-  bool is_ANARI = false;
-
-  if(dynamic_cast<vtkh::ANARIRenderer*>(renderer) != nullptr)
+  else if(dynamic_cast<vtkh::ANARIVolumeRenderer*>(renderer) != nullptr)
   {
-    is_ANARI = true;
+    is_volume = true;
   }
-  return is_ANARI;
+  return is_volume;
 }
 
 void
 Scene::AddRenderer(vtkh::Renderer *renderer)
 {
   bool is_volume = IsVolume(renderer);
-  bool is_mesh   = IsMesh(renderer);
-  bool is_anari  = IsANARI(renderer);
+  bool is_mesh = IsMesh(renderer);
 
   if(is_volume)
   {
@@ -128,11 +119,6 @@ Scene::AddRenderer(vtkh::Renderer *renderer)
       m_renderers.push_back(renderer);
     }
   }
-  else if(is_anari)
-  {
-    auto anari_renderer = dynamic_cast<vtkh::ANARIRenderer*>(renderer);
-    m_anari_renderers.push_back(anari_renderer);
-  }
   else
   {
     m_renderers.push_front(renderer);
@@ -142,17 +128,16 @@ Scene::AddRenderer(vtkh::Renderer *renderer)
 void
 Scene::Render()
 {
-  ASCENT_ANNOTATE_MARK_SCOPE("scene render");
+
   std::vector<viskores::Range> ranges;
   std::vector<std::string> field_names;
   std::vector<int> is_ct_discrete;
   std::vector<viskores::cont::ColorTable> color_tables;
   bool do_once = true;
-  bool anari_do_once = true;
 
   //
   // We are going to render images in batches. With databases
-  // like Cinema, we could be rendering hundreds of images. Keeping
+  // like Cinema, we could be rendering hundres of images. Keeping
   // all the canvases around can hog memory so we will conserve it.
   // For example, if we rendered 360 images at 1024^2, all the canvases
   // would consume 7GB of space. Not good on the GPU, where resources
@@ -160,21 +145,18 @@ Scene::Render()
   //
   const int render_size = m_renders.size();
   int batch_start = 0;
-  ASCENT_ANNOTATE_MARK_BEGIN("scene render batches");
   while(batch_start < render_size)
   {
-    ASCENT_ANNOTATE_MARK_SCOPE("scene render batch");
     int batch_end = std::min(m_batch_size + batch_start, render_size);
     auto begin = m_renders.begin() + batch_start;
     auto end = m_renders.begin() + batch_end;
 
     std::vector<vtkh::Render> current_batch(begin, end);
-    ASCENT_ANNOTATE_MARK_BEGIN("scene render batch clear canvases");
+
     for(auto  render : current_batch)
     {
       render.GetCanvas().Clear();
     }
-    ASCENT_ANNOTATE_MARK_END("scene render batch clear canvases");
 
     const int plot_size = m_renderers.size();
     auto renderer = m_renderers.begin();
@@ -196,7 +178,6 @@ Scene::Render()
       opaque_plots -= 1;
     }
 
-    ASCENT_ANNOTATE_MARK_BEGIN("scene render batch opaque pass");
     //
     // pass 1: opaque geometry
     //
@@ -219,29 +200,7 @@ Scene::Render()
       synch_depths = true;
       renderer++;
     }
-    ASCENT_ANNOTATE_MARK_END("scene render batch opaque pass");
 
-    //
-    // pass 1.5: anari renders
-    // 
-    ASCENT_ANNOTATE_MARK_BEGIN("scene render batch anari pass");
-    if(!m_anari_renderers.empty())
-    {
-      auto renderer = m_anari_renderers[0];
-      auto anari_renderer = dynamic_cast<vtkh::ANARIRenderer*>(renderer);
-      //TODO:: hook up option for ascent composite vs anari ptc composite
-      //(*anari_renderer)->SetComposite(true); //if ascent composites
-      //(*anari_renderer)->SetComposite(false); //if ptc composites
-      anari_renderer->SetRenders(current_batch); 
-      anari_renderer->SetRenderers(m_anari_renderers); 
-      anari_renderer->Update();
-
-      anari_renderer->ClearRenders();
-    }
-    ASCENT_ANNOTATE_MARK_END("scene render batch anari pass");
-
-
-    ASCENT_ANNOTATE_MARK_BEGIN("scene render batch volume pass");
     //
     // pass 2: volume
     //
@@ -258,8 +217,6 @@ Scene::Render()
       current_batch  = (*renderer)->GetRenders();
       (*renderer)->ClearRenders();
     }
-    ASCENT_ANNOTATE_MARK_END("scene render batch volume pass");
-
 
     if(do_once)
     {
@@ -281,7 +238,6 @@ Scene::Render()
       do_once = false;
     }
 
-    ASCENT_ANNOTATE_MARK_BEGIN("scene render batch annotations and save");
     // render screen annotations last and save
     for(int i = 0; i < current_batch.size(); ++i)
     {
@@ -290,11 +246,17 @@ Scene::Render()
       current_batch[i].RenderBackground();
       current_batch[i].Save();
     }
-    ASCENT_ANNOTATE_MARK_END("scene render batch annotations and save");
 
     batch_start = batch_end;
   } // while
-   ASCENT_ANNOTATE_MARK_END("scene render batches");
+std::cerr << "print ranges in SCENE" << std::endl;
+std::cerr << "num ranges: " << ranges.size() << std::endl;
+int num_r = ranges.size();
+for(int i = 0; i < num_r; i++)
+{
+  std::cerr <<"RANGE " << i <<  " min: " << ranges[i].Min << " max: " << ranges[i].Max << std::endl;
+
+}
 }
 
 void Scene::SynchDepths(std::vector<vtkh::Render> &renders)
@@ -308,7 +270,7 @@ void Scene::SynchDepths(std::vector<vtkh::Render> &renders)
   {
     viskores::rendering::Canvas &canvas = render.GetCanvas();
     const int image_size = canvas.GetWidth() * canvas.GetHeight();
-    float *depth_ptr = GetVISKORESPointer(canvas.GetDepthBuffer());
+    float *depth_ptr = GetVTKMPointer(canvas.GetDepthBuffer());
     MPI_Bcast( depth_ptr, image_size, MPI_FLOAT, 0, comm);
   }
 #endif
