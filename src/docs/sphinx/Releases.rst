@@ -40,7 +40,7 @@ Preferred dependency versions for ascent@0.9.6
 
  * cmake@3.26 or newer
  * conduit@0.9.9 or newer
- * viskores@1.2.0 (requires patches [patch1](https://github.com/Alpine-DAV/ascent/blob/develop/scripts/build_ascent/2026_08_13_viskores-add-plumbing-for-rays-wo-camera.patch) [patch2](https://github.com/Alpine-DAV/ascent/blob/develop/scripts/build_ascent/2026_09_15_viskores_extrusion_connectivity.patch) [patch3](https://github.com/Alpine-DAV/ascent/blob/develop/scripts/build_ascent/2026_09_28_viskores_mir_fixes.patch))
+ * viskores@1.2.0 (requires patches `patch1 <https://github.com/Alpine-DAV/ascent/blob/develop/scripts/build_ascent/2026_08_13_viskores-add-plumbing-for-rays-wo-camera.patch>`_ `patch2 <https://github.com/Alpine-DAV/ascent/blob/develop/scripts/build_ascent/2026_09_15_viskores_extrusion_connectivity.patch>`_ `patch3 <https://github.com/Alpine-DAV/ascent/blob/develop/scripts/build_ascent/2026_09_28_viskores_mir_fixes.patch>`_ )
  * raja@v2025.09.0
  * umpire@v2025.09.0
  * camp@v2025.09.2
@@ -56,7 +56,7 @@ Added
  * Added a ``gltf`` extract that exports surface geometry (points, lines, and triangles) as GLB files, with optional scalar field coloring
  * Added the ``points/glyph_type`` scene option for rendering point meshes with sphere, cube, or axes glyphs
  * Added plane to the Sample Filter
- * Added the ability to specify "min/max" as the x/y/z point for the reflect transform filter
+ * Added the ability to specify ``min/max`` as the ``x/y/z`` point for the reflect transform filter
  * Added Uniform Grid filter as a parameter of the Sample Filter
  * Added ability to define cameras for rendering using visit camera view parameters
  * Added ability to do tiled rendering, where tiles covering an image are rendered separately to form the final image, the default is to do tiled rendering with 1024 by 1024 tiles
