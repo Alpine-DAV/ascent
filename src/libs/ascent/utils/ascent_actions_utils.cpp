@@ -42,7 +42,6 @@ void parse_binning_var(const std::string &expression,
   std::regex e ("binning\\(\\s*'(.*?)'");
   std::smatch m;
 
-  std::set<std::string> matches;
   std::string s = expression;
   while (std::regex_search (s,m,e))
   {
@@ -68,7 +67,6 @@ void parse_binning_axis(const std::string &expression,
   std::regex e ("axis\\(\\s*'(.*?)'");
   std::smatch m;
 
-  std::set<std::string> matches;
   std::string s = expression;
   while (std::regex_search (s,m,e))
   {
@@ -114,7 +112,6 @@ void parse_field_list(const std::string &expression,
                 "\\s*,\\s*)*\\s*'[a-zA-Z][a-zA-Z_0-9]*'\\s*\\]");
   std::smatch m;
 
-  std::set<std::string> matches;
   std::string s = expression;
   std::string flist;
   // just get the entire matched experssion
@@ -150,7 +147,6 @@ void parse_expression(const std::string &expression,
   std::regex e ("field\\('(.*?)'\\)");
   std::smatch m;
 
-  std::set<std::string> matches;
   std::string s = expression;
   while (std::regex_search (s,m,e))
   {

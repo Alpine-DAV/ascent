@@ -15,6 +15,7 @@
 
 #include <iostream>
 #include <math.h>
+#include <cstdio>
 
 #include <conduit_blueprint.hpp>
 
@@ -560,6 +561,105 @@ TEST(ascent_triggers, trigger_single_actions_file_relative_path)
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
 
+
+TEST(ascent_triggers, trigger_actions_file)
+{
+    // the viskores runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping test");
+        return;
+    }
+
+    //
+    // Create example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                               EXAMPLE_MESH_SIDE_DIM,
+                                               EXAMPLE_MESH_SIDE_DIM,
+                                               EXAMPLE_MESH_SIDE_DIM,
+                                               data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_trigger_actions_file");
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+    // Trying not to completely screw up somebody's working directory with this test but ultimately
+    // I want a test that is verifying that the default ascent_actions.yaml filename doesn't cause
+    // infinite looping when triggering Ascent actions.
+    if(conduit::utils::is_file("ascent_actions.yaml"))
+    {
+        std::rename("ascent_actions.yaml", "ascent_actions_tmp_renamed.yaml");
+    }
+
+    bool error = false;
+    try
+    {
+        //
+        // Create the trigger actions.
+        //
+        conduit::Node trigger_actions;
+        // add the scenes
+        conduit::Node &add_scenes= trigger_actions.append();
+        add_scenes["action"] = "add_scenes";
+        conduit::Node &trigger_scenes = add_scenes["scenes"];
+        trigger_scenes["s1/plots/p1/type"] = "pseudocolor";
+        trigger_scenes["s1/plots/p1/field"] = "braid";
+        trigger_scenes["s1/image_prefix"] = output_file;
+        trigger_actions.save("add_scene.yaml");
+
+        //
+        // Create the actions.
+        //
+        Node actions;
+        // this should always be true
+        std::string condition = "cycle() % 100 == 0";
+        conduit::Node triggers;
+        triggers["t1/params/condition"] = condition;
+        triggers["t1/params/actions_file"] = "./add_scene.yaml";
+        conduit::Node &add_triggers= actions.append();
+        add_triggers["action"] = "add_triggers";
+        add_triggers["triggers"] = triggers;
+        actions.save("ascent_actions.yaml");
+
+        //
+        // Run Ascent
+        //
+        Ascent ascent;
+        Node ascent_opts;
+        ascent_opts["actions_file"] = "ascent_actions.yaml";
+        ascent.open(ascent_opts);
+        ascent.publish(data);
+        Node actions_execute; // Empty actions because I want to read them in from the ascent_actions.yaml file
+        ascent.execute(actions_execute);
+        ascent.close();
+
+        // check that we created an image from the trigger
+        EXPECT_TRUE(check_test_image(output_file));
+        std::string msg = "An example of specifying trigger actions file with a relative path;";
+        ASCENT_ACTIONS_DUMP(actions,output_file,msg);
+    }
+    catch(...)
+    {
+      error = true;
+    }
+
+    remove_test_file("ascent_actions.yaml");
+
+    if(conduit::utils::is_file("ascent_actions_tmp_renamed.yaml"))
+    {
+        std::rename("ascent_actions_tmp_renamed.yaml", "ascent_actions.yaml");
+    }
+
+    EXPECT_FALSE(error);
+}
 
 
 //-----------------------------------------------------------------------------

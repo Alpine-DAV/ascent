@@ -27,6 +27,67 @@
 namespace ascent
 {
 
+namespace
+{
+
+bool is_volume_fraction_field(const std::string &name)
+{
+  return name.rfind("volume_fraction_", 0) == 0 ||
+         name.rfind("vol_frac_", 0) == 0;
+}
+
+template<typename ArrayType>
+void clamp_unit_interval(ArrayType values)
+{
+  const conduit::index_t num_values = values.number_of_elements();
+  for(conduit::index_t i = 0; i < num_values; ++i)
+  {
+    if(values[i] < 0.0 && values[i] >= -CONDUIT_EPSILON)
+    {
+      values[i] = 0.0;
+    }
+    else if(values[i] > 1.0 && values[i] <= 1.0 + CONDUIT_EPSILON)
+    {
+      values[i] = 1.0;
+    }
+  }
+}
+
+void clamp_volume_fractions(conduit::Node &dataset)
+{
+  const int num_domains = dataset.number_of_children();
+  for(int domain_index = 0; domain_index < num_domains; ++domain_index)
+  {
+    conduit::Node &domain = dataset.child(domain_index);
+    if(!domain.has_path("fields"))
+    {
+      continue;
+    }
+
+    conduit::NodeIterator fields = domain["fields"].children();
+    while(fields.has_next())
+    {
+      conduit::Node &field = fields.next();
+      if(!is_volume_fraction_field(fields.name()) || !field.has_path("values"))
+      {
+        continue;
+      }
+
+      conduit::Node &values = field["values"];
+      if(values.dtype().is_float32())
+      {
+        clamp_unit_interval(values.as_float32_array());
+      }
+      else if(values.dtype().is_float64())
+      {
+        clamp_unit_interval(values.as_float64_array());
+      }
+    }
+  }
+}
+
+} // namespace
+
 int Transmogrifier::m_refinement_level = 3;
 
 bool Transmogrifier::is_high_order(const conduit::Node &doms)
@@ -63,6 +124,8 @@ conduit::Node* Transmogrifier::low_order(conduit::Node &dataset)
   conduit::Node *lo_dset = new conduit::Node;
   MFEMDataAdapter::Linearize(domains, *lo_dset, m_refinement_level);
   delete domains;
+
+  clamp_volume_fractions(*lo_dset);
 
   // add a second registry entry for the output so it can be zero copied.
   return lo_dset;

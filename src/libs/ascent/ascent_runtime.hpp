@@ -36,8 +36,10 @@ public:
     virtual void           Execute(const conduit::Node &actions)=0;
 
     virtual void           Info(conduit::Node &info_out)=0;
+    virtual void           Info(const std::string &key, conduit::Node &info_out);
 
     virtual conduit::Node &Info()=0;
+    virtual conduit::Node &Info(const std::string &key);
 
     virtual void           Cleanup()=0;
 

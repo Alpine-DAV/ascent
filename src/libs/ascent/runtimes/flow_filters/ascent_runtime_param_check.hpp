@@ -76,6 +76,14 @@ conduit::Node ASCENT_API &vec3_schema(conduit::Node &schema_node,
                                       const std::string var3,
                                       const bool supports_expressions = false);
 
+conduit::Node ASCENT_API &vec2_schema(conduit::Node &schema_node,
+                                      const bool supports_expressions = false);
+
+conduit::Node ASCENT_API &vec2_schema(conduit::Node &schema_node,
+                                      const std::string var1,
+                                      const std::string var2,
+                                      const bool supports_expressions = false);
+
 conduit::Node ASCENT_API &vec3_schema_anyOf(conduit::Node &schema_node,
                                             const bool supports_expressions = false);
 

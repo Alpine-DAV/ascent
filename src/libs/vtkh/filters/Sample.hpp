@@ -64,6 +64,9 @@ public:
                    const Vec3_f64 origin,
                    const Vec3_f64 spacing);
 
+  void Topology(const std::vector<viskores::cont::DataSet> &domains,
+                const std::vector<viskores::Id> &domain_ids);
+
   void Fields(const std::vector<std::string> fields);
   void InvalidValue(const viskores::Float64 invalid_value);
 
@@ -83,6 +86,9 @@ protected:
   Vec3_f64 m_spacing;
   int m_num_samples;
   bool m_is_points;
+  bool m_is_topology;
+  std::vector<viskores::cont::DataSet> m_topology_domains;
+  std::vector<viskores::Id> m_topology_domain_ids;
 };
 
 } //namespace vtkh

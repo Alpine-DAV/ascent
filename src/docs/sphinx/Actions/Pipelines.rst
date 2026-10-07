@@ -226,6 +226,69 @@ The plane is defined by a point (on the plane) and a normal vector (not required
 :numref:`Figure %s <slicefig>` shows an image produced from the slice filter.
 The full example is located in the file `slice test <https://github.com/Alpine-DAV/ascent/blob/develop/src/tests/ascent/t_ascent_slice.cpp>`_.
 
+Revolve
+~~~~~~~~
+The revolve filter creates a 3D volume by rotating a 2D surface mesh around an axis.
+The rotation axis is defined by a point on the axis and an axis direction vector.
+Angles are specified in degrees.
+Required parameters include: 
+specifying the rotational extrusion vector (``axis``)  via ``(r,z)`` or ``(x,y,z)``;
+and the degrees of rotation (``angle``).
+Optional parameters include: 
+ the ``point`` of rotation (default: (0,0)); 
+the ``start_angle``, in degrees, of where to begin the rotation (default: 0);
+the number of ``steps`` used to discretize the rotational extrusion (default: 32);
+and the ``topology`` name if there are multiple. 
+If ``angle`` is 360 degrees, revolve automatically wraps the final plane back to the first.
+
+
+Example: revolve an RZ dataset around the z-axis for 270 degrees in 32 steps:
+
+.. code-block:: c++
+
+	  conduit::Node pipelines;
+	  pipelines["pl1/f1/type"] = "revolve";
+	  conduit::Node &rev_params = pipelines["pl1/f1/params"];
+	  rev_params["topology"] = "topo";
+	  rev_params["point/r"] = 0.0;
+	  rev_params["point/z"] = 0.0;
+	  rev_params["axis/r"]  = 0.0;
+	  rev_params["axis/z"]  = 1.0;
+	  rev_params["start_angle"] = 0.0;  
+	  rev_params["angle"] = 270.0;       
+	  rev_params["steps"] = 32;         
+
+
+Revolve operates on line and triangle surface cells. If the input contains quad
+cells, it is triangulated internally before revolving (no need to add an explicit
+``triangulate`` filter).
+
+Extrude
+~~~~~~~~
+The extrude filter creates a 3D volume by translating a 2D mesh along a vector.
+The only required parameter is the translation vector, ``vector``, for the linear extrusion.
+Optional parameters include: 
+the number of segments (``steps``) used to discretize the extrusion (default: 1);
+and the input topology name, ``topology``.
+
+Note: The Viskores-based extrusion path operates on triangulated surfaces.
+If the input contains quad cells, it is triangulated internally before extrusion and
+the extruded volume is represented with wedge cells (no need to add an explicit
+``triangulate`` filter).
+
+.. code-block:: c++
+
+  conduit::Node pipelines;
+  pipelines["pl1/f1/type"] = "extrude";
+  conduit::Node &ext_params = pipelines["pl1/f1/params"];
+  ext_params["topology"] = "topo";
+  ext_params["vector/x"] = 0.0;
+  ext_params["vector/y"] = 0.0;
+  ext_params["vector/z"] = 5.0;
+  ext_params["steps"] = 8; // optional (default: 1)
+
+
+
 Three Slice
 ~~~~~~~~~~~
 The three slice filter slices 3d data sets using three axis-aligned slice planes and
@@ -1116,6 +1179,10 @@ The Material Interface Reconstruction (MIR) filter can be used to represent and 
 The user must specify the name of the material set (`matset`) they wish to use.  
 Optional parameters include the field name for the filter's output (`output_name`), error scaling (`error_scaling`), scaling decay (`scaling_decay`), maximum iterations (`iterations`), and maximum error percentage (`max_error`).
 The output field of the MIR Filter will be the name of the material set and can be used further in scenes or pipelines. 
+For VisIt-style material data, Ascent can build a matset named ``materials``
+from material volume fraction fields such as ``volume_fraction_*`` or
+``vol_frac_*``. Use ``params["matset"] = "materials"`` to run MIR on that
+material set.
 
 .. code-block:: c++
 
@@ -1130,6 +1197,14 @@ The output field of the MIR Filter will be the name of the material set and can 
   params["scaling_decay"] = 1.0;       //default: 0.0
   params["iterations"] = 8;            //default: 0
   params["max_error"] = 0.00001;       //default: 0.00001
+
+.. code-block:: c++
+
+  // MIR using a VisIt-style material set detected by Ascent
+  pipelines["pl1/f1/type"] = "mir";
+  conduit::Node &visit_params = pipelines["pl1/f1/params"];
+  visit_params["matset"] = "materials";
+  visit_params["output_name"] = "materials";
 
 Add MPI Ranks as Field Data
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1481,4 +1556,3 @@ integer values to limit the set of domains over which the selection will be appl
   pipelines["pl1/f1/params/selections/type"] = "field";
   pipelines["pl1/f1/params/selections/domain_id"] = "any";
   pipelines["pl1/f1/params/selections/field"] = "padam_padam"; 
-

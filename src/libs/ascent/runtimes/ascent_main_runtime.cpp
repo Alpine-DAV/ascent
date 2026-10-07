@@ -17,6 +17,8 @@
 // standard lib includes
 #include <string.h>
 #include <algorithm>
+#include <cctype>
+#include <set>
 
 //-----------------------------------------------------------------------------
 // thirdparty includes
@@ -71,6 +73,58 @@ namespace ascent
 {
 // node that holds tree of reg'd filter types
 Node AscentRuntime::s_reged_filter_types;
+
+namespace
+{
+
+bool
+is_visit_material_companion_field(const std::string &field_name)
+{
+  // Recognize material helper fields used by VisIt material data.
+  return field_name.rfind("volume_fraction_", 0) == 0 ||
+         field_name.rfind("vol_frac_", 0) == 0 ||
+         field_name.find("material_attribute") != std::string::npos;
+}
+
+bool
+visit_material_family_base(const std::string &field_name, std::string &base_name)
+{
+  // Find the base name for material field families such as vol_frac_* or field_0.
+  const std::string axom_prefix = "vol_frac_";
+  if(field_name.rfind(axom_prefix, 0) == 0 &&
+     field_name.size() > axom_prefix.size())
+  {
+    base_name = "vol_frac";
+    return true;
+  }
+
+  const size_t underscore = field_name.rfind('_');
+  if(underscore == std::string::npos || underscore + 1 == field_name.size())
+  {
+    return false;
+  }
+
+  for(size_t i = underscore + 1; i < field_name.size(); ++i)
+  {
+    if(!std::isdigit(static_cast<unsigned char>(field_name[i])))
+    {
+      return false;
+    }
+  }
+
+  base_name = field_name.substr(0, underscore);
+  return !base_name.empty();
+}
+
+bool
+is_requested_visit_material_family_field(const std::string &field_name, const std::set<std::string> &field_list)
+{
+  std::string base_name;
+  return visit_material_family_base(field_name, base_name) &&
+         field_list.find(base_name) != field_list.end();
+}
+
+} // namespace
 
 class InfoHandler
 {
@@ -402,7 +456,23 @@ AscentRuntime::Initialize(const conduit::Node &options)
 void
 AscentRuntime::Info(conduit::Node &out)
 {
+    // key copy out semantics for info for now
     out.set(m_info);
+}
+
+//-----------------------------------------------------------------------------
+void
+AscentRuntime::Info(const std::string &key, conduit::Node &out)
+{
+  if(key == "cache")
+  {
+    out.set_external(m_cache);
+  }
+  else
+  {
+    // key copy out semantics for info for now
+    out.set(m_info);
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -411,6 +481,21 @@ AscentRuntime::Info()
 {
     return m_info;
 }
+
+//-----------------------------------------------------------------------------
+conduit::Node &
+AscentRuntime::Info(const std::string &key)
+{
+  if(key == "cache")
+  {
+    return m_cache;
+  }
+  else
+  {
+    return m_info;
+  }
+}
+
 
 //-----------------------------------------------------------------------------
 void
@@ -431,6 +516,14 @@ AscentRuntime::ResetInfo()
     m_info["registered_filter_types"] = registered_filter_types();
 }
 
+//-----------------------------------------------------------------------------
+void
+AscentRuntime::RegisterCache()
+{
+  m_workspace.registry().add<Node>("cache",
+                                   &m_cache,
+                                   -1); // external, dont manage
+}
 
 //-----------------------------------------------------------------------------
 void
@@ -1981,6 +2074,37 @@ AscentRuntime::BuildGraph(const conduit::Node &actions)
         // Used with field filtering, we don't need
         // to process as part of exec
       }
+      else if(action_name == "clear_cache")
+      {
+          std::vector<std::string> names;
+          if(action.has_path("name"))
+          {
+              names.push_back(action["name"].as_string());
+          }
+          else if(action.has_path("names"))
+          {
+              NodeConstIterator itr = action["names"].children();
+              while(itr.has_next())
+              {
+                  names.push_back(itr.next().as_string());
+              }
+          }
+
+          if(names.size() == 0)
+          {
+              m_cache.reset();
+          }
+          else
+          {
+              for(const string &name : names)
+              {
+                  if(m_cache.has_child(name))
+                  {
+                      m_cache.remove(name);
+                  }
+              }
+          }
+      }
       else if(action_name == "open_log")
       {
         // Open Ascent Logging Stream
@@ -2166,6 +2290,7 @@ AscentRuntime::Execute(const conduit::Node &actions)
         // add the source to the registry so we can access information
         // about the original mesh (like bounds)
         m_workspace.registry().add<DataObject>("source_object", &m_data_object,1);
+        RegisterCache();
 
         m_workspace.info(m_info["flow_graph"]);
         m_info["actions"] = actions;
@@ -2331,6 +2456,8 @@ void AscentRuntime::SourceFieldFilter()
   }
 
   bool high_order = m_data_object.source() == DataObject::Source::HIGH_BP;
+  // The "materials" keyword keeps material helper fields during source filtering.
+  bool keep_visit_material_companions = m_field_list.find("materials") != m_field_list.end();
   conduit::Node *data = m_data_object.as_node().get();
   const int num_domains = data->number_of_children();
   for(int i = 0; i < num_domains; ++i)
@@ -2353,6 +2480,16 @@ void AscentRuntime::SourceFieldFilter()
           {
             continue;
           }
+        }
+        // Keep material companion fields and requested material field families.
+        if(keep_visit_material_companions &&
+           is_visit_material_companion_field(names[f]))
+        {
+          continue;
+        }
+        if(is_requested_visit_material_family_field(names[f], m_field_list))
+        {
+          continue;
         }
         if(std::find(m_field_list.begin(),
                      m_field_list.end(),

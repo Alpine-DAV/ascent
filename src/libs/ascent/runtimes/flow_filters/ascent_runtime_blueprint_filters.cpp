@@ -252,7 +252,7 @@ ConduitExtract::execute()
       conduit::Node *extract_list = new conduit::Node();
       graph().workspace().registry().add<Node>("extract_list",
                                                extract_list,
-                                               -1); // TODO keep forever?
+                                               -1); // keep root node forever
     }
 
     conduit::Node *extract_list = graph().workspace().registry().fetch<Node>("extract_list");
@@ -261,6 +261,61 @@ ConduitExtract::execute()
     einfo["type"] = "conduit";
     einfo["data"].set(*n_input);
 }
+
+
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// BlueprintCacheExtract
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+BlueprintCacheExtract::BlueprintCacheExtract()
+:Filter()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+BlueprintCacheExtract::~BlueprintCacheExtract()
+{
+// empty
+}
+
+//-----------------------------------------------------------------------------
+void
+BlueprintCacheExtract::declare_interface(Node &i)
+{
+    i["type_name"]   = "cache_extract";
+    i["port_names"].append() = "in";
+    i["output_port"] = "false";
+
+    // ----------- Define Param Schema -----------
+    conduit::Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
+    string_schema(param_schema["properties/name"]);
+
+}
+
+//-----------------------------------------------------------------------------
+void
+BlueprintCacheExtract::execute()
+{
+    if(!input(0).check_type<DataObject>())
+    {
+        ASCENT_ERROR("cache_extract input must be a DataObject");
+    }
+
+    std::string cache_name = params()["name"].as_string();
+
+    DataObject *d_input = input<DataObject>(0);
+    std::shared_ptr<conduit::Node> n_input = d_input->as_node();
+
+    conduit::Node *cache = graph().workspace().registry().fetch<Node>("cache");
+    // add copy to the cache
+    cache->fetch(cache_name).set(*n_input);
+}
+
 
 
 //-----------------------------------------------------------------------------

@@ -61,6 +61,10 @@ if (ENABLE_SERIAL)
         set_target_properties(apcomp PROPERTIES CXX_VISIBILITY_PRESET hidden)
     endif()
 
+    set_target_properties(apcomp PROPERTIES
+                          WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
+
+
     # build includes
     # this allows us to include as <apcomp/header.hpp>
     target_include_directories(apcomp PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/libs/>)
@@ -137,6 +141,9 @@ if (MPI_FOUND)
     if(ENABLE_HIDDEN_VISIBILITY)
         set_target_properties(apcomp_mpi PROPERTIES CXX_VISIBILITY_PRESET hidden)
     endif()
+
+    set_target_properties(apcomp_mpi PROPERTIES
+                          WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
 
     # install target
     install(TARGETS apcomp_mpi

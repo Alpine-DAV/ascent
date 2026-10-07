@@ -13,6 +13,7 @@ set(viskores_filters_headers
     viskoresGradient.hpp
     viskoresHistogram.hpp
     viskoresLagrangian.hpp
+    viskoresLinearExtrude.hpp
     viskoresLog.hpp
     viskoresMarchingCubes.hpp
     viskoresMeshQuality.hpp
@@ -24,6 +25,7 @@ set(viskores_filters_headers
     viskoresTriangulate.hpp
     viskoresThreshold.hpp
     viskoresVectorMagnitude.hpp
+    viskoresRevolve.hpp
     GradientParameters.hpp
     )
 
@@ -38,6 +40,7 @@ set(viskores_filters_sources
     viskoresGradient.cpp
     viskoresHistogram.cpp
     viskoresLagrangian.cpp
+    viskoresLinearExtrude.cpp
     viskoresLog.cpp
     viskoresMarchingCubes.cpp
     viskoresMeshQuality.cpp
@@ -49,6 +52,7 @@ set(viskores_filters_sources
     viskoresTriangulate.cpp
     viskoresThreshold.cpp
     viskoresVectorMagnitude.cpp
+    viskoresRevolve.cpp
     )
 
 # these are the only headers we need to install
@@ -89,4 +93,3 @@ endif()
 
 install(FILES ${viskores_filters_install_headers}
         DESTINATION include/ascent/vtkh/viskores_filters)
-

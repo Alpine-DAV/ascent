@@ -50,7 +50,9 @@ public:
     void             publish(const conduit::Node &data);
     void             execute(const conduit::Node &actions);
     void             info(conduit::Node &info_out);
+    void             info(const std::string &key,conduit::Node &info_out);
     conduit::Node   &info();
+    conduit::Node   &info(const std::string &key);
     void             close();
 
 private:

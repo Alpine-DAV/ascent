@@ -96,7 +96,7 @@ Logger::open(const std::string &ofpattern)
     // multi node case, assumes file pattern includes "rank"
     if(rank() > -1)
     {
-        m_log_fname = conduit_fmt::format(ofpattern,
+        m_log_fname = conduit_fmt::format(conduit_fmt::runtime(ofpattern),
                                           conduit_fmt::arg("rank",rank()));
     }
     else

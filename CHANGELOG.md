@@ -6,31 +6,49 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ## Unreleased
 ### Preferred dependency versions for ascent@develop
-- cmake@3.23 or newer
-- conduit@0.9.5
-- viskores@1.1.1
+- cmake@3.26 or newer
+- conduit@0.9.9 or newer
+- viskores@1.2.0 (requires patches [patch1](https://github.com/Alpine-DAV/ascent/blob/develop/scripts/build_ascent/2026_08_13_viskores-add-plumbing-for-rays-wo-camera.patch) [patch2](https://github.com/Alpine-DAV/ascent/blob/develop/scripts/build_ascent/2026_09_15_viskores_extrusion_connectivity.patch) [patch3](https://github.com/Alpine-DAV/ascent/blob/develop/scripts/build_ascent/2026_09_28_viskores_mir_fixes.patch))
 - raja@v2025.09.0
 - umpire@v2025.09.0
 - camp@v2025.09.2
 - kokkos@4.7.00
-- mfem@4.8
+- mfem@4.10
 
 ### Added
+- Added support for structured strided Blueprint meshes in the VTK-h data adapter.
+- Added Revolve and Extrude filters for rotational and linear extrusion, respectively
+- Added support for VisIt material volume fraction fields in field filtering and MIR.
+- Added a `gltf` extract that exports surface geometry (points, lines, and triangles) as GLB files, with optional scalar field coloring.
+- Added the `points/glyph_type` scene option for rendering point meshes with sphere, cube, or axes glyphs.
 - Added plane to the Sample Filter
 - Added the ability to specify "min/max" as the x/y/z point for the reflect transform filter
 - Added Uniform Grid filter as a parameter of the Sample Filter
 - Added ability to define cameras for rendering using visit camera view parameters
-- Added ability to do tiled rendering, where tiles covering an image are rendered seperately to form the final image. The default is to do tiled rendering with 1024 by 1024 tiles.
+- Added ability to do tiled rendering, where tiles covering an image are rendered separately to form the final image. The default is to do tiled rendering with 1024 by 1024 tiles.
 - Added support for 64 bit IDs
 - Added support for RZ meshes
 - If a `default_dir` is passed as an Ascent Option, extracts and plots will output to that directory by default now.
-- Added a warning if a `ascent.py` file exsits in the current working directory when executing a python extract. 
+- Added a warning if a `ascent.py` file exists in the current working directory when executing a python extract. 
+- Added support for monochrome/solid color plotting
+- Added support for `surface` and `wireframe` aliases
+- Added support for plotting pseudocolor plots without providing a field
+- Added support for hex color values for custom color tables
+- Added `topology` and `topologies` parameters to the transform filter, to allow transforming a selected subset of the published topologies
+- Added `cache` extract, that creates an an in-memory copy of mesh data and caches it by name
+- Added `clear_cache` action, which allows you removed cached mesh data by name
+- Added `load` filter that allows you to load additional mesh data from files, or cached data (via `cache:name`)
 
 ### Changed
-- Redefined the parameter varification and surprise checking behavior for Filters to instead use a conduit based JSON Schema style verification schema. Implimented for all existing filters. 
+- Redefined the parameter verification and surprise checking behavior for Filters to instead use a conduit based JSON Schema style verification schema. Implemented for all existing filters
+- Changed tiled rendering default to `false`
+- A couple of bugs were fixed with tiled rendering and the tiled rendering default was changed to `true`.
+- Changed ascent.info() methods to provide variants that accepts key. The key `cache` will return Ascent's cache instead of the normal info summary. This gives direct access to any cached data sets
 
 ### Fixed
-- Fixed issue where the plot did not align with the 3d axes when the camera was panned (`camera/xpan` and `camera/ypan`).
+- Fixed the aspect ratio for frustum renderings
+- Fixed a bug causing unnecessarily strict type constraints for camera parameters.
+- Fixed issue where the plot did not align with the 3d axes when the camera was panned (`camera/xpan` and `camera/ypan`)
 - Fixed a crash with PNG encoding of large renders (10k+ by 10k+ resolution)
 
 ## [0.9.5] - Released 2025-09-10

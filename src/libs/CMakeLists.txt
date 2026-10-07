@@ -2,6 +2,12 @@
 # Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
 # other details. No copyright assignment is required to contribute to Ascent.
 
+if(PYTHON_FOUND)
+  include(CMakeDependentOption)
+  cmake_dependent_option(ASCENT_PYTHON_USE_LIMITED_API "Build Python extensions using Limited API" OFF
+    "Python3_VERSION VERSION_GREATER_EQUAL \"3.11\"" OFF)
+endif()
+
 #######################################
 # display info about optional features
 #######################################

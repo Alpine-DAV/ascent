@@ -1,0 +1,12 @@
+#An example of using field filtering to keep material-related fields and matsets.
+
+- 
+  action: "add_extracts"
+  extracts: 
+    e1: 
+      type: "relay"
+      params: 
+        path: "/home/user/ascent/build/tests/_output/tout_material_field_selection"
+        protocol: "blueprint/mesh/hdf5"
+        fields: 
+          - "materials"

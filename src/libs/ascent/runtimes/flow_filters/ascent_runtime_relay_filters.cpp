@@ -63,6 +63,8 @@
 #endif
 
 // std includes
+#include <algorithm>
+#include <cctype>
 #include <limits>
 #include <set>
 #include <numeric>
@@ -104,6 +106,51 @@ namespace filters
 namespace detail
 {
 
+bool
+is_visit_material_companion_field(const std::string &field_name)
+{
+  // Recognize material helper fields used by VisIt material data.
+  return field_name.rfind("volume_fraction_", 0) == 0 ||
+         field_name.rfind("vol_frac_", 0) == 0 ||
+         field_name.find("material_attribute") != std::string::npos;
+}
+
+bool
+visit_material_family_base(const std::string &field_name, std::string &base_name)
+{
+  // Find the base name for material field families such as vol_frac_* or field_0.
+  const std::string axom_prefix = "vol_frac_";
+  if(field_name.rfind(axom_prefix, 0) == 0 &&
+     field_name.size() > axom_prefix.size())
+  {
+    base_name = "vol_frac";
+    return true;
+  }
+
+  const size_t underscore = field_name.rfind('_');
+  if(underscore == std::string::npos || underscore + 1 == field_name.size())
+  {
+    return false;
+  }
+
+  for(size_t i = underscore + 1; i < field_name.size(); ++i)
+  {
+    if(!std::isdigit(static_cast<unsigned char>(field_name[i])))
+    {
+      return false;
+    }
+  }
+
+  base_name = field_name.substr(0, underscore);
+  return !base_name.empty();
+}
+
+bool
+is_requested_visit_material_family_field(const std::string &field_name, const std::vector<std::string> &field_names)
+{
+  std::string base_name;
+  return visit_material_family_base(field_name, base_name) && std::find(field_names.begin(), field_names.end(), base_name) != field_names.end();
+}
 
 //-----------------------------------------------------------------------------
 // mfem needs special fields so look for them
@@ -112,8 +159,12 @@ void
 check_for_attributes(const conduit::Node &input,
                      std::vector<std::string> &field_names)
 {
+  // Expand "materials" into the material helper fields found in the input.
+  const bool keep_visit_material_companions = std::find(field_names.begin(), field_names.end(), "materials") != field_names.end();
+
   const int num_doms = input.number_of_children();
-  std::set<std::string> specials;
+  std::set<std::string> seen(field_names.begin(), field_names.end());
+  std::vector<std::string> specials;
   for(int d = 0; d < num_doms; ++d)
   {
     const conduit::Node &dom = input.child(d);
@@ -125,7 +176,25 @@ check_for_attributes(const conduit::Node &input,
       {
         if(fnames[i].find("_attribute") != std::string::npos)
         {
-          specials.insert(fnames[i]);
+          if(seen.insert(fnames[i]).second)
+          {
+            specials.push_back(fnames[i]);
+          }
+        }
+        if(keep_visit_material_companions &&
+           is_visit_material_companion_field(fnames[i]))
+        {
+          if(seen.insert(fnames[i]).second)
+          {
+            specials.push_back(fnames[i]);
+          }
+        }
+        if(is_requested_visit_material_family_field(fnames[i], field_names))
+        {
+          if(seen.insert(fnames[i]).second)
+          {
+            specials.push_back(fnames[i]);
+          }
         }
       }
     }
@@ -245,6 +314,8 @@ filter_fields(const conduit::Node &input,
   // assume this is multi-domain
   //
   check_for_attributes(input, field_names);
+  // When "materials" is requested, keep matsets on selected topologies.
+  const bool keep_materials = std::find(field_names.begin(), field_names.end(), "materials") != field_names.end();
 
   const int num_doms = input.number_of_children();
   for(int d = 0; d < num_doms; ++d)
@@ -323,7 +394,10 @@ filter_fields(const conduit::Node &input,
       for(int i = 0; i < num_matts; ++i)
       {
         const conduit::Node &matt = dom["matsets"].child(i);
-        if(matsets.find(matt_names[i]) != matsets.end())
+        const bool selected_by_name = matsets.find(matt_names[i]) != matsets.end();
+        // A material selection keeps matsets attached to any selected topology.
+        const bool selected_by_topology = keep_materials && matt.has_path("topology") && topos.find(matt["topology"].as_string()) != topos.end();
+        if(selected_by_name || selected_by_topology)
         {
           out_dom["matsets/"+matt_names[i]].set_external(matt);
         }
@@ -985,40 +1059,144 @@ void
 RelayIOLoad::declare_interface(Node &i)
 {
     i["type_name"]   = "relay_io_load";
-    i["port_names"] = DataType::empty();
+    i["port_names"].append() = "in";
     i["output_port"] = "true";
 
     // ----------- Define Param Schema -----------
-    io_param_schema(i["param_schema"]);
+    Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
+
+    string_schema(param_schema["properties/path"], 1);
+    ignore_schema(param_schema["properties/rename"]);
+
 }
 
 //-----------------------------------------------------------------------------
 void
 RelayIOLoad::execute()
 {
+    Node load_opts =params();
     std::string path, protocol;
     path = params()["path"].as_string();
+    
+    // we plan to pass thru most params as load opts, except:
+    //  path
+    //  rename
+    //
+    load_opts.remove("path");
 
-    // TODO check if we need to expand the path (MPI) case
-    if(params().has_child("protocol"))
+    Node rename_opts;
+    if(params().has_child("rename"))
     {
-        protocol = params()["protocol"].as_string();
+        // copy out rename opts
+        rename_opts = params()["rename"];
+        load_opts.remove("rename");
     }
 
-    Node *res = new Node();
-
-    if(protocol.empty())
+    if(!input("in").check_type<DataObject>())
     {
-        conduit::relay::io::load(path,*res);
+        // error
+        ASCENT_ERROR("relay_io_load requires a DataObject input");
+    }
+
+    DataObject *data_object  = input<DataObject>("in");
+    if(!data_object->is_valid())
+    {
+      return;
+    }
+
+    std::shared_ptr<Node> n_input = data_object->as_node();
+    Node *mesh = n_input.get();
+    Node loaded_mesh, opts;
+
+    // TODO: This conduit issue  https://github.com/llnl/conduit/issues/1717
+    //       prevents direct pass through of options
+
+    // if `path` starts with "cache:" look in ascents' cache
+    //
+    bool cache_load = (path.find("cache:") == 0);
+
+    if(cache_load)
+    {
+        std::string cache_name = path.substr(6); // len("cache:") == 6
+        conduit::Node *cache = graph().workspace().registry().fetch<Node>("cache");
+        // load a copy from the cache
+        if(cache->has_child(cache_name))
+        {
+            loaded_mesh.set(cache->fetch(cache_name));
+        }
+        else
+        {
+          const std::vector<std::string> child_names = cache->child_names();
+          std::ostringstream oss;
+          oss << "failed to load from cache, cache entry `" << cache_name << "` not found." << std::endl;
+          if(child_names.empty())
+          {
+            oss << " (Ascent cache is empty)" << std::endl;
+          }
+          else
+          {
+              oss << "Ascent cache entry names: " << std::endl;
+              for( const auto & name: child_names)
+              {
+                oss << " " << name << std::endl;
+              }
+          }
+          ASCENT_ERROR(oss.str());
+        }
     }
     else
     {
-        conduit::relay::io::load(path,protocol,*res);
+//-----------------------------------------------------------------------------
+#ifdef ASCENT_MPI_ENABLED
+//-----------------------------------------------------------------------------
+        MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
+        conduit::relay::mpi::io::blueprint::load_mesh(path,
+                                                      loaded_mesh,
+                                                      mpi_comm);
+
+//-----------------------------------------------------------------------------
+#else // non mpi case
+//-----------------------------------------------------------------------------
+        conduit::relay::io::blueprint::load_mesh(path,
+                                                 loaded_mesh);
+//-----------------------------------------------------------------------------
+#endif
+//-----------------------------------------------------------------------------
     }
 
-    set_output<Node>(res);
+    // loaded_mesh now contains new meshes ....
 
-}
+    // if we have rename options, exec rename
+    if(!rename_opts.dtype().is_empty())
+    {
+      conduit::blueprint::mesh::rename(rename_opts,loaded_mesh);
+    }
+
+    // we can add the new meshes as new domains, we don't have 
+    // to combine with existing trees
+
+    // mesh is multi domain, it will either be a list or empty Node
+    if(mesh->dtype().is_list() || mesh->dtype().is_empty())
+    {
+          NodeIterator load_itr = loaded_mesh.children();
+          while(load_itr.has_next())
+          {
+            mesh->append().move(load_itr.next());
+          }
+    }
+    else
+    {
+        ASCENT_ERROR("Blueprint load failure. "
+                     "Blueprint mesh Node is " << mesh->dtype().name() <<
+                     ", expected List or Empty Node");
+    }
+
+    // we can return our input data object
+    set_output<DataObject>(data_object);
+  }
+
 //-----------------------------------------------------------------------------
 BlueprintFlatten::BlueprintFlatten()
 :Filter()
@@ -1180,8 +1358,3 @@ BlueprintFlatten::execute()
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
-
-
-
-
-

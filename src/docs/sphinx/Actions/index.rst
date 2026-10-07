@@ -18,7 +18,6 @@ Ascent Actions
    Triggers
    Logging
    PathStringFormatting
-   Examples
    ExpressionsOverview
    expression_functions
    expression_objects

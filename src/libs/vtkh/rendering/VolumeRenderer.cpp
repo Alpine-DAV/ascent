@@ -201,11 +201,13 @@ public:
     viskores::Int32 width = (viskores::Int32) canvas.GetWidth();
     viskores::Int32 height = (viskores::Int32) canvas.GetHeight();
 
-    rayCamera.SetParameters(camera, width, height);
+    rayCamera = camera.CreateRaytracingCamera(width, height);
 
     rayCamera.CreateRays(rays, coords.GetBounds());
     rays.Buffers.at(0).InitConst(0.f);
-    viskores::rendering::raytracing::RayOperations::MapCanvasToRays(rays, camera, canvas);
+    viskores::rendering::raytracing::RayOperations::MapCanvasToRays(rays,
+                                                                    rayCamera, 
+                                                                    canvas.GetDepthBuffer());
 
     m_tracer.SetSampleDistance(m_sample_dist);
     m_tracer.SetColorMap(m_color_map);
@@ -240,11 +242,13 @@ public:
     viskores::rendering::raytracing::Ray<viskores::Float32> rays;
     viskores::Int32 width = (viskores::Int32) canvas.GetWidth();
     viskores::Int32 height = (viskores::Int32) canvas.GetHeight();
-    rayCamera.SetParameters(camera, width, height);
+    rayCamera = camera.CreateRaytracingCamera(width, height);
 
     rayCamera.CreateRays(rays, coords.GetBounds());
     rays.Buffers.at(0).InitConst(0.f);
-    viskores::rendering::raytracing::RayOperations::MapCanvasToRays(rays, camera, canvas);
+    viskores::rendering::raytracing::RayOperations::MapCanvasToRays(rays,
+                                                                    rayCamera, 
+                                                                    canvas.GetDepthBuffer());
 
     viskores::rendering::raytracing::VolumeRendererStructured tracer;
     tracer.SetSampleDistance(m_sample_dist);

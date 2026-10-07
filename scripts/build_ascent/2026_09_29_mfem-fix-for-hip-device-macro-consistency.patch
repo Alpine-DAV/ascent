@@ -1,0 +1,25 @@
+From 1030c45b5991bf753ab5185f3b444d9ab5b6d59b Mon Sep 17 00:00:00 2001
+From: Cyrus Harrison <cyrush@llnl.gov>
+Date: Tue, 29 Sep 2026 13:54:12 -0700
+Subject: [PATCH] tmp fix for hip device macro consistency
+
+---
+ general/error.hpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/general/error.hpp b/general/error.hpp
+index 4e79f2d..79a78a6 100644
+--- a/general/error.hpp
++++ b/general/error.hpp
+@@ -15,7 +15,7 @@
+ #include "../config/config.hpp"
+ #include <iomanip>
+ #include <sstream>
+-#if defined(MFEM_USE_HIP)
++#if defined(__HIP_DEVICE_COMPILE__)
+ #include <hip/hip_runtime.h>
+ #endif
+ 
+-- 
+2.37.0.windows.1
+
