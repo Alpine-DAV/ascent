@@ -45,6 +45,7 @@ set(BASIC_TESTS t_ascent_smoke
                 t_ascent_vorticity
                 t_ascent_relay
                 t_ascent_conduit_extract
+                t_ascent_cache_extract
                 t_ascent_vtk_file_extract
                 t_ascent_gltf_extract
                 t_ascent_htg
@@ -124,6 +125,7 @@ if(VISKORES_FOUND)
    list(APPEND VTKH_DEP_TESTS t_ascent_vtkh_data_adapter)
    list(APPEND MPI_TESTS   t_ascent_mpi_ascent_runtime
                            t_ascent_mpi_relay_extract
+                           t_ascent_mpi_relay_load
                            t_ascent_mpi_rover
                            t_ascent_mpi_revolve
                            t_ascent_mpi_extrude)

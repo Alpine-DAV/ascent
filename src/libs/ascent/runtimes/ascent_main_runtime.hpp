@@ -45,7 +45,9 @@ public:
 
 
     void                 Info(conduit::Node &out) override;
+    void                 Info(const std::string &path, conduit::Node &out) override;
     conduit::Node       &Info() override;
+    conduit::Node       &Info(const std::string &path) override;
 
     void  Cleanup() override;
 
@@ -73,6 +75,8 @@ private:
     conduit::Node     m_about;
     conduit::Node     m_previous_actions;
 
+    conduit::Node     m_cache;
+
     WebInterface      m_web_interface;
     int               m_refinement_level;
     int               m_rank;
@@ -90,6 +94,7 @@ private:
     conduit::Node     m_comments;
 
     void              ResetInfo();
+    void              RegisterCache();
     void              AddPublishedMeshInfo();
 
     flow::Workspace   m_workspace;

@@ -31,6 +31,20 @@ Runtime::~Runtime()
 
 }
 
+//-----------------------------------------------------------------------------
+void
+Runtime::Info(const std::string & /* key */, conduit::Node &info_out)
+{
+  Info(info_out);
+}
+
+//-----------------------------------------------------------------------------
+conduit::Node &
+Runtime::Info(const std::string & /*key*/)
+{
+  return Info();
+}
+
 void Runtime::DisplayError(const std::string &msg)
 {
   std::cerr<<msg;

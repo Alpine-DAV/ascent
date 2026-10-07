@@ -456,7 +456,23 @@ AscentRuntime::Initialize(const conduit::Node &options)
 void
 AscentRuntime::Info(conduit::Node &out)
 {
+    // key copy out semantics for info for now
     out.set(m_info);
+}
+
+//-----------------------------------------------------------------------------
+void
+AscentRuntime::Info(const std::string &key, conduit::Node &out)
+{
+  if(key == "cache")
+  {
+    out.set_external(m_cache);
+  }
+  else
+  {
+    // key copy out semantics for info for now
+    out.set(m_info);
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -465,6 +481,21 @@ AscentRuntime::Info()
 {
     return m_info;
 }
+
+//-----------------------------------------------------------------------------
+conduit::Node &
+AscentRuntime::Info(const std::string &key)
+{
+  if(key == "cache")
+  {
+    return m_cache;
+  }
+  else
+  {
+    return m_info;
+  }
+}
+
 
 //-----------------------------------------------------------------------------
 void
@@ -485,6 +516,14 @@ AscentRuntime::ResetInfo()
     m_info["registered_filter_types"] = registered_filter_types();
 }
 
+//-----------------------------------------------------------------------------
+void
+AscentRuntime::RegisterCache()
+{
+  m_workspace.registry().add<Node>("cache",
+                                   &m_cache,
+                                   -1); // external, dont manage
+}
 
 //-----------------------------------------------------------------------------
 void
@@ -2035,6 +2074,37 @@ AscentRuntime::BuildGraph(const conduit::Node &actions)
         // Used with field filtering, we don't need
         // to process as part of exec
       }
+      else if(action_name == "clear_cache")
+      {
+          std::vector<std::string> names;
+          if(action.has_path("name"))
+          {
+              names.push_back(action["name"].as_string());
+          }
+          else if(action.has_path("names"))
+          {
+              NodeConstIterator itr = action["names"].children();
+              while(itr.has_next())
+              {
+                  names.push_back(itr.next().as_string());
+              }
+          }
+
+          if(names.size() == 0)
+          {
+              m_cache.reset();
+          }
+          else
+          {
+              for(const string &name : names)
+              {
+                  if(m_cache.has_child(name))
+                  {
+                      m_cache.remove(name);
+                  }
+              }
+          }
+      }
       else if(action_name == "open_log")
       {
         // Open Ascent Logging Stream
@@ -2220,6 +2290,7 @@ AscentRuntime::Execute(const conduit::Node &actions)
         // add the source to the registry so we can access information
         // about the original mesh (like bounds)
         m_workspace.registry().add<DataObject>("source_object", &m_data_object,1);
+        RegisterCache();
 
         m_workspace.info(m_info["flow_graph"]);
         m_info["actions"] = actions;

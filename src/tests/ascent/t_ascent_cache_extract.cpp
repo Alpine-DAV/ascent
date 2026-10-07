@@ -6,7 +6,7 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: t_ascent_conduit_extract.cpp
+/// file: t_ascent_cache_extract.cpp
 ///
 //-----------------------------------------------------------------------------
 
@@ -48,40 +48,42 @@ TEST(ascent_conduit_extract, test_pass_thru)
                                               EXAMPLE_MESH_SIDE_DIM,
                                               EXAMPLE_MESH_SIDE_DIM,
                                               EXAMPLE_MESH_SIDE_DIM,
-                                              data);
-
-    data["state/domain_id"] = 0;
+                                              data.append()); // add braid as first domain
+    data[0]["state/domain_id"] = 0;
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+    ASCENT_INFO("Testing cache extract in serial");
 
-    ASCENT_INFO("Testing conduit  extract in serial");
-    
     conduit::Node actions;
     conduit::Node &add_extracts = actions.append();
     add_extracts["action"] = "add_extracts";
     conduit::Node &extracts = add_extracts["extracts"];
     // add the extract
-    extracts["e1/type"]  = "conduit";
+    extracts["e1/type"]  = "cache";
+    extracts["e1/params/name"]  = "mymesh";
 
     std::cout << actions.to_yaml() << std::endl;
 
-    //
-    // Run Ascent
-    //
     Ascent ascent;
     ascent.open();
     ascent.publish(data);
     ascent.execute(actions);
-    conduit::Node & info =  ascent.info();
-
-    // copy out our extract
-    conduit::Node extract_copy;
-    extract_copy.set(info["extracts"][0]);
-
-    ascent.close();
+    conduit::Node &cache = ascent.info("cache");
     // diff to make sure data looks as we expect
     Node diff_info;
-    EXPECT_FALSE(extract_copy["data"][0].diff(data,diff_info));
+    EXPECT_FALSE(ascent.info("cache")["mymesh"].diff(data, diff_info));
+
+    // test clear of cache entry by name
+     std::string acts_str = R"xyzxyz(
+- 
+  action: "clear_cache"
+  names: ["mymesh"]
+)xyzxyz";
+
+    actions.parse(acts_str);
+    ascent.execute(actions);
+    EXPECT_FALSE(ascent.info("cache").has_child("my_mesh"));
+    ascent.close();
 }
 
 //-----------------------------------------------------------------------------
@@ -109,7 +111,7 @@ TEST(ascent_conduit_extract, test_pipeline_result)
 
     EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
 
-    ASCENT_INFO("Testing slice to in-memory extract");
+    ASCENT_INFO("Testing slice to in-memory cache");
 
     //
     // Create the actions.
@@ -138,31 +140,20 @@ TEST(ascent_conduit_extract, test_pipeline_result)
     add_extracts["action"] = "add_extracts";
     conduit::Node &extracts = add_extracts["extracts"];
     // add the extract
-    extracts["e1/type"]  = "conduit";
+    extracts["e1/type"]  = "cache";
     extracts["e1/pipeline"] = "pl1";
+    extracts["e1/params/name"] = "myslice";
 
     std::cout << actions.to_yaml() << std::endl;
 
-    //
-    // Run Ascent
-    //
     Ascent ascent;
     ascent.open();
     ascent.publish(data);
     ascent.execute(actions);
-    conduit::Node & info = ascent.info();
-
-    // copy out our extract
-    conduit::Node extract_copy;
-    extract_copy.set(info["extracts"][0]);
-
-    ascent.close();
-
     // pass back copy and render the result
-
     string output_path = prepare_output_dir();
     string output_file = conduit::utils::join_file_path(output_path,
-                                            "tout_in_memory_extract_render_slice_3d");
+                                            "tout_in_memory_cache_extract_render_slice_3d");
 
     // remove old images before rendering
     remove_test_image(output_file);
@@ -178,9 +169,20 @@ TEST(ascent_conduit_extract, test_pipeline_result)
     scenes["s1/plots/p1/field"] = "radial";
     scenes["s1/image_prefix"] = output_file;
 
-    ascent.open();
-    ascent.publish(extract_copy["data"]);
+    ascent.publish(ascent.info("cache")["myslice"]);
     ascent.execute(actions);
+    EXPECT_TRUE(ascent.info("cache").has_child("myslice"));
+  
+    // test clear of all cache entries
+     std::string acts_str = R"xyzxyz(
+- 
+  action: "clear_cache"
+)xyzxyz";
+
+    actions.parse(acts_str);
+    ascent.execute(actions);
+    EXPECT_FALSE(ascent.info("cache").has_child("myslice"));
+
     ascent.close();
 
     // check that we created an image

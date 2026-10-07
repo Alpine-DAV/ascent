@@ -1474,6 +1474,224 @@ TEST(ascent_relay, test_extract_name_format_keywords)
     EXPECT_TRUE(conduit::utils::is_file(extract_file_no_format_final));
 }
 
+
+
+//-----------------------------------------------------------------------------
+TEST(ascent_relay, test_relay_load)
+{
+    Node n;
+    ascent::about(n);
+
+    // create a basic point mesh to public to ascent
+    Node data;
+    data["coordsets/pt_coords/type"] = "explicit";
+    data["coordsets/pt_coords/values/x"] = 0.0;
+    data["coordsets/pt_coords/values/y"] = 0.0;
+    data["coordsets/pt_coords/values/z"] = 0.0;
+    data["topologies/pt_topo/type"] = "points";
+    data["topologies/pt_topo/coordset"] = "pt_coords";
+
+    data.print();
+    Node verify_info;
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    // create a mesh that we save out side of ascent
+    // to test loading via the load filter
+    Node save_data;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              save_data);
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_relay_load_topos");
+    string output_root = output_file + ".cycle_000100.root";
+
+    conduit::relay::io::blueprint::save_mesh(save_data, output_file,"hdf5");
+
+    
+    conduit::Node actions;
+    // add the extracts
+    conduit::Node &add_pls = actions.append();
+    add_pls["action"] = "add_pipelines";
+    conduit::Node &pl = add_pls["pipelines/load_pipeline"];
+    pl["f1/type"] = "load";
+    pl["f1/params/path"] = output_root;
+    // test renaming blueprint components,
+    // this is useful to avoid name collisions
+    pl["f1/params/rename/fields/braid"] = "myfield";
+    pl["f1/params/rename/topologies/mesh"]  = "mytopo";
+    pl["f1/params/rename/coordsets/coords"]  = "mytopo";
+
+    output_file = conduit::utils::join_file_path(output_path,"tout_relay_load_topos_extract");
+    output_root = output_file + ".cycle_000100.root";
+    remove_test_image(output_root);
+
+    conduit::Node &add_extacts = actions.append();
+    add_extacts["action"] = "add_extracts";
+    add_extacts["extracts/e1/type"] = "relay";
+    add_extacts["extracts/e1/pipeline"] = "load_pipeline";
+    add_extacts["extracts/e1/params/protocol"] = "blueprint/mesh/hdf5";
+    add_extacts["extracts/e1/params/path"] = output_file;
+    add_extacts["extracts/e1/params/fields"].append() = "myfield";
+
+    std::cout << actions.to_yaml() << std::endl;
+
+    Ascent ascent;
+    ascent.open();
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    EXPECT_TRUE(conduit::utils::is_file(output_root));
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_relay, test_relay_load_bad_path)
+{
+    Node n;
+    ascent::about(n);
+
+    // create a basic point mesh to hand to ascent
+    Node data;
+    data["coordsets/pt_coords/type"] = "explicit";
+    data["coordsets/pt_coords/values/x"] = {0.0, 1.0, 2.0};
+    data["coordsets/pt_coords/values/y"] = {0.0, 5.0, 0.0};
+    data["coordsets/pt_coords/values/z"] = {-1.0, 0.0, 1.0};
+    data["topologies/pt_topo/type"] = "points";
+    data["topologies/pt_topo/coordset"] = "pt_coords";
+    data.print();
+
+    Node verify_info;
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    conduit::Node actions;
+    actions.reset();
+    // add the extracts
+    conduit::Node &add_pl = actions.append();
+    add_pl["action"] = "add_pipelines";
+    add_pl["pipelines/pl1/f1/type"] = "load";
+    add_pl["pipelines/pl1/f1/params/path"] = "/bogus/path/that/does/not/exist.root";
+
+    Ascent ascent;
+    Node opts;
+    opts["exceptions"] = "forward";
+    ascent.open(opts);
+    ascent.publish(data);
+    EXPECT_THROW(ascent.execute(actions), conduit::Error);
+    ascent.close();
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(ascent_relay, test_relay_load_from_cache)
+{
+    Node n;
+    ascent::about(n);
+
+    // create a basic point mesh to public to ascent
+    Node data;
+    data["coordsets/pt_coords/type"] = "explicit";
+    data["coordsets/pt_coords/values/x"] = {0.0, 1.0, 2.0};
+    data["coordsets/pt_coords/values/y"] = {0.0, 5.0, 0.0};
+    data["coordsets/pt_coords/values/z"] = {-1.0, 0.0, 1.0};
+    data["topologies/pt_topo/type"] = "points";
+    data["topologies/pt_topo/coordset"] = "pt_coords";
+
+    data.print();
+    Node verify_info;
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    conduit::Node actions;
+    actions.reset();
+    // add the extracts
+    conduit::Node &add_exts = actions.append();
+    add_exts["action"] = "add_extracts";
+    add_exts["extracts/e1/type"] = "cache";
+    add_exts["extracts/e1/params/name"] = "my_point_mesh";
+
+    Ascent ascent;
+    ascent.open();
+    ascent.publish(data);
+    ascent.execute(actions);
+
+    // create another simple dataset
+    data.reset();
+    data["coordsets/pt_coords_one/type"] = "explicit";
+    data["coordsets/pt_coords_one/values/x"] = {0.5};
+    data["coordsets/pt_coords_one/values/y"] = {0.5};
+    data["coordsets/pt_coords_one/values/z"] = {0.5};
+    data["topologies/pt_topo_one/type"] = "points";
+    data["topologies/pt_topo_one/coordset"] = "pt_coords_one";
+
+    // load the dataset back
+    actions.reset();
+    // add the extracts
+    conduit::Node &add_pls = actions.append();
+    add_pls["action"] = "add_pipelines";
+    conduit::Node &pl = add_pls["pipelines/load_pipeline"];
+    pl["f1/type"] = "load";
+    pl["f1/params/path"] = "cache:my_point_mesh";
+
+    string output_path = prepare_output_dir();
+    string output_file = conduit::utils::join_file_path(output_path,"tout_relay_load_cache_result");
+    string output_root = output_file + ".cycle_000100.root";
+    remove_test_image(output_root);
+
+    conduit::Node &add_extacts = actions.append();
+    add_extacts["action"] = "add_extracts";
+    add_extacts["extracts/e1/type"] = "relay";
+    add_extacts["extracts/e1/pipeline"] = "load_pipeline";
+    add_extacts["extracts/e1/params/protocol"] = "blueprint/mesh/hdf5";
+    add_extacts["extracts/e1/params/path"] = output_file;
+
+    std::cout << actions.to_yaml() << std::endl;
+
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    EXPECT_TRUE(conduit::utils::is_file(output_root));
+}
+
+//-----------------------------------------------------------------------------
+TEST(ascent_relay, test_relay_load_from_cache_bad_name)
+{
+    Node n;
+    ascent::about(n);
+
+    // create a basic point mesh to public to ascent
+    Node data;
+    data["coordsets/pt_coords/type"] = "explicit";
+    data["coordsets/pt_coords/values/x"] = {0.0, 1.0, 2.0};
+    data["coordsets/pt_coords/values/y"] = {0.0, 5.0, 0.0};
+    data["coordsets/pt_coords/values/z"] = {-1.0, 0.0, 1.0};
+    data["topologies/pt_topo/type"] = "points";
+    data["topologies/pt_topo/coordset"] = "pt_coords";
+    data.print();
+
+    Node verify_info;
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    conduit::Node actions;
+    actions.reset();
+    // add the extracts
+    conduit::Node &add_pl = actions.append();
+    add_pl["action"] = "add_pipelines";
+    add_pl["pipelines/pl1/f1/type"] = "load";
+    add_pl["pipelines/pl1/f1/params/path"] = "cache:bad_name";
+
+    Ascent ascent;
+    Node opts;
+    opts["exceptions"] = "forward";
+    ascent.open(opts);
+    ascent.publish(data);
+    EXPECT_THROW(ascent.execute(actions), conduit::Error);
+    ascent.close();
+}
+
+
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {
@@ -1490,5 +1708,7 @@ int main(int argc, char* argv[])
     result = RUN_ALL_TESTS();
     return result;
 }
+
+
 
 

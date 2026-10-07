@@ -1059,40 +1059,144 @@ void
 RelayIOLoad::declare_interface(Node &i)
 {
     i["type_name"]   = "relay_io_load";
-    i["port_names"] = DataType::empty();
+    i["port_names"].append() = "in";
     i["output_port"] = "true";
 
     // ----------- Define Param Schema -----------
-    io_param_schema(i["param_schema"]);
+    Node &param_schema = i["param_schema"];
+    param_schema["type"] = "object";
+    param_schema["additionalProperties"] = false;
+
+    string_schema(param_schema["properties/path"], 1);
+    ignore_schema(param_schema["properties/rename"]);
+
 }
 
 //-----------------------------------------------------------------------------
 void
 RelayIOLoad::execute()
 {
+    Node load_opts =params();
     std::string path, protocol;
     path = params()["path"].as_string();
+    
+    // we plan to pass thru most params as load opts, except:
+    //  path
+    //  rename
+    //
+    load_opts.remove("path");
 
-    // TODO check if we need to expand the path (MPI) case
-    if(params().has_child("protocol"))
+    Node rename_opts;
+    if(params().has_child("rename"))
     {
-        protocol = params()["protocol"].as_string();
+        // copy out rename opts
+        rename_opts = params()["rename"];
+        load_opts.remove("rename");
     }
 
-    Node *res = new Node();
-
-    if(protocol.empty())
+    if(!input("in").check_type<DataObject>())
     {
-        conduit::relay::io::load(path,*res);
+        // error
+        ASCENT_ERROR("relay_io_load requires a DataObject input");
+    }
+
+    DataObject *data_object  = input<DataObject>("in");
+    if(!data_object->is_valid())
+    {
+      return;
+    }
+
+    std::shared_ptr<Node> n_input = data_object->as_node();
+    Node *mesh = n_input.get();
+    Node loaded_mesh, opts;
+
+    // TODO: This conduit issue  https://github.com/llnl/conduit/issues/1717
+    //       prevents direct pass through of options
+
+    // if `path` starts with "cache:" look in ascents' cache
+    //
+    bool cache_load = (path.find("cache:") == 0);
+
+    if(cache_load)
+    {
+        std::string cache_name = path.substr(6); // len("cache:") == 6
+        conduit::Node *cache = graph().workspace().registry().fetch<Node>("cache");
+        // load a copy from the cache
+        if(cache->has_child(cache_name))
+        {
+            loaded_mesh.set(cache->fetch(cache_name));
+        }
+        else
+        {
+          const std::vector<std::string> child_names = cache->child_names();
+          std::ostringstream oss;
+          oss << "failed to load from cache, cache entry `" << cache_name << "` not found." << std::endl;
+          if(child_names.empty())
+          {
+            oss << " (Ascent cache is empty)" << std::endl;
+          }
+          else
+          {
+              oss << "Ascent cache entry names: " << std::endl;
+              for( const auto & name: child_names)
+              {
+                oss << " " << name << std::endl;
+              }
+          }
+          ASCENT_ERROR(oss.str());
+        }
     }
     else
     {
-        conduit::relay::io::load(path,protocol,*res);
+//-----------------------------------------------------------------------------
+#ifdef ASCENT_MPI_ENABLED
+//-----------------------------------------------------------------------------
+        MPI_Comm mpi_comm = MPI_Comm_f2c(Workspace::default_mpi_comm());
+        conduit::relay::mpi::io::blueprint::load_mesh(path,
+                                                      loaded_mesh,
+                                                      mpi_comm);
+
+//-----------------------------------------------------------------------------
+#else // non mpi case
+//-----------------------------------------------------------------------------
+        conduit::relay::io::blueprint::load_mesh(path,
+                                                 loaded_mesh);
+//-----------------------------------------------------------------------------
+#endif
+//-----------------------------------------------------------------------------
     }
 
-    set_output<Node>(res);
+    // loaded_mesh now contains new meshes ....
 
-}
+    // if we have rename options, exec rename
+    if(!rename_opts.dtype().is_empty())
+    {
+      conduit::blueprint::mesh::rename(rename_opts,loaded_mesh);
+    }
+
+    // we can add the new meshes as new domains, we don't have 
+    // to combine with existing trees
+
+    // mesh is multi domain, it will either be a list or empty Node
+    if(mesh->dtype().is_list() || mesh->dtype().is_empty())
+    {
+          NodeIterator load_itr = loaded_mesh.children();
+          while(load_itr.has_next())
+          {
+            mesh->append().move(load_itr.next());
+          }
+    }
+    else
+    {
+        ASCENT_ERROR("Blueprint load failure. "
+                     "Blueprint mesh Node is " << mesh->dtype().name() <<
+                     ", expected List or Empty Node");
+    }
+
+    // we can return our input data object
+    set_output<DataObject>(data_object);
+  }
+
 //-----------------------------------------------------------------------------
 BlueprintFlatten::BlueprintFlatten()
 :Filter()
