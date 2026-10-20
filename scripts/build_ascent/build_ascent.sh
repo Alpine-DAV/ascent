@@ -535,6 +535,12 @@ if [ ! -d ${conduit_src_dir} ]; then
   tar ${tar_extra_args} -xzf ${conduit_tarball} -C ${source_dir} \
       --exclude="conduit-${conduit_version}/src/tests/relay/data/silo/*" \
       --exclude="conduit-${conduit_version}/AGENTS.md"
+
+  # apply patches
+  cd ${conduit_src_dir}
+  echo "**** Applying Patches to ${conduit_tarball}"
+  patch -p1 < ${script_dir}/2026_10_20_conduit_braid_exact_endpoints.patch
+  cd ${root_dir}
 fi
 
 #
