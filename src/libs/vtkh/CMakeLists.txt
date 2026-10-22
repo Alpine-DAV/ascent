@@ -19,6 +19,10 @@ if(KOKKOS_FOUND)
   set(VTKH_KOKKOS_ENABLED TRUE)
 endif()
 
+if(ANARI_FOUND)
+  set(VTKH_ANARI_ENABLED TRUE)
+endif()
+
 configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/vtkh_config.h.in"
                 "${CMAKE_CURRENT_BINARY_DIR}/vtkh_config.h")
 
@@ -48,6 +52,9 @@ if(KOKKOS_FOUND)
     list(APPEND vtkh_base_deps Kokkos::kokkos)
 endif()
 
+if(ANARI_FOUND)
+    list(APPEND vtkh_base_deps viskores::anari)
+endif()
 
 add_subdirectory(utils)
 
