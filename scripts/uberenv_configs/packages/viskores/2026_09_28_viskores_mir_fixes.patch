@@ -90,3 +90,17 @@
          }
        }
      };
+@@ -2395,11 +2396,11 @@ struct DestructPointWeightList : public viskores::worklet::WorkletMapField
+       }
+       else
+       {
+-        originalVal = originalVals.Get(pointIDs[i]);
++        const auto nextOriginalVal = originalVals.Get(pointIDs[i]);
+         for (viskores::IdComponent cIndex = 0; cIndex < newVal.GetNumberOfComponents(); ++cIndex)
+         {
+           newVal[cIndex] +=
+-            static_cast<ValueType>(static_cast<WeightType>(originalVal[cIndex]) * pointWeights[i]);
++            static_cast<ValueType>(static_cast<WeightType>(nextOriginalVal[cIndex]) * pointWeights[i]);
+         }
+       }
+     }
