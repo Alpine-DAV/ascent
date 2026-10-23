@@ -4016,7 +4016,7 @@ VTKHDataAdapter::ViskoresFieldToBlueprint(conduit::Node &output,
   //bool assoc_mesh  = viskores::cont::Field::ASSOC_WHOLE_MESH == field.GetAssociation();
   if(!assoc_points && ! assoc_cells)
   {
-    ASCENT_ERROR("Field must be associated with cells or points\n");
+     ASCENT_ERROR("Field " + name + " must be associated with cells or points\n");
   }
   std::string conduit_name;
 
