@@ -10,8 +10,15 @@ permissions:
 jobs:
   build_hip:
     name: Build Ascent HIP
-    runs-on: ubuntu-22.04
-    container: alpinedav/ascent-devel:ubuntu-22.04-rocm-6.3.4-x86_64
+    runs-on: ubuntu-latest
+    container: ${{ matrix.container }}
+    strategy:
+      matrix:
+        include:
+          - name: rocm 6.3.4-shared
+            container: alpinedav/ascent-devel:ubuntu-22.04-rocm-6.3.4-x86_64
+          - name: rocm 7.2.4-shared
+            container: alpinedav/ascent-devel:ubuntu-22.04-rocm-7.2.4-x86_64
     env:
       CMAKE_VERSION: 3.31.8
     steps:
