@@ -329,7 +329,7 @@ DRAY_EXEC_ONLY Location DeviceMesh<ElemT>::locate (const Vec<Float, 3> &point) c
       bool use_init_guess = true;
       // locate the point
 
-      Vec<Float, dim> el_coords;
+      Vec<Float, dim> el_coords = subref_center(ref_start_box);
 
       bool found;
       found = detail::LocateHack<ElemT::get_dim ()>::template eval_inverse<ElemT> (
