@@ -5,6 +5,7 @@
 #include <vtkh/vtkh_exports.h>
 #include <vtkh/DataSet.hpp>
 #include <vtkh/Error.hpp>
+#include <vtkh/rendering/TextAnnotation.hpp>
 
 #include <viskores/rendering/Camera.h>
 #include <viskores/rendering/CanvasRayTracer.h>
@@ -56,6 +57,7 @@ public:
   void                            DoRenderAnnotations(bool on);
   void                            DoRenderWorldAnnotations(bool on);
   void                            DoRenderScreenAnnotations(bool on);
+  void                            DoRenderTextAnnotations(bool on);
   void                            DoRenderBackground(bool on);
   void                            ScaleWorldAnnotations(float x, float y, float z);
   void                            SetWidth(const viskores::Int32 width);
@@ -65,6 +67,7 @@ public:
   void                            SetImageName(const std::string &name);
   void                            SetComments(const std::vector<std::string> &comments);
   void                            SetColorBarPosition(std::vector<viskores::Bounds> color_bar_position);
+  void                            SetTextAnnotations(const std::vector<vtkh::TextAnnotation> &annotations);
   void                            SetBackgroundColor(float bg_color[4]);
   void                            SetForegroundColor(float fg_color[4]);
   void                            SetShadingOn(bool on);
@@ -78,6 +81,7 @@ public:
                                                           const std::vector<viskores::Range> &ranges,
                                                           const std::vector<viskores::cont::ColorTable> &colors,
                                                           const std::vector<int> &is_discrete);
+  void                            RenderTextAnnotations();
   void                            Save();
 protected:
   viskores::rendering::Camera      m_camera;
@@ -90,9 +94,11 @@ protected:
   viskores::rendering::Color       m_fg_color;
   viskoresCanvas                   CreateCanvas() const;
   std::vector<viskores::Bounds>    m_color_bar_position;
+  std::vector<vtkh::TextAnnotation> m_text_annotations;
   bool                         m_render_annotations;
   bool                         m_render_world_annotations;
   bool                         m_render_screen_annotations;
+  bool                         m_render_text_annotations;
   bool                         m_render_background;
   bool                         m_shading;
   viskoresCanvas                   m_canvas;

@@ -249,6 +249,7 @@ Scene::Render()
     {
       current_batch[i].RenderWorldAnnotations();
       current_batch[i].RenderScreenAnnotations(field_names, ranges, color_tables, is_ct_discrete);
+      current_batch[i].RenderTextAnnotations();
       current_batch[i].RenderBackground();
       current_batch[i].Save();
     }
