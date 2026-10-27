@@ -17,6 +17,7 @@ set(vtkh_rendering_headers
     PointRenderer.hpp
     ScalarRenderer.hpp
     Scene.hpp
+    TextAnnotation.hpp
     VolumeRenderer.hpp
     )
 
