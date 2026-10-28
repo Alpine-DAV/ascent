@@ -1,0 +1,20 @@
+--- a/core/src/setup/Kokkos_Setup_SYCL.hpp	2025-08-11 20:43:03.000000000 +0000
++++ b/core/src/setup/Kokkos_Setup_SYCL.hpp
+@@ -35,8 +35,15 @@
+ 
+ // FIXME_SYCL Use type directly once it has stabilized in SYCL.
+ namespace Kokkos::Impl {
+-#ifndef SYCL_EXT_INTEL_USM_ADDRESS_SPACES
+-#error SYCL_EXT_INTEL_USM_ADDRESS_SPACES undefined!
++#if !defined(SYCL_EXT_INTEL_USM_ADDRESS_SPACES)
++// oneAPI 2026.0 removed the sycl_ext_intel_usm_address_spaces extension
++// (and its feature macro) once the extension stabilized. Use the standard
++// sycl::global_ptr there, mirroring what Kokkos upstream moved to once
++// the intel device_ptr types went away.
++template <typename T>
++using sycl_device_ptr = sycl::global_ptr<T>;
++template <typename T>
++using sycl_host_ptr = sycl::global_ptr<T>;
+ #elif SYCL_EXT_INTEL_USM_ADDRESS_SPACES >= 2
+ template <typename T>
+ using sycl_device_ptr = sycl::ext::intel::device_ptr<T>;

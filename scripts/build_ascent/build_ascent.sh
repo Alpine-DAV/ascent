@@ -611,6 +611,12 @@ fi
 if [ ! -d ${kokkos_src_dir} ]; then
   echo "**** Extracting ${kokkos_tarball}"
   tar ${tar_extra_args} -xzf ${kokkos_tarball} -C ${source_dir}
+
+  # apply patches
+  cd ${kokkos_src_dir}
+  echo "**** Applying Patches to ${kokkos_tarball}"
+  patch -p1 < ${script_dir}/2026_10_28_kokkos-fix-oneapi-2026-usm-address-space-removal.patch
+  cd ${root_dir}
 fi
 
 kokkos_extra_cmake_args=""
