@@ -856,6 +856,12 @@ fi
 if [ ! -d ${raja_src_dir} ]; then
   echo "**** Extracting ${raja_tarball}"
   tar ${tar_extra_args} -xzf ${raja_tarball} -C ${source_dir}
+
+  # apply patches
+  cd ${raja_src_dir}
+  echo "**** Applying Patches to ${raja_tarball}"
+  patch -p1 < ${script_dir}/2026_10_28_raja-include-sycl-compat-for-SYCL_EXTERNAL.patch
+  cd ${root_dir}
 fi
 
 raja_extra_cmake_args=()
