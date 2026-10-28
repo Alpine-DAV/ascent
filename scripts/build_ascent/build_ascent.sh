@@ -813,7 +813,7 @@ if [[ "$enable_hip" == "ON" ]]; then
 fi
 
 if [[ "$enable_sycl" == "ON" ]]; then
-    camp_extra_cmake_args="-DENABLE_SYCL=ON"
+    camp_extra_cmake_args+=" -DENABLE_SYCL=ON"
 fi
 
 echo "**** Configuring Camp ${camp_version}"
