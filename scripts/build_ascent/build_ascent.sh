@@ -737,7 +737,7 @@ if [[ "$enable_sycl" == "ON" ]]; then
   viskores_extra_cmake_args+=(
     -DViskores_ENABLE_KOKKOS=ON
     -DCMAKE_PREFIX_PATH="${kokkos_install_dir}"
-    -DCMAKE_CXX_FLAGS="-fPIC -fp-model=precise -Wno-unused-command-line-argument -Wno-deprecated-declarations -fsycl-device-code-split=per_kernel -fsycl-max-parallel-link-jobs=128"
+    -DCMAKE_CXX_FLAGS="-fPIC -fp-model=precise -Wno-unused-command-line-argument -Wno-deprecated-declarations -fsycl-device-code-split=per_kernel -fsycl-max-parallel-link-jobs=128 -flink-huge-device-code"
   )
 fi
 
@@ -878,7 +878,7 @@ fi
 if [[ "$enable_sycl" == "ON" ]]; then
   raja_extra_cmake_args+=(
     -DENABLE_SYCL=ON
-    -DCMAKE_CXX_FLAGS="-fsycl -fsycl-device-code-split=per_kernel -fsycl-max-parallel-link-jobs=128"
+    -DCMAKE_CXX_FLAGS="-fsycl -fsycl-device-code-split=per_kernel -fsycl-max-parallel-link-jobs=128 -flink-huge-device-code"
   )
 fi
 
@@ -1175,7 +1175,7 @@ fi
 if [[ "$enable_sycl" == "ON" ]]; then
     echo 'set(BLT_CXX_STD c++17 CACHE STRING "")' >> ${root_dir}/ascent-config.cmake
     echo 'set(KOKKOS_DIR ' ${kokkos_install_dir} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
-    echo 'set(CMAKE_CXX_FLAGS "-fPIC -fp-model=precise -fsycl -fsycl-device-code-split=per_kernel -fsycl-max-parallel-link-jobs=128" CACHE STRING "")' >> ${root_dir}/ascent-config.cmake
+    echo 'set(CMAKE_CXX_FLAGS "-fPIC -fp-model=precise -fsycl -fsycl-device-code-split=per_kernel -fsycl-max-parallel-link-jobs=128 -flink-huge-device-code" CACHE STRING "")' >> ${root_dir}/ascent-config.cmake
 fi
 
 # build only if install doesn't exist
