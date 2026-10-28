@@ -806,6 +806,10 @@ if [[ "$enable_hip" == "ON" ]]; then
     camp_extra_cmake_args="${camp_extra_cmake_args} -DROCM_PATH=${ROCM_PATH}"
 fi
 
+if [[ "$enable_sycl" == "ON" ]]; then
+    camp_extra_cmake_args="-DENABLE_SYCL=ON"
+fi
+
 echo "**** Configuring Camp ${camp_version}"
 cmake -S ${camp_src_dir} -B ${camp_build_dir} ${cmake_compiler_settings} \
   -DCMAKE_VERBOSE_MAKEFILE:BOOL=${enable_verbose}\
@@ -848,17 +852,28 @@ if [ ! -d ${raja_src_dir} ]; then
   tar ${tar_extra_args} -xzf ${raja_tarball} -C ${source_dir}
 fi
 
-raja_extra_cmake_args=""
+raja_extra_cmake_args=()
 if [[ "$enable_cuda" == "ON" ]]; then
-  raja_extra_cmake_args="-DENABLE_CUDA=ON"
-  raja_extra_cmake_args="${raja_extra_cmake_args} -DCMAKE_CUDA_ARCHITECTURES=${CUDA_ARCH}"
+  raja_extra_cmake_args+=(
+    -DENABLE_CUDA=ON
+    -DCMAKE_CUDA_ARCHITECTURES="${CUDA_ARCH}"
+  )
 fi
 
 if [[ "$enable_hip" == "ON" ]]; then
-  raja_extra_cmake_args="-DENABLE_HIP=ON"
-  raja_extra_cmake_args="${raja_extra_cmake_args} -DCMAKE_HIP_COMPILER=${CXX}"
-  raja_extra_cmake_args="${raja_extra_cmake_args} -DCMAKE_HIP_ARCHITECTURES=${ROCM_ARCH}"
-  raja_extra_cmake_args="${raja_extra_cmake_args} -DROCM_PATH=${ROCM_PATH}"
+  raja_extra_cmake_args+=(
+    -DENABLE_HIP=ON
+    -DCMAKE_HIP_COMPILER="${CXX}"
+    -DCMAKE_HIP_ARCHITECTURES="${ROCM_ARCH}"
+    -DROCM_PATH="${ROCM_PATH}"
+  )
+fi
+
+if [[ "$enable_sycl" == "ON" ]]; then
+  raja_extra_cmake_args+=(
+    -DENABLE_SYCL=ON
+    -DCMAKE_CXX_FLAGS="-fsycl -fsycl-device-code-split=per_kernel -fsycl-max-parallel-link-jobs=128"
+  )
 fi
 
 echo "**** Configuring RAJA ${raja_version}"
@@ -871,9 +886,10 @@ cmake -S ${raja_src_dir} -B ${raja_build_dir} ${cmake_compiler_settings} \
   -DENABLE_TESTS=OFF \
   -DRAJA_ENABLE_TESTS=OFF \
   -DENABLE_EXAMPLES=OFF \
-  -DRAJA_ENABLE_EXERCISES=OFF ${raja_extra_cmake_args} \
+  -DRAJA_ENABLE_EXERCISES=OFF \
   -DCMAKE_INSTALL_PREFIX=${raja_install_dir} \
-  -DRAJA_ENABLE_VECTORIZATION=${raja_enable_vectorization}
+  -DRAJA_ENABLE_VECTORIZATION=${raja_enable_vectorization} \
+  "${raja_extra_cmake_args[@]}"
 
 echo "**** Building RAJA ${raja_version}"
 cmake --build ${raja_build_dir} --config ${build_config} -j${build_jobs}
@@ -1148,6 +1164,12 @@ if [[ "$enable_hip" == "ON" ]]; then
     echo 'set(CMAKE_HIP_ARCHITECTURES ' ${ROCM_ARCH} ' CACHE STRING "")' >> ${root_dir}/ascent-config.cmake
     echo 'set(ROCM_PATH ' ${ROCM_PATH} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
     echo 'set(KOKKOS_DIR ' ${kokkos_install_dir} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
+fi
+
+if [[ "$enable_sycl" == "ON" ]]; then
+    echo 'set(BLT_CXX_STD c++17 CACHE STRING "")' >> ${root_dir}/ascent-config.cmake
+    echo 'set(KOKKOS_DIR ' ${kokkos_install_dir} ' CACHE PATH "")' >> ${root_dir}/ascent-config.cmake
+    echo 'set(CMAKE_CXX_FLAGS "-fPIC -fp-model=precise -fsycl -fsycl-device-code-split=per_kernel -fsycl-max-parallel-link-jobs=128" CACHE STRING "")' >> ${root_dir}/ascent-config.cmake
 fi
 
 # build only if install doesn't exist
