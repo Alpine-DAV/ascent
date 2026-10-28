@@ -647,7 +647,10 @@ if [[ "$enable_hip" == "ON" ]]; then
 fi
 
 if [[ "$enable_sycl" == "ON" ]]; then
-  kokkos_extra_cmake_args="-DCMAKE_CXX_FLAGS=-fPIC -fp-model=precise -Wno-unused-command-line-argument -Wno-deprecated-declarations -fsycl-device-code-split=per_kernel -fsycl-max-parallel-link-jobs=128"
+  # Note: no CMAKE_CXX_FLAGS needed here. Kokkos adds the SYCL compiler and
+  # link flags itself when Kokkos_ENABLE_SYCL=ON; passing additional flags
+  # here requires quoting the whole -DCMAKE_CXX_FLAGS="..." value, otherwise
+  # the trailing flags leak into cmake as bare (unknown) arguments.
   kokkos_extra_cmake_args="${kokkos_extra_cmake_args} -DKokkos_ENABLE_SYCL=ON"
   kokkos_extra_cmake_args="${kokkos_extra_cmake_args} -DKokkos_ARCH_INTEL_PVC=ON"
   kokkos_extra_cmake_args="${kokkos_extra_cmake_args} -DCMAKE_CXX_EXTENSIONS=OFF"
@@ -706,30 +709,38 @@ if [ ! -d ${viskores_src_dir} ]; then
 fi
 
 
-viskores_extra_cmake_args=""
+viskores_extra_cmake_args=()
 if [[ "$enable_cuda" == "ON" ]]; then
-  viskores_extra_cmake_args="${viskores_extra_cmake_args} -DViskores_ENABLE_CUDA=ON"
-  viskores_extra_cmake_args="${viskores_extra_cmake_args} -DCMAKE_CUDA_HOST_COMPILER=${CXX}"
-  viskores_extra_cmake_args="${viskores_extra_cmake_args} -DCMAKE_CUDA_ARCHITECTURES=${CUDA_ARCH}"
+  viskores_extra_cmake_args+=(
+    -DViskores_ENABLE_CUDA=ON
+    -DCMAKE_CUDA_HOST_COMPILER="${CXX}"
+    -DCMAKE_CUDA_ARCHITECTURES="${CUDA_ARCH}"
+  )
 fi
 
 if [[ "$enable_hip" == "ON" ]]; then
-  viskores_extra_cmake_args="${viskores_extra_cmake_args} -DViskores_ENABLE_KOKKOS=ON"
-  viskores_extra_cmake_args="${viskores_extra_cmake_args} -DCMAKE_PREFIX_PATH=${kokkos_install_dir}"
-  viskores_extra_cmake_args="${viskores_extra_cmake_args} -DCMAKE_HIP_ARCHITECTURES=${ROCM_ARCH}"
-  viskores_extra_cmake_args="${viskores_extra_cmake_args} -DViskores_ENABLE_KOKKOS_THRUST=OFF"
+  viskores_extra_cmake_args+=(
+    -DViskores_ENABLE_KOKKOS=ON
+    -DCMAKE_PREFIX_PATH="${kokkos_install_dir}"
+    -DCMAKE_HIP_ARCHITECTURES="${ROCM_ARCH}"
+    -DViskores_ENABLE_KOKKOS_THRUST=OFF
+  )
 fi
 
 if [[ "$enable_sycl" == "ON" ]]; then
-  viskores_extra_cmake_args="${viskores_extra_cmake_args} -DViskores_ENABLE_KOKKOS=ON"
-  viskores_extra_cmake_args="${viskores_extra_cmake_args} -DCMAKE_PREFIX_PATH=${kokkos_install_dir}"
-  viskores_extra_cmake_args="-DCMAKE_CXX_FLAGS=-fPIC -fp-model=precise -Wno-unused-command-line-argument -Wno-deprecated-declarations -fsycl-device-code-split=per_kernel -fsycl-max-parallel-link-jobs=128"
+  viskores_extra_cmake_args+=(
+    -DViskores_ENABLE_KOKKOS=ON
+    -DCMAKE_PREFIX_PATH="${kokkos_install_dir}"
+    -DCMAKE_CXX_FLAGS="-fPIC -fp-model=precise -Wno-unused-command-line-argument -Wno-deprecated-declarations -fsycl-device-code-split=per_kernel -fsycl-max-parallel-link-jobs=128"
+  )
 fi
 
 
 if [[ "$enable_mpicc" == "ON" ]]; then
-  viskores_extra_cmake_args="${viskores_extra_cmake_args} -DMPI_C_COMPILER=${mpicc_exe}"
-  viskores_extra_cmake_args="${viskores_extra_cmake_args} -DMPI_CXX_COMPILER=${mpicxx_exe}"
+  viskores_extra_cmake_args+=(
+    -DMPI_C_COMPILER="${mpicc_exe}"
+    -DMPI_CXX_COMPILER="${mpicxx_exe}"
+  )
 fi
 
 echo "**** Configuring Viskores v${viskores_version}"
@@ -745,8 +756,9 @@ cmake -S ${viskores_src_dir} -B ${viskores_build_dir} ${cmake_compiler_settings}
   -DViskores_ENABLE_RENDERING=ON \
   -DViskores_ENABLE_TESTING=OFF\
   -DBUILD_TESTING=OFF \
-  -DViskores_ENABLE_BENCHMARKS=OFF ${viskores_extra_cmake_args} \
-  -DCMAKE_INSTALL_PREFIX=${viskores_install_dir}
+  -DViskores_ENABLE_BENCHMARKS=OFF \
+  -DCMAKE_INSTALL_PREFIX=${viskores_install_dir} \
+  "${viskores_extra_cmake_args[@]}"
 
 echo "**** Building Viskores v${viskores_version}"
 cmake --build ${viskores_build_dir} --config ${build_config} -j${build_jobs}
