@@ -24,9 +24,11 @@ module reset
 module use /soft/modulefiles
 module load cmake
 
-# Python 3.12 + numpy for enable_python=ON, and mpi4py for
-# t_python_ascent_mpi_render (its PYTHONPATH is snapshotted from the env
-# at configure time, so mpi4py must be loaded before running cmake).
+# Python 3.12 + numpy for enable_python=ON. py-mpi4py is needed to use the
+# python bindings under MPI (e.g. the ascent_python_mpi_render_example.py);
+# it is also required by the MPI python tests when building with
+# enable_tests=ON, since SetupTests.cmake snapshots $PYTHONPATH at
+# configure time.
 module load python/3.12.12
 module load py-cython py-numpy py-pip py-wheel py-setuptools
 module load py-mpi4py
@@ -34,5 +36,5 @@ module load py-mpi4py
 env CC=`which mpicc` CXX=`which mpicxx` FTN=`which mpifort` \
   build_config=Release \
   enable_sycl=ON enable_mpi=ON enable_find_mpi=OFF enable_python=ON \
-  enable_fortran=ON raja_enable_vectorization=ON enable_tests=ON \
+  enable_fortran=ON raja_enable_vectorization=ON enable_tests=OFF \
   enable_verbose=ON ./build_ascent_sycl.sh
