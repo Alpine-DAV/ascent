@@ -58,7 +58,6 @@
    #include <ascent_runtime_genten_filters.hpp>
 #endif
 
-
 using namespace flow;
 
 //-----------------------------------------------------------------------------
@@ -160,7 +159,6 @@ register_builtin()
     AscentRuntime::register_filter_type<GltfExtract>("extracts", "gltf");
     AscentRuntime::register_filter_type<VTKHMIR>("transforms","mir");
 
-
     AscentRuntime::register_filter_type<RoverXRay>("extracts", "xray");
     // AscentRuntime::register_filter_type<RoverVolume>("extracts", "volume"); // removing volume renderer
 
@@ -200,7 +198,6 @@ register_builtin()
 #if defined(ASCENT_PYTHON_ENABLED)
     AscentRuntime::register_filter_type<AscentPythonScript>();
 #endif
-
 }
 
 
