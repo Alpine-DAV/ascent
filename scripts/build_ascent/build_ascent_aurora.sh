@@ -37,4 +37,5 @@ env CC=`which mpicc` CXX=`which mpicxx` FTN=`which mpifort` \
   build_config=Release \
   enable_sycl=ON enable_mpi=ON enable_find_mpi=OFF enable_python=ON \
   enable_fortran=ON raja_enable_vectorization=ON enable_tests=OFF \
+  enable_64bit_ids=ON \
   enable_verbose=ON ./build_ascent_sycl.sh
