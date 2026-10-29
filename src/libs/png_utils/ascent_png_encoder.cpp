@@ -28,6 +28,25 @@ namespace ascent
 {
 
 //-----------------------------------------------------------------------------
+// Helper for converting floating point color channels to bytes.
+//
+// The input value is clamped to [0,1] before scaling and truncation.
+// Direct conversion of floating point values outside the representable
+// range of unsigned char is undefined behavior in C++, and compilers
+// handle it differently (x86 wrap-around modulo 256 vs saturation),
+// which silently corrupts output pixels when colors exceed 1.0
+// (e.g., additive volume compositing).
+//-----------------------------------------------------------------------------
+template<typename T>
+inline unsigned char
+clamp_to_byte(const T &value)
+{
+    const T clamped = value < T(0) ? T(0) : (value > T(1) ? T(1) : value);
+    return static_cast<unsigned char>(clamped * T(255));
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 PNGEncoder::PNGEncoder()
 :m_buffer(NULL),
  m_buffer_size(0)
@@ -94,10 +113,10 @@ PNGEncoder::Encode(const float *rgba_in,
         {
             int inOffset = (y * width + x) * 4;
             int outOffset = ((height - y - 1) * width + x) * 4;
-            rgba_flip[outOffset + 0] = (unsigned char)(rgba_in[inOffset + 0] * 255.f);
-            rgba_flip[outOffset + 1] = (unsigned char)(rgba_in[inOffset + 1] * 255.f);
-            rgba_flip[outOffset + 2] = (unsigned char)(rgba_in[inOffset + 2] * 255.f);
-            rgba_flip[outOffset + 3] = (unsigned char)(rgba_in[inOffset + 3] * 255.f);
+            rgba_flip[outOffset + 0] = clamp_to_byte(rgba_in[inOffset + 0]);
+            rgba_flip[outOffset + 1] = clamp_to_byte(rgba_in[inOffset + 1]);
+            rgba_flip[outOffset + 2] = clamp_to_byte(rgba_in[inOffset + 2]);
+            rgba_flip[outOffset + 3] = clamp_to_byte(rgba_in[inOffset + 3]);
         }
 
      unsigned error = lpng::lodepng_encode_memory(&m_buffer,
@@ -133,10 +152,10 @@ PNGEncoder::Encode(const double *rgba_in,
     for (int y = 0; y < height; ++y)
     {
       int offset = (y * width + x) * 4;
-      rgba[offset + 0] = (unsigned char)(rgba_in[offset + 0] * 255.);
-      rgba[offset + 1] = (unsigned char)(rgba_in[offset + 1] * 255.);
-      rgba[offset + 2] = (unsigned char)(rgba_in[offset + 2] * 255.);
-      rgba[offset + 3] = (unsigned char)(rgba_in[offset + 3] * 255.);
+      rgba[offset + 0] = clamp_to_byte(rgba_in[offset + 0]);
+      rgba[offset + 1] = clamp_to_byte(rgba_in[offset + 1]);
+      rgba[offset + 2] = clamp_to_byte(rgba_in[offset + 2]);
+      rgba[offset + 3] = clamp_to_byte(rgba_in[offset + 3]);
     }
 
   Encode(rgba, width, height);
@@ -161,9 +180,9 @@ PNGEncoder::EncodeChannel(const double *buffer_in,
     for (int y = 0; y < height; ++y)
     {
       int offset = (y * width + x);
-      rgba[offset + 0] = (unsigned char)(buffer_in[offset] * 255.);
-      rgba[offset + 1] = (unsigned char)(buffer_in[offset] * 255.);
-      rgba[offset + 2] = (unsigned char)(buffer_in[offset] * 255.);
+      rgba[offset + 0] = clamp_to_byte(buffer_in[offset]);
+      rgba[offset + 1] = clamp_to_byte(buffer_in[offset]);
+      rgba[offset + 2] = clamp_to_byte(buffer_in[offset]);
       rgba[offset + 3] = 255;
     }
 
@@ -188,9 +207,9 @@ PNGEncoder::EncodeChannel(const float *buffer_in,
     for (int y = 0; y < height; ++y)
     {
       int offset = (y * width + x);
-      rgba[offset + 0] = (unsigned char)(buffer_in[offset] * 255.);
-      rgba[offset + 1] = (unsigned char)(buffer_in[offset] * 255.);
-      rgba[offset + 2] = (unsigned char)(buffer_in[offset] * 255.);
+      rgba[offset + 0] = clamp_to_byte(buffer_in[offset]);
+      rgba[offset + 1] = clamp_to_byte(buffer_in[offset]);
+      rgba[offset + 2] = clamp_to_byte(buffer_in[offset]);
       rgba[offset + 3] = 255;
     }
 
@@ -275,10 +294,10 @@ PNGEncoder::Encode(const float *rgba_in,
         {
             int inOffset = (y * width + x) * 4;
             int outOffset = ((height - y - 1) * width + x) * 4;
-            rgba_flip[outOffset + 0] = (unsigned char)(rgba_in[inOffset + 0] * 255.f);
-            rgba_flip[outOffset + 1] = (unsigned char)(rgba_in[inOffset + 1] * 255.f);
-            rgba_flip[outOffset + 2] = (unsigned char)(rgba_in[inOffset + 2] * 255.f);
-            rgba_flip[outOffset + 3] = (unsigned char)(rgba_in[inOffset + 3] * 255.f);
+            rgba_flip[outOffset + 0] = clamp_to_byte(rgba_in[inOffset + 0]);
+            rgba_flip[outOffset + 1] = clamp_to_byte(rgba_in[inOffset + 1]);
+            rgba_flip[outOffset + 2] = clamp_to_byte(rgba_in[inOffset + 2]);
+            rgba_flip[outOffset + 3] = clamp_to_byte(rgba_in[inOffset + 3]);
         }
 
     lpng::LodePNGState state;
