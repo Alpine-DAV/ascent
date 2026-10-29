@@ -1,0 +1,21 @@
+--- a/include/RAJA/policy/sycl/params/kernel_name.hpp	2025-09-12 16:03:10.000000000 +0000
++++ b/include/RAJA/policy/sycl/params/kernel_name.hpp
+@@ -3,6 +3,18 @@
+ 
+ #include "RAJA/pattern/params/kernel_name.hpp"
+ 
++#if defined(RAJA_ENABLE_SYCL)
++// oneAPI 2026.x no longer predefines SYCL_EXTERNAL on the device
++// compilation pass (it is deprecated in favor of __DPCPP_SYCL_EXTERNAL).
++// Include the SYCL headers and fall back to __DPCPP_SYCL_EXTERNAL, which is
++// always defined once they have been included (empty on the host pass,
++// sycl_device on the device pass).
++#include "RAJA/util/sycl_compat.hpp"
++#ifndef SYCL_EXTERNAL
++#define SYCL_EXTERNAL __DPCPP_SYCL_EXTERNAL
++#endif
++#endif
++
+ namespace RAJA
+ {
+ namespace expt
