@@ -30,16 +30,18 @@ public:
   void Update() override;
 
 protected:
+  void ReleaseANARIResources();
   virtual void PreExecute() override;
   virtual void DoExecute() override;
   virtual void PostExecute() override;
 
   std::shared_ptr<viskores::rendering::MapperRayTracer> m_tracer;
 
-  int m_num_samples;
-  anari_cpp::Device m_device;
-  anari_cpp::Renderer m_renderer;
-  anari_cpp::Frame m_frame;
+  int m_num_samples = 1;
+  anari_cpp::Library m_library = nullptr;
+  anari_cpp::Device m_device = nullptr;
+  anari_cpp::Renderer m_renderer = nullptr;
+  anari_cpp::Frame m_frame = nullptr;
   std::vector<anari_cpp::Light> m_lights;
   std::vector<vtkh::ANARIRenderer*> m_anari_renderers;
 

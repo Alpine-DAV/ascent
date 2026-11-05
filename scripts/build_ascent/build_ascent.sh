@@ -688,7 +688,7 @@ fi # if enable_hip || enable_sycl
 ################
 # anari
 ################
-anari_version=0.15.0
+anari_version=0.16.0
 anari_src_dir=$(ospath ${source_dir}/ANARI-SDK-${anari_version})
 anari_build_dir=$(ospath ${build_dir}/anari-v${anari_version})
 anari_install_dir=$(ospath ${install_dir}/anari-v${anari_version}/)
@@ -875,6 +875,8 @@ if [ ! -d ${viskores_src_dir} ]; then
   patch -p1 < ${script_dir}/2026_08_13_viskores-add-plumbing-for-rays-wo-camera.patch
   patch -p1 < ${script_dir}/2026_09_15_viskores_extrusion_connectivity.patch
   patch -p1 < ${script_dir}/2026_09_28_viskores_mir_fixes.patch
+  patch -p1 < ${script_dir}/2026_10_30_viskores_anari_unstructured_array_cleanup.patch
+  patch -p1 < ${script_dir}/2026_10_30_viskores_anari_structured_field_metadata.patch
   cd ${root_dir}
 fi
 
