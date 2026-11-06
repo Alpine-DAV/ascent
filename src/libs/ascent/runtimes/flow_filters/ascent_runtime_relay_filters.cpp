@@ -1113,7 +1113,7 @@ RelayIOLoad::execute()
     // TODO: This conduit issue  https://github.com/llnl/conduit/issues/1717
     //       prevents direct pass through of options
 
-    // if `path` starts with "cache:" look in ascents' cache
+    // if `path` starts with "cache:" look in ascent's cache
     //
     bool cache_load = (path.find("cache:") == 0);
 
@@ -1128,7 +1128,7 @@ RelayIOLoad::execute()
         }
         else
         {
-          const std::vector<std::string> child_names = cache->child_names();
+          const std::vector<std::string> &child_names = cache->child_names();
           std::ostringstream oss;
           oss << "failed to load from cache, cache entry `" << cache_name << "` not found." << std::endl;
           if(child_names.empty())

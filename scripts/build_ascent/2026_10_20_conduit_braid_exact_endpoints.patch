@@ -1,0 +1,28 @@
+diff --git a/src/libs/blueprint/conduit_blueprint_mesh_examples.cpp b/src/libs/blueprint/conduit_blueprint_mesh_examples.cpp
+--- a/src/libs/blueprint/conduit_blueprint_mesh_examples.cpp
++++ b/src/libs/blueprint/conduit_blueprint_mesh_examples.cpp
+@@ -910,15 +910,21 @@ void braid_init_explicit_coordset(index_t npts_x,
+ 
+     for (index_t k = 0; k < outer; k++)
+     {
+-        float64 cz = -10.0 + k * dz;
++        // Set the upper endpoints explicitly. Compilers that use 
++        // multiply and add can produce a value just below 10.0.
++        float64 cz = (npts_z > 1 && k == npts_z - 1)
++                         ? 10.0
++                         : -10.0 + k * dz;
+ 
+         for (index_t j = 0; j < middle; j++)
+         {
+-            float64 cy = -10.0 + j * dy;
++            float64 cy = (npts_y > 1 && j == npts_y - 1)
++                             ? 10.0
++                             : -10.0 + j * dy;
+ 
+             for (index_t i = 0; i < npts_x; i++)
+             {
+-                x_vals[idx] = -10.0 + i * dx;
++                x_vals[idx] = (i == npts_x - 1) ? 10.0 : -10.0 + i * dx;
+ 
+                 if (npts_y > 1)
+                 {

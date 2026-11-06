@@ -4,8 +4,8 @@ Notable changes to Ascent are documented in this file. This changelog started on
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project aspires to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
-### Preferred dependency versions for ascent@develop
+## [0.9.6] - Released 2026-10-07
+### Preferred dependency versions for ascent@0.9.6
 - cmake@3.26 or newer
 - conduit@0.9.9 or newer
 - viskores@1.2.0 (requires patches [patch1](https://github.com/Alpine-DAV/ascent/blob/develop/scripts/build_ascent/2026_08_13_viskores-add-plumbing-for-rays-wo-camera.patch) [patch2](https://github.com/Alpine-DAV/ascent/blob/develop/scripts/build_ascent/2026_09_15_viskores_extrusion_connectivity.patch) [patch3](https://github.com/Alpine-DAV/ascent/blob/develop/scripts/build_ascent/2026_09_28_viskores_mir_fixes.patch))
@@ -16,16 +16,16 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - mfem@4.10
 
 ### Added
-- Added support for structured strided Blueprint meshes in the VTK-h data adapter.
+- Added support for structured strided Blueprint meshes in the VTK-h data adapter
 - Added Revolve and Extrude filters for rotational and linear extrusion, respectively
-- Added support for VisIt material volume fraction fields in field filtering and MIR.
-- Added a `gltf` extract that exports surface geometry (points, lines, and triangles) as GLB files, with optional scalar field coloring.
-- Added the `points/glyph_type` scene option for rendering point meshes with sphere, cube, or axes glyphs.
+- Added support for VisIt material volume fraction fields in field filtering and MIR
+- Added a `gltf` extract that exports surface geometry (points, lines, and triangles) as GLB files, with optional scalar field coloring
+- Added the `points/glyph_type` scene option for rendering point meshes with sphere, cube, or axes glyphs
 - Added plane to the Sample Filter
-- Added the ability to specify "min/max" as the x/y/z point for the reflect transform filter
+- Added the ability to specify `min/max` as the `x/y/z` point for the reflect transform filter
 - Added Uniform Grid filter as a parameter of the Sample Filter
 - Added ability to define cameras for rendering using visit camera view parameters
-- Added ability to do tiled rendering, where tiles covering an image are rendered separately to form the final image. The default is to do tiled rendering with 1024 by 1024 tiles.
+- Added ability to do tiled rendering, where tiles covering an image are rendered separately to form the final image, the default is to do tiled rendering with 1024 by 1024 tiles
 - Added support for 64 bit IDs
 - Added support for RZ meshes
 - If a `default_dir` is passed as an Ascent Option, extracts and plots will output to that directory by default now.
@@ -38,18 +38,31 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added `cache` extract, that creates an an in-memory copy of mesh data and caches it by name
 - Added `clear_cache` action, which allows you removed cached mesh data by name
 - Added `load` filter that allows you to load additional mesh data from files, or cached data (via `cache:name`)
+- Added `ray_surface` intersection sampling filter
+- Added `plane` case to the sampling filter
+- Added support for specifying materials for field filtering
+- Added support for tracing multiple energy groups in Rover
+- Added sampling python notebook to the Ascent tutorial
 
 ### Changed
-- Redefined the parameter verification and surprise checking behavior for Filters to instead use a conduit based JSON Schema style verification schema. Implemented for all existing filters
-- Changed tiled rendering default to `false`
-- A couple of bugs were fixed with tiled rendering and the tiled rendering default was changed to `true`.
-- Changed ascent.info() methods to provide variants that accepts key. The key `cache` will return Ascent's cache instead of the normal info summary. This gives direct access to any cached data sets
+- Redefined the parameter verification and surprise checking behavior for Filters to instead use a conduit based JSON Schema style verification schema, implemented for all existing filters
+- Changed ascent.info() methods to provide variants that accepts key, the key `cache` will return Ascent's cache instead of the normal info summary. This gives direct access to any cached data sets
+- Updated Ascent's Python related CMake logic to use modern find support and targets
+- Fixed several issues with runtime fmt params when using C++20 with gcc13+
+- Removed docs related to builds of deprecated exploratory features
+- Evolved CI to cover all test cases github actions and build_ascent.sh, stopped use of pre-built tpl containers
+- Ported from using vtk-m to viskores, viskores is the evolution of vtk-m
+- Updated to use viskores 1.2, with additional patches
+- Updated to use conduit 0.9.9 material utilities 
+- Improved support for various conduit blueprint matset representations
 
 ### Fixed
 - Fixed the aspect ratio for frustum renderings
 - Fixed a bug causing unnecessarily strict type constraints for camera parameters.
 - Fixed issue where the plot did not align with the 3d axes when the camera was panned (`camera/xpan` and `camera/ypan`)
 - Fixed a crash with PNG encoding of large renders (10k+ by 10k+ resolution)
+- Fixed issues with LOR creating out of range volume fractions
+- Resolved issues with parameter parsing being overly strict about bitwidths
 
 ## [0.9.5] - Released 2025-09-10
 ### Preferred dependency versions for ascent@0.9.5
@@ -112,8 +125,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added a `declare_fields` action, that allows users to explicitly list the fields to return for field filtering. This option avoids complex field parsing logic.
 - Added a 2d camera mode (`camera/2d: [left, right, bottom, top]`) to scene render cameras and the `project_2d` (scalar rendering) filter cameras.
 - Added support for `include` keyword to include children from yaml files in an input node trees
-- Added support for special keyword formatting for output paths. Current supported keywords include
-`cycle`, `family`, and `time`.
+- Added support for special keyword formatting for output paths. Current supported keywords include `cycle`, `family`, and `time`.
 - Added support for formatting of output paths for extracts.
 - Added support for parallel timestep mode to replay allowing for parallel in time processes in addition to pre-existing distributed-memory parallelism.
 
@@ -121,7 +133,8 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Extensive improvements to Rover X Ray Ray Tracing Diagnostic features (the `xray` extract).
 - Changed the replay utility's binary names such that `replay_ser` is now `ascent_replay` and `raplay_mpi` is now `ascent_replay_mpi`. This will help prevent potential name collisions with other tools that also have replay utilities.
 - Updated several preferred tpl versions
-- Changed bounding box used for default scene bounds to be the union of all topologies used in scene plots. Perviously, the union of all topologies in the dataset where used. 
+- Changed bounding box used for default scene bounds to be the union of all topologies used in scene plots. Perviously, the union of all topologies in the dataset where used.
+- Updated 
 
 ### Fixed
 - Fixed WarpX filter that was not allowing for rendering of the output streamlines
@@ -367,7 +380,12 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ### Fixed
 - Several minor bug fixes
 
-[Unreleased]: https://github.com/Alpine-DAV/ascent/compare/v0.9.1...HEAD
+[Unreleased]: https://github.com/Alpine-DAV/ascent/compare/v0.9.6...HEAD
+[0.9.6]: https://github.com/Alpine-DAV/ascent/compare/v0.9.5...v0.9.6
+[0.9.5]: https://github.com/Alpine-DAV/ascent/compare/v0.9.4...v0.9.5
+[0.9.4]: https://github.com/Alpine-DAV/ascent/compare/v0.9.3...v0.9.4
+[0.9.3]: https://github.com/Alpine-DAV/ascent/compare/v0.9.2...v0.9.3
+[0.9.2]: https://github.com/Alpine-DAV/ascent/compare/v0.9.1...v0.9.2
 [0.9.1]: https://github.com/Alpine-DAV/ascent/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/Alpine-DAV/ascent/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/Alpine-DAV/ascent/compare/v0.7.1...v0.8.0

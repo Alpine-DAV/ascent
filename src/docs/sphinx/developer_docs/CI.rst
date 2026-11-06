@@ -2,7 +2,7 @@ CI Testing
 ==========
 
 We use GitHub Actions that uses :ref:`build_ascent.sh <build_ascent>` for CI testing Ascent's Pull Requests.
-
+Link to our `GitHub Actions workflows <https://github.com/Alpine-DAV/ascent/tree/develop/.github/workflows>`_.
 
 .. Depricated Azure Pipeline Process
 .. ================================
