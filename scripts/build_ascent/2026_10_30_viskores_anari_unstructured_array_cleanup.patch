@@ -1,0 +1,21 @@
+--- a/viskores/interop/anari/ANARIMapperVolume.cxx
++++ b/viskores/interop/anari/ANARIMapperVolume.cxx
+@@ -425,6 +425,18 @@ void ANARIMapperVolume::ANARIHandles::ReleaseArrays()
+ 
+   anari_cpp::release(this->Device, this->UnstructuredParameters.VertexPosition);
+   this->UnstructuredParameters.VertexPosition = nullptr;
++
++  anari_cpp::release(this->Device, this->UnstructuredParameters.VertexData);
++  this->UnstructuredParameters.VertexData = nullptr;
++
++  anari_cpp::release(this->Device, this->UnstructuredParameters.Index);
++  this->UnstructuredParameters.Index = nullptr;
++
++  anari_cpp::release(this->Device, this->UnstructuredParameters.CellIndex);
++  this->UnstructuredParameters.CellIndex = nullptr;
++
++  anari_cpp::release(this->Device, this->UnstructuredParameters.CellType);
++  this->UnstructuredParameters.CellType = nullptr;
+ }
+ 
+ } // namespace anari

@@ -2,6 +2,7 @@
 # See License.txt
 #==============================================================================
 set(vtkh_rendering_headers
+    ANARIRenderer.hpp
     Annotator.hpp
     AutoCamera.hpp
     ConnectivityProxy.hpp
@@ -21,6 +22,7 @@ set(vtkh_rendering_headers
     )
 
 set(vtkh_rendering_sources
+    ANARIRenderer.cpp
     Annotator.cpp
     AutoCamera.cpp
     ConnectivityProxy.cpp
