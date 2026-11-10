@@ -58,6 +58,8 @@
 #include <ascent_runtime_vtkh_utils.hpp>
 #endif
 
+#include <iomanip>
+#include <sstream>
 #include <stdio.h>
 
 using namespace conduit;
@@ -184,18 +186,9 @@ void text_annotations_schema(conduit::Node &schema)
     conduit::Node number_item_schema;
     number_schema(number_item_schema);
 
-    conduit::Node screen_position_item_schema;
-    number_schema(screen_position_item_schema, false, -1, 1);
-
-    conduit::Node screen_position_schema;
-    array_schema(screen_position_schema, screen_position_item_schema, 2, 2);
-
-    conduit::Node world_position_schema;
-    array_schema(world_position_schema, number_item_schema, 3, 3);
-
     conduit::Node position_schema;
-    position_schema["oneOf"].append().set(screen_position_schema);
-    position_schema["oneOf"].append().set(world_position_schema);
+    array_schema(position_schema, number_item_schema, 2, 3);
+
 
     conduit::Node color_item_schema;
     number_schema(color_item_schema, false, 0, 1);
@@ -216,6 +209,36 @@ void text_annotations_schema(conduit::Node &schema)
     annotation_schema["required"].append() = "text";
 
     array_schema(schema["oneOf"].append(), annotation_schema);
+}
+
+void time_annotation_schema(conduit::Node &schema)
+{
+    schema.reset();
+
+    bool_schema(schema["oneOf"].append());
+
+    conduit::Node position_item_schema;
+    number_schema(position_item_schema);
+
+    conduit::Node position_schema;
+    array_schema(position_schema, position_item_schema, 2, 2);
+
+    conduit::Node color_item_schema;
+    number_schema(color_item_schema, false, 0, 1);
+
+    conduit::Node color_schema;
+    array_schema(color_schema, color_item_schema, 3, 4);
+
+    conduit::Node options_schema;
+    options_schema["type"] = "object";
+    options_schema["additionalProperties"] = false;
+    options_schema["properties/position"].set(position_schema);
+    number_schema(options_schema["properties/start_time"]);
+    number_schema(options_schema["properties/end_time"]);
+    options_schema["properties/color"].set(color_schema);
+    options_schema["constraints/dependencies/start_time"].append() = "end_time";
+
+    schema["oneOf"].append().set(options_schema);
 }
 
 void viskores_bounds_to_conduit_node(const viskores::Bounds &bounds,
@@ -488,12 +511,12 @@ parse_text_annotations(const conduit::Node &text_annotations_node)
     {
       const conduit::Node &position_node = annotation_node["position"];
       const std::vector<float> position = parse_annotation_float_array(position_node);
-      annotation.m_position[0] = position[0];
-      annotation.m_position[1] = position[1];
-      annotation.m_position[2] = position.size() == 3 ? position[2] : 0.f;
       annotation.m_position_type = position.size() == 3
         ? vtkh::TextAnnotation::PositionType::World
         : vtkh::TextAnnotation::PositionType::Screen;
+      annotation.m_position[0] = position[0];
+      annotation.m_position[1] = position[1];
+      annotation.m_position[2] = position.size() == 3 ? position[2] : 0.f;
     }
 
     if(annotation_node.has_path("scale"))
@@ -534,6 +557,107 @@ parse_text_annotations(const conduit::Node &text_annotations_node)
   }
 
   return text_annotations;
+}
+
+//-----------------------------------------------------------------------------
+
+vtkh::TextAnnotation
+create_time_annotation(const conduit::Node &metadata,
+                       const viskores::Vec2f_32 position =
+                         viskores::Vec2f_32(-0.95f, -0.92f),
+                       const bool use_color = false,
+                       const viskores::rendering::Color color =
+                         viskores::rendering::Color(1.f, 1.f, 1.f, 1.f))
+{
+  vtkh::TextAnnotation annotation;
+  annotation.m_position = viskores::Vec3f_32(position[0], position[1], 0.f);
+  annotation.m_vertical_alignment = -1.f;
+  annotation.m_use_color = use_color;
+  annotation.m_color = color;
+
+  std::ostringstream text;
+  if(metadata.has_path("time"))
+  {
+    text << std::setprecision(6) << "time: " << metadata["time"].to_float64();
+  }
+
+  if(metadata.has_path("cycle"))
+  {
+    if(!text.str().empty())
+    {
+      text << " ";
+    }
+    text << "cycle: " << metadata["cycle"].to_int64();
+  }
+
+  annotation.m_text = text.str();
+  return annotation;
+}
+
+//-----------------------------------------------------------------------------
+
+void
+parse_time_annotation(const conduit::Node &time_annotation_node,
+                      const conduit::Node &metadata,
+                      vtkh::Render &render)
+{
+  if(!metadata.has_path("time") && !metadata.has_path("cycle"))
+  {
+    return;
+  }
+
+  if(time_annotation_node.dtype().is_string() &&
+     time_annotation_node.as_string() == "false")
+  {
+    return;
+  }
+
+  viskores::Vec2f_32 position(-0.95f, -0.92f);
+  viskores::rendering::Color color(1.f, 1.f, 1.f, 1.f);
+  bool use_color = false;
+
+  if(time_annotation_node.dtype().is_object() &&
+     time_annotation_node.has_path("position"))
+  {
+    const std::vector<float> position_values =
+      parse_annotation_float_array(time_annotation_node["position"]);
+    position[0] = position_values[0];
+    position[1] = position_values[1];
+  }
+
+  if(time_annotation_node.dtype().is_object() &&
+     time_annotation_node.has_path("color"))
+  {
+    const std::vector<float> color_values =
+      parse_annotation_float_array(time_annotation_node["color"]);
+    color.Components[0] = color_values[0];
+    color.Components[1] = color_values[1];
+    color.Components[2] = color_values[2];
+    color.Components[3] = color_values.size() == 4 ? color_values[3] : 1.f;
+    use_color = true;
+  }
+
+  if(time_annotation_node.dtype().is_object() &&
+     time_annotation_node.has_path("end_time") &&
+     metadata.has_path("time"))
+  {
+    const double start_time = time_annotation_node.has_path("start_time")
+      ? time_annotation_node["start_time"].to_float64()
+      : 0.;
+    const double end_time = time_annotation_node["end_time"].to_float64();
+    const double time = metadata["time"].to_float64();
+    float progress = end_time == start_time
+      ? (time >= end_time ? 1.f : 0.f)
+      : static_cast<float>((time - start_time) / (end_time - start_time));
+    progress = progress < 0.f ? 0.f : progress;
+    progress = progress > 1.f ? 1.f : progress;
+    render.SetTimeAnnotationProgress(position, progress, use_color, color);
+  }
+
+  render.AddTextAnnotation(create_time_annotation(metadata,
+                                                  position,
+                                                  use_color,
+                                                  color));
 }
 
 //-----------------------------------------------------------------------------
@@ -639,6 +763,11 @@ vtkh::Render parse_render(const conduit::Node &render_node,
     {
       render.SetTextAnnotations(parse_text_annotations(text_annotations_node));
     }
+  }
+
+  if(!annot_all_off && render_node.has_path("time_annotation"))
+  {
+    parse_time_annotation(render_node["time_annotation"], meta, render);
   }
 
   if(render_node.has_path("render_bg"))
@@ -1358,6 +1487,7 @@ CreateRenders::declare_interface(Node &i)
     string_schema(render_schema["properties/world_annotations"]);
     string_schema(render_schema["properties/screen_annotations"]);
     detail::text_annotations_schema(render_schema["properties/text_annotations"]);
+    detail::time_annotation_schema(render_schema["properties/time_annotation"]);
     ignore_schema(render_schema["properties/axis_scale_x"]);
     ignore_schema(render_schema["properties/axis_scale_y"]);
     ignore_schema(render_schema["properties/axis_scale_z"]);

@@ -4987,7 +4987,7 @@ TEST(ascent_render_3d, test_render_3d_text_annotations)
 
 //-----------------------------------------------------------------------------
 
-TEST(ascent_render_3d, test_render_3d_text_annotations_schema)
+TEST(ascent_render_3d, test_render_3d_invalid_text_annotations_schema)
 {
     Node n;
     ascent::about(n);
@@ -5051,8 +5051,8 @@ TEST(ascent_render_3d, test_render_3d_text_annotations_schema)
 
     expect_invalid_text_annotation([](conduit::Node &annotation)
     {
-        double position[2] = {1.25, 0.0};
-        annotation["position"].set_float64_ptr(position, 2);
+        double position[4] = {0.0, 0.0, 0.0, 0.0};
+        annotation["position"].set_float64_ptr(position, 4);
     });
 
     expect_invalid_text_annotation([](conduit::Node &annotation)
@@ -5065,8 +5065,148 @@ TEST(ascent_render_3d, test_render_3d_text_annotations_schema)
         double color[2] = {1.0, 0.0};
         annotation["color"].set_float64_ptr(color, 2);
     });
+
+    conduit::Node scenes;
+    scenes["s1/plots/p1/type"] = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "braid";
+    scenes["s1/renders/r1/image_prefix"] = "tout_invalid_time_annotation_schema";
+    scenes["s1/renders/r1/time_annotation/start_time"] = 1.0;
+
+    conduit::Node actions;
+    conduit::Node &add_plots = actions.append();
+    add_plots["action"] = "add_scenes";
+    add_plots["scenes"] = scenes;
+
+    Ascent ascent;
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent_opts["exceptions"] = "forward";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+
+    bool schema_error = false;
+    try
+    {
+        ascent.execute(actions);
+    }
+    catch(conduit::Error &err)
+    {
+        schema_error =
+          err.message().find("Validation failed") != std::string::npos;
+    }
+    EXPECT_TRUE(schema_error);
+    ascent.close();
 }
+
 //-----------------------------------------------------------------------------
+
+TEST(ascent_render_3d, test_render_3d_time_annotation)
+{
+    Node n;
+    ascent::about(n);
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping time annotation test");
+        return;
+    }
+
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+    data["state/cycle"] = 42;
+    data["state/time"] = 3.14159;
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    string output_path = prepare_output_dir();
+    string output_file =
+      conduit::utils::join_file_path(output_path,"tout_render_3d_time_annotation_default");
+
+    remove_test_image(output_file);
+
+    conduit::Node scenes;
+    scenes["s1/plots/p1/type"] = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "braid";
+    scenes["s1/renders/r1/image_prefix"]  = output_file;
+    scenes["s1/renders/r1/time_annotation"] = "true";
+
+    conduit::Node actions;
+    conduit::Node &add_plots = actions.append();
+    add_plots["action"] = "add_scenes";
+    add_plots["scenes"] = scenes;
+
+    Ascent ascent;
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent_opts["exceptions"] = "forward";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    EXPECT_TRUE(check_test_image(output_file, 0.01f, 42));
+}
+
+//-----------------------------------------------------------------------------
+
+TEST(ascent_render_3d, test_render_3d_time_annotation_with_params)
+{
+    Node n;
+    ascent::about(n);
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping time annotation test");
+        return;
+    }
+
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+    data["state/cycle"] = 42;
+    data["state/time"] = 3.14159;
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    string output_path = prepare_output_dir();
+    string output_file =
+      conduit::utils::join_file_path(output_path,"tout_render_3d_time_annotation");
+
+    remove_test_image(output_file);
+
+    conduit::Node scenes;
+    scenes["s1/plots/p1/type"] = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "braid";
+    scenes["s1/renders/r1/image_prefix"]  = output_file;
+    scenes["s1/renders/r1/time_annotation/position"].set({-0.85, -0.80});
+    scenes["s1/renders/r1/time_annotation/start_time"] = 1.0;
+    scenes["s1/renders/r1/time_annotation/end_time"] = 10.0;
+    scenes["s1/renders/r1/time_annotation/color"].set({1.0, 0.8, 0.1});
+
+    conduit::Node actions;
+    conduit::Node &add_plots = actions.append();
+    add_plots["action"] = "add_scenes";
+    add_plots["scenes"] = scenes;
+
+    Ascent ascent;
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent_opts["exceptions"] = "forward";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    EXPECT_TRUE(check_test_image(output_file, 0.01f, 42));
+}
+
+//-----------------------------------------------------------------------------
+
 int main(int argc, char* argv[])
 {
     int result = 0;
