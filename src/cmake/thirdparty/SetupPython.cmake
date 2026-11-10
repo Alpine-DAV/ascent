@@ -126,7 +126,7 @@ FUNCTION(PYTHON_ADD_PIP_SETUP)
     # like we were able to do with distutils, you have to use TMPDIR
     # TODO: we might want to  explore this in the future
     add_custom_command(OUTPUT ${stamp}
-            COMMAND ${Python3_EXECUTABLE} -m pip install . -V 
+            COMMAND ${Python3_EXECUTABLE} -m pip install . -v
             --no-cache-dir
             --disable-pip-version-check
             --no-index
@@ -156,7 +156,7 @@ FUNCTION(PYTHON_ADD_PIP_SETUP)
         INSTALL(CODE
             "
             EXECUTE_PROCESS(WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-                COMMAND ${Python3_EXECUTABLE} -m pip install . -V --upgrade
+                COMMAND ${Python3_EXECUTABLE} -m pip install . -v --upgrade
                 --disable-pip-version-check --no-warn-script-location
                 --no-index --no-deps --no-build-isolation
                 --target ${py_mod_inst_prefix}
@@ -177,7 +177,7 @@ FUNCTION(PYTHON_ADD_PIP_SETUP)
         INSTALL(CODE
             "
             EXECUTE_PROCESS(WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-                COMMAND ${Python3_EXECUTABLE} -m pip install . -V --upgrade
+                COMMAND ${Python3_EXECUTABLE} -m pip install . -v --upgrade
                 --disable-pip-version-check --no-warn-script-location
                 --no-index --no-deps --no-build-isolation
                 --target \$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${args_DEST_DIR}
