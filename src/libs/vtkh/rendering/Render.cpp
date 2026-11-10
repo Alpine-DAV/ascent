@@ -16,6 +16,11 @@ Render::Render()
     m_render_world_annotations(true),
     m_render_screen_annotations(true),
     m_render_text_annotations(true),
+    m_time_annotation_progress_enabled(false),
+    m_time_annotation_progress_position(-0.95f, -0.92f),
+    m_time_annotation_progress(0.f),
+    m_time_annotation_progress_use_color(false),
+    m_time_annotation_progress_color(1.f, 1.f, 1.f, 1.f),
     m_render_background(true),
     m_shading(true),
     m_canvas(m_width, m_height),
@@ -168,6 +173,25 @@ Render::SetTextAnnotations(const std::vector<vtkh::TextAnnotation> &annotations)
 }
 
 void
+Render::AddTextAnnotation(const vtkh::TextAnnotation &annotation)
+{
+  m_text_annotations.push_back(annotation);
+}
+
+void
+Render::SetTimeAnnotationProgress(const viskores::Vec2f_32 &position,
+                                  float progress,
+                                  bool use_color,
+                                  const viskores::rendering::Color &color)
+{
+  m_time_annotation_progress_enabled = true;
+  m_time_annotation_progress_position = position;
+  m_time_annotation_progress = progress;
+  m_time_annotation_progress_use_color = use_color;
+  m_time_annotation_progress_color = color;
+}
+
+void
 Render::SetBackgroundColor(float bg_color[4])
 {
   m_bg_color.Components[0] = bg_color[0];
@@ -301,17 +325,53 @@ Render::RenderScreenAnnotations(const std::vector<std::string> &field_names,
 }
 
 void
+Render::RenderTimeAnnotationProgress()
+{
+  if(!m_time_annotation_progress_enabled) return;
+
+  const viskores::Float64 bar_width = 0.36;
+  const viskores::Float64 bar_height = 0.03;
+  const viskores::Float64 x_min = m_time_annotation_progress_position[0];
+  const viskores::Float64 x_max = x_min + bar_width;
+  const viskores::Float64 x_mid = x_min + (x_max - x_min) * m_time_annotation_progress;
+  const viskores::Float64 y_min = m_time_annotation_progress_position[1] - 0.10;
+  const viskores::Float64 y_max = y_min + bar_height;
+
+  viskores::rendering::Color elapsed = m_time_annotation_progress_use_color
+    ? m_time_annotation_progress_color
+    : m_fg_color;
+  elapsed.Components[3] = 0.95f;
+
+  const viskores::rendering::Color remaining(0.18f, 0.18f, 0.18f, 0.85f);
+
+  m_canvas.SetViewToScreenSpace(m_camera, true);
+  m_canvas.AddColorSwatch(x_min, y_min,
+                          x_max, y_min,
+                          x_max, y_max,
+                          x_min, y_max,
+                          remaining);
+  m_canvas.AddColorSwatch(x_min, y_min,
+                          x_mid, y_min,
+                          x_mid, y_max,
+                          x_min, y_max,
+                          elapsed);
+}
+
+void
 Render::RenderTextAnnotations()
 {
   if(!m_render_annotations) return;
   if(!m_render_text_annotations) return;
-  if(m_text_annotations.empty()) return;
+  if(m_text_annotations.empty() && !m_time_annotation_progress_enabled) return;
 #ifdef VTKH_PARALLEL
   if(vtkh::GetMPIRank() != 0) return;
 #endif
   m_canvas.SetBackgroundColor(m_bg_color);
   m_canvas.SetForegroundColor(m_fg_color);
   if(m_render_background) m_canvas.BlendBackground();
+
+  RenderTimeAnnotationProgress();
+  if(m_text_annotations.empty()) return;
 
   Annotator annotator(m_canvas, m_camera, m_scene_bounds);
   annotator.RenderTextAnnotations(m_text_annotations);
@@ -339,6 +399,11 @@ Render::Copy() const
   copy.m_world_annotation_scale = m_world_annotation_scale;
   copy.m_color_bar_position = m_color_bar_position;
   copy.m_text_annotations = m_text_annotations;
+  copy.m_time_annotation_progress_enabled = m_time_annotation_progress_enabled;
+  copy.m_time_annotation_progress_position = m_time_annotation_progress_position;
+  copy.m_time_annotation_progress = m_time_annotation_progress;
+  copy.m_time_annotation_progress_use_color = m_time_annotation_progress_use_color;
+  copy.m_time_annotation_progress_color = m_time_annotation_progress_color;
   return copy;
 }
 

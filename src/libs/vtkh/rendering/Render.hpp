@@ -68,6 +68,11 @@ public:
   void                            SetComments(const std::vector<std::string> &comments);
   void                            SetColorBarPosition(std::vector<viskores::Bounds> color_bar_position);
   void                            SetTextAnnotations(const std::vector<vtkh::TextAnnotation> &annotations);
+  void                            AddTextAnnotation(const vtkh::TextAnnotation &annotation);
+  void                            SetTimeAnnotationProgress(const viskores::Vec2f_32 &position,
+                                                            float progress,
+                                                            bool use_color,
+                                                            const viskores::rendering::Color &color);
   void                            SetBackgroundColor(float bg_color[4]);
   void                            SetForegroundColor(float fg_color[4]);
   void                            SetShadingOn(bool on);
@@ -81,6 +86,7 @@ public:
                                                           const std::vector<viskores::Range> &ranges,
                                                           const std::vector<viskores::cont::ColorTable> &colors,
                                                           const std::vector<int> &is_discrete);
+  void                            RenderTimeAnnotationProgress();
   void                            RenderTextAnnotations();
   void                            Save();
 protected:
@@ -95,6 +101,11 @@ protected:
   viskoresCanvas                   CreateCanvas() const;
   std::vector<viskores::Bounds>    m_color_bar_position;
   std::vector<vtkh::TextAnnotation> m_text_annotations;
+  bool                             m_time_annotation_progress_enabled;
+  viskores::Vec2f_32               m_time_annotation_progress_position;
+  float                            m_time_annotation_progress;
+  bool                             m_time_annotation_progress_use_color;
+  viskores::rendering::Color       m_time_annotation_progress_color;
   bool                         m_render_annotations;
   bool                         m_render_world_annotations;
   bool                         m_render_screen_annotations;

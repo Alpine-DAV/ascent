@@ -43,6 +43,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added support for specifying materials for field filtering
 - Added support for tracing multiple energy groups in Rover
 - Added sampling python notebook to the Ascent tutorial
+- Added support for text annotations in renders including time stamps and time progression bars
 
 ### Changed
 - Redefined the parameter verification and surprise checking behavior for Filters to instead use a conduit based JSON Schema style verification schema, implemented for all existing filters
