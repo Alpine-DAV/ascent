@@ -614,6 +614,7 @@ parameters:
 - ``dataset_bounds`` : controls the dimensions of the rendered bounding box around the dataset. This will overwrite the default bounding box based on the dataset's dimensions. A valid value is an array of six floats ([xMin,xMax,yMin,yMax,zMin,zMax]) that define dimensions larger than the default. Note: this does not control annotations. To turn off dataset annotations, see :ref:`world_annotations_off`. To turn off screen annotations, see :ref:`screen_annotations_off`.
 - ``color_bar_position`` : controls the position of 1 or more color bars. A valid value for positioning a single color bar is an array of four floats ([xMin,xMax,yMin,yMax]). A valid value for positioning N color bars is an array of 4*N floats ([xMin1_0,xMax1_0,yMin1_0,yMax1_0,...,xMin_n,xMax_n,yMin_n,yMax_n]). This repositioning is performed in Screen Space, so valid minimum and maximum values are limited to the range [-1,1] (i.e. the origin (0,0) is in the center of the image, (-1,-1) is the bottom-left corner, and (1,1) is the top-right corner). Note: Ascent does not check for correctness of user positioned color bars.
 - ``text_annotations`` : a list of text annotations to render. 
+- ``time_annotation`` : controls if a time annotation is rendered or not.
 
 Text Annotation Options
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -645,6 +646,44 @@ Example ``text_annotations`` usage:
           horizontal_alignment: "center"
           vertical_alignment: "center"
           color: [1.0, 0.85, 0.15]
+
+
+Time Annotation Options
+^^^^^^^^^^^^^^^^^^^^^^^
+The ``time_annotation`` option renders the current simulation time and cycle when they are present in the published mesh state.
+
+Set ``time_annotation`` to ``"true"`` to use the default annotation, or ``"false"`` to disable it.
+For more control, set ``time_annotation`` to an object with optional ``position``, ``start_time``, ``end_time``, and ``color`` values.
+
+``position`` is a 2-value screen-space coordinate in the range [-1,1].
+If ``position`` is omitted, the annotation is placed near the lower-left corner of the image.
+
+``color`` accepts RGB or RGBA values and controls both the time annotation text and the elapsed portion of the progress bar.
+If ``color`` is omitted, the foreground color is used.
+
+``end_time`` adds a progress bar below the time annotation.
+Since these images are getting rendered in-situ, an end time must be manually provided because the end time is not known at image generation.
+The progress bar compares the current simulation time to ``start_time`` and ``end_time``.
+If ``start_time`` is omitted, it defaults to 0.
+``start_time`` may only be used when ``end_time`` is also provided.
+
+Example ``time_annotation`` usage:
+
+.. code-block:: yaml
+
+  renders:
+    r1:
+      time_annotation:
+        position: [-0.85, -0.80]
+        start_time: 1.0
+        end_time: 10.0
+        color: [1.0, 0.8, 0.1]
+
+..  figure:: ../images/tout_render_3d_time_annotation_000042.png
+    :scale: 50 %
+    :align: center
+
+    Example of a scene rendered with a time stamp
 
 
 Tiled Rendering
