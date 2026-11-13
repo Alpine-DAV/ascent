@@ -592,7 +592,7 @@ AscentRuntime::AddPublishedMeshInfo()
 void
 AscentRuntime::Cleanup()
 {
-    // clean up runtime state not managed by the registry
+    // clean up runtime state not tracked/managed by the registry
     std::vector<std::string> entries = {"cache", "extract_list"};
     for( auto entry : entries)
     {
@@ -622,7 +622,6 @@ AscentRuntime::Cleanup()
         ftimings << m_workspace.timing_info();
         ftimings.close();
     }
-
 }
 
 //-----------------------------------------------------------------------------
