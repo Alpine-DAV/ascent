@@ -16,7 +16,9 @@
 #include "conduit.hpp"
 
 #if defined(ASCENT_LOGGING_ENABLE_CALIPER)
+#include "caliper/Annotation.h"
 #include "caliper/cali-manager.h"
+#include "caliper/cali.h"
 #endif
 
 //-----------------------------------------------------------------------------
@@ -30,6 +32,156 @@ namespace ascent
 //-----------------------------------------------------------------------------
 namespace annotations
 {
+
+//-----------------------------------------------------------------------------
+Scope::Scope(const std::string &name)
+  : m_name(name),
+    m_started(false)
+{
+#if defined(ASCENT_LOGGING_ENABLE_CALIPER)
+    cali_begin_region(m_name.c_str());
+    m_started = true;
+#endif
+}
+
+//-----------------------------------------------------------------------------
+Scope::~Scope()
+{
+#if defined(ASCENT_LOGGING_ENABLE_CALIPER)
+    if(m_started)
+    {
+        cali_end_region(m_name.c_str());
+    }
+#endif
+}
+
+//-----------------------------------------------------------------------------
+struct Value::Impl
+{
+#if defined(ASCENT_LOGGING_ENABLE_CALIPER)
+    std::string name;
+    cali::Annotation *annotation;
+    bool active;
+
+    explicit Impl(const std::string &name)
+      : name(name),
+        annotation(nullptr),
+        active(false)
+    {
+    }
+
+    ~Impl()
+    {
+        delete annotation;
+    }
+
+    void update(const cali::Variant &value, bool store_as_value)
+    {
+        if(annotation == nullptr)
+        {
+            int properties = CALI_ATTR_SCOPE_THREAD | CALI_ATTR_SKIP_EVENTS;
+            if(store_as_value)
+            {
+                properties |= CALI_ATTR_ASVALUE;
+            }
+            annotation = new cali::Annotation(name.c_str(), properties);
+        }
+
+        if(active)
+        {
+            annotation->set(value);
+        }
+        else
+        {
+            annotation->begin(value);
+            active = true;
+        }
+    }
+#else
+    explicit Impl(const std::string &)
+    {
+    }
+#endif
+};
+
+//-----------------------------------------------------------------------------
+Value::Value(const std::string &name)
+  : m_impl(nullptr)
+{
+#if defined(ASCENT_LOGGING_ENABLE_CALIPER)
+    m_impl = new Impl(name);
+#else
+    (void) name;
+#endif
+}
+
+//-----------------------------------------------------------------------------
+Value::~Value()
+{
+#if defined(ASCENT_LOGGING_ENABLE_CALIPER)
+    if(m_impl != nullptr)
+    {
+        if(m_impl->active)
+        {
+            m_impl->annotation->end();
+        }
+        delete m_impl;
+    }
+#endif
+}
+
+//-----------------------------------------------------------------------------
+void
+Value::set(const std::string &value)
+{
+#if defined(ASCENT_LOGGING_ENABLE_CALIPER)
+    // Store strings in Caliper's context tree to ensure they remain valid,
+    // rather than relying on a pointer to the original string's data.
+    m_impl->update(cali::Variant(value.c_str()), false);
+#else
+    (void) value;
+#endif
+}
+
+//-----------------------------------------------------------------------------
+void
+Value::set(const char *value)
+{
+    set(std::string(value == nullptr ? "" : value));
+}
+
+//-----------------------------------------------------------------------------
+void
+Value::set(std::int64_t value)
+{
+#if defined(ASCENT_LOGGING_ENABLE_CALIPER)
+    m_impl->update(cali::Variant(CALI_TYPE_INT, &value, sizeof(value)), true);
+#else
+    (void) value;
+#endif
+}
+
+//-----------------------------------------------------------------------------
+void
+Value::set(std::uint64_t value)
+{
+#if defined(ASCENT_LOGGING_ENABLE_CALIPER)
+    m_impl->update(cali::Variant(value), true);
+#else
+    (void) value;
+#endif
+}
+
+//-----------------------------------------------------------------------------
+void
+Value::set(double value)
+{
+#if defined(ASCENT_LOGGING_ENABLE_CALIPER)
+    m_impl->update(cali::Variant(value), true);
+#else
+    (void) value;
+#endif
+}
 
 #if defined(ASCENT_LOGGING_ENABLE_CALIPER)
 static cali::ConfigManager *cali_cfg_manager = NULL;
@@ -145,5 +297,3 @@ finalize()
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
-
-

@@ -1,6 +1,7 @@
 #include <vtkh/filters/Filter.hpp>
 #include <vtkh/Error.hpp>
 #include <vtkh/Logger.hpp>
+#include <ascent_annotations.hpp>
 
 namespace vtkh
 {
@@ -40,6 +41,29 @@ Filter::GetOutput()
 DataSet*
 Filter::Update()
 {
+  // Declare values before the filter scope so they remain active when
+  // the scope's end snapshot is recorded. Output metrics are populated after
+  // execution, once m_output is available.
+  ascent::annotations::Value filter_name("ascent.vtkh.filter");
+  ascent::annotations::Value backend("ascent.vtkh.backend");
+  ascent::annotations::Value input_cells("ascent.vtkh.input.cells");
+  ascent::annotations::Value input_domains("ascent.vtkh.input.domains");
+  ascent::annotations::Value output_cells("ascent.vtkh.output.cells");
+  ascent::annotations::Value output_domains("ascent.vtkh.output.domains");
+
+  if(ascent::annotations::supported())
+  {
+    filter_name.set(this->GetName());
+    backend.set(GetCurrentDevice());
+
+    if(this->m_input != nullptr)
+    {
+      input_cells.set(static_cast<std::uint64_t>(this->m_input->GetNumberOfCells()));
+      input_domains.set(static_cast<std::uint64_t>(this->m_input->GetNumberOfDomains()));
+    }
+  }
+
+  ascent::annotations::Scope filter_scope("vtkh filter: " + this->GetName());
   VTKH_DATA_OPEN(this->GetName());
 #ifdef VTKH_ENABLE_LOGGING
   VTKH_DATA_ADD("device", GetCurrentDevice());
@@ -57,9 +81,24 @@ Filter::Update()
     VTKH_DATA_ADD("in_topology", "unstructured");
   }
 #endif
-  PreExecute();
-  DoExecute();
-  PostExecute();
+  {
+    ascent::annotations::Scope phase("vtkh pre execute");
+    PreExecute();
+  }
+  {
+    ascent::annotations::Scope phase("vtkh execute");
+    DoExecute();
+  }
+  {
+    ascent::annotations::Scope phase("vtkh post execute");
+    PostExecute();
+  }
+
+  if(ascent::annotations::supported() && this->m_output != nullptr)
+  {
+    output_cells.set(static_cast<std::uint64_t>(this->m_output->GetNumberOfCells()));
+    output_domains.set(static_cast<std::uint64_t>(this->m_output->GetNumberOfDomains()));
+  }
 #ifdef VTKH_ENABLE_LOGGING
   long long int out_cells = this->m_output->GetNumberOfCells();
   VTKH_DATA_ADD("output_cells", out_cells);
