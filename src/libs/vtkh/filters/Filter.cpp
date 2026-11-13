@@ -63,7 +63,7 @@ Filter::Update()
     }
   }
 
-  ascent::annotations::Scope filter_scope("vtkh filter: " + this->GetName());
+  ASCENT_ANNOTATE_MARK_SCOPE("vtkh filter: " << this->GetName());
   VTKH_DATA_OPEN(this->GetName());
 #ifdef VTKH_ENABLE_LOGGING
   VTKH_DATA_ADD("device", GetCurrentDevice());
@@ -82,15 +82,15 @@ Filter::Update()
   }
 #endif
   {
-    ascent::annotations::Scope phase("vtkh pre execute");
+    ASCENT_ANNOTATE_MARK_SCOPE("vtkh pre execute");
     PreExecute();
   }
   {
-    ascent::annotations::Scope phase("vtkh execute");
+    ASCENT_ANNOTATE_MARK_SCOPE("vtkh execute");
     DoExecute();
   }
   {
-    ascent::annotations::Scope phase("vtkh post execute");
+    ASCENT_ANNOTATE_MARK_SCOPE("vtkh post execute");
     PostExecute();
   }
 

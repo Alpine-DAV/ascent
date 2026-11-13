@@ -12,8 +12,10 @@
 #include "ascent.hpp"
 #include "ascent_annotations.hpp"
 
+#include <fstream>
 #include <iostream>
 #include <limits>
+#include <sstream>
 #include <stdexcept>
 #include "gtest/gtest.h"
 
@@ -71,19 +73,40 @@ TEST(ascent_utils, annotations)
         ascent::annotations::Value output_cells("test.output.cells");
         input_cells.set(std::uint64_t(10));
         {
-            ascent::annotations::Scope scope("test_caliper_scope");
+            ASCENT_ANNOTATE_MARK_SCOPE("test_caliper_scope");
             output_cells.set(std::uint64_t(7));
         }
     }
 
-    // Exercise Scope cleanup when an exception is thrown.
+    // Exercise MARK_SCOPE cleanup when an exception is thrown.
     try
     {
-        ascent::annotations::Scope scope("test_exception_scope");
+        ASCENT_ANNOTATE_MARK_SCOPE("test_exception_scope");
         throw std::runtime_error("exercise annotation scope unwinding");
     }
     catch(const std::runtime_error &)
     {
+    }
+
+    // VTK-h can link multiple filters. Verify that scoped values
+    // with the same attribute names restore the outer values 
+    // when the inner values are destroyed
+    {
+        ascent::annotations::Value outer_name("test.nested.name");
+        ascent::annotations::Value outer_count("test.nested.count");
+        outer_name.set("outer");
+        outer_count.set(std::uint64_t(10));
+        ASCENT_ANNOTATE_MARK_SCOPE("test_nested_outer");
+        {
+            ascent::annotations::Value inner_name("test.nested.name");
+            ascent::annotations::Value inner_count("test.nested.count");
+            inner_name.set("inner");
+            inner_count.set(std::uint64_t(5));
+            ASCENT_ANNOTATE_MARK_SCOPE("test_nested_inner");
+        }
+    }
+    {
+        ASCENT_ANNOTATE_MARK_SCOPE("test_after_nested_values");
     }
 
     ascent::annotations::flush();
@@ -93,5 +116,10 @@ TEST(ascent_utils, annotations)
     {
         // make sure perf output file exists
         EXPECT_TRUE(conduit::utils::is_file(tout_file));
+
+        std::ifstream report_stream(tout_file.c_str());
+        std::stringstream report;
+        report << report_stream.rdbuf();
+        EXPECT_NE(report.str().find("test_after_nested_values", std::string::npos);
     }
 }

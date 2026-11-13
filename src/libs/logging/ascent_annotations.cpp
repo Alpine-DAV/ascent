@@ -16,7 +16,7 @@
 #include "conduit.hpp"
 
 #if defined(ASCENT_LOGGING_ENABLE_CALIPER)
-#include "caliper/Annotation.h"
+#include "caliper/Caliper.h"
 #include "caliper/cali-manager.h"
 #include "caliper/cali.h"
 #endif
@@ -34,68 +34,89 @@ namespace annotations
 {
 
 //-----------------------------------------------------------------------------
-Scope::Scope(const std::string &name)
-  : m_name(name),
-    m_started(false)
-{
-#if defined(ASCENT_LOGGING_ENABLE_CALIPER)
-    cali_begin_region(m_name.c_str());
-    m_started = true;
-#endif
-}
-
-//-----------------------------------------------------------------------------
-Scope::~Scope()
-{
-#if defined(ASCENT_LOGGING_ENABLE_CALIPER)
-    if(m_started)
-    {
-        cali_end_region(m_name.c_str());
-    }
-#endif
-}
-
-//-----------------------------------------------------------------------------
 struct Value::Impl
 {
 #if defined(ASCENT_LOGGING_ENABLE_CALIPER)
     std::string name;
-    cali::Annotation *annotation;
+    cali::Attribute attribute;
+    cali::Entry previous_entry;
+    cali::Variant previous_value;
     bool active;
+    bool store_as_value;
 
     explicit Impl(const std::string &name)
       : name(name),
-        annotation(nullptr),
-        active(false)
+        attribute(cali::Attribute::invalid),
+        active(false),
+        store_as_value(false)
     {
     }
 
-    ~Impl()
+    void update(const cali::Variant &value, bool use_as_value)
     {
-        delete annotation;
-    }
+        cali::Caliper caliper;
 
-    void update(const cali::Variant &value, bool store_as_value)
-    {
-        if(annotation == nullptr)
+        if(!active)
         {
             int properties = CALI_ATTR_SCOPE_THREAD | CALI_ATTR_SKIP_EVENTS;
-            if(store_as_value)
+            if(use_as_value)
             {
                 properties |= CALI_ATTR_ASVALUE;
             }
-            annotation = new cali::Annotation(name.c_str(), properties);
-        }
+            else
+            {
+		// Store string values separately from Caliper's region tracking so they
+                // don't interfere with the regions opened/closed by
+                // cali_begin_region()/cali_end_region()
+                properties |= CALI_ATTR_UNALIGNED;
+            }
 
-        if(active)
-        {
-            annotation->set(value);
+            attribute = caliper.create_attribute(name, value.type(), properties);
+            store_as_value = use_as_value;
+
+            // Values with the same name can be nested when one VTK-h filter
+            // invokes another. Save the prior value and restore it when this
+            // value is destroyed instead of simply deleting it
+            if(store_as_value)
+            {
+                previous_value = caliper.exchange(attribute, value);
+            }
+            else
+            {
+                previous_entry = caliper.get(attribute);
+                caliper.set(attribute, value);
+            }
+            active = true;
         }
         else
         {
-            annotation->begin(value);
-            active = true;
+            caliper.set(attribute, value);
         }
+    }
+
+    void end()
+    {
+        if(!active)
+        {
+            return;
+        }
+
+        cali::Caliper caliper;
+
+        if(store_as_value && previous_value.type() != CALI_TYPE_INV)
+        {
+            caliper.exchange(attribute, previous_value);
+        }
+        else if(!store_as_value && !previous_entry.empty())
+        {
+            caliper.set(attribute, previous_entry.value());
+        }
+        else
+        {
+            caliper.end(attribute);
+        }
+
+        active = false;
     }
 #else
     explicit Impl(const std::string &)
@@ -121,10 +142,7 @@ Value::~Value()
 #if defined(ASCENT_LOGGING_ENABLE_CALIPER)
     if(m_impl != nullptr)
     {
-        if(m_impl->active)
-        {
-            m_impl->annotation->end();
-        }
+        m_impl->end();
         delete m_impl;
     }
 #endif

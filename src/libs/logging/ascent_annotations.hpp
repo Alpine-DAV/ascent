@@ -78,32 +78,12 @@ namespace ascent
 namespace annotations
 {
   //---------------------------------------------------------------------------
-  /// Exception-safe Caliper region.
-  ///
-  /// The region begins in the constructor and ends in the destructor. This is
-  /// a no-op when Ascent is built without Caliper support.
-  //---------------------------------------------------------------------------
-  class ASCENT_API Scope
-  {
-  public:
-    explicit Scope(const std::string &name);
-    ~Scope();
-
-    Scope(const Scope &) = delete;
-    Scope &operator=(const Scope &) = delete;
-
-  private:
-    std::string m_name;
-    bool m_started;
-  };
-
-  //---------------------------------------------------------------------------
   /// Stores a typed value in Caliper for the lifetime of its associated scope.
   ///
-  /// Declare Value objects before the Scope they belong to if you want their
-  /// values to be included when the scope ends. Values can also be set after
-  /// the scope begins, which is useful when a metric is only available at the
-  /// end of an operation.
+  /// Declare Value objects before the ASCENT_ANNOTATE_MARK_SCOPE annotation
+  /// they belong to if you want their values to be included when the scope
+  /// ends. Values can also be set after the scope begins, which is useful when
+  /// a metric is only available at the end of an operation.
   //---------------------------------------------------------------------------
   class ASCENT_API Value
   {
