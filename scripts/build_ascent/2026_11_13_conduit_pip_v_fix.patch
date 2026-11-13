@@ -1,0 +1,64 @@
+From 87bf8ec04c3bc9ae1aea804518613046ed4917d5 Mon Sep 17 00:00:00 2001
+From: Cyrus Harrison <cyrush@llnl.gov>
+Date: Mon, 9 Nov 2026 10:58:01 -0800
+Subject: [PATCH 1/2] =?UTF-8?q?fix=20improper=20use=20of=20pip=20-V=20(sho?=
+ =?UTF-8?q?uld=20have=20been=20-v).=20=20pip=20as=20of=20pip=2026.3?=
+ =?UTF-8?q?=E2=80=A6=20(#1730)?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+* fix improper use of pip -V (should have been -v).  pip as of pip 26.3 (nov 2026) is strict and errors with -V
+
+* update changelog
+---
+ CHANGELOG.md                           | 1 +
+ src/cmake/thirdparty/SetupPython.cmake | 6 +++---
+ 2 files changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index 2b643e05..64b90e53 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -19,6 +19,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
+ ### Changed
+ 
+ #### General
++- Fixed CMake python build pip invocations to use `-v` instead of incorrect form `-V`, which as of pip 26.3 causes pip to fail
+ 
+ #### Conduit
+ 
+diff --git a/src/cmake/thirdparty/SetupPython.cmake b/src/cmake/thirdparty/SetupPython.cmake
+index bb9fdce6..1e146efb 100644
+--- a/src/cmake/thirdparty/SetupPython.cmake
++++ b/src/cmake/thirdparty/SetupPython.cmake
+@@ -126,7 +126,7 @@ FUNCTION(PYTHON_ADD_PIP_SETUP)
+     # like we were able to do with distutils, you have to use TMPDIR
+     # TODO: we might want to  explore this in the future
+     add_custom_command(OUTPUT ${stamp}
+-            COMMAND ${Python3_EXECUTABLE} -m pip install . -V 
++            COMMAND ${Python3_EXECUTABLE} -m pip install . -v
+             --no-cache-dir
+             --disable-pip-version-check
+             --no-index
+@@ -156,7 +156,7 @@ FUNCTION(PYTHON_ADD_PIP_SETUP)
+         INSTALL(CODE
+             "
+             EXECUTE_PROCESS(WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+-                COMMAND ${Python3_EXECUTABLE} -m pip install . -V --upgrade
++                COMMAND ${Python3_EXECUTABLE} -m pip install . -v --upgrade
+                 --disable-pip-version-check --no-warn-script-location
+                 --no-index --no-deps --no-build-isolation
+                 --target ${py_mod_inst_prefix}
+@@ -177,7 +177,7 @@ FUNCTION(PYTHON_ADD_PIP_SETUP)
+         INSTALL(CODE
+             "
+             EXECUTE_PROCESS(WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+-                COMMAND ${Python3_EXECUTABLE} -m pip install . -V --upgrade
++                COMMAND ${Python3_EXECUTABLE} -m pip install . -v --upgrade
+                 --disable-pip-version-check --no-warn-script-location
+                 --no-index --no-deps --no-build-isolation
+                 --target \$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${args_DEST_DIR}
+-- 
+2.54.0 (Apple Git-157)
+
