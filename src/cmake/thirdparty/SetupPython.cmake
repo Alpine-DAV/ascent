@@ -72,6 +72,8 @@ elseif(setuptools_version VERSION_LESS SETUPTOOLS_MIN_VERSION)
             "build with ENABLE_PYTHON=OFF.")
 endif()
 
+message(STATUS "ENABLE_PYTHON_FILTERS ${ENABLE_PYTHON_FILTERS}")
+
 ##############################################################################
 # Macro to use a pure python pip setup script
 ##############################################################################

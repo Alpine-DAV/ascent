@@ -8,10 +8,12 @@
 ####################################
 # Add Python Module Tests
 ####################################
-set(PYTHON_MODULE_TESTS t_python_flow_smoke t_python_flow_inception)
-
 message(STATUS "Adding flow lib python interface unit tests")
-foreach(TEST ${PYTHON_MODULE_TESTS})
-    add_python_test(${TEST})
-endforeach()
+
+add_python_test(t_python_flow_smoke)
+
+if(ENABLE_PYTHON_FILTERS)
+    message(STATUS "Adding flow lib python script filter interface unit test")
+    add_python_test(t_python_flow_inception)
+endif()
 

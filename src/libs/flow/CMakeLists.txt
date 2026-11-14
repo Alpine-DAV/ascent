@@ -12,6 +12,7 @@
 ###############################################################################
 
 set(FLOW_PYTHON_ENABLED ${PYTHON_FOUND})
+set(FLOW_PYTHON_FILTERS_ENABLED ${ENABLE_PYTHON_FILTERS})
 
 configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/flow_config.h.in"
                 "${CMAKE_CURRENT_BINARY_DIR}/flow_config.h")
@@ -58,7 +59,7 @@ endif()
 # does not provide a python interpreter
 #
 
-if(PYTHON_FOUND)
+if(PYTHON_FOUND AND ENABLE_PYTHON_FILTERS)
    list(APPEND flow_sources
         flow_python_interpreter.cpp
         filters/flow_python_script_filter.cpp)
