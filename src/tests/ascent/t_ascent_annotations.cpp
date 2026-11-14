@@ -120,6 +120,6 @@ TEST(ascent_utils, annotations)
         std::ifstream report_stream(tout_file.c_str());
         std::stringstream report;
         report << report_stream.rdbuf();
-        EXPECT_NE(report.str().find("test_after_nested_values", std::string::npos));
+        EXPECT_NE(report.str().find("test_after_nested_values"), std::string::npos);
     }
 }
