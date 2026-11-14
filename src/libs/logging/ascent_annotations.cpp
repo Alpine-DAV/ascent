@@ -16,7 +16,9 @@
 #include "conduit.hpp"
 
 #if defined(ASCENT_LOGGING_ENABLE_CALIPER)
+#include "caliper/Caliper.h"
 #include "caliper/cali-manager.h"
+#include "caliper/cali.h"
 #endif
 
 //-----------------------------------------------------------------------------
@@ -30,6 +32,174 @@ namespace ascent
 //-----------------------------------------------------------------------------
 namespace annotations
 {
+
+//-----------------------------------------------------------------------------
+struct Value::Impl
+{
+#if defined(ASCENT_LOGGING_ENABLE_CALIPER)
+    std::string name;
+    cali::Attribute attribute;
+    cali::Entry previous_entry;
+    cali::Variant previous_value;
+    bool active;
+    bool store_as_value;
+
+    explicit Impl(const std::string &name)
+      : name(name),
+        attribute(cali::Attribute::invalid),
+        active(false),
+        store_as_value(false)
+    {
+    }
+
+    void update(const cali::Variant &value, bool use_as_value)
+    {
+        cali::Caliper caliper;
+
+        if(!active)
+        {
+            int properties = CALI_ATTR_SCOPE_THREAD | CALI_ATTR_SKIP_EVENTS;
+            if(use_as_value)
+            {
+                properties |= CALI_ATTR_ASVALUE;
+            }
+            else
+            {
+		// Store string values separately from Caliper's region tracking so they
+                // don't interfere with the regions opened/closed by
+                // cali_begin_region()/cali_end_region()
+                properties |= CALI_ATTR_UNALIGNED;
+            }
+
+            attribute = caliper.create_attribute(name, value.type(), properties);
+            store_as_value = use_as_value;
+
+            // Values with the same name can be nested when one VTK-h filter
+            // invokes another. Save the prior value and restore it when this
+            // value is destroyed instead of simply deleting it
+            if(store_as_value)
+            {
+                previous_value = caliper.exchange(attribute, value);
+            }
+            else
+            {
+                previous_entry = caliper.get(attribute);
+                caliper.set(attribute, value);
+            }
+            active = true;
+        }
+        else
+        {
+            caliper.set(attribute, value);
+        }
+    }
+
+    void end()
+    {
+        if(!active)
+        {
+            return;
+        }
+
+        cali::Caliper caliper;
+
+        if(store_as_value && previous_value.type() != CALI_TYPE_INV)
+        {
+            caliper.exchange(attribute, previous_value);
+        }
+        else if(!store_as_value && !previous_entry.empty())
+        {
+            caliper.set(attribute, previous_entry.value());
+        }
+        else
+        {
+            caliper.end(attribute);
+        }
+
+        active = false;
+    }
+#else
+    explicit Impl(const std::string &)
+    {
+    }
+#endif
+};
+
+//-----------------------------------------------------------------------------
+Value::Value(const std::string &name)
+  : m_impl(nullptr)
+{
+#if defined(ASCENT_LOGGING_ENABLE_CALIPER)
+    m_impl = new Impl(name);
+#else
+    (void) name;
+#endif
+}
+
+//-----------------------------------------------------------------------------
+Value::~Value()
+{
+#if defined(ASCENT_LOGGING_ENABLE_CALIPER)
+    if(m_impl != nullptr)
+    {
+        m_impl->end();
+        delete m_impl;
+    }
+#endif
+}
+
+//-----------------------------------------------------------------------------
+void
+Value::set(const std::string &value)
+{
+#if defined(ASCENT_LOGGING_ENABLE_CALIPER)
+    // Store strings in Caliper's context tree to ensure they remain valid,
+    // rather than relying on a pointer to the original string's data.
+    m_impl->update(cali::Variant(value.c_str()), false);
+#else
+    (void) value;
+#endif
+}
+
+//-----------------------------------------------------------------------------
+void
+Value::set(const char *value)
+{
+    set(std::string(value == nullptr ? "" : value));
+}
+
+//-----------------------------------------------------------------------------
+void
+Value::set(std::int64_t value)
+{
+#if defined(ASCENT_LOGGING_ENABLE_CALIPER)
+    m_impl->update(cali::Variant(CALI_TYPE_INT, &value, sizeof(value)), true);
+#else
+    (void) value;
+#endif
+}
+
+//-----------------------------------------------------------------------------
+void
+Value::set(std::uint64_t value)
+{
+#if defined(ASCENT_LOGGING_ENABLE_CALIPER)
+    m_impl->update(cali::Variant(value), true);
+#else
+    (void) value;
+#endif
+}
+
+//-----------------------------------------------------------------------------
+void
+Value::set(double value)
+{
+#if defined(ASCENT_LOGGING_ENABLE_CALIPER)
+    m_impl->update(cali::Variant(value), true);
+#else
+    (void) value;
+#endif
+}
 
 #if defined(ASCENT_LOGGING_ENABLE_CALIPER)
 static cali::ConfigManager *cali_cfg_manager = NULL;
@@ -145,5 +315,3 @@ finalize()
 //-----------------------------------------------------------------------------
 // -- end ascent:: --
 //-----------------------------------------------------------------------------
-
-
