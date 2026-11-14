@@ -15,6 +15,7 @@ project(ascent VERSION "0.9.6")
 ################################
 # Build Options
 ################################
+include(CMakeDependentOption)
 
 option(BUILD_SHARED_LIBS  "Build shared libraries"    ON)
 option(ENABLE_TESTS       "Build tests"               ON)
@@ -51,6 +52,14 @@ option(VTKH_ENABLE_FILTER_CONTOUR_TREE "Build VTK-h contour tree support" ON)
 # Cuda Specific Options
 option(ENABLE_CUDA_DEBUG_CPU_ONLY "Enable CUDA CPU debugging" OFF)
 
+# python specific options
+cmake_dependent_option(ENABLE_PYTHON_FILTERS
+                       "Build Embedded Python Filter Support"
+                       ON # default to ON, as long as ENABLE_PYTHON is ON
+                       "ENABLE_PYTHON"
+                       OFF
+                       )
+
 #####################################################
 # Note: Third party libs like MFEM, FIDES, etc are
 #       enabled when you provide MFEM_DIR, etc
@@ -83,12 +92,6 @@ endif()
 # allow find_packages to use ZZZ_ROOT vars
 if(POLICY CMP0074)
     cmake_policy(SET CMP0074 NEW)
-endif()
-
-# allow FindPythonInterp and FindPythonLibs
-# https://cmake.org/cmake/help/latest/policy/CMP0148.html
-if(POLICY CMP0148)
-    cmake_policy(SET CMP0148 OLD)
 endif()
 
 ################################
