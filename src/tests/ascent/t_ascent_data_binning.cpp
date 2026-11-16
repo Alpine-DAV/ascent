@@ -958,7 +958,8 @@ TEST(ascent_binning, binning_float32_coords)
   const float64 fs[] = {0, 1, 2, 3};
   auto points = [&](int n, Node &data)
   {
-    Node domain;
+    data.reset();
+    Node &domain = data.append();
     domain["coordsets/coords/type"] = "explicit";
     domain["coordsets/coords/values/x"].set(xs, n);
     domain["coordsets/coords/values/y"].set(ys, n);
@@ -972,10 +973,6 @@ TEST(ascent_binning, binning_float32_coords)
     domain["fields/f/values"].set(fs, n);
     domain["state/cycle"] = 100;
     domain["state/domain_id"] = 0;
-    // a copy: the multi-domain mesh references domain
-    Node multi_domain;
-    blueprint::mesh::to_multi_domain(domain, multi_domain);
-    data.set(multi_domain);
   };
 
   Node point_data;
@@ -995,7 +992,8 @@ TEST(ascent_binning, binning_float32_coords)
   EXPECT_THROW(no_eval.evaluate(x_bins), conduit::Error);
 
   // a 2x2x2 rectilinear grid in [0, 1]^3, f = 0, ..., 7 per vertex
-  Node grid, grid_data;
+  Node grid_data;
+  Node &grid = grid_data.append();
   const float32 edges[] = {0, 1};
   const float64 gs[] = {0, 1, 2, 3, 4, 5, 6, 7};
   grid["coordsets/coords/type"] = "rectilinear";
@@ -1009,7 +1007,6 @@ TEST(ascent_binning, binning_float32_coords)
   grid["fields/f/values"].set(gs, 8);
   grid["state/cycle"] = 100;
   grid["state/domain_id"] = 0;
-  blueprint::mesh::to_multi_domain(grid, grid_data);
 
   runtime::expressions::ExpressionEval grid_eval(&grid_data);
   res = grid_eval.evaluate("bounds()");
