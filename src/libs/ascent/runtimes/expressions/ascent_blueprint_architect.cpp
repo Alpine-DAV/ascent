@@ -1184,17 +1184,19 @@ global_bounds(const conduit::Node &dataset, const std::string &topo_name)
       int num_dims = n_coords["values"].number_of_children();
       for(int i = 0; i < num_dims; ++i)
       {
+        // without values, the reductions return the limits of the
+        // coordinate type: keep the initial bounds instead
+        const std::string axis_path = "values/" + axes[i][0];
+        if(n_coords[axis_path].dtype().number_of_elements() == 0)
+        {
+          continue;
+        }
           // note: these aren't really fields, but the are close enough
           // to be exec-ed this way
-        const std::string axis_path = "values/" + axes[i][0];
         min_coords[i] = std::min(
-            min_coords[i], field_reduction_min(n_coords, axes[i][0])["value"].as_double());
+            min_coords[i], field_reduction_min(n_coords, axes[i][0])["value"].to_float64());
         max_coords[i] = std::max(
-            max_coords[i], field_reduction_max(n_coords, axes[i][0])["value"].as_double());
-        //min_coords[i] = std::min(
-        //    min_coords[i], field_reduction_min(n_coords[axis_path])["value"].as_double());
-        //max_coords[i] = std::max(
-        //    max_coords[i], field_reduction_max(n_coords[axis_path])["value"].as_double());
+            max_coords[i], field_reduction_max(n_coords, axes[i][0])["value"].to_float64());
       }
     }
     else

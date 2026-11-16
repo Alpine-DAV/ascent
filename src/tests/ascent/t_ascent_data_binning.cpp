@@ -945,6 +945,81 @@ void test_binning_pipline_filter(const std::string &tag,
 // }
 
 //-----------------------------------------------------------------------------
+TEST(ascent_binning, binning_float32_coords)
+{
+  runtime::expressions::register_builtin();
+  const std::string x_bins = "binning('f', 'sum', [axis('x', num_bins=2)])";
+  conduit::Node res;
+
+  // n points in [0, 1]^3 with float32 coordinates, and a field f
+  const float32 xs[] = {0, 1, 0, 1};
+  const float32 ys[] = {0, 0, 1, 1};
+  const int32 conn[] = {0, 1, 2, 3};
+  const float64 fs[] = {0, 1, 2, 3};
+  auto points = [&](int n, Node &data)
+  {
+    data.reset();
+    Node &domain = data.append();
+    domain["coordsets/coords/type"] = "explicit";
+    domain["coordsets/coords/values/x"].set(xs, n);
+    domain["coordsets/coords/values/y"].set(ys, n);
+    domain["coordsets/coords/values/z"].set(ys, n);
+    domain["topologies/mesh/type"] = "unstructured";
+    domain["topologies/mesh/coordset"] = "coords";
+    domain["topologies/mesh/elements/shape"] = "point";
+    domain["topologies/mesh/elements/connectivity"].set(conn, n);
+    domain["fields/f/association"] = "element";
+    domain["fields/f/topology"] = "mesh";
+    domain["fields/f/values"].set(fs, n);
+    domain["state/cycle"] = 100;
+    domain["state/domain_id"] = 0;
+  };
+
+  Node point_data;
+  points(4, point_data);
+  runtime::expressions::ExpressionEval point_eval(&point_data);
+  res = point_eval.evaluate("bounds()");
+  EXPECT_EQ(res["attrs/min/value"].to_yaml(), "[0.0, 0.0, 0.0]");
+  EXPECT_EQ(res["attrs/max/value"].to_yaml(), "[1.0, 1.0, 1.0]");
+  // f = 0 + 2 at x = 0, 1 + 3 at x = 1
+  res = point_eval.evaluate(x_bins);
+  EXPECT_EQ(res["attrs/value/value"].to_yaml(), "[2.0, 4.0]");
+
+  // without points, there are no bounds, as with float64 coordinates
+  Node no_data;
+  points(0, no_data);
+  runtime::expressions::ExpressionEval no_eval(&no_data);
+  EXPECT_THROW(no_eval.evaluate(x_bins), conduit::Error);
+
+  // a 2x2x2 rectilinear grid in [0, 1]^3, f = 0, ..., 7 per vertex
+  Node grid_data;
+  Node &grid = grid_data.append();
+  const float32 edges[] = {0, 1};
+  const float64 gs[] = {0, 1, 2, 3, 4, 5, 6, 7};
+  grid["coordsets/coords/type"] = "rectilinear";
+  grid["coordsets/coords/values/x"].set(edges, 2);
+  grid["coordsets/coords/values/y"].set(edges, 2);
+  grid["coordsets/coords/values/z"].set(edges, 2);
+  grid["topologies/mesh/type"] = "rectilinear";
+  grid["topologies/mesh/coordset"] = "coords";
+  grid["fields/f/association"] = "vertex";
+  grid["fields/f/topology"] = "mesh";
+  grid["fields/f/values"].set(gs, 8);
+  grid["state/cycle"] = 100;
+  grid["state/domain_id"] = 0;
+
+  runtime::expressions::ExpressionEval grid_eval(&grid_data);
+  res = grid_eval.evaluate("bounds()");
+  EXPECT_EQ(res["attrs/min/value"].to_yaml(), "[0.0, 0.0, 0.0]");
+  EXPECT_EQ(res["attrs/max/value"].to_yaml(), "[1.0, 1.0, 1.0]");
+  // f = 0 + 2 + 4 + 6 at x = 0, 1 + 3 + 5 + 7 at x = 1
+  res = grid_eval.evaluate(x_bins);
+  EXPECT_EQ(res["attrs/value/value"].to_yaml(), "[12.0, 16.0]");
+
+  runtime::expressions::ExpressionEval::reset_cache();
+}
+
+//-----------------------------------------------------------------------------
 TEST(ascent_binning, filter_braid_binning_mesh)
 {
   // the viskores runtime is currently our only rendering runtime
