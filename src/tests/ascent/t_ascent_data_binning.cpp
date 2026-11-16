@@ -1253,6 +1253,44 @@ TEST(ascent_binning, expr_braid_non_spatial_bins)
 }
 
 //-----------------------------------------------------------------------------
+TEST(ascent_binning, binning_count)
+{
+  // 4 points with a field f = 0, 1, 2, 3
+  Node single_domain, data;
+  const float64 x[] = {0, 1, 0, 1};
+  const float64 y[] = {0, 0, 1, 1};
+  const int32 conn[] = {0, 1, 2, 3};
+  const float64 f[] = {0, 1, 2, 3};
+  single_domain["coordsets/coords/type"] = "explicit";
+  single_domain["coordsets/coords/values/x"].set(x, 4);
+  single_domain["coordsets/coords/values/y"].set(y, 4);
+  single_domain["topologies/mesh/type"] = "unstructured";
+  single_domain["topologies/mesh/coordset"] = "coords";
+  single_domain["topologies/mesh/elements/shape"] = "point";
+  single_domain["topologies/mesh/elements/connectivity"].set(conn, 4);
+  single_domain["fields/f/association"] = "element";
+  single_domain["fields/f/topology"] = "mesh";
+  single_domain["fields/f/values"].set(f, 4);
+  single_domain["state/cycle"] = 100;
+  single_domain["state/domain_id"] = 0;
+  blueprint::mesh::to_multi_domain(single_domain, data);
+
+  runtime::expressions::register_builtin();
+  runtime::expressions::ExpressionEval eval(&data);
+
+  // bins [0, 2), [2, 4), [4, 6)
+  const std::string axes = "[axis('f', num_bins=3, min_val=0, max_val=6)]";
+  conduit::Node res = eval.evaluate("binning('f', 'count', " + axes + ")");
+  EXPECT_EQ(res["attrs/value/value"].to_yaml(), "[2.0, 2.0, 0.0]");
+
+  res = eval.evaluate("binning('', 'count', " + axes + ")");
+  EXPECT_EQ(res["attrs/value/value"].to_yaml(), "[2.0, 2.0, 0.0]");
+
+  res = eval.evaluate("binning('', 'count', " + axes + ", empty_bin_val=-1)");
+  EXPECT_EQ(res["attrs/value/value"].to_yaml(), "[2.0, 2.0, -1.0]");
+}
+
+//-----------------------------------------------------------------------------
 TEST(ascent_binning, binning_render_basic_mesh_cases)
 {
   // the viskores runtime is currently our only rendering runtime
