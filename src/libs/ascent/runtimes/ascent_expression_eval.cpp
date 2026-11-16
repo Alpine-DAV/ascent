@@ -1068,9 +1068,7 @@ initialize_functions()
   axis_sig["args/name/type"] = "string";
   axis_sig["args/name/description"] =
       "The name of a scalar field on the mesh "
-      "or one of ``'x'``, ``'y'``, or ``'z'``. `name` can also be the empty "
-      "string `''` if `reduction_op` is either `sum` or `pdf` to mean we want "
-      "to count the number of elements in the bin as our reduction variable.";
+      "or one of ``'x'``, ``'y'``, or ``'z'``.";
   // rectilinear binning
   axis_sig["args/bins/type"] = "list";
   axis_sig["args/bins/optional"];
@@ -1138,7 +1136,8 @@ initialize_functions()
   binning_sig["args/reduction_var/type"] = "string";
   binning_sig["args/reduction_var/description"] =
       "The variable being reduced. Either the name of a scalar field on the "
-      "mesh or one of ``'x'``, ``'y'``, or ``'z'``.";
+      "mesh or one of ``'x'``, ``'y'``, or ``'z'``. It can be the empty string "
+      "``''`` if `reduction_op` is `count` or `pdf`.";
   binning_sig["args/reduction_op/type"] = "string";
   binning_sig["args/reduction_op/description"] =
       "The reduction operator to use when \
@@ -1147,6 +1146,7 @@ initialize_functions()
   - max: maximum value in a bin \n \
   - sum: sum of values in a bin \n \
   - avg: average of values in a bin \n \
+  - count: number of values in a bin \n \
   - pdf: probability distribution function \n \
   - std: standard deviation of values in a bin \n \
   - var: variance of values in a bin \n \

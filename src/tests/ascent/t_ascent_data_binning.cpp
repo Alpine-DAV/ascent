@@ -759,53 +759,53 @@ void test_binning_pipline_filter(const std::string &tag,
 //
 //
 // //-----------------------------------------------------------------------------
-// TEST(ascent_binning, binning_basic_meshes_2d)
-// {
-//   // the viskores runtime is currently our only rendering runtime
-//   Node n;
-//   ascent::about(n);
-//   // only run this test if ascent was built with viskores support
-//   if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
-//   {
-//     ASCENT_INFO("Ascent support disabled, skipping test");
-//     return;
-//   }
-//
-//   //
-//   // Create an example mesh.
-//   //
-//
-//   // for all cases
-//   // extents of basic are -10, 10
-//   // with 3x3 nodes, there are 4 elements
-//   //
-//
-//
-//   // "uniform", "rectilinear", "structured","tris", "quads", "polygons"
-//
-//   Node data;
-//   generate_2d_basic_test_mesh("uniform", 3, 3,data);
-//   test_binning_basic_mesh_2d_quads("2d_uniform_3_3_0",data);
-//
-//   generate_2d_basic_test_mesh("rectilinear", 3, 3,data);
-//   test_binning_basic_mesh_2d_quads("2d_rectilinear_3_3_0",data);
-//
-//   // TODO: UNSUPPORTED
-//   // generate_2d_basic_test_mesh("structured", 3, 3, data);
-//   // test_binning_basic_mesh_2d(data,"2d_structured_3_3_0");
-//
-//   generate_2d_basic_test_mesh("quads", 3, 3,data);
-//   test_binning_basic_mesh_2d_quads("2d_quads_3_3_0",data);
-//   // TODO: UNSUPPORTED
-//   // generate_2d_basic_test_mesh("polygons", 3, 3,data);
-//   // test_binning_basic_mesh_2d_quads("2d_polygons_3_3_0",data);
-//
-//   // triangles produce different counts
-//   generate_2d_basic_test_mesh("tris", 3, 3,data);
-//   test_binning_basic_mesh_2d_tris("2d_tris_3_3_0",data);
-//
-//
-// }
+TEST(ascent_binning, binning_basic_meshes_2d)
+{
+  // the viskores runtime is currently our only rendering runtime
+  Node n;
+  ascent::about(n);
+  // only run this test if ascent was built with viskores support
+  if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
+  {
+    ASCENT_INFO("Ascent support disabled, skipping test");
+    return;
+  }
+
+  //
+  // Create an example mesh.
+  //
+
+  // for all cases
+  // extents of basic are -10, 10
+  // with 3x3 nodes, there are 4 elements
+  //
+
+
+  // "uniform", "rectilinear", "structured","tris", "quads", "polygons"
+
+  Node data;
+  generate_2d_basic_test_mesh("uniform", 3, 3,data);
+  test_binning_basic_mesh_2d_quads("2d_uniform_3_3_0",data);
+
+  generate_2d_basic_test_mesh("rectilinear", 3, 3,data);
+  test_binning_basic_mesh_2d_quads("2d_rectilinear_3_3_0",data);
+
+  // TODO: UNSUPPORTED
+  // generate_2d_basic_test_mesh("structured", 3, 3, data);
+  // test_binning_basic_mesh_2d(data,"2d_structured_3_3_0");
+
+  generate_2d_basic_test_mesh("quads", 3, 3,data);
+  test_binning_basic_mesh_2d_quads("2d_quads_3_3_0",data);
+  // TODO: UNSUPPORTED
+  // generate_2d_basic_test_mesh("polygons", 3, 3,data);
+  // test_binning_basic_mesh_2d_quads("2d_polygons_3_3_0",data);
+
+  // triangles produce different counts
+  generate_2d_basic_test_mesh("tris", 3, 3,data);
+  test_binning_basic_mesh_2d_tris("2d_tris_3_3_0",data);
+
+
+}
 //
 // //-----------------------------------------------------------------------------
 // TEST(ascent_binning, binning_basic_meshes_3d)
@@ -1255,12 +1255,13 @@ TEST(ascent_binning, expr_braid_non_spatial_bins)
 //-----------------------------------------------------------------------------
 TEST(ascent_binning, binning_count)
 {
-  // 4 points with a field f = 0, 1, 2, 3
+  // 4 points with a field f = 0, 1, 2, 3 and an integer field id
   Node single_domain, data;
   const float64 x[] = {0, 1, 0, 1};
   const float64 y[] = {0, 0, 1, 1};
   const int32 conn[] = {0, 1, 2, 3};
   const float64 f[] = {0, 1, 2, 3};
+  const int64 id[] = {10, 11, 12, 13};
   single_domain["coordsets/coords/type"] = "explicit";
   single_domain["coordsets/coords/values/x"].set(x, 4);
   single_domain["coordsets/coords/values/y"].set(y, 4);
@@ -1271,6 +1272,9 @@ TEST(ascent_binning, binning_count)
   single_domain["fields/f/association"] = "element";
   single_domain["fields/f/topology"] = "mesh";
   single_domain["fields/f/values"].set(f, 4);
+  single_domain["fields/id/association"] = "element";
+  single_domain["fields/id/topology"] = "mesh";
+  single_domain["fields/id/values"].set(id, 4);
   single_domain["state/cycle"] = 100;
   single_domain["state/domain_id"] = 0;
   blueprint::mesh::to_multi_domain(single_domain, data);
@@ -1286,8 +1290,14 @@ TEST(ascent_binning, binning_count)
   res = eval.evaluate("binning('', 'count', " + axes + ")");
   EXPECT_EQ(res["attrs/value/value"].to_yaml(), "[2.0, 2.0, 0.0]");
 
+  // count does not read the values of the reduction variable
+  res = eval.evaluate("binning('id', 'count', " + axes + ")");
+  EXPECT_EQ(res["attrs/value/value"].to_yaml(), "[2.0, 2.0, 0.0]");
+
   res = eval.evaluate("binning('', 'count', " + axes + ", empty_bin_val=-1)");
   EXPECT_EQ(res["attrs/value/value"].to_yaml(), "[2.0, 2.0, -1.0]");
+
+  runtime::expressions::ExpressionEval::reset_cache();
 }
 
 //-----------------------------------------------------------------------------

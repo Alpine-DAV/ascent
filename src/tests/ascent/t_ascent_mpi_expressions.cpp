@@ -393,6 +393,50 @@ TEST(ascent_mpi_expressions, mpi_expressions)
     }
 }
 
+//-----------------------------------------------------------------------------
+TEST(ascent_mpi_expressions, mpi_binning_count)
+{
+    MPI_Comm comm = MPI_COMM_WORLD;
+    int par_rank;
+    int par_size;
+    MPI_Comm_rank(comm, &par_rank);
+    MPI_Comm_size(comm, &par_size);
+
+    // 4 points per rank with a field f = 0, 1, 2, 3
+    Node data, multi_dom;
+    const float64 x[] = {0, 1, 0, 1};
+    const float64 y[] = {0, 0, 1, 1};
+    const int32 conn[] = {0, 1, 2, 3};
+    const float64 f[] = {0, 1, 2, 3};
+    data["coordsets/coords/type"] = "explicit";
+    data["coordsets/coords/values/x"].set(x, 4);
+    data["coordsets/coords/values/y"].set(y, 4);
+    data["topologies/mesh/type"] = "unstructured";
+    data["topologies/mesh/coordset"] = "coords";
+    data["topologies/mesh/elements/shape"] = "point";
+    data["topologies/mesh/elements/connectivity"].set(conn, 4);
+    data["fields/f/association"] = "element";
+    data["fields/f/topology"] = "mesh";
+    data["fields/f/values"].set(f, 4);
+    data["state/cycle"] = 100;
+    data["state/domain_id"] = par_rank;
+    blueprint::mesh::to_multi_domain(data, multi_dom);
+
+    flow::Workspace::set_default_mpi_comm(MPI_Comm_c2f(comm));
+    runtime::expressions::register_builtin();
+    runtime::expressions::ExpressionEval eval(&multi_dom);
+
+    // bins [0, 2), [2, 4), [4, 6): 2 points per rank in the first two
+    conduit::Node res = eval.evaluate(
+        "binning('', 'count', [axis('f', num_bins=3, min_val=0, max_val=6)])");
+    const float64 *counts = res["attrs/value/value"].as_float64_ptr();
+    EXPECT_EQ(counts[0], 2.0 * par_size);
+    EXPECT_EQ(counts[1], 2.0 * par_size);
+    EXPECT_EQ(counts[2], 0.0);
+
+    runtime::expressions::ExpressionEval::reset_cache();
+}
+
 int main(int argc, char* argv[])
 {
     int result = 0;

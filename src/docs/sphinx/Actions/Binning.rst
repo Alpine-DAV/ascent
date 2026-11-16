@@ -50,6 +50,7 @@ When multiple values fall into a single bin (i.e., undersampling), we aggregate 
 *  max: maximum value in a bin
 *  sum: sum of values in a bin
 *  avg: average of values in a bin
+*  count: number of values in a bin
 *  pdf: probability distribution function
 *  std: standard deviation of values in a bin
 *  var: variance of values in a bin

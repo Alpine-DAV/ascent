@@ -1571,8 +1571,12 @@ update_bin(double *bins,
   {
     bins[i] = std::max(bins[i], value);
   }
+  else if(reduction_op == "count")
+  {
+    bins[i] += 1;
+  }
   else if(reduction_op == "avg" || reduction_op == "sum" ||
-          reduction_op == "pdf" || reduction_op == "count")
+          reduction_op == "pdf")
   {
     bins[2 * i] += value;
     bins[2 * i + 1] += 1;
@@ -1724,7 +1728,8 @@ binning(const conduit::Node &dataset,
   {
     num_bin_vars = 3;
   }
-  else if(reduction_op == "min" || reduction_op == "max")
+  else if(reduction_op == "min" || reduction_op == "max" ||
+          reduction_op == "count")
   {
     num_bin_vars = 1;
   }
@@ -1755,7 +1760,7 @@ binning(const conduit::Node &dataset,
     const int homes_size = n_homes.dtype().number_of_elements();
 
     // update bins
-    if(reduction_var.empty())
+    if(reduction_var.empty() || reduction_op == "count")
     {
 //#ifdef ASCENT_OPENMP_ENABLED
 //#pragma omp parallel for
@@ -1944,14 +1949,7 @@ binning(const conduit::Node &dataset,
 #endif
     for(int i = 0; i < num_bins; ++i)
     {
-      if(bins[2 * i + 1] == 0)
-      {
-        res_bins[i] = empty_bin_val;
-      }
-      else
-      {
-        res_bins[i] = bins[2 * i + 1];
-      }
+      res_bins[i] = bins[i] == 0 ? empty_bin_val : bins[i];
     }
   }
   else if(reduction_op == "avg")
