@@ -1188,9 +1188,9 @@ global_bounds(const conduit::Node &dataset, const std::string &topo_name)
           // to be exec-ed this way
         const std::string axis_path = "values/" + axes[i][0];
         min_coords[i] = std::min(
-            min_coords[i], field_reduction_min(n_coords, axes[i][0])["value"].as_double());
+            min_coords[i], field_reduction_min(n_coords, axes[i][0])["value"].to_float64());
         max_coords[i] = std::max(
-            max_coords[i], field_reduction_max(n_coords, axes[i][0])["value"].as_double());
+            max_coords[i], field_reduction_max(n_coords, axes[i][0])["value"].to_float64());
         //min_coords[i] = std::min(
         //    min_coords[i], field_reduction_min(n_coords[axis_path])["value"].as_double());
         //max_coords[i] = std::max(
