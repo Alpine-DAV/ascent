@@ -1256,28 +1256,28 @@ TEST(ascent_binning, expr_braid_non_spatial_bins)
 TEST(ascent_binning, binning_count)
 {
   // 4 points with a field f = 0, 1, 2, 3 and an integer field id
-  Node single_domain, data;
+  Node data;
+  Node &domain = data.append();
   const float64 x[] = {0, 1, 0, 1};
   const float64 y[] = {0, 0, 1, 1};
   const int32 conn[] = {0, 1, 2, 3};
   const float64 f[] = {0, 1, 2, 3};
   const int64 id[] = {10, 11, 12, 13};
-  single_domain["coordsets/coords/type"] = "explicit";
-  single_domain["coordsets/coords/values/x"].set(x, 4);
-  single_domain["coordsets/coords/values/y"].set(y, 4);
-  single_domain["topologies/mesh/type"] = "unstructured";
-  single_domain["topologies/mesh/coordset"] = "coords";
-  single_domain["topologies/mesh/elements/shape"] = "point";
-  single_domain["topologies/mesh/elements/connectivity"].set(conn, 4);
-  single_domain["fields/f/association"] = "element";
-  single_domain["fields/f/topology"] = "mesh";
-  single_domain["fields/f/values"].set(f, 4);
-  single_domain["fields/id/association"] = "element";
-  single_domain["fields/id/topology"] = "mesh";
-  single_domain["fields/id/values"].set(id, 4);
-  single_domain["state/cycle"] = 100;
-  single_domain["state/domain_id"] = 0;
-  blueprint::mesh::to_multi_domain(single_domain, data);
+  domain["coordsets/coords/type"] = "explicit";
+  domain["coordsets/coords/values/x"].set(x, 4);
+  domain["coordsets/coords/values/y"].set(y, 4);
+  domain["topologies/mesh/type"] = "unstructured";
+  domain["topologies/mesh/coordset"] = "coords";
+  domain["topologies/mesh/elements/shape"] = "point";
+  domain["topologies/mesh/elements/connectivity"].set(conn, 4);
+  domain["fields/f/association"] = "element";
+  domain["fields/f/topology"] = "mesh";
+  domain["fields/f/values"].set(f, 4);
+  domain["fields/id/association"] = "element";
+  domain["fields/id/topology"] = "mesh";
+  domain["fields/id/values"].set(id, 4);
+  domain["state/cycle"] = 100;
+  domain["state/domain_id"] = 0;
 
   runtime::expressions::register_builtin();
   runtime::expressions::ExpressionEval eval(&data);

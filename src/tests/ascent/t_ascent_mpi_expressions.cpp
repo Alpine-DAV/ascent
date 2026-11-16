@@ -403,28 +403,28 @@ TEST(ascent_mpi_expressions, mpi_binning_count)
     MPI_Comm_size(comm, &par_size);
 
     // 4 points per rank with a field f = 0, 1, 2, 3
-    Node data, multi_dom;
+    Node data;
+    Node &domain = data.append();
     const float64 x[] = {0, 1, 0, 1};
     const float64 y[] = {0, 0, 1, 1};
     const int32 conn[] = {0, 1, 2, 3};
     const float64 f[] = {0, 1, 2, 3};
-    data["coordsets/coords/type"] = "explicit";
-    data["coordsets/coords/values/x"].set(x, 4);
-    data["coordsets/coords/values/y"].set(y, 4);
-    data["topologies/mesh/type"] = "unstructured";
-    data["topologies/mesh/coordset"] = "coords";
-    data["topologies/mesh/elements/shape"] = "point";
-    data["topologies/mesh/elements/connectivity"].set(conn, 4);
-    data["fields/f/association"] = "element";
-    data["fields/f/topology"] = "mesh";
-    data["fields/f/values"].set(f, 4);
-    data["state/cycle"] = 100;
-    data["state/domain_id"] = par_rank;
-    blueprint::mesh::to_multi_domain(data, multi_dom);
+    domain["coordsets/coords/type"] = "explicit";
+    domain["coordsets/coords/values/x"].set(x, 4);
+    domain["coordsets/coords/values/y"].set(y, 4);
+    domain["topologies/mesh/type"] = "unstructured";
+    domain["topologies/mesh/coordset"] = "coords";
+    domain["topologies/mesh/elements/shape"] = "point";
+    domain["topologies/mesh/elements/connectivity"].set(conn, 4);
+    domain["fields/f/association"] = "element";
+    domain["fields/f/topology"] = "mesh";
+    domain["fields/f/values"].set(f, 4);
+    domain["state/cycle"] = 100;
+    domain["state/domain_id"] = par_rank;
 
     flow::Workspace::set_default_mpi_comm(MPI_Comm_c2f(comm));
     runtime::expressions::register_builtin();
-    runtime::expressions::ExpressionEval eval(&multi_dom);
+    runtime::expressions::ExpressionEval eval(&data);
 
     // bins [0, 2), [2, 4), [4, 6): 2 points per rank in the first two
     conduit::Node res = eval.evaluate(
