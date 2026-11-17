@@ -11,11 +11,21 @@ jobs:
   build_basic:
     name: Ubuntu Build Ascent GCC with pyvenv
     runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        include:
+          - name: full
+            env:
+              enable_python_filters: TRUE
+          - name: no-python-filers
+            env:
+              enable_python_filters: FALSE
     env:
       CC: gcc
       CXX: g++
       FC: gfortran
       CMAKE_VERSION: 3.31.8
+      ENABLE_PYTHON_FILTERS: ${{ matrix.env.enable_python_filters }}
     steps:
     - name: Install System Deps
       run: |
@@ -85,7 +95,11 @@ jobs:
         export CWD=`pwd`
         export PATH=${CWD}/cmake-${CMAKE_VERSION}-linux-x86_64/bin/:$PATH
         echo "**** Configuring Ascent"
-        cmake -S src -B build -C ascent-config.cmake -DCMAKE_INSTALL_PREFIX=install
+        cmake -S src \
+              -B build \
+              -C ascent-config.cmake \
+              -DENABLE_PYTHON_FILTERS=${ENABLE_PYTHON_FILTERS} \
+              -DCMAKE_INSTALL_PREFIX=install
     - name: Build Ascent
       run: |
         export CWD=`pwd`

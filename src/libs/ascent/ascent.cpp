@@ -1193,6 +1193,21 @@ about(conduit::Node &n)
     n["annotations"] = "disabled";
 #endif
 
+// python features
+#if defined(ASCENT_PYTHON_ENABLED)
+    n["python"] = "enabled";
+    #if defined(ASCENT_PYTHON_FILTERS_ENABLED)
+        n["python_filters"] = "enabled";
+    #else
+        n["python_filters"] = "disabled";
+    #endif
+    n["python_executable"] = ASCENT_PYTHON_EXECUTABLE;
+#else
+    n["python"] = "disabled";
+    n["python_filters"] = "disabled";
+    n["python_executable"] = "";
+#endif
+
     std::string install_prefix = n["install_prefix"].as_string();
     std::string web_root = utils::join_file_path(install_prefix,"share");
     web_root = utils::join_file_path(web_root,"ascent");

@@ -28,6 +28,7 @@ if(FORTRAN_FOUND)
 endif()
 
 set(ASCENT_PYTHON_ENABLED   ${PYTHON_FOUND})
+set(ASCENT_PYTHON_FILTERS_ENABLED ${ENABLE_PYTHON_FILTERS})
 set(ASCENT_PYTHON_EXECUTABLE ${PYTHON_FOUND})
 
 set(ASCENT_LOGGING_ENABLED ${ENABLE_LOGGING})
@@ -351,13 +352,14 @@ endif()
 if(PYTHON_FOUND)
    add_subdirectory(python)
 
-   list(APPEND ascent_sources
-        runtimes/flow_filters/ascent_python_script_filter.cpp)
+   if(ENABLE_PYTHON_FILTERS)
+       list(APPEND ascent_sources
+            runtimes/flow_filters/ascent_python_script_filter.cpp)
 
-   list(APPEND ascent_headers
-        runtimes/flow_filters/ascent_python_script_filter.hpp)
+       list(APPEND ascent_headers
+            runtimes/flow_filters/ascent_python_script_filter.hpp)
+    endif()
 endif()
-
 
 ##################################
 # flag all device sources

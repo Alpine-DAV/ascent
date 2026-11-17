@@ -15,6 +15,7 @@
 #define FLOW_CONFIG_H
 
 #cmakedefine FLOW_PYTHON_ENABLED  "@PYTHON_FOUND@"
+#cmakedefine FLOW_PYTHON_FILTERS_ENABLED  "@ENABLE_PYTHON_FILTERS@"
 
 
 #endif

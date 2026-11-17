@@ -18,7 +18,7 @@ set(FLOW_TESTS  t_flow_data
                 t_flow_workspace
                 t_flow_workspace_adv_manage)
 
-if(PYTHON_FOUND)
+if(PYTHON_FOUND AND ENABLE_PYTHON_FILTERS)
     list(APPEND FLOW_TESTS t_flow_python_interpreter
                            t_flow_python_script_filter)
 endif()

@@ -39,7 +39,7 @@
     #include <ascent_runtime_dray_filters.hpp>
 #endif
 
-#if defined(ASCENT_PYTHON_ENABLED)
+#if defined(ASCENT_PYTHON_FILTERS_ENABLED)
     #include <ascent_python_script_filter.hpp>
 #endif
 
@@ -197,7 +197,7 @@ register_builtin()
 
 #endif
 
-#if defined(ASCENT_PYTHON_ENABLED)
+#if defined(ASCENT_PYTHON_FILTERS_ENABLED)
     AscentRuntime::register_filter_type<AscentPythonScript>();
 #endif
 
