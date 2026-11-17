@@ -4875,6 +4875,197 @@ TEST(ascent_render_3d, test_render_3d_mesh_bg_fg_color)
     std::string msg = "An example of rendering a mesh with custom background and foreground colors.";
     ASCENT_ACTIONS_DUMP(actions,output_file,msg);
 }
+
+//-----------------------------------------------------------------------------
+
+TEST(ascent_render_3d, test_render_3d_text_annotations)
+{
+    // the ascent runtime is currently our only rendering runtime
+    Node n;
+    ascent::about(n);
+    // only run this test if ascent was built with viskores support
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping 3D default"
+                      "Pipeline test");
+
+        return;
+    }
+
+
+    //
+    // Create an example mesh.
+    //
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    ASCENT_INFO("Testing 3D Rendering with text annotations");
+
+
+    string output_path = prepare_output_dir();
+    string output_file =
+      conduit::utils::join_file_path(output_path,"tout_render_3d_text_annotations");
+
+    // remove old images before rendering
+    remove_test_image(output_file);
+
+    //
+    // Create the actions.
+    //
+
+    conduit::Node scenes;
+    scenes["s1/plots/p1/type"] = "pseudocolor";
+    scenes["s1/plots/p1/field"] = "braid";
+    scenes["s1/renders/r1/image_prefix"]  = output_file;
+
+    conduit::Node text_annotations;
+    conduit::Node &text_annotation_1 = text_annotations.append();
+    text_annotation_1["text"] = "Text Annotation: Defaults";
+
+    conduit::Node &text_annotation_2 = text_annotations.append();
+    text_annotation_2["text"] = "Text Annotation: 2D Position";
+    double screen_pos_1[2] = {-0.90, -0.80};
+    text_annotation_2["position"].set_float64_ptr(screen_pos_1, 2);
+
+    conduit::Node &text_annotation_3 = text_annotations.append();
+    text_annotation_3["text"] = "Text Annotation: 3D Position";
+    double world_pos[3] = {0.0, 0.0, 12.0};
+    text_annotation_3["position"].set_float64_ptr(world_pos, 3);
+    text_annotation_3["scale"] = 0.06;
+
+    conduit::Node &text_annotation_4 = text_annotations.append();
+    text_annotation_4["text"] = "Text Annotation: Scaled Smaller";
+    double screen_pos_2[2] = {-0.90, -0.65};
+    text_annotation_4["position"].set_float64_ptr(screen_pos_2, 2);
+    text_annotation_4["scale"] = 0.025;
+
+    conduit::Node &text_annotation_5 = text_annotations.append();
+    text_annotation_5["text"] = "Text Annotation: Scaled Larger";
+    double screen_pos_3[2] = {-0.90, -0.50};
+    text_annotation_5["position"].set_float64_ptr(screen_pos_3, 2);
+    text_annotation_5["scale"] = 0.07;
+    double color[3] = {1.0, 0.85, 0.15};
+    text_annotation_5["color"].set_float64_ptr(color, 3);
+
+    conduit::Node &text_annotation_6 = text_annotations.append();
+    text_annotation_6["text"] = "Text Annotation: Alignment";
+    double screen_pos_4[2] = {0.0, 0.82};
+    text_annotation_6["position"].set_float64_ptr(screen_pos_4, 2);
+    text_annotation_6["horizontal_alignment"] = "center";
+    text_annotation_6["vertical_alignment"] = "top";
+
+    scenes["s1/renders/r1/text_annotations"] = text_annotations;
+
+    conduit::Node actions;
+    conduit::Node &add_plots = actions.append();
+    add_plots["action"] = "add_scenes";
+    add_plots["scenes"] = scenes;
+
+    //
+    // Run Ascent
+    //
+
+    Ascent ascent;
+
+    Node ascent_opts;
+    ascent_opts["runtime/type"] = "ascent";
+    ascent_opts["exceptions"] = "forward";
+    ascent.open(ascent_opts);
+    ascent.publish(data);
+    ascent.execute(actions);
+    ascent.close();
+
+    // check that we created an image
+    EXPECT_TRUE(check_test_image(output_file));
+}
+
+//-----------------------------------------------------------------------------
+
+TEST(ascent_render_3d, test_render_3d_text_annotations_schema)
+{
+    Node n;
+    ascent::about(n);
+    if(n["runtimes/ascent/viskores/status"].as_string() == "disabled")
+    {
+        ASCENT_INFO("Ascent support disabled, skipping text annotation schema test");
+        return;
+    }
+
+    Node data, verify_info;
+    conduit::blueprint::mesh::examples::braid("hexs",
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              EXAMPLE_MESH_SIDE_DIM,
+                                              data);
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    auto expect_invalid_text_annotation = [&](auto configure)
+    {
+        conduit::Node scenes;
+        scenes["s1/plots/p1/type"] = "pseudocolor";
+        scenes["s1/plots/p1/field"] = "braid";
+        scenes["s1/renders/r1/image_prefix"] = "tout_invalid_text_annotation_schema";
+
+        conduit::Node text_annotations;
+        conduit::Node &annotation = text_annotations.append();
+        annotation["text"] = "Invalid text annotation";
+        configure(annotation);
+        scenes["s1/renders/r1/text_annotations"] = text_annotations;
+
+        conduit::Node actions;
+        conduit::Node &add_plots = actions.append();
+        add_plots["action"] = "add_scenes";
+        add_plots["scenes"] = scenes;
+
+        Ascent ascent;
+        Node ascent_opts;
+        ascent_opts["runtime/type"] = "ascent";
+        ascent_opts["exceptions"] = "forward";
+        ascent.open(ascent_opts);
+        ascent.publish(data);
+
+        bool schema_error = false;
+        try
+        {
+            ascent.execute(actions);
+        }
+        catch(conduit::Error &err)
+        {
+            schema_error =
+              err.message().find("Validation failed") != std::string::npos;
+        }
+        EXPECT_TRUE(schema_error);
+        ascent.close();
+    };
+
+    expect_invalid_text_annotation([](conduit::Node &annotation)
+    {
+        annotation["surprise"] = "schema should reject this";
+    });
+
+    expect_invalid_text_annotation([](conduit::Node &annotation)
+    {
+        double position[2] = {1.25, 0.0};
+        annotation["position"].set_float64_ptr(position, 2);
+    });
+
+    expect_invalid_text_annotation([](conduit::Node &annotation)
+    {
+        annotation["horizontal_alignment"] = "middle";
+    });
+
+    expect_invalid_text_annotation([](conduit::Node &annotation)
+    {
+        double color[2] = {1.0, 0.0};
+        annotation["color"].set_float64_ptr(color, 2);
+    });
+}
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {

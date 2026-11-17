@@ -49,6 +49,7 @@
 #include <vtkh/rendering/Scene.hpp>
 #include <vtkh/rendering/MeshRenderer.hpp>
 #include <vtkh/rendering/PointRenderer.hpp>
+#include <vtkh/rendering/TextAnnotation.hpp>
 #include <vtkh/rendering/VolumeRenderer.hpp>
 #include <vtkh/rendering/AutoCamera.hpp>
 #include <viskores/cont/DataSet.h>
@@ -163,6 +164,58 @@ void color_table_schema(conduit::Node &param_schema) {
     param_schema["constraints/exclusiveChildren"].append() = "solid";
     param_schema["constraints/exclusiveChildren"].append() = "control_points";
     param_schema["constraints/allowNoneInExclusiveGroup"] = true;
+}
+
+void text_alignment_schema(conduit::Node &schema,
+                           const std::vector<std::string> &string_values)
+{
+    schema.reset();
+    string_enum_schema(schema["oneOf"].append(), string_values);
+    number_schema(schema["oneOf"].append(), false, -1, 1);
+}
+
+void text_annotations_schema(conduit::Node &schema)
+{
+    schema.reset();
+
+    conduit::Node &off_schema = schema["oneOf"].append();
+    string_enum_schema(off_schema, {"false"});
+
+    conduit::Node number_item_schema;
+    number_schema(number_item_schema);
+
+    conduit::Node screen_position_item_schema;
+    number_schema(screen_position_item_schema, false, -1, 1);
+
+    conduit::Node screen_position_schema;
+    array_schema(screen_position_schema, screen_position_item_schema, 2, 2);
+
+    conduit::Node world_position_schema;
+    array_schema(world_position_schema, number_item_schema, 3, 3);
+
+    conduit::Node position_schema;
+    position_schema["oneOf"].append().set(screen_position_schema);
+    position_schema["oneOf"].append().set(world_position_schema);
+
+    conduit::Node color_item_schema;
+    number_schema(color_item_schema, false, 0, 1);
+
+    conduit::Node color_schema;
+    array_schema(color_schema, color_item_schema, 3, 4);
+
+    conduit::Node annotation_schema;
+    annotation_schema["type"] = "object";
+    annotation_schema["additionalProperties"] = false;
+    string_schema(annotation_schema["properties/text"], 1);
+    annotation_schema["properties/position"].set(position_schema);
+    number_schema(annotation_schema["properties/scale"], false, std::numeric_limits<int>::lowest(), std::numeric_limits<int>::max(), 0);
+    number_schema(annotation_schema["properties/angle"]);
+    text_alignment_schema(annotation_schema["properties/horizontal_alignment"], {"left", "center", "hcenter", "right"});
+    text_alignment_schema(annotation_schema["properties/vertical_alignment"], {"bottom", "center", "vcenter", "top"});
+    annotation_schema["properties/color"].set(color_schema);
+    annotation_schema["required"].append() = "text";
+
+    array_schema(schema["oneOf"].append(), annotation_schema);
 }
 
 void viskores_bounds_to_conduit_node(const viskores::Bounds &bounds,
@@ -333,6 +386,158 @@ public:
 
 //-----------------------------------------------------------------------------
 
+float
+parse_annotation_float(const conduit::Node &node)
+{
+  return node.to_float32();
+}
+
+//-----------------------------------------------------------------------------
+
+std::vector<float>
+parse_annotation_float_array(const conduit::Node &node)
+{
+  std::vector<float> values;
+  if(node.dtype().is_number())
+  {
+    conduit::Node n;
+    node.to_float32_array(n);
+    const float32 *data = n.as_float32_ptr();
+    const int num_elements = n.dtype().number_of_elements();
+    values.assign(data, data + num_elements);
+  }
+  else
+  {
+    const int num_children = node.number_of_children();
+    values.reserve(num_children);
+    for(int i = 0; i < num_children; ++i)
+    {
+      values.push_back(node.child(i).to_float32());
+    }
+  }
+
+  return values;
+}
+
+//-----------------------------------------------------------------------------
+
+float
+parse_horizontal_text_alignment(const conduit::Node &node)
+{
+  if(node.dtype().is_string())
+  {
+    const std::string value = node.as_string();
+    if(value == "left")
+    {
+      return -1.f;
+    }
+    else if(value == "center" || value == "hcenter")
+    {
+      return 0.f;
+    }
+    else if(value == "right")
+    {
+      return 1.f;
+    }
+  }
+
+  return parse_annotation_float(node);
+}
+
+//-----------------------------------------------------------------------------
+
+float
+parse_vertical_text_alignment(const conduit::Node &node)
+{
+  if(node.dtype().is_string())
+  {
+    const std::string value = node.as_string();
+    if(value == "bottom")
+    {
+      return -1.f;
+    }
+    else if(value == "center" || value == "vcenter")
+    {
+      return 0.f;
+    }
+    else if(value == "top")
+    {
+      return 1.f;
+    }
+  }
+
+  return parse_annotation_float(node);
+}
+
+//-----------------------------------------------------------------------------
+
+std::vector<vtkh::TextAnnotation>
+parse_text_annotations(const conduit::Node &text_annotations_node)
+{
+  std::vector<vtkh::TextAnnotation> text_annotations;
+  for(int i = 0; i < text_annotations_node.number_of_children(); ++i)
+  {
+    const conduit::Node &annotation_node = text_annotations_node.child(i);
+    vtkh::TextAnnotation annotation;
+    annotation.m_position = viskores::Vec3f_32(-0.95f, 0.90f, 0.f);
+    annotation.m_vertical_alignment = 1.f;
+
+    annotation.m_text = annotation_node["text"].as_string();
+
+    if(annotation_node.has_path("position"))
+    {
+      const conduit::Node &position_node = annotation_node["position"];
+      const std::vector<float> position = parse_annotation_float_array(position_node);
+      annotation.m_position[0] = position[0];
+      annotation.m_position[1] = position[1];
+      annotation.m_position[2] = position.size() == 3 ? position[2] : 0.f;
+      annotation.m_position_type = position.size() == 3
+        ? vtkh::TextAnnotation::PositionType::World
+        : vtkh::TextAnnotation::PositionType::Screen;
+    }
+
+    if(annotation_node.has_path("scale"))
+    {
+      annotation.m_scale = parse_annotation_float(annotation_node["scale"]);
+    }
+
+    if(annotation_node.has_path("angle"))
+    {
+      annotation.m_angle = parse_annotation_float(annotation_node["angle"]);
+    }
+
+    if(annotation_node.has_path("horizontal_alignment"))
+    {
+      annotation.m_horizontal_alignment =
+        parse_horizontal_text_alignment(annotation_node["horizontal_alignment"]);
+    }
+
+    if(annotation_node.has_path("vertical_alignment"))
+    {
+      annotation.m_vertical_alignment =
+        parse_vertical_text_alignment(annotation_node["vertical_alignment"]);
+    }
+
+    if(annotation_node.has_path("color"))
+    {
+      const conduit::Node &color_node = annotation_node["color"];
+      const std::vector<float> color = parse_annotation_float_array(color_node);
+      annotation.m_color.Components[0] = color[0];
+      annotation.m_color.Components[1] = color[1];
+      annotation.m_color.Components[2] = color[2];
+      annotation.m_color.Components[3] =
+        color.size() == 4 ? color[3] : 1.f;
+      annotation.m_use_color = true;
+    }
+
+    text_annotations.push_back(annotation);
+  }
+
+  return text_annotations;
+}
+
+//-----------------------------------------------------------------------------
+
 vtkh::Render parse_render(const conduit::Node &render_node,
                           viskores::Bounds &bounds,
                           const std::string &image_name)
@@ -420,6 +625,19 @@ vtkh::Render parse_render(const conduit::Node &render_node,
     if(annot == "false")
     {
       render.DoRenderScreenAnnotations(false);
+    }
+  }
+
+  if(!annot_all_off && render_node.has_path("text_annotations"))
+  {
+    const conduit::Node &text_annotations_node = render_node["text_annotations"];
+    if(text_annotations_node.dtype().is_string())
+    {
+      render.DoRenderTextAnnotations(false);
+    }
+    else
+    {
+      render.SetTextAnnotations(parse_text_annotations(text_annotations_node));
     }
   }
 
@@ -1136,9 +1354,10 @@ CreateRenders::declare_interface(Node &i)
     ignore_schema(render_schema["properties/db_name"]);
     ignore_schema(render_schema["properties/output_path"]);
     ignore_schema(render_schema["properties/render_bg"]);
-    ignore_schema(render_schema["properties/annotations"]);
-    ignore_schema(render_schema["properties/world_annotations"]);
-    ignore_schema(render_schema["properties/screen_annotations"]);
+    string_schema(render_schema["properties/annotations"]);
+    string_schema(render_schema["properties/world_annotations"]);
+    string_schema(render_schema["properties/screen_annotations"]);
+    detail::text_annotations_schema(render_schema["properties/text_annotations"]);
     ignore_schema(render_schema["properties/axis_scale_x"]);
     ignore_schema(render_schema["properties/axis_scale_y"]);
     ignore_schema(render_schema["properties/axis_scale_z"]);

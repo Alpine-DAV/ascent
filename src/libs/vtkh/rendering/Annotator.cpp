@@ -1,5 +1,8 @@
 #include <vtkh/rendering/Annotator.hpp>
 
+#include <viskores/rendering/TextAnnotationBillboard.h>
+#include <viskores/rendering/TextAnnotationScreen.h>
+
 namespace vtkh
 {
 
@@ -85,6 +88,45 @@ Annotator::RenderScreenAnnotations(const std::vector<std::string> &field_names,
     this->m_color_bar_annotation.Render(m_camera, *m_world_annotator, m_canvas);
   }
   m_world_annotator->EndLineRenderingBatch();
+  m_canvas.EndTextRenderingBatch();
+}
+
+void
+Annotator::RenderTextAnnotations(const std::vector<vtkh::TextAnnotation> &annotations)
+{
+  m_canvas.BeginTextRenderingBatch();
+  for(size_t i = 0; i < annotations.size(); ++i)
+  {
+    const vtkh::TextAnnotation &annotation = annotations[i];
+    const viskores::rendering::Color color = annotation.m_use_color
+      ? annotation.m_color
+      : m_canvas.GetForegroundColor();
+
+    if(annotation.m_position_type == vtkh::TextAnnotation::PositionType::World)
+    {
+      viskores::rendering::TextAnnotationBillboard text(annotation.m_text,
+                                                        color,
+                                                        annotation.m_scale,
+                                                        annotation.m_position,
+                                                        annotation.m_angle);
+      text.SetRawAnchor(annotation.m_horizontal_alignment,
+                        annotation.m_vertical_alignment);
+      text.Render(m_camera, *m_world_annotator, m_canvas);
+    }
+    else
+    {
+      const viskores::Vec2f_32 pos(annotation.m_position[0],
+                                   annotation.m_position[1]);
+      viskores::rendering::TextAnnotationScreen text(annotation.m_text,
+                                                     color,
+                                                     annotation.m_scale,
+                                                     pos,
+                                                     annotation.m_angle);
+      text.SetRawAnchor(annotation.m_horizontal_alignment,
+                        annotation.m_vertical_alignment);
+      text.Render(m_camera, *m_world_annotator, m_canvas);
+    }
+  }
   m_canvas.EndTextRenderingBatch();
 }
 

@@ -15,6 +15,7 @@ Render::Render()
     m_render_annotations(true),
     m_render_world_annotations(true),
     m_render_screen_annotations(true),
+    m_render_text_annotations(true),
     m_render_background(true),
     m_shading(true),
     m_canvas(m_width, m_height),
@@ -61,6 +62,12 @@ void
 Render::DoRenderScreenAnnotations(bool on)
 {
   m_render_screen_annotations = on;
+}
+
+void
+Render::DoRenderTextAnnotations(bool on)
+{
+  m_render_text_annotations = on;
 }
 
 
@@ -152,6 +159,12 @@ void
 Render::SetColorBarPosition(std::vector<viskores::Bounds> color_bar_position)
 {
   m_color_bar_position = color_bar_position;
+}
+
+void
+Render::SetTextAnnotations(const std::vector<vtkh::TextAnnotation> &annotations)
+{
+  m_text_annotations = annotations;
 }
 
 void
@@ -287,6 +300,23 @@ Render::RenderScreenAnnotations(const std::vector<std::string> &field_names,
     annotator.RenderScreenAnnotations(field_names, ranges, colors, m_color_bar_position, is_discrete);
 }
 
+void
+Render::RenderTextAnnotations()
+{
+  if(!m_render_annotations) return;
+  if(!m_render_text_annotations) return;
+  if(m_text_annotations.empty()) return;
+#ifdef VTKH_PARALLEL
+  if(vtkh::GetMPIRank() != 0) return;
+#endif
+  m_canvas.SetBackgroundColor(m_bg_color);
+  m_canvas.SetForegroundColor(m_fg_color);
+  if(m_render_background) m_canvas.BlendBackground();
+
+  Annotator annotator(m_canvas, m_camera, m_scene_bounds);
+  annotator.RenderTextAnnotations(m_text_annotations);
+}
+
 
 Render
 Render::Copy() const
@@ -302,11 +332,13 @@ Render::Copy() const
   copy.m_render_annotations = m_render_annotations;
   copy.m_render_world_annotations = m_render_world_annotations;
   copy.m_render_screen_annotations = m_render_screen_annotations;
+  copy.m_render_text_annotations = m_render_text_annotations;
   copy.m_render_background = m_render_background;
   copy.m_shading = m_shading;
   copy.m_canvas = CreateCanvas();
   copy.m_world_annotation_scale = m_world_annotation_scale;
   copy.m_color_bar_position = m_color_bar_position;
+  copy.m_text_annotations = m_text_annotations;
   return copy;
 }
 
@@ -335,6 +367,9 @@ Render::Print() const
            <<"\n";
   std::cout<<"=== screen annotations : "
            <<(m_render_screen_annotations ? "On" : "Off")
+           <<"\n";
+  std::cout<<"=== text annotations : "
+           <<(m_render_text_annotations ? "On" : "Off")
            <<"\n";
   std::cout<<"=== background  : "
            <<(m_render_background ? "On" : "Off")

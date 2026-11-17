@@ -7,6 +7,7 @@
 #include <viskores/rendering/Camera.h>
 #include <viskores/rendering/ColorBarAnnotation.h>
 #include <viskores/rendering/WorldAnnotator.h>
+#include <vtkh/rendering/TextAnnotation.hpp>
 
 #include<vtkh/vtkh_exports.h>
 
@@ -32,6 +33,9 @@ public:
                                const std::vector<viskores::cont::ColorTable> &color_tables,
 			                         const std::vector<viskores::Bounds> &color_bar_position,
 			                         const std::vector<int> &is_discrete);
+
+  void RenderTextAnnotations(const std::vector<vtkh::TextAnnotation> &annotations);
+
 protected:
   Annotator();
   bool                                    m_is_3d;
@@ -45,9 +49,6 @@ protected:
   viskores::rendering::ColorBarAnnotation     m_color_bar_annotation;
   viskores::rendering::WorldAnnotator        *m_world_annotator;
   std::vector<viskores::Bounds>               m_color_bar_pos;
-  //std::vector<viskores::rendering::TextAnnotation*> m_text_annotations;
-  //void RenderScreen2DAnnotations(viskores::Range range, const  std::string &field_name);
-  //void RenderScreen3DAnnotations(viskores::Range range, const std::string &field_name);
 };
 
 }// namespace vtkh
