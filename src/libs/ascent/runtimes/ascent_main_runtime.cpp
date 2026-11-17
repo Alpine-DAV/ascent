@@ -592,6 +592,18 @@ AscentRuntime::AddPublishedMeshInfo()
 void
 AscentRuntime::Cleanup()
 {
+    // clean up runtime state not tracked/managed by the registry
+    std::vector<std::string> entries = {"cache", "extract_list"};
+    for( auto entry : entries)
+    {
+        if(m_workspace.registry().has_entry(entry))
+        {
+            Node *data = m_workspace.registry().fetch<Node>(entry);
+            m_workspace.registry().detach(entry);
+            delete data;
+        }
+    }
+
     if(m_runtime_options.has_child("timings") &&
        m_runtime_options["timings"].as_string() == "true")
     {

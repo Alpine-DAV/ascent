@@ -252,7 +252,7 @@ ConduitExtract::execute()
       conduit::Node *extract_list = new conduit::Node();
       graph().workspace().registry().add<Node>("extract_list",
                                                extract_list,
-                                               -1); // keep root node forever
+                                               -1); // cleaned up by ascent main runtime
     }
 
     conduit::Node *extract_list = graph().workspace().registry().fetch<Node>("extract_list");

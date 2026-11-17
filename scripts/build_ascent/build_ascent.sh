@@ -35,7 +35,7 @@ enable_tests="${enable_tests:=OFF}"
 enable_verbose="${enable_verbose:=ON}"
 enable_64bit_ids="${enable_64bit_ids:=OFF}"
 build_jobs="${build_jobs:=6}"
-build_config="${build_config:=Debug}"
+build_config="${build_config:=Release}"
 build_shared_libs="${build_shared_libs:=ON}"
 
 # tpl controls
