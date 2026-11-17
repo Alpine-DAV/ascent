@@ -1175,7 +1175,7 @@ global_bounds(const conduit::Node &dataset, const std::string &topo_name)
         double spacing = n_coords["spacing/" + axes[i][2]].to_float64();
 
         min_coords[i] = std::min(min_coords[i], origin);
-        max_coords[i] = std::max(min_coords[i], origin + (dim - 1) * spacing);
+        max_coords[i] = std::max(max_coords[i], origin + (dim - 1) * spacing);
       }
     }
     else if(topo_type == "rectilinear" || topo_type == "structured" ||

@@ -1098,6 +1098,48 @@ TEST(ascent_binning, filter_braid_binning_mesh)
 }
 
 //-----------------------------------------------------------------------------
+TEST(ascent_binning, binning_uniform_domains)
+{
+  // two uniform domains of one cell each: x in [1, 2], then x in [0, 1]
+  Node data;
+  const float64 one[] = {1};
+  for(int i = 0; i < 2; ++i)
+  {
+    Node &dom = data.append();
+    dom["state/cycle"] = 100;
+    dom["state/domain_id"] = i;
+    dom["coordsets/coords/type"] = "uniform";
+    dom["coordsets/coords/dims/i"] = 2;
+    dom["coordsets/coords/dims/j"] = 2;
+    dom["coordsets/coords/dims/k"] = 2;
+    dom["coordsets/coords/origin/x"] = 1.0 - i;
+    dom["coordsets/coords/origin/y"] = 0.0;
+    dom["coordsets/coords/origin/z"] = 0.0;
+    dom["coordsets/coords/spacing/dx"] = 1.0;
+    dom["coordsets/coords/spacing/dy"] = 1.0;
+    dom["coordsets/coords/spacing/dz"] = 1.0;
+    dom["topologies/mesh/type"] = "uniform";
+    dom["topologies/mesh/coordset"] = "coords";
+    dom["fields/ones/association"] = "element";
+    dom["fields/ones/topology"] = "mesh";
+    dom["fields/ones/values"].set(one, 1);
+  }
+
+  runtime::expressions::register_builtin();
+  runtime::expressions::ExpressionEval eval(&data);
+
+  conduit::Node res = eval.evaluate("bounds()");
+  EXPECT_EQ(res["attrs/min/value"].to_yaml(), "[0.0, 0.0, 0.0]");
+  EXPECT_EQ(res["attrs/max/value"].to_yaml(), "[2.0, 1.0, 1.0]");
+
+  // one cell in each bin along x
+  res = eval.evaluate("binning('ones', 'sum', [axis('x', num_bins=2)])");
+  EXPECT_EQ(res["attrs/value/value"].to_yaml(), "[1.0, 1.0]");
+
+  runtime::expressions::ExpressionEval::reset_cache();
+}
+
+//-----------------------------------------------------------------------------
 TEST(ascent_binning, filter_braid_binning_bins)
 {
   // the viskores runtime is currently our only rendering runtime
