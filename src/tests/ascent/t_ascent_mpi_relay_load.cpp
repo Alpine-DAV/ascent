@@ -146,8 +146,15 @@ TEST(ascent_mpi_relay_load, test_load)
     ascent.execute(actions);
     ascent.close();
 
+    // only rank zero writes the render, so sync before checking
+    // for the existence of the output image
+    MPI_Barrier(comm);
+
     // check that we created an image
-    EXPECT_TRUE(check_test_image(output_render_file,1e-7,""));
+    // Note: 1e-7 (bitwise on 8-bit images) is too strict for gpu renders;
+    // silhouette pixels can flip when a ray lands exactly on a triangle
+    // boundary. 1e-5 tolerates a handful of flipped pixels out of 1M.
+    EXPECT_TRUE(check_test_image(output_render_file,1e-5,""));
     std::string msg = "An mpi example of loading and plotting an addional blueprint mesh from the file system.";
     ASCENT_ACTIONS_DUMP(actions,output_render_file,msg);
 }
@@ -280,8 +287,15 @@ TEST(ascent_mpi_relay_load, test_load_cache)
     ascent.execute(actions);
     ascent.close();
 
+    // only rank zero writes the render, so sync before checking
+    // for the existence of the output image
+    MPI_Barrier(comm);
+
     // check that we created an image
-    EXPECT_TRUE(check_test_image(output_render_file,1e-7,""));
+    // Note: 1e-7 (bitwise on 8-bit images) is too strict for gpu renders;
+    // silhouette pixels can flip when a ray lands exactly on a triangle
+    // boundary. 1e-5 tolerates a handful of flipped pixels out of 1M.
+    EXPECT_TRUE(check_test_image(output_render_file,1e-5,""));
     std::string msg = "An mpi example of loading and plotting an addional blueprint mesh from the file system.";
     ASCENT_ACTIONS_DUMP(actions,output_render_file,msg);
 }
