@@ -15,6 +15,10 @@
 #include <hip.h>
 #endif
 
+#ifdef KOKKOS_ENABLE_SYCL
+#include <sycl/sycl.hpp>
+#endif
+
 
 #include <sstream>
 
@@ -344,9 +348,7 @@ KokkosDeviceCount()
             throw Error(msg.str());
         }
     }
-    #endif
-
-    #ifdef KOKKOS_ENABLE_CUDA
+    #elif defined(KOKKOS_ENABLE_CUDA)
         // kokkos + cuda case
         {
             cudaError_t res = cudaGetDeviceCount(&device_count);
@@ -359,6 +361,14 @@ KokkosDeviceCount()
                 throw Error(msg.str());
             }
         }
+    #elif defined(KOKKOS_ENABLE_SYCL)
+        // kokkos + sycl case
+        {
+            device_count =
+              static_cast<int>(sycl::device::get_devices(sycl::info::device_type::gpu).size());
+        }
+    #else
+        throw Error("Cannot fetch Kokkos device count: no HIP, CUDA, or SYCL backend found");
     #endif
 #else
     throw Error("Cannot fetch Kokkos device count: Viskores lacks Kokkos support");
