@@ -18,6 +18,9 @@
 #include <ascent_logging_config.h>
 #include <conduit.hpp>
 
+#include <cstdint>
+#include <string>
+
 //-----------------------------------------------------------------------------
 #if defined(ASCENT_LOGGING_ENABLE_CALIPER)
 #include <caliper/cali.h>
@@ -74,6 +77,34 @@ namespace ascent
 //-----------------------------------------------------------------------------
 namespace annotations
 {
+  //---------------------------------------------------------------------------
+  /// Stores a typed value in Caliper for the lifetime of its associated scope.
+  ///
+  /// Declare Value objects before the ASCENT_ANNOTATE_MARK_SCOPE annotation
+  /// they belong to if you want their values to be included when the scope
+  /// ends. Values can also be set after the scope begins, which is useful when
+  /// a metric is only available at the end of an operation.
+  //---------------------------------------------------------------------------
+  class ASCENT_API Value
+  {
+  public:
+    explicit Value(const std::string &name);
+    ~Value();
+
+    void set(const std::string &value);
+    void set(const char *value);
+    void set(std::int64_t value);
+    void set(std::uint64_t value);
+    void set(double value);
+
+    Value(const Value &) = delete;
+    Value &operator=(const Value &) = delete;
+
+  private:
+    struct Impl;
+    Impl *m_impl;
+  };
+
   //---------------------------------------------------------------------------
   /// Caliper performance annotations environment management.
   ///
