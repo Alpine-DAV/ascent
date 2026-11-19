@@ -1,0 +1,12 @@
+diff --git a/viskores/rendering/anari-device/viskores_device.json b/viskores/rendering/anari-device/viskores_device.json
+index b426fb93..78a8b338 100644
+--- a/viskores/rendering/anari-device/viskores_device.json
++++ b/viskores/rendering/anari-device/viskores_device.json
+@@ -12,6 +12,7 @@
+       "khr_geometry_triangle",
+       "khr_material_matte",
+       "khr_sampler_image1d",
++      "khr_spatial_field_structured_regular",
+       "khr_volume_transfer_function1d"
+     ]
+   },
