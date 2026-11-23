@@ -1573,6 +1573,10 @@ update_bin(double *bins,
   {
     bins[i] = std::max(bins[i], value);
   }
+  else if(reduction_op == "count")
+  {
+    bins[i] += 1;
+  }
   else if(reduction_op == "avg" || reduction_op == "sum" ||
           reduction_op == "pdf")
   {
@@ -1726,7 +1730,8 @@ binning(const conduit::Node &dataset,
   {
     num_bin_vars = 3;
   }
-  else if(reduction_op == "min" || reduction_op == "max")
+  else if(reduction_op == "min" || reduction_op == "max" ||
+          reduction_op == "count")
   {
     num_bin_vars = 1;
   }
@@ -1757,7 +1762,7 @@ binning(const conduit::Node &dataset,
     const int homes_size = n_homes.dtype().number_of_elements();
 
     // update bins
-    if(reduction_var.empty())
+    if(reduction_var.empty() || reduction_op == "count")
     {
 //#ifdef ASCENT_OPENMP_ENABLED
 //#pragma omp parallel for
@@ -1841,7 +1846,8 @@ binning(const conduit::Node &dataset,
   MPI_Comm mpi_comm = MPI_Comm_f2c(flow::Workspace::default_mpi_comm());
   double *global_bins = new double[bins_size];
   if(reduction_op == "sum" || reduction_op == "pdf" || reduction_op == "avg" ||
-     reduction_op == "std" || reduction_op == "var" || reduction_op == "rms")
+     reduction_op == "std" || reduction_op == "var" || reduction_op == "rms" ||
+     reduction_op == "count")
   {
     MPI_Allreduce(bins, global_bins, bins_size, MPI_DOUBLE, MPI_SUM, mpi_comm);
   }
@@ -1936,6 +1942,16 @@ binning(const conduit::Node &dataset,
       {
         res_bins[i] = bins[2 * i];
       }
+    }
+  }
+  else if(reduction_op == "count")
+  {
+#ifdef ASCENT_OPENMP_ENABLED
+#pragma omp parallel for
+#endif
+    for(int i = 0; i < num_bins; ++i)
+    {
+      res_bins[i] = bins[i] == 0 ? empty_bin_val : bins[i];
     }
   }
   else if(reduction_op == "avg")
